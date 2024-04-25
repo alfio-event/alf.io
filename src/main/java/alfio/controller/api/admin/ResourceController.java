@@ -106,9 +106,9 @@ public class ResourceController {
 
     @PostMapping("/overridable-template/{name}/{locale}/preview")
     public void previewTemplate(@PathVariable TemplateResource name, @PathVariable String locale,
-                                @RequestParam(required = false) Integer organizationId,
-                                @RequestParam(required = false) Integer eventId,
-                                @RequestParam(required = false) UUID subscriptionDescriptorId,
+                                @RequestParam(required = false, value = "organizationId") Integer organizationId,
+                                @RequestParam(required = false, value = "eventId") Integer eventId,
+                                @RequestParam(required = false, value = "subscriptionDescriptorId") UUID subscriptionDescriptorId,
                                 @RequestBody UploadBase64FileModification template,
                                 Principal principal,
                                 HttpServletResponse response) throws IOException {

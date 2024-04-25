@@ -49,8 +49,8 @@ public class EmailMessageApiController {
     @GetMapping("/")
     public PageAndContent<List<LightweightEmailMessage>> loadEmailMessages(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
                                                                            @PathVariable String publicIdentifier,
-                                                                           @RequestParam(required = false) Integer page,
-                                                                           @RequestParam(required = false) String search,
+                                                                           @RequestParam(value = "page", required = false) Integer page,
+                                                                           @RequestParam(value = "search", required = false) String search,
                                                                            Principal principal) {
         accessService.checkPurchaseContextOwnership(principal, purchaseContextType, publicIdentifier);
         var purchaseContext = purchaseContextManager.findBy(purchaseContextType, publicIdentifier).orElseThrow();

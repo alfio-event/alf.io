@@ -63,12 +63,12 @@ public class UtilsApiController {
     }
 
     @GetMapping("/short-name/generate")
-    public String generateShortName(@RequestParam String displayName) {
+    public String generateShortName(@RequestParam("displayName") String displayName) {
         return eventNameManager.generateShortName(displayName);
     }
 
     @PostMapping("/short-name/validate")
-    public boolean validateShortName(@RequestParam String shortName, HttpServletResponse response) {
+    public boolean validateShortName(@RequestParam("shortName") String shortName, HttpServletResponse response) {
         boolean unique = eventNameManager.isUnique(shortName);
         if(!unique) {
             response.setStatus(HttpServletResponse.SC_CONFLICT);

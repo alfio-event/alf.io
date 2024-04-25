@@ -62,7 +62,7 @@ public class LocationApiController {
     }
 
     @GetMapping("/location/timezone")
-    public String getTimezone(@RequestParam double lat, @RequestParam double lng) {
+    public String getTimezone(@RequestParam("lat") double lat, @RequestParam("lng") double lng) {
         String tzId = TimezoneMapper.tzNameAt(lat, lng);
         return getTimezones().contains(tzId) ? tzId : null;
     }
@@ -71,8 +71,8 @@ public class LocationApiController {
 
     @GetMapping("/location/static-map-image")
     public String getMapImage(
-        @RequestParam(required = false) String lat,
-        @RequestParam(required = false) String lng) {
+        @RequestParam(name = "lat", required = false) String lat,
+        @RequestParam(name = "lng", required = false) String lng) {
         return LocationDescriptor.getMapUrl(lat, lng, getGeoConf());
     }
 

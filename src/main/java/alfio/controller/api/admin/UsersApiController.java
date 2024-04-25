@@ -186,7 +186,7 @@ public class UsersApiController {
     }
 
     @PostMapping("/users/new")
-    public UserWithPasswordAndQRCode insertUser(@RequestBody UserModification userModification, @RequestParam String baseUrl, Principal principal) {
+    public UserWithPasswordAndQRCode insertUser(@RequestBody UserModification userModification, @RequestParam("baseUrl") String baseUrl, Principal principal) {
         accessService.checkOrganizationOwnership(principal, userModification.getOrganizationId());
         Role requested = Role.valueOf(userModification.getRole());
         Validate.isTrue(userManager.getAvailableRoles(principal.getName()).stream().anyMatch(requested::equals), String.format("Requested role %s is not available for current user", userModification.getRole()));
@@ -275,7 +275,7 @@ public class UsersApiController {
     }
 
     @PutMapping("/users/{id}/reset-password")
-    public UserWithPasswordAndQRCode resetPassword(@PathVariable("id") int userId, @RequestParam String baseUrl, Principal principal) {
+    public UserWithPasswordAndQRCode resetPassword(@PathVariable("id") int userId, @RequestParam("baseUrl") String baseUrl, Principal principal) {
         UserWithPassword userWithPassword = userManager.resetPassword(userId, principal);
         return new UserWithPasswordAndQRCode(userWithPassword, Base64.getEncoder().encodeToString(generateQRCode(userWithPassword, baseUrl)));
     }

@@ -54,7 +54,7 @@ public class CustomMessagesApiController {
 
     @PostMapping("/preview")
     public Map<String, Object> preview(@PathVariable String eventName,
-                                       @RequestParam(required = false) Integer categoryId,
+                                       @RequestParam(required = false, value = "categoryId") Integer categoryId,
                                        @RequestBody List<MessageModification> messageModifications, Principal principal) {
         accessService.checkEventOwnership(principal, eventName);
         return customMessageManager.generatePreview(eventName, Optional.ofNullable(categoryId), messageModifications, principal.getName());
@@ -62,7 +62,7 @@ public class CustomMessagesApiController {
 
     @PostMapping("/send")
     public void send(@PathVariable String eventName,
-                    @RequestParam(required = false) Integer categoryId,
+                    @RequestParam(required = false, value = "categoryId") Integer categoryId,
                     @RequestBody List<MessageModification> messageModifications,
                     Principal principal) {
         accessService.checkEventOwnership(principal, eventName);

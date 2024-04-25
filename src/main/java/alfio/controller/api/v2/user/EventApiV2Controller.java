@@ -137,7 +137,7 @@ public class EventApiV2Controller {
     }
 
     @GetMapping("event/{eventName}/ticket-categories")
-    public ResponseEntity<ItemsByCategory> getTicketCategories(@PathVariable String eventName, @RequestParam(required = false) String code) {
+    public ResponseEntity<ItemsByCategory> getTicketCategories(@PathVariable String eventName, @RequestParam(value = "code", required = false) String code) {
 
         //
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
@@ -249,7 +249,7 @@ public class EventApiV2Controller {
     public void getCalendar(@PathVariable String eventName,
                             @PathVariable String locale,
                             @RequestParam(value = "type", required = false) String calendarType,
-                            @RequestParam(required = false) String ticketId,
+                            @RequestParam(value = "ticketId", required = false) String ticketId,
                             HttpServletResponse response) {
 
         eventRepository.findOptionalByShortName(eventName).ifPresentOrElse(ev -> {
@@ -289,7 +289,7 @@ public class EventApiV2Controller {
      */
     @PostMapping(value = "event/{eventName}/reserve-tickets")
     public ResponseEntity<ValidatedResponse<String>> reserveTickets(@PathVariable String eventName,
-                                                                    @RequestParam String lang,
+                                                                    @RequestParam("lang") String lang,
                                                                     @RequestBody ReservationForm reservation,
                                                                     BindingResult bindingResult,
                                                                     ServletWebRequest request,
@@ -335,7 +335,7 @@ public class EventApiV2Controller {
 
     @GetMapping("event/{eventName}/validate-code")
     public ResponseEntity<ValidatedResponse<EventCode>> validateCode(@PathVariable String eventName,
-                                                                     @RequestParam String code) {
+                                                                     @RequestParam("code") String code) {
 
         var res = promoCodeRequestManager.checkCode(eventName, code);
         if(res.isSuccess()) {

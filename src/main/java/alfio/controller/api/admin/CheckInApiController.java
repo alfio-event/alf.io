@@ -74,13 +74,13 @@ public class CheckInApiController {
     }
     
     @GetMapping("/check-in/{eventId}/ticket/{ticketIdentifier}")
-    public TicketAndCheckInResult findTicketWithUUID(@PathVariable int eventId, @PathVariable String ticketIdentifier, @RequestParam String qrCode, Principal principal) {
+    public TicketAndCheckInResult findTicketWithUUID(@PathVariable int eventId, @PathVariable String ticketIdentifier, @RequestParam("qrCode") String qrCode, Principal principal) {
         accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier, AccessService.CHECKIN_ROLES);
         return checkInManager.evaluateTicketStatus(eventId, ticketIdentifier, Optional.ofNullable(qrCode));
     }
 
     @GetMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}")
-    public TicketAndCheckInResult findTicketWithUUID(@PathVariable String eventName, @PathVariable String ticketIdentifier, @RequestParam String qrCode, Principal principal) {
+    public TicketAndCheckInResult findTicketWithUUID(@PathVariable String eventName, @PathVariable String ticketIdentifier, @RequestParam("qrCode") String qrCode, Principal principal) {
         accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
         return checkInManager.evaluateTicketStatus(eventName, ticketIdentifier, Optional.ofNullable(qrCode));
     }
@@ -104,7 +104,7 @@ public class CheckInApiController {
     public TicketAndCheckInResult checkIn(@PathVariable String eventName,
                                           @PathVariable String ticketIdentifier,
                                           @RequestBody TicketCode ticketCode,
-                                          @RequestParam(required = false) String offlineUser,
+                                          @RequestParam(value = "offlineUser", required = false) String offlineUser,
                                           Principal principal) {
         accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
         String username = principal.getName();
@@ -115,8 +115,8 @@ public class CheckInApiController {
     @PostMapping("/check-in/event/{eventName}/bulk")
     public Map<String, TicketAndCheckInResult> bulkCheckIn(@PathVariable String eventName,
                                                            @RequestBody List<TicketIdentifierCode> ticketIdentifierCodes,
-                                                           @RequestParam(required = false) String offlineUser,
-                                                           @RequestParam(required = false, defaultValue = "false") boolean forceCheckInPaymentOnSite,
+                                                           @RequestParam(value = "offlineUser", required = false) String offlineUser,
+                                                           @RequestParam(value = "forceCheckInPaymentOnSite", required = false, defaultValue = "false") boolean forceCheckInPaymentOnSite,
                                                            Principal principal) {
         accessService.checkEventMembership(principal, eventName, AccessService.CHECKIN_ROLES);
         String username = principal.getName();
@@ -171,7 +171,7 @@ public class CheckInApiController {
     public TicketAndCheckInResult confirmOnSitePayment(@PathVariable String eventName,
                                                        @PathVariable String ticketIdentifier,
                                                        @RequestBody TicketCode ticketCode,
-                                                       @RequestParam(required = false) String offlineUser,
+                                                       @RequestParam(value = "offlineUser", required = false) String offlineUser,
                                                        Principal principal) {
         accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
         String username = principal.getName();
@@ -195,7 +195,7 @@ public class CheckInApiController {
 
     @GetMapping("/check-in/{eventId}/ticket-identifiers")
     public List<Integer> findAllIdentifiersForAdminCheckIn(@PathVariable int eventId,
-                                               @RequestParam(required = false) Long changedSince,
+                                               @RequestParam(value = "changedSince", required = false) Long changedSince,
                                                HttpServletResponse response,
                                                Principal principal) {
         accessService.checkEventMembership(principal, eventId, AccessService.CHECKIN_ROLES);
@@ -205,8 +205,8 @@ public class CheckInApiController {
 
     @GetMapping("/check-in/event/{publicIdentifier}/attendees")
     public ResponseEntity<AttendeeSearchResults> searchAttendees(@PathVariable String publicIdentifier,
-                                                                 @RequestParam(required = false) String query,
-                                                                 @RequestParam(required = false, defaultValue = "0") int page,
+                                                                 @RequestParam(value = "query", required = false) String query,
+                                                                 @RequestParam(value = "page", required = false, defaultValue = "0") int page,
                                                                  Principal principal) {
         accessService.checkEventMembership(principal, publicIdentifier, AccessService.CHECKIN_ROLES);
         if (StringUtils.isBlank(query) || StringUtils.isBlank(publicIdentifier)) {
@@ -239,7 +239,7 @@ public class CheckInApiController {
 
     @GetMapping("/check-in/{eventName}/offline-identifiers")
     public List<Integer> getOfflineIdentifiers(@PathVariable String eventName,
-                                              @RequestParam(required = false) Long changedSince,
+                                              @RequestParam(value = "changedSince", required = false) Long changedSince,
                                               HttpServletResponse resp,
                                               Principal principal) {
         var event = accessService.checkEventMembership(principal, eventName, AccessService.CHECKIN_ROLES);

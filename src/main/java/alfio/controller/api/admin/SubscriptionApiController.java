@@ -99,7 +99,7 @@ public class SubscriptionApiController {
     @PatchMapping("/{subscriptionId}/is-public")
     ResponseEntity<Boolean> setPublicState(@PathVariable int organizationId,
                                            @PathVariable UUID subscriptionId,
-                                           @RequestParam boolean status,
+                                           @RequestParam("status") boolean status,
                                            Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
         return ResponseEntity.ok(subscriptionManager.setPublicStatus(subscriptionId, organizationId, status));

@@ -117,7 +117,7 @@ public class AdminWaitingQueueApiController {
 
     @GetMapping("/download")
     public void downloadAllSubscriptions(@PathVariable String eventName,
-                                         @RequestParam(defaultValue = "excel") String format,
+                                         @RequestParam(name = "format", defaultValue = "excel") String format,
                                          Principal principal, HttpServletResponse response) throws IOException {
         accessService.checkEventOwnership(principal, eventName);
         var event = eventManager.getSingleEvent(eventName, principal.getName());

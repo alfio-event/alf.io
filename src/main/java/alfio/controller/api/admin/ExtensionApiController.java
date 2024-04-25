@@ -216,10 +216,10 @@ public class ExtensionApiController {
     //
 
     @GetMapping("/log")
-    public PageAndContent<List<ExtensionLog>> getLog(@RequestParam(required = false) String path,
-                                                     @RequestParam(required = false) String name,
-                                                     @RequestParam(required = false) ExtensionLog.Type type,
-                                                     @RequestParam(required = false, defaultValue = "0") Integer page, Principal principal) {
+    public PageAndContent<List<ExtensionLog>> getLog(@RequestParam(required = false, name = "path") String path,
+                                                     @RequestParam(required = false, name = "name") String name,
+                                                     @RequestParam(required = false, name = "type") ExtensionLog.Type type,
+                                                     @RequestParam(required = false, name = "page", defaultValue = "0") Integer page, Principal principal) {
         accessService.ensureAdmin(principal);
         final int pageSize = 50;
         Pair<List<ExtensionLog>, Integer> res = extensionService.getLog(StringUtils.trimToNull(path), StringUtils.trimToNull(name), type, pageSize, (page == null ? 0 : page) * pageSize);

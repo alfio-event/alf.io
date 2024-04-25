@@ -287,7 +287,7 @@ public class ReservationApiV2Controller {
 
     @PostMapping("/reservation/{reservationId}")
     public ResponseEntity<ValidatedResponse<ReservationPaymentResult>> confirmOverview(@PathVariable String reservationId,
-                                                                                       @RequestParam String lang,
+                                                                                       @RequestParam("lang") String lang,
                                                                                        @RequestBody  PaymentForm paymentForm,
                                                                                        BindingResult bindingResult,
                                                                                        HttpServletRequest request,
@@ -368,8 +368,8 @@ public class ReservationApiV2Controller {
 
     @PostMapping("/reservation/{reservationId}/validate-to-overview")
     public ResponseEntity<ValidatedResponse<Boolean>> validateToOverview(@PathVariable String reservationId,
-                                                                         @RequestParam String lang,
-                                                                         @RequestParam(defaultValue = "false") boolean ignoreWarnings,
+                                                                         @RequestParam("lang") String lang,
+                                                                         @RequestParam(value = "ignoreWarnings", defaultValue = "false") boolean ignoreWarnings,
                                                                          @RequestBody ContactAndTicketsForm contactAndTicketsForm,
                                                                          BindingResult br,
                                                                          Authentication principal) {
@@ -552,7 +552,7 @@ public class ReservationApiV2Controller {
     public ResponseEntity<Boolean> reSendReservationConfirmationEmail(@PathVariable PurchaseContextType purchaseContextType,
                                                                       @PathVariable String publicIdentifier,
                                                                       @PathVariable String reservationId,
-                                                                      @RequestParam String lang,
+                                                                      @RequestParam("lang") String lang,
                                                                       Principal principal) {
 
 
@@ -701,7 +701,7 @@ public class ReservationApiV2Controller {
     }
 
     @DeleteMapping("/reservation/{reservationId}/remove-code")
-    public ResponseEntity<Boolean> removeCode(@PathVariable String reservationId, @RequestParam ReservationCodeForm.ReservationCodeType type) {
+    public ResponseEntity<Boolean> removeCode(@PathVariable String reservationId, @RequestParam("type") ReservationCodeForm.ReservationCodeType type) {
         boolean res = false;
         if (type == ReservationCodeForm.ReservationCodeType.SUBSCRIPTION) {
             res = purchaseContextManager.getReservationWithPurchaseContext(reservationId).map(et -> ticketReservationManager.removeSubscription(et.getRight())).orElse(false);

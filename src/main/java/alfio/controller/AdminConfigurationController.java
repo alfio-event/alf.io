@@ -57,8 +57,8 @@ public class AdminConfigurationController {
 
     @GetMapping("/admin/configuration/payment/{provider}/connect/{orgId}")
     public String oAuthRedirectToAuthorizationURL(Principal principal,
-                                                  @PathVariable Integer orgId,
-                                                  @PathVariable String provider,
+                                                  @PathVariable("orgId") Integer orgId,
+                                                  @PathVariable("provider") String provider,
                                                   HttpSession session) {
         if(CONNECT_PROVIDERS.contains(provider) && userManager.isOwnerOfOrganization(userManager.findUserByUsername(principal.getName()), orgId)) {
             var connectURL = getConnector(provider).getConnectURL(orgId);
@@ -72,8 +72,8 @@ public class AdminConfigurationController {
 
     @GetMapping({ STRIPE_CONNECT_REDIRECT_PATH, MOLLIE_CONNECT_REDIRECT_PATH })
     public String authorize(Principal principal,
-                            @RequestParam String state,
-                            @RequestParam(required = false) String code,
+                            @RequestParam("state") String state,
+                            @RequestParam(value = "code", required = false) String code,
                             @RequestParam(value = "error", required = false) String errorCode,
                             @RequestParam(value = "error_description", required = false) String errorDescription,
                             HttpServletRequest request,

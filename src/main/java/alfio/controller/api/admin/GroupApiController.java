@@ -54,7 +54,7 @@ public class GroupApiController {
     }
 
     @GetMapping("/for/{organizationId}")
-    public ResponseEntity<List<Group>> loadAllGroupsForOrganization(@PathVariable int organizationId, @RequestParam(defaultValue = "false", required = false) boolean showAll, Principal principal) {
+    public ResponseEntity<List<Group>> loadAllGroupsForOrganization(@PathVariable int organizationId, @RequestParam(name = "showAll", defaultValue = "false", required = false) boolean showAll, Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
         if (showAll) {
             return ResponseEntity.ok(groupManager.getAllForOrganization(organizationId));
@@ -166,7 +166,7 @@ public class GroupApiController {
     public ResponseEntity<String> unlinkGroup(@PathVariable int organizationId,
                                               @PathVariable int configurationId,
                                               @PathVariable int eventId,
-                                              @RequestParam(required = false) Integer categoryId,
+                                              @RequestParam(name = "categoryId", required = false) Integer categoryId,
                                               Principal principal) {
         accessService.checkGroupLinkOwnership(principal, configurationId, organizationId, eventId, categoryId);
         groupManager.disableLink(configurationId);

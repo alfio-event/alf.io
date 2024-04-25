@@ -116,7 +116,7 @@ public class PromoCodeDiscountApiController {
 
     @GetMapping("/promo-code/{promoCodeId}/detailed-usage")
     public List<PromoCodeUsageResult> retrieveDetailedUsage(@PathVariable int promoCodeId,
-                                                            @RequestParam(required = false) String eventShortName,
+                                                            @RequestParam(value = "eventShortName", required = false) String eventShortName,
                                                             Principal principal) {
         Integer eventId = null;
         if (StringUtils.isNotBlank(eventShortName)) {

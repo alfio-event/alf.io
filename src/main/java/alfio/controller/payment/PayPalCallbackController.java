@@ -48,7 +48,7 @@ public class PayPalCallbackController {
                                 @PathVariable String reservationId,
                                 @RequestParam(value = "token", required = false) String payPalPaymentId,
                                 @RequestParam(value = "PayerID", required = false) String payPalPayerID,
-                                @RequestParam String hmac) {
+                                @RequestParam(value = "hmac") String hmac) {
 
         var optionalPurchaseContext = purchaseContextManager.findByReservationId(reservationId)
             .filter(pc -> pc.getType() == purchaseContextType && pc.getPublicIdentifier().equals(purchaseContextId));

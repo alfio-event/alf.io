@@ -275,8 +275,8 @@ public class ConfigurationApiController {
     }
 
     @PutMapping("/generate-tickets-for-subscriptions")
-    public ResponseEntity<Boolean> generateTicketsForSubscriptions(@RequestParam(required = false) Integer eventId,
-                                                                   @RequestParam(required = false) Integer organizationId,
+    public ResponseEntity<Boolean> generateTicketsForSubscriptions(@RequestParam(value = "eventId", required = false) Integer eventId,
+                                                                   @RequestParam(value = "organizationId", required = false) Integer organizationId,
                                                                    Principal principal) {
         boolean admin = RequestUtils.isAdmin(principal);
         Map<String, Object> jobMetadata = null;

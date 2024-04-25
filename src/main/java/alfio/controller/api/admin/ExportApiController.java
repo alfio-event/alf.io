@@ -52,8 +52,8 @@ public class ExportApiController {
     }
 
     @GetMapping("/reservations")
-    public void downloadAllEvents(@RequestParam String from,
-                                  @RequestParam String to,
+    public void downloadAllEvents(@RequestParam(name = "from") String from,
+                                  @RequestParam(name = "to") String to,
                                   HttpServletResponse response,
                                   Principal principal) throws IOException {
         var allEvents = exportManager.reservationsForInterval(LocalDate.parse(requireNonNull(from)),

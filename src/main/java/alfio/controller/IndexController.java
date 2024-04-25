@@ -208,7 +208,7 @@ public class IndexController {
     public void replyToIndex(@PathVariable(value = EVENT_SHORT_NAME, required = false) String eventShortName,
                              @PathVariable(required = false) String subscriptionId,
                              @RequestHeader(value = "User-Agent", required = false) String userAgent,
-                             @RequestParam(required = false) String lang,
+                             @RequestParam(value = "lang", required = false) String lang,
                              ServletWebRequest request,
                              HttpServletResponse response,
                              HttpSession session) throws IOException {

@@ -37,7 +37,7 @@ public class AttendeeBulkImportApiController {
     @PostMapping("")
     public Result<String> createReservations(@PathVariable String eventName,
                                              @RequestBody AdminReservationModification body,
-                                             @RequestParam(defaultValue = "false", required = false) boolean oneReservationPerAttendee,
+                                             @RequestParam(name="oneReservationPerAttendee", defaultValue = "false", required = false) boolean oneReservationPerAttendee,
                                              Principal principal) {
         accessService.checkEventOwnership(principal, eventName);
         return requestManager.scheduleReservations(eventName, body, !oneReservationPerAttendee, principal.getName());

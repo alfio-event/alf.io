@@ -77,8 +77,8 @@ public class AuthenticationController {
     }
 
     @GetMapping("/authentication")
-    public void getLoginPage(@RequestParam(required = false) String failed,
-                             @RequestParam(required = false) String recaptchaFailed,
+    public void getLoginPage(@RequestParam(value="failed", required = false) String failed,
+                             @RequestParam(value = "recaptchaFailed", required = false) String recaptchaFailed,
                              Model model,
                              Principal principal,
                              HttpServletRequest request,

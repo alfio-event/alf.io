@@ -118,7 +118,7 @@ public class PollAdminApiController {
     @GetMapping("/{pollId}/filter-tickets")
     ResponseEntity<List<PollParticipant>> findAdditionalAttendees(@PathVariable String eventName,
                                                                   @PathVariable Long pollId,
-                                                                  @RequestParam String filter,
+                                                                  @RequestParam("filter") String filter,
                                                                   Principal principal) {
         if(StringUtils.isBlank(filter)) {
             return ResponseEntity.badRequest().build();

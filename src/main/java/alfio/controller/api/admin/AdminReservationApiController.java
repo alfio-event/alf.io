@@ -78,9 +78,9 @@ public class AdminReservationApiController {
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/reservations/list")
     public PageAndContent<List<TicketReservation>> findAll(@PathVariable PurchaseContextType purchaseContextType,
                                                            @PathVariable String publicIdentifier,
-                                                           @RequestParam(required = false) Integer page,
-                                                           @RequestParam(required = false) String search,
-                                                           @RequestParam(required = false) List<TicketReservation.TicketReservationStatus> status,
+                                                           @RequestParam(value = "page", required = false) Integer page,
+                                                           @RequestParam(value = "search", required = false) String search,
+                                                           @RequestParam(value = "status", required = false) List<TicketReservation.TicketReservationStatus> status,
                                                            Principal principal) {
 
         return purchaseContextManager.findBy(purchaseContextType, publicIdentifier)
@@ -254,17 +254,17 @@ public class AdminReservationApiController {
     @PostMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/cancel")
     public Result<Boolean> removeReservation(@PathVariable PurchaseContextType purchaseContextType, @PathVariable String publicIdentifier,
                                              @PathVariable String reservationId,
-                                             @RequestParam boolean refund,
-                                             @RequestParam(defaultValue = "false") boolean notify,
-                                             @RequestParam(defaultValue = "false") boolean issueCreditNote,
+                                             @RequestParam("refund") boolean refund,
+                                             @RequestParam(value = "notify", defaultValue = "false") boolean notify,
+                                             @RequestParam(value = "issueCreditNote", defaultValue = "false") boolean issueCreditNote,
                                              Principal principal) {
         accessService.checkReservationMembership(principal, purchaseContextType, publicIdentifier, reservationId);
         return adminReservationManager.removeReservation(purchaseContextType, publicIdentifier, reservationId, refund, notify, issueCreditNote, principal.getName());
     }
 
     @PostMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/credit")
-    public Result<Boolean> creditReservation(@PathVariable PurchaseContextType purchaseContextType, @PathVariable String publicIdentifier, @PathVariable String reservationId, @RequestParam boolean refund,
-                                             @RequestParam(defaultValue = "false") boolean notify,
+    public Result<Boolean> creditReservation(@PathVariable PurchaseContextType purchaseContextType, @PathVariable String publicIdentifier, @PathVariable String reservationId, @RequestParam("refund") boolean refund,
+                                             @RequestParam(value = "notify", defaultValue = "false") boolean notify,
                                              Principal principal) {
         accessService.checkReservationOwnership(principal, purchaseContextType, publicIdentifier, reservationId);
         adminReservationManager.creditReservation(purchaseContextType, publicIdentifier, reservationId, refund, notify, principal.getName());

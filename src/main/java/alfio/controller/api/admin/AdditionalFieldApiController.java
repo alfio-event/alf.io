@@ -141,7 +141,7 @@ public class AdditionalFieldApiController {
     public void setAdditionalFieldPosition(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
                                            @PathVariable String publicIdentifier,
                                            @PathVariable long id,
-                                           @RequestParam int newPosition,
+                                           @RequestParam("newPosition") int newPosition,
                                            Principal principal) {
         //
         accessService.checkPurchaseContextOwnershipAndTicketAdditionalFieldIds(principal, purchaseContextType, publicIdentifier, Set.of(id));

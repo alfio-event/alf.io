@@ -78,8 +78,8 @@ public class AdminPaymentsApiController {
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/list")
     PageAndContent<List<ReservationPaymentDetail>> getPaymentsForPurchaseContext(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
                                                                                  @PathVariable String publicIdentifier,
-                                                                                 @RequestParam(required = false) Integer page,
-                                                                                 @RequestParam(required = false) String search,
+                                                                                 @RequestParam(value = "page", required = false) Integer page,
+                                                                                 @RequestParam(value = "search", required = false) String search,
                                                                                  Principal principal) {
         return purchaseContextManager.findBy(purchaseContextType, publicIdentifier)
             .map(purchaseContext -> {
@@ -112,7 +112,7 @@ public class AdminPaymentsApiController {
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/download")
     void exportPayments(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
                         @PathVariable String publicIdentifier,
-                        @RequestParam(required = false) String search,
+                        @RequestParam(value = "search", required = false) String search,
                         Principal principal,
                         HttpServletResponse response) throws IOException {
         var purchaseContextOptional = purchaseContextManager.findBy(purchaseContextType, publicIdentifier);

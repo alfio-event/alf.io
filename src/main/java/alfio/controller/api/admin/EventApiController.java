@@ -157,7 +157,7 @@ public class EventApiController {
     @GetMapping(value = "/events", headers = "Authorization")
     public List<EventListItem> getAllEventsForExternal(Principal principal,
                                                        HttpServletRequest request,
-                                                       @RequestParam(required = false, defaultValue = "false") boolean includeOnline) {
+                                                       @RequestParam(value = "includeOnline", required = false, defaultValue = "false") boolean includeOnline) {
         List<Integer> userOrganizations = userManager.findUserOrganizations(principal.getName()).stream().map(Organization::getId).collect(toList());
         return eventManager.getActiveEvents().stream()
             .filter(e -> userOrganizations.contains(e.getOrganizationId()) && (includeOnline || e.getFormat() != Event.EventFormat.ONLINE))
@@ -266,7 +266,7 @@ public class EventApiController {
     }
 
     @GetMapping("/events/name-by-ids")
-    public Map<Integer, String> getEventNamesByIds(@RequestParam List<Integer> eventIds, Principal principal) {
+    public Map<Integer, String> getEventNamesByIds(@RequestParam("eventIds") List<Integer> eventIds, Principal principal) {
         // only used by admin it seems
         accessService.ensureAdmin(principal);
         return eventManager.getEventNamesByIds(eventIds, principal);
@@ -286,7 +286,7 @@ public class EventApiController {
     }
 
     @PutMapping("/events/{id}/status")
-    public String activateEvent(@PathVariable int id, @RequestParam boolean active, Principal principal) {
+    public String activateEvent(@PathVariable int id, @RequestParam("active") boolean active, Principal principal) {
         accessService.checkEventOwnership(principal, id);
         eventManager.toggleActiveFlag(id, principal.getName(), active);
         return OK;
@@ -358,7 +358,7 @@ public class EventApiController {
     private static final List<String> ITALIAN_E_INVOICING_FIELDS = List.of(FISCAL_CODE, REFERENCE_TYPE, "Addressee Code", "PEC");
 
     @GetMapping("/events/{eventName}/export")
-    public void downloadAllTicketsCSV(@PathVariable String eventName, @RequestParam(defaultValue = "excel") String format, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
+    public void downloadAllTicketsCSV(@PathVariable String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
         accessService.checkEventOwnership(principal, eventName);
         List<String> fields = Arrays.asList(Optional.ofNullable(request.getParameterValues("fields")).orElse(new String[] {}));
         Event event = loadEvent(eventName, principal);
@@ -455,7 +455,7 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/sponsor-scan/export")
-    public void downloadSponsorScanExport(@PathVariable String eventName, @RequestParam(defaultValue = "excel") String format, HttpServletResponse response, Principal principal) throws IOException {
+    public void downloadSponsorScanExport(@PathVariable String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletResponse response, Principal principal) throws IOException {
         accessService.checkEventOwnership(principal, eventName);
         var event = eventManager.getSingleEvent(eventName, principal.getName());
         List<PurchaseContextFieldConfiguration> fields = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.getId());
@@ -567,7 +567,7 @@ public class EventApiController {
     public String deletePendingPayment(@PathVariable String eventName,
                                        @PathVariable String reservationId,
                                        @RequestParam(required = false, value = "credit", defaultValue = "false") Boolean creditReservation,
-                                       @RequestParam(required = false, defaultValue = "true") Boolean notify,
+                                       @RequestParam(required = false, value = "notify", defaultValue = "true") Boolean notify,
                                        Principal principal) {
         accessService.checkEventAndReservationOwnership(principal, eventName, Set.of(reservationId));
         ticketReservationManager.deleteOfflinePayment(loadEvent(eventName, principal), reservationId, false, Boolean.TRUE.equals(creditReservation), notify, principal.getName());
@@ -749,8 +749,8 @@ public class EventApiController {
 
     @GetMapping("/events/{eventName}/category/{categoryId}/ticket")
     public PageAndContent<List<TicketWithStatistic>> getTicketsInCategory(@PathVariable String eventName, @PathVariable int categoryId,
-                                                                          @RequestParam(required = false) Integer page,
-                                                                          @RequestParam(required = false) String search,
+                                                                          @RequestParam(value = "page", required = false) Integer page,
+                                                                          @RequestParam(value = "search", required = false) String search,
                                                                           Principal principal) {
         accessService.checkCategoryOwnership(principal, eventName, categoryId);
         EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());

@@ -36,7 +36,7 @@ public class PollApiController {
     private final PollManager pollManager;
 
     @GetMapping("")
-    ResponseEntity<ValidatedResponse<List<Poll>>> getAll(@PathVariable String eventName, @RequestParam String pin) {
+    ResponseEntity<ValidatedResponse<List<Poll>>> getAll(@PathVariable String eventName, @RequestParam("pin") String pin) {
         var result = pollManager.getActiveForEvent(eventName, pin);
         if(result.isSuccess()) {
             return ResponseEntity.ok(ValidatedResponse.fromResult(result, "pin"));
@@ -45,7 +45,7 @@ public class PollApiController {
     }
 
     @GetMapping("/{pollId}")
-    ResponseEntity<ValidatedResponse<PollWithOptions>> getSingle(@PathVariable String eventName, @PathVariable Long pollId, @RequestParam String pin) {
+    ResponseEntity<ValidatedResponse<PollWithOptions>> getSingle(@PathVariable String eventName, @PathVariable Long pollId, @RequestParam("pin") String pin) {
         var result = pollManager.getSingleActiveForEvent(eventName, pollId, pin);
         if(result.isSuccess()) {
             return ResponseEntity.ok(ValidatedResponse.fromResult(result, "pin"));

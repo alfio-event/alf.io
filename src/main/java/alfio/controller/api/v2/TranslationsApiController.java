@@ -49,13 +49,13 @@ public class TranslationsApiController {
 
     @GetMapping("/public/i18n/bundle/{lang}")
     public Map<String, String> getPublicTranslations(@PathVariable String lang,
-                                                     @RequestParam(defaultValue = "true", required = false) boolean withSystemOverride) {
+                                                     @RequestParam(value = "withSystemOverride", defaultValue = "true", required = false) boolean withSystemOverride) {
         return messageSourceManager.getBundleAsMap("alfio.i18n.public", withSystemOverride, lang, MessageSourceManager.PUBLIC_FRONTEND);
     }
 
     @GetMapping("/admin/i18n/bundle/{lang}")
     public Map<String, String> getAdminTranslations(@PathVariable String lang,
-                                                    @RequestParam(defaultValue = "true", required = false) boolean withSystemOverride) {
+                                                    @RequestParam(value = "withSystemOverride", defaultValue = "true", required = false) boolean withSystemOverride) {
         return messageSourceManager.getBundleAsMap("alfio.i18n.public", withSystemOverride, lang, MessageSourceManager.ADMIN_FRONTEND);
     }
 
