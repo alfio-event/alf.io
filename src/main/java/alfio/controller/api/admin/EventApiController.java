@@ -42,8 +42,9 @@ import alfio.repository.EventDescriptionRepository;
 import alfio.repository.PurchaseContextFieldRepository;
 import alfio.repository.SponsorScanRepository;
 import alfio.util.*;
-import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvException;
+import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
@@ -465,7 +466,7 @@ public class EventApiController {
         header.add("Timestamp");
         header.add("Full name");
         header.add("Email");
-        header.addAll(fields.stream().map(PurchaseContextFieldConfiguration::getName).collect(toList()));
+        header.addAll(fields.stream().map(PurchaseContextFieldConfiguration::getName).toList());
         header.add("Sponsor notes");
         header.add("Lead Status");
         header.add("Operator");
@@ -576,27 +577,28 @@ public class EventApiController {
     @PostMapping("/events/{eventName}/pending-payments/bulk-confirmation")
     public List<Triple<Boolean, String, String>> bulkConfirmation(@PathVariable String eventName,
                                                                   Principal principal,
-                                                                  @RequestBody UploadBase64FileModification file) throws IOException, CsvException {
-        try(InputStreamReader isr = new InputStreamReader(file.getInputStream(), UTF_8); CSVReader reader = new CSVReader(isr)) {
-            var all = reader.readAll();
+                                                                  @RequestBody UploadBase64FileModification file) throws IOException {
+        record Transaction(String reservationId, BigDecimal price) {}
+        var csvMapper = new CsvMapper();
+        try(InputStreamReader isr = new InputStreamReader(file.getInputStream(), UTF_8)) {
+            MappingIterator<Transaction> iterator = csvMapper.readerFor(Transaction.class)
+                .with(CsvSchema.emptySchema().withoutHeader())
+                .readValues(isr);
+            var all = iterator.readAll();
+
             var reservationIds = all.stream()
-                .map(line -> {
-                    Validate.isTrue(line.length >= 2);
-                    return line[0];
-                })
+                .map(Transaction::reservationId)
                 .collect(Collectors.toSet());
             accessService.checkEventAndReservationOwnership(principal, eventName, reservationIds);
 
             Event event = loadEvent(eventName, principal);
             return all.stream()
                     .map(line -> {
-                        String reservationID = null;
                         try {
-                            reservationID = line[0];
-                            ticketReservationManager.validateAndConfirmOfflinePayment(reservationID, event, new BigDecimal(line[1]), principal.getName());
-                            return Triple.of(Boolean.TRUE, reservationID, "");
+                            ticketReservationManager.validateAndConfirmOfflinePayment(line.reservationId, event, line.price, principal.getName());
+                            return Triple.of(Boolean.TRUE, line.reservationId, "");
                         } catch (Exception e) {
-                            return Triple.of(Boolean.FALSE, Optional.ofNullable(reservationID).orElse(""), e.getMessage());
+                            return Triple.of(Boolean.FALSE, Optional.ofNullable(line.reservationId).orElse(""), e.getMessage());
                         }
                     })
                     .collect(toList());

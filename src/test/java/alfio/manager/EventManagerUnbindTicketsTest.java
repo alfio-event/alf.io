@@ -85,9 +85,9 @@ public class EventManagerUnbindTicketsTest {
             eventDescriptionRepository, ticketCategoryRepository, ticketCategoryDescriptionRepository,
             ticketRepository, specialPriceRepository, null, null, null,
             null, null, null,
-            null, organizationRepository,
-            null, null, null, null, null,
-            null, TestUtil.clockProvider(), mock(SubscriptionRepository.class), null);
+            organizationRepository,
+            null, null, null, null, null, null,
+            TestUtil.clockProvider(), mock(SubscriptionRepository.class), null);
     }
 
     @Test

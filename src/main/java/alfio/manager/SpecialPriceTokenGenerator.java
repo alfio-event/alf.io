@@ -57,7 +57,7 @@ public class SpecialPriceTokenGenerator {
     private static final RandomStringGenerator RANDOM_STRING_GENERATOR = new RandomStringGenerator.Builder()
         .selectFrom(ADMITTED_CHARACTERS)
         .usingRandom(RANDOM::nextInt)
-        .build();
+        .get();
 
     private final SpecialPriceRepository specialPriceRepository;
     private final TicketCategoryRepository ticketCategoryRepository;

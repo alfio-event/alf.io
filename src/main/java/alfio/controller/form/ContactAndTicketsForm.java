@@ -32,7 +32,7 @@ import alfio.util.ErrorsCode;
 import alfio.util.ItalianTaxIdValidator;
 import alfio.util.Validator;
 import lombok.Data;
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;

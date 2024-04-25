@@ -48,7 +48,6 @@ import alfio.util.MonetaryUtil;
 import alfio.util.RequestUtils;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -108,7 +107,6 @@ public class EventManager {
     private final SpecialPriceRepository specialPriceRepository;
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final ConfigurationManager configurationManager;
-    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final EventDeleterRepository eventDeleterRepository;
     private final PurchaseContextFieldManager purchaseContextFieldManager;
     private final Flyway flyway;
@@ -824,13 +822,13 @@ public class EventManager {
     }
 
     private void createAllTicketsForEvent(Event event, EventModification em) {
-        Validate.notNull(em.getAvailableSeats());
+        Objects.requireNonNull(em.getAvailableSeats());
         final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(event.now(clockProvider), event, em.getAvailableSeats(), TicketStatus.FREE);
         ticketRepository.bulkTicketInitialization(params);
     }
 
     private int insertEvent(EventModification em) {
-        Validate.notNull(em.getAvailableSeats());
+        Objects.requireNonNull(em.getAvailableSeats());
         validatePaymentProxies(em.getAllowedPaymentProxies(), em.getOrganizationId());
         String paymentProxies = collectPaymentProxies(em);
         BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVatPercentage();

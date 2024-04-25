@@ -26,10 +26,7 @@ import alfio.model.user.User;
 import alfio.repository.AdminReservationRequestRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.user.UserRepository;
-import alfio.util.ClockProvider;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -53,6 +50,7 @@ import java.util.stream.Stream;
 import static alfio.model.modification.AdminReservationModification.Notification.orEmpty;
 import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
+import static org.apache.commons.collections4.CollectionUtils.size;
 
 @Component
 @Transactional
@@ -128,7 +126,7 @@ public class AdminReservationRequestManager {
             }
         });
 
-        return Pair.of(CollectionUtils.size(result.get(true)), CollectionUtils.size(result.get(false)));
+        return Pair.of(size(result.get(true)), size(result.get(false)));
 
     }
 

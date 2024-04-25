@@ -21,8 +21,9 @@ import alfio.manager.SpecialPriceManager;
 import alfio.model.SpecialPrice;
 import alfio.model.modification.SendCodeModification;
 import alfio.model.modification.UploadBase64FileModification;
-import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvException;
+import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -36,10 +37,8 @@ import java.io.InputStreamReader;
 import java.security.Principal;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.lang3.StringUtils.trim;
 
 @RestController
 @RequestMapping("/admin/api")
@@ -69,18 +68,15 @@ public class SpecialPriceApiController {
     public ResponseEntity<List<SendCodeModification>> linkAssigneeToCodes(@PathVariable String eventName,
                                                                          @PathVariable int categoryId,
                                                                          @RequestBody UploadBase64FileModification file,
-                                                                         Principal principal) throws IOException, CsvException {
+                                                                         Principal principal) throws IOException {
 
         Validate.isTrue(StringUtils.isNotEmpty(eventName));
         accessService.checkCategoryOwnership(principal, eventName, categoryId);
-        try(InputStreamReader isr = new InputStreamReader(file.getInputStream(), UTF_8); CSVReader reader = new CSVReader(isr)) {
-            List<SendCodeModification> content = reader.readAll().stream()
-                    .map(line -> {
-                        Validate.isTrue(line.length >= 4);
-                        return new SendCodeModification(StringUtils.trimToNull(line[0]), trim(line[1]), trim(line[2]), trim(line[3]));
-                    })
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(specialPriceManager.linkAssigneeToCode(content, eventName, categoryId, principal.getName()));
+        try(InputStreamReader isr = new InputStreamReader(file.getInputStream(), UTF_8)) {
+            MappingIterator<SendCodeModification> iterator = new CsvMapper().readerFor(SendCodeModification.class)
+                .with(CsvSchema.emptySchema().withoutHeader())
+                .readValues(isr);
+            return ResponseEntity.ok(specialPriceManager.linkAssigneeToCode(iterator.readAll(), eventName, categoryId, principal.getName()));
         }
     }
 

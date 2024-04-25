@@ -19,7 +19,7 @@ package alfio.model.result;
 import alfio.model.result.ValidationResult.ErrorDescriptor;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.validation.ObjectError;
 

@@ -35,7 +35,7 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.51.0'
     id 'com.github.hierynomus.license' version '0.16.1'
     id 'net.researchgate.release' version '3.0.2'
-    id 'org.springframework.boot' version '3.2.0'
+    id 'org.springframework.boot' version '3.2.5'
     id 'org.sonarqube' version '4.4.1.3373'
     // id 'net.ltgt.errorprone' version '3.1.0'
     id 'com.github.node-gradle.node' version '7.0.2'
@@ -102,8 +102,9 @@ repositories {
 }
 
 dependencies {
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
     implementation 'com.auth0:java-jwt:4.4.0'
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv"
     implementation "com.fasterxml.jackson.core:jackson-core"
     implementation "com.fasterxml.jackson.core:jackson-databind"
     implementation "org.springframework.boot:spring-boot-properties-migrator", {
@@ -133,10 +134,9 @@ dependencies {
         exclude module: 'gson'
     }
 
-    implementation "org.apache.commons:commons-lang3:3.13.0"
-    implementation 'com.opencsv:opencsv:5.9', {
-        exclude module: 'commons-collections:commons-collections:3.2.2'
-    }
+    implementation 'org.apache.commons:commons-lang3:3.13.0'
+    implementation 'org.apache.commons:commons-text:1.12.0'
+    implementation 'org.apache.commons:commons-collections4:4.4'
     implementation 'commons-codec:commons-codec:1.15'
     implementation 'net.sf.biweekly:biweekly:0.6.6'
     implementation 'com.atlassian.commonmark:commonmark:0.17.0'
