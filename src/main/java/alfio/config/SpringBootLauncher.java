@@ -47,10 +47,6 @@ public class SpringBootLauncher {
             MvcConfiguration.class);
         List<String> additionalProfiles = new ArrayList<>();
         additionalProfiles.add(Initializer.PROFILE_SPRING_BOOT);
-        if("true".equals(System.getenv("ALFIO_LOG_STDOUT_ONLY"))) {
-            // -> will load application-stdout.properties on top to override the logger configuration
-            additionalProfiles.add("stdout");
-        }
         if("true".equals(System.getenv("ALFIO_DEMO_ENABLED"))) {
             additionalProfiles.add(Initializer.PROFILE_DEMO);
         }
