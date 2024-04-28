@@ -9,13 +9,14 @@ FROM azul/zulu-openjdk-alpine:17 as zulu
 
 RUN $JAVA_HOME/bin/jlink --compress=1 --strip-java-debug-attributes --no-header-files --no-man-pages \
     --module-path $JAVA_HOME/jmods \
-    # see https://github.com/ben-manes/caffeine/issues/273 TODO investigate if we can remove jdk.unsupported
     # see https://docs.oracle.com/en/java/javase/11/security/oracle-providers.html#GUID-9224B90B-7B2F-41F9-BB96-C0A1B6A0FEAA
-    --add-modules java.desktop,java.logging,java.sql,java.management,java.naming,jdk.unsupported,jdk.crypto.ec,java.net.http,jdk.localedata \
+    --add-modules java.desktop,java.logging,java.sql,java.management,java.naming,jdk.unsupported,jdk.crypto.ec,java.net.http,jdk.localedata,java.instrument \
     --include-locales en,it,es,nl,fr,de,ro,pt,tr,pl,da,bg,sv,cs \
     --output /jlinked
 
-FROM alpine:3.15
+RUN /jlinked/bin/java -Xshare:dump -XX:+UseSerialGC -version
+
+FROM alpine:3.19
 LABEL org.opencontainers.image.source=https://github.com/alfio-event/alf.io
 
 COPY --from=zulu /jlinked /opt/jdk/
