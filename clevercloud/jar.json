@@ -4,6 +4,6 @@
         "goal": "clever -x test"
     },
     "deploy": {
-        "jarName": "build/clevercloud/alfio-boot.war"
+        "jarName": "build/clevercloud/alfio-boot.jar"
     }
 }

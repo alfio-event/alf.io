@@ -6,7 +6,7 @@
 #
 
 FROM azul/zulu-openjdk-alpine:17 as zulu
-
+COPY alfio-boot.jar .
 RUN $JAVA_HOME/bin/jlink --compress=1 --strip-java-debug-attributes --no-header-files --no-man-pages \
     --module-path $JAVA_HOME/jmods \
     # see https://docs.oracle.com/en/java/javase/11/security/oracle-providers.html#GUID-9224B90B-7B2F-41F9-BB96-C0A1B6A0FEAA
@@ -15,6 +15,9 @@ RUN $JAVA_HOME/bin/jlink --compress=1 --strip-java-debug-attributes --no-header-
     --output /jlinked
 
 RUN /jlinked/bin/java -Xshare:dump -XX:+UseSerialGC -version
+RUN $JAVA_HOME/bin/java -Djarmode=tools -jar alfio-boot.jar extract --destination /cds && \
+    (cd /cds && java -XX:ArchiveClassesAtExit=alfio-cds.jsa -Dspring.profiles.active=app-cds -Dspring.context.exit=onRefresh -jar alfio-boot.jar)
+
 
 FROM alpine:3.19
 LABEL org.opencontainers.image.source=https://github.com/alfio-event/alf.io
@@ -33,14 +36,13 @@ USER 1001
 RUN mkdir /home/alfio/app
 WORKDIR /home/alfio/app
 
-RUN mkdir logs
-COPY --chown=alfio WEB-INF WEB-INF
-COPY --chown=alfio resources resources
+COPY --chown=alfio --from=zulu /cds/alfio-cds.jsa .
+COPY --chown=alfio alfio-boot.jar .
 
 ENV ALFIO_JAVA_OPTS=""
 ENV ALFIO_PERFORMANCE_OPTS="-Dspring.jmx.enabled=false -Dlog4j2.disableJmx=true"
 
 CMD /opt/jdk/bin/java $ALFIO_JAVA_OPTS $ALFIO_PERFORMANCE_OPTS -XX:+UseContainerSupport \
-    -cp ./WEB-INF/classes:./resources:./WEB-INF/lib/*:./WEB-INF/lib-provided/* alfio.config.SpringBootLauncher
+    -XX:SharedArchiveFile=alfio-cds.jsa -jar alfio-boot.jar
 
 EXPOSE 8080

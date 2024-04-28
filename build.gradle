@@ -19,6 +19,7 @@ buildscript {
         //
     }
 
+
     repositories {
         maven {
             url "https://plugins.gradle.org/m2/"
@@ -28,21 +29,21 @@ buildscript {
 }
 
 plugins {
-    id 'io.freefair.lombok' version '8.4'
+    id 'io.freefair.lombok' version '8.6'
     id 'java'
     id 'idea'
     id 'org.kordamp.gradle.jacoco' version '0.54.0'
     id 'com.github.ben-manes.versions' version '0.51.0'
     id 'com.github.hierynomus.license' version '0.16.1'
     id 'net.researchgate.release' version '3.0.2'
-    id 'org.springframework.boot' version '3.2.5'
-    id 'org.sonarqube' version '4.4.1.3373'
+    id 'org.springframework.boot' version '3.3.0-RC1'
+    id 'io.spring.dependency-management' version '1.1.4'
+    id 'org.sonarqube' version '5.0.0.4638'
     // id 'net.ltgt.errorprone' version '3.1.0'
     id 'com.github.node-gradle.node' version '7.0.2'
 }
 
 apply plugin: 'java'
-apply plugin: 'war'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'project-report'
@@ -99,6 +100,7 @@ configurations {
 repositories {
     mavenLocal()
     mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
 }
 
 dependencies {
@@ -121,7 +123,8 @@ dependencies {
     /**/
     implementation 'com.google.zxing:core:3.5.3'
     implementation 'com.google.zxing:javase:3.5.3'
-    implementation "org.flywaydb:flyway-core"
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql'
     implementation "org.postgresql:postgresql"
     implementation "com.zaxxer:HikariCP"
 
@@ -141,7 +144,10 @@ dependencies {
     implementation 'net.sf.biweekly:biweekly:0.6.6'
     implementation 'com.atlassian.commonmark:commonmark:0.17.0'
     implementation 'com.atlassian.commonmark:commonmark-ext-gfm-tables:0.17.0'
-    implementation 'com.ryantenney.passkit4j:passkit4j:2.0.1'
+    implementation 'com.ryantenney.passkit4j:passkit4j:2.0.1', {
+        exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
+    }
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
     implementation 'com.github.ben-manes.caffeine:caffeine'
     implementation 'com.github.scribejava:scribejava-core:8.3.3'
     implementation 'ch.digitalfondue.vatchecker:vatchecker:1.6.0'
@@ -287,7 +293,7 @@ compileJava {
 compileJava.dependsOn(processResources)
 
 //propagate the system properties to the tests
-test {
+tasks.named('test') {
     useJUnitPlatform()
     systemProperties = System.properties
     systemProperties.remove("java.endorsed.dirs")
@@ -375,17 +381,23 @@ tasks.register('publicFrontendIndexTransform', FrontendIndexTransformTask) {
 //}
 
 tasks.register('distribution', Copy) {
-    from zipTree(project.layout.buildDirectory.file("libs/alfio-${project.version}-boot.war"))
+    from project.layout.buildDirectory.file("libs/alfio-${project.version}-boot.jar")
+    rename(new Transformer<String, String>() {
+        @Override
+        String transform(String s) {
+            return "alfio-boot.jar"
+        }
+    })
     into layout.buildDirectory.dir("dockerize")
     dependsOn publicFrontendIndexTransform, build, dockerize
 }
 
 tasks.register('clever', Copy) {
-    from project.layout.buildDirectory.file("libs/alfio-${project.version}-boot.war")
+    from project.layout.buildDirectory.file("libs/alfio-${project.version}-boot.jar")
     rename(new Transformer<String, String>() {
         @Override
         String transform(String s) {
-            return "alfio-boot.war"
+            return "alfio-boot.jar"
         }
     })
     into project.layout.buildDirectory.dir("clevercloud")
@@ -401,17 +413,17 @@ release {
     }
 }
 
-bootWar {
+bootJar {
     dependsOn publicFrontendIndexTransform//, adminFrontendIndexTransform
     archiveClassifier.set('boot')
     from(tasks.named("frontendBuild")) {
         into 'resources'
     }
     from(tasks.named("publicFrontendIndexTransform")) {
-        rename 'alfio-public-frontend-index.html', 'WEB-INF/classes/alfio-public-frontend-index.html'
+        rename 'alfio-public-frontend-index.html', 'BOOT-INF/classes/alfio-public-frontend-index.html'
     }
     /*from(tasks.named("adminFrontendIndexTransform")) {
-        rename 'alfio-admin-frontend-index.html', 'WEB-INF/classes/alfio-admin-frontend-index.html'
+        rename 'alfio-admin-frontend-index.html', 'BOOT-INF/classes/alfio-admin-frontend-index.html'
     }*/
     def bowerDir = "resources/bower_components"
     def excludesFile = new File("./lib_exclude")

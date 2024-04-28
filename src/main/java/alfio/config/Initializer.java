@@ -31,6 +31,7 @@ import java.util.logging.Level;
 
 public class Initializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
+    public static final String PROFILE_APP_CDS = "app-cds";
     public static final String PROFILE_DEV = "dev";
     public static final String PROFILE_INTEGRATION_TEST = "integration-test";
     public static final String PROFILE_LIVE = "!dev";

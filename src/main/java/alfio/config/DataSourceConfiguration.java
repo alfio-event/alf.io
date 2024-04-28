@@ -41,7 +41,6 @@ import ch.digitalfondue.npjt.EnableNpjt;
 import ch.digitalfondue.npjt.mapper.ColumnMapperFactory;
 import ch.digitalfondue.npjt.mapper.ParameterConverter;
 import com.zaxxer.hikari.HikariDataSource;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
@@ -49,6 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.*;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -98,7 +98,7 @@ public class DataSourceConfiguration {
     @Bean
     @Profile({"!"+Initializer.PROFILE_INTEGRATION_TEST, "travis"})
     public DataSource getDataSource(Environment env, PlatformProvider platform) {
-        if(platform == PlatformProvider.CLOUD_FOUNDRY) {
+        if(platform == PlatformProvider.CLOUD_FOUNDRY || platform == PlatformProvider.DRY_RUN) {
             return new FakeCFDataSource();
         } else {
             HikariDataSource dataSource = new HikariDataSource();
@@ -166,11 +166,15 @@ public class DataSourceConfiguration {
     }
 
     @Bean
-    public Flyway migrator(DataSource dataSource) {
+    public Flyway migrator(DataSource dataSource, Environment environment) {
+        boolean dryRun = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_APP_CDS));
         var configuration = Flyway.configure();
-        var jdbcTemplate = new JdbcTemplate(dataSource);
-        var matches = jdbcTemplate.queryForObject("select count(*) from information_schema.tables where table_name = 'schema_version'", Integer.class);
-        var tableName = matches != null && matches > 0 ? "schema_version" : configuration.getTable();
+        String tableName = configuration.getTable();
+        if (!dryRun) {
+            var jdbcTemplate = new JdbcTemplate(dataSource);
+            var matches = jdbcTemplate.queryForObject("select count(*) from information_schema.tables where table_name = 'schema_version'", Integer.class);
+            tableName = matches != null && matches > 0 ? "schema_version" : configuration.getTable();
+        }
         configuration.table(tableName)
             .dataSource(dataSource)
             .validateOnMigrate(false)
@@ -178,7 +182,9 @@ public class DataSourceConfiguration {
             .outOfOrder(true)
             .locations("alfio/db/PGSQL/");
         Flyway migration = new Flyway(configuration);
-        migration.migrate();
+        if (!dryRun) {
+            migration.migrate();
+        }
         return migration;
     }
     
@@ -318,7 +324,7 @@ public class DataSourceConfiguration {
     }
 
     /**
-     * Fake DataSource used on Cloud Foundry. Oh yeah.
+     * Fake DataSource used on Cloud Foundry.
      */
     private static class FakeCFDataSource extends AbstractDataSource {
         @Override
@@ -331,24 +337,5 @@ public class DataSourceConfiguration {
             return null;
         }
 
-        public boolean isWrapperFor(Class<?> iface) throws java.sql.SQLException {
-            return iface.isAssignableFrom(this.getClass());
-        }
-
-        public <T> T unwrap(Class<T> iface) throws java.sql.SQLException {
-            try {
-                if(iface.isAssignableFrom(this.getClass())) {
-                    return iface.cast(this);
-                }
-                throw new java.sql.SQLException("Auto-generated unwrap failed; Revisit implementation");
-            } catch (Exception e) {
-                throw new java.sql.SQLException(e);
-            }
-        }
-
-        public java.util.logging.Logger getParentLogger() {
-            // TODO Auto-generated method stub
-            return null;
-        }
     }
 }

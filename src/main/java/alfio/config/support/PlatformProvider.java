@@ -16,7 +16,9 @@
  */
 package alfio.config.support;
 
+import alfio.config.Initializer;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -38,6 +40,13 @@ import static java.util.Optional.ofNullable;
  */
 public enum PlatformProvider {
     DEFAULT,
+
+    DRY_RUN {
+        @Override
+        public boolean isHosting(Environment env) {
+            return env.acceptsProfiles(Profiles.of(Initializer.PROFILE_APP_CDS));
+        }
+    },
 
     //see
     // https://developers.openshift.com/external-services/elephantsql.html
