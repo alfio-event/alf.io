@@ -146,8 +146,10 @@ dependencies {
     implementation 'com.atlassian.commonmark:commonmark-ext-gfm-tables:0.17.0'
     implementation 'com.ryantenney.passkit4j:passkit4j:2.0.1', {
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
+        exclude group: 'org.bouncycastle', module: 'bcmail-jdk15on'
     }
     implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+    implementation 'org.bouncycastle:bcmail-jdk15on:1.70'
     implementation 'com.github.ben-manes.caffeine:caffeine'
     implementation 'com.github.scribejava:scribejava-core:8.3.3'
     implementation 'ch.digitalfondue.vatchecker:vatchecker:1.6.0'
@@ -216,6 +218,14 @@ dependencies {
     testImplementation 'org.seleniumhq.selenium:selenium-java:4.16.1'
 
     //errorprone('com.google.errorprone:error_prone_core:2.24.0')
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDirs "src/main/webapp"
+        }
+    }
 }
 
 // -- license configuration
