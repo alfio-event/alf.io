@@ -53,9 +53,11 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Map.entry;
 import static java.util.Objects.requireNonNull;
 import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElementLocated;
 
@@ -290,15 +292,17 @@ class NormalFlowE2ETest {
                                                    String browserVersion,
                                                    String profileName) {
             DesiredCapabilities caps = new DesiredCapabilities();
-            caps.setCapability("os", os);
-            caps.setCapability("os_version", osVersion);
-            caps.setCapability("browser", browser);
-            caps.setCapability("browser_version", browserVersion);
-            caps.setCapability("name", profileName);
-            caps.setCapability("browserstack.console", "errors");
-            caps.setCapability("browserstack.networkLogs", "true");
-            caps.setCapability("seleniumVersion", "4.0.0-beta-2");
-            caps.setCapability("browserstack.idleTimeout", "180");
+            caps.setCapability("browserName", browser);
+            caps.setCapability("bstack:options", Map.ofEntries(
+                entry("os", os),
+                entry("osVersion", osVersion),
+                entry("browserVersion", browserVersion),
+                entry("buildName", profileName),
+                entry("consoleLogs", "errors"),
+                entry("networkLogs", "true"),
+                entry("seleniumVersion", "4.16.1"),
+                entry("idleTimeout", "180")
+            ));
             return new RemoteWebDriver(url, caps);
         }
 
