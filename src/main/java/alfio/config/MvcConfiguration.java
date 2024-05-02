@@ -31,7 +31,6 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.session.FindByIndexNameSessionRepository;
-import org.springframework.session.config.annotation.web.http.SpringHttpSessionConfiguration;
 import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 import org.springframework.session.web.http.CookieHttpSessionIdResolver;
@@ -77,28 +76,28 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
         var defaultCacheControl = CacheControl.maxAge(Duration.ofDays(isLive ? 10 : 0)).mustRevalidate();
 
+        registry.addResourceHandler("/resources/font/*", alfioVersion + "/resources/font/*")
+            .addResourceLocations("classpath:/font/")
+            .setCachePeriod(cacheMinutes * 60)
+            .setCacheControl(defaultCacheControl);
+
+        registry.addResourceHandler( "/resources/images/*", alfioVersion +"/resources/images/*")
+            .addResourceLocations("classpath:/images/")
+            .setCachePeriod(cacheMinutes * 60)
+            .setCacheControl(defaultCacheControl);
+
         registry.addResourceHandler(alfioVersion + "/resources/**")
-            .addResourceLocations("/resources/")
-            .setCachePeriod(cacheMinutes * 60)
-            .setCacheControl(defaultCacheControl);
-
-        registry.addResourceHandler("/resources/font/*")
-            .addResourceLocations("/resources/font/")
-            .setCachePeriod(cacheMinutes * 60)
-            .setCacheControl(defaultCacheControl);
-
-        registry.addResourceHandler("/resources/images/**")
-            .addResourceLocations("/resources/images/")
+            .addResourceLocations("classpath:/alfio-admin-v1/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(defaultCacheControl);
 
         registry.addResourceHandler("/frontend-public/**")
-            .addResourceLocations("/resources/alfio-public-frontend/")
+            .addResourceLocations("classpath:/resources/alfio-public-frontend/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(CacheControl.maxAge(Duration.ofDays(60)));
 
         registry.addResourceHandler("/frontend-admin/**")
-            .addResourceLocations("/resources/alfio-admin-frontend/")
+            .addResourceLocations("classpath:/resources/alfio-admin-frontend/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(CacheControl.maxAge(Duration.ofDays(60)));
 

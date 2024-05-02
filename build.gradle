@@ -427,7 +427,7 @@ bootJar {
     dependsOn publicFrontendIndexTransform//, adminFrontendIndexTransform
     archiveClassifier.set('boot')
     from(tasks.named("frontendBuild")) {
-        into 'resources'
+        into 'BOOT-INF/classes/resources/'
     }
     from(tasks.named("publicFrontendIndexTransform")) {
         rename 'alfio-public-frontend-index.html', 'BOOT-INF/classes/alfio-public-frontend-index.html'
