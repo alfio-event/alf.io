@@ -20,6 +20,8 @@ import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.metadata.TicketMetadataContainer;
 
+import java.util.Objects;
+
 /**
  * Signals that access for the ticket must be invalidated on external systems
  */
@@ -39,7 +41,7 @@ public class InvalidateAccess {
     }
 
     public TicketMetadataContainer getTicketMetadataContainer() {
-        return ticketMetadataContainer;
+        return Objects.requireNonNullElseGet(ticketMetadataContainer, TicketMetadataContainer::empty);
     }
 
     public Event getEvent() {
