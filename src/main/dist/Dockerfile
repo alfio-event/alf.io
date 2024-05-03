@@ -22,25 +22,24 @@ RUN "$JAVA_HOME/bin/java" -Djarmode=tools -jar alfio-boot.jar extract --destinat
 FROM alpine:3.19
 LABEL org.opencontainers.image.source=https://github.com/alfio-event/alf.io
 
-COPY --from=zulu /jlinked /opt/jdk/
-
 ENV LANG en_US.UTF-8
+ENV ALFIO_JAVA_OPTS=""
+ENV ALFIO_PERFORMANCE_OPTS="-Dspring.jmx.enabled=false -Dlog4j2.disableJmx=true"
+
 RUN addgroup -S alfio  \
     && adduser -h /home/alfio -u 1001 -G alfio -S alfio  \
     && apk update  \
     && apk add --update ttf-dejavu  \
-    && rm -rf /var/cache/apk/*
+    && rm -rf /var/cache/apk/* \
+    && mkdir /home/alfio/app
+
+COPY --from=zulu /jlinked /opt/jdk/
+COPY --chown=alfio --from=zulu /cds/ /home/alfio/app/
 
 USER 1001
 
 # Define working directory.
-RUN mkdir /home/alfio/app
 WORKDIR /home/alfio/app
-
-COPY --chown=alfio --from=zulu /cds/* /home/alfio/app/
-
-ENV ALFIO_JAVA_OPTS=""
-ENV ALFIO_PERFORMANCE_OPTS="-Dspring.jmx.enabled=false -Dlog4j2.disableJmx=true"
 
 CMD /opt/jdk/bin/java $ALFIO_JAVA_OPTS $ALFIO_PERFORMANCE_OPTS -XX:+UseContainerSupport \
     -XX:SharedArchiveFile=alfio-cds.jsa -jar alfio-boot.jar
