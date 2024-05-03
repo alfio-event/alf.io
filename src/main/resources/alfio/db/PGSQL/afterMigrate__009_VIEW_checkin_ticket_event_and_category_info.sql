@@ -141,7 +141,7 @@ create view checkin_ticket_event_and_category_info as
         e.org_id                            e_org_id,
         e.locales                           e_locales,
         e.version                           e_version,
-        (select jsonb_object_agg(tfc.field_name, retrieve_field_value_as_json(tfc.field_type, tfv.field_value)) as additional_info
+        (select jsonb_object_agg(tfc.field_name, retrieve_field_value_as_json(tfv.field_value, tfc.field_type)) as additional_info
             from purchase_context_field_value tfv
                 inner join purchase_context_field_configuration tfc on tfv.field_configuration_id_fk = tfc.id
             where event_id_fk = e.id and tfv.ticket_id_fk = t.id)       tai_additional_info,
