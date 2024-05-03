@@ -62,7 +62,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
-import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.DecodeHintType;
@@ -73,7 +72,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
@@ -1127,6 +1125,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                         assertEquals(count, attendees.size());
                         assertTrue(attendees.stream().anyMatch(sr -> sr.getLastName().equals(fullTicketInfo.getLastName())));
                         assertTrue(attendees.stream().allMatch(sr -> sr.getAdditionalInfo() != null));
+                        assertEquals(List.of("value"), attendees.get(0).getAdditionalInfo().get("field1"));
                         break;
                     case ONLINE:
                         assertTrue(results.getStatusCode().is2xxSuccessful());
