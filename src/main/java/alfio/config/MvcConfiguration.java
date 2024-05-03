@@ -16,6 +16,8 @@
  */
 package alfio.config;
 
+import alfio.config.support.HeaderPublisherFilter;
+import alfio.manager.system.ConfigurationManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -115,6 +117,11 @@ public class MvcConfiguration implements WebMvcConfigurer {
         final MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
         converter.setObjectMapper(objectMapper);
         return converter;
+    }
+
+    @Bean
+    public HeaderPublisherFilter headerPublisherFilter(ConfigurationManager configurationManager) {
+        return new HeaderPublisherFilter(configurationManager);
     }
 
     @Bean

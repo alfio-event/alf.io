@@ -1,7 +1,7 @@
-import {Injectable, OnDestroy} from '@angular/core';
+import {Injectable, isDevMode, OnDestroy} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {ANONYMOUS, AuthenticationStatus, ClientRedirect, PurchaseContextWithReservation, User} from '../model/user';
-import {BehaviorSubject, interval, Observable, of, Subscription} from 'rxjs';
+import {BehaviorSubject, Observable, of, Subscription} from 'rxjs';
 import {map, mergeMap, tap} from 'rxjs/operators';
 import {ValidatedResponse} from '../model/validated-response';
 
@@ -17,13 +17,23 @@ export class UserService implements OnDestroy {
 
   initAuthenticationStatus(): Promise<boolean> {
     return new Promise<boolean>((resolve) => this.loadUserStatus()
-      .subscribe(result => {
-        this.authStatusSubject.next(result);
-        resolve(true);
-      }, () => {
-        this.authStatusSubject.next({ enabled: false });
-        resolve(true); // we resolve the promise anyway
+      .subscribe({
+        next: result => {
+          this.authStatusSubject.next(result);
+          resolve(true);
+        },
+        error: () => {
+          this.authStatusSubject.next({ enabled: false });
+          resolve(true); // we resolve the promise anyway
+        }
       }));
+  }
+
+  updateAuthenticationStatus(enabled: boolean): void {
+    if (isDevMode()) {
+      console.log('authentication enabled', enabled);
+    }
+    this.authStatusSubject.next({ enabled });
   }
 
   private loadUserStatus(): Observable<{enabled: boolean, user?: User}> {
@@ -68,16 +78,7 @@ export class UserService implements OnDestroy {
     return this.http.post<ValidatedResponse<User>>('/api/v2/public/user/me', user);
   }
 
-  private startPolling(): void {
-    this.authStatusSubscription = interval(30_000).pipe(
-      mergeMap(() => this.loadUserStatus())
-    ).subscribe(() => {});
-  }
-
   get authenticationStatus(): Observable<AuthenticationStatus> {
-    if (this.authStatusSubscription == null) {
-      this.startPolling();
-    }
     return this.authStatusSubject.asObservable();
   }
 

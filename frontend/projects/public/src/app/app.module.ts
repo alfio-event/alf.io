@@ -132,6 +132,7 @@ import {TranslateDescriptionPipe} from './shared/translate-description.pipe';
 import {AuthTokenInterceptor, DOMGidExtractor, DOMXsrfTokenExtractor} from './xsrf';
 import {DownloadTicketComponent} from './reservation/download-ticket/download-ticket.component';
 import {AdditionalServiceFormComponent} from './additional-service-form/additional-service-form.component';
+import {HeaderInformationRetriever} from "./header-information-retriever";
 
 
 // AoT requires an exported function for factories
@@ -231,6 +232,7 @@ export function InitUserService(userService: UserService): () => Promise<boolean
     providers: [
       { provide: APP_INITIALIZER, useFactory: InitUserService, deps: [UserService], multi: true },
       { provide: HTTP_INTERCEPTORS, useClass: AuthTokenInterceptor, multi: true },
+      { provide: HTTP_INTERCEPTORS, useClass: HeaderInformationRetriever, multi: true },
       { provide: HttpXsrfTokenExtractor, useClass: DOMXsrfTokenExtractor },
       DOMGidExtractor,
       DOMXsrfTokenExtractor,

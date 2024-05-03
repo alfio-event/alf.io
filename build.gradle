@@ -130,7 +130,7 @@ dependencies {
 
     /**/
 
-    implementation "com.stripe:stripe-java:25.3.0"
+    implementation "com.stripe:stripe-java:25.5.0"
     implementation 'com.paypal.sdk:checkout-sdk:2.0.0'
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'com.fatboyindustrial.gson-javatime-serialisers:gson-javatime-serialisers:1.1.2', {

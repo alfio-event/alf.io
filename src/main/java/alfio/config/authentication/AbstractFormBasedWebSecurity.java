@@ -29,6 +29,8 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -46,6 +48,7 @@ import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -62,12 +65,14 @@ import java.util.regex.Pattern;
 
 import static alfio.config.Initializer.API_V2_PUBLIC_PATH;
 import static alfio.config.Initializer.XSRF_TOKEN;
+import static alfio.config.WebSecurityConfig.CSRF_PARAM_NAME;
 import static alfio.config.authentication.support.AuthenticationConstants.*;
 import static alfio.config.authentication.support.OpenIdAuthenticationFilter.*;
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
 abstract class AbstractFormBasedWebSecurity {
     public static final String AUTHENTICATE = "/authenticate";
+    private static final Logger log = LoggerFactory.getLogger(AbstractFormBasedWebSecurity.class);
     private static final List<String> OWNERSHIP_REQUIRED = List.of(
         ADMIN_API + "/overridable-template",
         ADMIN_API + "/additional-services",
@@ -150,13 +155,11 @@ abstract class AbstractFormBasedWebSecurity {
         // call implementation-specific logic
         addAdditionalFilters(http, authenticationManager);
 
-        http.addFilterBefore(csrfFilter(), RecaptchaLoginFilter.class);
-
         if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
             http.addFilterAfter(new UserCreatorBeforeLoginFilter(userManager, AUTHENTICATE), RecaptchaLoginFilter.class);
         }
 
-        return http.build();
+        return http.addFilterAfter(csrfPublisherFilter(), CsrfFilter.class).build();
     }
 
     private JdbcUserDetailsManager createUserDetailsManager() {
@@ -174,22 +177,23 @@ abstract class AbstractFormBasedWebSecurity {
         return new ProviderManager(List.of(daoAuthenticationProvider, new OpenIdAuthenticationProvider()));
     }
 
-    private Filter csrfFilter() {
+    private Filter csrfPublisherFilter() {
         return (servletRequest, servletResponse, filterChain) -> {
 
             HttpServletRequest req = (HttpServletRequest) servletRequest;
             HttpServletResponse res = (HttpServletResponse) servletResponse;
             var reqUri = req.getRequestURI();
-
             if ((reqUri.startsWith(API_V2_PUBLIC_PATH) || reqUri.startsWith(ADMIN_API) || reqUri.startsWith("/api/v2/admin/") || reqUri.equals(AUTHENTICATION_STATUS)) && "GET".equalsIgnoreCase(req.getMethod())) {
-                CsrfToken csrf = csrfTokenRepository.loadToken(req);
-                if (csrf == null) {
-                    csrf = csrfTokenRepository.generateToken(req);
-                }
-                res.addHeader(XSRF_TOKEN, csrf.getToken());
-                if (!reqUri.startsWith(API_V2_PUBLIC_PATH)) {
-                    // FIXME remove this after the new admin is complete
-                    addCookie(res, csrf);
+                CsrfToken token = (CsrfToken) req.getAttribute(CSRF_PARAM_NAME);
+                if (token != null) {
+                    String csrfToken = token.getToken();
+                    res.addHeader(XSRF_TOKEN, csrfToken);
+                    if (!reqUri.startsWith(API_V2_PUBLIC_PATH)) {
+                        // FIXME remove this after the new admin is complete
+                        addCookie(res, csrfToken);
+                    }
+                } else {
+                    log.warn("Expected CSRF token for request {} but none found.", reqUri);
                 }
             }
             filterChain.doFilter(servletRequest, servletResponse);
@@ -244,8 +248,8 @@ abstract class AbstractFormBasedWebSecurity {
         });
     }
 
-    private void addCookie(HttpServletResponse res, CsrfToken csrf) {
-        Cookie cookie = new Cookie(XSRF_TOKEN, csrf.getToken());
+    private void addCookie(HttpServletResponse res, String csrfToken) {
+        Cookie cookie = new Cookie(XSRF_TOKEN, csrfToken);
         cookie.setPath("/");
         boolean prod = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE));
         cookie.setSecure(prod);
