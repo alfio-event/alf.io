@@ -326,7 +326,7 @@ class NormalFlowE2ETest {
                 case "firefox" ->
                         new BrowserWebDriver(BrowserWebDriver.Browser.FIREFOX, buildRemoteDriver(url, "Windows", "10", "Firefox", "latest", "testFlowFirefox" + githubBuildNumber));
                 case "safari" ->
-                        new BrowserWebDriver(BrowserWebDriver.Browser.SAFARI, buildRemoteDriver(url, "OS X", "Catalina", "Safari", "13.1", "testFlowSafari" + githubBuildNumber));
+                        new BrowserWebDriver(BrowserWebDriver.Browser.SAFARI, buildRemoteDriver(url, "OS X", "Big Sur", "Safari", "14.1", "testFlowSafari" + githubBuildNumber));
                 default -> throw new IllegalStateException("unknown browser" + browser);
             };
         }
