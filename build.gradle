@@ -441,7 +441,7 @@ bootJar {
         into 'BOOT-INF/classes/resources/'
     }
     from(tasks.named("frontendAdminBuild")) {
-        into 'resources/alfio-admin-frontend/'
+        into 'BOOT-INF/classes/resources/alfio-admin-frontend/'
     }
     from(tasks.named("publicFrontendIndexTransform")) {
         rename 'alfio-public-frontend-index.html', 'BOOT-INF/classes/alfio-public-frontend-index.html'

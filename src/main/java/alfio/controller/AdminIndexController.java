@@ -74,7 +74,7 @@ public class AdminIndexController {
         }
     }
 
-    @GetMapping("/admin")
+    @GetMapping({"/admin", "/admin/"})
     public void adminHome(Model model, @Value("${alfio.version}") String version, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
         model.addAttribute("alfioVersion", version);
         model.addAttribute("username", principal.getName());
