@@ -21,6 +21,8 @@ import alfio.controller.support.CSPConfigurer;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.user.Role;
 import alfio.util.TemplateManager;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
@@ -35,6 +37,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import static alfio.controller.Constants.*;
 import static alfio.model.system.ConfigurationKeys.SHOW_PROJECT_BANNER;
@@ -42,22 +46,35 @@ import static alfio.model.system.ConfigurationKeys.SHOW_PROJECT_BANNER;
 @Controller
 public class AdminIndexController {
 
+    public record ManifestEntry(List<String> css, String file) {
+    }
+
     private final ConfigurationManager configurationManager;
     private final Environment environment;
     private final CSPConfigurer cspConfigurer;
     private final TemplateManager templateManager;
+    private final ManifestEntry manifestEntry;
 
     public AdminIndexController(ConfigurationManager configurationManager,
                                 Environment environment,
                                 CSPConfigurer cspConfigurer,
-                                TemplateManager templateManager) {
+                                TemplateManager templateManager,
+                                ObjectMapper objectMapper) throws IOException {
         this.configurationManager = configurationManager;
         this.environment = environment;
         this.cspConfigurer = cspConfigurer;
         this.templateManager = templateManager;
+        var cpr = new ClassPathResource("/resources/alfio-admin-frontend/.vite/manifest.json");
+        if (cpr.exists()) {
+            try (var descriptor = cpr.getInputStream()) {
+                this.manifestEntry = objectMapper.readValue(descriptor, new TypeReference<Map<String, ManifestEntry>>() {}).get("src/main.ts");
+            }
+        } else {
+            manifestEntry = null;
+        }
     }
 
-    @GetMapping("/admin")
+    @GetMapping({"/admin", "/admin/"})
     public void adminHome(Model model, @Value("${alfio.version}") String version, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
         model.addAttribute("alfioVersion", version);
         model.addAttribute("username", principal.getName());
@@ -82,6 +99,12 @@ public class AdminIndexController {
         addCommonModelAttributes(model, request, version, environment);
         model.addAttribute("displayProjectBanner", isAdmin && configurationManager.getForSystem(SHOW_PROJECT_BANNER).getValueAsBooleanOrDefault());
         //
+
+        model.addAttribute("litAdminStatic", manifestEntry != null);
+        if (manifestEntry != null) {
+            model.addAttribute("lit-css", manifestEntry.css);
+            model.addAttribute("lit-js", manifestEntry.file);
+        }
 
         try (var os = response.getOutputStream()) {
             response.setContentType(TEXT_HTML_CHARSET_UTF_8);

@@ -6,6 +6,18 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="_csrf" content="{{_csrf.token}}"/>
     <meta name="_csrf_header" content="{{_csrf.headerName}}"/>
+    {{#devModeEnabled}}
+    <!-- see https://vitejs.dev/guide/backend-integration.html -->
+    <script type="module" src="http://localhost:5173/@vite/client" nonce="{{nonce}}"></script>
+    <script type="module" src="http://localhost:5173/src/main.ts" nonce="{{nonce}}"></script>
+    {{/devModeEnabled}}
+    {{#litAdminStatic}}
+        <script type="module" src="{{contextPath}}/frontend-admin/{{lit-js}}" id="lit-js" nonce="{{nonce}}"></script>
+        {{#lit-css}}
+        <link rel="stylesheet" href="{{contextPath}}/frontend-admin/{{.}}" />
+        {{/lit-css}}
+    {{/litAdminStatic}}
+
     <link rel="stylesheet" href="{{contextPath}}/resources/css/source-sans-pro.css" />
     <link rel="stylesheet" href="{{contextPath}}/resources/css/bootstrap-admin.min.css" />
     <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/chartist/dist/chartist.min.css">
