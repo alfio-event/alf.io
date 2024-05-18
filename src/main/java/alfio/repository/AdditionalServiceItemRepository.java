@@ -35,7 +35,7 @@ public interface AdditionalServiceItemRepository {
           join additional_service_description asd on ads.id = asd.additional_service_id_fk\
           where ai.event_id_fk = :eventId and ai.status in ('ACQUIRED', 'CHECKED_IN', 'TO_BE_PAID')\
           and ads.service_type <> 'DONATION'\
-          and ads.supplement_policy <> 'MANDATORY_ONE_FOR_TICKET'\
+          and ads.supplement_policy not in ('MANDATORY_ONE_FOR_TICKET', 'MANDATORY_PERCENTAGE_RESERVATION', 'MANDATORY_PERCENTAGE_FOR_TICKET')\
           and asd.locale = :language\
           and asd.type = 'TITLE'\
           and ai.tickets_reservation_uuid = :reservationId\

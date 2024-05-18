@@ -215,7 +215,9 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             Collections.singletonList(new EventModification.AdditionalServiceText(null, "en", "additional desc", AdditionalServiceText.TextType.DESCRIPTION)),
 
             AdditionalService.AdditionalServiceType.SUPPLEMENT,
-            supplementPolicy
+            supplementPolicy,
+            null,
+            null
         );
     }
 

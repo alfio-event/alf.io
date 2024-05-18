@@ -17,6 +17,7 @@
 package alfio.model;
 
 import alfio.util.ClockProvider;
+import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 import org.springframework.security.crypto.codec.Hex;
@@ -28,7 +29,11 @@ import java.security.NoSuchAlgorithmException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Getter
 public class AdditionalService {
@@ -46,7 +51,15 @@ public class AdditionalService {
     }
 
     public enum SupplementPolicy {
-        MANDATORY_ONE_FOR_TICKET,
+        MANDATORY_ONE_FOR_TICKET(true),
+        /**
+         * Will be calculated from the total reservation price, excluding any other mandatory fee
+         */
+        MANDATORY_PERCENTAGE_RESERVATION(true),
+        /**
+         * Will be calculated from the total price of the tickets, excluding any additional items
+         */
+        MANDATORY_PERCENTAGE_FOR_TICKET(true),
         OPTIONAL_UNLIMITED_AMOUNT,
         OPTIONAL_MAX_AMOUNT_PER_TICKET {
             @Override
@@ -61,8 +74,27 @@ public class AdditionalService {
             }
         };
 
+        private final boolean mandatory;
+
+        SupplementPolicy() {
+            this(false);
+        }
+
+        SupplementPolicy(boolean mandatory) {
+            this.mandatory = mandatory;
+        }
+
+
         public boolean isValid(int quantity, AdditionalService as, int selectionCount) {
             return true;
+        }
+
+        public boolean isMandatory() {
+            return mandatory;
+        }
+
+        public static Set<SupplementPolicy> userSelected() {
+            return Arrays.stream(values()).filter(Predicate.not(SupplementPolicy::isMandatory)).collect(Collectors.toSet());
         }
     }
 
@@ -83,6 +115,9 @@ public class AdditionalService {
     private final String currencyCode;
     private final Integer availableItems;
 
+    private final Integer minPriceCts;
+    private final Integer maxPriceCts;
+
     public AdditionalService(@Column("id") int id,
                              @Column("event_id_fk") int eventId,
                              @Column("fix_price") boolean fixPrice,
@@ -97,7 +132,9 @@ public class AdditionalService {
                              @Column("service_type") AdditionalServiceType type,
                              @Column("supplement_policy") SupplementPolicy supplementPolicy,
                              @Column("currency_code") String currencyCode,
-                             @Column("available_count") Integer availableItems) {
+                             @Column("available_count") Integer availableItems,
+                             @Column("price_min_cts") Integer minPriceCts,
+                             @Column("price_max_cts") Integer maxPriceCts) {
         this.id = id;
         this.eventId = eventId;
         this.fixPrice = fixPrice;
@@ -113,6 +150,8 @@ public class AdditionalService {
         this.supplementPolicy = supplementPolicy;
         this.currencyCode = currencyCode;
         this.availableItems = availableItems;
+        this.minPriceCts = minPriceCts;
+        this.maxPriceCts = maxPriceCts;
     }
 
     public ZonedDateTime getInception(ZoneId zoneId) {
@@ -126,6 +165,20 @@ public class AdditionalService {
     public boolean getSaleable() {
         ZonedDateTime now = ZonedDateTime.now(ClockProvider.clock());
         return getUtcInception().isBefore(now) && getUtcExpiration().isAfter(now);
+    }
+
+    public BigDecimal getMinPrice() {
+        if (minPriceCts != null) {
+            return MonetaryUtil.centsToUnit(minPriceCts, currencyCode);
+        }
+        return null;
+    }
+
+    public BigDecimal getMaxPrice() {
+        if (maxPriceCts != null) {
+            return MonetaryUtil.centsToUnit(maxPriceCts, currencyCode);
+        }
+        return null;
     }
 
     public String getChecksum() {
