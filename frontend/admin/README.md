@@ -1,4 +1,4 @@
-#Frontend for admin
+# Frontend for admin
 
 Use lit element + shoelace style.
 
@@ -13,6 +13,11 @@ See https://stackoverflow.com/a/76446465 for icon/static assets
 `npm run dev`
 
 Then you can launch alf.io normally and go to localhost:8080/admin/ -> all the components exported in the main.ts will be available.
+
+## update deps
+
+> npx npm-check-updates -u
+> npm install
 
 ## todo
 
