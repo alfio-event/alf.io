@@ -42,15 +42,16 @@ public interface SubscriptionRepository {
 
     String FETCH_SUBSCRIPTION_LINK = """
         select sd.id subscription_descriptor_id, sd.title subscription_descriptor_title, e.id event_id,\
-         e.short_name event_short_name, e.display_name event_display_name, e.currency event_currency, se.price_per_ticket price_per_ticket \
+         e.short_name event_short_name, e.display_name event_display_name, e.currency event_currency,\
+         se.price_per_ticket price_per_ticket, se.compatible_categories compatible_categories\
          from subscription_event se\
          join event e on e.id = se.event_id_fk and e.org_id = :organizationId\
          join subscription_descriptor sd on sd.id = se.subscription_descriptor_id_fk and sd.organization_id_fk = :organizationId\
         """;
 
     String INSERT_SUBSCRIPTION_LINK = """
-        insert into subscription_event(event_id_fk, subscription_descriptor_id_fk, price_per_ticket, organization_id_fk)\
-         values(:eventId, :subscriptionId, :pricePerTicket, :organizationId) on conflict(subscription_descriptor_id_fk, event_id_fk) do update set price_per_ticket = excluded.price_per_ticket\
+        insert into subscription_event(event_id_fk, subscription_descriptor_id_fk, price_per_ticket, organization_id_fk, compatible_categories) \
+        values(:eventId, :subscriptionId, :pricePerTicket, :organizationId, :compatibleCategories::json) on conflict(subscription_descriptor_id_fk, event_id_fk) do update set price_per_ticket = excluded.price_per_ticket
         """;
 
     String INSERT_SUBSCRIPTION = """
@@ -203,7 +204,8 @@ public interface SubscriptionRepository {
     int linkSubscriptionAndEvent(@Bind("subscriptionId") UUID subscriptionId,
                                  @Bind("eventId") int eventId,
                                  @Bind("pricePerTicket") int pricePerTicket,
-                                 @Bind("organizationId") int organizationId);
+                                 @Bind("organizationId") int organizationId,
+                                 @Bind("compatibleCategories") @JSONData List<Integer> compatibleCategories);
 
     @Query(type = QueryType.TEMPLATE, value = INSERT_SUBSCRIPTION_LINK)
     String insertSubscriptionEventLink();
@@ -211,6 +213,15 @@ public interface SubscriptionRepository {
     @Query(FETCH_SUBSCRIPTION_LINK + " where se.subscription_descriptor_id_fk = :subscriptionId")
     List<EventSubscriptionLink> findLinkedEvents(@Bind("organizationId") int organizationId,
                                                  @Bind("subscriptionId") UUID id);
+
+    @Query(FETCH_SUBSCRIPTION_LINK + " where se.event_id_fk = :eventId")
+    List<EventSubscriptionLink> findLinkedSubscriptions(@Bind("organizationId") int organizationId,
+                                                        @Bind("eventId") int eventId);
+
+    @Query(FETCH_SUBSCRIPTION_LINK + " where se.event_id_fk = :eventId and se.subscription_descriptor_id_fk = :subscriptionId")
+    Optional<EventSubscriptionLink> findLink(@Bind("organizationId") int organizationId,
+                                             @Bind("subscriptionId") UUID id,
+                                             @Bind("eventId") int eventId);
 
     @Query("select subscription_descriptor_id_fk from subscription_event where event_id_fk = :eventId and organization_id_fk = :organizationId")
     List<UUID> findLinkedSubscriptionIds(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId);
@@ -228,14 +239,6 @@ public interface SubscriptionRepository {
     int removeStaleSubscriptions(@Bind("eventId") int eventId,
                                  @Bind("organizationId") int organizationId,
                                  @Bind("descriptorIds") List<UUID> currentDescriptors);
-
-    @Query("""
-        delete from subscription_event where subscription_descriptor_id_fk = :subscriptionId and organization_id_fk = :organizationId\
-         and event_id_fk not in (:eventIds)\
-        """)
-    int removeStaleEvents(@Bind("subscriptionId") UUID subscriptionId,
-                          @Bind("organizationId") int organizationId,
-                          @Bind("eventIds") List<Integer> eventIds);
 
     @Query("delete from subscription_event where event_id_fk = :eventId and organization_id_fk = :organizationId")
     int removeAllSubscriptionsForEvent(@Bind("eventId") int eventId,
@@ -392,12 +395,14 @@ public interface SubscriptionRepository {
             select e.id event_id, \
                    e.org_id organization_id, \
                    s.id as subscription_id, \
+                   sd.id as descriptor_id, \
                    s.email_address as email_address, \
                    s.first_name as first_name, \
                    s.last_name as last_name, \
                    r.user_language as user_language,\
                    r.email_address as reservation_email,\
-                   fv.fields as additional_fields \
+                   fv.fields as additional_fields, \
+                   se.compatible_categories as compatible_categories \
             from event e \
                      join subscription_event se on se.event_id_fk = e.id \
                      join subscription_descriptor sd on se.subscription_descriptor_id_fk = sd.id \
@@ -426,12 +431,14 @@ public interface SubscriptionRepository {
                 eId,
                 rse.getInt("organization_id"),
                 rse.getObject("subscription_id", UUID.class),
+                rse.getObject("descriptor_id", UUID.class),
                 rse.getString("email_address"),
                 rse.getString("first_name"),
                 rse.getString("last_name"),
                 rse.getString("user_language"),
                 rse.getString("reservation_email"),
-                rse.getString("additional_fields")
+                rse.getString("additional_fields"),
+                rse.getString("compatible_categories")
             ));
         });
         return result;

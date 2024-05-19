@@ -17,14 +17,16 @@
 package alfio.model.api.v1.admin;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-public class LinkedSubscriptions {
+public class LinkedSubscription {
     private final String eventSlug;
-    private final List<UUID> subscriptions;
+    private final Map<UUID, List<Integer>> subscriptions;
 
-    public LinkedSubscriptions(String eventSlug, List<UUID> subscriptions) {
+    public LinkedSubscription(String eventSlug,
+                              Map<UUID, List<Integer>> subscriptions) {
         this.eventSlug = eventSlug;
         this.subscriptions = subscriptions;
     }
@@ -33,7 +35,7 @@ public class LinkedSubscriptions {
         return eventSlug;
     }
 
-    public List<UUID> getSubscriptions() {
-        return Objects.requireNonNullElse(subscriptions, List.of());
+    public Map<UUID, List<Integer>> getSubscriptions() {
+        return Objects.requireNonNullElse(subscriptions, Map.of());
     }
 }

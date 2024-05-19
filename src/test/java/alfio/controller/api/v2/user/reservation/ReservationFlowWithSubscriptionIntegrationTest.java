@@ -210,7 +210,7 @@ class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlow
         var descriptorId = createSubscriptionDescriptor(event.getOrganizationId(), fileUploadManager, subscriptionManager, maxEntries);
         var descriptor = subscriptionRepository.findOne(descriptorId).orElseThrow();
         var subscriptionIdAndPin = confirmAndLinkSubscription(descriptor, event.getOrganizationId(), subscriptionRepository, ticketReservationRepository, maxEntries);
-        this.subscriptionRepository.linkSubscriptionAndEvent(descriptorId, event.getId(), 0, event.getOrganizationId());
+        this.subscriptionRepository.linkSubscriptionAndEvent(descriptorId, event.getId(), 0, event.getOrganizationId(), null);
         var linkedSubscriptions = eventManager.getLinkedSubscriptionIds(event.getId(), event.getOrganizationId());
         assertEquals(List.of(descriptorId), linkedSubscriptions);
         this.context = new ReservationFlowContext(event, owner(eventAndUser.getRight()), subscriptionIdAndPin.getLeft(), subscriptionIdAndPin.getRight());
@@ -340,7 +340,7 @@ class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlow
         desc.put("de", "muh description new");
 
         var descriptorId = createSubscriptionDescriptor(event.getOrganizationId(), fileUploadManager, subscriptionManager, 10);
-        this.subscriptionRepository.linkSubscriptionAndEvent(descriptorId, event.getId(), 0, event.getOrganizationId());
+        this.subscriptionRepository.linkSubscriptionAndEvent(descriptorId, event.getId(), 0, event.getOrganizationId(), null);
         int newOrgId = BaseIntegrationTest.createNewOrg(username, jdbcTemplate);
 
         EventModification em = new EventModification(event.getId(),

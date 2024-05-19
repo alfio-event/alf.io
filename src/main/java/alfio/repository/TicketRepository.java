@@ -491,6 +491,16 @@ public interface TicketRepository {
                                                 @Bind("subscriptionId") UUID subscriptionId,
                                                 @Bind("limit") int limit);
 
+    @Query("""
+        update ticket set subscription_id_fk = :subscriptionId from \
+         (select id from ticket where tickets_reservation_id = :reservationId and category_id in (:categories) order by final_price_cts limit :limit) t\
+         where ticket.id = t.id\
+        """)
+    int applySubscriptionToTicketsInReservation(@Bind("reservationId") String reservationId,
+                                                @Bind("subscriptionId") UUID subscriptionId,
+                                                @Bind("categories") Collection<Integer> categories,
+                                                @Bind("limit") int limit);
+
     @Query("update ticket set subscription_id_fk = null where tickets_reservation_id = :reservationId")
     int removeSubscriptionFromTicketsInReservation(@Bind("reservationId") String reservationId);
 

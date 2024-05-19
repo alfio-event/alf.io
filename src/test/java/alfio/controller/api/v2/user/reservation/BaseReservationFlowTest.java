@@ -1586,10 +1586,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertEquals(1, reservation.getTicketsByCategory().size());
         assertEquals(numberOfTickets, reservation.getTicketsByCategory().get(0).getTickets().size());
 
-        var contactForm = new ContactAndTicketsForm();
-
         // move to overview status
-        contactForm = new ContactAndTicketsForm();
+        var contactForm = new ContactAndTicketsForm();
         contactForm.setEmail("test@test.com");
         contactForm.setBillingAddress("my billing address");
         contactForm.setFirstName("full");

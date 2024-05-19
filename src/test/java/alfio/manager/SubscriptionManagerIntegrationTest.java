@@ -175,7 +175,7 @@ class SubscriptionManagerIntegrationTest {
         assertEquals(1, subscriptionsWithStatistics.size());
         assertEquals(0, subscriptionsWithStatistics.get(0).getSoldCount());
 
-        assertEquals(1, subscriptionManager.linkSubscriptionToEvent(descriptor.getId(), event.getId(), orgId, 0));
+        assertEquals(1, subscriptionManager.linkSubscriptionToEvent(descriptor.getId(), event.getId(), orgId, 0, null));
         var links = subscriptionManager.getLinkedEvents(orgId, descriptor.getId());
         assertFalse(links.isEmpty());
         assertEquals(event.getId(), links.get(0).getEventId());
