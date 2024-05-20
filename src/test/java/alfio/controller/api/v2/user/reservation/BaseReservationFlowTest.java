@@ -1531,14 +1531,19 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         return ticketwc;
     }
 
-    protected void testAddSubscription(ReservationFlowContext context, int numberOfTickets) {
+    protected void testAddSubscription(ReservationFlowContext context, int numberOfTickets, String categoryName) {
         var form = new ReservationForm();
         var ticketReservation = new TicketReservationModification();
         ticketReservation.setQuantity(numberOfTickets);
         var categoriesResponse = eventApiV2Controller.getTicketCategories(context.event.getShortName(), null);
         assertTrue(categoriesResponse.getStatusCode().is2xxSuccessful());
         assertNotNull(categoriesResponse.getBody());
-        ticketReservation.setTicketCategoryId(categoriesResponse.getBody().getTicketCategories().get(0).getId());
+        var categoryId = categoriesResponse.getBody().getTicketCategories().stream()
+            .filter(t -> t.getName().equals(categoryName))
+            .findFirst()
+            .orElseThrow()
+            .getId();
+        ticketReservation.setTicketCategoryId(categoryId);
         form.setReservation(Collections.singletonList(ticketReservation));
         var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), null);
         assertEquals(HttpStatus.OK, res.getStatusCode());
@@ -1558,10 +1563,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertEquals(1, reservation.getTicketsByCategory().size());
         assertEquals(numberOfTickets, reservation.getTicketsByCategory().get(0).getTickets().size());
 
-        var contactForm = new ContactAndTicketsForm();
-
         // move to overview status
-        contactForm = new ContactAndTicketsForm();
+        var contactForm = new ContactAndTicketsForm();
         contactForm.setEmail("test@test.com");
         contactForm.setBillingAddress("my billing address");
         contactForm.setFirstName("full");

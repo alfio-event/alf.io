@@ -34,6 +34,8 @@ import alfio.model.modification.PromoCodeDiscountWithFormattedTimeAndAmount;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
+import alfio.model.subscription.EventSubscriptionLink;
+import alfio.model.subscription.LinkSubscriptionsToEventRequest;
 import alfio.model.support.CheckInOutputColorConfiguration;
 import alfio.model.support.CheckInOutputColorConfiguration.ColorConfiguration;
 import alfio.model.system.ConfigurationKeys;
@@ -210,7 +212,7 @@ public class EventManager {
         createAdditionalFields(event, em);
         createCategoriesForEvent(em, event, srcEvent);
         createAllTicketsForEvent(event, em);
-        createSubscriptionLinks(eventId, organization.getId(), em.getLinkedSubscriptions());
+        createSubscriptionLinks(eventId, organization.getId(), toSubscriptionLinkRequests(em.getLinkedSubscriptions()));
         srcEvent.ifPresent(eventAndOrganizationId -> copySettings(event, eventAndOrganizationId));
         extensionManager.handleEventCreation(event);
         var eventMetadata = extensionManager.handleMetadataUpdate(event, organization, AlfioMetadata.empty());
@@ -238,13 +240,15 @@ public class EventManager {
         log.info("copied {} settings from source event", count);
     }
 
-    private void createSubscriptionLinks(int eventId, int organizationId, List<UUID> linkedSubscriptions) {
+    private void createSubscriptionLinks(int eventId, int organizationId, List<LinkSubscriptionsToEventRequest> linkedSubscriptions) {
         if(CollectionUtils.isNotEmpty(linkedSubscriptions)) {
             var parameters = linkedSubscriptions.stream()
-                .map(id -> new MapSqlParameterSource("eventId", eventId)
-                    .addValue("subscriptionId", id)
+                .map(s -> new MapSqlParameterSource("eventId", eventId)
+                    .addValue("subscriptionId", s.getDescriptorId())
                     .addValue("pricePerTicket", 0)
-                    .addValue("organizationId", organizationId))
+                    .addValue("organizationId", organizationId)
+                    .addValue("compatibleCategories", Json.toJson(s.getCategories()))
+                )
                 .toArray(MapSqlParameterSource[]::new);
             var result = jdbcTemplate.batchUpdate(SubscriptionRepository.INSERT_SUBSCRIPTION_LINK, parameters);
             Validate.isTrue(Arrays.stream(result).allMatch(r -> r == 1), "Cannot link subscription");
@@ -365,14 +369,22 @@ public class EventManager {
                 Validate.isTrue(ids.size() == invalidatedTickets, String.format("error during ticket invalidation: expected %d, got %d", ids.size(), invalidatedTickets));
             }
         }
-        if (updateSubscriptions) {
-            updateLinkedSubscriptions(em.getLinkedSubscriptions(), eventId, original.getOrganizationId());
+        if (updateSubscriptions && em.getLinkedSubscriptions() != null) {
+            var requests = toSubscriptionLinkRequests(em.getLinkedSubscriptions());
+            updateLinkedSubscriptions(requests, eventId, original.getOrganizationId());
         }
     }
 
-    public void updateLinkedSubscriptions(List<UUID> linkedSubscriptions, int eventId, int organizationId) {
+    // temporary until we support full subscription link on the admin UI
+    private static List<LinkSubscriptionsToEventRequest> toSubscriptionLinkRequests(List<UUID> subscriptionIds) {
+        return requireNonNullElse(subscriptionIds, List.<UUID>of()).stream()
+            .map(s -> new LinkSubscriptionsToEventRequest(s, List.of())).collect(Collectors.toList());
+    }
+
+    public void updateLinkedSubscriptions(List<LinkSubscriptionsToEventRequest> linkedSubscriptions, int eventId, int organizationId) {
         if(CollectionUtils.isNotEmpty(linkedSubscriptions)) {
-            int removed = subscriptionRepository.removeStaleSubscriptions(eventId, organizationId, linkedSubscriptions);
+            var descriptorIds = linkedSubscriptions.stream().map(LinkSubscriptionsToEventRequest::getDescriptorId).collect(Collectors.toList());
+            int removed = subscriptionRepository.removeStaleSubscriptions(eventId, organizationId, descriptorIds);
             log.trace("removed {} subscription links", removed);
             createSubscriptionLinks(eventId, organizationId, linkedSubscriptions);
         } else if (linkedSubscriptions != null) {
@@ -1090,6 +1102,10 @@ public class EventManager {
 
     public List<UUID> getLinkedSubscriptionIds(int eventId, int organizationId) {
         return subscriptionRepository.findLinkedSubscriptionIds(eventId, organizationId);
+    }
+
+    public List<EventSubscriptionLink> getLinkedSubscriptions(int eventId, int organizationId) {
+        return subscriptionRepository.findLinkedSubscriptions(eventId, organizationId);
     }
 
     public int getEventsCount() {

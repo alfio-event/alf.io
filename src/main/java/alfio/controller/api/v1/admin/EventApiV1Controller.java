@@ -30,7 +30,7 @@ import alfio.model.ExtensionSupport.ExtensionMetadataValue;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.api.v1.admin.CheckInLogEntry;
 import alfio.model.api.v1.admin.EventCreationRequest;
-import alfio.model.api.v1.admin.LinkedSubscriptions;
+import alfio.model.api.v1.admin.LinkedSubscription;
 import alfio.model.group.Group;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.LinkedGroupModification;
@@ -38,6 +38,8 @@ import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
+import alfio.model.subscription.EventSubscriptionLink;
+import alfio.model.subscription.LinkSubscriptionsToEventRequest;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.ExtensionRepository;
@@ -183,15 +185,15 @@ public class EventApiV1Controller {
     }
 
     @GetMapping("/{slug}/subscriptions")
-    public ResponseEntity<LinkedSubscriptions> getLinkedSubscriptions(@PathVariable("slug") String slug, Principal user) {
+    public ResponseEntity<LinkedSubscription> getLinkedSubscriptions(@PathVariable("slug") String slug, Principal user) {
         var event = accessService.checkEventOwnership(user, slug);
         return ResponseEntity.ok(retrieveLinkedSubscriptionsForEvent(slug, event.getId(), event.getOrganizationId()));
     }
 
     @PutMapping("/{slug}/subscriptions")
-    public ResponseEntity<LinkedSubscriptions> updateLinkedSubscriptions(@PathVariable("slug") String slug,
-                                                                         @RequestBody List<UUID> subscriptions,
-                                                                         Principal user) {
+    public ResponseEntity<LinkedSubscription> updateLinkedSubscriptions(@PathVariable("slug") String slug,
+                                                                        @RequestBody List<LinkSubscriptionsToEventRequest> subscriptions,
+                                                                        Principal user) {
         var eventAndOrgId = accessService.checkDescriptorsLinkRequest(user, slug, subscriptions);
         eventManager.updateLinkedSubscriptions(subscriptions, eventAndOrgId.getId(), eventAndOrgId.getOrganizationId());
         return ResponseEntity.ok(retrieveLinkedSubscriptionsForEvent(slug, eventAndOrgId.getId(), eventAndOrgId.getOrganizationId()));
@@ -221,9 +223,11 @@ public class EventApiV1Controller {
         }
     }
 
-    private LinkedSubscriptions retrieveLinkedSubscriptionsForEvent(String slug, int id, int organizationId) {
-        var subscriptionIds = eventManager.getLinkedSubscriptionIds(id, organizationId);
-        return new LinkedSubscriptions(slug, subscriptionIds);
+    private LinkedSubscription retrieveLinkedSubscriptionsForEvent(String slug, int id, int organizationId) {
+        var subscriptions = eventManager.getLinkedSubscriptions(id, organizationId);
+        return new LinkedSubscription(slug,
+            subscriptions.stream().collect(Collectors.toMap(EventSubscriptionLink::getSubscriptionDescriptorId, EventSubscriptionLink::getCompatibleCategories))
+        );
     }
 
     private Optional<Event> updateEvent(String slug, EventCreationRequest request, Principal user, String imageRef) {

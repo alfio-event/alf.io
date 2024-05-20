@@ -32,6 +32,13 @@ import java.util.stream.Collectors;
 public interface TicketCategoryRepository {
 
     String CHECK_ACTIVE = "event_id = :eventId and tc_status = 'ACTIVE'";
+    String FIND_ALL_AVAILABLE = "select tc.* from ticket_category_with_currency tc " +
+        " join ticket_category_statistics tcs on tc.id = tcs.ticket_category_id " +
+        " where tc.event_id = :eventId" +
+        " and tcs.is_expired is FALSE" +
+        " and tcs.access_restricted is FALSE" +
+        " and (tcs.bounded is FALSE or tcs.not_sold_tickets > 0)" +
+        " order by tc.inception, tc.expiration, tc.id";
 
     @Query("insert into ticket_category(inception, expiration, name, max_tickets, price_cts, src_price_cts, access_restricted, tc_status, event_id, bounded, category_code, valid_checkin_from, valid_checkin_to, ticket_validity_start, ticket_validity_end, ordinal, ticket_checkin_strategy, metadata, ticket_access_type) " +
             "values(:inception, :expiration, :name, :max_tickets, 0, :price, :accessRestricted, 'ACTIVE', :eventId, :bounded, :code, :validCheckInFrom, :validCheckInTo, :ticketValidityStart, :ticketValidityEnd, :ordinal, :ticketCheckInStrategy, :metadata::jsonb, :ticketAccessType::ticket_access_type)")
@@ -90,15 +97,11 @@ public interface TicketCategoryRepository {
     @Query("select * from ticket_category_with_currency where event_id = :eventId  and tc_status = 'ACTIVE' order by ordinal asc, inception asc, expiration asc, id asc")
     List<TicketCategory> findAllTicketCategories(@Bind("eventId") int eventId);
 
-    @Query("select tc.* from ticket_category_with_currency tc" +
-        "    join ticket_category_statistics tcs on tc.id = tcs.ticket_category_id" +
-        "    where tc.event_id = :eventId" +
-        "    and tcs.is_expired is FALSE" +
-        "    and tcs.access_restricted is FALSE" +
-        "    and (tcs.bounded is FALSE or tcs.not_sold_tickets > 0)" +
-        " order by tc.inception, tc.expiration, tc.id" +
-        " limit 1")
+    @Query(FIND_ALL_AVAILABLE + " limit 1")
     Optional<TicketCategory> findFirstWithAvailableTickets(@Bind("eventId") int eventId);
+
+    @Query(FIND_ALL_AVAILABLE)
+    List<TicketCategory> findAllWithAvailableTickets(@Bind("eventId") int eventId);
 
     default Map<Integer, TicketCategory> findByEventIdAsMap(int eventId) {
         return findAllTicketCategories(eventId).stream().collect(Collectors.toMap(TicketCategory::getId, Function.identity()));
@@ -194,4 +197,7 @@ public interface TicketCategoryRepository {
 
     @Query("select count(*) from ticket_category where event_id = :eventId and id in (:categoryIds)")
     int countCategoryForEvent(@Bind("categoryIds") Set<Integer> categoryIds, @Bind("eventId") int eventId);
+
+    @Query("select count(*) from ticket_category tc join event e on tc.event_id = e.id where e.short_name = :shortName and tc.id in (:categoryIds)")
+    int countCategoryForEvent(@Bind("categoryIds") Set<Integer> categoryIds, @Bind("shortName") String eventShortName);
 }

@@ -33,6 +33,7 @@ import alfio.repository.SubscriptionRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.util.ClockProvider;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -106,13 +107,12 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
                     .getValueAsBooleanOrDefault();
                 if (generationEnabled) {
                     var subscriptions = subscriptionsByEvent.get(event.getId());
-                    var optionalCategory = ticketCategoryRepository.findFirstWithAvailableTickets(event.getId());
-                    if (optionalCategory.isPresent()) {
-                        var category = optionalCategory.get();
+                    var availableCategories = ticketCategoryRepository.findAllWithAvailableTickets(event.getId());
+                    if (CollectionUtils.isNotEmpty(availableCategories)) {
                         // 3. create reservation import request for the subscribers. ID is "AUTO_${eventShortName}_${now_ISO}"
                         var requestId = String.format("AUTO_%s_%s", event.getShortName(), LocalDateTime.now(clockProvider.getClock()).format(DateTimeFormatter.ISO_DATE_TIME));
                         requestManager.insertRequest(requestId,
-                            buildBody(event, subscriptions, category, fieldsByEventId.getOrDefault(event.getId(), Set.of())),
+                            buildBody(event, subscriptions, availableCategories, fieldsByEventId.getOrDefault(event.getId(), Set.of())),
                             event,
                             false,
                             "admin");
@@ -130,18 +130,34 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
 
     private AdminReservationModification buildBody(Event event,
                                                    List<AvailableSubscriptionsByEvent> subscriptions,
-                                                   TicketCategory category,
+                                                   List<TicketCategory> availableCategories,
                                                    Set<String> fieldsForEvent) {
         var clock = clockProvider.getClock();
+        var subscriptionsByDescriptor = subscriptions.stream().collect(Collectors.groupingBy(AvailableSubscriptionsByEvent::getDescriptorId));
+        var tickets = subscriptionsByDescriptor.values().stream().flatMap(availableSubscriptionsByEvents -> {
+            var firstValue = availableSubscriptionsByEvents.get(0);
+            var categoryOptional = availableCategories.stream()
+                .filter(c -> CollectionUtils.isEmpty(firstValue.getCompatibleCategoryIds()) || firstValue.getCompatibleCategoryIds().contains(c.getId()))
+                .findFirst();
+
+            if (categoryOptional.isEmpty()) {
+                var categoriesIds = availableCategories.stream().map(TicketCategory::getId).collect(Collectors.toSet());
+                log.warn("Skipping descriptor {}. No compatible category found (wanted: one of {}, available: {})", firstValue.getDescriptorId(), firstValue.getCompatibleCategoryIds(), categoriesIds);
+            }
+
+            return categoryOptional.stream()
+                .map(category -> new TicketsInfo(
+                    new Category(category.getId(), category.getName(), category.getPrice(), category.getTicketAccessType()),
+                    toAttendees(availableSubscriptionsByEvents, fieldsForEvent),
+                    false,
+                    false
+                ));
+        }).collect(Collectors.toList());
+
         return new AdminReservationModification(
-            new DateTimeModification(LocalDate.now(clock), LocalTime.now(clock).plus(5L, ChronoUnit.MINUTES)),
+            new DateTimeModification(LocalDate.now(clock), LocalTime.now(clock).plusMinutes(5L)),
             new CustomerData("", "", "", null, "", null, null, null, null),
-            List.of(new TicketsInfo(
-                new Category(category.getId(), category.getName(), category.getPrice(), category.getTicketAccessType()),
-                toAttendees(subscriptions, fieldsForEvent),
-                false,
-                false
-            )),
+            tickets,
             event.getContentLanguages().get(0).getLanguage(),
             false,
             false,

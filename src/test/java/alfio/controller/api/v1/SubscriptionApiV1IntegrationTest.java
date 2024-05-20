@@ -29,6 +29,7 @@ import alfio.model.api.v1.admin.DescriptionRequest;
 import alfio.model.api.v1.admin.SubscriptionDescriptorModificationRequest;
 import alfio.model.api.v1.admin.subscription.StandardPeriodTerm;
 import alfio.model.modification.OrganizationModification;
+import alfio.model.subscription.LinkEventsToSubscriptionRequest;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType;
 import alfio.model.transaction.PaymentProxy;
@@ -138,10 +139,15 @@ class SubscriptionApiV1IntegrationTest {
         var response = controller.getLinkedEvents(descriptorId, principal);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertTrue(requireNonNull(response.getBody()).isEmpty());
-        controller.updateLinkedEvents(descriptorId, List.of(eventSlug), principal);
+        controller.updateLinkedEvents(descriptorId, List.of(new LinkEventsToSubscriptionRequest(eventSlug, List.of())), principal);
         response = controller.getLinkedEvents(descriptorId, principal);
         assertTrue(response.getStatusCode().is2xxSuccessful());
-        assertEquals(List.of(eventSlug), response.getBody());
+        var body = response.getBody();
+        assertNotNull(body);
+        assertEquals(1, body.size());
+        var linkedEvent = body.get(0);
+        assertEquals(eventSlug, linkedEvent.getSlug());
+        assertTrue(linkedEvent.getEnabledCategories().isEmpty());
     }
 
 
