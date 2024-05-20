@@ -62,6 +62,7 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.*;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -2301,9 +2302,20 @@ public class TicketReservationManager {
             return false;
         }
 
-        if (!subscriptionRepository.isSubscriptionLinkedToEvent(eventId, subscription.getSubscriptionDescriptorId(), subscription.getOrganizationId())) {
+        var linkOptional = subscriptionRepository.findLink(subscription.getOrganizationId(), subscription.getSubscriptionDescriptorId(), eventId);
+
+        if (linkOptional.isEmpty()) {
             log.warn("Attempt to use subscription {} - descriptor {} for event {}", subscription.getId(), subscriptionDescriptor.getId(), eventId);
             return false;
+        }
+
+        var link = linkOptional.get();
+        if (CollectionUtils.isNotEmpty(link.getCompatibleCategories())) {
+            var bookedCategories = ticketCategoryRepository.findCategoriesInReservation(reservation.getId()).stream().map(TicketCategory::getId).collect(toSet());
+            if (CollectionUtils.intersection(link.getCompatibleCategories(), bookedCategories).isEmpty()) {
+                log.warn("Attempt to use subscription {} - descriptor {} unsuccessful for event {}. No compatible categories found (booked: {}).", subscription.getId(), subscriptionDescriptor.getId(), eventId, bookedCategories);
+                return false;
+            }
         }
 
         try {
@@ -2328,7 +2340,12 @@ public class TicketReservationManager {
             // subscription can be applied. First we apply it at reservation level
             ticketReservationRepository.applySubscription(reservation.getId(), subscription.getId());
             // then we apply it to the tickets
-            int count = ticketRepository.applySubscriptionToTicketsInReservation(reservation.getId(), subscriptionId, limit - countExisting);
+            int count;
+            if (CollectionUtils.isNotEmpty(link.getCompatibleCategories())) {
+                count = ticketRepository.applySubscriptionToTicketsInReservation(reservation.getId(), subscriptionId, link.getCompatibleCategories(), limit - countExisting);
+            } else {
+                count = ticketRepository.applySubscriptionToTicketsInReservation(reservation.getId(), subscriptionId, limit - countExisting);
+            }
             log.trace("Applied subscription {} to {} tickets for reservation {}", subscriptionId, count, reservation.getId());
         } catch(UncategorizedSQLException sqlException) {
             log.trace("got exception while trying to apply SubscriptionID {} to ReservationID {}", subscriptionId, reservation.getId());

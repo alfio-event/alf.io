@@ -21,34 +21,37 @@ import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.core.type.TypeReference;
 
-import java.lang.reflect.Type;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public class AvailableSubscriptionsByEvent {
     private final int eventId;
     private final int organizationId;
     private final UUID subscriptionId;
+    private final UUID descriptorId;
     private final String emailAddress;
     private final String firstName;
     private final String lastName;
     private final String userLanguage;
     private final String reservationEmail;
     private final List<FieldNameAndValue> additionalFields;
+    private final List<Integer> compatibleCategoryIds;
 
     public AvailableSubscriptionsByEvent(@Column("event_id") int eventId,
                                          @Column("organization_id") int organizationId,
                                          @Column("subscription_id") UUID subscriptionId,
+                                         @Column("descriptor_id") UUID descriptorId,
                                          @Column("email_address") String emailAddress,
                                          @Column("first_name") String firstName,
                                          @Column("last_name") String lastName,
                                          @Column("user_language") String userLanguage,
                                          @Column("reservation_email") String reservationEmail,
-                                         @Column("additional_fields") String additionalFieldsAsString) {
+                                         @Column("additional_fields") String additionalFieldsAsString,
+                                         @Column("compatible_categories") String compatibleCategories) {
         this.eventId = eventId;
         this.organizationId = organizationId;
         this.subscriptionId = subscriptionId;
+        this.descriptorId = descriptorId;
         this.emailAddress = emailAddress;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -59,6 +62,7 @@ public class AvailableSubscriptionsByEvent {
         } else {
             this.additionalFields = List.of();
         }
+        this.compatibleCategoryIds = compatibleCategories != null ? Json.fromJson(compatibleCategories, new TypeReference<>() {}) : List.of();
     }
 
     public int getEventId() {
@@ -67,6 +71,10 @@ public class AvailableSubscriptionsByEvent {
 
     public UUID getSubscriptionId() {
         return subscriptionId;
+    }
+
+    public UUID getDescriptorId() {
+        return descriptorId;
     }
 
     public String getEmailAddress() {
@@ -95,5 +103,9 @@ public class AvailableSubscriptionsByEvent {
 
     public List<FieldNameAndValue> getAdditionalFields() {
         return additionalFields;
+    }
+
+    public List<Integer> getCompatibleCategoryIds() {
+        return compatibleCategoryIds;
     }
 }

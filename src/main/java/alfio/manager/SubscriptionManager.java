@@ -23,12 +23,13 @@ import alfio.model.modification.SubscriptionDescriptorModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.subscription.EventSubscriptionLink;
+import alfio.model.subscription.LinkEventsToSubscriptionRequest;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
 import alfio.repository.EventRepository;
 import alfio.repository.SubscriptionRepository;
+import alfio.util.Json;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNullElse;
@@ -55,6 +57,7 @@ public class SubscriptionManager {
 
     private static final Logger log = LoggerFactory.getLogger(SubscriptionManager.class);
     private final SubscriptionRepository subscriptionRepository;
+    private final EventRepository eventRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final Environment environment;
 
@@ -226,8 +229,8 @@ public class SubscriptionManager {
         return subscriptionRepository.findOneWithStatistics(id, organizationId);
     }
 
-    public int linkSubscriptionToEvent(UUID subscriptionId, int eventId, int organizationId, int pricePerTicket) {
-        return subscriptionRepository.linkSubscriptionAndEvent(subscriptionId, eventId, pricePerTicket, organizationId);
+    public int linkSubscriptionToEvent(UUID subscriptionId, int eventId, int organizationId, int pricePerTicket, List<Integer> compatibleCategories) {
+        return subscriptionRepository.linkSubscriptionAndEvent(subscriptionId, eventId, pricePerTicket, organizationId, Objects.requireNonNullElse(compatibleCategories, List.of()));
     }
 
     public List<EventSubscriptionLink> getLinkedEvents(int organizationId, UUID id) {
@@ -253,17 +256,24 @@ public class SubscriptionManager {
             "Cannot deactivate subscription descriptor"));
     }
 
-    public Result<List<EventSubscriptionLink>> updateLinkedEvents(int organizationId, UUID subscriptionId, List<Integer> eventIds){
-        if (eventIds.isEmpty()) {
-            removeAllEventLinksForSubscription(organizationId, subscriptionId);
+    public Result<List<EventSubscriptionLink>> updateLinkedEvents(int organizationId, UUID subscriptionId, List<LinkEventsToSubscriptionRequest> requests){
+        removeAllEventLinksForSubscription(organizationId, subscriptionId);
+        if (requests.isEmpty()) {
             return Result.success(List.of());
         } else {
-            subscriptionRepository.removeStaleEvents(subscriptionId, organizationId, eventIds);
-            var parameters = eventIds.stream()
-                .map(eventId -> new MapSqlParameterSource("eventId", eventId)
-                    .addValue("subscriptionId", subscriptionId)
-                    .addValue("pricePerTicket", 0)
-                    .addValue("organizationId", organizationId))
+            var byName = requests.stream().collect(Collectors.groupingBy(LinkEventsToSubscriptionRequest::getSlug));
+            var allEvents = eventRepository.findEventsByShortNames(organizationId, byName.keySet());
+            var parameters = byName.entrySet().stream()
+                .map(entry -> {
+                    var event = allEvents.stream().filter(e -> e.getShortName().equals(entry.getKey()))
+                        .findFirst()
+                        .orElseThrow();
+                    return new MapSqlParameterSource("eventId", event.getId())
+                            .addValue("subscriptionId", subscriptionId)
+                            .addValue("pricePerTicket", 0)
+                            .addValue("organizationId", organizationId)
+                            .addValue("compatibleCategories", Json.toJson(entry.getValue().stream().flatMap(v -> v.getCategories().stream()).collect(Collectors.toSet())));
+                })
                 .toArray(MapSqlParameterSource[]::new);
             var result = jdbcTemplate.batchUpdate(SubscriptionRepository.INSERT_SUBSCRIPTION_LINK, parameters);
             return new Result.Builder<List<EventSubscriptionLink>>()

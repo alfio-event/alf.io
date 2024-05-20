@@ -168,29 +168,42 @@ class AssignTicketToSubscriberJobExecutorIntegrationTest {
 
     @Test
     void process() {
-        performTest(Map.of());
+        performTest(Map.of(), null);
     }
 
     @Test
     void processOrganizationLevel() {
-        performTest(Map.of(AssignTicketToSubscriberJobExecutor.ORGANIZATION_ID, event.getOrganizationId()));
+        performTest(Map.of(AssignTicketToSubscriberJobExecutor.ORGANIZATION_ID, event.getOrganizationId()), null);
     }
 
     @Test
     void processEventLevel() {
+        var category = ticketCategoryRepository.findAllTicketCategories(event.getId())
+            .stream()
+            .filter(c -> c.getName().equals(FIRST_CATEGORY_NAME))
+            .findFirst()
+            .orElseThrow();
         performTest(Map.of(
             AssignTicketToSubscriberJobExecutor.ORGANIZATION_ID, event.getOrganizationId(),
             AssignTicketToSubscriberJobExecutor.EVENT_ID, event.getId()
-        ));
+        ), List.of(category.getId()));
     }
 
-    private void performTest(Map<String, Object> metadata) {
+    @Test
+    void processEventLevelWithCompatibleCategories() {
+        performTest(Map.of(
+            AssignTicketToSubscriberJobExecutor.ORGANIZATION_ID, event.getOrganizationId(),
+            AssignTicketToSubscriberJobExecutor.EVENT_ID, event.getId()
+        ), null);
+    }
+
+    private void performTest(Map<String, Object> metadata, List<Integer> compatibleCategories) {
         var adminRequest = new AdminJobSchedule(1L, "", ZonedDateTime.now(ClockProvider.clock()), AdminJobSchedule.Status.SCHEDULED, null, metadata, 1);
         int maxEntries = 2;
         var descriptorId = createSubscriptionDescriptor(event.getOrganizationId(), fileUploadManager, subscriptionManager, maxEntries);
         var descriptor = subscriptionRepository.findOne(descriptorId).orElseThrow();
         var subscriptionIdAndPin = confirmAndLinkSubscription(descriptor, event.getOrganizationId(), subscriptionRepository, ticketReservationRepository, maxEntries);
-        subscriptionRepository.linkSubscriptionAndEvent(descriptorId, event.getId(), 0, event.getOrganizationId());
+        subscriptionRepository.linkSubscriptionAndEvent(descriptorId, event.getId(), 0, event.getOrganizationId(), compatibleCategories);
         // 1. check that subscription descriptor is not marked as "available" because it does not support ticket generation
         assertEquals(0, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null).size());
         // enable support for tickets generation
