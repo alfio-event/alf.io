@@ -383,8 +383,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
         assertTrue(response.getStatusCode().is2xxSuccessful());
         var linkedSubscriptions = response.getBody();
         assertNotNull(linkedSubscriptions);
-        assertTrue(linkedSubscriptions.getSubscriptions().isEmpty());
-        assertEquals(slug, linkedSubscriptions.getEventSlug());
+        assertTrue(linkedSubscriptions.isEmpty());
     }
 
 

@@ -185,18 +185,18 @@ public class EventApiV1Controller {
     }
 
     @GetMapping("/{slug}/subscriptions")
-    public ResponseEntity<LinkedSubscription> getLinkedSubscriptions(@PathVariable("slug") String slug, Principal user) {
+    public ResponseEntity<List<LinkedSubscription>> getLinkedSubscriptions(@PathVariable("slug") String slug, Principal user) {
         var event = accessService.checkEventOwnership(user, slug);
-        return ResponseEntity.ok(retrieveLinkedSubscriptionsForEvent(slug, event.getId(), event.getOrganizationId()));
+        return ResponseEntity.ok(retrieveLinkedSubscriptionsForEvent(event.getId(), event.getOrganizationId()));
     }
 
     @PutMapping("/{slug}/subscriptions")
-    public ResponseEntity<LinkedSubscription> updateLinkedSubscriptions(@PathVariable("slug") String slug,
+    public ResponseEntity<List<LinkedSubscription>> updateLinkedSubscriptions(@PathVariable("slug") String slug,
                                                                         @RequestBody List<LinkSubscriptionsToEventRequest> subscriptions,
                                                                         Principal user) {
         var eventAndOrgId = accessService.checkDescriptorsLinkRequest(user, slug, subscriptions);
         eventManager.updateLinkedSubscriptions(subscriptions, eventAndOrgId.getId(), eventAndOrgId.getOrganizationId());
-        return ResponseEntity.ok(retrieveLinkedSubscriptionsForEvent(slug, eventAndOrgId.getId(), eventAndOrgId.getOrganizationId()));
+        return ResponseEntity.ok(retrieveLinkedSubscriptionsForEvent(eventAndOrgId.getId(), eventAndOrgId.getOrganizationId()));
     }
 
     @PostMapping("/{slug}/generate-subscribers-tickets")
@@ -223,11 +223,11 @@ public class EventApiV1Controller {
         }
     }
 
-    private LinkedSubscription retrieveLinkedSubscriptionsForEvent(String slug, int id, int organizationId) {
+    private List<LinkedSubscription> retrieveLinkedSubscriptionsForEvent(int id, int organizationId) {
         var subscriptions = eventManager.getLinkedSubscriptions(id, organizationId);
-        return new LinkedSubscription(slug,
-            subscriptions.stream().collect(Collectors.toMap(EventSubscriptionLink::getSubscriptionDescriptorId, EventSubscriptionLink::getCompatibleCategories))
-        );
+        return subscriptions.stream()
+            .map(s -> new LinkedSubscription(s.getSubscriptionDescriptorId(), s.getCompatibleCategories()))
+            .collect(Collectors.toList());
     }
 
     private Optional<Event> updateEvent(String slug, EventCreationRequest request, Principal user, String imageRef) {
