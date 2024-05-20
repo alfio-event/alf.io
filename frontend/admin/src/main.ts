@@ -22,3 +22,4 @@ if (import.meta.env.MODE === 'development') {
     setBasePath(`${document.getElementById('lit-js')?.getAttribute('src')?.replace(/assets.*/g, '')}shoelace/`);
 }
 export { NewElement } from './new-element';
+export { ProjectBanner } from './project-banner/project-banner';
