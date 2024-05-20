@@ -51,7 +51,7 @@ public interface SubscriptionRepository {
 
     String INSERT_SUBSCRIPTION_LINK = """
         insert into subscription_event(event_id_fk, subscription_descriptor_id_fk, price_per_ticket, organization_id_fk, compatible_categories) \
-        values(:eventId, :subscriptionId, :pricePerTicket, :organizationId, :compatibleCategories::json) on conflict(subscription_descriptor_id_fk, event_id_fk) do update set price_per_ticket = excluded.price_per_ticket
+        values(:eventId, :subscriptionId, :pricePerTicket, :organizationId, :compatibleCategories::json) on conflict(subscription_descriptor_id_fk, event_id_fk) do update set price_per_ticket = excluded.price_per_ticket, compatible_categories = excluded.compatible_categories
         """;
 
     String INSERT_SUBSCRIPTION = """
