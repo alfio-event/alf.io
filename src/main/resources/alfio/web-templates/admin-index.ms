@@ -249,6 +249,7 @@
             </div>
             <footer class="text-center" ng-if="!ctrl.displaySidebar">
                 <project-banner data-full-banner="{{displayProjectBanner}}" data-alfio-version="'{{alfioVersion}}'"></project-banner>
+                <alfio-project-banner data-full-banner="{{displayProjectBanner}}" data-alfio-version="{{alfioVersion}}"></alfio-project-banner>
             </footer>
         </div>
     </div>
