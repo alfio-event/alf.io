@@ -140,7 +140,7 @@ public class DataMigrator {
 
     private void fixReservationPrice(List<Event> events) {
         transactionTemplate.execute(ts -> {
-            Map<Integer, List<String>> candidates = jdbc.queryForList("select id, event_id_fk from tickets_reservation where src_price_cts = 0 and payment_method <> 'NONE' and status not in ('CANCELLED', 'CREDIT_NOTE_ISSUED') order by 2", Map.of())
+            Map<Integer, List<String>> candidates = jdbc.queryForList("select id, event_id_fk from tickets_reservation where event_id_fk is not null and src_price_cts = 0 and payment_method <> 'NONE' and status not in ('CANCELLED', 'CREDIT_NOTE_ISSUED') order by 2", Map.of())
                 .stream()
                 .map(m -> Pair.of((Integer) m.get("event_id_fk"), (String) m.get("id")))
                 .collect(groupingBy(Pair::getKey, mapping(Pair::getValue, toList())));
@@ -266,7 +266,7 @@ public class DataMigrator {
 
     void fillReservationsLanguage() {
         transactionTemplate.execute(s -> {
-            jdbc.queryForList("select id from tickets_reservation where user_language is null", EmptySqlParameterSource.INSTANCE, String.class)
+            jdbc.queryForList("select id from tickets_reservation where user_language is null and event_id_fk is not null", EmptySqlParameterSource.INSTANCE, String.class)
                     .forEach(id -> {
                         MapSqlParameterSource param = new MapSqlParameterSource("reservationId", id);
                         String language = optionally(() -> jdbc.queryForObject("select user_language from ticket where tickets_reservation_id = :reservationId limit 1", param, String.class)).orElse("en");
