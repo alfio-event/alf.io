@@ -19,8 +19,11 @@ package alfio.controller.api.v1.admin;
 import alfio.controller.api.admin.SubscriptionApiController;
 import alfio.manager.*;
 import alfio.manager.user.UserManager;
+import alfio.model.api.v1.admin.LinkedEvent;
 import alfio.model.api.v1.admin.SubscriptionDescriptorModificationRequest;
 import alfio.model.modification.SubscriptionDescriptorModification;
+import alfio.model.subscription.EventSubscriptionLink;
+import alfio.model.subscription.LinkEventsToSubscriptionRequest;
 import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
 import alfio.util.Json;
 import org.apache.commons.lang3.StringUtils;
@@ -36,7 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static alfio.controller.api.admin.SubscriptionApiController.loadLinkedEvents;
+import static java.util.stream.Collectors.toList;
 
 @RestController
 @RequestMapping("/api/v1/admin/subscription")
@@ -47,7 +50,6 @@ public class SubscriptionApiV1Controller {
     private final FileUploadManager fileUploadManager;
     private final FileDownloadManager fileDownloadManager;
     private final UserManager userManager;
-    private final EventManager eventManager;
     private final AccessService accessService;
     private final PurchaseContextFieldManager purchaseContextFieldManager;
 
@@ -55,14 +57,12 @@ public class SubscriptionApiV1Controller {
                                        FileUploadManager fileUploadManager,
                                        FileDownloadManager fileDownloadManager,
                                        UserManager userManager,
-                                       EventManager eventManager,
                                        AccessService accessService,
                                        PurchaseContextFieldManager purchaseContextFieldManager) {
         this.subscriptionManager = subscriptionManager;
         this.fileUploadManager = fileUploadManager;
         this.fileDownloadManager = fileDownloadManager;
         this.userManager = userManager;
-        this.eventManager = eventManager;
         this.accessService = accessService;
         this.purchaseContextFieldManager = purchaseContextFieldManager;
     }
@@ -121,31 +121,26 @@ public class SubscriptionApiV1Controller {
     }
 
     @GetMapping("/{subscriptionId}/events")
-    public ResponseEntity<List<String>> getLinkedEvents(@PathVariable UUID subscriptionId,
-                                                        Principal principal) {
+    public ResponseEntity<List<LinkedEvent>> getLinkedEvents(@PathVariable UUID subscriptionId,
+                                                       Principal principal) {
         accessService.checkSubscriptionDescriptorOwnership(principal, subscriptionId.toString());
         var organization = userManager.findUserOrganizations(principal.getName()).get(0);
-        return ResponseEntity.ok(loadLinkedEvents(subscriptionManager.getLinkedEvents(organization.getId(), subscriptionId)));
+        return ResponseEntity.ok(toLinkedEvents(subscriptionManager.getLinkedEvents(organization.getId(), subscriptionId)));
     }
 
     @PostMapping("/{subscriptionId}/events")
-    public ResponseEntity<List<String>> updateLinkedEvents(@PathVariable UUID subscriptionId,
-                                                           @RequestBody List<String> eventSlugs,
-                                                           Principal principal) {
-        if (eventSlugs == null) {
+    public ResponseEntity<List<LinkedEvent>> updateLinkedEvents(@PathVariable UUID subscriptionId,
+                                                                @RequestBody List<LinkEventsToSubscriptionRequest> linkedEvents,
+                                                                Principal principal) {
+        if (linkedEvents == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
-        accessService.checkEventLinkRequest(principal, subscriptionId.toString(), eventSlugs);
+        accessService.checkEventLinkRequest(principal, subscriptionId.toString(), linkedEvents);
         var organization = userManager.findUserOrganizations(principal.getName()).get(0);
         int organizationId = organization.getId();
-
-        List<Integer> eventIds = List.of();
-        if (!eventSlugs.isEmpty()) {
-            eventIds = eventManager.getEventIdsBySlug(eventSlugs, organizationId);
-        }
-        var result = subscriptionManager.updateLinkedEvents(organizationId, subscriptionId, eventIds);
+        var result = subscriptionManager.updateLinkedEvents(organizationId, subscriptionId, linkedEvents);
         if (result.isSuccess()) {
-            return ResponseEntity.ok(loadLinkedEvents(result.getData()));
+            return ResponseEntity.ok(toLinkedEvents(result.getData()));
         } else {
             if (log.isWarnEnabled()) {
                 log.warn("Cannot update linked events {}", Json.toJson(result.getErrors()));
@@ -169,5 +164,11 @@ public class SubscriptionApiV1Controller {
         } else {
             return null;
         }
+    }
+
+    private static List<LinkedEvent> toLinkedEvents(List<EventSubscriptionLink> links) {
+        return links.stream()
+            .map(l -> new LinkedEvent(l.getEventShortName(), l.getCompatibleCategories()))
+            .collect(toList());
     }
 }

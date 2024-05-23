@@ -25,6 +25,8 @@ import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.GroupModification;
 import alfio.model.modification.PromoCodeDiscountModification;
 import alfio.model.modification.ReservationRequest;
+import alfio.model.subscription.LinkEventsToSubscriptionRequest;
+import alfio.model.subscription.LinkSubscriptionsToEventRequest;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.repository.*;
@@ -371,15 +373,23 @@ public class AccessService {
         }
     }
 
-    public EventAndOrganizationId checkDescriptorsLinkRequest(Principal principal, String eventSlug, List<UUID> descriptorsToLink) {
+    public EventAndOrganizationId checkDescriptorsLinkRequest(Principal principal, String eventSlug, List<LinkSubscriptionsToEventRequest> descriptorsToLink) {
         var event = checkEventOwnership(principal, eventSlug);
         if (descriptorsToLink.isEmpty()) {
             // user is requesting to remove all subscriptions from event
             return event;
         }
-        var count = subscriptionRepository.countDescriptorsBelongingToOrganization(descriptorsToLink, event.getOrganizationId());
+        var descriptorsId = descriptorsToLink.stream().map(LinkSubscriptionsToEventRequest::getDescriptorId).collect(Collectors.toList());
+        var count = subscriptionRepository.countDescriptorsBelongingToOrganization(descriptorsId, event.getOrganizationId());
         if (count == null || descriptorsToLink.size() != count) {
             throw new AccessDeniedException();
+        }
+        var categoriesToLink = descriptorsToLink.stream().flatMap(sl -> sl.getCategories().stream()).collect(Collectors.toSet());
+        if (!categoriesToLink.isEmpty()) {
+            count = ticketCategoryRepository.countCategoryForEvent(categoriesToLink, event.getId());
+            if (categoriesToLink.size() != count) {
+                throw new AccessDeniedException();
+            }
         }
         return event;
     }
@@ -480,13 +490,23 @@ public class AccessService {
         }
     }
 
-    public void checkEventLinkRequest(Principal principal, String subscriptionId, List<String> eventSlugs) {
+    public void checkEventLinkRequest(Principal principal, String subscriptionId, List<LinkEventsToSubscriptionRequest> linkRequests) {
         int organizationId = subscriptionRepository.findOrganizationIdForDescriptor(UUID.fromString(subscriptionId))
             .orElseThrow(AccessDeniedException::new);
         checkOrganizationOwnership(principal, organizationId);
-        if (eventSlugs.size() > 0 && eventSlugs.size() != eventRepository.countEventsInOrganization(organizationId, eventSlugs)) {
+        var eventSlugs = linkRequests.stream().map(LinkEventsToSubscriptionRequest::getSlug).collect(Collectors.toSet());
+        if (!eventSlugs.isEmpty() && eventSlugs.size() != eventRepository.countEventsInOrganization(organizationId, eventSlugs)) {
             throw new AccessDeniedException();
         }
+        linkRequests.forEach(request -> {
+            var categoriesToLink = request.getCategories();
+            if (!categoriesToLink.isEmpty()) {
+                int count = ticketCategoryRepository.countCategoryForEvent(Set.copyOf(request.getCategories()), request.getSlug());
+                if (categoriesToLink.size() != count) {
+                    throw new AccessDeniedException();
+                }
+            }
+        });
     }
 
     public EventAndOrganizationId canAccessEvent(Principal principal, String eventShortName) {
@@ -555,7 +575,7 @@ public class AccessService {
         if (reservationIds.size() != reservationRepository.countReservationsWithEventId(reservationIds, eventAndOrgId.getId())) {
             log.warn("Some reservation ids {} are not in the event {}", reservationIds, eventName);
             throw new AccessDeniedException();
-        };
+        }
     }
 
     public void checkEventAndReservationAndTransactionOwnership(Principal principal, String eventName, String reservationId, int transactionId) {

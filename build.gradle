@@ -2,6 +2,7 @@ import ch.digitalfondue.jfiveparse.HtmlSerializer
 import ch.digitalfondue.jfiveparse.NodeMatcher
 import ch.digitalfondue.jfiveparse.Parser
 import ch.digitalfondue.jfiveparse.Selector
+import ch.digitalfondue.mjml4j.Mjml4j
 import org.apache.tools.ant.filters.ReplaceTokens
 
 import java.nio.charset.StandardCharsets
@@ -14,9 +15,10 @@ buildscript {
 
     dependencies {
         classpath 'org.postgresql:postgresql:42.5.1'
-        //this is for processing the index.html at compile time
+        // for processing the index.html at build time
         classpath "ch.digitalfondue.jfiveparse:jfiveparse:1.0.3"
-        //
+        // for processing the mjml templates at build time
+        classpath "ch.digitalfondue.mjml4j:mjml4j:1.0.2"
     }
 
 
@@ -458,22 +460,21 @@ bootJar {
 
 // MJML email templates translations to HTML
 
-tasks.register('mjmlNpmInstall', NpmTask) {
-    args = ['--prefix', "${project.projectDir}/etc/mjml", 'ci']
-}
-
-tasks.register('mjmlToHtml', NodeTask) {
-    dependsOn mjmlNpmInstall
-    args = ['--prefix', "${project.projectDir}/frontend"]
-    script = file("${project.projectDir}/etc/mjml/mjmlToHtml.js")
-    args = ["${layout.projectDirectory}", "${layout.buildDirectory.dir("generated/resources").get()}"]
+tasks.register('mjml4jToHtml', Mjml4jTransformTask) {
+    files = fileTree("${layout.projectDirectory}/src/main/resources/alfio/mjml/").matching {
+        include "**/*.mjml"
+        include { !it.isDirectory }
+    }
+    var d = layout.buildDirectory.dir("generated/resources/alfio/templates/").get();
+    d.asFile.mkdirs()
+    outputDir = d
 }
 
 // We build HTML templates from MJML source files and then save them under "build/generated/resources" in order to be
 // included in the final artifact.
 // TODO should we do the same for plaintext templates? See https://gist.github.com/brasilikum/3cd515bad5541ca6c76873faf10445c2
-processResources.dependsOn(mjmlToHtml)
-sourceSets.main.output.dir layout.buildDirectory.dir("generated/resources"), builtBy: mjmlToHtml
+processResources.dependsOn(mjml4jToHtml)
+sourceSets.main.output.dir layout.buildDirectory.dir("generated/resources/"), builtBy: mjml4jToHtml
 
 // transform index.html
 abstract class FrontendIndexTransformTask extends DefaultTask {
@@ -509,5 +510,23 @@ abstract class FrontendIndexTransformTask extends DefaultTask {
         })
 
         indexHtmlTransformed.get().asFile.write(HtmlSerializer.serialize(indexDoc), "UTF-8", false)
+    }
+}
+
+abstract class Mjml4jTransformTask extends DefaultTask {
+
+    @InputFiles
+    FileTree files
+
+    @InputDirectory
+    Directory outputDir
+
+    @TaskAction
+    def doWork() {
+        files.visit { FileVisitDetails f ->
+            var templateOutput = Mjml4j.render(f.file.getText("UTF-8"))
+            var outputName = f.file.name.substring(0, f.file.name.lastIndexOf('.')) + ".ms"
+            new File(outputDir.asFile, outputName).setText(templateOutput, "UTF-8")
+        }
     }
 }
