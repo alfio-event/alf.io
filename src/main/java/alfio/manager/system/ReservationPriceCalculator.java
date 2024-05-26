@@ -98,7 +98,7 @@ public class ReservationPriceCalculator implements PriceContainer {
             .map(t -> TicketPriceContainer.from(t, reservation.getVatStatus(), getVatPercentageOrZero(), purchaseContext.getVatStatus(), discount).getTaxablePrice())
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         var additionalServiceTaxablePrice = additionalServiceItems.stream()
-            .map(asi -> AdditionalServiceItemPriceContainer.from(asi, additionalServices.stream().filter(as -> as.getId() == asi.getAdditionalServiceId()).findFirst().orElseThrow(), purchaseContext, discount).getTaxablePrice())
+            .map(asi -> AdditionalServiceItemPriceContainer.from(asi, additionalServices.stream().filter(as -> as.id() == asi.getAdditionalServiceId()).findFirst().orElseThrow(), purchaseContext, discount).getTaxablePrice())
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         var subscriptionsPrice = subscriptions.stream().map(s -> SubscriptionPriceContainer.from(s, purchaseContext, discount).getTaxablePrice())
             .reduce(BigDecimal.ZERO, BigDecimal::add);

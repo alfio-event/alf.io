@@ -44,7 +44,6 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -244,19 +243,19 @@ public class AdditionalServiceManager {
         var currencyCode = pc.getCurrencyCode();
         String queryTemplate;
         var batchReserveParameters = new ArrayList<MapSqlParameterSource>();
-        if (as.getAvailableQuantity() > 0) {
+        if (as.availableQuantity() > 0) {
             queryTemplate = additionalServiceItemRepository.batchUpdate();
-            var ids = additionalServiceItemRepository.lockExistingItems(as.getId(), quantity);
+            var ids = additionalServiceItemRepository.lockExistingItems(as.id(), quantity);
             if (ids.size() != quantity) {
                 throw new NotEnoughItemsException();
             }
             for (int i = 0; i < quantity; i++) {
                 batchReserveParameters.add(new MapSqlParameterSource("uuid", UUID.randomUUID().toString())
                     .addValue("ticketsReservationUuid", reservationId)
-                    .addValue("additionalServiceId", as.getId())
+                    .addValue("additionalServiceId", as.id())
                     .addValue("status", AdditionalServiceItem.AdditionalServiceItemStatus.PENDING.name())
                     .addValue("id", ids.get(i))
-                    .addValue("srcPriceCts", as.getSrcPriceCts())
+                    .addValue("srcPriceCts", as.srcPriceCts())
                     .addValue("finalPriceCts", unitToCents(pc.getFinalPrice(), currencyCode))
                     .addValue("vatCts", unitToCents(pc.getVAT(), currencyCode))
                     .addValue("discountCts", unitToCents(pc.getAppliedDiscount(), currencyCode))
@@ -266,7 +265,7 @@ public class AdditionalServiceManager {
             queryTemplate = additionalServiceItemRepository.batchInsert();
             for (int i = 0; i < quantity; i++) {
                 batchReserveParameters.add(buildInsertItemParameterSource(
-                    as.getId(),
+                    as.id(),
                     reservationId,
                     AdditionalServiceItem.AdditionalServiceItemStatus.PENDING,
                     event,
@@ -400,11 +399,11 @@ public class AdditionalServiceManager {
         // apply valid additional service with supplement policy mandatory one for ticket
         var additionalServicesForEvent = loadAllForEvent(event.getId());
 
-        var automatic = additionalServicesForEvent.stream().filter(as -> as.getSupplementPolicy().isMandatory() && as.getSaleable())
+        var automatic = additionalServicesForEvent.stream().filter(as -> as.supplementPolicy().isMandatory() && as.getSaleable())
             .map(as -> {
                 AdditionalServiceReservationModification asrm = new AdditionalServiceReservationModification();
-                asrm.setAdditionalServiceId(as.getId());
-                asrm.setQuantity(as.getSupplementPolicy() == MANDATORY_ONE_FOR_TICKET ? ticketCount : 1);
+                asrm.setAdditionalServiceId(as.id());
+                asrm.setQuantity(as.supplementPolicy() == MANDATORY_ONE_FOR_TICKET ? ticketCount : 1);
                 return new ASReservationWithOptionalCodeModification(asrm, Optional.empty());
             }).toList();
 
@@ -459,12 +458,12 @@ public class AdditionalServiceManager {
             .filter(ar -> ar.getAdditionalServiceId() != null)
             .map(requested -> {
                 var optionalAs = additionalServicesForEvent.stream()
-                    .filter(as -> as.getId() == requested.getAdditionalServiceId() && as.getSupplementPolicy() != null)
+                    .filter(as -> as.id() == requested.getAdditionalServiceId() && as.supplementPolicy() != null)
                     .findFirst();
                 return new MappedRequestedService(requested, optionalAs.orElse(null));
             })
             .filter(o -> Objects.nonNull(o.additionalService))
-            .collect(groupingBy(o -> o.additionalService.getSupplementPolicy()));
+            .collect(groupingBy(o -> o.additionalService.supplementPolicy()));
 
         // first handle MANDATORY_PERCENTAGE_FOR_TICKET, if any.
         // this way only ticket costs will be included in the percentage calculation
@@ -474,7 +473,7 @@ public class AdditionalServiceManager {
         var nonMandatoryPolicies = AdditionalService.SupplementPolicy.userSelected();
         nonMandatoryPolicies.stream()
             .filter(allAdditionalItems::containsKey)
-            .flatMap(p -> allAdditionalItems.get(p).stream().filter(as -> as.requested.getQuantity() > 0 && (as.additionalService.isFixPrice() || requireNonNullElse(as.requested.getAmount(), BigDecimal.ZERO).compareTo(BigDecimal.ZERO) > 0)))
+            .flatMap(p -> allAdditionalItems.get(p).stream().filter(as -> as.requested.getQuantity() > 0 && (as.additionalService.fixPrice() || requireNonNullElse(as.requested.getAmount(), BigDecimal.ZERO).compareTo(BigDecimal.ZERO) > 0)))
             .forEach(mapped -> {
                 var as = mapped.additionalService;
                 var additionalServiceReservation = mapped.requested;
@@ -508,7 +507,7 @@ public class AdditionalServiceManager {
         // we attach all those without policy to the first ticket (donations)
         var firstTicketId = ticketIds.stream().findFirst().map(List::of).orElseThrow();
         var noPoliciesParameterSources = additionalServicesForEvent.stream()
-            .filter(as -> as.getSupplementPolicy() == null && additionalServiceReservationList.stream().anyMatch(findAdditionalServiceRequest(as)))
+            .filter(as -> as.supplementPolicy() == null && additionalServiceReservationList.stream().anyMatch(findAdditionalServiceRequest(as)))
             .flatMap(as -> linkWithEveryTicket(reservationId, additionalServiceReservationList, bookedItems, firstTicketId, as))
             .toArray(MapSqlParameterSource[]::new);
         var noPolicyResults = jdbcTemplate.batchUpdate(additionalServiceItemRepository.batchLinkToTicket(), noPoliciesParameterSources);
@@ -528,7 +527,7 @@ public class AdditionalServiceManager {
                 if (PriceContainer.VatStatus.isVatNotIncluded(vatStatus)) {
                     basePrice -= reservationPrice.getVAT();
                 }
-                int percentage = mrs.additionalService.getSrcPriceCts();
+                int percentage = mrs.additionalService.srcPriceCts();
                 int amountCts = adjustUsingMinMaxPrice(calcPercentage(basePrice, new BigDecimal(String.valueOf(percentage)), BigDecimal::intValueExact), mrs.additionalService);
                 BigDecimal amount = centsToUnit(amountCts, reservationPrice.getCurrencyCode());
                 bookAdditionalServiceItems(mrs.requested.getQuantity(), amount, mrs.additionalService, event, discount, reservationId);
@@ -537,13 +536,13 @@ public class AdditionalServiceManager {
     }
 
     private static int adjustUsingMinMaxPrice(int amountCts, AdditionalService additionalService) {
-        if (additionalService.getMinPrice() != null && unitToCents(additionalService.getMinPrice(), additionalService.getCurrencyCode()) > amountCts) {
+        if (additionalService.getMinPrice() != null && unitToCents(additionalService.getMinPrice(), additionalService.currencyCode()) > amountCts) {
             // if calculated price is below minimum, we return the minimum price
-            return unitToCents(additionalService.getMinPrice(), additionalService.getCurrencyCode());
+            return unitToCents(additionalService.getMinPrice(), additionalService.currencyCode());
         }
-        if (additionalService.getMaxPrice() != null && unitToCents(additionalService.getMaxPrice(), additionalService.getCurrencyCode()) < amountCts) {
+        if (additionalService.getMaxPrice() != null && unitToCents(additionalService.getMaxPrice(), additionalService.currencyCode()) < amountCts) {
             // if calculated price is over maximum, we return the maximum price
-            return unitToCents(additionalService.getMaxPrice(), additionalService.getCurrencyCode());
+            return unitToCents(additionalService.getMaxPrice(), additionalService.currencyCode());
         }
         return amountCts;
     }
@@ -560,7 +559,7 @@ public class AdditionalServiceManager {
     }
 
     private static Predicate<ASReservationWithOptionalCodeModification> findAdditionalServiceRequest(AdditionalService as) {
-        return asr -> as.getId() == asr.getAdditionalServiceId();
+        return asr -> as.id() == asr.getAdditionalServiceId();
     }
 
     record MappedRequestedService(ASReservationWithOptionalCodeModification requested, AdditionalService additionalService) {

@@ -1,10 +1,13 @@
-// see 
+// see
 // https://github.com/shoelace-style/rollup-example/blob/master/src/index.js
 // +
 // https://shoelace.style/getting-started/installation?id=bundling#bundling
 import './main.css';
 import '@shoelace-style/shoelace/dist/themes/light.css';
 import { setBasePath } from '@shoelace-style/shoelace/dist/utilities/base-path.js';
+import "@shoelace-style/shoelace/dist/components/format-date/format-date.js";
+import "@shoelace-style/shoelace/dist/components/format-number/format-number.js";
+import "@shoelace-style/shoelace/dist/components/divider/divider.js";
 
 // imported components
 import '@shoelace-style/shoelace/dist/components/card/card.js';
@@ -23,3 +26,4 @@ if (import.meta.env.MODE === 'development') {
 }
 export { NewElement } from './new-element';
 export { ProjectBanner } from './project-banner/project-banner';
+export { AdditionalItemList } from './event/additional-item-list/additional-item-list';

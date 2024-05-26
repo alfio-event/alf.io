@@ -35,8 +35,23 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-@Getter
-public class AdditionalService {
+public record AdditionalService(@Column("id") int id,
+                                @Column("event_id_fk") int eventId,
+                                @Column("fix_price") boolean fixPrice,
+                                @Column("ordinal") int ordinal,
+                                @Column("available_qty") int availableQuantity,
+                                @Column("max_qty_per_order") int maxQtyPerOrder,
+                                @Column("inception_ts") ZonedDateTime utcInception,
+                                @Column("expiration_ts") ZonedDateTime utcExpiration,
+                                @Column("vat") BigDecimal vat,
+                                @Column("vat_type") VatType vatType,
+                                @Column("src_price_cts") Integer srcPriceCts,
+                                @Column("service_type") AdditionalServiceType type,
+                                @Column("supplement_policy") SupplementPolicy supplementPolicy,
+                                @Column("currency_code") String currencyCode,
+                                @Column("available_count") Integer availableItems,
+                                @Column("price_min_cts") Integer minPriceCts,
+                                @Column("price_max_cts") Integer maxPriceCts) {
 
 
     public enum VatType {
@@ -64,13 +79,13 @@ public class AdditionalService {
         OPTIONAL_MAX_AMOUNT_PER_TICKET {
             @Override
             public boolean isValid(int quantity, AdditionalService as, int ticketsCount) {
-                return quantity <= ticketsCount * as.getMaxQtyPerOrder();
+                return quantity <= ticketsCount * as.maxQtyPerOrder();
             }
         },
         OPTIONAL_MAX_AMOUNT_PER_RESERVATION {
             @Override
             public boolean isValid(int quantity, AdditionalService as, int selectionCount) {
-                return quantity <= as.getMaxQtyPerOrder();
+                return quantity <= as.maxQtyPerOrder();
             }
         };
 
@@ -98,62 +113,6 @@ public class AdditionalService {
         }
     }
 
-    private final int id;
-    private final int eventId;
-    private final boolean fixPrice;
-    private final int ordinal;
-    private final int availableQuantity;
-    private final int maxQtyPerOrder;
-    private final ZonedDateTime utcInception;
-    private final ZonedDateTime utcExpiration;
-    private final BigDecimal vat;
-    private final VatType vatType;
-    private final AdditionalServiceType type;
-    private final SupplementPolicy supplementPolicy;
-
-    private final Integer srcPriceCts;
-    private final String currencyCode;
-    private final Integer availableItems;
-
-    private final Integer minPriceCts;
-    private final Integer maxPriceCts;
-
-    public AdditionalService(@Column("id") int id,
-                             @Column("event_id_fk") int eventId,
-                             @Column("fix_price") boolean fixPrice,
-                             @Column("ordinal") int ordinal,
-                             @Column("available_qty") int availableQuantity,
-                             @Column("max_qty_per_order") int maxQtyPerOrder,
-                             @Column("inception_ts") ZonedDateTime utcInception,
-                             @Column("expiration_ts") ZonedDateTime utcExpiration,
-                             @Column("vat") BigDecimal vat,
-                             @Column("vat_type") VatType vatType,
-                             @Column("src_price_cts") Integer srcPriceCts,
-                             @Column("service_type") AdditionalServiceType type,
-                             @Column("supplement_policy") SupplementPolicy supplementPolicy,
-                             @Column("currency_code") String currencyCode,
-                             @Column("available_count") Integer availableItems,
-                             @Column("price_min_cts") Integer minPriceCts,
-                             @Column("price_max_cts") Integer maxPriceCts) {
-        this.id = id;
-        this.eventId = eventId;
-        this.fixPrice = fixPrice;
-        this.ordinal = ordinal;
-        this.availableQuantity = availableQuantity;
-        this.maxQtyPerOrder = maxQtyPerOrder;
-        this.utcInception = utcInception;
-        this.utcExpiration = utcExpiration;
-        this.vat = vat;
-        this.vatType = vatType;
-        this.srcPriceCts = srcPriceCts;
-        this.type = type;
-        this.supplementPolicy = supplementPolicy;
-        this.currencyCode = currencyCode;
-        this.availableItems = availableItems;
-        this.minPriceCts = minPriceCts;
-        this.maxPriceCts = maxPriceCts;
-    }
-
     public ZonedDateTime getInception(ZoneId zoneId) {
         return Optional.ofNullable(utcInception).map(i -> i.withZoneSameInstant(zoneId)).orElseGet(() -> ZonedDateTime.now(ClockProvider.clock().withZone(zoneId)).minus(1L, ChronoUnit.HOURS));
     }
@@ -164,7 +123,7 @@ public class AdditionalService {
 
     public boolean getSaleable() {
         ZonedDateTime now = ZonedDateTime.now(ClockProvider.clock());
-        return getUtcInception().isBefore(now) && getUtcExpiration().isAfter(now);
+        return utcInception().isBefore(now) && utcExpiration().isAfter(now);
     }
 
     public BigDecimal getMinPrice() {
@@ -203,17 +162,11 @@ public class AdditionalService {
     }
 
     public static PriceContainer.VatStatus getVatStatus(VatType vatType, PriceContainer.VatStatus eventVatStatus) {
-        switch (vatType) {
-            case INHERITED:
-                return eventVatStatus;
-            case NONE:
-                return PriceContainer.VatStatus.NONE;
-            case CUSTOM_EXCLUDED:
-                return PriceContainer.VatStatus.NOT_INCLUDED;
-            case CUSTOM_INCLUDED:
-                return PriceContainer.VatStatus.INCLUDED;
-            default:
-                return PriceContainer.VatStatus.NOT_INCLUDED;
-        }
+        return switch (vatType) {
+            case INHERITED -> eventVatStatus;
+            case NONE -> PriceContainer.VatStatus.NONE;
+            case CUSTOM_INCLUDED -> PriceContainer.VatStatus.INCLUDED;
+            default -> PriceContainer.VatStatus.NOT_INCLUDED;
+        };
     }
 }

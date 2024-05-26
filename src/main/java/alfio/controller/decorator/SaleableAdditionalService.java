@@ -45,7 +45,7 @@ public class SaleableAdditionalService implements PriceContainer {
     }
 
     public boolean isExpired() {
-        return getUtcExpiration().isBefore(ZonedDateTime.now(clock));
+        return utcExpiration().isBefore(ZonedDateTime.now(clock));
     }
 
     public boolean getExpired() {
@@ -53,11 +53,11 @@ public class SaleableAdditionalService implements PriceContainer {
     }
 
     public boolean getSaleInFuture() {
-        return getUtcInception().isAfter(ZonedDateTime.now(clock));
+        return utcInception().isAfter(ZonedDateTime.now(clock));
     }
 
     public boolean getFree() {
-        return isFixPrice() && getFinalPrice().compareTo(BigDecimal.ZERO) == 0;
+        return fixPrice() && getFinalPrice().compareTo(BigDecimal.ZERO) == 0;
     }
 
     public ZonedDateTime getZonedInception() {
@@ -70,13 +70,13 @@ public class SaleableAdditionalService implements PriceContainer {
 
     @Override
     public int getSrcPriceCts() {
-        return Optional.ofNullable(additionalService.getSrcPriceCts()).orElse(0);
+        return Optional.ofNullable(additionalService.srcPriceCts()).orElse(0);
     }
 
     @Override
     public Optional<PromoCodeDiscount> getDiscount() {
         return Optional.ofNullable(promoCodeDiscount)
-            .filter(x -> x.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT && getType() != AdditionalService.AdditionalServiceType.DONATION);
+            .filter(x -> x.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT && type() != AdditionalService.AdditionalServiceType.DONATION);
     }
 
     @Override
@@ -94,7 +94,7 @@ public class SaleableAdditionalService implements PriceContainer {
 
     @Override
     public VatStatus getVatStatus() {
-        return AdditionalService.getVatStatus(getVatType(), event.getVatStatus());
+        return AdditionalService.getVatStatus(vatType(), event.getVatStatus());
     }
 
     public String getFormattedFinalPrice() {
@@ -102,7 +102,7 @@ public class SaleableAdditionalService implements PriceContainer {
     }
 
     public boolean getSupportsDiscount() {
-        return getType() != AdditionalService.AdditionalServiceType.DONATION && isFixPrice()
+        return type() != AdditionalService.AdditionalServiceType.DONATION && fixPrice()
             && promoCodeDiscount != null && promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT;
     }
 
@@ -111,7 +111,7 @@ public class SaleableAdditionalService implements PriceContainer {
     }
 
     public boolean getVatIncluded() {
-        switch (getVatType()) {
+        switch (vatType()) {
             case INHERITED:
                 return event.isVatIncluded();
             case CUSTOM_INCLUDED:
@@ -122,15 +122,15 @@ public class SaleableAdditionalService implements PriceContainer {
     }
 
     public BigDecimal getVatPercentage() {
-        AdditionalService.VatType vatType = getVatType();
+        AdditionalService.VatType vatType = vatType();
         if(vatType == AdditionalService.VatType.INHERITED) {
             return event.getVat();
         }
-        return Optional.ofNullable(additionalService.getVat()).orElse(BigDecimal.ZERO);
+        return Optional.ofNullable(additionalService.vat()).orElse(BigDecimal.ZERO);
     }
 
     public boolean getVatApplies() {
-        return getVatType() != AdditionalService.VatType.NONE;
+        return vatType() != AdditionalService.VatType.NONE;
     }
 
 
@@ -139,7 +139,7 @@ public class SaleableAdditionalService implements PriceContainer {
     }
 
     public boolean isSaleable() {
-        return !isExpired() && additionalService.getAvailableItems() > 0;
+        return !isExpired() && additionalService.availableItems() > 0;
     }
 
     private interface Exclusions {

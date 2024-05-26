@@ -39,15 +39,15 @@ public class AdditionalServicePriceContainer implements PriceContainer {
 
     @Override
     public int getSrcPriceCts() {
-        if(additionalService.isFixPrice()) {
-            return additionalService.getSrcPriceCts();
+        if(additionalService.fixPrice()) {
+            return additionalService.srcPriceCts();
         }
         return Optional.ofNullable(customAmount).map(a -> MonetaryUtil.unitToCents(a, currencyCode)).orElse(0);
     }
 
     @Override
     public Optional<PromoCodeDiscount> getDiscount() {
-        return Optional.ofNullable(promoCodeDiscount).filter(d -> additionalService.getType() != AdditionalService.AdditionalServiceType.DONATION);
+        return Optional.ofNullable(promoCodeDiscount).filter(d -> additionalService.type() != AdditionalService.AdditionalServiceType.DONATION);
     }
 
     @Override
@@ -57,7 +57,7 @@ public class AdditionalServicePriceContainer implements PriceContainer {
 
     @Override
     public Optional<BigDecimal> getOptionalVatPercentage() {
-        if(additionalService.getVatType() == AdditionalService.VatType.INHERITED) {
+        if(additionalService.vatType() == AdditionalService.VatType.INHERITED) {
             return Optional.ofNullable(vatPercentage);
         } else {
             return Optional.empty();
@@ -66,7 +66,7 @@ public class AdditionalServicePriceContainer implements PriceContainer {
 
     @Override
     public VatStatus getVatStatus() {
-        if(additionalService.getVatType() == AdditionalService.VatType.INHERITED) {
+        if(additionalService.vatType() == AdditionalService.VatType.INHERITED) {
             return vatStatus;
         } else {
             return VatStatus.NONE;

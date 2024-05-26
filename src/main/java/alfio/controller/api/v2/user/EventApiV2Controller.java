@@ -204,17 +204,17 @@ public class EventApiV2Controller {
                 .collect(Collectors.toList());
 
             // will be used for fetching descriptions and titles for all the languages
-            var saleableAdditionalServicesIds = saleableAdditionalServices.stream().map(SaleableAdditionalService::getId).collect(Collectors.toList());
+            var saleableAdditionalServicesIds = saleableAdditionalServices.stream().map(SaleableAdditionalService::id).collect(Collectors.toList());
 
             var additionalServiceTexts = additionalServiceManager.getDescriptionsByAdditionalServiceIds(saleableAdditionalServicesIds);
 
             var additionalServicesRes = saleableAdditionalServices.stream().map(as -> {
                 var expiration = Formatters.getFormattedDate(event, as.getZonedExpiration(), "common.ticket-category.date-format", messageSource);
                 var inception = Formatters.getFormattedDate(event, as.getZonedInception(), "common.ticket-category.date-format", messageSource);
-                var title = additionalServiceTexts.getOrDefault(as.getId(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.TITLE, Collections.emptyMap());
-                var description = Formatters.applyCommonMark(additionalServiceTexts.getOrDefault(as.getId(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.DESCRIPTION, Collections.emptyMap()), messageSource);
-                return new AdditionalService(as.getId(), as.getType(), as.getSupplementPolicy(),
-                    as.isFixPrice(), as.getAvailableItems(), as.getMaxQtyPerOrder(),
+                var title = additionalServiceTexts.getOrDefault(as.id(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.TITLE, Collections.emptyMap());
+                var description = Formatters.applyCommonMark(additionalServiceTexts.getOrDefault(as.id(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.DESCRIPTION, Collections.emptyMap()), messageSource);
+                return new AdditionalService(as.id(), as.type(), as.supplementPolicy(),
+                    as.fixPrice(), as.availableItems(), as.maxQtyPerOrder(),
                     as.getFree(), as.getFormattedFinalPrice(), as.getSupportsDiscount(), as.getDiscountedPrice(), as.getVatApplies(), as.getVatIncluded(), as.getVatPercentage().toString(),
                     as.isExpired(), as.getSaleInFuture(),
                     inception, expiration, title, description);

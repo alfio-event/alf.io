@@ -368,9 +368,9 @@ public class EventModification {
                 Optional<PriceContainer> optionalPrice = Optional.ofNullable(this.priceContainer);
                 BigDecimal finalPrice = optionalPrice.map(PriceContainer::getFinalPrice).orElse(BigDecimal.ZERO);
                 String currencyCode = optionalPrice.map(PriceContainer::getCurrencyCode).orElse("");
-                return new AdditionalService(src.getId(), Optional.ofNullable(src.getSrcPriceCts()).map(p -> MonetaryUtil.centsToUnit(p, src.getCurrencyCode())).orElse(BigDecimal.ZERO),
-                    src.isFixPrice(), src.getOrdinal(), src.getAvailableQuantity(), src.getMaxQtyPerOrder(), DateTimeModification.fromZonedDateTime(src.getInception(zoneId)),
-                    DateTimeModification.fromZonedDateTime(src.getExpiration(zoneId)), src.getVat(), src.getVatType(), additionalServiceFields, title, description, finalPrice, currencyCode, src.getType(), src.getSupplementPolicy(), src.getMinPrice(), src.getMaxPrice());
+                return new AdditionalService(src.id(), Optional.ofNullable(src.srcPriceCts()).map(p -> MonetaryUtil.centsToUnit(p, src.currencyCode())).orElse(BigDecimal.ZERO),
+                    src.fixPrice(), src.ordinal(), src.availableQuantity(), src.maxQtyPerOrder(), DateTimeModification.fromZonedDateTime(src.getInception(zoneId)),
+                    DateTimeModification.fromZonedDateTime(src.getExpiration(zoneId)), src.vat(), src.vatType(), additionalServiceFields, title, description, finalPrice, currencyCode, src.type(), src.supplementPolicy(), src.getMinPrice(), src.getMaxPrice());
             }
 
         }

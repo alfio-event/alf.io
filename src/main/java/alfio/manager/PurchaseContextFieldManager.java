@@ -191,7 +191,7 @@ public class PurchaseContextFieldManager {
             null,
             as.getMinPrice() != null ? MonetaryUtil.unitToCents(as.getMinPrice(), currencyCode) : null,
             as.getMaxPrice() != null ? MonetaryUtil.unitToCents(as.getMaxPrice(), currencyCode) : null).getChecksum();
-        return additionalServiceRepository.loadAllForEvent(eventId).stream().filter(as1 -> as1.getChecksum().equals(checksum)).findFirst().map(AdditionalService::getId).orElse(null);
+        return additionalServiceRepository.loadAllForEvent(eventId).stream().filter(as1 -> as1.getChecksum().equals(checksum)).findFirst().map(AdditionalService::id).orElse(null);
     }
 
     public void updateFieldDescriptions(Map<String, TicketFieldDescriptionModification> descriptions, int organizationId) {

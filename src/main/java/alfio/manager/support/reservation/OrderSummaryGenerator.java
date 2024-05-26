@@ -198,7 +198,7 @@ public class OrderSummaryGenerator {
         summary.addAll(additionalServicesToInclude
             .map(entry -> {
                 String language = locale.getLanguage();
-                AdditionalServiceText title = additionalServiceTextRepository.findBestMatchByLocaleAndType(entry.getKey().getId(), language, AdditionalServiceText.TextType.TITLE);
+                AdditionalServiceText title = additionalServiceTextRepository.findBestMatchByLocaleAndType(entry.getKey().id(), language, AdditionalServiceText.TextType.TITLE);
                 if(!title.getLocale().equals(language) || title.getId() == -1) {
                     log.debug("additional service {}: title not found for locale {}", title.getAdditionalServiceId(), language);
                 }

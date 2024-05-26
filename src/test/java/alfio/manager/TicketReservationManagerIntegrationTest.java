@@ -512,7 +512,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 
         AdditionalServiceReservationModification asrm = new AdditionalServiceReservationModification();
-        asrm.setAdditionalServiceId(additionalServiceRepository.loadAllForEvent(event.getId()).get(0).getId());
+        asrm.setAdditionalServiceId(additionalServiceRepository.loadAllForEvent(event.getId()).get(0).id());
         asrm.setQuantity(1);
 
         ASReservationWithOptionalCodeModification asMod = new ASReservationWithOptionalCodeModification(asrm, Optional.empty());

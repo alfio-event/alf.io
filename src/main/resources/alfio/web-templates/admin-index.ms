@@ -32,6 +32,7 @@
     <script nonce="{{nonce}}">
         window.ALFIO_CONTEXT_PATH = "{{contextPath}}";
         window.USER_IS_OWNER = {{isOwner}};
+        window.SUPPORTED_LANGUAGES = {{#render-json}}supportedLanguages{{/render-json}};
     </script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/lodash/lodash.min.js"></script>

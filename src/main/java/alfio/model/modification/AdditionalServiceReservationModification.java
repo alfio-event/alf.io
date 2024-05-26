@@ -29,8 +29,8 @@ public class AdditionalServiceReservationModification implements Serializable {
     private Integer quantity = 1;
 
     public boolean isQuantityValid(AdditionalService as, int selectionCount) {
-        if(quantity != null && as.getSupplementPolicy() != null) {
-            return as.getSupplementPolicy().isValid(quantity, as, selectionCount);
+        if(quantity != null && as.supplementPolicy() != null) {
+            return as.supplementPolicy().isValid(quantity, as, selectionCount);
         } else {
             return true;
         }
