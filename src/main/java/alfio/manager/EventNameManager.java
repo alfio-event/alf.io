@@ -45,7 +45,7 @@ public class EventNameManager {
     private static final RandomStringGenerator RANDOM_STRING_GENERATOR = new RandomStringGenerator.Builder()
         .withinRange(new char[] {'a', 'z'}, new char[] {'A', 'Z'} , new char[] { '0', '9'})
         .usingRandom(RANDOM::nextInt)
-        .build();
+        .get();
     private final EventAdminRepository eventAdminRepository;
 
     /**

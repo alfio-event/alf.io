@@ -1,6 +1,7 @@
 import {LitElement, html, nothing, TemplateResult} from 'lit';
 import { customElement, property } from 'lit/decorators.js'
 import { repeat } from 'lit/directives/repeat.js';
+import { classMap } from 'lit/directives/class-map.js';
 import {AdditionalItemService, UsageCount} from "../../service/additional-item.ts";
 import {Task} from "@lit/task";
 import {AlfioEvent, ContentLanguage} from "../../model/event.ts";
@@ -32,11 +33,11 @@ export class AdditionalItemList extends LitElement {
     pageTitle?: string;
     @property({ type: String, attribute: 'data-icon' })
     icon?: string;
+    editActive: boolean = false;
 
     private retrieveListTask = new Task<ReadonlyArray<string>, Model>(this,
         async ([publicIdentifier]) => {
             const event = (await EventService.load(publicIdentifier)).event;
-
             const [items, count] = await Promise.all([AdditionalItemService.loadAll(event.id), AdditionalItemService.useCount(event.id)]);
             return {
                 items: items.filter(i => i.type === this.type),
@@ -67,6 +68,7 @@ export class AdditionalItemList extends LitElement {
                             </a>` : nothing}
                     </h3>
                 </div>
+
                 ${this.iterateItems(model)}
 
                 ${this.generateFooter(model)}
@@ -92,9 +94,9 @@ export class AdditionalItemList extends LitElement {
         const footer = () => html`
             <div class="row">
                 <div class="col-xs-12">
-                    <button type="button" class="btn btn-success" @click=${this.addNew} data-ng-if="!ctrl.editActive"><i class="fa fa-plus"></i> Add new</button></div>
+                    <button type="button" class="btn btn-success" @click=${this.addNew}><i class="fa fa-plus"></i> Add new</button></div>
             </div>`;
-        return when(model.event.freeOfCharge, warning, footer);
+        return when(model.event.freeOfCharge, warning, () => renderIf(() => !this.editActive, footer));
     }
 
     private iterateItems(model: Model): TemplateResult {
@@ -157,7 +159,9 @@ export class AdditionalItemList extends LitElement {
                                     </div>`)}
                             </div>
                             <div class="hidden-xs col-md-7">
-                                <p class="text-muted" data-ng-repeat="pair in item.zippedTitleAndDescriptions" title="{{pair[1].locale}}" ng-class="{'text-danger': pair[1].value === ''}">{{pair[1].locale}} <display-commonmark-preview button-text="View description" text="pair[1].value"></display-commonmark-preview></p>
+                                ${repeat(item.description, d => d.id, (d) => html`
+                                    <p class=${classMap({'text-muted': true, 'text-danger': d.value === ''})} title=${d.locale}>${d.locale} <alfio-display-commonmark-preview data-button-text="View description" data-text=${d.value}></alfio-display-commonmark-preview></p>
+                                `)}
                             </div>
                         </div>
                     </div>

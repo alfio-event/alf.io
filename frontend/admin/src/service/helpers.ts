@@ -16,6 +16,13 @@ export function postJson(url: string, payload: any): Promise<Response> {
     })
 }
 
+export function fetchJson<T>(url: string) : Promise<T> {
+    return fetch(url, {
+        method: 'GET',
+        credentials: 'include'
+    }).then(r => r.json());
+}
+
 export function renderIf(predicate: () => boolean, template: () => TemplateResult): TemplateResult {
     return html`${when(predicate(), template, () => nothing)}`;
 }

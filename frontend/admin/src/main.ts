@@ -8,6 +8,8 @@ import { setBasePath } from '@shoelace-style/shoelace/dist/utilities/base-path.j
 import "@shoelace-style/shoelace/dist/components/format-date/format-date.js";
 import "@shoelace-style/shoelace/dist/components/format-number/format-number.js";
 import "@shoelace-style/shoelace/dist/components/divider/divider.js";
+import "@shoelace-style/shoelace/dist/components/dialog/dialog.js";
+import "@shoelace-style/shoelace/dist/components/button/button.js";
 
 // imported components
 import '@shoelace-style/shoelace/dist/components/card/card.js';
@@ -27,3 +29,4 @@ if (import.meta.env.MODE === 'development') {
 export { NewElement } from './new-element';
 export { ProjectBanner } from './project-banner/project-banner';
 export { AdditionalItemList } from './event/additional-item-list/additional-item-list';
+export { DisplayCommonMarkPreview } from './display-common-mark-preview/display-common-mark-preview';
