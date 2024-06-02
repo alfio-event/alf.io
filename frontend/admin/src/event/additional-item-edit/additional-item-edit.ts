@@ -12,14 +12,14 @@ import {SlDialog, SlRequestCloseEvent} from "@shoelace-style/shoelace";
 import {AlfioEvent, ContentLanguage} from "../../model/event.ts";
 import {repeat} from "lit/directives/repeat.js";
 import {TanStackFormController} from "@tanstack/lit-form";
-import {dialog, pageHeader, row} from "../../styles.ts";
+import {dialog, form, pageHeader, row} from "../../styles.ts";
 import {extractDateTime, notifyChange} from "../../service/helpers.ts";
 import {classMap} from "lit/directives/class-map.js";
 
 @customElement('alfio-additional-item-edit')
 export class AdditionalItemEdit extends LitElement {
 
-    static styles = [pageHeader, row, dialog];
+    static styles = [pageHeader, row, dialog, form];
 
     @property({ type: Number, attribute: 'data-item-id' })
     itemId?: number;
@@ -93,7 +93,14 @@ export class AdditionalItemEdit extends LitElement {
                     <div>
                         ${this.#form.field({name: 'availabilityAndPrices'}, (field) => this.renderAvailabilityAndPrices(field.state.value))}
                     </div>
-                    <sl-button slot="footer" variant="primary" @click=${this.close}>Close</sl-button>
+                    <div slot="footer">
+                        <sl-divider></sl-divider>
+                        <div class="row" style="--alfio-row-cols: 3">
+                            <sl-button variant="default" size="large" @click=${this.close}>Close</sl-button>
+                            <div></div>
+                            <sl-button variant="success"  size="large" @click=${() => alert('TODO')}>Save</sl-button>
+                        </div>
+                    </div>
                 </form>
             </sl-dialog>
         `;
@@ -130,11 +137,10 @@ export class AdditionalItemEdit extends LitElement {
                             }},
                         (field) => {
                             return html`
-                                <sl-textarea required .value=${field.state.value} rows="2" @sl-change=${(e: InputEvent) => notifyChange(e, field)}>
-                                    <div slot="label">
-                                        Description <alfio-display-commonmark-preview data-button-text="preview" .text=${field.state.value}></alfio-display-commonmark-preview>
+                                <sl-textarea label="Description" required .value=${field.state.value} rows="2" @sl-change=${(e: InputEvent) => notifyChange(e, field)}>
+                                    <div slot="help-text">
+                                        <alfio-display-commonmark-preview data-button-text="preview" .text=${field.state.value}></alfio-display-commonmark-preview>
                                     </div>
-                                    <div slot="help-text">TODO</div>
                                 </sl-textarea>
                             `
                     })}

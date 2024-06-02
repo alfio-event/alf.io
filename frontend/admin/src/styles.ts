@@ -38,3 +38,15 @@ export const dialog = css`
         --sl-z-index-dialog: 1031; // bootstrap's navbar + 1
     }
 `;
+
+export const form = css`
+    sl-input::part(form-control-label),
+    sl-textarea::part(form-control-label),
+    sl-select::part(form-control-label){
+        font-weight: bold;
+    }
+
+    sl-input, sl-textarea, sl-select {
+        margin-top: 15px;
+    }
+`;
