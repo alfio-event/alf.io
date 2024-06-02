@@ -18,7 +18,7 @@ export interface AlfioEvent {
     ticketCategories:                TicketCategory[];
     description:                     LocalizedContent;
     title:                           LocalizedContent;
-    begin:                           Date;
+    begin:                           string;
     format:                          string;
     currency:                        string;
     formattedBegin:                  string;
@@ -29,7 +29,7 @@ export interface AlfioEvent {
     locales:                         number;
     freeOfCharge:                    boolean;
     sameDay:                         boolean;
-    end:                             Date;
+    end:                             string;
     online:                          boolean;
     organizationId:                  number;
     regularPrice:                    number;
@@ -37,6 +37,7 @@ export interface AlfioEvent {
     termsAndConditionsUrl:           string;
     privacyPolicyUrl:                string;
     vatIncluded:                     boolean;
+    vatPercentage:                   number;
     beginTimeZoneOffset:             number;
     endTimeZoneOffset:               number;
     isOnline:                        boolean;

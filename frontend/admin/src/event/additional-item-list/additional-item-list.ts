@@ -1,7 +1,7 @@
-import {LitElement, html, nothing, TemplateResult} from 'lit';
-import { customElement, property } from 'lit/decorators.js'
-import { repeat } from 'lit/directives/repeat.js';
-import { classMap } from 'lit/directives/class-map.js';
+import {html, LitElement, nothing, TemplateResult} from 'lit';
+import {customElement, property, query, state} from 'lit/decorators.js'
+import {repeat} from 'lit/directives/repeat.js';
+import {classMap} from 'lit/directives/class-map.js';
 import {AdditionalItemService, UsageCount} from "../../service/additional-item.ts";
 import {Task} from "@lit/task";
 import {AlfioEvent, ContentLanguage} from "../../model/event.ts";
@@ -10,6 +10,8 @@ import {EventService} from "../../service/event.ts";
 import {renderIf, supportedLanguages} from "../../service/helpers.ts";
 import {pageHeader} from "../../styles.ts";
 import {when} from "lit/directives/when.js";
+import {SlCloseEvent} from "@shoelace-style/shoelace";
+import {AdditionalItemEdit} from "../additional-item-edit/additional-item-edit.ts";
 
 interface Model {
     items: Array<AdditionalItem>;
@@ -33,7 +35,11 @@ export class AdditionalItemList extends LitElement {
     pageTitle?: string;
     @property({ type: String, attribute: 'data-icon' })
     icon?: string;
+    @property({ type: Number })
+    editedItemId: number | null = null;
+    @state()
     editActive: boolean = false;
+
 
     private retrieveListTask = new Task<ReadonlyArray<string>, Model>(this,
         async ([publicIdentifier]) => {
@@ -54,6 +60,9 @@ export class AdditionalItemList extends LitElement {
 
     static styles = [pageHeader];
 
+    @query("alfio-additional-item-edit")
+    itemEditComponent?: AdditionalItemEdit;
+
     render() {
 
         return this.retrieveListTask.render({
@@ -63,11 +72,18 @@ export class AdditionalItemList extends LitElement {
                     <h3>
                         <sl-icon name=${model.icon}></sl-icon> ${model.title}
                         ${ model.allowDownload ?
-                            html`<a class="btn btn-default pull-right" href="/admin/api/events/${model.event.publicIdentifier}/additional-services/${this.type}}/export" target="_blank" rel="noopener">
-                                <i class="fa fa-download"></i> Export purchased items
-                            </a>` : nothing}
+                            html`<sl-button href=${`/admin/api/events/${model.event.publicIdentifier}/additional-services/${this.type}/export`} target="_blank" rel="noopener">
+                                    <sl-icon name="download"></sl-icon> Export purchased items
+                                </sl-button>` : nothing}
                     </h3>
                 </div>
+
+                <alfio-additional-item-edit
+                    .event=${model.event}
+                    .supportedLanguages=${model.event.contentLanguages}
+                    data-item-id=${this.editedItemId}
+                    data-type=${this.type}
+                    @sl-after-hide=${this.editDialogClosed}></alfio-additional-item-edit>
 
                 ${this.iterateItems(model)}
 
@@ -77,24 +93,38 @@ export class AdditionalItemList extends LitElement {
         });
     }
 
-    addNew(): void {
-        console.log('create new');
+    async addNew(): Promise<void> {
+        this.editedItemId = null;
+        if (this.itemEditComponent != null) {
+            this.editActive = await this.itemEditComponent.open();
+        }
     }
 
-    edit(item: AdditionalItem): void {
-        console.log('edit item', item.id);
+    async edit(item: AdditionalItem): Promise<void> {
+        this.editedItemId = item.id;
+        if (this.itemEditComponent != null) {
+            this.editActive = await this.itemEditComponent.open();
+        }
+    }
+
+    delete(item: AdditionalItem): void {
+        console.log('delete item', item.id);
     }
 
     private generateFooter(model: Model): TemplateResult {
         const warning = () => html`
-            <div class="alert alert-warning" data-ng-if="ctrl.eventIsFreeOfCharge">
+            <div class="alert alert-warning">
                 <p><span class="fa fa-warning"></span> Cannot add <span>${model.type === 'DONATION' ? 'donations' : 'additional options'}</span> to an event marked as "free of charge".</p>
                 <p>Please change this setting, add a default price > 0, specify currency and Taxes</p>
             </div>`;
         const footer = () => html`
             <div class="row">
-                <div class="col-xs-12">
-                    <button type="button" class="btn btn-success" @click=${this.addNew}><i class="fa fa-plus"></i> Add new</button></div>
+                <div class="col-xs-12" style="font-size: 20px">
+                    <sl-button type="button" variant="success" @click=${this.addNew} size="large">
+                        <sl-icon name="plus-circle" slot="prefix"></sl-icon>
+                        Add new
+                    </sl-button>
+                </div>
             </div>`;
         return when(model.event.freeOfCharge, warning, () => renderIf(() => !this.editActive, footer));
     }
@@ -115,8 +145,8 @@ export class AdditionalItemList extends LitElement {
                                 </div>
                                 <div class="col-xs-3">
                                     <div class="pull-right">
-                                        <button class="btn btn-sm btn-default" title="edit" @click=${() => this.edit(item)} type="button"><i class="fa fa-edit"></i> edit</button>
-                                        ${renderIf(() => countUsage(model, item.id) > 0, () => html`<button class="btn btn-sm btn-default" ng-if="!(ctrl.additionalServiceUseCount[item.id] > 0)" title="delete" data-ng-click="ctrl.delete(item)" type="button"><i class="fa fa-trash"></i> delete</button>`)}
+                                        <sl-button variant="default" title="edit" @click=${() => this.edit(item)} type="button"><sl-icon name="edit" slot="prefix"></sl-icon> edit</sl-button>
+                                        ${renderIf(() => countUsage(model, item.id) === 0, () => html`<sl-button title="delete" @click=${() => this.delete(item)} type="button"><sl-icon name="trash" slot="prefix"></sl-icon> delete</sl-button>`)}
                                     </div>
                                 </div>
                             </div>
@@ -171,6 +201,12 @@ export class AdditionalItemList extends LitElement {
         })}`;
     }
 
+    private editDialogClosed(e: SlCloseEvent) {
+        console.log(e.detail);
+        this.editedItemId = null;
+        this.editActive = false;
+        // TODO refresh list using task
+    }
 }
 
 function countUsage(model: Model, itemId: number): number {

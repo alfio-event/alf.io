@@ -16,6 +16,10 @@ import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import '@shoelace-style/shoelace/dist/components/alert/alert';
+import '@shoelace-style/shoelace/dist/components/input/input';
+import '@shoelace-style/shoelace/dist/components/textarea/textarea';
+import '@shoelace-style/shoelace/dist/components/select/select';
+import '@shoelace-style/shoelace/dist/components/option/option';
 
 
 
@@ -30,3 +34,4 @@ export { NewElement } from './new-element';
 export { ProjectBanner } from './project-banner/project-banner';
 export { AdditionalItemList } from './event/additional-item-list/additional-item-list';
 export { DisplayCommonMarkPreview } from './display-common-mark-preview/display-common-mark-preview';
+export { AdditionalItemEdit } from './event/additional-item-edit/additional-item-edit';
