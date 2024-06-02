@@ -15,7 +15,7 @@ export const supplementPolicyDescriptions: {[key: string]: string} = {
     'MANDATORY_ONE_FOR_TICKET': 'Mandatory fixed fee, 1 per ticket',
     'MANDATORY_PERCENTAGE_RESERVATION': 'Mandatory percentage fee, entire reservation (including user-selected Additional Items, if any)',
     'MANDATORY_PERCENTAGE_FOR_TICKET': 'Mandatory percentage fee for tickets',
-    'OPTIONAL_UNLIMITED_AMOUNT': 'User-selected item, quantity unlimited',
+    'OPTIONAL_UNLIMITED_AMOUNT': 'User-selected item',
     'OPTIONAL_MAX_AMOUNT_PER_TICKET': 'User-selected item, limited quantity per ticket',
     'OPTIONAL_MAX_AMOUNT_PER_RESERVATION': 'User-selected item, limited quantity per reservation',
 }

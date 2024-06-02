@@ -14,6 +14,7 @@ import {repeat} from "lit/directives/repeat.js";
 import {TanStackFormController} from "@tanstack/lit-form";
 import {dialog, pageHeader, row} from "../../styles.ts";
 import {extractDateTime, notifyChange} from "../../service/helpers.ts";
+import {classMap} from "lit/directives/class-map.js";
 
 @customElement('alfio-additional-item-edit')
 export class AdditionalItemEdit extends LitElement {
@@ -76,7 +77,8 @@ export class AdditionalItemEdit extends LitElement {
             supplementPolicy: "OPTIONAL_UNLIMITED_AMOUNT",
             inception: `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}T${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`,
             expiration: event.begin,
-            maxQtyPerOrder: 1
+            maxQtyPerOrder: null,
+            availableQuantity: null
         }
     }
 
@@ -116,7 +118,7 @@ export class AdditionalItemEdit extends LitElement {
                     }},
                     (field) => {
                         return html`
-                            <sl-input placeholder="Title" label="Title" .value=${field.state.value} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
+                            <sl-input placeholder="Title" label="Title" required .value=${field.state.value} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
                         `
                     })}
                     ${this.#form.field({name: `descriptions[${index}].description`, validators: {
@@ -128,7 +130,7 @@ export class AdditionalItemEdit extends LitElement {
                             }},
                         (field) => {
                             return html`
-                                <sl-textarea .value=${field.state.value} rows="2" @sl-change=${(e: InputEvent) => notifyChange(e, field)}>
+                                <sl-textarea required .value=${field.state.value} rows="2" @sl-change=${(e: InputEvent) => notifyChange(e, field)}>
                                     <div slot="label">
                                         Description <alfio-display-commonmark-preview data-button-text="preview" .text=${field.state.value}></alfio-display-commonmark-preview>
                                     </div>
@@ -147,7 +149,7 @@ export class AdditionalItemEdit extends LitElement {
                 ${this.#form.field({name: `availabilityAndPrices.supplementPolicy`},
                     (field) => {
                         return html`
-                            <sl-select label="Additional Item Policy" value=${field.state.value} @sl-change=${(e: InputEvent) => notifyChange(e, field)}>
+                            <sl-select required label="Additional Item Policy" value=${field.state.value} @sl-change=${(e: InputEvent) => notifyChange(e, field)}>
                                 ${repeat(Object.keys(supplementPolicyDescriptions), k => k, (k) => html`
                                     <sl-option value=${k}>${supplementPolicyDescriptions[k]}</sl-option>
                                 `)}
@@ -165,7 +167,7 @@ export class AdditionalItemEdit extends LitElement {
                                 },
                             }},
                         (field) => {
-                            return html`<sl-input value=${extractDateTime(field.state.value)} type="datetime-local" label="Valid from"  @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>`
+                            return html`<sl-input required value=${extractDateTime(field.state.value)} type="datetime-local" label="Valid from"  @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>`
                         })
                     }
                 </div>
@@ -178,7 +180,7 @@ export class AdditionalItemEdit extends LitElement {
                                 },
                             }},
                         (field) => {
-                            return html`<sl-input .value=${extractDateTime(field.state.value)} type="datetime-local" label="Valid to" @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>`
+                            return html`<sl-input required .value=${extractDateTime(field.state.value)} type="datetime-local" label="Valid to" @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>`
                         })
                     }
                 </div>
@@ -188,7 +190,7 @@ export class AdditionalItemEdit extends LitElement {
                     ${this.#form.field({name: `availabilityAndPrices.price`},
                         (field) => {
                             return html`
-                                <sl-input .value=${field.state.value} label="Price" @sl-change=${(e: InputEvent) => notifyChange(e, field)}>
+                                <sl-input required .value=${field.state.value} label="Price" @sl-change=${(e: InputEvent) => notifyChange(e, field)}>
                                     <div slot="suffix">${isMandatoryPercentage(formValue.supplementPolicy) ? '%' : this.event?.currency}</div>
                                 </sl-input>`
                         })
@@ -198,7 +200,7 @@ export class AdditionalItemEdit extends LitElement {
                     ${this.#form.field({name: `availabilityAndPrices.vatType`},
                         (field) => {
                             return html`
-                                <sl-select label="Tax Policy" value=${field.state.value}  @sl-change=${(e: InputEvent) => notifyChange(e, field)}>
+                                <sl-select required label="Tax Policy" value=${field.state.value}  @sl-change=${(e: InputEvent) => notifyChange(e, field)}>
                                     ${repeat(Object.keys(taxTypeDescriptions), k => k, (k) => html`
                                         <sl-option value=${k}>${taxTypeDescriptions[k]}</sl-option>
                                     `)}
@@ -212,7 +214,6 @@ export class AdditionalItemEdit extends LitElement {
     }
 
     private handleContextBasedFields(formValue: AvailabilityAndPricesForm): TemplateResult {
-
         switch (formValue.supplementPolicy) {
             case "MANDATORY_PERCENTAGE_RESERVATION":
             case "MANDATORY_PERCENTAGE_FOR_TICKET":
@@ -245,19 +246,42 @@ export class AdditionalItemEdit extends LitElement {
             case "OPTIONAL_MAX_AMOUNT_PER_RESERVATION":
             case "OPTIONAL_MAX_AMOUNT_PER_TICKET":
                 return html`
-                    <div>
-                        ${this.#form.field({name: `availabilityAndPrices.maxQtyPerOrder`},
-                            (field) => {
-                                return html`
-                                        <sl-input .value=${field.state.value} label=${`Max quantity per ${formValue.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_RESERVATION' ? 'order' : 'ticket'}`} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
-                                    `
-                            })
-                        }
+                    <div class="${classMap({ row: this.event?.supportsAdditionalItemsQuantity ?? false })}">
+                        <div class="col">
+                            ${this.#form.field({name: `availabilityAndPrices.maxQtyPerOrder`},
+                                (field) => {
+                                    return html`
+                                            <sl-input required .value=${field.state.value} label=${`Max quantity per ${formValue.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_RESERVATION' ? 'order' : 'ticket'}`} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
+                                        `
+                                })
+                            }
+                        </div>
+                        ${this.addAvailableQuantity()}
                     </div>
                 `;
             default:
-                return html`<!-- ${formValue.supplementPolicy} does not need additional input fields -->`;
+                return html`
+                    ${this.addAvailableQuantity()}
+                    <!-- ${formValue.supplementPolicy} does not need additional input fields -->
+                `;
         }
+    }
+
+    private addAvailableQuantity() {
+        if (this.event?.supportsAdditionalItemsQuantity) {
+            return html`
+                <div class="col">
+                    ${this.#form.field({name: `availabilityAndPrices.availableQuantity`},
+                        (field) => {
+                            return html`
+                                <sl-input .value=${field.state.value} label="Total available quantity" @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
+                            `
+                        })
+                    }
+                </div>
+            `
+        }
+        return html``;
     }
 
     public async open(): Promise<boolean> {
@@ -290,8 +314,8 @@ interface DescriptionForm {
 interface AvailabilityAndPricesForm {
     price: number;
     fixPrice: boolean;
-    availableQuantity?: number;
-    maxQtyPerOrder?: number;
+    availableQuantity: number | null;
+    maxQtyPerOrder: number | null;
     inception: string;
     expiration: string;
     vat: number | null;
