@@ -49,7 +49,7 @@ import java.util.stream.Stream;
 
 import static alfio.model.AdditionalService.SupplementPolicy.*;
 import static alfio.util.MonetaryUtil.*;
-import static java.util.Objects.requireNonNull;
+import static java.math.RoundingMode.HALF_UP;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.groupingBy;
 
@@ -189,7 +189,10 @@ public class AdditionalServiceManager {
 
     private static int evaluateAdditionalServicePriceCts(EventModification.AdditionalService as, String currencyCode) {
         if (as.getSupplementPolicy() == MANDATORY_PERCENTAGE_FOR_TICKET || as.getSupplementPolicy() == MANDATORY_PERCENTAGE_RESERVATION) {
-            return Objects.requireNonNullElse(as.getPrice(), BigDecimal.ZERO).intValueExact();
+            var decimalAwarePrice = Objects.requireNonNullElse(as.getPrice(), BigDecimal.ZERO)
+                .multiply(HUNDRED)
+                .setScale(0, HALF_UP);
+            return decimalAwarePrice.intValueExact();
         } else {
             return as.getPrice() != null ? MonetaryUtil.unitToCents(as.getPrice(), currencyCode) : 0;
         }
@@ -428,7 +431,7 @@ public class AdditionalServiceManager {
         var fields = purchaseContextFieldRepository.findAdditionalFieldsForEvent(eventId)
             .stream()
             .filter(c -> c.getContext() == PurchaseContextFieldConfiguration.Context.ADDITIONAL_SERVICE)
-            .collect(Collectors.toList());
+            .toList();
 
         var sources = additionalServices.entrySet().stream()
             .flatMap(entry -> entry.getValue().stream().flatMap(form -> form.getAdditional().entrySet().stream()
@@ -527,8 +530,8 @@ public class AdditionalServiceManager {
                 if (PriceContainer.VatStatus.isVatNotIncluded(vatStatus)) {
                     basePrice -= reservationPrice.getVAT();
                 }
-                int percentage = mrs.additionalService.srcPriceCts();
-                int amountCts = adjustUsingMinMaxPrice(calcPercentage(basePrice, new BigDecimal(String.valueOf(percentage)), BigDecimal::intValueExact), mrs.additionalService);
+                var percentage = new BigDecimal(String.valueOf(mrs.additionalService.srcPriceCts())).divide(HUNDRED, HALF_UP);
+                int amountCts = adjustUsingMinMaxPrice(calcPercentage(basePrice, percentage, BigDecimal::intValueExact), mrs.additionalService);
                 BigDecimal amount = centsToUnit(amountCts, reservationPrice.getCurrencyCode());
                 bookAdditionalServiceItems(mrs.requested.getQuantity(), amount, mrs.additionalService, event, discount, reservationId);
             });

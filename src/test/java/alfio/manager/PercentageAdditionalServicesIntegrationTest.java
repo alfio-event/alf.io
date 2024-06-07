@@ -85,7 +85,7 @@ public class PercentageAdditionalServicesIntegrationTest {
         @Test
         void taxIncluded() {
             // percentage fee with no min/max
-            var event = initData(PriceContainer.VatStatus.INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_RESERVATION, null, null);
+            var event = initData(BigDecimal.TEN, PriceContainer.VatStatus.INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_RESERVATION, null, null);
             var totalPrice = bookAndCalculatePrice(event);
             // we expect a price of 100.00 for the ticket + 100.00 for the additional service + 10% + VAT = 220.00
             Assertions.assertEquals(22000, totalPrice.getPriceWithVAT());
@@ -94,7 +94,7 @@ public class PercentageAdditionalServicesIntegrationTest {
         @Test
         void taxIncludedMinPrice() {
             // percentage fee with no min/max
-            var event = initData(PriceContainer.VatStatus.INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_RESERVATION, new BigDecimal("20.01"), null);
+            var event = initData(BigDecimal.TEN, PriceContainer.VatStatus.INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_RESERVATION, new BigDecimal("20.01"), null);
             var totalPrice = bookAndCalculatePrice(event);
             Assertions.assertEquals(22001, totalPrice.getPriceWithVAT());
         }
@@ -102,7 +102,7 @@ public class PercentageAdditionalServicesIntegrationTest {
         @Test
         void taxIncludedMaxPrice() {
             // percentage fee with no min/max
-            var event = initData(PriceContainer.VatStatus.INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_RESERVATION, null, new BigDecimal("9.99"));
+            var event = initData(BigDecimal.TEN, PriceContainer.VatStatus.INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_RESERVATION, null, new BigDecimal("9.99"));
             var totalPrice = bookAndCalculatePrice(event);
             Assertions.assertEquals(20999, totalPrice.getPriceWithVAT());
         }
@@ -110,7 +110,7 @@ public class PercentageAdditionalServicesIntegrationTest {
         @Test
         void taxNotIncluded() {
             // percentage fee with no min/max
-            var event = initData(PriceContainer.VatStatus.NOT_INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_RESERVATION, null, null);
+            var event = initData(BigDecimal.TEN, PriceContainer.VatStatus.NOT_INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_RESERVATION, null, null);
             var totalPrice = bookAndCalculatePrice(event);
             // we expect a price of 100.00 for the ticket + additional item + 10% + VAT = 222.20
             Assertions.assertEquals(22220, totalPrice.getPriceWithVAT());
@@ -124,7 +124,7 @@ public class PercentageAdditionalServicesIntegrationTest {
         @Test
         void taxIncluded() {
             // percentage fee with no min/max
-            var event = initData(PriceContainer.VatStatus.INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_FOR_TICKET, null, null);
+            var event = initData(BigDecimal.TEN, PriceContainer.VatStatus.INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_FOR_TICKET, null, null);
 
             var totalPrice = bookAndCalculatePrice(event);
             // we expect a price of 100.00 for the ticket + 10% + VAT = 110.00
@@ -132,9 +132,19 @@ public class PercentageAdditionalServicesIntegrationTest {
         }
 
         @Test
+        void taxIncludedDecimalPercentage() {
+            // percentage fee with no min/max
+            var event = initData(new BigDecimal("10.5"), PriceContainer.VatStatus.INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_FOR_TICKET, null, null);
+
+            var totalPrice = bookAndCalculatePrice(event);
+            // we expect a price of 100.00 for the ticket + 10% + VAT = 110.00
+            Assertions.assertEquals(21100, totalPrice.getPriceWithVAT());
+        }
+
+        @Test
         void taxIncludedMinPrice() {
             // percentage fee with no min/max
-            var event = initData(PriceContainer.VatStatus.INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_FOR_TICKET, new BigDecimal("10.01"), null);
+            var event = initData(BigDecimal.TEN, PriceContainer.VatStatus.INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_FOR_TICKET, new BigDecimal("10.01"), null);
             var totalPrice = bookAndCalculatePrice(event);
             // we expect a price of 100.00 for the ticket + 10.01 = 110.01
             Assertions.assertEquals(21001, totalPrice.getPriceWithVAT());
@@ -143,7 +153,7 @@ public class PercentageAdditionalServicesIntegrationTest {
         @Test
         void taxIncludedMaxPrice() {
             // percentage fee with no min/max
-            var event = initData(PriceContainer.VatStatus.INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_FOR_TICKET, null, new BigDecimal("9.99"));
+            var event = initData(BigDecimal.TEN, PriceContainer.VatStatus.INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_FOR_TICKET, null, new BigDecimal("9.99"));
             var totalPrice = bookAndCalculatePrice(event);
             // we expect a price of 100.00 for the ticket + 10.01 = 110.01
             Assertions.assertEquals(20999, totalPrice.getPriceWithVAT());
@@ -152,7 +162,7 @@ public class PercentageAdditionalServicesIntegrationTest {
         @Test
         void taxNotIncluded() {
             // percentage fee with no min/max
-            var event = initData(PriceContainer.VatStatus.NOT_INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_FOR_TICKET, null, null);
+            var event = initData(BigDecimal.TEN, PriceContainer.VatStatus.NOT_INCLUDED, AdditionalService.SupplementPolicy.MANDATORY_PERCENTAGE_FOR_TICKET, null, null);
             var totalPrice = bookAndCalculatePrice(event);
             // we expect a price of 100.00 for the ticket + 10% + VAT = 111.00
             Assertions.assertEquals(21210, totalPrice.getPriceWithVAT());
@@ -160,14 +170,15 @@ public class PercentageAdditionalServicesIntegrationTest {
     }
 
 
-    private Event initData(PriceContainer.VatStatus eventVatStatus,
+    private Event initData(BigDecimal price,
+                           PriceContainer.VatStatus eventVatStatus,
                            AdditionalService.SupplementPolicy supplementPolicy,
                            BigDecimal minPrice,
                            BigDecimal maxPrice) {
 
         var mandatory = new EventModification.AdditionalService(
             null,
-            BigDecimal.TEN,
+            price,
             false,
             1,
             -1,

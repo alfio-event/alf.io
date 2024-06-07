@@ -19,7 +19,6 @@ package alfio.model;
 import alfio.util.ClockProvider;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
 import org.springframework.security.crypto.codec.Hex;
 
 import java.math.BigDecimal;

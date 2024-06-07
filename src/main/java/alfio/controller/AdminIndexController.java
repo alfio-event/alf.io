@@ -26,6 +26,8 @@ import alfio.util.TemplateManager;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.samskivert.mustache.Mustache;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
@@ -35,8 +37,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Collection;
@@ -65,7 +65,6 @@ public class AdminIndexController {
                                 CSPConfigurer cspConfigurer,
                                 TemplateManager templateManager,
                                 ObjectMapper objectMapper,
-                                Json json,
                                 I18nManager i18nManager) throws IOException {
         this.configurationManager = configurationManager;
         this.environment = environment;
