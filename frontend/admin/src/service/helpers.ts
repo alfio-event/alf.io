@@ -52,6 +52,7 @@ export function extractDateTime(isoString?: string): string {
 export function notifyChange(event: InputEvent, field: FieldApi<any, any>): void {
     const target = event.currentTarget as HTMLInputElement | null;
     if (target != null) {
+        console.log('field value is', target.value);
         field.handleChange(target.value);
     }
 }

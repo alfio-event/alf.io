@@ -13,6 +13,22 @@ export const pageHeader = css`
     }
 `;
 
+export const textColors = css`
+    .text-success {
+        color: var(--sl-color-success-600);
+    }
+
+    .text-muted {
+        color: var(--sl-color-gray-600);
+    }
+
+    .text-danger {
+        color: var(--sl-color-danger-600);
+    }
+`
+
+
+
 export const row = css`
 
     :host {

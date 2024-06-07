@@ -1,17 +1,16 @@
-import {html, LitElement, nothing, TemplateResult} from 'lit';
+import {css, html, LitElement, nothing, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js'
 import {repeat} from 'lit/directives/repeat.js';
-import {classMap} from 'lit/directives/class-map.js';
 import {AdditionalItemService, UsageCount} from "../../service/additional-item.ts";
 import {Task} from "@lit/task";
 import {AlfioEvent, ContentLanguage} from "../../model/event.ts";
-import {AdditionalItem, AdditionalItemType} from "../../model/additional-item.ts";
+import {AdditionalItem, AdditionalItemType, supplementPolicyDescriptions} from "../../model/additional-item.ts";
 import {EventService} from "../../service/event.ts";
 import {renderIf, supportedLanguages} from "../../service/helpers.ts";
-import {pageHeader} from "../../styles.ts";
+import {pageHeader, textColors} from "../../styles.ts";
 import {when} from "lit/directives/when.js";
-import {SlCloseEvent} from "@shoelace-style/shoelace";
 import {AdditionalItemEdit} from "../additional-item-edit/additional-item-edit.ts";
+import {AlfioDialogClosed} from "../../model/dom-events.ts";
 
 interface Model {
     items: Array<AdditionalItem>;
@@ -44,7 +43,7 @@ export class AdditionalItemList extends LitElement {
     private retrieveListTask = new Task<ReadonlyArray<string>, Model>(this,
         async ([publicIdentifier]) => {
             const event = (await EventService.load(publicIdentifier)).event;
-            const [items, count] = await Promise.all([AdditionalItemService.loadAll(event.id), AdditionalItemService.useCount(event.id)]);
+            const [items, count] = await Promise.all([AdditionalItemService.loadAll({eventId: event.id}), AdditionalItemService.useCount(event.id)]);
             return {
                 items: items.filter(i => i.type === this.type),
                 event,
@@ -58,7 +57,70 @@ export class AdditionalItemList extends LitElement {
         },
         () => [this.publicIdentifier!]);
 
-    static styles = [pageHeader];
+    static styles = [pageHeader, textColors, css`
+        .item {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        .item [slot='header'] {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .item [slot='footer'] {
+            display: flex;
+            align-items: center;
+            justify-content: end;
+            gap: 1em;
+        }
+
+        .item .body {
+            display: grid;
+            row-gap: 0.5rem;
+        }
+
+        .item .body .info-container {
+            display: grid;
+            row-gap: 0.5rem;
+        }
+
+        .item .body .info-container .info {
+            display: grid;
+            grid-template-columns: 0.5fr 1.3fr;
+            grid-auto-rows: auto;
+            column-gap: 3rem;
+        }
+
+
+        @media only screen and (min-width: 768px) {
+            .item > .body {
+                grid-template-columns: 1fr 1.3fr;
+                grid-auto-rows: auto;
+                column-gap: 3rem;
+            }
+        }
+
+        sl-tab-group {
+            height: 100%;
+        }
+
+        .panel-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 80px;
+        }
+
+        .ps {
+            padding-left: 0.5rem;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    `];
 
     @query("alfio-additional-item-edit")
     itemEditComponent?: AdditionalItemEdit;
@@ -71,11 +133,11 @@ export class AdditionalItemList extends LitElement {
                 <div class="page-header">
                     <h3>
                         <sl-icon name=${model.icon}></sl-icon> ${model.title}
-                        ${ model.allowDownload ?
-                            html`<sl-button href=${`/admin/api/events/${model.event.publicIdentifier}/additional-services/${this.type}/export`} target="_blank" rel="noopener">
-                                    <sl-icon name="download"></sl-icon> Export purchased items
-                                </sl-button>` : nothing}
                     </h3>
+                    ${ model.allowDownload ?
+                        html`<sl-button href=${`/admin/api/events/${model.event.publicIdentifier}/additional-services/${this.type}/export`} target="_blank" rel="noopener">
+                                <sl-icon name="download"></sl-icon> Export purchased items
+                            </sl-button>` : nothing}
                 </div>
 
                 <alfio-additional-item-edit
@@ -83,7 +145,7 @@ export class AdditionalItemList extends LitElement {
                     .supportedLanguages=${model.event.contentLanguages}
                     data-item-id=${this.editedItemId}
                     data-type=${this.type}
-                    @sl-after-hide=${this.editDialogClosed}></alfio-additional-item-edit>
+                    @alfio-dialog-closed=${this.editDialogClosed}></alfio-additional-item-edit>
 
                 ${this.iterateItems(model)}
 
@@ -130,82 +192,74 @@ export class AdditionalItemList extends LitElement {
     }
 
     private iterateItems(model: Model): TemplateResult {
-        return html`${repeat(model.items, (item) => item.id, (item, index) => {
+        return html`${repeat(model.items, (item) => item.id, (item) => {
             return html`
-                <div class="panel panel-default">
-                    <div data-ng-if="item.id" id="additional-service-${item.id}"></div>
-                    <div class="panel-heading">
-                        <div class="panel-title">
-                            <div class="row">
-                                <div class="col-xs-9">
-                                    <h4>
-                                        ${showItemTitle(item)}
-                                        <span style="margin-left: 20px;" class="text-success"> ${`Confirmed: ${formatSoldCount(model, item.id)}`}</span>
-                                    </h4>
-                                </div>
-                                <div class="col-xs-3">
-                                    <div class="pull-right">
-                                        <sl-button variant="default" title="edit" @click=${() => this.edit(item)} type="button"><sl-icon name="edit" slot="prefix"></sl-icon> edit</sl-button>
-                                        ${renderIf(() => countUsage(model, item.id) === 0, () => html`<sl-button title="delete" @click=${() => this.delete(item)} type="button"><sl-icon name="trash" slot="prefix"></sl-icon> delete</sl-button>`)}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                <div id=${`additional-service-${item.id}`}></div>
+                <sl-card class="item">
+                    <div slot="header">
+                        <div class="col">${showItemTitle(item)}</div>
+                        <div class="text-success"> ${`Confirmed: ${formatSoldCount(model, item.id)}`}</div>
                     </div>
-                    <div class="panel-body">
-                        <div class="row">
-                            <div class="col-xs-12 col-md-5">
-                                <div class="row">
-                                    <div class="col-sm-4"><strong>Inception</strong></div>
-                                    <div class="col-sm-8">
-                                        <sl-format-date date=${item.inception.date + 'T' + item.inception.time} month="long" day="numeric" year="numeric" hour="numeric" minute="numeric"></sl-format-date>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-sm-4"><strong>Expiration</strong></div>
-                                    <sl-format-date date=${item.expiration.date + 'T' + item.expiration.time} month="long" day="numeric" year="numeric" hour="numeric" minute="numeric"></sl-format-date>
-                                </div>
-                                <div class="row">
-                                    <div class="col-sm-4"><strong>Price</strong></div>
-                                    <div class="col-sm-8">
-                                        ${when(item.fixPrice,
-                                            () => html`<sl-format-number type="currency" currency=${item.currency} value=${item.finalPrice}></sl-format-number><span></span>`,
-                                            () => html`<span>User-defined</span>`)}
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-sm-4"><strong>Type</strong></div>
-                                    <div class="col-sm-8">${item.type}</div>
-                                </div>
-                                ${renderIf(() => item.type === 'SUPPLEMENT', () => html`<div class="row">
-                                    <div class="col-sm-4"><strong>Policy</strong></div>
-                                    <div class="col-sm-8">${item.supplementPolicy}</div>
+                    <div slot="footer">
+                        <sl-button variant="default" title="edit" @click=${() => this.edit(item)} type="button"><sl-icon name="pencil" slot="prefix"></sl-icon> edit</sl-button>
+                        ${renderIf(() => countUsage(model, item.id) === 0, () => html`<sl-button title="delete" variant="danger" @click=${() => this.delete(item)} type="button"><sl-icon name="trash" slot="prefix"></sl-icon> delete</sl-button>`)}
+                    </div>
+                    <div class="body">
+                        <div class="info-container">
+                            <div class="info">
+                                <strong>Inception</strong>
+                                <sl-format-date date=${item.inception.date + 'T' + item.inception.time} month="long" day="numeric" year="numeric" hour="numeric" minute="numeric"></sl-format-date>
+                            </div>
+                            <div class="info">
+                                <strong>Expiration</strong>
+                                <sl-format-date date=${item.expiration.date + 'T' + item.expiration.time} month="long" day="numeric" year="numeric" hour="numeric" minute="numeric"></sl-format-date>
+                            </div>
+                            <div class="info">
+                                <strong>Price</strong>
+                                ${when(item.fixPrice,
+                            () => html`<sl-format-number type="currency" currency=${item.currency} value=${item.finalPrice}></sl-format-number><span></span>`,
+                            () => html`<span>User-defined</span>`)}
+                            </div>
+                            ${renderIf(() => item.type === 'SUPPLEMENT', () => html`
+                                <div class="info">
+                                    <strong>Policy</strong>
+                                    ${supplementPolicyDescriptions[item.supplementPolicy]}
                                 </div>`)}
 
-                                ${renderIf(() => item.fixPrice && (item.supplementPolicy !== 'MANDATORY_ONE_FOR_TICKET' && item.supplementPolicy !== 'OPTIONAL_UNLIMITED_AMOUNT'),
-                                    () => html`<div class="row">
-                                        <div class="col-sm-4"><strong>Max Qty per ${item.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_TICKET' ? 'ticket' : 'order'}</strong></div>
-                                        <div class="col-sm-8">${item.maxQtyPerOrder}</div>
-                                    </div>`)}
-                            </div>
-                            <div class="hidden-xs col-md-7">
-                                ${repeat(item.description, d => d.id, (d) => html`
-                                    <p class=${classMap({'text-muted': true, 'text-danger': d.value === ''})} title=${d.locale}>${d.locale} <alfio-display-commonmark-preview data-button-text="View description" data-text=${d.value}></alfio-display-commonmark-preview></p>
-                                `)}
-                            </div>
+                            ${renderIf(() => item.fixPrice && (item.supplementPolicy !== 'MANDATORY_ONE_FOR_TICKET' && item.supplementPolicy !== 'OPTIONAL_UNLIMITED_AMOUNT'),
+                        () => html`
+                                <div class="info">
+                                    <strong>Max Qty per ${item.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_TICKET' ? 'ticket' : 'order'}</strong>
+                                    ${item.maxQtyPerOrder}
+                                </div>`)}
                         </div>
+
+                        <sl-tab-group>
+                            ${repeat(item.description, d => d.id, (d) => html`
+                                <sl-tab slot="nav" panel=${d.locale}>${d.locale}</sl-tab>
+                                <sl-tab-panel name=${d.locale}>
+                                    <div class="panel-content">
+                                        <alfio-display-commonmark-preview data-button-text="Preview" data-text=${d.value}></alfio-display-commonmark-preview>
+                                        <div class="ps">${d.value}</div>
+                                    </div>
+                                </sl-tab-panel>
+
+                            `)}
+
+                        </sl-tab-group>
                     </div>
-                </div>
-                ${renderIf(() => index + 1 < model.items.length, () => html`<sl-divider></sl-divider>`)}
+                </sl-card>
             `
         })}`;
     }
 
-    private editDialogClosed(e: SlCloseEvent) {
-        console.log(e.detail);
+    private editDialogClosed(e: AlfioDialogClosed) {
         this.editedItemId = null;
         this.editActive = false;
-        // TODO refresh list using task
+        if (e.detail.success) {
+            // TODO refresh list using task
+            // TODO show notification
+        }
     }
 }
 

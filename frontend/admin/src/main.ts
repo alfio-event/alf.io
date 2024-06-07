@@ -2,14 +2,17 @@
 // https://github.com/shoelace-style/rollup-example/blob/master/src/index.js
 // +
 // https://shoelace.style/getting-started/installation?id=bundling#bundling
-import './main.css';
 import '@shoelace-style/shoelace/dist/themes/light.css';
+import './main.css';
 import { setBasePath } from '@shoelace-style/shoelace/dist/utilities/base-path.js';
 import "@shoelace-style/shoelace/dist/components/format-date/format-date.js";
 import "@shoelace-style/shoelace/dist/components/format-number/format-number.js";
 import "@shoelace-style/shoelace/dist/components/divider/divider.js";
 import "@shoelace-style/shoelace/dist/components/dialog/dialog.js";
 import "@shoelace-style/shoelace/dist/components/button/button.js";
+import "@shoelace-style/shoelace/dist/components/tab-group/tab-group.js";
+import "@shoelace-style/shoelace/dist/components/tab/tab.js";
+import "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel.js";
 
 // imported components
 import '@shoelace-style/shoelace/dist/components/card/card.js';

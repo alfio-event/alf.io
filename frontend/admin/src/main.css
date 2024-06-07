@@ -1,4 +1,5 @@
 :root {
     font-size: 16px; /* reset bootstrap css, set default font size as defined in https://shoelace.style/tokens/typography#font-size */
-    font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --sl-font-sans: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --sl-color-danger-600: var(--sl-color-red-700);
 }

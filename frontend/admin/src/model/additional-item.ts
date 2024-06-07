@@ -39,7 +39,7 @@ export const taxTypeDescriptions: {[key: string]: string} = {
 // export type AdditionalItemStatus = 'FREE' | 'PENDING' | 'TO_BE_PAID' | 'ACQUIRED' | 'CANCELLED' | 'CHECKED_IN' | 'EXPIRED' | 'INVALIDATED' | 'RELEASED';
 
 export interface AdditionalItemLocalizedContent {
-    id: number,
+    id: number | null,
     locale: string,
     value: string,
     type: 'DESCRIPTION' | 'TITLE'
