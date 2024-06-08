@@ -19,9 +19,7 @@ package alfio.controller.api.admin;
 import alfio.manager.AccessService;
 import alfio.manager.CheckInManager;
 import alfio.manager.EventManager;
-import alfio.manager.support.CheckInStatistics;
-import alfio.manager.support.TicketAndCheckInResult;
-import alfio.manager.support.TicketCheckInStatusResult;
+import alfio.manager.support.*;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.FullTicketInfo;
@@ -106,10 +104,15 @@ public class CheckInApiController {
                                           @RequestBody TicketCode ticketCode,
                                           @RequestParam(value = "offlineUser", required = false) String offlineUser,
                                           Principal principal) {
-        accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
-        String username = principal.getName();
-        String auditUser = StringUtils.defaultIfBlank(offlineUser, username);
-        return checkInManager.checkIn(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), username, auditUser);
+        try {
+            accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
+            String username = principal.getName();
+            String auditUser = StringUtils.defaultIfBlank(offlineUser, username);
+            return checkInManager.checkIn(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), username, auditUser);
+        } catch (AccessDeniedException e) {
+            // mobile app doesn't know how to handle 403 results, so we return a "TICKET_NOT_FOUND" code instead.
+            return new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.TICKET_NOT_FOUND, "ticket not found"));
+        }
     }
 
     @PostMapping("/check-in/event/{eventName}/bulk")
