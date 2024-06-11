@@ -65,4 +65,19 @@ export const form = css`
     sl-input, sl-textarea, sl-select {
         margin-top: 15px;
     }
+
+    sl-input.error, sl-textarea.error, sl-select.error {
+        --sl-input-border-color: var(--sl-color-danger-600);
+        --sl-input-border-color-hover: var(--sl-color-danger-500);
+        --sl-input-border-color-focus: var(--sl-color-danger-600);
+        --sl-input-focus-ring-color: var(--sl-color-danger-200);
+    }
+
+    .error-text {
+        display: none;
+    }
+
+    sl-input.error .error-text, sl-textarea.error .error-text, sl-select.error .error-text {
+        display: inline-block;
+    }
 `;

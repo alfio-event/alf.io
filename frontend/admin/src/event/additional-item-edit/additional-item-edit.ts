@@ -13,7 +13,7 @@ import {SlDialog, SlRequestCloseEvent} from "@shoelace-style/shoelace";
 import {AlfioEvent, ContentLanguage} from "../../model/event.ts";
 import {repeat} from "lit/directives/repeat.js";
 import {TanStackFormController} from "@tanstack/lit-form";
-import {dialog, form, pageHeader, row} from "../../styles.ts";
+import {dialog, form, pageHeader, row, textColors} from "../../styles.ts";
 import {extractDateTime, notifyChange, toDateTimeModification} from "../../service/helpers.ts";
 import {classMap} from "lit/directives/class-map.js";
 import {AdditionalItemService} from "../../service/additional-item.ts";
@@ -21,7 +21,7 @@ import {AdditionalItemService} from "../../service/additional-item.ts";
 @customElement('alfio-additional-item-edit')
 export class AdditionalItemEdit extends LitElement {
 
-    static styles = [pageHeader, row, dialog, form];
+    static styles = [pageHeader, row, dialog, form, textColors];
 
     @property({ type: Number, attribute: 'data-item-id' })
     itemId?: number;
@@ -40,6 +40,10 @@ export class AdditionalItemEdit extends LitElement {
 
     @state()
     displayForm?: boolean;
+
+    // waiting for https://github.com/TanStack/form/pull/656 to be complete
+    @state()
+    private validationErrors?: { [k: string]: string};
 
 
 
@@ -66,6 +70,26 @@ export class AdditionalItemEdit extends LitElement {
                             description: '',
                         };
                     })
+                },
+                onSubmit: async (values) => {
+                    await this.save(values.value);
+                },
+                validators: {
+                    onSubmitAsync: async props => {
+                        const errors: { [k:string]: string} = {};
+                        const additionalItemRequest: Partial<AdditionalItem> = this.buildServerPayload(props.value);
+                        const result = await AdditionalItemService.validateAdditionalItem(additionalItemRequest);
+                        if (!result.success) {
+                            result.validationErrors.forEach(error => {
+                                errors[error.fieldName] = error.code;
+                            });
+                            this.validationErrors = errors;
+                            return 'form contains errors';
+                        } else {
+                            this.validationErrors = {};
+                            return undefined;
+                        }
+                    }
                 }
             });
         }
@@ -102,7 +126,7 @@ export class AdditionalItemEdit extends LitElement {
 
     private renderForm(): TemplateResult {
         return html`
-            <form id="form" @submit=${(e: Event) => {e.preventDefault()}}>
+            <form id="form" @submit=${async (e: Event) => { e.preventDefault(); e.stopImmediatePropagation(); await this.#form.api.handleSubmit();}}>
                 <h3 style="margin-bottom: 0">Descriptions</h3>
                 <div class="row">
                     ${this.#form.field({name: 'descriptions'}, (descriptionsField) => this.renderDescription(descriptionsField.state.value))}
@@ -116,7 +140,7 @@ export class AdditionalItemEdit extends LitElement {
                     <div class="row" style="--alfio-row-cols: 3">
                         <sl-button variant="default" size="large" @click=${this.close}>Close</sl-button>
                         <div></div>
-                        <sl-button variant="success"  size="large" @click=${this.validateAndSave}>Save</sl-button>
+                        <sl-button variant="success" type="submit" size="large" .disabled=${!this.#form.api.state.canSubmit}>Save</sl-button>
                     </div>
                 </div>
             </form>
@@ -132,29 +156,29 @@ export class AdditionalItemEdit extends LitElement {
                     </div>
 
                     ${
-                    // title
-                    this.#form.field({name: `descriptions[${index}].title`, validators: {
-                        onChange: ({ value }: { value: string }) => {
-                            return value && value.length < 3
-                                ? 'Not long enough'
-                                : undefined
-                        },
-                    }},
-                    (field) => {
-                        return html`
-                            <sl-input placeholder="Title" label="Title" required .value=${field.state.value} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
-                        `
+                        // title
+                        this.#form.field({name: `descriptions[${index}].title`, validators: {
+                            onChange: ({ value }: { value: string }) => {
+                                return value && value.length < 3
+                                    ? 'error.title'
+                                    : undefined
+                            },
+                        }},
+                        (field) => {
+                            return html`
+                                <sl-input placeholder="Title" label="Title" required .value=${field.state.value} class="${classMap({ error: this.hasError(field.state.meta, field.name) })}" @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
+                            `
                     })}
                     ${this.#form.field({name: `descriptions[${index}].description`, validators: {
                                 onChange: ({ value }: { value: string }) => {
                                     return value && value.length < 3
-                                        ? 'Not long enough'
+                                        ? 'error.description'
                                         : undefined
                                 },
                             }},
                         (field) => {
                             return html`
-                                <sl-textarea label="Description" required .value=${field.state.value} rows="2" @sl-input=${(e: InputEvent) => notifyChange(e, field)}>
+                                <sl-textarea label="Description" required .value=${field.state.value} class="${classMap({ error: this.hasError(field.state.meta, field.name) })}" rows="2" @sl-input=${(e: InputEvent) => notifyChange(e, field)}>
                                     <div slot="help-text">
                                         <alfio-display-commonmark-preview data-button-text="preview" .text=${field.state.value}></alfio-display-commonmark-preview>
                                     </div>
@@ -164,6 +188,10 @@ export class AdditionalItemEdit extends LitElement {
                 </div>
             `;
         })}`;
+    }
+
+    private hasError(meta: any, name: string) {
+        return (meta.isTouched && meta.errors.length > 0) || this.validationError(name) != null;
     }
 
     private renderAvailabilityAndPrices(formValue: AvailabilityAndPricesForm): TemplateResult {
@@ -190,7 +218,10 @@ export class AdditionalItemEdit extends LitElement {
                                 },
                             }},
                         (field) => {
-                            return html`<sl-input required value=${extractDateTime(field.state.value)} type="datetime-local" label="Valid from"  @sl-input=${(e: InputEvent) => notifyChange(e, field)}></sl-input>`
+                            return html`
+                                <sl-input required class="${classMap({ error: this.hasError(field.state.meta, field.name) })}" value=${extractDateTime(field.state.value)} type="datetime-local" label="Valid from"  @sl-input=${(e: InputEvent) => notifyChange(e, field)}>
+                                    <div slot="help-text"><div class="error-text text-danger">Please check the validity interval</div></div>
+                                </sl-input>`
                         })
                     }
                 </div>
@@ -203,7 +234,10 @@ export class AdditionalItemEdit extends LitElement {
                                 },
                             }},
                         (field) => {
-                            return html`<sl-input required .value=${extractDateTime(field.state.value)} type="datetime-local" label="Valid to" @sl-input=${(e: InputEvent) => notifyChange(e, field)}></sl-input>`
+                            return html`
+                                <sl-input required class="${classMap({ error: this.hasError(field.state.meta, field.name) })}" .value=${extractDateTime(field.state.value)} type="datetime-local" label="Valid to" @sl-input=${(e: InputEvent) => notifyChange(e, field)}>
+                                    <div slot="help-text"><div class="error-text text-danger">Please check the validity interval</div></div>
+                                </sl-input>`
                         })
                     }
                 </div>
@@ -333,9 +367,8 @@ export class AdditionalItemEdit extends LitElement {
         }
     }
 
-    private async validateAndSave() {
-        const value = this.#form.api.state.values;
-        const additionalItemRequest: Partial<AdditionalItem> = {
+    private buildServerPayload(value: {descriptions: DescriptionForm[], availabilityAndPrices: AvailabilityAndPricesForm}): Partial<AdditionalItem> {
+        return {
             // TODO id
             maxQtyPerOrder: value.availabilityAndPrices.maxQtyPerOrder ?? -1,
             price: value.availabilityAndPrices.price,
@@ -349,13 +382,23 @@ export class AdditionalItemEdit extends LitElement {
             vat: value.availabilityAndPrices.vat,
             type: this.type
         };
-        const result = await AdditionalItemService.validateAdditionalItem(additionalItemRequest);
-        if (result.success) {
-            const update = await AdditionalItemService.updateAdditionalItem(additionalItemRequest, this.event!.id);
-            if (update.ok) {
-                await this.close(true);
-            }
+    }
+
+    private async save(value: { descriptions: DescriptionForm[]; availabilityAndPrices: AvailabilityAndPricesForm }) {
+        const additionalItemRequest: Partial<AdditionalItem> = this.buildServerPayload(value);
+        const update = await AdditionalItemService.updateAdditionalItem(additionalItemRequest, this.event!.id);
+        if (update.ok) {
+            await this.close(true);
         }
+    }
+
+    private validationError(fieldName: string): string | undefined {
+        const validationErrors = this.validationErrors;
+        if (validationErrors != null) {
+            const remoteFieldName = fieldName.substring(fieldName.lastIndexOf('.') + 1, fieldName.length);
+            return validationErrors[remoteFieldName];
+        }
+        return undefined;
     }
 }
 
