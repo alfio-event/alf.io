@@ -1,6 +1,6 @@
 import {AdditionalItem} from "../model/additional-item.ts";
 import {ValidatedResponse} from "../model/validation.ts";
-import {fetchJson, postJson} from "./helpers.ts";
+import {callDelete, fetchJson, postJson, putJson} from "./helpers.ts";
 
 export type UsageCount = { [id: number]: { [ status: string ]: number } };
 
@@ -19,7 +19,14 @@ export class AdditionalItemService {
     }
 
     static async updateAdditionalItem(additionalItem: Partial<AdditionalItem>, eventId: number): Promise<Response> {
+        if (additionalItem.id != null) {
+            return await putJson(`/admin/api/event/${eventId}/additional-services/${additionalItem.id}`, additionalItem);
+        }
         return await postJson(`/admin/api/event/${eventId}/additional-services`, additionalItem);
+    }
+
+    static async deleteAdditionalItem(additionalItemId: number, eventId: number): Promise<Response> {
+        return await callDelete(`/admin/api/event/${eventId}/additional-services/${additionalItemId}`)
     }
 
 }

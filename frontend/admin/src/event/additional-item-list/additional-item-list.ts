@@ -6,7 +6,7 @@ import {Task} from "@lit/task";
 import {AlfioEvent, ContentLanguage} from "../../model/event.ts";
 import {AdditionalItem, AdditionalItemType, supplementPolicyDescriptions} from "../../model/additional-item.ts";
 import {EventService} from "../../service/event.ts";
-import {renderIf, supportedLanguages} from "../../service/helpers.ts";
+import {renderIf, supportedLanguages, ValueContainer} from "../../service/helpers.ts";
 import {pageHeader, textColors} from "../../styles.ts";
 import {when} from "lit/directives/when.js";
 import {AdditionalItemEdit} from "../additional-item-edit/additional-item-edit.ts";
@@ -34,8 +34,8 @@ export class AdditionalItemList extends LitElement {
     pageTitle?: string;
     @property({ type: String, attribute: 'data-icon' })
     icon?: string;
-    @property({ type: Number })
-    editedItemId: number | null = null;
+    @state()
+    editedItem: ValueContainer<AdditionalItem> | null = null;
     @state()
     editActive: boolean = false;
 
@@ -140,12 +140,7 @@ export class AdditionalItemList extends LitElement {
                             </sl-button>` : nothing}
                 </div>
 
-                <alfio-additional-item-edit
-                    .event=${model.event}
-                    .supportedLanguages=${model.event.contentLanguages}
-                    data-item-id=${this.editedItemId}
-                    data-type=${this.type}
-                    @alfio-dialog-closed=${this.editDialogClosed}></alfio-additional-item-edit>
+                <alfio-additional-item-edit @alfio-dialog-closed=${this.editDialogClosed}></alfio-additional-item-edit>
 
                 ${this.iterateItems(model)}
 
@@ -155,22 +150,32 @@ export class AdditionalItemList extends LitElement {
         });
     }
 
-    async addNew(): Promise<void> {
-        this.editedItemId = null;
+    async addNew(model: Model): Promise<void> {
+        this.editedItem = null;
         if (this.itemEditComponent != null) {
-            this.editActive = await this.itemEditComponent.open();
+            this.editActive = await this.itemEditComponent.open({
+                supportedLanguages: model.event.contentLanguages,
+                event: model.event,
+                type: this.type!,
+                editedItem: null
+            });
         }
     }
 
-    async edit(item: AdditionalItem): Promise<void> {
-        this.editedItemId = item.id;
+    async edit(item: AdditionalItem, model: Model): Promise<void> {
         if (this.itemEditComponent != null) {
-            this.editActive = await this.itemEditComponent.open();
+            this.editActive = await this.itemEditComponent.open({
+                supportedLanguages: model.event.contentLanguages,
+                event: model.event,
+                type: this.type!,
+                editedItem: item
+            });
         }
     }
 
-    delete(item: AdditionalItem): void {
-        console.log('delete item', item.id);
+    async delete(item: AdditionalItem, model: Model): Promise<boolean> {
+        const response = await AdditionalItemService.deleteAdditionalItem(item.id, model.event.id);
+        return response.ok;
     }
 
     private generateFooter(model: Model): TemplateResult {
@@ -182,7 +187,7 @@ export class AdditionalItemList extends LitElement {
         const footer = () => html`
             <div class="row">
                 <div class="col-xs-12" style="font-size: 20px">
-                    <sl-button type="button" variant="success" @click=${this.addNew} size="large">
+                    <sl-button type="button" variant="success" @click=${() => this.addNew(model)} size="large">
                         <sl-icon name="plus-circle" slot="prefix"></sl-icon>
                         Add new
                     </sl-button>
@@ -201,8 +206,8 @@ export class AdditionalItemList extends LitElement {
                         <div class="text-success"> ${`Confirmed: ${formatSoldCount(model, item.id)}`}</div>
                     </div>
                     <div slot="footer">
-                        <sl-button variant="default" title="edit" @click=${() => this.edit(item)} type="button"><sl-icon name="pencil" slot="prefix"></sl-icon> edit</sl-button>
-                        ${renderIf(() => countUsage(model, item.id) === 0, () => html`<sl-button title="delete" variant="danger" @click=${() => this.delete(item)} type="button"><sl-icon name="trash" slot="prefix"></sl-icon> delete</sl-button>`)}
+                        <sl-button variant="default" title="edit" @click=${() => this.edit(item, model)} type="button"><sl-icon name="pencil" slot="prefix"></sl-icon> edit</sl-button>
+                        ${renderIf(() => countUsage(model, item.id) === 0, () => html`<sl-button title="delete" variant="danger" @click=${() => this.delete(item, model)} type="button"><sl-icon name="trash" slot="prefix"></sl-icon> delete</sl-button>`)}
                     </div>
                     <div class="body">
                         <div class="info-container">
@@ -254,7 +259,7 @@ export class AdditionalItemList extends LitElement {
     }
 
     private editDialogClosed(e: AlfioDialogClosed) {
-        this.editedItemId = null;
+        this.editedItem = null;
         this.editActive = false;
         if (e.detail.success) {
             // TODO refresh list using task

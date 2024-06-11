@@ -1,5 +1,5 @@
-import {html, LitElement, PropertyValues, TemplateResult} from "lit";
-import {customElement, property, query, state} from "lit/decorators.js";
+import {html, LitElement, TemplateResult} from "lit";
+import {customElement, query} from "lit/decorators.js";
 import {
     AdditionalItem,
     AdditionalItemTaxType,
@@ -13,6 +13,7 @@ import {SlDialog, SlRequestCloseEvent} from "@shoelace-style/shoelace";
 import {AlfioEvent, ContentLanguage} from "../../model/event.ts";
 import {repeat} from "lit/directives/repeat.js";
 import {TanStackFormController} from "@tanstack/lit-form";
+import {FormState} from '@tanstack/form-core';
 import {dialog, form, pageHeader, row, textColors} from "../../styles.ts";
 import {extractDateTime, notifyChange, toDateTimeModification} from "../../service/helpers.ts";
 import {classMap} from "lit/directives/class-map.js";
@@ -23,76 +24,57 @@ export class AdditionalItemEdit extends LitElement {
 
     static styles = [pageHeader, row, dialog, form, textColors];
 
-    @property({ type: Number, attribute: 'data-item-id' })
-    itemId?: number;
-
-    @property({ type: Array<ContentLanguage>, attribute: 'data-languages'})
-    supportedLanguages?: ContentLanguage[];
-
-    @property()
-    event?: AlfioEvent;
-
-    @property({ type: String, attribute: 'data-type' })
-    type?: AdditionalItemType;
+    private editedItem: AdditionalItem | null = null;
+    private supportedLanguages: ContentLanguage[] = [];
+    private event: AlfioEvent | null = null;
+    private type: AdditionalItemType | null = null;
 
     @query("sl-dialog#editDialog")
     dialog?: SlDialog;
 
-    @state()
-    displayForm?: boolean;
+    displayForm: boolean = false;
 
     // waiting for https://github.com/TanStack/form/pull/656 to be complete
-    @state()
     private validationErrors?: { [k: string]: string};
 
-
-
-    #form: TanStackFormController<{ descriptions: DescriptionForm[], availabilityAndPrices: AvailabilityAndPricesForm}> = new TanStackFormController(this, {
+    #form: TanStackFormController<FormData> = new TanStackFormController(this, {
         defaultValues: {
             descriptions: [] as DescriptionForm[],
             availabilityAndPrices: {} as AvailabilityAndPricesForm,
         }
     });
 
-    protected updated(_changedProperties: PropertyValues) {
-        super.updated(_changedProperties);
-        const hasSupportedLanguages = _changedProperties.has('supportedLanguages');
-        const hasEvent = _changedProperties.has('event');
-        if (hasSupportedLanguages || hasEvent) {
-            const currentState = this.#form.api.state;
-            this.#form.api.update({
-                defaultValues: {
-                    availabilityAndPrices: hasEvent ? this.buildAvailabilityAndPricesFromEvent(this.event!) : currentState.values.availabilityAndPrices,
-                    descriptions: (this.supportedLanguages ?? []).map(sl => {
-                        return {
-                            locale: sl.locale,
-                            title: '',
-                            description: '',
-                        };
-                    })
-                },
-                onSubmit: async (values) => {
-                    await this.save(values.value);
-                },
-                validators: {
-                    onSubmitAsync: async props => {
-                        const errors: { [k:string]: string} = {};
-                        const additionalItemRequest: Partial<AdditionalItem> = this.buildServerPayload(props.value);
-                        const result = await AdditionalItemService.validateAdditionalItem(additionalItemRequest);
-                        if (!result.success) {
-                            result.validationErrors.forEach(error => {
-                                errors[error.fieldName] = error.code;
-                            });
-                            this.validationErrors = errors;
-                            return 'form contains errors';
-                        } else {
-                            this.validationErrors = {};
-                            return undefined;
-                        }
+    private buildDefaultValues(currentState: FormState<FormData>): FormData {
+        if (this.editedItem != null) {
+            const item = this.editedItem as AdditionalItem;
+            return {
+                availabilityAndPrices: this.buildAvailabilityAndPricesFromItem(item),
+                descriptions: item.title.map(((title, i) => {
+                    const description = item.description[i];
+                    return {
+                        locale: title.locale,
+                        title: title.value,
+                        description: description.value,
+                        titleId: title.id,
+                        descriptionId: description.id
                     }
-                }
-            });
+                }))
+            }
         }
+
+
+        return {
+            availabilityAndPrices: this.event != null ? this.buildAvailabilityAndPricesFromEvent(this.event) : currentState.values.availabilityAndPrices,
+            descriptions: (this.supportedLanguages ?? []).map(sl => {
+                return {
+                    locale: sl.locale,
+                    title: '',
+                    description: '',
+                    titleId: null,
+                    descriptionId: null
+                };
+            })
+        };
     }
 
     private buildAvailabilityAndPricesFromEvent(event: AlfioEvent): AvailabilityAndPricesForm {
@@ -113,9 +95,26 @@ export class AdditionalItemEdit extends LitElement {
         }
     }
 
+    private buildAvailabilityAndPricesFromItem(item: AdditionalItem): AvailabilityAndPricesForm {
+        return {
+            availableItems: item.availableItems !== -1 ? item.availableItems : null,
+            minPrice: item.minPrice,
+            maxPrice: item.maxPrice,
+            price: item.price,
+            fixPrice: item.fixPrice,
+            vat: item.vat,
+            vatType: item.vatType,
+            supplementPolicy: item.supplementPolicy,
+            inception: `${item.inception.date}T${item.inception.time}`,
+            expiration: `${item.expiration.date}T${item.expiration.time}`,
+            maxQtyPerOrder: item.maxQtyPerOrder ?? null,
+            availableQuantity: item.availableQuantity !== -1 ? item.availableQuantity ?? null : null
+        }
+    }
+
     protected render(): TemplateResult {
         return html`
-            <sl-dialog label=${(this.itemId ?? 0) > 0 ? `Edit Additional Item` : 'New Additional Item'} id="editDialog" style="--width: 50vw; --header-spacing:16px; --body-spacing: 16px; --sl-font-size-large: 1.5rem;" class="dialog"
+            <sl-dialog label=${this.editedItem != null ? `Edit Additional Item` : 'New Additional Item'} id="editDialog" style="--width: 50vw; --header-spacing:16px; --body-spacing: 16px; --sl-font-size-large: 1.5rem;" class="dialog"
                        @sl-request-close=${this.preventAccidentalClose}>
 
                 ${this.renderForm()}
@@ -343,8 +342,45 @@ export class AdditionalItemEdit extends LitElement {
         return html``;
     }
 
-    public async open(): Promise<boolean> {
+    public async open(request: {
+        editedItem: AdditionalItem | null,
+        supportedLanguages: ContentLanguage[],
+        event: AlfioEvent,
+        type: AdditionalItemType
+    }): Promise<boolean> {
         if (this.dialog != null) {
+            this.editedItem = request.editedItem;
+            this.supportedLanguages = request.supportedLanguages;
+            this.event = request.event;
+            this.type = request.type;
+            const hasSupportedLanguages = this.supportedLanguages != null;
+            const hasEvent = this.event != null;
+            const hasItem = this.editedItem != null;
+            if (hasSupportedLanguages || hasEvent || hasItem) {
+                this.#form.api.update({
+                    defaultValues: this.buildDefaultValues(this.#form.api.state),
+                    onSubmit: async (values) => {
+                        await this.save(values.value);
+                    },
+                    validators: {
+                        onSubmitAsync: async props => {
+                            const errors: { [k:string]: string} = {};
+                            const additionalItemRequest: Partial<AdditionalItem> = this.buildServerPayload(props.value);
+                            const result = await AdditionalItemService.validateAdditionalItem(additionalItemRequest);
+                            if (!result.success) {
+                                result.validationErrors.forEach(error => {
+                                    errors[error.fieldName] = error.code;
+                                });
+                                this.validationErrors = errors;
+                                return 'form contains errors';
+                            } else {
+                                this.validationErrors = {};
+                                return undefined;
+                            }
+                        }
+                    }
+                });
+            }
             this.displayForm = true;
             await this.dialog?.show();
         }
@@ -367,24 +403,24 @@ export class AdditionalItemEdit extends LitElement {
         }
     }
 
-    private buildServerPayload(value: {descriptions: DescriptionForm[], availabilityAndPrices: AvailabilityAndPricesForm}): Partial<AdditionalItem> {
+    private buildServerPayload(value: FormData): Partial<AdditionalItem> {
         return {
-            // TODO id
+            id: this.editedItem?.id,
             maxQtyPerOrder: value.availabilityAndPrices.maxQtyPerOrder ?? -1,
             price: value.availabilityAndPrices.price,
             availableQuantity: value.availabilityAndPrices.availableQuantity ?? -1,
             inception: toDateTimeModification(value.availabilityAndPrices.inception),
             expiration: toDateTimeModification(value.availabilityAndPrices.expiration),
-            title: value.descriptions.map(df => { return { locale: df.locale, type: 'TITLE', value: df.title, id: null }}),
-            description: value.descriptions.map(df => { return { locale: df.locale, type: 'DESCRIPTION', value: df.description, id: null }}),
+            title: value.descriptions.map(df => { return { locale: df.locale, type: 'TITLE', value: df.title, id: df.titleId }}),
+            description: value.descriptions.map(df => { return { locale: df.locale, type: 'DESCRIPTION', value: df.description, id: df.descriptionId }}),
             supplementPolicy: value.availabilityAndPrices.supplementPolicy,
             vatType: value.availabilityAndPrices.vatType,
             vat: value.availabilityAndPrices.vat,
-            type: this.type
+            type: this.type ?? undefined
         };
     }
 
-    private async save(value: { descriptions: DescriptionForm[]; availabilityAndPrices: AvailabilityAndPricesForm }) {
+    private async save(value: FormData) {
         const additionalItemRequest: Partial<AdditionalItem> = this.buildServerPayload(value);
         const update = await AdditionalItemService.updateAdditionalItem(additionalItemRequest, this.event!.id);
         if (update.ok) {
@@ -405,7 +441,9 @@ export class AdditionalItemEdit extends LitElement {
 interface DescriptionForm {
     locale: string;
     title: string;
+    titleId: number | null;
     description: string;
+    descriptionId: number | null;
 }
 
 interface AvailabilityAndPricesForm {
@@ -421,6 +459,11 @@ interface AvailabilityAndPricesForm {
     availableItems: number | null;
     minPrice: number | null;
     maxPrice: number | null;
+}
+
+interface FormData {
+    descriptions: DescriptionForm[];
+    availabilityAndPrices: AvailabilityAndPricesForm
 }
 
 declare global {
