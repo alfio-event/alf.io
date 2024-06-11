@@ -6,7 +6,7 @@ import {Task} from "@lit/task";
 import {AlfioEvent, ContentLanguage} from "../../model/event.ts";
 import {AdditionalItem, AdditionalItemType, supplementPolicyDescriptions} from "../../model/additional-item.ts";
 import {EventService} from "../../service/event.ts";
-import {renderIf, supportedLanguages, ValueContainer} from "../../service/helpers.ts";
+import {renderIf, supportedLanguages} from "../../service/helpers.ts";
 import {pageHeader, textColors} from "../../styles.ts";
 import {when} from "lit/directives/when.js";
 import {AdditionalItemEdit} from "../additional-item-edit/additional-item-edit.ts";
@@ -34,8 +34,6 @@ export class AdditionalItemList extends LitElement {
     pageTitle?: string;
     @property({ type: String, attribute: 'data-icon' })
     icon?: string;
-    @state()
-    editedItem: ValueContainer<AdditionalItem> | null = null;
     @state()
     editActive: boolean = false;
 
@@ -151,7 +149,6 @@ export class AdditionalItemList extends LitElement {
     }
 
     async addNew(model: Model): Promise<void> {
-        this.editedItem = null;
         if (this.itemEditComponent != null) {
             this.editActive = await this.itemEditComponent.open({
                 supportedLanguages: model.event.contentLanguages,
@@ -259,7 +256,6 @@ export class AdditionalItemList extends LitElement {
     }
 
     private editDialogClosed(e: AlfioDialogClosed) {
-        this.editedItem = null;
         this.editActive = false;
         if (e.detail.success) {
             // TODO refresh list using task
