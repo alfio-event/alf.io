@@ -13,14 +13,18 @@ import {AdditionalItemEdit} from "../additional-item-edit/additional-item-edit.t
 import {AlfioDialogClosed} from "../../model/dom-events.ts";
 
 interface Model {
-    items: Array<AdditionalItem>;
     event: AlfioEvent;
-    title: string,
-    icon: string,
-    type: AdditionalItemType,
-    supportedLanguages: ContentLanguage[],
-    usageCount: UsageCount,
-    allowDownload: boolean
+    title: string;
+    icon: string;
+    type: AdditionalItemType;
+    supportedLanguages: ContentLanguage[];
+    dataTask: Task<ReadonlyArray<number>, ListData>;
+}
+
+interface ListData {
+    items: Array<AdditionalItem>;
+    usageCount: UsageCount;
+    allowDownload: boolean;
 }
 
 @customElement('alfio-additional-item-list')
@@ -36,21 +40,29 @@ export class AdditionalItemList extends LitElement {
     icon?: string;
     @state()
     editActive: boolean = false;
+    @state()
+    allowDownload: boolean = false;
+    @state()
+    refreshCount: number = 0;
 
-
-    private retrieveListTask = new Task<ReadonlyArray<string>, Model>(this,
+    private retrievePageDataTask = new Task<ReadonlyArray<string>, Model>(this,
         async ([publicIdentifier]) => {
             const event = (await EventService.load(publicIdentifier)).event;
-            const [items, count] = await Promise.all([AdditionalItemService.loadAll({eventId: event.id}), AdditionalItemService.useCount(event.id)]);
+            const dataTask = new Task<ReadonlyArray<number>, ListData>(this, async ([]) => {
+                const [items, count] = await Promise.all([AdditionalItemService.loadAll({eventId: event.id}), AdditionalItemService.useCount(event.id)]);
+                return {
+                    items: items.filter(i => i.type === this.type),
+                    usageCount: count,
+                    allowDownload: Object.values(count).some(p => Object.values(p).reduce((pv: number, cv: number) => pv + cv) > 0),
+                }
+            }, () => [this.refreshCount]);
             return {
-                items: items.filter(i => i.type === this.type),
                 event,
                 title: this.pageTitle ?? '',
                 icon: this.icon ?? '',
                 type: this.type!,
                 supportedLanguages: supportedLanguages(),
-                usageCount: count,
-                allowDownload: Object.values(count).some(p => Object.values(p).reduce((pv: number, cv: number) => pv + cv) > 0),
+                dataTask
             };
         },
         () => [this.publicIdentifier!]);
@@ -124,15 +136,15 @@ export class AdditionalItemList extends LitElement {
     itemEditComponent?: AdditionalItemEdit;
 
     render() {
-
-        return this.retrieveListTask.render({
+        return this.retrievePageDataTask.render({
             initial: () => html`loading...`,
             complete: (model) => html`
+
                 <div class="page-header">
                     <h3>
                         <sl-icon name=${model.icon}></sl-icon> ${model.title}
                     </h3>
-                    ${ model.allowDownload ?
+                    ${ this.allowDownload ?
                         html`<sl-button href=${`/admin/api/events/${model.event.publicIdentifier}/additional-services/${this.type}/export`} target="_blank" rel="noopener">
                                 <sl-icon name="download"></sl-icon> Export purchased items
                             </sl-button>` : nothing}
@@ -193,18 +205,20 @@ export class AdditionalItemList extends LitElement {
         return when(model.event.freeOfCharge, warning, () => renderIf(() => !this.editActive, footer));
     }
 
-    private iterateItems(model: Model): TemplateResult {
-        return html`${repeat(model.items, (item) => item.id, (item) => {
-            return html`
+    private iterateItems(model: Model) {
+        return model.dataTask.render({
+            initial: () => html`loading...`,
+            complete: listData => html`${repeat(listData.items, (item) => item.id, (item) => {
+                return html`
                 <div id=${`additional-service-${item.id}`}></div>
                 <sl-card class="item">
                     <div slot="header">
                         <div class="col">${showItemTitle(item)}</div>
-                        <div class="text-success"> ${`Confirmed: ${formatSoldCount(model, item.id)}`}</div>
+                        <div class="text-success"> ${`Confirmed: ${formatSoldCount(listData, item.id)}`}</div>
                     </div>
                     <div slot="footer">
                         <sl-button variant="default" title="edit" @click=${() => this.edit(item, model)} type="button"><sl-icon name="pencil" slot="prefix"></sl-icon> edit</sl-button>
-                        ${renderIf(() => countUsage(model, item.id) === 0, () => html`<sl-button title="delete" variant="danger" @click=${() => this.delete(item, model)} type="button"><sl-icon name="trash" slot="prefix"></sl-icon> delete</sl-button>`)}
+                        ${renderIf(() => countUsage(listData, item.id) === 0, () => html`<sl-button title="delete" variant="danger" @click=${() => this.delete(item, model)} type="button"><sl-icon name="trash" slot="prefix"></sl-icon> delete</sl-button>`)}
                     </div>
                     <div class="body">
                         <div class="info-container">
@@ -219,8 +233,8 @@ export class AdditionalItemList extends LitElement {
                             <div class="info">
                                 <strong>Price</strong>
                                 ${when(item.fixPrice,
-                            () => html`<sl-format-number type="currency" currency=${item.currency} value=${item.finalPrice}></sl-format-number><span></span>`,
-                            () => html`<span>User-defined</span>`)}
+                    () => html`<sl-format-number type="currency" currency=${item.currency} value=${item.finalPrice}></sl-format-number><span></span>`,
+                    () => html`<span>User-defined</span>`)}
                             </div>
                             ${renderIf(() => item.type === 'SUPPLEMENT', () => html`
                                 <div class="info">
@@ -229,7 +243,7 @@ export class AdditionalItemList extends LitElement {
                                 </div>`)}
 
                             ${renderIf(() => item.fixPrice && (item.supplementPolicy !== 'MANDATORY_ONE_FOR_TICKET' && item.supplementPolicy !== 'OPTIONAL_UNLIMITED_AMOUNT'),
-                        () => html`
+                    () => html`
                                 <div class="info">
                                     <strong>Max Qty per ${item.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_TICKET' ? 'ticket' : 'order'}</strong>
                                     ${item.maxQtyPerOrder}
@@ -252,21 +266,22 @@ export class AdditionalItemList extends LitElement {
                     </div>
                 </sl-card>
             `
-        })}`;
+            })}`
+        })
     }
 
-    private editDialogClosed(e: AlfioDialogClosed) {
+    private async editDialogClosed(e: AlfioDialogClosed) {
         this.editActive = false;
         if (e.detail.success) {
-            // TODO refresh list using task
+            this.refreshCount++;
             // TODO show notification
         }
     }
 }
 
-function countUsage(model: Model, itemId: number): number {
-    if (model.usageCount[itemId] != null) {
-        const detail = model.usageCount[itemId];
+function countUsage(listData: ListData, itemId: number): number {
+    if (listData.usageCount[itemId] != null) {
+        const detail = listData.usageCount[itemId];
         const acquired = detail['ACQUIRED'] ?? 0;
         const checkedIn = detail['CHECKED_IN'] ?? 0;
         const toBePaid = detail['TO_BE_PAID'] ?? 0;
@@ -275,9 +290,9 @@ function countUsage(model: Model, itemId: number): number {
     return 0;
 }
 
-function formatSoldCount(model: Model, itemId: number): string {
-    if (model.usageCount[itemId] != null) {
-        const detail = model.usageCount[itemId];
+function formatSoldCount(listData: ListData, itemId: number): string {
+    if (listData.usageCount[itemId] != null) {
+        const detail = listData.usageCount[itemId];
         const acquired = detail['ACQUIRED'] ?? 0;
         const checkedIn = detail['CHECKED_IN'] ?? 0;
         const toBePaid = detail['TO_BE_PAID'] ?? 0;
