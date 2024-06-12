@@ -118,7 +118,9 @@ class ValidatorTest {
         EventModification.AdditionalService invalid = new EventModification.AdditionalService(0, BigDecimal.ZERO, false, 0, -1, 1, VALID_EXPIRATION, VALID_INCEPTION, null, AdditionalService.VatType.NONE, Collections.emptyList(), singletonList(title), singletonList(description), AdditionalService.AdditionalServiceType.DONATION, null, null, null);
         assertFalse(Validator.validateAdditionalService(invalid, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
-        assertNotNull(errors.getFieldError("additionalServices"));
+        assertEquals(2, errors.getErrorCount());
+        assertNotNull(errors.getFieldError("inception"));
+        assertNotNull(errors.getFieldError("expiration"));
     }
 
     @Test
@@ -126,7 +128,9 @@ class ValidatorTest {
         EventModification.AdditionalService invalid = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, null, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description), AdditionalService.AdditionalServiceType.DONATION, null, null, null);
         assertFalse(Validator.validateAdditionalService(invalid, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
-        assertNotNull(errors.getFieldError("additionalServices"));
+        assertEquals(2, errors.getErrorCount());
+        assertNotNull(errors.getFieldError("inception"));
+        assertNotNull(errors.getFieldError("expiration"));
     }
 
     @Test
@@ -134,7 +138,9 @@ class ValidatorTest {
         EventModification.AdditionalService invalid = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, null, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description), AdditionalService.AdditionalServiceType.DONATION, null, null, null);
         assertFalse(Validator.validateAdditionalService(invalid, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
-        assertNotNull(errors.getFieldError("additionalServices"));
+        assertEquals(2, errors.getErrorCount());
+        assertNotNull(errors.getFieldError("inception"));
+        assertNotNull(errors.getFieldError("expiration"));
     }
 
     @Test
@@ -142,7 +148,9 @@ class ValidatorTest {
         EventModification.AdditionalService invalid = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, null, null, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description), AdditionalService.AdditionalServiceType.DONATION, null, null, null);
         assertFalse(Validator.validateAdditionalService(invalid, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
-        assertNotNull(errors.getFieldError("additionalServices"));
+        assertEquals(2, errors.getErrorCount());
+        assertNotNull(errors.getFieldError("inception"));
+        assertNotNull(errors.getFieldError("expiration"));
     }
 
     @Test
@@ -152,7 +160,9 @@ class ValidatorTest {
         assertTrue(Validator.validateAdditionalService(valid, errors).isSuccess());
         assertFalse(Validator.validateAdditionalService(invalid, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
-        assertNotNull(errors.getFieldError("additionalServices"));
+        assertEquals(2, errors.getErrorCount());
+        assertNotNull(errors.getFieldError("title"));
+        assertNotNull(errors.getFieldError("description"));
     }
 
     @Test
@@ -161,11 +171,13 @@ class ValidatorTest {
         EventModification.AdditionalService invalid2 = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(new EventModification.AdditionalServiceText(0, "en", "", AdditionalServiceText.TextType.DESCRIPTION)), AdditionalService.AdditionalServiceType.DONATION, null, null, null);
         assertFalse(Validator.validateAdditionalService(invalid1, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
-        assertNotNull(errors.getFieldError("additionalServices"));
+        assertNotNull(errors.getFieldError("title"));
+        assertNotNull(errors.getFieldError("description"));
 
         assertFalse(Validator.validateAdditionalService(invalid2, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
-        assertNotNull(errors.getFieldError("additionalServices"));
+        assertNotNull(errors.getFieldError("title"));
+        assertNotNull(errors.getFieldError("description"));
     }
 
     @Test
