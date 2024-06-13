@@ -10,7 +10,7 @@ import {renderIf, supportedLanguages} from "../../service/helpers.ts";
 import {pageHeader, textColors} from "../../styles.ts";
 import {when} from "lit/directives/when.js";
 import {AdditionalItemEdit} from "../additional-item-edit/additional-item-edit.ts";
-import {AlfioDialogClosed} from "../../model/dom-events.ts";
+import {AlfioDialogClosed, dispatchFeedback} from "../../model/dom-events.ts";
 
 interface Model {
     event: AlfioEvent;
@@ -274,7 +274,10 @@ export class AdditionalItemList extends LitElement {
         this.editActive = false;
         if (e.detail.success) {
             this.refreshCount++;
-            // TODO show notification
+            dispatchFeedback({
+                type: 'success',
+                message: 'Operation completed successfully'
+            }, this);
         }
     }
 }

@@ -21,7 +21,7 @@
         this.loadEvent = loadEvent.data.event;
     }
 
-    admin.config(function($stateProvider, $urlRouterProvider, growlProvider) {
+    admin.config(function($stateProvider, $urlRouterProvider) {
         $urlRouterProvider.otherwise("/");
         $stateProvider
             .state('index', {
@@ -407,8 +407,6 @@
                 url: '/log',
                 template: '<extension-log></extension-log>'
             });
-
-        growlProvider.globalPosition('bottom-right');
     });
 
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;

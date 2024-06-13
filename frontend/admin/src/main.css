@@ -3,3 +3,10 @@
     --sl-font-sans: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
     --sl-color-danger-600: var(--sl-color-red-700);
 }
+
+.sl-toast-stack {
+    bottom: 16px;
+    right: 16px;
+    z-index: 9999;
+    top: auto;
+}

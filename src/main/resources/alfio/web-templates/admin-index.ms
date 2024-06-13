@@ -27,7 +27,6 @@
     <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker-bs3.css" />
     <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-csp.css"/>
     <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.css"/>
-    <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/angular-growl-v2/build/angular-growl.min.css"/>
     <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/dragula.js/dist/dragula.min.css"/>
     <script nonce="{{nonce}}">
         window.ALFIO_CONTEXT_PATH = "{{contextPath}}";
@@ -232,7 +231,6 @@
             </div>
         </div>
     </div>
-    <div growl></div>
     <div data-ng-controller="LayoutController as ctrl">
         <div class="container-fluid menu-spacer">
             <div class="row">
@@ -255,5 +253,6 @@
         </div>
     </div>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/common/warning-msg.js" async="true"></script>
+    <alfio-feedback-visualizer></alfio-feedback-visualizer>
 </body>
 </html>

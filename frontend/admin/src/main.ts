@@ -38,3 +38,4 @@ export { ProjectBanner } from './project-banner/project-banner';
 export { AdditionalItemList } from './event/additional-item-list/additional-item-list';
 export { DisplayCommonMarkPreview } from './display-common-mark-preview/display-common-mark-preview';
 export { AdditionalItemEdit } from './event/additional-item-edit/additional-item-edit';
+export { FeedbackVisualizer } from './feedback-visualizer/feedback-visualizer';
