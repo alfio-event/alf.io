@@ -239,7 +239,7 @@ public class AdditionalServiceManager {
                     .addValue("additionalServiceId", as.getId())
                     .addValue("status", AdditionalServiceItem.AdditionalServiceItemStatus.PENDING.name())
                     .addValue("id", ids.get(i))
-                    .addValue("srcPriceCts", as.getSrcPriceCts())
+                    .addValue("srcPriceCts", pc.getSrcPriceCts())
                     .addValue("finalPriceCts", unitToCents(pc.getFinalPrice(), currencyCode))
                     .addValue("vatCts", unitToCents(pc.getVAT(), currencyCode))
                     .addValue("discountCts", unitToCents(pc.getAppliedDiscount(), currencyCode))
@@ -253,7 +253,7 @@ public class AdditionalServiceManager {
                     reservationId,
                     AdditionalServiceItem.AdditionalServiceItemStatus.PENDING,
                     event,
-                    as.getSrcPriceCts(),
+                    pc.getSrcPriceCts(),
                     unitToCents(pc.getFinalPrice(), currencyCode),
                     unitToCents(pc.getVAT(), currencyCode),
                     unitToCents(pc.getAppliedDiscount(), currencyCode)
