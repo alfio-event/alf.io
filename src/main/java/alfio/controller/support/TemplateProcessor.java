@@ -37,7 +37,7 @@ import com.openhtmltopdf.extend.FSStreamFactory;
 import com.openhtmltopdf.pdfboxout.PdfBoxFontResolver;
 import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
-import org.apache.pdfbox.io.MemoryUsageSetting;
+import org.apache.pdfbox.io.IOUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.core.io.ClassPathResource;
 
@@ -144,7 +144,7 @@ public final class TemplateProcessor {
             return;
         }
         PdfRendererBuilder builder = new PdfRendererBuilder();
-        PDDocument doc = new PDDocument(MemoryUsageSetting.setupTempFileOnly());
+        PDDocument doc = new PDDocument(IOUtils.createTempFileOnlyStreamCache());
         builder.usePDDocument(doc);
         builder.toStream(os);
         builder.useProtocolsStreamImplementation(new AlfioInternalFSStreamFactory(), "alfio-internal");

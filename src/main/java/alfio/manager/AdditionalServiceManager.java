@@ -258,7 +258,7 @@ public class AdditionalServiceManager {
                     .addValue("additionalServiceId", as.id())
                     .addValue("status", AdditionalServiceItem.AdditionalServiceItemStatus.PENDING.name())
                     .addValue("id", ids.get(i))
-                    .addValue("srcPriceCts", as.srcPriceCts())
+                    .addValue("srcPriceCts", pc.getSrcPriceCts())
                     .addValue("finalPriceCts", unitToCents(pc.getFinalPrice(), currencyCode))
                     .addValue("vatCts", unitToCents(pc.getVAT(), currencyCode))
                     .addValue("discountCts", unitToCents(pc.getAppliedDiscount(), currencyCode))

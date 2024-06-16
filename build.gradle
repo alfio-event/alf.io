@@ -119,8 +119,8 @@ dependencies {
     implementation "com.samskivert:jmustache:1.16"
     implementation 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
-    implementation 'com.openhtmltopdf:openhtmltopdf-core:1.0.10'
-    implementation 'com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10'
+    implementation 'io.github.openhtmltopdf:openhtmltopdf-core:1.1.16'
+    implementation 'io.github.openhtmltopdf:openhtmltopdf-pdfbox:1.1.16'
     implementation 'ch.digitalfondue.jfiveparse:jfiveparse:1.0.3'
     /**/
     implementation 'com.google.zxing:core:3.5.3'
