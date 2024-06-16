@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.manager.support.reservation.ReservationCostCalculator;
 import alfio.model.AdditionalService;
 import alfio.model.Event;
 import alfio.model.PromoCodeDiscount;
@@ -48,6 +49,7 @@ public class AdditionalServiceManagerTest {
     private NamedParameterJdbcTemplate jdbcTemplate;
     private TicketRepository ticketRepository;
     private PurchaseContextFieldRepository purchaseContextFieldRepository;
+    private ReservationCostCalculator reservationCostCalculator;
 
     @BeforeEach
     void init() {
@@ -61,6 +63,7 @@ public class AdditionalServiceManagerTest {
         jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
         purchaseContextFieldRepository = mock(PurchaseContextFieldRepository.class);
         ticketRepository = mock(TicketRepository.class);
+        reservationCostCalculator = mock(ReservationCostCalculator.class);
     }
 
     @ParameterizedTest
@@ -73,11 +76,11 @@ public class AdditionalServiceManagerTest {
         final PromoCodeDiscount DISCOUNT = null;
         final String RESERVATION_ID = "7ddadb25-18e8-4c72-9727-11f0bdfdb698";
         final int REQUESTED_QUANTITY = 1;
-        final BigDecimal AMOUNT = new BigDecimal(5.74);
+        final BigDecimal AMOUNT = new BigDecimal("5.74");
         final boolean IS_FIXED_PRICE = false;
 
-        when(additionalService.getAvailableQuantity()).thenReturn(availQuantity);
-        when(additionalService.isFixPrice()).thenReturn(IS_FIXED_PRICE);
+        when(additionalService.availableQuantity()).thenReturn(availQuantity);
+        when(additionalService.fixPrice()).thenReturn(IS_FIXED_PRICE);
         when(jdbcTemplate.batchUpdate(any(), any(SqlParameterSource[].class))).thenReturn(new int[]{1});
 
         final ArrayList<Integer> FREE_SERVICE_ITEMS = new ArrayList<>();
@@ -90,7 +93,8 @@ public class AdditionalServiceManagerTest {
             additionalServiceItemRepository,
             jdbcTemplate,
             ticketRepository,
-            purchaseContextFieldRepository
+            purchaseContextFieldRepository,
+            reservationCostCalculator
         );
 
         additionalServiceManager.bookAdditionalServiceItems(
