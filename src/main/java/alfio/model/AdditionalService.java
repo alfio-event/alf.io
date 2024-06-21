@@ -110,6 +110,11 @@ public record AdditionalService(@Column("id") int id,
         public static Set<SupplementPolicy> userSelected() {
             return Arrays.stream(values()).filter(Predicate.not(SupplementPolicy::isMandatory)).collect(Collectors.toSet());
         }
+
+        public static boolean isMandatoryPercentage(SupplementPolicy policy) {
+            return policy == SupplementPolicy.MANDATORY_PERCENTAGE_RESERVATION
+                || policy == SupplementPolicy.MANDATORY_PERCENTAGE_FOR_TICKET;
+        }
     }
 
     public ZonedDateTime getInception(ZoneId zoneId) {

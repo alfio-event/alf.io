@@ -114,4 +114,13 @@ public final class MonetaryUtil {
         var currencyUnit = CurrencyUnit.of(Objects.requireNonNull(currencyCode).toUpperCase(Locale.ENGLISH));
         return Objects.requireNonNull(unit).setScale(currencyUnit.getDecimalPlaces(), HALF_UP).toPlainString();
     }
+
+    public static String formatPercentage(int percentageCts) {
+        return formatPercentage(new BigDecimal(percentageCts).divide(HUNDRED, HALF_UP)
+            .setScale(2, HALF_UP));
+    }
+
+    public static String formatPercentage(BigDecimal unit) {
+        return unit.stripTrailingZeros().toPlainString();
+    }
 }

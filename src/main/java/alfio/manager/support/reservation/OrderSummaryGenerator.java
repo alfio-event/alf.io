@@ -146,7 +146,7 @@ public class OrderSummaryGenerator {
         List<SummaryRow> summary = new ArrayList<>();
         var currencyCode = reservationCost.getCurrencyCode();
         List<TicketPriceContainer> tickets = ticketsToInclude.stream()
-            .map(t -> TicketPriceContainer.from(t, reservationVatStatus, purchaseContext.getVat(), purchaseContext.getVatStatus(), promoCodeDiscount)).collect(toList());
+            .map(t -> TicketPriceContainer.from(t, reservationVatStatus, purchaseContext.getVat(), purchaseContext.getVatStatus(), promoCodeDiscount)).toList();
         purchaseContext.event().ifPresent(event -> {
             boolean multipleTaxRates = tickets.stream().map(TicketPriceContainer::getVatStatus).collect(Collectors.toSet()).size() > 1;
             var ticketsByCategory = tickets.stream()
@@ -157,7 +157,7 @@ public class OrderSummaryGenerator {
                     .entrySet()
                     .stream()
                     .sorted(Comparator.comparing((Map.Entry<Integer, List<TicketPriceContainer>> e) -> e.getValue().get(0).getVatStatus()).reversed())
-                    .collect(Collectors.toList());
+                    .toList();
             } else {
                 sorted = new ArrayList<>(ticketsByCategory.entrySet());
             }
@@ -206,8 +206,14 @@ public class OrderSummaryGenerator {
                 AdditionalServiceItemPriceContainer first = prices.get(0);
                 final int subtotal = prices.stream().mapToInt(AdditionalServiceItemPriceContainer::getSrcPriceCts).sum();
                 final int subtotalBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(prices);
-                return new SummaryRow(title.getValue(), formatCents(first.getSrcPriceCts(), currencyCode), formatCents(SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(first)), currencyCode), prices.size(), formatCents(subtotal, currencyCode), formatCents(subtotalBeforeVat, currencyCode), subtotal, SummaryRow.SummaryType.ADDITIONAL_SERVICE, null, first.getVatStatus());
-            }).collect(toList()));
+                Function<Integer, String> formatterFunction;
+                if (AdditionalService.SupplementPolicy.isMandatoryPercentage(entry.getKey().supplementPolicy())) {
+                    formatterFunction = cts -> MonetaryUtil.formatPercentage(cts) + "%";
+                } else {
+                    formatterFunction = srcPriceCts -> formatCents(srcPriceCts, currencyCode);
+                }
+                return new SummaryRow(title.getValue(), formatterFunction.apply(first.getSrcPriceCts()), formatterFunction.apply(SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(first))), prices.size(), formatCents(subtotal, currencyCode), formatCents(subtotalBeforeVat, currencyCode), subtotal, SummaryRow.SummaryType.ADDITIONAL_SERVICE, null, first.getVatStatus());
+            }).toList());
 
         Optional.ofNullable(promoCodeDiscount).ifPresent(promo -> {
             String formattedSingleAmount = "-" + (PromoCodeDiscount.DiscountType.isFixedAmount(promo.getDiscountType())  ? formatCents(promo.getDiscountAmount(), currencyCode) : (promo.getDiscountAmount()+"%"));
@@ -242,7 +248,7 @@ public class OrderSummaryGenerator {
             subscriptionRepository.findOne(subscription.getSubscriptionDescriptorId(), subscription.getOrganizationId()).ifPresent(subscriptionDescriptor -> {
                 log.trace("found subscriptionDescriptor with ID {}", subscriptionDescriptor.getId());
                 // find tickets with subscription applied
-                var ticketsSubscription = tickets.stream().filter(t -> Objects.equals(subscription.getId(), t.getSubscriptionId())).collect(toList());
+                var ticketsSubscription = tickets.stream().filter(t -> Objects.equals(subscription.getId(), t.getSubscriptionId())).toList();
                 final int ticketPriceCts = ticketsSubscription.stream().mapToInt(TicketPriceContainer::getSummarySrcPriceCts).sum();
                 final int priceBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(ticketsSubscription);
                 summary.add(new SummaryRow(subscriptionDescriptor.getLocalizedTitle(locale),
@@ -289,7 +295,7 @@ public class OrderSummaryGenerator {
             return messageSourceManager.getMessageSourceFor(purchaseContext).getMessage("reservation.dynamic.discount.description", null, locale); //we don't expose the internal promo code
         }
 
-        List<Ticket> filteredTickets = tickets.stream().filter(ticket -> promoCodeDiscount.getCategories().contains(ticket.getCategoryId())).collect(toList());
+        List<Ticket> filteredTickets = tickets.stream().filter(ticket -> promoCodeDiscount.getCategories().contains(ticket.getCategoryId())).toList();
 
         if (promoCodeDiscount.getCategories().isEmpty() || filteredTickets.isEmpty()) {
             return promoCodeDiscount.getPromoCode();

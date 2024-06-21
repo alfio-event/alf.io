@@ -188,7 +188,7 @@ public class AdditionalServiceManager {
     }
 
     private static int evaluateAdditionalServicePriceCts(EventModification.AdditionalService as, String currencyCode) {
-        if (as.getSupplementPolicy() == MANDATORY_PERCENTAGE_FOR_TICKET || as.getSupplementPolicy() == MANDATORY_PERCENTAGE_RESERVATION) {
+        if (AdditionalService.SupplementPolicy.isMandatoryPercentage(as.getSupplementPolicy())) {
             var decimalAwarePrice = Objects.requireNonNullElse(as.getPrice(), BigDecimal.ZERO)
                 .multiply(HUNDRED)
                 .setScale(0, HALF_UP);

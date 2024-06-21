@@ -28,6 +28,8 @@ import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
+import static alfio.util.MonetaryUtil.formatPercentage;
+
 public class SaleableAdditionalService implements PriceContainer {
     private final Event event;
     @Delegate(excludes = {Exclusions.class, PriceContainer.class})
@@ -98,6 +100,9 @@ public class SaleableAdditionalService implements PriceContainer {
     }
 
     public String getFormattedFinalPrice() {
+        if (AdditionalService.SupplementPolicy.isMandatoryPercentage(supplementPolicy())) {
+            return formatPercentage(srcPriceCts());
+        }
         return SaleableTicketCategory.getFinalPriceToDisplay(getFinalPrice().add(getAppliedDiscount()), getVAT(), getVatStatus()).toPlainString();
     }
 
@@ -111,14 +116,11 @@ public class SaleableAdditionalService implements PriceContainer {
     }
 
     public boolean getVatIncluded() {
-        switch (vatType()) {
-            case INHERITED:
-                return event.isVatIncluded();
-            case CUSTOM_INCLUDED:
-                return true;
-            default:
-                return false;
-        }
+        return switch (vatType()) {
+            case INHERITED -> event.isVatIncluded();
+            case CUSTOM_INCLUDED -> true;
+            default -> false;
+        };
     }
 
     public BigDecimal getVatPercentage() {
