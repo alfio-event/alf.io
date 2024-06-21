@@ -46,7 +46,7 @@ export class AdditionalItemEdit extends LitElement {
 
     private buildDefaultValues(currentState: FormState<FormData>): FormData {
         if (this.editedItem != null) {
-            const item = this.editedItem as AdditionalItem;
+            const item = this.editedItem;
             return {
                 availabilityAndPrices: this.buildAvailabilityAndPricesFromItem(item),
                 descriptions: item.title.map(((title, i) => {
@@ -84,7 +84,7 @@ export class AdditionalItemEdit extends LitElement {
             minPrice: null,
             maxPrice: null,
             price: 0,
-            fixPrice: true,
+            fixPrice: this.type === 'SUPPLEMENT',
             vat: event.vatPercentage,
             vatType: "INHERITED",
             supplementPolicy: "OPTIONAL_UNLIMITED_AMOUNT",
@@ -353,34 +353,29 @@ export class AdditionalItemEdit extends LitElement {
             this.supportedLanguages = request.supportedLanguages;
             this.event = request.event;
             this.type = request.type;
-            const hasSupportedLanguages = this.supportedLanguages != null;
-            const hasEvent = this.event != null;
-            const hasItem = this.editedItem != null;
-            if (hasSupportedLanguages || hasEvent || hasItem) {
-                this.#form.api.update({
-                    defaultValues: this.buildDefaultValues(this.#form.api.state),
-                    onSubmit: async (values) => {
-                        await this.save(values.value);
-                    },
-                    validators: {
-                        onSubmitAsync: async props => {
-                            const errors: { [k:string]: string} = {};
-                            const additionalItemRequest: Partial<AdditionalItem> = this.buildServerPayload(props.value);
-                            const result = await AdditionalItemService.validateAdditionalItem(additionalItemRequest);
-                            if (!result.success) {
-                                result.validationErrors.forEach(error => {
-                                    errors[error.fieldName] = error.code;
-                                });
-                                this.validationErrors = errors;
-                                return 'form contains errors';
-                            } else {
-                                this.validationErrors = {};
-                                return undefined;
-                            }
+            this.#form.api.update({
+                defaultValues: this.buildDefaultValues(this.#form.api.state),
+                onSubmit: async (values) => {
+                    await this.save(values.value);
+                },
+                validators: {
+                    onSubmitAsync: async props => {
+                        const errors: { [k:string]: string} = {};
+                        const additionalItemRequest: Partial<AdditionalItem> = this.buildServerPayload(props.value);
+                        const result = await AdditionalItemService.validateAdditionalItem(additionalItemRequest);
+                        if (!result.success) {
+                            result.validationErrors.forEach(error => {
+                                errors[error.fieldName] = error.code;
+                            });
+                            this.validationErrors = errors;
+                            return 'form contains errors';
+                        } else {
+                            this.validationErrors = {};
+                            return undefined;
                         }
                     }
-                });
-            }
+                }
+            });
             this.displayForm = true;
             await this.dialog?.show();
         }
@@ -416,7 +411,8 @@ export class AdditionalItemEdit extends LitElement {
             supplementPolicy: value.availabilityAndPrices.supplementPolicy,
             vatType: value.availabilityAndPrices.vatType,
             vat: value.availabilityAndPrices.vat,
-            type: this.type ?? undefined
+            type: this.type ?? undefined,
+            fixPrice: value.availabilityAndPrices.fixPrice
         };
     }
 

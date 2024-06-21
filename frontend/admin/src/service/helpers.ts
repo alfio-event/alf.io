@@ -68,6 +68,12 @@ export function notifyChange(event: InputEvent, field: FieldApi<any, any>): void
     }
 }
 
+export function escapeHtml(message: string): string {
+    const div = document.createElement('div');
+    div.textContent = message;
+    return div.innerHTML;
+}
+
 declare global {
     interface Window {
         SUPPORTED_LANGUAGES: string | null;

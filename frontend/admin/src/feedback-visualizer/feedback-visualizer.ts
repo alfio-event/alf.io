@@ -1,6 +1,7 @@
 import {customElement} from "lit/decorators.js";
 import {html, LitElement, TemplateResult} from "lit";
 import {AlfioFeedbackEvent} from "../model/dom-events.ts";
+import {escapeHtml} from "../service/helpers.ts";
 
 @customElement('alfio-feedback-visualizer')
 export class FeedbackVisualizer extends LitElement {
@@ -13,7 +14,7 @@ export class FeedbackVisualizer extends LitElement {
             duration: 3000,
             innerHTML: `
                 <sl-icon name="${this.getIcon(detail)}" slot="icon"></sl-icon>
-                ${this.escapeHtml(detail.message)}
+                ${escapeHtml(detail.message)}
             `
         });
 
@@ -32,12 +33,6 @@ export class FeedbackVisualizer extends LitElement {
             default:
                 return 'info-circle';
         }
-    }
-
-    private escapeHtml(message: string): string {
-        const div = document.createElement('div');
-        div.textContent = message;
-        return div.innerHTML;
     }
 
     protected render(): TemplateResult {

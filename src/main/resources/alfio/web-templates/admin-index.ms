@@ -48,7 +48,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/chartist-plugin-accessibility/dist/chartist-plugin-accessibility.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-growl-v2/build/angular-growl.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-animate/angular-animate.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/qrcode-generator/js/qrcode.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/qrcode-generator/js/qrcode_UTF8.js"></script>

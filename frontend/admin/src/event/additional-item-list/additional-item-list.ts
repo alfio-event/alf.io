@@ -4,13 +4,19 @@ import {repeat} from 'lit/directives/repeat.js';
 import {AdditionalItemService, UsageCount} from "../../service/additional-item.ts";
 import {Task} from "@lit/task";
 import {AlfioEvent, ContentLanguage} from "../../model/event.ts";
-import {AdditionalItem, AdditionalItemType, supplementPolicyDescriptions} from "../../model/additional-item.ts";
+import {
+    AdditionalItem,
+    AdditionalItemType, isMandatory,
+    isMandatoryPercentage,
+    supplementPolicyDescriptions
+} from "../../model/additional-item.ts";
 import {EventService} from "../../service/event.ts";
 import {renderIf, supportedLanguages} from "../../service/helpers.ts";
 import {pageHeader, textColors} from "../../styles.ts";
 import {when} from "lit/directives/when.js";
 import {AdditionalItemEdit} from "../additional-item-edit/additional-item-edit.ts";
 import {AlfioDialogClosed, dispatchFeedback} from "../../model/dom-events.ts";
+import {ConfirmationDialogService} from "../../service/confirmation-dialog.ts";
 
 interface Model {
     event: AlfioEvent;
@@ -183,8 +189,31 @@ export class AdditionalItemList extends LitElement {
     }
 
     async delete(item: AdditionalItem, model: Model): Promise<boolean> {
-        const response = await AdditionalItemService.deleteAdditionalItem(item.id, model.event.id);
-        return response.ok;
+        try {
+            const confirmation = await ConfirmationDialogService.requestConfirm(
+                "Delete additional option?",
+                `Do you want to delete Additional option "${item.title.map(t => t.value).join("/")}"?`,
+                'danger'
+                );
+            if (confirmation) {
+                const response = await AdditionalItemService.deleteAdditionalItem(item.id, model.event.id);
+                if(response.ok) {
+                    dispatchFeedback({
+                        type: 'success',
+                        message: 'Additional Option successfully deleted'
+                    }, this);
+                    this.triggerListRefresh();
+                } else {
+                    dispatchFeedback({
+                        type: 'danger',
+                        message: 'Cannot delete additional option'
+                    }, this);
+                }
+            }
+            return false;
+        } catch(e) {
+            return false;
+        }
     }
 
     private generateFooter(model: Model): TemplateResult {
@@ -233,8 +262,8 @@ export class AdditionalItemList extends LitElement {
                             <div class="info">
                                 <strong>Price</strong>
                                 ${when(item.fixPrice,
-                    () => html`<sl-format-number type="currency" currency=${item.currency} value=${item.finalPrice}></sl-format-number><span></span>`,
-                    () => html`<span>User-defined</span>`)}
+                                    () => this.showItemFixPrice(item),
+                                    () => html`<span>User-defined</span>`)}
                             </div>
                             ${renderIf(() => item.type === 'SUPPLEMENT', () => html`
                                 <div class="info">
@@ -242,7 +271,7 @@ export class AdditionalItemList extends LitElement {
                                     ${supplementPolicyDescriptions[item.supplementPolicy]}
                                 </div>`)}
 
-                            ${renderIf(() => item.fixPrice && (item.supplementPolicy !== 'MANDATORY_ONE_FOR_TICKET' && item.supplementPolicy !== 'OPTIONAL_UNLIMITED_AMOUNT'),
+                            ${renderIf(() => item.fixPrice && (!isMandatory(item.supplementPolicy) && item.supplementPolicy !== 'OPTIONAL_UNLIMITED_AMOUNT'),
                     () => html`
                                 <div class="info">
                                     <strong>Max Qty per ${item.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_TICKET' ? 'ticket' : 'order'}</strong>
@@ -270,15 +299,26 @@ export class AdditionalItemList extends LitElement {
         })
     }
 
+    private showItemFixPrice(item: AdditionalItem): TemplateResult {
+        if (isMandatoryPercentage(item.supplementPolicy)) {
+            return html`${item.price}%`;
+        }
+        return html`<sl-format-number type="currency" currency=${item.currency} value=${item.finalPrice}></sl-format-number><span></span>`;
+    }
+
     private async editDialogClosed(e: AlfioDialogClosed) {
         this.editActive = false;
         if (e.detail.success) {
-            this.refreshCount++;
+            this.triggerListRefresh();
             dispatchFeedback({
                 type: 'success',
                 message: 'Operation completed successfully'
             }, this);
         }
+    }
+
+    private triggerListRefresh(): void {
+        this.refreshCount++;
     }
 }
 
