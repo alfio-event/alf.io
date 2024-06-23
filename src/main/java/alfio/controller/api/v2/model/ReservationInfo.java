@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Getter
@@ -114,7 +113,7 @@ public class ReservationInfo {
             this.summary = orderSummary.getSummary()
                 .stream()
                 .map(s -> new ReservationInfoOrderSummaryRow(s.getName(), s.getAmount(), s.getPrice(), s.getSubTotal(), s.getType(), s.getTaxPercentage()))
-                .collect(Collectors.toList());
+                .toList();
             this.totalPrice = orderSummary.getTotalPrice();
             this.free = orderSummary.getFree();
             this.displayVat = orderSummary.getDisplayVat();
@@ -156,11 +155,11 @@ public class ReservationInfo {
         }
 
         public List<AdditionalField> getFieldConfigurationBeforeStandard() {
-            return additionalFields.stream().filter(AdditionalField::isBeforeStandardFields).collect(Collectors.toList());
+            return additionalFields.stream().filter(AdditionalField::isBeforeStandardFields).toList();
         }
 
         public List<AdditionalField> getFieldConfigurationAfterStandard() {
-            return additionalFields.stream().filter(tv -> !tv.isBeforeStandardFields()).collect(Collectors.toList());
+            return additionalFields.stream().filter(tv -> !tv.isBeforeStandardFields()).toList();
         }
     }
 

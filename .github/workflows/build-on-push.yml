@@ -7,10 +7,10 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                postgresql: ['10','16']
+                postgresql: ['10', '15','16']
         steps:
-            - uses: actions/checkout@v3
-            - uses: actions/cache@v3
+            - uses: actions/checkout@v4
+            - uses: actions/cache@v4
               with:
                   path: ~/.gradle/caches
                   key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
@@ -23,7 +23,7 @@ jobs:
                   restore-keys: |
                       ${{ runner.os }}-gradlew-
             - name: Set up JDK
-              uses: actions/setup-java@v3
+              uses: actions/setup-java@v4
               with:
                   java-version: 17
                   distribution: temurin
@@ -37,7 +37,7 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             -   name: 'Upload Build'
                 if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '10'}}
-                uses: actions/upload-artifact@v3
+                uses: actions/upload-artifact@v4
                 with:
                     name: dist
                     path: build
@@ -49,7 +49,7 @@ jobs:
         name: Push dev image
         steps:
             - name: Download artifacts
-              uses: actions/download-artifact@v3
+              uses: actions/download-artifact@v4
               with:
                   name: dist
             -   name: Set up QEMU
@@ -79,7 +79,7 @@ jobs:
         name: Push PROD image
         steps:
             -   name: Download artifacts
-                uses: actions/download-artifact@v3
+                uses: actions/download-artifact@v4
                 with:
                     name: dist
             -   name: Set up QEMU

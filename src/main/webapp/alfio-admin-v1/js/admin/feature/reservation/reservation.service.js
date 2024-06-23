@@ -20,7 +20,7 @@
                     return $http['put']('/admin/api/reservation/'+purchaseContextType+'/'+publicIdentifier+'/'+reservationId+'/notify-attendees', ids).error(HttpErrorHandler.handle);
                 },
                 load: function(purchaseContextType, publicIdentifier, reservationId) {
-                    return $http.get('/admin/api/reservation/'+purchaseContextType+'/'+publicIdentifier+'/'+reservationId+'/').error(HttpErrorHandler.handle);
+                    return $http.get('/admin/api/reservation/'+purchaseContextType+'/'+publicIdentifier+'/'+reservationId).error(HttpErrorHandler.handle);
                 },
                 paymentInfo: function(purchaseContextType, publicIdentifier, reservationId) {
                     return $http.get('/admin/api/reservation/'+purchaseContextType+'/'+publicIdentifier+'/'+reservationId+'/payment-info').error(HttpErrorHandler.handle);

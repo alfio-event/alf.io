@@ -27,11 +27,11 @@
     <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker-bs3.css" />
     <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-csp.css"/>
     <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.css"/>
-    <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/angular-growl-v2/build/angular-growl.min.css"/>
     <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/dragula.js/dist/dragula.min.css"/>
     <script nonce="{{nonce}}">
         window.ALFIO_CONTEXT_PATH = "{{contextPath}}";
         window.USER_IS_OWNER = {{isOwner}};
+        window.SUPPORTED_LANGUAGES = {{#render-json}}supportedLanguages{{/render-json}};
     </script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/lodash/lodash.min.js"></script>
@@ -48,7 +48,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/chartist-plugin-accessibility/dist/chartist-plugin-accessibility.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-growl-v2/build/angular-growl.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-animate/angular-animate.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/qrcode-generator/js/qrcode.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/qrcode-generator/js/qrcode_UTF8.js"></script>
@@ -231,7 +230,6 @@
             </div>
         </div>
     </div>
-    <div growl></div>
     <div data-ng-controller="LayoutController as ctrl">
         <div class="container-fluid menu-spacer">
             <div class="row">
@@ -254,5 +252,6 @@
         </div>
     </div>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/common/warning-msg.js" async="true"></script>
+    <alfio-feedback-visualizer></alfio-feedback-visualizer>
 </body>
 </html>

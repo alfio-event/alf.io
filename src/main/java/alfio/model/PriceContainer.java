@@ -73,6 +73,15 @@ public interface PriceContainer {
             return vatStatus == INCLUDED || vatStatus == INCLUDED_EXEMPT || vatStatus == CUSTOM_INCLUDED_EXEMPT;
         }
 
+        /**
+         * Checks if tax is explicitly NOT INCLUDED
+         * @param vatStatus tax application
+         * @return true if not included
+         */
+        public static boolean isVatNotIncluded(VatStatus vatStatus) {
+            return vatStatus == NOT_INCLUDED || vatStatus == NOT_INCLUDED_EXEMPT || vatStatus == CUSTOM_NOT_INCLUDED_EXEMPT;
+        }
+
         public static VatStatus forceExempt(VatStatus original) {
             if (isVatIncluded(original)) {
                 return INCLUDED_EXEMPT;

@@ -68,6 +68,11 @@ export class AdditionalServiceComponent implements OnInit, OnDestroy {
     }
   }
 
+  get mandatoryPercentage(): boolean {
+      return this.additionalService.supplementPolicy === 'MANDATORY_PERCENTAGE_RESERVATION'
+          || this.additionalService.supplementPolicy === 'MANDATORY_PERCENTAGE_FOR_TICKET';
+  }
+
   public ngOnDestroy(): void {
     if (this.formSub) {
       this.formSub.unsubscribe();

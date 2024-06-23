@@ -113,8 +113,8 @@ public class ReservationUtil {
             return as.getInception(event.getZoneId()).isBefore(now) &&
                 as.getExpiration(event.getZoneId()).isAfter(now) &&
                 asm.getQuantity() >= 0 &&
-                ((as.isFixPrice() && asm.isQuantityValid(as, selectionCount)) || (!as.isFixPrice() && asm.getAmount() != null && asm.getAmount().compareTo(BigDecimal.ZERO) >= 0)) &&
-                eventManager.eventExistsById(as.getEventId());
+                ((as.fixPrice() && asm.isQuantityValid(as, selectionCount)) || (!as.fixPrice() && asm.getAmount() != null && asm.getAmount().compareTo(BigDecimal.ZERO) >= 0)) &&
+                eventManager.eventExistsById(as.eventId());
         });
 
         if(!validCategorySelection || !validAdditionalServiceSelected) {

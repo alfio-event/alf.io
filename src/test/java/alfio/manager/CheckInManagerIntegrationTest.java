@@ -113,7 +113,7 @@ class CheckInManagerIntegrationTest {
             List.of(new EventModification.AdditionalServiceText(null, "en", "bla", AdditionalServiceText.TextType.TITLE)),
             List.of(new EventModification.AdditionalServiceText(null, "en", "blabla", AdditionalServiceText.TextType.DESCRIPTION)),
             AdditionalService.AdditionalServiceType.SUPPLEMENT,
-            AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT
+            AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT, null, null
         );
         var additionalService = additionalServiceManager.insertAdditionalService(event, additionalServiceRequest);
         var category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);

@@ -30,7 +30,6 @@ import alfio.util.ExportUtils;
 import alfio.util.MonetaryUtil;
 import alfio.util.Validator;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,7 +85,7 @@ public class AdditionalServiceApiController {
             .map(event -> additionalServiceManager.loadAllForEvent(eventId)
                             .stream()
                             .map(as -> EventModification.AdditionalService.from(as)//.withAdditionalFields() TODO to be implemented
-                                            .withText(additionalServiceManager.findAllTextByAdditionalServiceId(as.getId()))
+                                            .withText(additionalServiceManager.findAllTextByAdditionalServiceId(as.id()))
                                             .withZoneId(event.getZoneId())
                                             .withPriceContainer(buildPriceContainer(event, as)).build())
                             .collect(Collectors.toList()))
@@ -107,7 +106,7 @@ public class AdditionalServiceApiController {
         Optional<AdditionalService> optional = additionalServiceManager.getOptionalById(additionalServiceId, eventId);
         Assert.isTrue(optional.isPresent(), "No additional service with id " + additionalServiceId + " present in eventId " + eventId);
         var existing = optional.get();
-        Assert.isTrue(existing.getAvailableQuantity() == -1 || additionalService.getAvailableQuantity() > 0, "Missing available quantity");
+        Assert.isTrue(existing.availableQuantity() == -1 || additionalService.getAvailableQuantity() > 0, "Missing available quantity");
         //
         ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
         Validate.isTrue(validationResult.isSuccess(), "validation failed");
@@ -216,7 +215,7 @@ public class AdditionalServiceApiController {
         return new PriceContainer() {
             @Override
             public int getSrcPriceCts() {
-                return as.isFixPrice() ? as.getSrcPriceCts() : 0;
+                return as.fixPrice() ? as.srcPriceCts() : 0;
             }
 
             @Override
@@ -231,7 +230,7 @@ public class AdditionalServiceApiController {
 
             @Override
             public VatStatus getVatStatus() {
-                return AdditionalService.getVatStatus(as.getVatType(), event.getVatStatus());
+                return AdditionalService.getVatStatus(as.vatType(), event.getVatStatus());
             }
         };
     }

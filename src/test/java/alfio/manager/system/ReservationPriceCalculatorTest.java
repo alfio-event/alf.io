@@ -99,14 +99,14 @@ class ReservationPriceCalculatorTest {
 
         @Test
         void allItemsAreSubjectedToTaxation() {
-            when(additionalService.getVatType()).thenReturn(AdditionalService.VatType.INHERITED);
+            when(additionalService.vatType()).thenReturn(AdditionalService.VatType.INHERITED);
             var taxablePrice = new ReservationPriceCalculator(reservation, null, tickets, additionalServiceItems, additionalServices, event, List.of(), Optional.empty()).getTaxablePrice();
             assertEquals(new BigDecimal("21.00"), taxablePrice);
         }
 
         @Test
         void additionalItemsAreNotSubjectedToTaxation() {
-            when(additionalService.getVatType()).thenReturn(AdditionalService.VatType.NONE);
+            when(additionalService.vatType()).thenReturn(AdditionalService.VatType.NONE);
             var taxablePrice = new ReservationPriceCalculator(reservation, null, tickets, additionalServiceItems, additionalServices, event, List.of(), Optional.empty()).getTaxablePrice();
             assertEquals(new BigDecimal("10.00"), taxablePrice);
         }

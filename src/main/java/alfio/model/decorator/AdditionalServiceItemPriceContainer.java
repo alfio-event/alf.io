@@ -52,7 +52,7 @@ public class AdditionalServiceItemPriceContainer implements SummaryPriceContaine
 
     @Override
     public Optional<BigDecimal> getOptionalVatPercentage() {
-        if(additionalService.getVatType() == AdditionalService.VatType.INHERITED) {
+        if(additionalService.vatType() == AdditionalService.VatType.INHERITED) {
             return Optional.ofNullable(eventVatPercentage);
         } else {
             return Optional.empty();
@@ -61,7 +61,7 @@ public class AdditionalServiceItemPriceContainer implements SummaryPriceContaine
 
     @Override
     public VatStatus getVatStatus() {
-        if(additionalService.getVatType() == AdditionalService.VatType.INHERITED) {
+        if(additionalService.vatType() == AdditionalService.VatType.INHERITED) {
             return eventVatStatus;
         } else {
             return VatStatus.NONE;
@@ -77,7 +77,7 @@ public class AdditionalServiceItemPriceContainer implements SummaryPriceContaine
     }
 
     public static AdditionalServiceItemPriceContainer from(AdditionalServiceItem item, AdditionalService additionalService, PurchaseContext purchaseContext, PromoCodeDiscount discount) {
-        var discountToApply = isDiscountCompatible(discount) && additionalService.getType() != AdditionalService.AdditionalServiceType.DONATION ? discount : null;
+        var discountToApply = isDiscountCompatible(discount) && additionalService.type() != AdditionalService.AdditionalServiceType.DONATION ? discount : null;
         return new AdditionalServiceItemPriceContainer(item, additionalService, purchaseContext.getCurrency(), discountToApply, purchaseContext.getVatStatus(), purchaseContext.getVat());
     }
 

@@ -380,8 +380,8 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
-        var firstAsKey = additionalServiceRepository.insert(event.getId(), 1000, true, 1, -1, 1, ZonedDateTime.now(ClockProvider.clock()).minusHours(1), ZonedDateTime.now(ClockProvider.clock()).plusHours(1), BigDecimal.TEN, AdditionalService.VatType.INHERITED, AdditionalService.AdditionalServiceType.SUPPLEMENT, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT);
-        var secondAsKey = additionalServiceRepository.insert(event.getId(), 500, true, 2, -1, 1, ZonedDateTime.now(ClockProvider.clock()).minusHours(1), ZonedDateTime.now(ClockProvider.clock()).plusHours(1), BigDecimal.TEN, AdditionalService.VatType.INHERITED, AdditionalService.AdditionalServiceType.DONATION, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT);
+        var firstAsKey = additionalServiceRepository.insert(event.getId(), 1000, true, 1, -1, 1, ZonedDateTime.now(ClockProvider.clock()).minusHours(1), ZonedDateTime.now(ClockProvider.clock()).plusHours(1), BigDecimal.TEN, AdditionalService.VatType.INHERITED, AdditionalService.AdditionalServiceType.SUPPLEMENT, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT, null, null);
+        var secondAsKey = additionalServiceRepository.insert(event.getId(), 500, true, 2, -1, 1, ZonedDateTime.now(ClockProvider.clock()).minusHours(1), ZonedDateTime.now(ClockProvider.clock()).plusHours(1), BigDecimal.TEN, AdditionalService.VatType.INHERITED, AdditionalService.AdditionalServiceType.DONATION, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT, null, null);
 
         TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
@@ -492,7 +492,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testWithAdditionalServices() {
+    void testWithAdditionalServices() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -501,7 +501,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
 
         List<EventModification.AdditionalService> additionalServices = Collections.singletonList(new EventModification.AdditionalService(null, BigDecimal.TEN, true, 1, 100, 5,
             DateTimeModification.fromZonedDateTime(ZonedDateTime.now(ClockProvider.clock()).minusDays(1L)), DateTimeModification.fromZonedDateTime(ZonedDateTime.now(ClockProvider.clock()).plusDays(1L)),
-            BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), AdditionalService.AdditionalServiceType.SUPPLEMENT, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT));
+            BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), AdditionalService.AdditionalServiceType.SUPPLEMENT, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT, null, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, additionalServices, Event.EventFormat.IN_PERSON).getKey();
 
         TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
@@ -512,7 +512,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 
         AdditionalServiceReservationModification asrm = new AdditionalServiceReservationModification();
-        asrm.setAdditionalServiceId(additionalServiceRepository.loadAllForEvent(event.getId()).get(0).getId());
+        asrm.setAdditionalServiceId(additionalServiceRepository.loadAllForEvent(event.getId()).get(0).id());
         asrm.setQuantity(1);
 
         ASReservationWithOptionalCodeModification asMod = new ASReservationWithOptionalCodeModification(asrm, Optional.empty());
@@ -532,7 +532,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals("40.00", orderSummary.getTotalPrice());
         assertEquals("0.40", orderSummary.getTotalVAT());
         assertEquals(3, orderSummary.getTicketAmount());
-        List<SummaryRow> asRows = orderSummary.getSummary().stream().filter(s -> s.getType() == SummaryRow.SummaryType.ADDITIONAL_SERVICE).collect(Collectors.toList());
+        List<SummaryRow> asRows = orderSummary.getSummary().stream().filter(s -> s.getType() == SummaryRow.SummaryType.ADDITIONAL_SERVICE).toList();
         assertEquals(1, asRows.size());
         assertEquals("9.90", asRows.get(0).getPriceBeforeVat());
         assertEquals("9.90", asRows.get(0).getSubTotalBeforeVat());
@@ -540,7 +540,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testTicketSelectionNotEnoughTicketsAvailable() {
+    void testTicketSelectionNotEnoughTicketsAvailable() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),

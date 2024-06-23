@@ -1,6 +1,6 @@
 (function () {
     "use strict";
-    var baseServices = angular.module('adminServices', ['angular-growl' , 'ngAnimate']);
+    var baseServices = angular.module('adminServices', ['ngAnimate']);
 
     baseServices.config(['$httpProvider', function($httpProvider) {
         var token = $("meta[name='_csrf']").attr("content");
@@ -660,26 +660,47 @@
         };
     }]);
 
-    baseServices.service("NotificationHandler", ["growl", "$sanitize", function (growl, $sanitize) {
-        var config = {ttl: 5000, disableCountDown: true};
-        var sanitize = function(message) {
-            var sanitized = $sanitize(message);
-            return sanitized.split(' ').map(function(part) {
-                return encodeURIComponent(part);
-            }).join(' ');
-        };
+    baseServices.service("NotificationHandler", [function () {
         return {
             showSuccess: function (message) {
-                return growl.success(sanitize(message), config);
+                window.dispatchEvent(new CustomEvent('alfio-feedback', {
+                    detail: {
+                        type: 'success',
+                        message: message
+                    },
+                    bubbles: true,
+                    composed: true
+                }));
             },
             showWarning: function (message) {
-                return growl.warning(sanitize(message), config);
+                window.dispatchEvent(new CustomEvent('alfio-feedback', {
+                    detail: {
+                        type: 'warning',
+                        message: message
+                    },
+                    bubbles: true,
+                    composed: true
+                }));
             },
             showInfo : function (message) {
-                return growl.info(sanitize(message), config);
+                window.dispatchEvent(new CustomEvent('alfio-feedback', {
+                    detail: {
+                        type: 'neutral',
+                        message: message
+                    },
+                    bubbles: true,
+                    composed: true
+                }));
             },
             showError : function (message, prefix) {
-                return growl.error((prefix || '') + sanitize(message), config);
+                window.dispatchEvent(new CustomEvent('alfio-feedback', {
+                    detail: {
+                        type: 'danger',
+                        message: message
+                    },
+                    bubbles: true,
+                    composed: true
+                }));
             }
         }
 

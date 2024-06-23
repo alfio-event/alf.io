@@ -53,7 +53,7 @@ class AdditionalServiceItemPriceContainerTest {
 
     @Test
     void fromDonation() {
-        when(additionalService.getType()).thenReturn(AdditionalService.AdditionalServiceType.DONATION);
+        when(additionalService.type()).thenReturn(AdditionalService.AdditionalServiceType.DONATION);
         var priceContainer = AdditionalServiceItemPriceContainer.from(additionalServiceItem, additionalService, event, discount);
         assertNotNull(priceContainer);
         assertFalse(priceContainer.getDiscount().isPresent());
@@ -61,7 +61,7 @@ class AdditionalServiceItemPriceContainerTest {
 
     @Test
     void fromSupplementPercentageDiscount() {
-        when(additionalService.getType()).thenReturn(AdditionalService.AdditionalServiceType.SUPPLEMENT);
+        when(additionalService.type()).thenReturn(AdditionalService.AdditionalServiceType.SUPPLEMENT);
         when(discount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.PERCENTAGE);
         when(discount.getCodeType()).thenReturn(PromoCodeDiscount.CodeType.DISCOUNT);
         var priceContainer = AdditionalServiceItemPriceContainer.from(additionalServiceItem, additionalService, event, discount);
@@ -72,7 +72,7 @@ class AdditionalServiceItemPriceContainerTest {
 
     @Test
     void fromSupplement() {
-        when(additionalService.getType()).thenReturn(AdditionalService.AdditionalServiceType.SUPPLEMENT);
+        when(additionalService.type()).thenReturn(AdditionalService.AdditionalServiceType.SUPPLEMENT);
         when(discount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.FIXED_AMOUNT);
         when(discount.getCodeType()).thenReturn(PromoCodeDiscount.CodeType.DISCOUNT);
         var priceContainer = AdditionalServiceItemPriceContainer.from(additionalServiceItem, additionalService, event, discount);

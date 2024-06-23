@@ -34,7 +34,9 @@ create view additional_service_with_currency as (
         asv.supplement_policy supplement_policy,
         asv.organization_id_fk organization_id_fk,
         e.currency currency_code,
-        (case when asv.available_qty > 0 then (select count(*) from additional_service_item where additional_service_id_fk = asv.id and status = 'FREE') else 999 end) as available_count
+        (case when asv.available_qty > 0 then (select count(*) from additional_service_item where additional_service_id_fk = asv.id and status = 'FREE') else 999 end) as available_count,
+        asv.price_min_cts price_min_cts,
+        asv.price_max_cts price_max_cts
     from additional_service asv, event e
     where asv.event_id_fk = e.id
 )

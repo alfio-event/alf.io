@@ -335,7 +335,7 @@
         return {
             loadAll: function(eventId) {
                 if(angular.isDefined(eventId)) {
-                    return $http.get('/admin/api/event/'+eventId+'/additional-services/').error(HttpErrorHandler.handle);
+                    return $http.get('/admin/api/event/'+eventId+'/additional-services').error(HttpErrorHandler.handle);
                 }
                 var deferred = $q.defer();
                 deferred.resolve({data:[]});
@@ -348,7 +348,7 @@
                 return (angular.isDefined(additionalService.id)) ? this.update(eventId, additionalService) : this.create(eventId, additionalService);
             },
             create: function(eventId, additionalService) {
-                return $http.post('/admin/api/event/'+eventId+'/additional-services/', additionalService).error(HttpErrorHandler.handle);
+                return $http.post('/admin/api/event/'+eventId+'/additional-services', additionalService).error(HttpErrorHandler.handle);
             },
             update: function(eventId, additionalService) {
                 return $http['put']('/admin/api/event/'+eventId+'/additional-services/'+additionalService.id, additionalService).error(HttpErrorHandler.handle);
