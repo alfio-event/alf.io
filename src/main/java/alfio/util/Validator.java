@@ -67,7 +67,9 @@ public final class Validator {
     private static final String ADDITIONAL_PREFIX = "additional[";
     private static final String ADDITIONAL_SERVICES = "additionalServices";
     private static final String ERROR_RESTRICTED_VALUE = "error.restrictedValue";
-    public static final Supplier<LocalDate> LOCAL_DATE_SUPPLIER = () -> LocalDate.now(ClockProvider.clock());
+    private static final Supplier<LocalDate> LOCAL_DATE_SUPPLIER = () -> LocalDate.now(ClockProvider.clock());
+    private static final String DESCRIPTION = "description";
+    private static final String TITLE = "title";
 
     private Validator() {
     }
@@ -94,7 +96,7 @@ public final class Validator {
         var descriptions = ev.getDescription();
 
         if(descriptions == null || descriptions.values().stream().anyMatch(v -> v == null || v.isBlank() || v.length() > descriptionMaxLength)) {
-            errors.rejectValue("description", ERROR_DESCRIPTION);
+            errors.rejectValue(DESCRIPTION, ERROR_DESCRIPTION);
         }
 
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "termsAndConditionsUrl", "error.termsandconditionsurl");
@@ -178,7 +180,7 @@ public final class Validator {
             errors.rejectValue(prefix + "expiration", "error.date.overflow");
         }
         if(isCategoryDescriptionTooLong(category, descriptionMaxLength)) {
-            errors.rejectValue(prefix + "description", ERROR_DESCRIPTION);
+            errors.rejectValue(prefix + DESCRIPTION, ERROR_DESCRIPTION);
         }
         return evaluateValidationResult(errors);
     }
@@ -616,14 +618,14 @@ public final class Validator {
         List<EventModification.AdditionalServiceText> descriptions = additionalService.getDescription();
         List<EventModification.AdditionalServiceText> titles = additionalService.getTitle();
         if(descriptions == null || titles == null || titles.size() != descriptions.size()) {
-            rejectFieldForAdditionalService("title", eventModificationIsNotNull, errors);
-            rejectFieldForAdditionalService("description", eventModificationIsNotNull, errors);
+            rejectFieldForAdditionalService(TITLE, eventModificationIsNotNull, errors);
+            rejectFieldForAdditionalService(DESCRIPTION, eventModificationIsNotNull, errors);
         } else {
             if(!validateDescriptionList(titles) || !containsAllRequiredTranslations(eventModification, titles)) {
-                rejectFieldForAdditionalService("title", eventModificationIsNotNull, errors);
+                rejectFieldForAdditionalService(TITLE, eventModificationIsNotNull, errors);
             }
             if(!validateDescriptionList(descriptions) || !containsAllRequiredTranslations(eventModification, descriptions)) {
-                rejectFieldForAdditionalService("description", eventModificationIsNotNull, errors);
+                rejectFieldForAdditionalService(DESCRIPTION, eventModificationIsNotNull, errors);
             }
         }
 
