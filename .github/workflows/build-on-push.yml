@@ -7,7 +7,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                postgresql: ['10','16']
+                postgresql: ['10', '15','16']
         steps:
             - uses: actions/checkout@v4
             - uses: actions/cache@v4
