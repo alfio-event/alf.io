@@ -23,8 +23,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.github.benmanes.caffeine.cache.RemovalListener;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -43,10 +41,13 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.*;
 
+// FIXME: remove @Transactiona
+// FIXME: new strategy: we cache on the FS, without any in memory cache reference, ideally, a file read should not trigger a transaction in the happy path
 @Component
 @Transactional
-@RequiredArgsConstructor
 public class FileUploadManager {
+
+
 
     static final int IMAGE_THUMB_MAX_WIDTH_PX = 300;
     static final int IMAGE_THUMB_MAX_HEIGHT_PX = 200;
@@ -63,6 +64,10 @@ public class FileUploadManager {
         .removalListener(removalListener())
         .build();
 
+    public FileUploadManager(FileUploadRepository repository) {
+        this.repository = repository;
+    }
+
     private static RemovalListener<String, File> removalListener() {
         return (String key, File value, RemovalCause cause) -> {
             if (value != null) {
@@ -76,6 +81,7 @@ public class FileUploadManager {
         };
     }
 
+    @Transactional(readOnly = true)
     public Optional<FileBlobMetadata> findMetadata(String id) {
         return repository.findById(id);
     }
