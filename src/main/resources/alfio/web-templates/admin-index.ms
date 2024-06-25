@@ -115,7 +115,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/internationalization-editor/internationalization-editor.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/copy-event/copy-event.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/metadata-editor/metadata-editor.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/project-banner/project-banner.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/polls/polls.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/export-reservations/export-reservations.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/open-generated-link/open-generated-link.js"></script>
@@ -246,8 +245,7 @@
                 </div>
             </div>
             <footer class="text-center" ng-if="!ctrl.displaySidebar">
-                <project-banner data-full-banner="{{displayProjectBanner}}" data-alfio-version="'{{alfioVersion}}'"></project-banner>
-                <!-- <alfio-project-banner data-full-banner="{{displayProjectBanner}}" data-alfio-version="{{alfioVersion}}"></alfio-project-banner> -->
+                <alfio-project-banner data-full-banner="{{displayProjectBanner}}" data-alfio-version="{{alfioVersion}}" class="container alert" style="display:block"></alfio-project-banner>
             </footer>
         </div>
     </div>

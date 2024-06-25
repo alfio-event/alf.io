@@ -1,7 +1,8 @@
-import { LitElement, html } from 'lit';
+import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js';
 import { ConfigurationService } from '../service/configuration';
+import { retroCompat, textColors, row } from '../styles'
 
 @customElement('alfio-project-banner')
 export class ProjectBanner extends LitElement {
@@ -12,32 +13,43 @@ export class ProjectBanner extends LitElement {
     @property({ type: String, attribute: 'data-alfio-version' })
     alfioVersion?: string;
 
+    static styles = [
+        retroCompat,
+        textColors,
+        row,
+        css` :host { --alfio-row-cols: 3 }`
+    ];
+
     render() {
         const notFullBanner = () => html`
             <div>
                 <h5 class="text-muted">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.${this.alfioVersion}</h5>
                 <small><a href="https://github.com/alfio-event/alf.io/issues" target="_blank" rel="noopener">report an issue</a> or <a href="https://github.com/alfio-event/alf.io/discussions" target="_blank" rel="nofollow noopener noreferrer">ask for help</a></small>
                 <div class="wMarginTop10px">
-                    <a class="btn btn-xs btn-success" href="https://alf.io/usage-form/" target="_blank" rel="noopener">Tell us about you!</a>
+                    <sl-button variant="success" size="small" href="https://alf.io/usage-form/" target="_blank" rel="noopener">Tell us about you!</sl-button>
                 </div>
             </div>
         `;
 
         const fullBanner = () => html`
-            <div class="alert">
+            <div>
                 <h3 class="text-center">Thank you for using Alf.io!</h3>
                 <h4> We don't track usage in any way, because we respect your privacy<br>
                 ...but we're very happy that you've decided to use Alf.io and we'd love to hear your story! </h4>
-                <div class="mb-3">&nbsp;</div>
+                <div>&nbsp;</div>
                 <div class="row">
-                    <div class="col-xs-12 col-lg-2 col-lg-offset-3">
-                        <a class="btn btn-primary" href="https://alf.io/usage-form/" target="_blank" rel="noopener"><i class="fa fa-bullhorn"></i> Tell us about you!</a>
+                    <div>
+                        <sl-button variant="primary" href="https://alf.io/usage-form/" target="_blank" rel="noopener">
+                            Tell us about you!
+                        </sl-button>
                     </div>
-                    <div class="col-xs-12 col-lg-2">
-                        <a class="btn btn-success ml-2" href="https://opencollective.com/alfio/contribute" target="_blank" rel="noopener"><i class="fa fa-handshake-o"></i> Contribute on OpenCollective</a>
+                    <div>
+                        <sl-button variant="success" href="https://opencollective.com/alfio/contribute" target="_blank" rel="noopener">
+                            Contribute on OpenCollective
+                        </sl-button>
                     </div>
-                    <div class="col-xs-12 col-lg-2">
-                        <button type="button" class="btn btn-default ml-3" @click=${this.dismiss} ng-click="$ctrl.dismiss()">Dismiss</button>
+                    <div>
+                        <sl-button type="button" class="btn btn-default ml-3" @click=${this.dismiss} ng-click="$ctrl.dismiss()">Dismiss</sl-button>
                     </div>
                 </div>
             </div>

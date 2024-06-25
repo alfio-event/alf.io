@@ -81,3 +81,42 @@ export const form = css`
         display: inline-block;
     }
 `;
+
+
+// imported minimal common css part from bootstrap
+export const retroCompat = css`
+
+h1,h2,h3,h4,h5,h6,.h1,.h2,.h3,.h4,.h5,.h6 {
+    font-family: inherit;
+    font-weight: 500;
+    line-height: 1.1;
+    color: inherit
+}
+
+h1,.h1,h2,.h2,h3,.h3 {
+    margin-top: 22px;
+    margin-bottom: 11px
+}
+
+
+h4,.h4,h5,.h5,h6,.h6 {
+    margin-top: 11px;
+    margin-bottom: 11px
+}
+
+h1,.h1 { font-size: 41px }
+h2,.h2 { font-size: 34px }
+h3,.h3 { font-size: 28px }
+h4,.h4 { font-size: 20px }
+h5,.h5 { font-size: 16px }
+h6,.h6 { font-size: 14px }
+
+small,.small { font-size: 87% }
+
+a { color: #337ab7; text-decoration: none }
+a:hover,a:focus { color: #23527c; text-decoration: underline }
+a:focus { outline: 5px auto -webkit-focus-ring-color; outline-offset: -2px }
+
+.wMarginTop10px { margin-top: 10px; }
+
+`;
