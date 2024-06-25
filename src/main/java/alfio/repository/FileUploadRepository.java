@@ -40,8 +40,8 @@ import java.util.Optional;
 @QueryRepository
 public interface FileUploadRepository {
 
-    @Query("select count(id) from file_blob where id = :id")
-    Integer isPresent(@Bind("id") String id);
+    @Query("select exists (select 1 from file_blob where id = :id)")
+    boolean isPresent(@Bind("id") String id);
 
     @Query("select id, name, content_size, content_type, attributes from file_blob where id = :id")
     Optional<FileBlobMetadata> findById(@Bind("id") String id);
@@ -79,7 +79,6 @@ public interface FileUploadRepository {
     default File file(String id) {
         try {
             File cachedFile = File.createTempFile("fileupload-cache", ".tmp");
-            cachedFile.deleteOnExit();
             SqlParameterSource param = new MapSqlParameterSource("id", id);
             getNamedParameterJdbcTemplate().query("select content from file_blob where id = :id", param, rs -> {
                 try (InputStream is = rs.getBinaryStream("content"); OutputStream os = new FileOutputStream(cachedFile)) {

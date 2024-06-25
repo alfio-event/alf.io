@@ -19,10 +19,6 @@ package alfio.manager;
 import alfio.model.FileBlobMetadata;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.repository.FileUploadRepository;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.RemovalCause;
-import com.github.benmanes.caffeine.cache.RemovalListener;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -31,20 +27,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.nio.file.Files;
-import java.time.Duration;
+import java.nio.file.*;
 import java.util.*;
+import java.util.regex.Pattern;
 
-// FIXME: remove @Transactiona
-// FIXME: new strategy: we cache on the FS, without any in memory cache reference, ideally, a file read should not trigger a transaction in the happy path
 @Component
-@Transactional
 public class FileUploadManager {
 
 
@@ -58,27 +52,9 @@ public class FileUploadManager {
     private static final int MAXIMUM_ALLOWED_SIZE = 1024 * 200;
     private static final MimeType IMAGE_TYPE = MimeType.valueOf("image/*");
     private final FileUploadRepository repository;
-    private final Cache<String, File> cache = Caffeine.newBuilder()
-        .maximumSize(20)
-        .expireAfterWrite(Duration.ofMinutes(20))
-        .removalListener(removalListener())
-        .build();
 
     public FileUploadManager(FileUploadRepository repository) {
         this.repository = repository;
-    }
-
-    private static RemovalListener<String, File> removalListener() {
-        return (String key, File value, RemovalCause cause) -> {
-            if (value != null) {
-                try {
-                    Files.delete(value.toPath());
-                    log.trace("deleted {}", key);
-                } catch(Exception ex) {
-                    log.trace("Error while deleting file", ex);
-                }
-            }
-        };
     }
 
     @Transactional(readOnly = true)
@@ -86,14 +62,11 @@ public class FileUploadManager {
         return repository.findById(id);
     }
 
-    public void outputFile(String id, OutputStream out) {
-        var file = cache.get(id, identifier -> repository.file(id));
-        if(file == null || !file.exists()) { //fallback, the file will not be cached though
-            cache.invalidate(id);
-            file = repository.file(id);
-        }
+    private static final Pattern IS_HEX = Pattern.compile("^\\p{XDigit}+$");
 
-        try (var fis = new FileInputStream(file)){
+    public void outputFile(String id, OutputStream out) {
+        Assert.isTrue(IS_HEX.matcher(id).matches(), "id must be an hex value");
+        try (var fis = ensureFilePresence(id)) {
             fis.transferTo(out);
         } catch(EOFException ex){
             // this happens when the browser closes the stream on its end.
@@ -103,17 +76,53 @@ public class FileUploadManager {
         }
     }
 
+    private Path getBlobDir() {
+        return Paths.get(System.getProperty("java.io.tmpdir"), "alfio-blob");
+    }
+
+    private InputStream ensureFilePresence(String id) throws IOException {
+        var resourcePath = getBlobDir().resolve(id);
+        try {
+            return Files.newInputStream(resourcePath);
+        } catch (NoSuchFileException nse) {
+            log.info("Cache not hit for file {}", id);
+            var tmpFile = repository.file(id);
+            var dir = getBlobDir();
+            Files.createDirectories(dir);
+            Files.move(tmpFile.toPath(), resourcePath, StandardCopyOption.ATOMIC_MOVE);
+            return Files.newInputStream(resourcePath); // second try...
+        }
+    }
+
+    private void ensureFilePresence(String digest, byte[] content) {
+        try {
+            // ensure directory
+            var dir = getBlobDir();
+            Files.createDirectories(dir);
+            var tmpFile = Files.createTempFile(dir, "tmp", "fileblob");
+            Files.write(tmpFile, content);
+            Files.move(tmpFile, dir.resolve(digest), StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            log.warn("was not able to ensure file presence with digest {}", digest, e);
+        }
+    }
+
+    @Transactional
     public String insertFile(UploadBase64FileModification file) {
         final var mimeType = MimeTypeUtils.parseMimeType(file.getType());
         var upload = resizeIfNeeded(file, mimeType);
         Validate.exclusiveBetween(1, MAXIMUM_ALLOWED_SIZE, upload.getFile().length);
         String digest = DigestUtils.sha256Hex(upload.getFile());
-        if (Integer.valueOf(0).equals(repository.isPresent(digest))) {
+        if (!repository.isPresent(digest)) {
             repository.upload(upload, digest, getAttributes(upload));
         }
+        //
+        ensureFilePresence(digest, upload.getFile());
+        //
         return digest;
     }
 
+    @Transactional
     public void cleanupUnreferencedBlobFiles(Date date) {
         int deleted = repository.cleanupUnreferencedBlobFiles(date);
         log.debug("removed {} unused file_blob", deleted);
