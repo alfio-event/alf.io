@@ -1,5 +1,5 @@
 import {css, html, LitElement, nothing, TemplateResult} from 'lit';
-import {customElement, property, query, state} from 'lit/decorators.js'
+import {customElement, property, state} from 'lit/decorators.js'
 import {repeat} from 'lit/directives/repeat.js';
 import {AdditionalItemService, UsageCount} from "../../service/additional-item.ts";
 import {Task} from "@lit/task";
@@ -14,7 +14,6 @@ import {EventService} from "../../service/event.ts";
 import {renderIf, supportedLanguages} from "../../service/helpers.ts";
 import {pageHeader, textColors} from "../../styles.ts";
 import {when} from "lit/directives/when.js";
-import {AdditionalItemEdit} from "../additional-item-edit/additional-item-edit.ts";
 import {AlfioDialogClosed, dispatchFeedback} from "../../model/dom-events.ts";
 import {ConfirmationDialogService} from "../../service/confirmation-dialog.ts";
 
@@ -138,9 +137,6 @@ export class AdditionalItemList extends LitElement {
         }
     `];
 
-    @query("alfio-additional-item-edit")
-    itemEditComponent?: AdditionalItemEdit;
-
     render() {
         return this.retrievePageDataTask.render({
             initial: () => html`loading...`,
@@ -156,8 +152,6 @@ export class AdditionalItemList extends LitElement {
                             </sl-button>` : nothing}
                 </div>
 
-                <alfio-additional-item-edit @alfio-dialog-closed=${this.editDialogClosed}></alfio-additional-item-edit>
-
                 ${this.iterateItems(model)}
 
                 ${this.generateFooter(model)}
@@ -167,25 +161,34 @@ export class AdditionalItemList extends LitElement {
     }
 
     async addNew(model: Model): Promise<void> {
-        if (this.itemEditComponent != null) {
-            this.editActive = await this.itemEditComponent.open({
-                supportedLanguages: model.event.contentLanguages,
-                event: model.event,
-                type: this.type!,
-                editedItem: null
-            });
-        }
+        this.editActive = true;
+        await this.openEditDialog(model, null);
     }
 
     async edit(item: AdditionalItem, model: Model): Promise<void> {
-        if (this.itemEditComponent != null) {
-            this.editActive = await this.itemEditComponent.open({
-                supportedLanguages: model.event.contentLanguages,
-                event: model.event,
-                type: this.type!,
-                editedItem: item
-            });
-        }
+        this.editActive = true;
+        await this.openEditDialog(model, item);
+    }
+
+    private async openEditDialog(model: Model, item: AdditionalItem | null): Promise<void> {
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <alfio-additional-item-edit></alfio-additional-item-edit>
+        `;
+        const itemEditComponent = div.querySelector('alfio-additional-item-edit')!;
+        document.body.appendChild(div);
+        await customElements.whenDefined('alfio-additional-item-edit');
+        itemEditComponent.addEventListener('alfio-dialog-closed', async (e) => {
+            await this.editDialogClosed(e);
+            setTimeout(() => document.body.removeChild(div));
+        });
+        await itemEditComponent.open({
+            supportedLanguages: model.event.contentLanguages,
+            event: model.event,
+            type: this.type!,
+            editedItem: item
+        });
+
     }
 
     async delete(item: AdditionalItem, model: Model): Promise<boolean> {
@@ -271,7 +274,7 @@ export class AdditionalItemList extends LitElement {
                                     ${supplementPolicyDescriptions[item.supplementPolicy]}
                                 </div>`)}
 
-                            ${renderIf(() => item.fixPrice && (!isMandatory(item.supplementPolicy) && item.supplementPolicy !== 'OPTIONAL_UNLIMITED_AMOUNT'),
+                            ${renderIf(() => item.fixPrice && (item.type === 'DONATION' || (!isMandatory(item.supplementPolicy) && item.supplementPolicy !== 'OPTIONAL_UNLIMITED_AMOUNT')),
                     () => html`
                                 <div class="info">
                                     <strong>Max Qty per ${item.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_TICKET' ? 'ticket' : 'order'}</strong>

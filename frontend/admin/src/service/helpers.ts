@@ -61,10 +61,13 @@ export function extractDateTime(isoString?: string): string {
     return "";
 }
 
-export function notifyChange(event: InputEvent, field: FieldApi<any, any>): void {
+export function notifyChange(event: InputEvent,
+                             field: FieldApi<any, any>,
+                             // helps with boolean / number values
+                             valueTransformer: (v: string) => any = (s) => s): void {
     const target = event.currentTarget as HTMLInputElement | null;
     if (target != null) {
-        field.handleChange(target.value);
+        field.handleChange(valueTransformer(target.value));
     }
 }
 
