@@ -301,7 +301,11 @@ export class AdditionalItemList extends LitElement {
 
     private showItemFixPrice(item: AdditionalItem): TemplateResult {
         if (isMandatoryPercentage(item.supplementPolicy)) {
-            return html`${item.price}%`;
+            return html`<div>${item.price}%${
+                renderIf(() => item.minPrice != null, () => html`, min. <sl-format-number type="currency" currency=${item.currency} value=${item.minPrice}></sl-format-number><span></span>`)
+            }${
+                renderIf(() => item.maxPrice != null, () => html`, max <sl-format-number type="currency" currency=${item.currency} value=${item.maxPrice}></sl-format-number><span></span>`)
+            }</div>`;
         }
         return html`<sl-format-number type="currency" currency=${item.currency} value=${item.finalPrice}></sl-format-number><span></span>`;
     }

@@ -206,13 +206,16 @@ public class OrderSummaryGenerator {
                 AdditionalServiceItemPriceContainer first = prices.get(0);
                 final int subtotal = prices.stream().mapToInt(AdditionalServiceItemPriceContainer::getSrcPriceCts).sum();
                 final int subtotalBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(prices);
-                Function<Integer, String> formatterFunction;
-                if (AdditionalService.SupplementPolicy.isMandatoryPercentage(entry.getKey().supplementPolicy())) {
-                    formatterFunction = cts -> MonetaryUtil.formatPercentage(cts) + "%";
-                } else {
-                    formatterFunction = srcPriceCts -> formatCents(srcPriceCts, currencyCode);
-                }
-                return new SummaryRow(title.getValue(), formatterFunction.apply(first.getSrcPriceCts()), formatterFunction.apply(SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(first))), prices.size(), formatCents(subtotal, currencyCode), formatCents(subtotalBeforeVat, currencyCode), subtotal, SummaryRow.SummaryType.ADDITIONAL_SERVICE, null, first.getVatStatus());
+                return new SummaryRow(title.getValue(),
+                    formatCents(first.getSrcPriceCts(), currencyCode),
+                    formatCents(SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(first)), currencyCode),
+                    prices.size(),
+                    formatCents(subtotal, currencyCode),
+                    formatCents(subtotalBeforeVat, currencyCode),
+                    subtotal,
+                    SummaryRow.SummaryType.ADDITIONAL_SERVICE,
+                    null,
+                    first.getVatStatus());
             }).toList());
 
         Optional.ofNullable(promoCodeDiscount).ifPresent(promo -> {

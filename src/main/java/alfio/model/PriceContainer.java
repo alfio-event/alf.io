@@ -142,15 +142,11 @@ public interface PriceContainer {
         }
         final BigDecimal price = centsToUnit(getSrcPriceCts(), getCurrencyCode());
         BigDecimal discountedPrice = price.subtract(getAppliedDiscount());
-        switch(vatStatus) {
-            case INCLUDED:
-            case NOT_INCLUDED_NOT_CHARGED:
-                return discountedPrice;
-            case INCLUDED_NOT_CHARGED:
-                return discountedPrice.subtract(getVAT());
-            default:
-                return discountedPrice.add(getVAT());
-        }
+        return switch (vatStatus) {
+            case INCLUDED, NOT_INCLUDED_NOT_CHARGED -> discountedPrice;
+            case INCLUDED_NOT_CHARGED -> discountedPrice.subtract(getVAT());
+            default -> discountedPrice.add(getVAT());
+        };
     }
 
     /**

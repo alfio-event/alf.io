@@ -137,7 +137,7 @@ export class AdditionalItemEdit extends LitElement {
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${this.close}>Close</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.close(false)}>Close</sl-button>
                         <div></div>
                         <sl-button variant="success" type="submit" size="large" .disabled=${!this.#form.api.state.canSubmit}>Save</sl-button>
                     </div>
@@ -382,7 +382,7 @@ export class AdditionalItemEdit extends LitElement {
         return this.dialog != null;
     }
 
-    public async close(success: boolean = false): Promise<boolean> {
+    public async close(success: boolean): Promise<boolean> {
         if (this.dialog != null) {
             await this.dialog.hide();
         }
@@ -412,7 +412,9 @@ export class AdditionalItemEdit extends LitElement {
             vatType: value.availabilityAndPrices.vatType,
             vat: value.availabilityAndPrices.vat,
             type: this.type ?? undefined,
-            fixPrice: value.availabilityAndPrices.fixPrice
+            fixPrice: value.availabilityAndPrices.fixPrice,
+            minPrice: value.availabilityAndPrices.minPrice,
+            maxPrice: value.availabilityAndPrices.maxPrice,
         };
     }
 

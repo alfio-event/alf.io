@@ -39,6 +39,9 @@ public class AdditionalServicePriceContainer implements PriceContainer {
 
     @Override
     public int getSrcPriceCts() {
+        if (AdditionalService.SupplementPolicy.isMandatoryPercentage(additionalService.supplementPolicy()) && customAmount != null) {
+            return MonetaryUtil.unitToCents(customAmount, currencyCode);
+        }
         if(additionalService.fixPrice()) {
             return additionalService.srcPriceCts();
         }

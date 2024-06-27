@@ -93,7 +93,9 @@ public class AdditionalServiceManager {
             additionalService.getVat(),
             additionalService.getVatType(),
             Optional.ofNullable(additionalService.getPrice()).map(p -> MonetaryUtil.unitToCents(p, event.getCurrency())).orElse(0),
-            additionalService.getSupplementPolicy().name());
+            additionalService.getSupplementPolicy().name(),
+            Optional.ofNullable(additionalService.getMinPrice()).map(p -> MonetaryUtil.unitToCents(p, event.getCurrency())).orElse(null),
+            Optional.ofNullable(additionalService.getMaxPrice()).map(p -> MonetaryUtil.unitToCents(p, event.getCurrency())).orElse(null));
         preGenerateItems(additionalServiceId, event, additionalService);
         return result;
     }
@@ -539,13 +541,13 @@ public class AdditionalServiceManager {
     }
 
     private static int adjustUsingMinMaxPrice(int amountCts, AdditionalService additionalService) {
-        if (additionalService.getMinPrice() != null && unitToCents(additionalService.getMinPrice(), additionalService.currencyCode()) > amountCts) {
+        if (additionalService.minPriceCts() != null && additionalService.minPriceCts() > amountCts) {
             // if calculated price is below minimum, we return the minimum price
-            return unitToCents(additionalService.getMinPrice(), additionalService.currencyCode());
+            return additionalService.minPriceCts();
         }
-        if (additionalService.getMaxPrice() != null && unitToCents(additionalService.getMaxPrice(), additionalService.currencyCode()) < amountCts) {
+        if (additionalService.maxPriceCts() != null && additionalService.maxPriceCts() < amountCts) {
             // if calculated price is over maximum, we return the maximum price
-            return unitToCents(additionalService.getMaxPrice(), additionalService.currencyCode());
+            return additionalService.maxPriceCts();
         }
         return amountCts;
     }
