@@ -153,7 +153,7 @@ abstract class AbstractFormBasedWebSecurity {
         http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, AUTHENTICATE, "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class);
 
         // call implementation-specific logic
-        addAdditionalFilters(http, authenticationManager);
+        additionalConfiguration(http, authenticationManager);
 
         if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
             http.addFilterAfter(new UserCreatorBeforeLoginFilter(userManager, AUTHENTICATE), RecaptchaLoginFilter.class);
@@ -265,7 +265,7 @@ abstract class AbstractFormBasedWebSecurity {
      * @param http
      * @param jdbcAuthenticationManager
      */
-    protected void addAdditionalFilters(HttpSecurity http, AuthenticationManager jdbcAuthenticationManager) {
+    protected void additionalConfiguration(HttpSecurity http, AuthenticationManager jdbcAuthenticationManager) throws Exception {
     }
 
     private OpenIdAuthenticationFilter openIdPublicAuthenticationFilter(OpenIdAuthenticationManager openIdAuthenticationManager) {

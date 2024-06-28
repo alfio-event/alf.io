@@ -71,7 +71,7 @@ public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
     }
 
     @Override
-    protected void addAdditionalFilters(HttpSecurity http, AuthenticationManager jdbcAuthenticationManager) {
+    protected void additionalConfiguration(HttpSecurity http, AuthenticationManager jdbcAuthenticationManager) {
         var callbackLoginFilter = new OpenIdCallbackLoginFilter(adminOpenIdAuthenticationManager,
             new AntPathRequestMatcher("/callback", "GET"),
             jdbcAuthenticationManager);
