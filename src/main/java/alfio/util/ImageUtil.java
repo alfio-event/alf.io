@@ -43,6 +43,7 @@ public final class ImageUtil {
     private static final Logger log = LoggerFactory.getLogger(ImageUtil.class);
 
     private static final String DEJA_VU_SANS = "/alfio/font/DejaVuSansMono.ttf";
+    private static final String FONT_SECTION = "font";
 
     private static File loadDejaVuFont() {
         try {
@@ -58,7 +59,7 @@ public final class ImageUtil {
     }
 
     public static File getDejaVuSansMonoFont(FileUploadManager fileUploadManager) {
-        return fileUploadManager.getFile("font", "DejaVuSansMono", () -> loadDejaVuFont());
+        return fileUploadManager.getFile(FONT_SECTION, "DejaVuSansMono", () -> loadDejaVuFont());
     }
 
 

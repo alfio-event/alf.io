@@ -84,7 +84,7 @@ public class FileBlobCacheManager {
             Files.write(tmpFile, supplier.get());
             Files.move(tmpFile, dir.resolve(id), StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
-            log.warn("was not able to ensure file presence with section {} and id ", section, id, e);
+            log.warn("was not able to ensure file presence with section {} and id {}", section, id, e);
         }
     }
 }

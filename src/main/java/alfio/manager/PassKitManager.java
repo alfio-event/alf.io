@@ -57,6 +57,7 @@ public class PassKitManager {
 
     private static final Logger log = LoggerFactory.getLogger(PassKitManager.class);
     private static final String APPLE_PASS = "ApplePass";
+    private static final String PASSKIT_SECTION = "passkit";
     private final EventRepository eventRepository;
     private final OrganizationRepository organizationRepository;
     private final ConfigurationManager configurationManager;
@@ -205,9 +206,9 @@ public class PassKitManager {
                 var fullSizeLogo = fileUploadManager.getFile(event.getFileBlobId());
                 var id = event.getFileBlobId();
                 try {
-                    var logo1x = fileBlobCacheManager.getFile("passkit", id + "scale-1", () -> scaleLogo(fullSizeLogo, 1));
-                    var logo2x = fileBlobCacheManager.getFile("passkit", id + "scale-2", () -> scaleLogo(fullSizeLogo, 2));
-                    var logo3x = fileBlobCacheManager.getFile("passkit", id + "scale-3", () -> scaleLogo(fullSizeLogo, 3));
+                    var logo1x = fileBlobCacheManager.getFile(PASSKIT_SECTION, id + "scale-1", () -> scaleLogo(fullSizeLogo, 1));
+                    var logo2x = fileBlobCacheManager.getFile(PASSKIT_SECTION, id + "scale-2", () -> scaleLogo(fullSizeLogo, 2));
+                    var logo3x = fileBlobCacheManager.getFile(PASSKIT_SECTION, id + "scale-3", () -> scaleLogo(fullSizeLogo, 3));
                     passResources.add(new PassResource("logo.png", logo1x));
                     passResources.add(new PassResource("logo@2x.png", logo2x));
                     passResources.add(new PassResource("logo@3x.png", logo3x));
