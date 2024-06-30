@@ -76,6 +76,11 @@ public interface FileUploadRepository {
 
     NamedParameterJdbcTemplate getNamedParameterJdbcTemplate();
 
+    /**
+     * Return a temporary file with the content of a given id
+     * @param id
+     * @return
+     */
     default File file(String id) {
         try {
             File cachedFile = File.createTempFile("fileupload-cache", ".tmp");

@@ -34,27 +34,28 @@ import org.springframework.util.MimeTypeUtils;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.nio.file.*;
 import java.util.*;
 import java.util.regex.Pattern;
 
 @Component
 public class FileUploadManager {
 
-
-
     static final int IMAGE_THUMB_MAX_WIDTH_PX = 300;
     static final int IMAGE_THUMB_MAX_HEIGHT_PX = 200;
     private static final Logger log = LoggerFactory.getLogger(FileUploadManager.class);
+
+    private static final String FILE_SECTION = "file-upload-manager";
     /**
      * Maximum allowed file size is 200kb
      */
     private static final int MAXIMUM_ALLOWED_SIZE = 1024 * 200;
     private static final MimeType IMAGE_TYPE = MimeType.valueOf("image/*");
     private final FileUploadRepository repository;
+    private final FileBlobCacheManager fileBlobCacheManager;
 
-    public FileUploadManager(FileUploadRepository repository) {
+    public FileUploadManager(FileUploadRepository repository, FileBlobCacheManager fileBlobCacheManager) {
         this.repository = repository;
+        this.fileBlobCacheManager = fileBlobCacheManager;
     }
 
     @Transactional(readOnly = true)
@@ -76,35 +77,16 @@ public class FileUploadManager {
         }
     }
 
-    private Path getBlobDir() {
-        return Paths.get(System.getProperty("java.io.tmpdir"), "alfio-blob");
+    public File getFile(String id) {
+        return fileBlobCacheManager.getFile(FILE_SECTION, id, () -> repository.file(id));
     }
 
     private InputStream ensureFilePresence(String id) throws IOException {
-        var resourcePath = getBlobDir().resolve(id);
-        try {
-            return Files.newInputStream(resourcePath);
-        } catch (NoSuchFileException nse) {
-            log.info("Cache not hit for file {}", id);
-            var tmpFile = repository.file(id);
-            var dir = getBlobDir();
-            Files.createDirectories(dir);
-            Files.move(tmpFile.toPath(), resourcePath, StandardCopyOption.ATOMIC_MOVE);
-            return Files.newInputStream(resourcePath); // second try...
-        }
+        return new FileInputStream(fileBlobCacheManager.getFile(FILE_SECTION, id, () -> repository.file(id)));
     }
 
-    private void ensureFilePresence(String digest, byte[] content) {
-        try {
-            // ensure directory
-            var dir = getBlobDir();
-            Files.createDirectories(dir);
-            var tmpFile = Files.createTempFile(dir, "tmp", "fileblob");
-            Files.write(tmpFile, content);
-            Files.move(tmpFile, dir.resolve(digest), StandardCopyOption.ATOMIC_MOVE);
-        } catch (IOException e) {
-            log.warn("was not able to ensure file presence with digest {}", digest, e);
-        }
+    private void ensureFilePresence(String id, byte[] content) {
+        fileBlobCacheManager.ensureFileExists(FILE_SECTION, id, () -> content);
     }
 
     @Transactional
@@ -158,10 +140,9 @@ public class FileUploadManager {
     }
 
     private Map<String, String> getAttributes(UploadBase64FileModification file) {
-        if(!StringUtils.startsWith(file.getType(), "image/")) {
+        if (!StringUtils.startsWith(file.getType(), "image/")) {
             return Collections.emptyMap();
         }
-
         try {
             BufferedImage image = ImageIO.read(new ByteArrayInputStream(file.getFile()));
             Map<String, String> attributes = new HashMap<>();

@@ -26,8 +26,6 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.LocaleUtil;
 import alfio.util.MustacheCustomTag;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ryantenney.passkit4j.Pass;
 import com.ryantenney.passkit4j.PassResource;
 import com.ryantenney.passkit4j.PassSerializer;
@@ -36,7 +34,6 @@ import com.ryantenney.passkit4j.sign.PassSigner;
 import com.ryantenney.passkit4j.sign.PassSignerImpl;
 import com.ryantenney.passkit4j.sign.PassSigningException;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.imgscalr.Scalr;
@@ -46,9 +43,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.*;
-import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.*;
@@ -62,10 +57,6 @@ public class PassKitManager {
 
     private static final Logger log = LoggerFactory.getLogger(PassKitManager.class);
     private static final String APPLE_PASS = "ApplePass";
-    private final Cache<String, Optional<byte[]>> passKitLogoCache = Caffeine.newBuilder()
-        .maximumSize(20)
-        .expireAfterWrite(Duration.ofMinutes(20))
-        .build();
     private final EventRepository eventRepository;
     private final OrganizationRepository organizationRepository;
     private final ConfigurationManager configurationManager;
@@ -73,7 +64,7 @@ public class PassKitManager {
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketRepository ticketRepository;
-    private final TicketReservationRepository ticketReservationRepository;
+    private final FileBlobCacheManager fileBlobCacheManager;
 
 
     public boolean writePass(Ticket ticket, EventAndOrganizationId event, OutputStream out) throws IOException, PassSigningException {
@@ -101,7 +92,7 @@ public class PassKitManager {
 
             Map<ConfigurationKeys, String> passConf = getConfigurationKeys(event);
             //check if all are set
-            if(passConf.isEmpty()) {
+            if (passConf.isEmpty()) {
                 log.trace("Cannot generate Passbook. Missing configuration keys, check if all 5 are presents");
                 return null;
             }
@@ -210,14 +201,18 @@ public class PassKitManager {
         passResources.add(new PassResource("icon@3x.png", () -> new ClassPathResource("/alfio/icon/icon@3x.png").getInputStream()));
 
         fileUploadManager.findMetadata(event.getFileBlobId()).ifPresent(metadata -> {
-            if(metadata.getContentType().equals("image/png") || metadata.getContentType().equals("image/jpeg")) {
-                Optional<byte[]> cachedLogo = passKitLogoCache.get(event.getFileBlobId(), id -> {
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    fileUploadManager.outputFile(event.getFileBlobId(), baos);
-                    return readAndConvertImage(baos);
-                });
-                if(cachedLogo != null && cachedLogo.isPresent()) {
-                    addLogoResources(cachedLogo.get(), passResources);
+            if (metadata.getContentType().equals("image/png") || metadata.getContentType().equals("image/jpeg")) {
+                var fullSizeLogo = fileUploadManager.getFile(event.getFileBlobId());
+                var id = event.getFileBlobId();
+                try {
+                    var logo1x = fileBlobCacheManager.getFile("passkit", id + "scale-1", () -> scaleLogo(fullSizeLogo, 1));
+                    var logo2x = fileBlobCacheManager.getFile("passkit", id + "scale-2", () -> scaleLogo(fullSizeLogo, 2));
+                    var logo3x = fileBlobCacheManager.getFile("passkit", id + "scale-3", () -> scaleLogo(fullSizeLogo, 3));
+                    passResources.add(new PassResource("logo.png", logo1x));
+                    passResources.add(new PassResource("logo@2x.png", logo2x));
+                    passResources.add(new PassResource("logo@3x.png", logo3x));
+                } catch (IllegalStateException e) { // handle various failures related to the file blob layer
+                    log.warn("was not able to add the logo to the passkit for ticket {} in event {}", ticket.getUuid(), event.getShortName(), e);
                 }
             }
         });
@@ -276,39 +271,23 @@ public class PassKitManager {
             .map(t -> Pair.of(event, t));
     }
 
-    private void addLogoResources(byte[] logo, List<PassResource> passResources) {
-        try {
-            var srcImage = ImageIO.read(new ByteArrayInputStream(logo));
-            passResources.add(new PassResource("logo.png", scaleLogo(srcImage, 1)));
-            passResources.add(new PassResource("logo@2x.png", scaleLogo(srcImage, 2)));
-            passResources.add(new PassResource("logo@3x.png", logo));
-        } catch (IOException e) {
-            log.warn("Error during image conversion", e);
-        }
-    }
-
     private List<Field<?>> getAuxiliaryFields(Ticket ticket) {
         //TODO add additional options here.
         return null;
     }
 
-    private static Optional<byte[]> readAndConvertImage(ByteArrayOutputStream baos) {
+    private static File scaleLogo(File sourceImage, int factor) {
         try {
-            BufferedImage sourceImage = ImageIO.read(new ByteArrayInputStream(baos.toByteArray()));
-            return Optional.of(scaleLogo(sourceImage, 3));
+            // base image is 160 x 50 points.
+            // On retina displays, a point can be two or three pixels, depending on the device model
+            int finalWidth = 160 * factor;
+            int finalHeight = 50 * factor;
+            var thumbImg = Scalr.resize(ImageIO.read(sourceImage), Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, finalWidth, finalHeight, Scalr.OP_ANTIALIAS);
+            var tmpFile = File.createTempFile("passkit", ""+factor);
+            ImageIO.write(thumbImg, "png", tmpFile);
+            return tmpFile;
         } catch (IOException e) {
-            return Optional.empty();
+            throw new IllegalStateException("was not able to scale logo from file " + sourceImage + " with factor " + factor, e);
         }
-    }
-
-    private static byte[] scaleLogo(BufferedImage sourceImage, int factor) throws IOException {
-        // base image is 160 x 50 points.
-        // On retina displays, a point can be two or three pixels, depending on the device model
-        int finalWidth = 160 * factor;
-        int finalHeight = 50 * factor;
-        var thumbImg = Scalr.resize(sourceImage, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, finalWidth, finalHeight, Scalr.OP_ANTIALIAS);
-        var outputStream = new ByteArrayOutputStream();
-        ImageIO.write(thumbImg, "png", outputStream);
-        return outputStream.toByteArray();
     }
 }
