@@ -1,9 +1,11 @@
 import {customElement} from "lit/decorators.js";
 import {html, LitElement, TemplateResult} from "lit";
+import {msg, localized} from '@lit/localize';
 import {AlfioFeedbackEvent} from "../model/dom-events.ts";
 import {escapeHtml} from "../service/helpers.ts";
 
 @customElement('alfio-feedback-visualizer')
+@localized()
 export class FeedbackVisualizer extends LitElement {
 
     private listener: EventListener = (e) => {
@@ -39,8 +41,8 @@ export class FeedbackVisualizer extends LitElement {
         return html`
             <sl-alert variant="danger" duration="3000" closable>
                 <sl-icon slot="icon" name="exclamation-octagon"></sl-icon>
-                <strong>Your account has been deleted</strong><br />
-                We're very sorry to see you go!
+                <strong>${msg(`Your account has been deleted`)}</strong><br />
+                ${msg(`We're very sorry to see you go!`)}
             </sl-alert>
         `;
     }

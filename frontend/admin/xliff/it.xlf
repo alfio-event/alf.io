@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+<file target-language="it" source-language="en" original="lit-localize-inputs" datatype="plaintext">
+<body>
+<trans-unit id="h8dbae751b47cca9d">
+  <source>Powered by <x id="0" equiv-text="&lt;a href=&quot;https://alf.io&quot; target=&quot;_blank&quot;&gt;"/>Alf.io<x id="1" equiv-text="&lt;/a&gt;"/> v.<x id="2" equiv-text="${this.alfioVersion}"/></source>
+</trans-unit>
+<trans-unit id="hf8ae7043408fe50a">
+  <source><x id="0" equiv-text="&lt;a href=&quot;https://github.com/alfio-event/alf.io/issues&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;"/>report an issue<x id="1" equiv-text="&lt;/a&gt;"/> or <x id="2" equiv-text="&lt;a href=&quot;https://github.com/alfio-event/alf.io/discussions&quot; target=&quot;_blank&quot; rel=&quot;nofollow noopener noreferrer&quot;&gt;"/>ask for help<x id="3" equiv-text="&lt;/a&gt;"/></source>
+</trans-unit>
+<trans-unit id="s66f7fb1ee5abad1b">
+  <source>Tell us about you!</source>
+</trans-unit>
+<trans-unit id="s453bbc36b1e1022b">
+  <source>Thank you for using Alf.io!</source>
+</trans-unit>
+<trans-unit id="scd07ca3518e4f6e4">
+  <source>We don't track usage in any way, because we respect your privacy</source>
+</trans-unit>
+<trans-unit id="sefdd01e68dc17845">
+  <source>...but we're very happy that you've decided to use Alf.io and we'd love to hear your story!</source>
+</trans-unit>
+<trans-unit id="sf4b7b3fc180a2259">
+  <source>Contribute on OpenCollective</source>
+</trans-unit>
+<trans-unit id="s12d6dde9b30c3093">
+  <source>Dismiss</source>
+</trans-unit>
+<trans-unit id="s902283dfce75a674">
+  <source>Your account has been deleted</source>
+</trans-unit>
+<trans-unit id="saf7a91f4fd57c858">
+  <source>We're very sorry to see you go!</source>
+</trans-unit>
+</body>
+</file>
+</xliff>

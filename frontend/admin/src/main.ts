@@ -24,6 +24,8 @@ import '@shoelace-style/shoelace/dist/components/textarea/textarea';
 import '@shoelace-style/shoelace/dist/components/select/select';
 import '@shoelace-style/shoelace/dist/components/option/option';
 
+import './localization';
+
 
 
 // see https://vitejs.dev/guide/env-and-mode
