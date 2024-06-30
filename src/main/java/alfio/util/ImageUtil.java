@@ -16,9 +16,7 @@
  */
 package alfio.util;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.RemovalCause;
+import alfio.manager.FileUploadManager;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.MultiFormatWriter;
@@ -43,19 +41,10 @@ import static org.apache.commons.lang3.StringUtils.truncate;
 public final class ImageUtil {
 
     private static final Logger log = LoggerFactory.getLogger(ImageUtil.class);
-    private static final Cache<String, File> FONT_CACHE = Caffeine.newBuilder()
-        .removalListener((String key, File value, RemovalCause cause) -> {
-            if(value != null) {
-                boolean result = value.delete();
-                log.trace("value {} deleted: {}", key, result);
-            }
-        })
-        .build();
-
 
     private static final String DEJA_VU_SANS = "/alfio/font/DejaVuSansMono.ttf";
 
-    private static File loadDejaVuFont(String classPathResource) {
+    private static File loadDejaVuFont() {
         try {
             File cachedFile = File.createTempFile("font-cache", ".tmp");
             cachedFile.deleteOnExit();
@@ -69,13 +58,8 @@ public final class ImageUtil {
         }
     }
 
-    public static File getDejaVuSansMonoFont() {
-        File defaultFont = FONT_CACHE.get(DEJA_VU_SANS, ImageUtil::loadDejaVuFont);
-        if (defaultFont != null && !defaultFont.exists()) { // fallback, the cached font will not be shared though
-            FONT_CACHE.invalidate(DEJA_VU_SANS);
-            defaultFont = loadDejaVuFont(DEJA_VU_SANS);
-        }
-        return defaultFont;
+    public static File getDejaVuSansMonoFont(FileUploadManager fileUploadManager) {
+        return fileUploadManager.getFile("font", "DejaVuSansMono", () -> loadDejaVuFont());
     }
 
 
@@ -99,7 +83,7 @@ public final class ImageUtil {
         return new MultiFormatWriter().encode(text, BarcodeFormat.QR_CODE, 200, 200, hintMap);
     }
 
-    public static byte[] createQRCodeWithDescription(String text, String description) {
+    public static byte[] createQRCodeWithDescription(String text, String description, FileUploadManager fileUploadManager) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             BitMatrix matrix = drawQRCode(text);
             BufferedImage bufferedImage = MatrixToImageWriter.toBufferedImage(matrix);
@@ -110,7 +94,7 @@ public final class ImageUtil {
             graphics.setColor(Color.WHITE);
             graphics.fillRect(0, 200, 200, 30);
             graphics.setColor(Color.BLACK);
-            File fontFile = getDejaVuSansMonoFont();
+            File fontFile = getDejaVuSansMonoFont(fileUploadManager);
             if (fontFile != null) {
                 graphics.setFont(Font.createFont(Font.TRUETYPE_FONT, fontFile).deriveFont(14f));
                 graphics.drawString(center(truncate(description, 23), 25), 0, 215);

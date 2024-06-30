@@ -46,15 +46,15 @@ public class FileBlobCacheManager {
         return Paths.get(cacheDir, "alfio-blob").resolve(section);
     }
 
-    private void checkPath(Path resourcePath) {
-        var parentPath = Paths.get(cacheDir).normalize();
+    private void checkPath(Path resourcePath, String section) {
+        var parentPath = getBlobDir(section).normalize();
         var childPath = resourcePath.normalize();
         Assert.isTrue(childPath.startsWith(parentPath), () -> "Resource path " + childPath + "must be inside the blob path " + parentPath);
     }
 
     public File getFile(String section, String id, Supplier<File> supplier) {
         var resourcePath = getBlobDir(section).resolve(id);
-        checkPath(resourcePath);
+        checkPath(resourcePath, section);
         if (Files.exists(resourcePath)) {
             return resourcePath.toFile();
         }
@@ -72,7 +72,7 @@ public class FileBlobCacheManager {
 
     public void ensureFileExists(String section, String id, Supplier<byte[]> supplier) {
         var resourcePath = getBlobDir(section).resolve(id);
-        checkPath(resourcePath);
+        checkPath(resourcePath, section);
         if (Files.exists(resourcePath)) {
             return;
         }

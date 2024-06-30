@@ -35,6 +35,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 @Component
@@ -79,6 +80,10 @@ public class FileUploadManager {
 
     public File getFile(String id) {
         return fileBlobCacheManager.getFile(FILE_SECTION, id, () -> repository.file(id));
+    }
+
+    public File getFile(String section, String id, Supplier<File> supplier) {
+        return fileBlobCacheManager.getFile(section, id, supplier);
     }
 
     private InputStream ensureFilePresence(String id) throws IOException {
