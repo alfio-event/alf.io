@@ -50,7 +50,7 @@ abstract class BaseMailer implements Mailer {
             replyToSetter.accept(replyToConfig);
         } else if(requireNonNull(conf.get(ConfigurationKeys.MAIL_SET_ORG_REPLY_TO), "MAIL_SET_ORG_REPLY_TO is required").getValueAsBooleanOrDefault()) {
             var address = ORG_ADDRESS_CACHE.get(organizationId, id -> {
-                var organization = organizationRepository.getById(organizationId);
+                var organization = organizationRepository.getContactById(organizationId);
                 if (StringUtils.isNotBlank(organization.getEmail())) {
                     return organization.getEmail();
                 }

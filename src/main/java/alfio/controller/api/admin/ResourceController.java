@@ -138,7 +138,7 @@ public class ResourceController {
                 try (OutputStream os = response.getOutputStream()) {
                     response.setContentType(MediaType.APPLICATION_PDF_VALUE);
                     response.addHeader("Content-Disposition", "attachment; filename="+name.name()+".pdf");
-                    TemplateProcessor.renderToPdf(renderedTemplate, os, extensionManager, purchaseContext);
+                    TemplateProcessor.renderToPdf(renderedTemplate, os, extensionManager, purchaseContext, fileUploadManager);
                 }
             } else {
                 throw new IllegalStateException("cannot enter here!");

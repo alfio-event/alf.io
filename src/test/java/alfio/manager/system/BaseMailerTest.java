@@ -39,13 +39,13 @@ class BaseMailerTest {
 
     private static final String ORG_EMAIL = "org@example.org";
     private OrganizationRepository organizationRepository;
-    private Organization organization;
+    private Organization.OrganizationContact organization;
     private BaseMailer baseMailer;
 
     @BeforeEach
     void setUp() {
         organizationRepository = mock(OrganizationRepository.class);
-        organization = mock(Organization.class);
+        organization = mock(Organization.OrganizationContact.class);
         when(organization.getEmail()).thenReturn(ORG_EMAIL);
         baseMailer = new BaseMailerMock(organizationRepository);
     }
@@ -57,7 +57,7 @@ class BaseMailerTest {
             MAIL_SET_ORG_REPLY_TO, existing(MAIL_SET_ORG_REPLY_TO, "true")
         );
         int orgId = 1;
-        when(organizationRepository.getById(orgId)).thenReturn(organization);
+        when(organizationRepository.getContactById(orgId)).thenReturn(organization);
         var consumer = new AtomicReference<String>();
         baseMailer.setReplyToIfPresent(config, orgId, consumer::set);
         assertEquals(ORG_EMAIL, consumer.get());
@@ -66,7 +66,7 @@ class BaseMailerTest {
         baseMailer.setReplyToIfPresent(config, orgId, consumer::set);
         assertEquals(ORG_EMAIL, consumer.get());
 
-        verify(organizationRepository, times(1)).getById(orgId);
+        verify(organizationRepository, times(1)).getContactById(orgId);
     }
 
     @Test
@@ -77,11 +77,11 @@ class BaseMailerTest {
             MAIL_SET_ORG_REPLY_TO, existing(MAIL_SET_ORG_REPLY_TO, "true")
         );
         int orgId = 2;
-        when(organizationRepository.getById(orgId)).thenReturn(organization);
+        when(organizationRepository.getContactById(orgId)).thenReturn(organization);
         var consumer = new AtomicReference<String>();
         baseMailer.setReplyToIfPresent(config, orgId, consumer::set);
         assertEquals(customEmail, consumer.get());
-        verify(organizationRepository, never()).getById(anyInt());
+        verify(organizationRepository, never()).getContactById(anyInt());
     }
 
     @Test
@@ -91,11 +91,11 @@ class BaseMailerTest {
             MAIL_REPLY_TO, missing(MAIL_REPLY_TO),
             MAIL_SET_ORG_REPLY_TO, missing(MAIL_SET_ORG_REPLY_TO)
         );
-        when(organizationRepository.getById(orgId)).thenReturn(organization);
+        when(organizationRepository.getContactById(orgId)).thenReturn(organization);
         var consumer = new AtomicReference<String>();
         baseMailer.setReplyToIfPresent(config, orgId, consumer::set);
         assertNull(consumer.get());
-        verify(organizationRepository, never()).getById(anyInt());
+        verify(organizationRepository, never()).getContactById(anyInt());
     }
 
     @Test

@@ -103,7 +103,7 @@ public final class TemplateProcessor {
             additionalServiceWithData));
 
         String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language).getTextPart();
-        renderToPdf(page, os, extensionManager, event);
+        renderToPdf(page, os, extensionManager, event, fileUploadManager);
     }
 
     public static Map<String, Object> getSubscriptionDetailsModelForTicket(Ticket ticket,
@@ -135,10 +135,10 @@ public final class TemplateProcessor {
         var additionalFields = purchaseContextFieldManager.getFieldDescriptionAndValues(subscriptionDescriptor, null, subscription, List.of(), locale.getLanguage(), true);
         Map<String, Object> model = TemplateResource.buildModelForSubscriptionPDF(subscription, subscriptionDescriptor, organization, metadata, imageData, reservationId, locale, reservation, additionalFields);
         String page = templateManager.renderTemplate(subscriptionDescriptor, TemplateResource.SUBSCRIPTION_PDF, model, locale).getTextPart();
-        renderToPdf(page, os, extensionManager, subscriptionDescriptor);
+        renderToPdf(page, os, extensionManager, subscriptionDescriptor, fileUploadManager);
     }
 
-    public static void renderToPdf(String page, OutputStream os, ExtensionManager extensionManager, PurchaseContext purchaseContext) throws IOException {
+    public static void renderToPdf(String page, OutputStream os, ExtensionManager extensionManager, PurchaseContext purchaseContext, FileUploadManager fileUploadManager) throws IOException {
 
         if(extensionManager.handlePdfTransformation(page, purchaseContext, os)) {
             return;
@@ -157,7 +157,7 @@ public final class TemplateProcessor {
 
         builder.withW3cDocument(W3CDom.toW3CDocument(parser.parse(page)), "");
         try (PdfBoxRenderer renderer = builder.buildPdfRenderer()) {
-            File defaultFont = ImageUtil.getDejaVuSansMonoFont();
+            File defaultFont = ImageUtil.getDejaVuSansMonoFont(fileUploadManager);
             if (defaultFont != null) {
                 renderer.getFontResolver().addFont(defaultFont, "DejaVu Sans Mono", null, null, false, PdfBoxFontResolver.FontGroup.MAIN);
             }
@@ -225,7 +225,7 @@ public final class TemplateProcessor {
                                                    OutputStream os) {
         try {
             String html = renderReceiptOrInvoicePdfTemplate(purchaseContext, fileUploadManager, language, templateManager, model, templateResource);
-            renderToPdf(html, os, extensionManager, purchaseContext);
+            renderToPdf(html, os, extensionManager, purchaseContext, fileUploadManager);
             return true;
         } catch (IOException ioe) {
             return false;

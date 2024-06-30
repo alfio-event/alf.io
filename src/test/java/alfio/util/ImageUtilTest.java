@@ -16,7 +16,10 @@
  */
 package alfio.util;
 
+import alfio.manager.FileBlobCacheManager;
+import alfio.manager.FileUploadManager;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +34,7 @@ public class ImageUtilTest {
         Map<String, Object> info = new HashMap<>();
         info.put("apiKey", UUID.randomUUID().toString());
         info.put("baseUrl", "https://veeerylongsubdomain.verylongdomain.fiesta");
-        byte[] array = ImageUtil.createQRCodeWithDescription(Json.GSON.toJson(info), "1234567890123456789012345");
+        byte[] array = ImageUtil.createQRCodeWithDescription(Json.GSON.toJson(info), "1234567890123456789012345", new FileUploadManager(null, new FileBlobCacheManager(new MockEnvironment())));
         assertNotNull(array);
     }
 }
