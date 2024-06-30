@@ -46,8 +46,7 @@ public final class ImageUtil {
 
     private static File loadDejaVuFont() {
         try {
-            File cachedFile = File.createTempFile("font-cache", ".tmp");
-            cachedFile.deleteOnExit();
+            var cachedFile = File.createTempFile("font-cache", ".tmp");
             try (InputStream is = new ClassPathResource(DEJA_VU_SANS).getInputStream(); OutputStream tmpOs = new FileOutputStream(cachedFile)) {
                 is.transferTo(tmpOs);
             }
