@@ -3,6 +3,7 @@ import {customElement, property, state} from 'lit/decorators.js'
 import {repeat} from 'lit/directives/repeat.js';
 import {AdditionalItemService, UsageCount} from "../../service/additional-item.ts";
 import {Task} from "@lit/task";
+import {msg, localized, str} from '@lit/localize';
 import {AlfioEvent, ContentLanguage} from "../../model/event.ts";
 import {
     AdditionalItem,
@@ -33,6 +34,7 @@ interface ListData {
 }
 
 @customElement('alfio-additional-item-list')
+@localized()
 export class AdditionalItemList extends LitElement {
 
     @property({ type: String, attribute: 'data-public-identifier' })
@@ -148,7 +150,7 @@ export class AdditionalItemList extends LitElement {
                     </h3>
                     ${ this.allowDownload ?
                         html`<sl-button href=${`/admin/api/events/${model.event.publicIdentifier}/additional-services/${this.type}/export`} target="_blank" rel="noopener">
-                                <sl-icon name="download"></sl-icon> Export purchased items
+                                <sl-icon name="download"></sl-icon> ${msg('Export purchased items')}
                             </sl-button>` : nothing}
                 </div>
 
@@ -194,8 +196,8 @@ export class AdditionalItemList extends LitElement {
     async delete(item: AdditionalItem, model: Model): Promise<boolean> {
         try {
             const confirmation = await ConfirmationDialogService.requestConfirm(
-                "Delete additional option?",
-                `Do you want to delete Additional option "${item.title.map(t => t.value).join("/")}"?`,
+                msg("Delete additional option?"),
+                msg(str`Do you want to delete Additional option "${item.title.map(t => t.value).join("/")}"?`),
                 'danger'
                 );
             if (confirmation) {
@@ -203,13 +205,13 @@ export class AdditionalItemList extends LitElement {
                 if(response.ok) {
                     dispatchFeedback({
                         type: 'success',
-                        message: 'Additional Option successfully deleted'
+                        message: msg('Additional Option successfully deleted')
                     }, this);
                     this.triggerListRefresh();
                 } else {
                     dispatchFeedback({
                         type: 'danger',
-                        message: 'Cannot delete additional option'
+                        message: msg('Cannot delete additional option')
                     }, this);
                 }
             }
@@ -222,15 +224,15 @@ export class AdditionalItemList extends LitElement {
     private generateFooter(model: Model): TemplateResult {
         const warning = () => html`
             <div class="alert alert-warning">
-                <p><span class="fa fa-warning"></span> Cannot add <span>${model.type === 'DONATION' ? 'donations' : 'additional options'}</span> to an event marked as "free of charge".</p>
-                <p>Please change this setting, add a default price > 0, specify currency and Taxes</p>
+                <p><span class="fa fa-warning"></span> ${msg(html`Cannot add <span>${model.type === 'DONATION' ? 'donations' : 'additional options'}</span> to an event marked as "free of charge".`)}</p>
+                <p>${msg('Please change this setting, add a default price > 0, specify currency and Taxes')}</p>
             </div>`;
         const footer = () => html`
             <div class="row">
                 <div class="col-xs-12" style="font-size: 20px">
                     <sl-button type="button" variant="success" @click=${() => this.addNew(model)} size="large">
                         <sl-icon name="plus-circle" slot="prefix"></sl-icon>
-                        Add new
+                        ${msg('Add new')}
                     </sl-button>
                 </div>
             </div>`;
@@ -255,29 +257,29 @@ export class AdditionalItemList extends LitElement {
                     <div class="body">
                         <div class="info-container">
                             <div class="info">
-                                <strong>Inception</strong>
+                                <strong>${msg('Inception')}</strong>
                                 <sl-format-date date=${item.inception.date + 'T' + item.inception.time} month="long" day="numeric" year="numeric" hour="numeric" minute="numeric"></sl-format-date>
                             </div>
                             <div class="info">
-                                <strong>Expiration</strong>
+                                <strong>${msg('Expiration')}</strong>
                                 <sl-format-date date=${item.expiration.date + 'T' + item.expiration.time} month="long" day="numeric" year="numeric" hour="numeric" minute="numeric"></sl-format-date>
                             </div>
                             <div class="info">
-                                <strong>Price</strong>
+                                <strong>${msg('Price')}</strong>
                                 ${when(item.fixPrice,
                                     () => this.showItemFixPrice(item),
-                                    () => html`<span>User-defined</span>`)}
+                                    () => html`<span>${msg('User-defined')}</span>`)}
                             </div>
                             ${renderIf(() => item.type === 'SUPPLEMENT', () => html`
                                 <div class="info">
-                                    <strong>Policy</strong>
+                                    <strong>${msg('Policy')}</strong>
                                     ${supplementPolicyDescriptions[item.supplementPolicy]}
                                 </div>`)}
 
                             ${renderIf(() => item.fixPrice && (item.type === 'DONATION' || (!isMandatory(item.supplementPolicy) && item.supplementPolicy !== 'OPTIONAL_UNLIMITED_AMOUNT')),
                     () => html`
                                 <div class="info">
-                                    <strong>Max Qty per ${item.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_TICKET' ? 'ticket' : 'order'}</strong>
+                                    <strong>${msg(str`Max Qty per ${item.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_TICKET' ? 'ticket' : 'order'}`)}</strong>
                                     ${item.maxQtyPerOrder}
                                 </div>`)}
                         </div>
@@ -287,7 +289,7 @@ export class AdditionalItemList extends LitElement {
                                 <sl-tab slot="nav" panel=${d.locale}>${d.locale}</sl-tab>
                                 <sl-tab-panel name=${d.locale}>
                                     <div class="panel-content">
-                                        <alfio-display-commonmark-preview data-button-text="Preview" data-text=${d.value}></alfio-display-commonmark-preview>
+                                        <alfio-display-commonmark-preview data-button-text="${msg('Preview')}" data-text=${d.value}></alfio-display-commonmark-preview>
                                         <div class="ps">${d.value}</div>
                                     </div>
                                 </sl-tab-panel>
