@@ -144,13 +144,19 @@
   <source>Max price</source>
 </trans-unit>
 <trans-unit id="s6d604b9dc12aeabb">
-  <source>Max quantity per <x id="0" equiv-text="${this.type === 'DONATION' || formValue.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_RESERVATION' ? 'order' : 'ticket'}"/></source>
+  <source>Max quantity per <x id="0" equiv-text="${this.type === 'DONATION' || formValue.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_RESERVATION' ? msg('order') : msg('ticket')}"/></source>
 </trans-unit>
 <trans-unit id="s63a96d942e6031eb">
   <source>Total available quantity</source>
 </trans-unit>
 <trans-unit id="s417b90913e05bc17">
   <source>Preview</source>
+</trans-unit>
+<trans-unit id="s6be60d7281a829f7">
+  <source>order</source>
+</trans-unit>
+<trans-unit id="s7bd70f38875a4245">
+  <source>ticket</source>
 </trans-unit>
 </body>
 </file>

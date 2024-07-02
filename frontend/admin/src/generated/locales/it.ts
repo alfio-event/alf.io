@@ -56,6 +56,8 @@
 's255169c55655cada': `Min price`,
 'se11cda5867361c84': `Max price`,
 's6d604b9dc12aeabb': str`Max quantity per ${0}`,
+'s6be60d7281a829f7': `order`,
+'s7bd70f38875a4245': `ticket`,
 's63a96d942e6031eb': `Total available quantity`,
 's902283dfce75a674': `Your account has been deleted`,
 'saf7a91f4fd57c858': `We're very sorry to see you go!`,

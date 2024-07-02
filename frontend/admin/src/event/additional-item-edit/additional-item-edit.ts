@@ -348,7 +348,7 @@ export class AdditionalItemEdit extends LitElement {
             ${this.#form.field({name: `availabilityAndPrices.maxQtyPerOrder`},
             (field) => {
                 return html`
-                   <sl-input required .value=${field.state.value} label=${msg(str`Max quantity per ${this.type === 'DONATION' || formValue.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_RESERVATION' ? 'order' : 'ticket'}`)} @sl-input=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
+                   <sl-input required .value=${field.state.value} label=${msg(str`Max quantity per ${this.type === 'DONATION' || formValue.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_RESERVATION' ? msg('order') : msg('ticket')}`)} @sl-input=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
                 `
             })}
         `
