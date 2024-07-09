@@ -227,42 +227,45 @@ export class BookingComponent implements OnInit, AfterViewInit {
   }
 
   private validateToOverview(ignoreWarnings: boolean): void {
-    this.reservationService.validateToOverview(this.reservationId, this.contactAndTicketsForm.value, this.translate.currentLang, ignoreWarnings).subscribe(res => {
-      if (res.success && (!res.warnings || res.warnings.length === 0 || ignoreWarnings)) {
-        let o: Observable<unknown> = of(true);
-        if (this.route.snapshot.queryParamMap.has('subscription') && BookingComponent.isUUID(this.route.snapshot.queryParamMap.get('subscription'))) {
-          // try to apply the subscription
-          const subscriptionCode = this.route.snapshot.queryParamMap.get('subscription');
-          o = this.reservationService.applySubscriptionCode(this.reservationId, subscriptionCode, this.reservationInfo.email);
+    this.reservationService.validateToOverview(this.reservationId, this.contactAndTicketsForm.value, this.translate.currentLang, ignoreWarnings).subscribe({
+        next: res => {
+            if (res.success && (!res.warnings || res.warnings.length === 0 || ignoreWarnings)) {
+                let o: Observable<unknown> = of(true);
+                if (this.route.snapshot.queryParamMap.has('subscription') && BookingComponent.isUUID(this.route.snapshot.queryParamMap.get('subscription'))) {
+                    // try to apply the subscription
+                    const subscriptionCode = this.route.snapshot.queryParamMap.get('subscription');
+                    o = this.reservationService.applySubscriptionCode(this.reservationId, subscriptionCode, this.reservationInfo.email);
+                }
+                o.subscribe({
+                    next: (_) => this.proceedToOverview(),
+                    // if there is an error, we proceed anyway
+                    error: () => this.proceedToOverview()
+                });
+            } else if (res.success) {
+                // display warnings
+                const modalRef = this.modalService.open(WarningModalComponent, {centered: true, backdrop: 'static'});
+                const firstWarning = res.warnings[0];
+                modalRef.componentInstance.message = firstWarning.code;
+                const params: {[key: string]: string} = {};
+                firstWarning.params.forEach((v, i) => params['' + i] = v);
+                modalRef.componentInstance.parameters = params;
+                modalRef.result.then(() => this.validateToOverview(true));
+            }
+        },
+        error: (err) => {
+            this.globalErrors = handleServerSideValidationError(err, this.contactAndTicketsForm, key => {
+                const additionalRegex = /tickets\.([a-f0-9-]+)\.additional\.([^.]+)\.(\d+)/;
+                const result = additionalRegex.exec(key);
+                if (result != null) {
+                    const uuid = result[1];
+                    const fieldName = result[2];
+                    const links = this.contactAndTicketsForm.value.additionalServices.links[uuid];
+                    const index = links.findIndex(link => link.fields[fieldName] != null);
+                    return `additionalServices.links.${uuid}.${index}.fields.${fieldName}.${result[3]}`;
+                }
+                return key;
+            });
         }
-        o.subscribe(
-          _ => this.proceedToOverview(),
-          // if there is an error, we proceed anyway
-          () => this.proceedToOverview()
-        );
-      } else if (res.success) {
-        // display warnings
-        const modalRef = this.modalService.open(WarningModalComponent, {centered: true, backdrop: 'static'});
-        const firstWarning = res.warnings[0];
-        modalRef.componentInstance.message = firstWarning.code;
-        const params: {[key: string]: string} = {};
-        firstWarning.params.forEach((v, i) => params['' + i] = v);
-        modalRef.componentInstance.parameters = params;
-        modalRef.result.then(() => this.validateToOverview(true));
-      }
-    }, (err) => {
-      this.globalErrors = handleServerSideValidationError(err, this.contactAndTicketsForm, key => {
-        const additionalRegex = /tickets\.([a-f0-9-]+)\.additional\.([^.]+)\.(\d+)/;
-        const result = additionalRegex.exec(key);
-        if (result != null) {
-          const uuid = result[1];
-          const fieldName = result[2];
-          const links = this.contactAndTicketsForm.value.additionalServices.links[uuid];
-          const index = links.findIndex(link => link.fields[fieldName] != null);
-          return `additionalServices.links.${uuid}.${index}.fields.${fieldName}.${result[3]}`;
-        }
-        return key;
-      });
     });
   }
 
