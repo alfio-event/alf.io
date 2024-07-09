@@ -4,15 +4,15 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {FormArray, UntypedFormBuilder, UntypedFormGroup, Validators} from '@angular/forms';
 import {TicketService} from '../../shared/ticket.service';
 import {
-  AdditionalServiceWithData,
-  BillingDetails,
-  ItalianEInvoicing,
-  ReservationInfo,
-  ReservationSubscriptionInfo,
-  TicketsByTicketCategory
+    AdditionalServiceWithData,
+    BillingDetails,
+    ItalianEInvoicing,
+    ReservationInfo,
+    ReservationSubscriptionInfo,
+    TicketsByTicketCategory
 } from '../../model/reservation-info';
 import {Observable, of, Subject, zip} from 'rxjs';
-import {getErrorObject, handleServerSideValidationError} from '../../shared/validation-helper';
+import {getErrorObject, handleServerSideValidationError, isServerError} from '../../shared/validation-helper';
 import {I18nService} from '../../shared/i18n.service';
 import {MoveAdditionalServiceRequest, Ticket, TicketIdentifier} from '../../model/ticket';
 import {TranslateService} from '@ngx-translate/core';
@@ -101,76 +101,83 @@ export class BookingComponent implements OnInit, AfterViewInit {
       this.displayLoginSuggestion = authStatus.enabled && authStatus.user === ANONYMOUS;
 
       zip(
-        this.purchaseContextService.getContext(this.purchaseContextType, this.publicIdentifier),
-        this.reservationService.getReservationInfo(this.reservationId)
-      ).subscribe(([purchaseContext, reservationInfo]) => {
-        this.purchaseContext = purchaseContext;
-        this.reservationInfo = reservationInfo;
+          this.purchaseContextService.getContext(this.purchaseContextType, this.publicIdentifier),
+          this.reservationService.getReservationInfo(this.reservationId)
+      ).subscribe({
+          next: ([purchaseContext, reservationInfo]) => {
+              this.purchaseContext = purchaseContext;
+              this.reservationInfo = reservationInfo;
 
-        this.i18nService.setPageTitle('reservation-page.header.title', purchaseContext);
+              this.i18nService.setPageTitle('reservation-page.header.title', purchaseContext);
 
-        const invoiceRequested = purchaseContext.invoicingConfiguration.onlyInvoice ? true : reservationInfo.invoiceRequested;
+              const invoiceRequested = purchaseContext.invoicingConfiguration.onlyInvoice ? true : reservationInfo.invoiceRequested;
 
-        //
-        this.ticketCounts = 0;
-        this.reservationInfo.ticketsByCategory.forEach(t => {
-          this.ticketCounts += t.tickets.length;
-        });
+              //
+              this.ticketCounts = 0;
+              this.reservationInfo.ticketsByCategory.forEach(t => {
+                  this.ticketCounts += t.tickets.length;
+              });
 
 
-        // auto complete (copy by default first/lastname + email to ticket) is enabled only if we have only
-        // one ticket
-        if (this.ticketCounts === 1 && this.purchaseContext.assignmentConfiguration.enableAttendeeAutocomplete) {
-          this.enableAttendeeAutocomplete = true;
-        }
-        //
+              // auto complete (copy by default first/lastname + email to ticket) is enabled only if we have only
+              // one ticket
+              if (this.ticketCounts === 1 && this.purchaseContext.assignmentConfiguration.enableAttendeeAutocomplete) {
+                  this.enableAttendeeAutocomplete = true;
+              }
+              //
 
-        //
+              //
 
-        const billingDetails = this.reservationInfo.billingDetails;
-        const userBillingDetails = user?.profile?.billingDetails;
+              const billingDetails = this.reservationInfo.billingDetails;
+              const userBillingDetails = user?.profile?.billingDetails;
 
-        const additionalServices = reservationInfo.additionalServiceWithData ?? [];
-        this.contactAndTicketsForm = this.formBuilder.group({
-          firstName: this.formBuilder.control(this.reservationInfo.firstName || user?.firstName, [Validators.required, Validators.maxLength(255)]),
-          lastName: this.formBuilder.control(this.reservationInfo.lastName || user?.lastName, [Validators.required, Validators.maxLength(255)]),
-          email: this.formBuilder.control(this.reservationInfo.email || user?.emailAddress, [Validators.required, Validators.maxLength(255)]),
-          tickets: this.buildTicketsFormGroup(this.reservationInfo.ticketsByCategory, user),
-          invoiceRequested: invoiceRequested,
-          addCompanyBillingDetails: this.reservationInfo.addCompanyBillingDetails || userBillingDetails?.companyName != null,
-          billingAddressCompany: billingDetails.companyName || userBillingDetails?.companyName,
-          billingAddressLine1: billingDetails.addressLine1 || userBillingDetails?.addressLine1,
-          billingAddressLine2: billingDetails.addressLine2 || userBillingDetails?.addressLine2,
-          billingAddressZip: billingDetails.zip || userBillingDetails?.zip,
-          billingAddressCity: billingDetails.city || userBillingDetails?.city,
-          billingAddressState: billingDetails.state || userBillingDetails?.state,
-          vatCountryCode: billingDetails.country || userBillingDetails?.country,
-          customerReference: this.reservationInfo.customerReference,
-          vatNr: billingDetails.taxId || userBillingDetails?.taxId,
-          skipVatNr: this.reservationInfo.skipVatNr,
-          italyEInvoicingFiscalCode: BookingComponent.optionalGet(billingDetails, (i) => i.fiscalCode, userBillingDetails),
-          italyEInvoicingReferenceType: BookingComponent.optionalGet(billingDetails, (i) => i.referenceType, userBillingDetails),
-          italyEInvoicingReferenceAddresseeCode: BookingComponent.optionalGet(billingDetails, (i) => i.addresseeCode, userBillingDetails),
-          italyEInvoicingReferencePEC: BookingComponent.optionalGet(billingDetails, (i) => i.pec, userBillingDetails),
-          italyEInvoicingSplitPayment: BookingComponent.optionalGet(billingDetails, (i) => i.splitPayment, userBillingDetails),
-          postponeAssignment: false,
-          differentSubscriptionOwner: this.isDifferentOwnerDefined(),
-          subscriptionOwner: this.buildSubscriptionOwnerFormGroup(this.reservationInfo.subscriptionInfos, user),
-          additionalServices: this.ticketService.buildAdditionalServicesFormGroup(additionalServices, this.i18nService.getCurrentLang())
-        });
+              const additionalServices = reservationInfo.additionalServiceWithData ?? [];
+              this.contactAndTicketsForm = this.formBuilder.group({
+                  firstName: this.formBuilder.control(this.reservationInfo.firstName || user?.firstName, [Validators.required, Validators.maxLength(255)]),
+                  lastName: this.formBuilder.control(this.reservationInfo.lastName || user?.lastName, [Validators.required, Validators.maxLength(255)]),
+                  email: this.formBuilder.control(this.reservationInfo.email || user?.emailAddress, [Validators.required, Validators.maxLength(255)]),
+                  tickets: this.buildTicketsFormGroup(this.reservationInfo.ticketsByCategory, user),
+                  invoiceRequested: invoiceRequested,
+                  addCompanyBillingDetails: this.reservationInfo.addCompanyBillingDetails || userBillingDetails?.companyName != null,
+                  billingAddressCompany: billingDetails.companyName || userBillingDetails?.companyName,
+                  billingAddressLine1: billingDetails.addressLine1 || userBillingDetails?.addressLine1,
+                  billingAddressLine2: billingDetails.addressLine2 || userBillingDetails?.addressLine2,
+                  billingAddressZip: billingDetails.zip || userBillingDetails?.zip,
+                  billingAddressCity: billingDetails.city || userBillingDetails?.city,
+                  billingAddressState: billingDetails.state || userBillingDetails?.state,
+                  vatCountryCode: billingDetails.country || userBillingDetails?.country,
+                  customerReference: this.reservationInfo.customerReference,
+                  vatNr: billingDetails.taxId || userBillingDetails?.taxId,
+                  skipVatNr: this.reservationInfo.skipVatNr,
+                  italyEInvoicingFiscalCode: BookingComponent.optionalGet(billingDetails, (i) => i.fiscalCode, userBillingDetails),
+                  italyEInvoicingReferenceType: BookingComponent.optionalGet(billingDetails, (i) => i.referenceType, userBillingDetails),
+                  italyEInvoicingReferenceAddresseeCode: BookingComponent.optionalGet(billingDetails, (i) => i.addresseeCode, userBillingDetails),
+                  italyEInvoicingReferencePEC: BookingComponent.optionalGet(billingDetails, (i) => i.pec, userBillingDetails),
+                  italyEInvoicingSplitPayment: BookingComponent.optionalGet(billingDetails, (i) => i.splitPayment, userBillingDetails),
+                  postponeAssignment: false,
+                  differentSubscriptionOwner: this.isDifferentOwnerDefined(),
+                  subscriptionOwner: this.buildSubscriptionOwnerFormGroup(this.reservationInfo.subscriptionInfos, user),
+                  additionalServices: this.ticketService.buildAdditionalServicesFormGroup(additionalServices, this.i18nService.getCurrentLang())
+              });
 
-        additionalServices.forEach(asd => {
-          if (this.additionalServicesWithData[asd.ticketUUID] != null) {
-            this.additionalServicesWithData[asd.ticketUUID].push(asd);
-          } else {
-            this.additionalServicesWithData[asd.ticketUUID] = [asd];
+              additionalServices.forEach(asd => {
+                  if (this.additionalServicesWithData[asd.ticketUUID] != null) {
+                      this.additionalServicesWithData[asd.ticketUUID].push(asd);
+                  } else {
+                      this.additionalServicesWithData[asd.ticketUUID] = [asd];
+                  }
+              });
+              this.additionalServicesCount = additionalServices.length;
+
+              setTimeout(() => this.doScroll.next(this.invoiceElement != null));
+
+              this.analytics.pageView(purchaseContext.analyticsConfiguration);
+          },
+          error: err => {
+              if (isServerError(err)) {
+                  this.feedbackService.showError('error.STEP_2_PAYMENT_REQUEST_CREATION');
+              }
           }
-        });
-        this.additionalServicesCount = additionalServices.length;
-
-        setTimeout(() => this.doScroll.next(this.invoiceElement != null));
-
-        this.analytics.pageView(purchaseContext.analyticsConfiguration);
       });
     });
   }
@@ -265,6 +272,10 @@ export class BookingComponent implements OnInit, AfterViewInit {
                 }
                 return key;
             });
+            if (isServerError(err)) {
+                // the server responded with a 50x error
+                this.feedbackService.showError('error.STEP_2_PAYMENT_REQUEST_CREATION');
+            }
         }
     });
   }

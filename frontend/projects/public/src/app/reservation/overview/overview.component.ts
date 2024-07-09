@@ -5,12 +5,12 @@ import {UntypedFormBuilder, UntypedFormGroup} from '@angular/forms';
 import {PaymentMethod, PaymentProxy, PaymentProxyWithParameters} from '../../model/event';
 import {ReservationInfo, SummaryRow} from '../../model/reservation-info';
 import {
-  PaymentProvider,
-  PaymentResult,
-  PaymentStatusNotification,
-  SimplePaymentProvider
+    PaymentProvider,
+    PaymentResult,
+    PaymentStatusNotification,
+    SimplePaymentProvider
 } from '../../payment/payment-provider';
-import {handleServerSideValidationError} from '../../shared/validation-helper';
+import {handleServerSideValidationError, isServerError} from '../../shared/validation-helper';
 import {I18nService} from '../../shared/i18n.service';
 import {TranslateService} from '@ngx-translate/core';
 import {AnalyticsService} from '../../shared/analytics.service';
@@ -184,60 +184,69 @@ export class OverviewComponent implements OnInit {
         this.paymentStatusNotification = notification;
       }
     });
-    this.selectedPaymentProvider.pay().subscribe(paymentResult => {
-      if (paymentResult.success) {
-        this.overviewForm.get('gatewayToken').setValue(paymentResult.gatewayToken);
-        const overviewFormValue = this.overviewForm.value;
-        this.reservationService.confirmOverview(this.reservationId, overviewFormValue, this.translate.currentLang).subscribe(res => {
-          if (res.success) {
-            this.unregisterHook();
-            if (res.value.redirect) { // handle the case of redirects (e.g. paypal, stripe)
-              window.location.href = res.value.redirectUrl;
+    this.selectedPaymentProvider.pay().subscribe({
+        next: paymentResult => {
+            if (paymentResult.success) {
+                this.overviewForm.get('gatewayToken').setValue(paymentResult.gatewayToken);
+                const overviewFormValue = this.overviewForm.value;
+                this.reservationService.confirmOverview(this.reservationId, overviewFormValue, this.translate.currentLang).subscribe(res => {
+                    if (res.success) {
+                        this.unregisterHook();
+                        if (res.value.redirect) { // handle the case of redirects (e.g. paypal, stripe)
+                            window.location.href = res.value.redirectUrl;
+                        } else {
+                            this.router.navigate([this.purchaseContextType, this.publicIdentifier, 'reservation', this.reservationId, 'success'], {
+                                queryParams: SearchParams.transformParams(this.route.snapshot.queryParams, this.route.snapshot.params)
+                            });
+                        }
+                    } else {
+                        this.submitting = false;
+                        this.unregisterHook();
+                        this.globalErrors = handleServerSideValidationError(res, this.overviewForm);
+                    }
+                }, (err) => {
+                    this.submitting = false;
+                    this.unregisterHook();
+                    notifyPaymentErrorToParent(this.purchaseContext, this.reservationInfo, this.reservationId, err);
+                    this.globalErrors = handleServerSideValidationError(err, this.overviewForm);
+                    if (isServerError(err)) {
+                        this.feedbackService.showError('error.STEP_2_PAYMENT_REQUEST_CREATION');
+                    }
+                });
             } else {
-              this.router.navigate([this.purchaseContextType, this.publicIdentifier, 'reservation', this.reservationId, 'success'], {
-                queryParams: SearchParams.transformParams(this.route.snapshot.queryParams, this.route.snapshot.params)
-              });
+                console.log('paymentResult is not success (may be cancelled)');
+                this.unregisterHook();
+                if (paymentResult.reservationChanged) {
+                    console.log('reservation status is changed. Trying to reload it...');
+                    // reload reservation, try to go to /success
+                    this.router.navigate([this.purchaseContextType, this.publicIdentifier, 'reservation', this.reservationId, 'success']);
+                } else {
+                    this.submitting = false;
+                }
             }
-          } else {
+        },
+        error: err => {
             this.submitting = false;
             this.unregisterHook();
-            this.globalErrors = handleServerSideValidationError(res, this.overviewForm);
-          }
-        }, (err) => {
-          this.submitting = false;
-          this.unregisterHook();
-          notifyPaymentErrorToParent(this.purchaseContext, this.reservationInfo, this.reservationId, err);
-          this.globalErrors = handleServerSideValidationError(err, this.overviewForm);
-        });
-      } else {
-        console.log('paymentResult is not success (may be cancelled)');
-        this.unregisterHook();
-        if (paymentResult.reservationChanged) {
-          console.log('reservation status is changed. Trying to reload it...');
-          // reload reservation, try to go to /success
-          this.router.navigate([this.purchaseContextType, this.publicIdentifier, 'reservation', this.reservationId, 'success']);
-        } else {
-          this.submitting = false;
+            this.notifyPaymentError(err);
+            notifyPaymentErrorToParent(this.purchaseContext, this.reservationInfo, this.reservationId, err);
         }
-      }
-    }, (err) => {
-      this.submitting = false;
-      this.unregisterHook();
-      this.notifyPaymentError(err);
-      notifyPaymentErrorToParent(this.purchaseContext, this.reservationInfo, this.reservationId, err);
     });
   }
 
   forceCheck(): void {
     this.paymentStatusNotification = null;
     this.forceCheckInProgress = true;
-    this.reservationService.forcePaymentStatusCheck(this.reservationId).subscribe(res => {
-      if (res.success) {
-        console.log('reservation has been confirmed. Waiting for the PaymentProvider to acknowledge it...');
-      }
-    }, err => {
-      console.log('error while force-checking', err);
-      notifyPaymentErrorToParent(this.purchaseContext, this.reservationInfo, this.reservationId, err);
+    this.reservationService.forcePaymentStatusCheck(this.reservationId).subscribe({
+        next: res => {
+            if (res.success) {
+                console.log('reservation has been confirmed. Waiting for the PaymentProvider to acknowledge it...');
+            }
+        },
+        error: err => {
+            console.log('error while force-checking', err);
+            notifyPaymentErrorToParent(this.purchaseContext, this.reservationInfo, this.reservationId, err);
+        }
     });
   }
 
@@ -257,10 +266,13 @@ export class OverviewComponent implements OnInit {
     if (response != null && response instanceof PaymentResult) {
       errorDescriptor.code = 'error.STEP_2_PAYMENT_PROCESSING_ERROR';
       errorDescriptor.arguments = {
-        '0': (<PaymentResult>response).reason
+        '0': response.reason
       };
     } else {
       errorDescriptor.code = 'error.STEP_2_PAYMENT_REQUEST_CREATION';
+    }
+    if (isServerError(response)) {
+      this.feedbackService.showError('error.STEP_2_PAYMENT_REQUEST_CREATION');
     }
     const validatedResponse = new ValidatedResponse();
     validatedResponse.errorCount = 1;
