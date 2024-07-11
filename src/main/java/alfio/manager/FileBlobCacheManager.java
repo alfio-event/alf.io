@@ -28,7 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 @Component
@@ -39,7 +38,7 @@ public class FileBlobCacheManager {
 
 
     public FileBlobCacheManager(Environment environment) {
-        this.cacheDir = Optional.ofNullable(environment.getProperty("alfio.cache-dir")).orElse(System.getProperty("java.io.tmpdir"));
+        this.cacheDir = environment.getProperty("alfio.cache-dir", System.getProperty("java.io.tmpdir"));
     }
 
     private Path getBlobDir(String section) {
@@ -58,7 +57,7 @@ public class FileBlobCacheManager {
         if (Files.exists(resourcePath)) {
             return resourcePath.toFile();
         }
-        log.info("Cache not hit for file {}", id);
+        log.debug("Cache not hit for file {}", id);
         var tmpFile = supplier.get();
         var dir = getBlobDir(section);
         try {
