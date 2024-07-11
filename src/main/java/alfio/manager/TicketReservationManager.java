@@ -1180,11 +1180,6 @@ public class TicketReservationManager {
         return ReservationUtil.reservationUrl(reservation, purchaseContext, configurationManager);
     }
 
-    String ticketUrl(Event event, String ticketId) {
-        Ticket ticket = ticketRepository.findByUUID(ticketId);
-        return configurationManager.baseUrl(event) + "/event/" + event.getShortName() + "/ticket/" + ticketId + "?lang=" + ticket.getUserLanguage();
-    }
-
     public String ticketOnlineCheckIn(Event event, String ticketId) {
         Ticket ticket = ticketRepository.findByUUID(ticketId);
         

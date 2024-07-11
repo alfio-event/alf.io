@@ -99,7 +99,7 @@ public class CustomMessageManager {
                     model.addAttribute("reservationURL", ticketReservationManager.reservationUrl(t.getTicketsReservationId(), event));
                     model.addAttribute("reservationID", ticketReservationManager.getShortReservationID(event, t.getTicketsReservationId()));
                     model.addAttribute("ticketURL", ReservationUtil.ticketUpdateUrl(event, t, configurationManager));
-                    model.addAttribute("ticketID", t.getUuid());
+                    model.addAttribute("ticketID", t.getPublicUuid().toString());
                     model.addAttribute("ticket", t);
                     return Triple.of(t, t.getEmail(), model);
                 })

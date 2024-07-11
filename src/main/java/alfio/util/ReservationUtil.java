@@ -171,7 +171,7 @@ public class ReservationUtil {
     }
 
     public static String ticketUpdateUrl(Event event, Ticket ticket, ConfigurationManager configurationManager) {
-        return configurationManager.baseUrl(event) + "/event/" + event.getShortName() + "/ticket/" + ticket.getUuid() + "/update?lang=" + ticket.getUserLanguage();
+        return configurationManager.baseUrl(event) + "/event/" + event.getShortName() + "/ticket/" + ticket.getPublicUuid().toString() + "/update?lang=" + ticket.getUserLanguage();
     }
 
     public static String reservationUrl(String baseUrl, String reservationId,

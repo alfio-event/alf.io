@@ -1142,14 +1142,14 @@ class TicketReservationManagerTest {
     @Test
     void reservationURLGeneration() {
         String shortName = "shortName";
-        String ticketId = "ticketId";
+        UUID ticketId = UUID.randomUUID();
         when(event.getType()).thenReturn(PurchaseContext.PurchaseContextType.event);
         when(event.getPublicIdentifier()).thenReturn(shortName);
         when(ticketReservation.getUserLanguage()).thenReturn("en");
         when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
         when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
-        when(ticketRepository.findByUUID(ticketId)).thenReturn(ticket);
-        when(ticket.getUuid()).thenReturn(ticketId);
+        when(ticketRepository.findByPublicUUID(ticketId)).thenReturn(ticket);
+        when(ticket.getPublicUuid()).thenReturn(ticketId);
         when(ticket.getUserLanguage()).thenReturn(USER_LANGUAGE);
         //generate the reservationUrl from RESERVATION_ID
         Assertions.assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrl(RESERVATION_ID));
@@ -1160,10 +1160,8 @@ class TicketReservationManagerTest {
 
         when(event.getShortName()).thenReturn(shortName);
 
-        //generate the ticket URL
-        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/ticket/ticketId?lang=it", trm.ticketUrl(event, ticketId));
         //generate the ticket update URL
-        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/ticket/ticketId/update?lang=it", ReservationUtil.ticketUpdateUrl(event, ticket, configurationManager));
+        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/ticket/"+ticketId+"/update?lang=it", ReservationUtil.ticketUpdateUrl(event, ticket, configurationManager));
     }
 
     @Test
@@ -1211,7 +1209,7 @@ class TicketReservationManagerTest {
         when(ticket.getTicketsReservationId()).thenReturn(RESERVATION_ID);
         int ticketId = 2;
         when(ticket.getId()).thenReturn(ticketId);
-        when(ticket.getUuid()).thenReturn("uuid");
+        when(ticket.getPublicUuid()).thenReturn(UUID.randomUUID());
         when(ticket.getEmail()).thenReturn("ciccio");
         when(ticketRepository.findAllAssignedButNotYetNotifiedForUpdate(EVENT_ID)).thenReturn(singletonList(ticket));
         when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(ticketReservation));
