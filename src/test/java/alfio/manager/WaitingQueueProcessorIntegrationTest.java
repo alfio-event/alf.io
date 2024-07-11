@@ -139,7 +139,7 @@ class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getRight();
         String reservationId = pair.getLeft();
         Ticket firstTicket = ticketRepository.findTicketsInReservation(reservationId).get(0);
-        ticketRepository.releaseTicket(reservationId, UUID.randomUUID().toString(), event.getId(), firstTicket.getId());
+        ticketRepository.releaseTicket(reservationId, UUID.randomUUID().toString(), UUID.randomUUID(), event.getId(), firstTicket.getId());
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
         List<WaitingQueueSubscription> subscriptions =  waitingQueueRepository.loadAll(event.getId());
         assertEquals(1, subscriptions.stream().filter(w -> StringUtils.isNotBlank(w.getReservationId())).count());

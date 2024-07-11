@@ -19,11 +19,14 @@ package alfio.model;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
+import java.util.UUID;
+
 @Getter
 public class TicketInfo {
 
     private final int ticketId;
     private final String ticketUuid;
+    private final UUID ticketPublicUUID;
     private final int ticketCategoryId;
     private final boolean ticketCategoryBounded;
     private final PriceContainer.VatStatus taxPolicy;
@@ -31,11 +34,13 @@ public class TicketInfo {
 
     public TicketInfo(@Column("t_id") int id,
                       @Column("t_uuid") String ticketUuid,
+                      @Column("t_public_uuid") UUID ticketPublicUUID,
                       @Column("tc_id") int tcId,
                       @Column("tc_bounded") boolean bounded,
                       @Column("t_vat_status") PriceContainer.VatStatus taxPolicy) {
         this.ticketId = id;
         this.ticketUuid = ticketUuid;
+        this.ticketPublicUUID = ticketPublicUUID;
         this.ticketCategoryId = tcId;
         this.ticketCategoryBounded = bounded;
         this.taxPolicy = taxPolicy;

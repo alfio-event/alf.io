@@ -55,11 +55,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.Principal;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.UUID;
 
 import static alfio.model.PurchaseContextFieldConfiguration.EVENT_RELATED_CONTEXTS;
 import static alfio.util.EventUtil.firstMatchingCallLink;
@@ -90,7 +92,8 @@ public class TicketApiV2Controller {
         "/event/{eventName}/ticket/{ticketIdentifier}/code.png"
     })
     public void showQrCode(@PathVariable String eventName,
-                           @PathVariable String ticketIdentifier, HttpServletResponse response) throws IOException {
+                           @PathVariable UUID ticketIdentifier,
+                           HttpServletResponse response) throws IOException {
         var oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
         if (oData.isEmpty()) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
@@ -112,7 +115,7 @@ public class TicketApiV2Controller {
 
     @GetMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/download-ticket")
     public void generateTicketPdf(@PathVariable String eventName,
-                                  @PathVariable String ticketIdentifier,
+                                  @PathVariable UUID ticketIdentifier,
                                   HttpServletResponse response) {
 
         ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier).ifPresentOrElse(data -> {
@@ -152,7 +155,7 @@ public class TicketApiV2Controller {
 
     @PostMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/send-ticket-by-email")
     public ResponseEntity<Boolean> sendTicketByEmail(@PathVariable String eventName,
-                                                     @PathVariable String ticketIdentifier) {
+                                                     @PathVariable UUID ticketIdentifier) {
 
         return ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier).map(data -> {
             Event event = data.getLeft();
@@ -176,7 +179,7 @@ public class TicketApiV2Controller {
 
     @DeleteMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}")
     public ResponseEntity<Boolean> releaseTicket(@PathVariable String eventName,
-                                                 @PathVariable String ticketIdentifier) {
+                                                 @PathVariable UUID ticketIdentifier) {
         var oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
         try {
             oData.ifPresent(triple -> ticketReservationManager.releaseTicket(triple.getLeft(), triple.getMiddle(), triple.getRight()));
@@ -188,7 +191,7 @@ public class TicketApiV2Controller {
 
     @GetMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/full")
     public ResponseEntity<ReservationInfo.TicketsByTicketCategory> getTicket(@PathVariable String eventName,
-                                                                             @PathVariable String ticketIdentifier) {
+                                                                             @PathVariable UUID ticketIdentifier) {
 
         var optionalTicket = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier)
             .map(complete -> {
@@ -203,7 +206,7 @@ public class TicketApiV2Controller {
 
     @GetMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}")
     public ResponseEntity<TicketInfo> getTicketInfo(@PathVariable String eventName,
-                                                    @PathVariable String ticketIdentifier) {
+                                                    @PathVariable UUID ticketIdentifier) {
 
         //TODO: cleanup, we load useless data here!
 
@@ -237,7 +240,7 @@ public class TicketApiV2Controller {
         return ResponseEntity.ok(new TicketInfo(
             ticket.getFullName(),
             ticket.getEmail(),
-            ticket.getUuid(),
+            ticket.getPublicUuid().toString(),
             ticketCategory.getName(),
             ticketReservation.getFullName(),
             configurationManager.getShortReservationID(event, ticketReservation),
@@ -255,7 +258,7 @@ public class TicketApiV2Controller {
 
     @PutMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}")
     public ResponseEntity<ValidatedResponse<Boolean>> updateTicketInfo(@PathVariable String eventName,
-                                                                       @PathVariable String ticketIdentifier,
+                                                                       @PathVariable UUID ticketIdentifier,
                                                                        @RequestBody UpdateTicketOwnerForm updateTicketOwner,
                                                                        BindingResult bindingResult,
                                                                        Authentication authentication) {
@@ -285,6 +288,7 @@ public class TicketApiV2Controller {
         ).orElseThrow(IllegalStateException::new);
     }
 
+    // TODO CHECK
     @GetMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/code/{checkInCode}/check-in-info")
     public ResponseEntity<OnlineCheckInInfo> getCheckInInfo(@PathVariable String eventName,
                                                             @PathVariable String ticketIdentifier,

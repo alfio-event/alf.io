@@ -736,13 +736,13 @@ class TicketReservationManagerTest {
     void sendEmailToAssigneeOnSuccess() {
         initReleaseTicket();
         when(ticketCategory.isAccessRestricted()).thenReturn(false);
-        when(ticketRepository.releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID))).thenReturn(1);
+        when(ticketRepository.releaseTicket(eq(RESERVATION_ID), anyString(), any(UUID.class), eq(EVENT_ID), eq(TICKET_ID))).thenReturn(1);
         when(ticketCategory.isAccessRestricted()).thenReturn(false);
         List<String> expectedReservations = singletonList(RESERVATION_ID);
         when(ticketReservationRepository.remove(eq(expectedReservations))).thenReturn(1);
         when(transactionRepository.loadOptionalByReservationId(anyString())).thenReturn(Optional.empty());
         trm.releaseTicket(event, ticketReservation, ticket);
-        verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID));
+        verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), any(UUID.class), eq(EVENT_ID), eq(TICKET_ID));
         verify(notificationManager).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq(RESERVATION_EMAIL), any(), any(TemplateGenerator.class));
         verify(notificationManager).sendSimpleEmail(eq(event), isNull(), eq(ORG_EMAIL), any(), any(TemplateGenerator.class));
         verify(organizationRepository).getById(eq(ORGANIZATION_ID));
@@ -763,7 +763,7 @@ class TicketReservationManagerTest {
     void releaseRestrictedTicketIfUnboundedCategoryPresent() {
         initReleaseTicket();
         when(ticketCategory.getId()).thenReturn(TICKET_CATEGORY_ID);
-        when(ticketRepository.releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID))).thenReturn(1);
+        when(ticketRepository.releaseTicket(eq(RESERVATION_ID), anyString(), any(UUID.class), eq(EVENT_ID), eq(TICKET_ID))).thenReturn(1);
         when(ticketCategoryRepository.getByIdAndActive(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(ticketCategory.isAccessRestricted()).thenReturn(true);
         when(ticketCategoryRepository.countUnboundedCategoriesByEventId(eq(EVENT_ID))).thenReturn(1);
@@ -771,7 +771,7 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.remove(eq(expectedReservations))).thenReturn(1);
         when(transactionRepository.loadOptionalByReservationId(anyString())).thenReturn(Optional.empty());
         trm.releaseTicket(event, ticketReservation, ticket);
-        verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID));
+        verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), any(UUID.class), eq(EVENT_ID), eq(TICKET_ID));
         verify(ticketRepository).unbindTicketsFromCategory(eq(EVENT_ID), eq(TICKET_CATEGORY_ID), eq(singletonList(TICKET_ID)));
         verify(notificationManager).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq(RESERVATION_EMAIL), any(), any(TemplateGenerator.class));
         verify(organizationRepository).getById(eq(ORGANIZATION_ID));
@@ -781,13 +781,13 @@ class TicketReservationManagerTest {
     @Test
     void throwExceptionIfMultipleTickets() {
         initReleaseTicket();
-        when(ticketRepository.releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID))).thenReturn(2);
+        when(ticketRepository.releaseTicket(eq(RESERVATION_ID), anyString(), any(UUID.class), eq(EVENT_ID), eq(TICKET_ID))).thenReturn(2);
         try {
             trm.releaseTicket(event, ticketReservation, ticket);
             Assertions.fail();
         } catch (IllegalArgumentException e) {
             Assertions.assertEquals("Expected 1 row to be updated, got 2", e.getMessage());
-            verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID));
+            verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), any(UUID.class), eq(EVENT_ID), eq(TICKET_ID));
             verify(notificationManager, never()).sendSimpleEmail(any(), any(), any(), any(), any(TemplateGenerator.class));
         }
     }

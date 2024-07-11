@@ -367,7 +367,7 @@ public enum TemplateResource {
     }
 
     private static Ticket sampleTicket(String firstName, String lastName, String email, ZoneId zoneId) {
-        return new Ticket(0, RESERVATION_ID_VALUE, ZonedDateTime.now(ClockProvider.clock().withZone(zoneId)), 0, "ACQUIRED", 0,
+        return new Ticket(0, UUID.randomUUID().toString(), UUID.randomUUID(), ZonedDateTime.now(ClockProvider.clock().withZone(zoneId)), 0, "ACQUIRED", 0,
             RESERVATION_ID_VALUE, firstName + " " + lastName, firstName, lastName, email, false, "en",
             1000, 1000, 80, 0, null, "CHF", List.of(), null, PriceContainer.VatStatus.INCLUDED);
     }

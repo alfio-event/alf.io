@@ -42,6 +42,7 @@ public class TicketWithReservationAndTransaction {
 
     public TicketWithReservationAndTransaction(@Column("t_id") Integer id,
                                                @Column("t_uuid") String uuid,
+                                               @Column("t_public_uuid") UUID publicUuid,
                                                @Column("t_creation") ZonedDateTime creation,
                                                @Column("t_category_id") Integer categoryId,
                                                @Column("t_status") String status,
@@ -124,7 +125,7 @@ public class TicketWithReservationAndTransaction {
                                                @Column("special_price_token") String specialPriceToken
                                                ) {
 
-        this.ticket = id != null ? new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId,
+        this.ticket = id != null ? new Ticket(id, uuid, publicUuid, creation, categoryId, status, eventId, ticketsReservationId,
             fullName, firstName, lastName, email, lockedAssignment, userLanguage,
             srcPriceCts, finalPriceCts, vatCts, discountCts, extReference, currencyCode,
             ticketTags, ticketSubscriptionId, vatStatus) : null;

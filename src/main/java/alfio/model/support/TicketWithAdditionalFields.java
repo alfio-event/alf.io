@@ -26,19 +26,46 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-@AllArgsConstructor
 public class TicketWithAdditionalFields {
-    @Delegate(excludes = EventAndOrganizationId.class)
-    @JsonIgnore
     private final Ticket ticket;
-    @JsonIgnore
     private final List<FieldConfigurationDescriptionAndValue> additionalFieldsDescriptionsAndValues;
+
+    public TicketWithAdditionalFields(Ticket ticket,
+                                      List<FieldConfigurationDescriptionAndValue> additionalFieldsDescriptionsAndValues) {
+        this.ticket = ticket;
+        this.additionalFieldsDescriptionsAndValues = additionalFieldsDescriptionsAndValues;
+    }
 
     public Map<String, String> getAdditionalFields() {
         return additionalFieldsDescriptionsAndValues.stream()
             .map(af -> Pair.of(af.getLabelDescription(), af.getValueDescription()))
             .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+    }
+
+    public String getUuid() {
+        return ticket.getUuid();
+    }
+
+    public String getFullName() {
+        return ticket.getFullName();
+    }
+
+    public String getFirstName() {
+        return ticket.getFirstName();
+    }
+
+    public String getLastName() {
+        return ticket.getLastName();
+    }
+
+    public String getEmail() {
+        return ticket.getEmail();
+    }
+
+    public String getUserLanguage() {
+        return ticket.getUserLanguage();
     }
 }

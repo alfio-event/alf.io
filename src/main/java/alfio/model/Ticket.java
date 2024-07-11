@@ -20,6 +20,7 @@ import alfio.model.support.Array;
 import alfio.util.MonetaryUtil;
 import alfio.util.checkin.NameNormalizer;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import org.apache.commons.codec.digest.HmacAlgorithms;
@@ -40,6 +41,7 @@ public class Ticket implements TicketInfoContainer {
 
     private final int id;
     private final String uuid;
+    private final UUID publicUuid;
     private final ZonedDateTime creation;
     private final Integer categoryId;
     private final int eventId;
@@ -65,6 +67,7 @@ public class Ticket implements TicketInfoContainer {
 
     public Ticket(@JsonProperty("id") @Column("id") int id,
                   @JsonProperty("uuid") @Column("uuid") String uuid,
+                  @JsonProperty("publicUuid") @Column("public_uuid") UUID publicUuid,
                   @JsonProperty("creation") @Column("creation") ZonedDateTime creation,
                   @JsonProperty("categoryId") @Column("category_id") Integer categoryId,
                   @JsonProperty("status") @Column("status") String status,
@@ -87,6 +90,7 @@ public class Ticket implements TicketInfoContainer {
                   @JsonProperty("vatStatus") @Column("vat_status") PriceContainer.VatStatus vatStatus) {
         this.id = id;
         this.uuid = uuid;
+        this.publicUuid = publicUuid;
         this.creation = creation;
         this.categoryId = categoryId;
         this.eventId = eventId;
@@ -174,6 +178,7 @@ public class Ticket implements TicketInfoContainer {
         return new Ticket(
             id,
             uuid,
+            publicUuid,
             creation,
             categoryId,
             status.name(),

@@ -16,26 +16,72 @@
  */
 package alfio.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 
-@RequiredArgsConstructor
-public class TicketWithCategory implements TicketInfoContainer {
-
-    @Delegate
-    private final Ticket ticket;
-    private final TicketCategory category;
+public record TicketWithCategory(@JsonIgnore Ticket ticket, @JsonIgnore TicketCategory category) implements TicketInfoContainer {
 
     public String getCategoryName() {
         return category != null ? category.getName() : null;
     }
 
-    public TicketCategory getCategory() {
-        return category;
+    @Override
+    public boolean getAssigned() {
+        return ticket.getAssigned();
     }
 
-    protected Ticket getTicket() {
-        return ticket;
+    @Override
+    public boolean isCheckedIn() {
+        return ticket.isCheckedIn();
     }
 
+    @Override
+    public int getId() {
+        return ticket.getId();
+    }
+
+    @Override
+    public String getUuid() {
+        return ticket.getUuid();
+    }
+
+    @Override
+    public int getEventId() {
+        return ticket.getEventId();
+    }
+
+    @Override
+    public String getTicketsReservationId() {
+        return ticket.getTicketsReservationId();
+    }
+
+    @Override
+    public String getFirstName() {
+        return ticket.getFirstName();
+    }
+
+    @Override
+    public String getLastName() {
+        return ticket.getLastName();
+    }
+
+    @Override
+    public String getEmail() {
+        return ticket.getEmail();
+    }
+
+    @Override
+    public String getUserLanguage() {
+        return ticket.getUserLanguage();
+    }
+
+    @Override
+    public Integer getCategoryId() {
+        return ticket.getCategoryId();
+    }
+
+    public String getFullName() {
+        return ticket.getFullName();
+    }
 }

@@ -48,8 +48,8 @@ function copyEventCtrl(EventService, AdditionalFieldsService, $q, $templateCache
     };
 
     ctrl.submit = function() {
-        var selectedAdditionalFields = ctrl.additionalFields.filter(function(af) {return ctrl.selectedAdditionalFields[af.name]});
-        var selectedAdditionalServices = ctrl.additionalServices.filter(function(as) {return ctrl.selectedAdditionalServices[as.id]});
+        var selectedAdditionalFields = (ctrl.additionalFields||[]).filter(function(af) {return ctrl.selectedAdditionalFields[af.name]});
+        var selectedAdditionalServices = (ctrl.additionalServices||[]).filter(function(as) {return ctrl.selectedAdditionalServices[as.id]});
         ctrl.onCopy([ctrl.newEvent, ctrl.selectedEvent, selectedAdditionalFields, selectedAdditionalServices]);
     };
 

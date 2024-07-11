@@ -437,14 +437,13 @@ public class ReservationApiV2Controller {
                 );
             }
 
-            if (purchaseContext.ofType(PurchaseContextType.event)) {
-                var event = (Event) purchaseContext;
+            if (purchaseContext instanceof Event event) {
                 if (event.supportsLinkedAdditionalServices() && contactAndTicketsForm.hasAdditionalServices()) {
                     var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
                     additionalServiceManager.linkItemsToTickets(reservationId, contactAndTicketsForm.getAdditionalServices(), tickets);
                     additionalServiceManager.persistFieldsForAdditionalItems(event.getId(), event.getOrganizationId(), contactAndTicketsForm.getAdditionalServices(), tickets);
                 }
-                assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, locale, true, true);
+                assignTickets(event, reservationId, contactAndTicketsForm, bindingResult, locale, true, true);
             }
 
             if(purchaseContext.ofType(PurchaseContextType.subscription)) {
@@ -518,14 +517,15 @@ public class ReservationApiV2Controller {
             contactAndTicketsForm.isItalyEInvoicingSplitPayment());
     }
 
-    private void assignTickets(String eventName, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, Locale locale, boolean preAssign, boolean skipValidation) {
+    private void assignTickets(Event event, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, Locale locale, boolean preAssign, boolean skipValidation) {
         if(!contactAndTicketsForm.isPostponeAssignment()) {
-            contactAndTicketsForm.getTickets().forEach((ticketId, owner) -> {
+            contactAndTicketsForm.getTickets().forEach((ticketPublicId, owner) -> {
+                var publicUUID = UUID.fromString(ticketPublicId);
                 if (preAssign) {
                     Optional<BindingResult> bindingResultOptional = skipValidation ? Optional.empty() : Optional.of(bindingResult);
-                    ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, bindingResultOptional, locale);
+                    Validate.isTrue(ticketHelper.preAssignTicket(event.getShortName(), reservationId, publicUUID, owner, bindingResultOptional, locale).isPresent());
                 } else {
-                    ticketHelper.assignTicket(eventName, ticketId, owner, Optional.of(bindingResult), locale, Optional.empty(), true);
+                    Validate.isTrue(ticketHelper.assignTicket(event.getShortName(), publicUUID, owner, Optional.of(bindingResult), locale, Optional.empty(), true).isPresent());
                 }
             });
         }

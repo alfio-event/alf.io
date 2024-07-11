@@ -44,6 +44,7 @@ public class FullTicketInfo implements TicketInfoContainer {
 
     public FullTicketInfo(@Column("t_id") int id,
                           @Column("t_uuid") String uuid,
+                          @Column("t_public_uuid") UUID publicUuid,
                           @Column("t_creation") ZonedDateTime creation,
                           @Column("t_category_id") int categoryId,
                           @Column("t_status") String status,
@@ -127,7 +128,7 @@ public class FullTicketInfo implements TicketInfoContainer {
                           @Column("tc_ticket_access_type") TicketCategory.TicketAccessType ticketAccessType
                           ) {
 
-        this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId, fullName,
+        this.ticket = new Ticket(id, uuid, publicUuid, creation, categoryId, status, eventId, ticketsReservationId, fullName,
             firstName, lastName, email, lockedAssignment, userLanguage, ticketSrcPriceCts, ticketFinalPriceCts,
             ticketVatCts, ticketDiscountCts, extReference, currencyCode, ticketTags, ticketSubscriptionId, ticketVatStatus);
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trFirstName, trLastName, trEmail, trBillingAddress,

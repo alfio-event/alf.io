@@ -627,7 +627,7 @@ public class ExtensionManager {
         var categoriesById = ticketCategoryRepository.findCategoriesInReservation(reservationId).stream()
             .collect(Collectors.toMap(TicketCategory::getId, Function.identity()));
         var ticketInfoById = ticketRepository.findBasicTicketInfoForReservation(event.getId(), reservationId).stream()
-            .collect(Collectors.toMap(TicketInfo::getTicketUuid, Function.identity()));
+            .collect(Collectors.toMap(ti -> ti.getTicketPublicUUID().toString(), Function.identity()));
         var context = new HashMap<String, Object>();
         context.put(EVENT, event);
         context.put(RESERVATION_ID, reservationId);

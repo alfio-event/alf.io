@@ -32,6 +32,7 @@ public class TicketWithMetadataAttributes {
 
     public TicketWithMetadataAttributes(@Column("id") int id,
                                         @Column("uuid") String uuid,
+                                        @Column("public_uuid") UUID publicUuid,
                                         @Column("creation") ZonedDateTime creation,
                                         @Column("category_id") Integer categoryId,
                                         @Column("status") String status,
@@ -53,7 +54,7 @@ public class TicketWithMetadataAttributes {
                                         @Column("subscription_id_fk") UUID subscriptionId,
                                         @Column("vat_status") PriceContainer.VatStatus vatStatus,
                                         @Column("metadata") @JSONData TicketMetadataContainer ticketMetadataContainer) {
-        this(new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId, fullName, firstName, lastName, email, lockedAssignment, userLanguage, srcPriceCts, finalPriceCts, vatCts, discountCts, extReference, currencyCode, tags, subscriptionId, vatStatus),
+        this(new Ticket(id, uuid, publicUuid, creation, categoryId, status, eventId, ticketsReservationId, fullName, firstName, lastName, email, lockedAssignment, userLanguage, srcPriceCts, finalPriceCts, vatCts, discountCts, extReference, currencyCode, tags, subscriptionId, vatStatus),
             ticketMetadataContainer);
     }
 

@@ -225,7 +225,7 @@ public class ReverseChargeManager {
         var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
         var currencyCode = reservation.getCurrencyCode();
         var ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId).stream()
-            .collect(toMap(Ticket::getUuid, Function.identity()));
+            .collect(toMap(t -> t.getPublicUuid().toString(), Function.identity()));
         var ticketIds = ticketsInReservation.keySet();
         if (customTaxPolicy.getTicketPolicies().stream().anyMatch(tp -> !ticketIds.contains(tp.getUuid()))) {
             log.warn("Error in custom tax policy: some tickets are not included in reservation {}", reservationId);

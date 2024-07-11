@@ -251,9 +251,9 @@ public final class Validator {
         }
 
 
-        public List<PurchaseContextFieldConfiguration> getFieldsForTicket(String ticketUuid, Set<PurchaseContextFieldConfiguration.Context> requestedContexts) {
-            var ticket = ticketsInReservation.stream().filter(t -> t.getUuid().equals(ticketUuid)).findFirst().orElseThrow();
-            var isFirstTicket = firstTicketInReservation.map(first -> ticket.getUuid().equals(first.getUuid())).orElse(false);
+        public List<PurchaseContextFieldConfiguration> getFieldsForTicket(UUID publicUuid, Set<PurchaseContextFieldConfiguration.Context> requestedContexts) {
+            var ticket = ticketsInReservation.stream().filter(t -> t.getPublicUuid().equals(publicUuid)).findFirst().orElseThrow();
+            var isFirstTicket = firstTicketInReservation.map(first -> ticket.getId() == first.getId()).orElse(false);
             return filterFieldsForTicket(purchaseContextFields, ticket, additionalFieldsForReservation, isFirstTicket, eventSupportsAdditionalFieldsLink, additionalServiceItems, requestedContexts);
         }
 

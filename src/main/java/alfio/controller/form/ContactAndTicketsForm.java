@@ -119,7 +119,7 @@ public class ContactAndTicketsForm implements Serializable {
                 Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
                     .filter(m -> !m.isEmpty())
                     .map(m -> m.entrySet().stream().map(e -> {
-                        var filteredForTicket = fieldsFilterer.getFieldsForTicket(e.getKey(), EnumSet.of(ATTENDEE));
+                        var filteredForTicket = fieldsFilterer.getFieldsForTicket(UUID.fromString(e.getKey()), EnumSet.of(ATTENDEE));
                         return Validator.validateTicketAssignment(e.getValue(), filteredForTicket, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator, extensionManager);
                     }))
                     .map(s -> s.collect(Collectors.toList()));
@@ -164,7 +164,7 @@ public class ContactAndTicketsForm implements Serializable {
         }
         var result = ValidationResult.success();
         for (var ticketAndFields : form.entrySet()) {
-            var filteredForTicket = additionalFieldsFilterer.getFieldsForTicket(ticketAndFields.getKey(), EnumSet.of(ADDITIONAL_SERVICE));
+            var filteredForTicket = additionalFieldsFilterer.getFieldsForTicket(UUID.fromString(ticketAndFields.getKey()), EnumSet.of(ADDITIONAL_SERVICE));
             var fieldForms = ticketAndFields.getValue();
             for (int i = 0; i < fieldForms.size(); i++) {
                 result = result.or(Validator.validateAdditionalItemFieldsForTicket(fieldForms.get(i), filteredForTicket, bindingResult, "additionalServices["+ticketAndFields.getKey()+"]["+i+"]", vatValidator, fieldForms, additionalServiceItems));
