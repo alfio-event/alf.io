@@ -275,16 +275,16 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
         //
 
-        assertEquals("Switzerland", translationsApiController.getCountries("en").stream().filter( c-> "CH".equals(c.getIsoCode())).findFirst().get().getName());
+        assertEquals("Switzerland", translationsApiController.getCountries("en").stream().filter( c-> "CH".equals(c.isoCode())).findFirst().get().name());
 
-        assertEquals("Greece", translationsApiController.getCountries("en").stream().filter(c->"GR".equals(c.getIsoCode())).findFirst().get().getName());
+        assertEquals("Greece", translationsApiController.getCountries("en").stream().filter(c->"GR".equals(c.isoCode())).findFirst().get().name());
 
-        assertEquals("Suisse", translationsApiController.getCountries("fr").stream().filter( c-> "CH".equals(c.getIsoCode())).findFirst().get().getName());
-        assertEquals("Svizzera", translationsApiController.getCountries("it").stream().filter( c-> "CH".equals(c.getIsoCode())).findFirst().get().getName());
-        assertEquals("Schweiz", translationsApiController.getCountries("de").stream().filter( c-> "CH".equals(c.getIsoCode())).findFirst().get().getName());
+        assertEquals("Suisse", translationsApiController.getCountries("fr").stream().filter( c-> "CH".equals(c.isoCode())).findFirst().get().name());
+        assertEquals("Svizzera", translationsApiController.getCountries("it").stream().filter( c-> "CH".equals(c.isoCode())).findFirst().get().name());
+        assertEquals("Schweiz", translationsApiController.getCountries("de").stream().filter( c-> "CH".equals(c.isoCode())).findFirst().get().name());
 
         //EL -> greece for vat
-        assertEquals("Greece", translationsApiController.getCountriesForVat("en").stream().filter(c->"EL".equals(c.getIsoCode())).findFirst().get().getName());
+        assertEquals("Greece", translationsApiController.getCountriesForVat("en").stream().filter(c->"EL".equals(c.isoCode())).findFirst().get().name());
         assertEquals(27, translationsApiController.getEuCountriesForVat("en").size()); //
         //
 

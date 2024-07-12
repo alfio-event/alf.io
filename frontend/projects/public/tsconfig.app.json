@@ -3,7 +3,9 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "../../out-tsc/app",
-    "types": [],
+    "types": [
+      "@angular/localize"
+    ],
     /* temporarily disable strict checks, see https://www.typescriptlang.org/tsconfig */
     "strict": false,
     "noPropertyAccessFromIndexSignature": false

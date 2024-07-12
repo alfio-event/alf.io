@@ -67,8 +67,6 @@
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/configuration/configuration.js"></script>
 
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/additional-service/additional-service.js"></script>
-
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/event-statistic/event-statistic.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/expired-events-list/expired-events-list.js"></script>

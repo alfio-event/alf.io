@@ -1,4 +1,4 @@
-export class LocalizedCountry {
+export interface LocalizedCountry {
     isoCode: string;
     name: string;
 }
