@@ -18,6 +18,7 @@ package alfio.controller.api.admin;
 
 import alfio.config.authentication.support.AuthenticationConstants;
 import alfio.manager.AccessService;
+import alfio.manager.FileUploadManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.modification.OrganizationModification;
@@ -30,7 +31,6 @@ import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -55,14 +55,22 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @RestController
 @RequestMapping("/admin/api")
-@AllArgsConstructor
 public class UsersApiController {
 
     private static final Logger log = LoggerFactory.getLogger(UsersApiController.class);
     private static final String OK = "OK";
+
     private final UserManager userManager;
     private final ConfigurationManager configurationManager;
     private final AccessService accessService;
+    private final FileUploadManager fileUploadManager;
+
+    public UsersApiController(UserManager userManager, ConfigurationManager configurationManager, AccessService accessService, FileUploadManager fileUploadManager) {
+        this.userManager = userManager;
+        this.configurationManager = configurationManager;
+        this.accessService = accessService;
+        this.fileUploadManager = fileUploadManager;
+    }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -209,19 +217,19 @@ public class UsersApiController {
         String baseUrl = configurationManager.getForSystem(ConfigurationKeys.BASE_URL).getRequiredValue();
         try(OutputStream os = response.getOutputStream(); ZipOutputStream zipOS = new ZipOutputStream(os)) {
             for (User user : userManager.findAllApiKeysFor(organizationId)) {
-                Pair<String, byte[]> result = generateApiKeyQRCode(user, baseUrl);
+                Pair<String, byte[]> result = generateApiKeyQRCode(user, baseUrl, fileUploadManager);
                 zipOS.putNextEntry(new ZipEntry(user.getType().name() + "-" +result.getLeft()+".png"));
                 StreamUtils.copy(result.getRight(), zipOS);
             }
         }
     }
 
-    private static Pair<String, byte[]> generateApiKeyQRCode(User user, String baseUrl) {
+    private static Pair<String, byte[]> generateApiKeyQRCode(User user, String baseUrl, FileUploadManager fileUploadManager) {
         Map<String, String> info = new HashMap<>();
         info.put("apiKey", user.getUsername());
         info.put("baseUrl", baseUrl);
         String description = Objects.toString(trimToNull(user.getDescription()), user.getUsername());
-        return Pair.of(description, ImageUtil.createQRCodeWithDescription(Json.GSON.toJson(info), description));
+        return Pair.of(description, ImageUtil.createQRCodeWithDescription(Json.GSON.toJson(info), description, fileUploadManager));
     }
 
     private static byte[] generateQRCode(UserWithPassword userWithPassword, String baseUrl) {
