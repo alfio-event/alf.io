@@ -1415,8 +1415,8 @@ public class TicketReservationManager {
         });
     }
 
-    public Optional<CheckInFullInfo> fetchCompleteAndAssignedForOnlineCheckIn(String eventName, String ticketIdentifier) {
-        return ticketRepository.getFullInfoForOnlineCheckin(eventName, ticketIdentifier);
+    public Optional<CheckInFullInfo> fetchCompleteAndAssignedForOnlineCheckIn(String eventName, UUID publicUUID) {
+        return ticketRepository.getFullInfoForOnlineCheckin(eventName, publicUUID);
     }
 
     public void sendReminderForOfflinePayments() {

@@ -23,7 +23,6 @@ import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
-import lombok.experimental.UtilityClass;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -43,7 +42,7 @@ public class TicketCheckInUtil {
     public static String ticketOnlineCheckInUrl(Event event, Ticket ticket, String baseUrl) {
         var ticketCode = DigestUtils.sha256Hex(ticket.ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive()));
         return StringUtils.removeEnd(baseUrl, "/")
-            + "/event/" + event.getShortName() + "/ticket/" + ticket.getUuid() + "/check-in/"+ticketCode;
+            + "/event/" + event.getShortName() + "/ticket/" + ticket.getPublicUuid() + "/check-in/"+ticketCode;
     }
 
     public static Map<String, String> getOnlineCheckInInfo(ExtensionManager extensionManager,

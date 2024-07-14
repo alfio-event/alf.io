@@ -460,8 +460,8 @@ public interface TicketRepository {
     @Query("select distinct category_id from ticket where tickets_reservation_id = :reservationId and src_price_cts > 0")
     List<Integer> getCategoriesIdToPayInReservation(@Bind("reservationId") String reservationId);
 
-    @Query("select * from checkin_ticket_event_and_category_info where t_uuid = :ticketUUID and e_short_name = :eventShortName and (e_format = 'ONLINE' or tc_ticket_access_type = 'ONLINE') ")
-    Optional<CheckInFullInfo> getFullInfoForOnlineCheckin(@Bind("eventShortName") String eventShortName, @Bind("ticketUUID") String ticketUUID);
+    @Query("select * from checkin_ticket_event_and_category_info where t_public_uuid = :publicUUID and e_short_name = :eventShortName and (e_format = 'ONLINE' or tc_ticket_access_type = 'ONLINE') ")
+    Optional<CheckInFullInfo> getFullInfoForOnlineCheckin(@Bind("eventShortName") String eventShortName, @Bind("publicUUID") UUID publicUUID);
 
     @Query("select * from checkin_ticket_event_and_category_info where e_id = :eventId " +
         "and (" + TicketSearchRepository.BASE_FILTER + " or lower(tc_name) like lower(:search)) "+

@@ -20,7 +20,6 @@ import alfio.manager.CheckInManager;
 import alfio.manager.ExtensionManager;
 import alfio.manager.TicketReservationManager;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +30,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Optional;
+import java.util.UUID;
 
 import static alfio.manager.support.CheckInStatus.ALREADY_CHECK_IN;
 import static alfio.manager.support.CheckInStatus.SUCCESS;
@@ -45,25 +45,25 @@ public class OnlineCheckInController {
     private final CheckInManager checkInManager;
     private final ExtensionManager extensionManager;
 
-    @GetMapping("/event/{shortName}/ticket/{ticketUUID}/check-in/{ticketCodeHash}")
+    @GetMapping("/event/{shortName}/ticket/{publicUUID}/check-in/{ticketCodeHash}")
     public String performCheckIn(@PathVariable("shortName") String eventShortName,
-                                 @PathVariable String ticketUUID,
+                                 @PathVariable UUID publicUUID,
                                  @PathVariable String ticketCodeHash) {
 
-        return ticketReservationManager.fetchCompleteAndAssignedForOnlineCheckIn(eventShortName, ticketUUID)
+        return ticketReservationManager.fetchCompleteAndAssignedForOnlineCheckIn(eventShortName, publicUUID)
             .flatMap(data -> {
                 var ticket = data.getTicket();
                 var event = data.getEventWithCheckInInfo();
                 String ticketCode = ticket.ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive());
                 if(MessageDigest.isEqual(DigestUtils.sha256Hex(ticketCode).getBytes(StandardCharsets.UTF_8), ticketCodeHash.getBytes(StandardCharsets.UTF_8))) {
-                    log.debug("code successfully validated for ticket {}", ticketUUID);
+                    log.debug("code successfully validated for ticket {}", publicUUID);
                     // check-in can be done. Let's check if there is a redirection URL
                     var categoryConfiguration = data.getCategoryMetadata().getOnlineConfiguration();
                     var eventConfiguration = event.getMetadata().getOnlineConfiguration();
                     var match = findMatchingLink(event.getZoneId(), categoryConfiguration, eventConfiguration);
                     if(match.isPresent()) {
                         var checkInStatus = checkInManager.performCheckinForOnlineEvent(ticket, event, data.getTicketCategory());
-                        log.info("check-in status {} for ticket {}", checkInStatus, ticketUUID);
+                        log.info("check-in status {} for ticket {}", checkInStatus, publicUUID);
                         if(checkInStatus == SUCCESS || (checkInStatus == ALREADY_CHECK_IN && ticket.isCheckedIn())) {
                             // invoke the extension for customizing the URL, if any
                             // we call the extension from here because it will have a smaller impact on the throughput compared to
@@ -71,13 +71,13 @@ public class OnlineCheckInController {
                             var customUrlOptional = extensionManager.handleOnlineCheckInLink(match.get(), ticket, event, data.getTicketAdditionalInfo());
                             return customUrlOptional.or(() -> match);
                         }
-                        log.info("denying check-in for ticket {} because check-in status was {}", ticketUUID, checkInStatus);
-                        return Optional.of("/event/"+event.getShortName()+"/ticket/"+ticketUUID+"/update");
+                        log.info("denying check-in for ticket {} because check-in status was {}", publicUUID, checkInStatus);
+                        return Optional.of("/event/"+event.getShortName()+"/ticket/"+ publicUUID +"/update");
                     }
-                    log.info("validation was successful, but cannot find a valid link for {}", ticketUUID);
-                    return Optional.of("/event/"+event.getShortName()+"/ticket/"+ticketUUID+"/check-in/"+ticketCodeHash+"/waiting-room");
+                    log.info("validation was successful, but cannot find a valid link for {}", publicUUID);
+                    return Optional.of("/event/"+event.getShortName()+"/ticket/"+ publicUUID +"/check-in/"+ticketCodeHash+"/waiting-room");
                 }
-                log.warn("code validation failed for ticket {}", ticketUUID);
+                log.warn("code validation failed for ticket {}", publicUUID);
                 return Optional.empty();
             })
             .map(link -> "redirect:"+link)

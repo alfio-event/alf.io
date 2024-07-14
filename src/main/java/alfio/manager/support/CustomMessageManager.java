@@ -184,7 +184,7 @@ public class CustomMessageManager {
         if (htmlEmailEnabled) {
             model.put(Mailer.SKIP_PASSBOOK, "true");
         }
-        return new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.TICKET_PDF);
+        return new Mailer.Attachment("ticket-" + ticket.getPublicUuid() + ".pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.TICKET_PDF);
     }
 
     private static Map<String, String> getModelForTicket(Ticket ticket, TicketReservation reservation, TicketCategory ticketCategory, Organization organization) {

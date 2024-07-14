@@ -28,7 +28,6 @@ import alfio.model.system.ConfigurationKeys;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
 import com.samskivert.mustache.Template;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,7 +130,7 @@ public class TemplateManager {
     public RenderedTemplate renderTemplate(PurchaseContext purchaseContext, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
         Map<String, Object> updatedModel = modelEnricher(model, purchaseContext, locale);
         return uploadedResourceManager.findCascading(purchaseContext.getOrganizationId(), purchaseContext.event().map(Event::getId).orElse(null), templateResource.getSavedName(locale))
-            .map(resource -> RenderedTemplate.plaintext(render(new ByteArrayResource(resource), updatedModel, locale, purchaseContext, templateResource.getTemplateOutput()), model))
+            .map(resource -> RenderedTemplate.plaintext(render(new ByteArrayResource(templateResource.replaceTokens(resource)), updatedModel, locale, purchaseContext, templateResource.getTemplateOutput()), model))
             .orElseGet(() -> renderMultipartTemplate(purchaseContext, templateResource, updatedModel, locale));
     }
 

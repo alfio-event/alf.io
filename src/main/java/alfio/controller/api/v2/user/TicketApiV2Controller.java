@@ -39,6 +39,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.ImageUtil;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -50,12 +51,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.Principal;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -288,10 +287,9 @@ public class TicketApiV2Controller {
         ).orElseThrow(IllegalStateException::new);
     }
 
-    // TODO CHECK
     @GetMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/code/{checkInCode}/check-in-info")
     public ResponseEntity<OnlineCheckInInfo> getCheckInInfo(@PathVariable String eventName,
-                                                            @PathVariable String ticketIdentifier,
+                                                            @PathVariable UUID ticketIdentifier,
                                                             @PathVariable String checkInCode,
                                                             @RequestParam(value = "tz", required = false) String userTz) {
         return ResponseEntity.of(ticketReservationManager.fetchCompleteAndAssignedForOnlineCheckIn(eventName, ticketIdentifier)

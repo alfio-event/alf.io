@@ -37,5 +37,5 @@ CREATE TRIGGER t_check_public_uuid
     when ( new.public_uuid is null )
     EXECUTE PROCEDURE fill_public_uuid();
 
-
+alter table ticket add constraint "t_unique_public_uuid" unique(public_uuid);
 
