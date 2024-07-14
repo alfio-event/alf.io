@@ -18,7 +18,7 @@ export class FeedbackComponent {
     this.feedbackService.displayNotification().subscribe(details => {
       this.active = details.active;
       this.text = details.message;
-      this.type = details.type || 'INFO';
+      this.type = details.type ?? 'INFO';
     });
   }
 
@@ -32,7 +32,7 @@ export class FeedbackComponent {
         return 'border-success text-success';
       case 'ERROR':
         return 'border-danger text-danger';
-      case 'INFO':
+      default:
         return 'border-primary text-primary';
     }
   }
@@ -43,7 +43,7 @@ export class FeedbackComponent {
         return 'bg-success text-white';
       case 'ERROR':
         return 'bg-danger text-white';
-      case 'INFO':
+      default:
         return 'bg-white text-primary';
     }
   }
@@ -54,7 +54,7 @@ export class FeedbackComponent {
         return ['far', 'check-circle'];
       case 'ERROR':
         return ['fas', 'exclamation-circle'];
-      case 'INFO':
+      default:
         return ['fas', 'info-circle'];
     }
   }

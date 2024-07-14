@@ -18,7 +18,7 @@ package alfio.controller.api.v2;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.Language;
-import alfio.controller.api.v2.model.LocalizedCountry;
+import alfio.model.LocalizedCountry;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationManager;
@@ -61,12 +61,12 @@ public class TranslationsApiController {
 
     @GetMapping("/public/i18n/countries/{lang}")
     public List<LocalizedCountry> getCountries(@PathVariable String lang) {
-        return fromPair(TicketHelper.getLocalizedCountries(LocaleUtil.forLanguageTag(lang)));
+        return TicketHelper.getSortedLocalizedCountries(LocaleUtil.forLanguageTag(lang));
     }
 
     @GetMapping("/public/i18n/countries-vat/{lang}")
     public List<LocalizedCountry> getCountriesForVat(@PathVariable String lang) {
-        return fromPair(TicketHelper.getLocalizedCountriesForVat(LocaleUtil.forLanguageTag(lang)));
+        return TicketHelper.getSortedLocalizedVatCountries(LocaleUtil.forLanguageTag(lang));
     }
 
     @GetMapping("/public/i18n/eu-countries-vat/{lang}")
@@ -79,7 +79,7 @@ public class TranslationsApiController {
     private static List<LocalizedCountry> fromPair(List<Pair<String, String>> countries) {
         var collator = Collator.getInstance(Locale.FRENCH); //<- gives the better sorting experience...
         return countries.stream().map(p-> new LocalizedCountry(p.getKey(), p.getValue()))
-            .sorted((lc1, lc2) -> collator.compare(lc1.getName(), lc2.getName()))
+            .sorted((lc1, lc2) -> collator.compare(lc1.name(), lc2.name()))
             .collect(Collectors.toList());
     }
 

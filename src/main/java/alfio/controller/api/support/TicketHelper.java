@@ -39,8 +39,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
 
+import java.text.Collator;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -214,6 +217,22 @@ public class TicketHelper {
 
     public static List<Pair<String, String>> getLocalizedCountries(Locale locale) {
         return mapISOCountries(Stream.of(Locale.getISOCountries()), locale);
+    }
+
+    public static List<LocalizedCountry> getSortedLocalizedCountries(Locale locale) {
+        return sortCountries(getLocalizedCountries(locale).stream());
+    }
+
+    public static List<LocalizedCountry> getSortedLocalizedVatCountries(Locale locale) {
+        return sortCountries(getLocalizedCountriesForVat(locale).stream());
+    }
+
+    private static List<LocalizedCountry> sortCountries(Stream<Pair<String, String>> countries) {
+        var collator = Collator.getInstance(Locale.FRENCH); //<- gives the better sorting experience...
+        return countries
+            .map(pair -> new LocalizedCountry(pair.getKey(), pair.getValue()))
+            .sorted((lc1, lc2) -> collator.compare(lc1.name(), lc2.name()))
+            .toList();
     }
 
     public static List<Pair<String, String>> getLocalizedEUCountriesForVat(Locale locale, String euCountries) {

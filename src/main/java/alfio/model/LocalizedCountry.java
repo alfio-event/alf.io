@@ -14,14 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.api.v2.model;
+package alfio.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
-@AllArgsConstructor
-@Getter
-public class LocalizedCountry {
-    private final String isoCode;
-    private final String name;
+public record LocalizedCountry(String isoCode, String name) {
 }

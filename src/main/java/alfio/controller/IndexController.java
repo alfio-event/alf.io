@@ -16,6 +16,7 @@
  */
 package alfio.controller;
 
+import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.Language;
 import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.controller.support.CSPConfigurer;
@@ -35,6 +36,7 @@ import alfio.util.RequestUtils;
 import ch.digitalfondue.jfiveparse.*;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
@@ -54,6 +56,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static alfio.config.Initializer.PROFILE_LIVE;
 import static alfio.controller.Constants.*;
@@ -307,12 +310,22 @@ public class IndexController {
             }
         }
         head.appendChild(buildScripTag(json.asJsonString(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, preloadLang, MessageSourceManager.PUBLIC_FRONTEND)), "application/json", "preload-bundle", preloadLang));
+        head.appendChild(buildScripTag(countriesForVatAsJson(json, preloadLang), "application/json", "preload-vat-countries", preloadLang));
+        head.appendChild(buildScripTag(countriesAsJson(json, preloadLang), "application/json", "preload-countries", preloadLang));
         // add fallback in english
         if (!"en".equals(preloadLang)) {
             head.appendChild(buildScripTag(json.asJsonString(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, "en", MessageSourceManager.PUBLIC_FRONTEND)), "application/json", "preload-bundle", "en"));
         }
         var htmlElement = IterableUtils.get(idx.getElementsByTagName("html"), 0);
         htmlElement.setAttribute("lang", preloadLang);
+    }
+
+    private static String countriesForVatAsJson(Json json, String preloadLang) {
+        return json.asJsonString(TicketHelper.getSortedLocalizedVatCountries(Locale.forLanguageTag(preloadLang)));
+    }
+
+    private static String countriesAsJson(Json json, String preloadLang) {
+        return json.asJsonString(TicketHelper.getSortedLocalizedCountries(Locale.forLanguageTag(preloadLang)));
     }
 
     private static Element buildScripTag(String content, String type, String id, String param) {

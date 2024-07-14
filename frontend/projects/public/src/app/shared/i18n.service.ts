@@ -6,7 +6,7 @@ import {LocalizedCountry} from '../model/localized-country';
 import {Title} from '@angular/platform-browser';
 import {LangChangeEvent, TranslateLoader, TranslateService} from '@ngx-translate/core';
 import {NavigationStart, Router} from '@angular/router';
-import {catchError, map, mergeMap, shareReplay} from 'rxjs/operators';
+import {catchError, map, mergeMap, shareReplay, tap} from 'rxjs/operators';
 import {EventService} from './event.service';
 import {PurchaseContextType} from './purchase-context.service';
 import {PurchaseContext} from '../model/purchase-context';
@@ -19,6 +19,7 @@ export class I18nService {
 
 
   private applicationLanguages: Observable<Language[]>;
+  private countriesCache = new CountriesCache();
 
   private static getInterpolateParams(lang: string, ctx: PurchaseContext): any {
     if (ctx != null) {
@@ -33,14 +34,53 @@ export class I18nService {
     private translateService: TranslateService,
     private router: Router,
     private customLoader: CustomLoader,
-    private eventService: EventService) { }
+    private eventService: EventService) {
+  }
+
+  private initCountriesCache(): void {
+      if (this.countriesCache.empty) {
+          const vatCountries = document.getElementById('preload-vat-countries');
+          if (vatCountries != null && vatCountries.getAttribute('data-param') != null) {
+              const vatCountriesJson = JSON.parse(vatCountries.textContent) as {[k: string]: string};
+              this.countriesCache.countriesForVat[vatCountries.getAttribute('data-param')] = Object.entries(vatCountriesJson)
+                  .sort((a1, a2) => a1[1].localeCompare(a2[1]))
+                  .map(([isoCode, name]) => {
+                      return {
+                          isoCode,
+                          name
+                      };
+                  });
+          }
+          const allCountries = document.getElementById('preload-countries');
+          if (allCountries != null && allCountries.getAttribute('data-param') != null) {
+              this.countriesCache.allCountries[allCountries.getAttribute('data-param')] = JSON.parse(allCountries.textContent);
+          }
+          this.countriesCache.markAsInitialized();
+      }
+  }
+
+
 
   getCountries(locale: string): Observable<LocalizedCountry[]> {
-    return this.http.get<LocalizedCountry[]>(`/api/v2/public/i18n/countries/${locale}`);
+    this.initCountriesCache();
+    if (this.countriesCache.allCountries[locale] != null) {
+        return of(this.countriesCache.allCountries[locale]);
+    }
+    return this.http.get<LocalizedCountry[]>(`/api/v2/public/i18n/countries/${locale}`)
+        .pipe(tap(countries => {
+            this.countriesCache.allCountries[locale] = countries;
+        }));
   }
 
   getVatCountries(locale: string): Observable<LocalizedCountry[]> {
-    return this.http.get<LocalizedCountry[]>(`/api/v2/public/i18n/countries-vat/${locale}`);
+    this.initCountriesCache();
+    if (this.countriesCache.countriesForVat[locale] != null) {
+      return of(this.countriesCache.countriesForVat[locale]);
+    }
+    return this.http.get<LocalizedCountry[]>(`/api/v2/public/i18n/countries-vat/${locale}`)
+        .pipe(tap(countries => {
+            this.countriesCache.countriesForVat[locale] = countries;
+        }));
   }
 
   getEUVatCountries(locale: string): Observable<LocalizedCountry[]> {
@@ -128,4 +168,14 @@ export class CustomLoader implements TranslateLoader {
     }
     return translationCache[lang];
   }
+}
+
+class CountriesCache {
+    countriesForVat: {[k:string]: LocalizedCountry[]} = {};
+    allCountries: {[k:string]: LocalizedCountry[]} = {};
+    empty: boolean = true;
+
+    markAsInitialized() {
+        this.empty = false;
+    }
 }

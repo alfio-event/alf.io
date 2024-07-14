@@ -8,7 +8,7 @@
     var ERROR_CODES = { DUPLICATE:'duplicate', MAX_LENGTH:'maxlength', MIN_LENGTH:'minlength'};
     
     var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives',
-        'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-additional-services', 'alfio-event-statistic',
+        'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-event-statistic',
         'ui.ace', 'monospaced.qrcode', 'checklist-model', 'group', 'subscriptions', angularDragula(angular)]);
 
     var loadEvent = {

@@ -67,9 +67,20 @@ function containsWithKey(errors: ErrorDescriptor[], key: string) {
     return false;
 }
 
+export function isServerError(err: any): boolean {
+    return err instanceof HttpErrorResponse && err.status > 499;
+}
+
 export function handleServerSideValidationError(err: any,
                                                 form: AbstractControl,
                                                 keyNotFoundHandler?: (key: string) => string): ErrorDescriptor[] {
+  if (isServerError(err)) {
+      return [{
+          code: 'error.STEP_2_PAYMENT_REQUEST_CREATION',
+          fieldName: '',
+          arguments: []
+      }]
+  }
   const errorObject = getErrorObject(err);
   if (errorObject != null) {
     return applyValidationErrors(form, errorObject, keyNotFoundHandler);
