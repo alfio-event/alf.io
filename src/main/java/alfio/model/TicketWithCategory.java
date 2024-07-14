@@ -17,8 +17,6 @@
 package alfio.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Delegate;
 
 public record TicketWithCategory(@JsonIgnore Ticket ticket, @JsonIgnore TicketCategory category) implements TicketInfoContainer {
 

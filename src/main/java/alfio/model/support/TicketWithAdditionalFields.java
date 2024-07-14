@@ -16,17 +16,12 @@
  */
 package alfio.model.support;
 
-import alfio.model.EventAndOrganizationId;
 import alfio.model.FieldConfigurationDescriptionAndValue;
 import alfio.model.Ticket;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
-import lombok.experimental.Delegate;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class TicketWithAdditionalFields {
