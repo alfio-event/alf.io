@@ -32,6 +32,7 @@ public class DetailedScanData {
 
     public DetailedScanData(@Column("t_id") int ticketId,
                             @Column("t_uuid") String ticketUuid,
+                            @Column("t_public_uuid") UUID publicUuid,
                             @Column("t_creation") ZonedDateTime ticketCreation,
                             @Column("t_category_id") int ticketCategoryId,
                             @Column("t_status") String ticketStatus,
@@ -62,7 +63,7 @@ public class DetailedScanData {
                             @Column("s_notes") String notes,
                             @Column("s_lead_status") SponsorScan.LeadStatus leadStatus,
                             @Column("s_operator") String operator) {
-        this.ticket = new Ticket(ticketId, ticketUuid, ticketCreation, ticketCategoryId,
+        this.ticket = new Ticket(ticketId, ticketUuid, publicUuid, ticketCreation, ticketCategoryId,
             ticketStatus, ticketEventId, ticketsReservationId, ticketFullName, ticketFirstName,
             ticketLastName, ticketEmail, ticketLockedAssignment, ticketUserLanguage, ticketSrcPriceCts,
             ticketFinalPriceCts, ticketVatCts, ticketDiscountCts, extReference, currencyCode, ticketTags,

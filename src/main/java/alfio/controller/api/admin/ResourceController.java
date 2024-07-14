@@ -31,8 +31,8 @@ import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import com.samskivert.mustache.MustacheException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
@@ -42,7 +42,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -126,7 +125,7 @@ public class ResourceController {
             Organization organization = organizationRepository.getById(organizationId);
             Optional<TemplateResource.ImageData> image = TemplateProcessor.extractImageModel(purchaseContext, fileUploadManager);
             Map<String, Object> model = name.prepareSampleModel(organization, purchaseContext, image);
-            String renderedTemplate = templateManager.renderString(purchaseContext, template.getFileAsString(), model, loc, name.getTemplateOutput());
+            String renderedTemplate = templateManager.renderString(purchaseContext, new String(name.replaceTokens(template.getFile())), model, loc, name.getTemplateOutput());
             if(MediaType.TEXT_PLAIN_VALUE.equals(name.getRenderedContentType()) || TemplateResource.MULTIPART_ALTERNATIVE_MIMETYPE.equals(name.getRenderedContentType())) {
                 response.addHeader("Content-Disposition", "attachment; filename="+name.name()+".txt");
                 response.setContentType(MediaType.TEXT_PLAIN_VALUE);

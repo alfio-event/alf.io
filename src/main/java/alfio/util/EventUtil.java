@@ -147,6 +147,7 @@ public final class EventUtil {
                                                            MapSqlParameterSource ps,
                                                            Ticket.TicketStatus ticketStatus) {
         return ps.addValue("uuid", UUID.randomUUID().toString())
+            .addValue("publicUuid", UUID.randomUUID())
             .addValue("creation", creation)
             .addValue("categoryId", tc.map(TicketCategory::getId).orElse(null))
             .addValue("eventId", eventId)

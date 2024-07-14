@@ -154,8 +154,7 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
         Map<String, PurchaseContextFieldValue> toUpdate;
         values = Optional.ofNullable(values).orElseGet(Collections::emptyMap);
         List<PurchaseContextFieldConfiguration> additionalFields;
-        if (purchaseContext.ofType(PurchaseContextType.event)) {
-            Event event = (Event) purchaseContext;
+        if (purchaseContext instanceof Event event) {
             additionalFields = findAdditionalFieldsForEvent(event.getId());
             toUpdate = findAllByTicketIdGroupedByName(ticketId, event.supportsLinkedAdditionalServices());
         } else {

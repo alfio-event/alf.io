@@ -62,6 +62,7 @@ create view reservation_and_ticket_and_tx as (select
 
     ticket.id t_id,
     ticket.uuid t_uuid,
+    ticket.public_uuid t_public_uuid,
     ticket.creation t_creation,
     ticket.category_id t_category_id,
     ticket.status t_status,

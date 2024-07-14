@@ -41,6 +41,7 @@ create view checkin_ticket_event_and_category_info as
 
         t.id                                t_id,
         t.uuid                              t_uuid,
+        t.public_uuid                       t_public_uuid,
         t.creation                          t_creation,
         t.category_id                       t_category_id,
         t.status                            t_status,

@@ -378,7 +378,7 @@ public class AdditionalServiceManager {
             .flatMap(entry -> {
                 var asl = entry.getValue();
                 Integer ticketId = tickets.stream()
-                    .filter(t -> StringUtils.isNotEmpty(entry.getKey()) && t.getUuid().equals(entry.getKey()))
+                    .filter(t -> StringUtils.isNotEmpty(entry.getKey()) && t.getPublicUuid().toString().equals(entry.getKey()))
                     .findFirst()
                     .map(Ticket::getId)
                     .orElse(null);
@@ -425,8 +425,8 @@ public class AdditionalServiceManager {
                                                 int organizationId,
                                                 Map<String, List<AdditionalServiceLinkForm>> additionalServices,
                                                 List<Ticket> tickets) {
-        var ticketIdsByUuid = tickets.stream().collect(Collectors.toMap(Ticket::getUuid, Ticket::getId));
-        int res = purchaseContextFieldRepository.deleteAllValuesForAdditionalItems(ticketIdsByUuid.values(), eventId);
+        var ticketIds = tickets.stream().map(Ticket::getId).collect(Collectors.toSet());
+        int res = purchaseContextFieldRepository.deleteAllValuesForAdditionalItems(ticketIds, eventId);
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Deleted {} field values", res);
         }
@@ -448,7 +448,8 @@ public class AdditionalServiceManager {
                         .addValue("value", purchaseContextFieldRepository.getFieldValueJson(e2.getValue()))
                         .addValue("organizationId", organizationId);
                 }))).toArray(MapSqlParameterSource[]::new);
-        jdbcTemplate.batchUpdate(purchaseContextFieldRepository.batchInsertAdditionalItemsFields(), sources);
+        var results = jdbcTemplate.batchUpdate(purchaseContextFieldRepository.batchInsertAdditionalItemsFields(), sources);
+        Validate.isTrue(Arrays.stream(results).allMatch(r -> r == 1), "error while persisting additional fields");
     }
 
     private void reserveAdditionalServicesForReservation(Event event,

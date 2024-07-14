@@ -263,7 +263,7 @@ public class ReservationEmailContentHelper {
         if(purchaseContext.getType() == PurchaseContext.PurchaseContextType.event) {
             var event = purchaseContext.event().orElseThrow();
             model.put("displayLocation", ticketsWithCategory.stream()
-                .noneMatch(tc -> EventUtil.isAccessOnline(tc.getCategory(), event)));
+                .noneMatch(tc -> EventUtil.isAccessOnline(tc.category(), event)));
         } else {
             model.put("displayLocation", false);
         }

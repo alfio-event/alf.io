@@ -141,15 +141,15 @@ class CustomTaxPolicyIntegrationTest {
 
         var tickets = ticketRepository.findTicketsInReservation(reservationId);
         assertEquals(2, tickets.size());
-        var firstUuid = tickets.get(0).getUuid();
-        var secondUuid = tickets.get(1).getUuid();
+        var firstUuid = tickets.get(0).getPublicUuid();
+        var secondUuid = tickets.get(1).getPublicUuid();
         var contactAndTicketsForm = new ContactAndTicketsForm();
         contactAndTicketsForm.setFirstName("The");
         contactAndTicketsForm.setLastName("Customer");
         contactAndTicketsForm.setEmail("email@customer.com");
         contactAndTicketsForm.setTickets(Map.of(
-            firstUuid, updateTicketOwnerForm("example@example.org"),
-            secondUuid, updateTicketOwnerForm("example@example1.org")
+            firstUuid.toString(), updateTicketOwnerForm("example@example.org"),
+            secondUuid.toString(), updateTicketOwnerForm("example@example1.org")
         ));
         var bindingResult = new BeanPropertyBindingResult(contactAndTicketsForm, "form");
         var response = reservationApiV2Controller.validateToOverview(reservationId, "en", false, contactAndTicketsForm, bindingResult, null);
@@ -157,8 +157,8 @@ class CustomTaxPolicyIntegrationTest {
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isSuccess());
         // verify that first ticket has the expected tax settings
-        assertEquals(PriceContainer.VatStatus.CUSTOM_INCLUDED_EXEMPT, ticketRepository.findByUUID(firstUuid).getVatStatus());
-        assertEquals(PriceContainer.VatStatus.INCLUDED, ticketRepository.findByUUID(secondUuid).getVatStatus());
+        assertEquals(PriceContainer.VatStatus.CUSTOM_INCLUDED_EXEMPT, ticketRepository.findByPublicUUID(firstUuid).getVatStatus());
+        assertEquals(PriceContainer.VatStatus.INCLUDED, ticketRepository.findByPublicUUID(secondUuid).getVatStatus());
         totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId).getLeft();
         assertEquals(19901, totalPrice.getPriceWithVAT());
         assertEquals(19901, ticketReservationManager.findById(reservationId).orElseThrow().getFinalPriceCts());
@@ -181,15 +181,15 @@ class CustomTaxPolicyIntegrationTest {
 
         var tickets = ticketRepository.findTicketsInReservation(reservationId);
         assertEquals(2, tickets.size());
-        var firstUuid = tickets.get(0).getUuid();
-        var secondUuid = tickets.get(1).getUuid();
+        var firstUuid = tickets.get(0).getPublicUuid();
+        var secondUuid = tickets.get(1).getPublicUuid();
         var contactAndTicketsForm = new ContactAndTicketsForm();
         contactAndTicketsForm.setFirstName("The");
         contactAndTicketsForm.setLastName("Customer");
         contactAndTicketsForm.setEmail("email@customer.com");
         contactAndTicketsForm.setTickets(Map.of(
-            firstUuid, updateTicketOwnerForm("example@example.org"),
-            secondUuid, updateTicketOwnerForm("example@example1.org")
+            firstUuid.toString(), updateTicketOwnerForm("example@example.org"),
+            secondUuid.toString(), updateTicketOwnerForm("example@example1.org")
         ));
         var bindingResult = new BeanPropertyBindingResult(contactAndTicketsForm, "form");
         var response = reservationApiV2Controller.validateToOverview(reservationId, "en", false, contactAndTicketsForm, bindingResult, null);
@@ -197,8 +197,8 @@ class CustomTaxPolicyIntegrationTest {
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isSuccess());
         // verify that first ticket has the expected tax settings
-        assertEquals(PriceContainer.VatStatus.CUSTOM_NOT_INCLUDED_EXEMPT, ticketRepository.findByUUID(firstUuid).getVatStatus());
-        assertEquals(PriceContainer.VatStatus.NOT_INCLUDED, ticketRepository.findByUUID(secondUuid).getVatStatus());
+        assertEquals(PriceContainer.VatStatus.CUSTOM_NOT_INCLUDED_EXEMPT, ticketRepository.findByPublicUUID(firstUuid).getVatStatus());
+        assertEquals(PriceContainer.VatStatus.NOT_INCLUDED, ticketRepository.findByPublicUUID(secondUuid).getVatStatus());
         totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId).getLeft();
         assertEquals(20100, totalPrice.getPriceWithVAT());
         assertEquals(20100, ticketReservationManager.findById(reservationId).orElseThrow().getFinalPriceCts());

@@ -101,7 +101,7 @@ public class BookingInfoTicketLoader {
             cancellationEnabled,
             configuration.get(SEND_TICKETS_AUTOMATICALLY).getValueAsBooleanOrDefault(),
             configuration.get(ALLOW_TICKET_DOWNLOAD).getValueAsBooleanOrDefault(),
-            additionalFieldsFilterer.getFieldsForTicket(t.getUuid(), contexts),
+            additionalFieldsFilterer.getFieldsForTicket(t.getPublicUuid(), contexts),
             descriptionsByTicketFieldId,
             valuesByTicketIds.getOrDefault(t.getId(), Collections.emptyList()),
             formattedOnlineCheckInDate,
@@ -145,7 +145,7 @@ public class BookingInfoTicketLoader {
             .flatMap(tfc -> toAdditionalFieldsStream(descriptionsByTicketFieldId, tfc, valuesById))
             .collect(Collectors.toList());
 
-        return new BookingInfoTicket(ticket.getUuid(),
+        return new BookingInfoTicket(ticket.getPublicUuid().toString(),
             ticket.getFirstName(),
             ticket.getLastName(),
             ticket.getEmail(),

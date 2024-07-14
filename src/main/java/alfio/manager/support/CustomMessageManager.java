@@ -99,7 +99,7 @@ public class CustomMessageManager {
                     model.addAttribute("reservationURL", ticketReservationManager.reservationUrl(t.getTicketsReservationId(), event));
                     model.addAttribute("reservationID", ticketReservationManager.getShortReservationID(event, t.getTicketsReservationId()));
                     model.addAttribute("ticketURL", ReservationUtil.ticketUpdateUrl(event, t, configurationManager));
-                    model.addAttribute("ticketID", t.getUuid());
+                    model.addAttribute("ticketID", t.getPublicUuid().toString());
                     model.addAttribute("ticket", t);
                     return Triple.of(t, t.getEmail(), model);
                 })
@@ -184,7 +184,7 @@ public class CustomMessageManager {
         if (htmlEmailEnabled) {
             model.put(Mailer.SKIP_PASSBOOK, "true");
         }
-        return new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.TICKET_PDF);
+        return new Mailer.Attachment("ticket-" + ticket.getPublicUuid() + ".pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.TICKET_PDF);
     }
 
     private static Map<String, String> getModelForTicket(Ticket ticket, TicketReservation reservation, TicketCategory ticketCategory, Organization organization) {

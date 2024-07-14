@@ -50,16 +50,16 @@ public interface TicketRepository {
     String FIND_TICKETS_IN_RESERVATION = "select * from ticket where tickets_reservation_id = :reservationId " + SORT_TICKETS;
 
     String RESET_TICKET = " TICKETS_RESERVATION_ID = null, FULL_NAME = null, EMAIL_ADDRESS = null, SPECIAL_PRICE_ID_FK = null, LOCKED_ASSIGNMENT = false, USER_LANGUAGE = null, REMINDER_SENT = false, SRC_PRICE_CTS = 0, FINAL_PRICE_CTS = 0, VAT_CTS = 0, DISCOUNT_CTS = 0, FIRST_NAME = null, LAST_NAME = null, EXT_REFERENCE = null, TAGS = array[]::text[], VAT_STATUS = null, METADATA = '{}'::jsonb ";
-    String RELEASE_TICKET_QUERY = "update ticket set status = 'RELEASED', uuid = :newUuid, " + RESET_TICKET + " where id = :ticketId and status in('ACQUIRED', 'PENDING', 'TO_BE_PAID') and tickets_reservation_id = :reservationId and event_id = :eventId";
-    String FIND_BASIC_TICKET_INFO_BY_EVENT_ID = "select t.id t_id, t.uuid t_uuid, tc.id tc_id, tc.bounded tc_bounded, t.vat_status t_vat_status from ticket t inner join ticket_category tc on t.category_id = tc.id where t.event_id = :eventId";
+    String RELEASE_TICKET_QUERY = "update ticket set status = 'RELEASED', uuid = :newUuid, public_uuid = :newPublicUuid, " + RESET_TICKET + " where id = :ticketId and status in('ACQUIRED', 'PENDING', 'TO_BE_PAID') and tickets_reservation_id = :reservationId and event_id = :eventId";
+    String FIND_BASIC_TICKET_INFO_BY_EVENT_ID = "select t.id t_id, t.uuid t_uuid, t.public_uuid t_public_uuid, tc.id tc_id, tc.bounded tc_bounded, t.vat_status t_vat_status from ticket t inner join ticket_category tc on t.category_id = tc.id where t.event_id = :eventId";
     String UPDATE_TICKET_PRICE = "update ticket set src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts, vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode, vat_status = :vatStatus::VAT_STATUS where event_id = :eventId and category_id = :categoryId";
 
 
     //TODO: refactor, try to move the MapSqlParameterSource inside the default method!
     default void bulkTicketInitialization(MapSqlParameterSource[] args) {
         getNamedParameterJdbcTemplate().batchUpdate("""
-            insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts, src_price_cts)\
-            values(:uuid, :creation, :categoryId, :eventId, :status, 0, 0, :srcPriceCts)\
+            insert into ticket (uuid, public_uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts, src_price_cts)
+            values(:uuid, :publicUuid, :creation, :categoryId, :eventId, :status, 0, 0, :srcPriceCts)
             """, args);
     }
 
@@ -259,11 +259,20 @@ public interface TicketRepository {
     @Query("select * from ticket where uuid = :uuid")
     Ticket findByUUID(@Bind("uuid") String uuid);
 
+    @Query("select * from ticket where public_uuid = :publicUuid")
+    Ticket findByPublicUUID(@Bind("publicUuid") UUID publicUuid);
+
+    @Query("select uuid from ticket where public_uuid = :publicUuid and event_id = :eventId")
+    Optional<String> getInternalUuid(@Bind("publicUuid") UUID publicUuid, @Bind("eventId") int eventId);
+
     @Query("select category_id from ticket where uuid = :uuid")
-    Integer getTicketCategoryByUIID(@Bind("uuid") String uuid);
+    Integer getTicketCategoryByUUID(@Bind("uuid") String uuid);
 
     @Query("select * from ticket where uuid = :uuid")
     Optional<Ticket> findOptionalByUUID(@Bind("uuid") String uuid);
+
+    @Query("select * from ticket where public_uuid = :publicUuid")
+    Optional<Ticket> findOptionalByPublicUUID(@Bind("publicUuid") UUID uuid);
 
     @Query("select * from ticket where uuid = :uuid for update")
     Optional<Ticket> findByUUIDForUpdate(@Bind("uuid") String uuid);
@@ -318,7 +327,7 @@ public interface TicketRepository {
 
     String FIND_FULL_TICKET_INFO = """
         select \
-         t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id,\
+         t.id t_id, t.uuid t_uuid, t.public_uuid t_public_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id,\
          t.src_price_cts t_src_price_cts, t.final_price_cts t_final_price_cts, t.vat_cts t_vat_cts, t.discount_cts t_discount_cts, t.tickets_reservation_id t_tickets_reservation_id,\
          t.full_name t_full_name, t.first_name t_first_name, t.last_name t_last_name, t.email_address t_email_address, t.locked_assignment t_locked_assignment,\
          t.user_language t_user_language, t.ext_reference t_ext_reference, t.currency_code t_currency_code, t.tags t_tags, t.subscription_id_fk t_subscription_id, t.vat_status t_vat_status, \
@@ -378,25 +387,31 @@ public interface TicketRepository {
     int flagTicketAsReminderSent(@Bind("id") int ticketId);
 
     @Query(RELEASE_TICKET_QUERY)
-    int releaseTicket(@Bind("reservationId") String reservationId, @Bind("newUuid") String newUuid, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
+    int releaseTicket(@Bind("reservationId") String reservationId, @Bind("newUuid") String newUuid, @Bind("newPublicUuid") UUID newPublicUuid, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
 
     default int[] batchReleaseTickets(String reservationId, List<Integer> ticketIds, Event event) {
         MapSqlParameterSource[] args = ticketIds.stream().map(id -> new MapSqlParameterSource("ticketId", id)
             .addValue("reservationId", reservationId)
             .addValue("eventId", event.getId())
             .addValue("newUuid", UUID.randomUUID().toString())
+            .addValue("newPublicUuid", UUID.randomUUID())
         ).toArray(MapSqlParameterSource[]::new);
         return getNamedParameterJdbcTemplate().batchUpdate(RELEASE_TICKET_QUERY, args);
     }
 
-    @Query("update ticket set status = 'RELEASED', uuid = :newUuid, " + RESET_TICKET + " where id = :ticketId and status = 'PENDING' and tickets_reservation_id = :reservationId and event_id = :eventId")
-    int releaseExpiredTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId, @Bind("newUuid") String newUuid);
+    @Query("update ticket set status = 'RELEASED', uuid = :newUuid, public_uuid = :newPublicUuid, " + RESET_TICKET + " where id = :ticketId and status = 'PENDING' and tickets_reservation_id = :reservationId and event_id = :eventId")
+    int releaseExpiredTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId, @Bind("newUuid") String newUuid, @Bind("newPublicUuid") UUID newPublicUuid);
 
     NamedParameterJdbcTemplate getNamedParameterJdbcTemplate();
 
     default void resetTickets(List<Integer> ticketIds) {
-        MapSqlParameterSource[] params = ticketIds.stream().map(ticketId -> new MapSqlParameterSource("ticketId", ticketId).addValue("newUuid", UUID.randomUUID().toString())).toArray(MapSqlParameterSource[]::new);
-        getNamedParameterJdbcTemplate().batchUpdate("update ticket set status = 'RELEASED', uuid = :newUuid, " + RESET_TICKET + " where id = :ticketId", params);
+        MapSqlParameterSource[] params = ticketIds.stream()
+            .map(ticketId -> new MapSqlParameterSource("ticketId", ticketId)
+                .addValue("newUuid", UUID.randomUUID().toString())
+                .addValue("newPublicUuid", UUID.randomUUID())
+            )
+            .toArray(MapSqlParameterSource[]::new);
+        getNamedParameterJdbcTemplate().batchUpdate("update ticket set status = 'RELEASED', uuid = :newUuid, public_uuid = :newPublicUuid, " + RESET_TICKET + " where id = :ticketId", params);
     }
 
     @Query("select count(*) from ticket where status = 'RELEASED' and event_id = :eventId")
@@ -445,8 +460,8 @@ public interface TicketRepository {
     @Query("select distinct category_id from ticket where tickets_reservation_id = :reservationId and src_price_cts > 0")
     List<Integer> getCategoriesIdToPayInReservation(@Bind("reservationId") String reservationId);
 
-    @Query("select * from checkin_ticket_event_and_category_info where t_uuid = :ticketUUID and e_short_name = :eventShortName and (e_format = 'ONLINE' or tc_ticket_access_type = 'ONLINE') ")
-    Optional<CheckInFullInfo> getFullInfoForOnlineCheckin(@Bind("eventShortName") String eventShortName, @Bind("ticketUUID") String ticketUUID);
+    @Query("select * from checkin_ticket_event_and_category_info where t_public_uuid = :publicUUID and e_short_name = :eventShortName and (e_format = 'ONLINE' or tc_ticket_access_type = 'ONLINE') ")
+    Optional<CheckInFullInfo> getFullInfoForOnlineCheckin(@Bind("eventShortName") String eventShortName, @Bind("publicUUID") UUID publicUUID);
 
     @Query("select * from checkin_ticket_event_and_category_info where e_id = :eventId " +
         "and (" + TicketSearchRepository.BASE_FILTER + " or lower(tc_name) like lower(:search)) "+

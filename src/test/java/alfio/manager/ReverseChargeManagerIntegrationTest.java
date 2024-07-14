@@ -242,11 +242,11 @@ class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
 
         var form = new ReservationForm();
         var first = new TicketReservationModification();
-        first.setAmount(2);
+        first.setQuantity(2);
         first.setTicketCategoryId(categories.get(0).getId());
 
         var second = new TicketReservationModification();
-        second.setAmount(2);
+        second.setQuantity(2);
         second.setTicketCategoryId(categories.get(1).getId());
 
         form.setReservation(List.of(first, second));
@@ -289,7 +289,7 @@ class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
                     ticketForm.setFirstName("ticketfull");
                     ticketForm.setLastName("ticketname");
                     ticketForm.setEmail("tickettest@test.com");
-                    return Map.entry(t.getUuid(), ticketForm);
+                    return Map.entry(t.getPublicUuid().toString(), ticketForm);
         }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         contactForm.setTickets(tickets);

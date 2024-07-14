@@ -39,6 +39,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -1043,6 +1044,44 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         }
         assertEquals(10, tickets.stream().filter(t -> t.getCategoryId() != null).count());
         return Pair.of(eventRepository.findById(event.getId()), pair.getRight());
+    }
+
+    @Test
+    void ensureUniqueConstraintApplied() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
+        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
+        var uuid = UUID.randomUUID().toString();
+        var publicUuid = UUID.randomUUID();
+        ticketRepository.bulkTicketInitialization(new MapSqlParameterSource[] {new MapSqlParameterSource()
+            .addValue("uuid", uuid)
+            .addValue("publicUuid", publicUuid)
+            .addValue("creation", new Date())
+            .addValue("categoryId", null)
+            .addValue("eventId", event.getId())
+            .addValue("status", Ticket.TicketStatus.FREE.name())
+            .addValue("srcPriceCts", 100)});
+
+        assertThrows(DataIntegrityViolationException.class, () -> ticketRepository.bulkTicketInitialization(new MapSqlParameterSource[] {new MapSqlParameterSource()
+            .addValue("uuid", uuid)
+            .addValue("publicUuid", UUID.randomUUID())
+            .addValue("creation", new Date())
+            .addValue("categoryId", null)
+            .addValue("eventId", event.getId())
+            .addValue("status", Ticket.TicketStatus.FREE.name())
+            .addValue("srcPriceCts", 100)}));
+
+        assertThrows(DataIntegrityViolationException.class, () -> ticketRepository.bulkTicketInitialization(new MapSqlParameterSource[] {new MapSqlParameterSource()
+            .addValue("uuid", UUID.randomUUID().toString())
+            .addValue("publicUuid", publicUuid)
+            .addValue("creation", new Date())
+            .addValue("categoryId", null)
+            .addValue("eventId", event.getId())
+            .addValue("status", Ticket.TicketStatus.FREE.name())
+            .addValue("srcPriceCts", 100)}));
     }
 
     private EventModification createEventModification(int availableSeats, Event event) {

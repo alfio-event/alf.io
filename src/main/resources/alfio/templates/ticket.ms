@@ -86,7 +86,7 @@
 			</tr>
 			<tr>
 				<td>{{#i18n}}ticket.reference-number{{/i18n}}</td>
-				<td>{{ticket.uuid}}</td>
+				<td>{{ticket.publicUuid}}</td>
 			</tr>
 			{{#hasSubscription}}
 			<tr>

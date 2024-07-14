@@ -19,15 +19,14 @@ package alfio.controller.api.pass;
 import alfio.manager.PassKitManager;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.Ticket;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Optional;
 
@@ -80,7 +79,7 @@ public class PassKitApiController {
         try (var os = response.getOutputStream()) {
             response.setContentType("application/vnd.apple.pkpass");
             if (addFilename) {
-                response.setHeader("Content-Disposition", "attachment; filename=Passbook-"+ticket.getUuid().substring(0, 8)+".pkpass");
+                response.setHeader("Content-Disposition", "attachment; filename=Passbook-"+ticket.getPublicUuid().toString().substring(0, 8)+".pkpass");
                 markAsNoIndex(response);
             }
             passKitManager.writePass(ticket, eventAndOrganizationId, os);

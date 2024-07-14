@@ -939,17 +939,24 @@ public class TicketReservationManager {
     }
 
     //check internal consistency between the 3 values
-    public Optional<Triple<Event, TicketReservation, Ticket>> from(String eventName, String reservationId, String ticketIdentifier) {
-
+    public Optional<Triple<Event, TicketReservation, Ticket>> from(String eventName, String reservationId, Ticket ticket) {
         return eventRepository.findOptionalByShortName(eventName).flatMap(event ->
-            ticketReservationRepository.findOptionalReservationById(reservationId).flatMap(reservation ->
-                ticketRepository.findOptionalByUUID(ticketIdentifier).flatMap(ticket -> Optional.of(Triple.of(event, reservation, ticket)))))
-        .filter(x -> {
-            Ticket t = x.getRight();
-            Event e = x.getLeft();
-            TicketReservation tr = x.getMiddle();
-            return tr.getId().equals(t.getTicketsReservationId()) && e.getId() == t.getEventId();
-        });
+                ticketReservationRepository.findOptionalReservationById(reservationId)
+                    .map(reservation -> Triple.of(event, reservation, ticket)))
+            .filter(x -> {
+                Ticket t = x.getRight();
+                Event e = x.getLeft();
+                TicketReservation tr = x.getMiddle();
+                return tr.getId().equals(t.getTicketsReservationId()) && e.getId() == t.getEventId();
+            });
+    }
+
+    public Optional<Triple<Event, TicketReservation, Ticket>> from(String eventName, String reservationId, String ticketIdentifier) {
+        return ticketRepository.findOptionalByUUID(ticketIdentifier).flatMap(ticket -> from(eventName, reservationId, ticket));
+    }
+
+    public Optional<Triple<Event, TicketReservation, Ticket>> from(String eventName, String reservationId, UUID publicTicketUUID) {
+        return ticketRepository.findOptionalByPublicUUID(publicTicketUUID).flatMap(ticket -> from(eventName, reservationId, ticket));
     }
 
     /**
@@ -1173,11 +1180,6 @@ public class TicketReservationManager {
         return ReservationUtil.reservationUrl(reservation, purchaseContext, configurationManager);
     }
 
-    String ticketUrl(Event event, String ticketId) {
-        Ticket ticket = ticketRepository.findByUUID(ticketId);
-        return configurationManager.baseUrl(event) + "/event/" + event.getShortName() + "/ticket/" + ticketId + "?lang=" + ticket.getUserLanguage();
-    }
-
     public String ticketOnlineCheckIn(Event event, String ticketId) {
         Ticket ticket = ticketRepository.findByUUID(ticketId);
         
@@ -1257,7 +1259,7 @@ public class TicketReservationManager {
             log.debug("Deleted {} and updated {} additionalServiceItems for reservation {}", deletedItems, updatedItems, reservationId);
             int updatedAS = additionalServiceManager.updateStatusForReservationId(event.getId(), reservationId, expired ? AdditionalServiceItemStatus.EXPIRED : AdditionalServiceItemStatus.CANCELLED);
             int updatedTickets = ticketRepository.findTicketIdsInReservation(reservationId).stream().mapToInt(
-                tickedId -> ticketRepository.releaseExpiredTicket(reservationId, event.getId(), tickedId, UUID.randomUUID().toString())
+                tickedId -> ticketRepository.releaseExpiredTicket(reservationId, event.getId(), tickedId, UUID.randomUUID().toString(), UUID.randomUUID())
             ).sum();
             Validate.isTrue(updatedTickets  + updatedAS > 0, "no items have been updated");
         });
@@ -1384,9 +1386,9 @@ public class TicketReservationManager {
         return userDetails.flatMap(u -> u.getAuthorities().stream().map(a -> Role.fromRoleName(a.getAuthority())).filter(Role.ADMIN::equals).findFirst()).isPresent();
     }
 
-    public Optional<Triple<Event, TicketReservation, Ticket>> fetchComplete(String eventName, String ticketIdentifier) {
-        return ticketRepository.findOptionalByUUID(ticketIdentifier)
-            .flatMap(ticket -> from(eventName, ticket.getTicketsReservationId(), ticketIdentifier)
+    public Optional<Triple<Event, TicketReservation, Ticket>> fetchComplete(String eventName, UUID ticketPublicUUID) {
+        return ticketRepository.findOptionalByPublicUUID(ticketPublicUUID)
+            .flatMap(ticket -> from(eventName, ticket.getTicketsReservationId(), ticket)
                 .flatMap(triple -> {
                     if(triple.getMiddle().getStatus() == TicketReservationStatus.COMPLETE) {
                         return Optional.of(triple);
@@ -1397,13 +1399,13 @@ public class TicketReservationManager {
     }
 
     /**
-     * Return a fully present triple only if the values are present (obviously) and the the reservation has a COMPLETE status and the ticket is considered assigned.
+     * Return a fully present triple only if the values are present (obviously) and the reservation has a COMPLETE status and the ticket is considered assigned.
      *
      * @param eventName
      * @param ticketIdentifier
      * @return
      */
-    public Optional<Triple<Event, TicketReservation, Ticket>> fetchCompleteAndAssigned(String eventName, String ticketIdentifier) {
+    public Optional<Triple<Event, TicketReservation, Ticket>> fetchCompleteAndAssigned(String eventName, UUID ticketIdentifier) {
         return fetchComplete(eventName, ticketIdentifier).flatMap(t -> {
             if (t.getRight().getAssigned()) {
                 return Optional.of(t);
@@ -1413,8 +1415,8 @@ public class TicketReservationManager {
         });
     }
 
-    public Optional<CheckInFullInfo> fetchCompleteAndAssignedForOnlineCheckIn(String eventName, String ticketIdentifier) {
-        return ticketRepository.getFullInfoForOnlineCheckin(eventName, ticketIdentifier);
+    public Optional<CheckInFullInfo> fetchCompleteAndAssignedForOnlineCheckIn(String eventName, UUID publicUUID) {
+        return ticketRepository.getFullInfoForOnlineCheckin(eventName, publicUUID);
     }
 
     public void sendReminderForOfflinePayments() {
@@ -1574,7 +1576,7 @@ public class TicketReservationManager {
 
         String reservationId = ticketReservation.getId();
         //#365 - reset UUID when releasing a ticket
-        int result = ticketRepository.releaseTicket(reservationId, UUID.randomUUID().toString(), event.getId(), ticket.getId());
+        int result = ticketRepository.releaseTicket(reservationId, UUID.randomUUID().toString(), UUID.randomUUID(), event.getId(), ticket.getId());
         Validate.isTrue(result == 1, "Expected 1 row to be updated, got %d".formatted(result));
         if(category.isAccessRestricted() || !category.isBounded()) {
             ticketRepository.unbindTicketsFromCategory(event.getId(), category.getId(), singletonList(ticket.getId()));
