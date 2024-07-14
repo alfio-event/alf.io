@@ -49,9 +49,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-animate/angular-animate.min.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/qrcode-generator/js/qrcode.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/qrcode-generator/js/qrcode_UTF8.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-qrcode/angular-qrcode.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/dragula.js/dist/dragula.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angularjs-dragula/dist/angularjs-dragula.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/jsqrcode/jsqrcode.min.js"></script>
