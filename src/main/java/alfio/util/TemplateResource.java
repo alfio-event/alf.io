@@ -315,7 +315,7 @@ public enum TemplateResource {
     }
 
     private static byte[] replaceOldReferences(byte[] raw) {
-        var contentAsString = new String(raw);
+        var contentAsString = new String(raw, StandardCharsets.UTF_8);
         return TICKET_UUID_FINDER.matcher(contentAsString).replaceAll("{{ticket.publicUuid}}")
             .getBytes(StandardCharsets.UTF_8);
     }
