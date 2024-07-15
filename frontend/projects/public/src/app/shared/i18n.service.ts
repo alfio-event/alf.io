@@ -41,15 +41,7 @@ export class I18nService {
       if (this.countriesCache.empty) {
           const vatCountries = document.getElementById('preload-vat-countries');
           if (vatCountries != null && vatCountries.getAttribute('data-param') != null) {
-              const vatCountriesJson = JSON.parse(vatCountries.textContent) as {[k: string]: string};
-              this.countriesCache.countriesForVat[vatCountries.getAttribute('data-param')] = Object.entries(vatCountriesJson)
-                  .sort((a1, a2) => a1[1].localeCompare(a2[1]))
-                  .map(([isoCode, name]) => {
-                      return {
-                          isoCode,
-                          name
-                      };
-                  });
+              this.countriesCache.countriesForVat[vatCountries.getAttribute('data-param')] = JSON.parse(vatCountries.textContent);
           }
           const allCountries = document.getElementById('preload-countries');
           if (allCountries != null && allCountries.getAttribute('data-param') != null) {

@@ -6,6 +6,6 @@
     </div>
     <div class="ms-2" *ngIf="singleLineLayout">&nbsp;</div>
     <div *ngIf="showTaxes">
-      <small class="text-align-right text-muted align-self-end ms-2 ms-md-0"><i>{{(purchaseContext.vatIncluded ? 'show-event.incVat' : 'show-event.excVat') | translate:{'0': purchaseContext.vat, '1': ('common.vat' | translate)} }}</i></small>
+      <small class="text-align-right text-body-secondary align-self-end ms-2 ms-md-0"><i>{{(purchaseContext.vatIncluded ? 'show-event.incVat' : 'show-event.excVat') | translate:{'0': purchaseContext.vat, '1': ('common.vat' | translate)} }}</i></small>
     </div>
   </div>

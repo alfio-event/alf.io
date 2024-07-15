@@ -17,7 +17,7 @@
     <div class="markdown-content" [innerHTML]="event.description[translate.currentLang]"></div>
 
     <div #tickets></div>
-    <h2 class="mt-4 mb-4">{{'show-event.tickets' | translate}} <span *ngIf="ticketsLeftCountVisible()" class="badge badge-warning ms-2">{{"show-event.tickets.left" | translate: {'0': event.availableTicketsCount} }}</span></h2>
+    <h2 class="mt-4 mb-4">{{'show-event.tickets' | translate}} <span *ngIf="ticketsLeftCountVisible()" class="badge text-bg-warning ms-2">{{"show-event.tickets.left" | translate: {'0': event.availableTicketsCount} }}</span></h2>
 
     <div class="alert alert-danger" role="alert" *ngIf="globalErrors && globalErrors.length > 0">
       <div *ngFor="let err of globalErrors"><strong>{{err.code | translate: err.arguments}}</strong></div>
@@ -104,8 +104,8 @@
             {{category.name}}
           </span>
           <div class="item-badges mb-2">
-            <span *ngIf="displayOnlineTicketTag(category)" class="badge badge-success">{{'event.online.badge' | translate}}</span>
-            <span class="badge badge-warning" [class.ms-2]="displayOnlineTicketTag(category)" *ngIf="ticketsLeftCountVisibleForCategory(category)">{{"show-event.tickets.left" | translate: {'0': category.availableTickets} }}</span>
+            <span *ngIf="displayOnlineTicketTag(category)" class="badge text-bg-success">{{'event.online.badge' | translate}}</span>
+            <span class="badge text-bg-warning" [class.ms-2]="displayOnlineTicketTag(category)" *ngIf="ticketsLeftCountVisibleForCategory(category)">{{"show-event.tickets.left" | translate: {'0': category.availableTickets} }}</span>
           </div>
           <div class="item-price">
             <span *ngIf="category.free" translate="common.free"></span>
@@ -122,11 +122,11 @@
         </app-item-card>
       </div>
 
-      <div class="mt-4 text-muted" *ngIf="expiredCategories.length > 0">
+      <div class="mt-4 text-body-secondary" *ngIf="expiredCategories.length > 0">
         <div class="text-center">
           <button type="button" (click)="expiredCategoriesExpanded = !expiredCategoriesExpanded" class="btn btn-link"><fa-icon [icon]="expiredCategoriesExpanded ? ['fas', 'angle-up'] : ['fas', 'angle-down']" a11yRole="presentation"></fa-icon>&nbsp;{{ 'show-event.expired-categories' | translate }}</button>
         </div>
-        <ul class="list-group list-group-flush text-muted mt-2" *ngIf="expiredCategoriesExpanded">
+        <ul class="list-group list-group-flush text-body-secondary mt-2" *ngIf="expiredCategoriesExpanded">
           <li *ngFor="let category of expiredCategories;" class="list-group-item">
             <div class="d-flex flex-grow-1 justify-content-between">
               <div>

@@ -47,9 +47,9 @@
     <div class="card mt-4" *ngFor="let ticket of tc.tickets" [ngClass]="{'border-left-warning': !ticket.assigned, 'shadow': ticketsFormShow[ticket.uuid], 'border-left-success': ticket.assigned && !ticketsFormShow[ticket.uuid]}">
       <div class="card-body">
         <div class="attendees-data d-md-flex w-100 justify-content-between">
-          <h3 class="card-title flex-md-shrink-1"><fa-icon [icon]="['fas', ticket.assigned ? 'check' : 'exclamation-triangle']" size="xs" [classes]="[ ticket.assigned ? 'text-success' : 'text-warning', 'd-none', 'd-md-inline']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.ticket-nr' | translate}}<span class="ticket-counter"></span> <small class="ms-2 text-muted">- {{tc.name}}</small></h3>
+          <h3 class="card-title flex-md-shrink-1"><fa-icon [icon]="['fas', ticket.assigned ? 'check' : 'exclamation-triangle']" size="xs" [classes]="[ ticket.assigned ? 'text-success' : 'text-warning', 'd-none', 'd-md-inline']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.ticket-nr' | translate}}<span class="ticket-counter"></span> <small class="ms-2 text-body-secondary">- {{tc.name}}</small></h3>
           <h3 class="card-title flex-md-shrink-0" *ngIf="ticket.assigned">{{ticket.fullName}}</h3>
-          <h3 class="card-title text-muted" *ngIf="!ticket.assigned">{{'reservation-page-complete.ticket-not-assigned' | translate }}</h3>
+          <h3 class="card-title text-body-secondary" *ngIf="!ticket.assigned">{{'reservation-page-complete.ticket-not-assigned' | translate }}</h3>
         </div>
         <div *ngIf="hasAdditionalData(ticket)" class="pl-4">
           <span *ngFor="let additionalData of getGroupedAdditionalData(ticket); let last = last; let first = first" [class.pl-1]="first">
@@ -119,7 +119,7 @@
         <a class="block-button btn btn-light" [attr.href]="event.websiteUrl" translate="to-event-site"></a>
       </div>
     </div>
-    <div class="text-center text-muted mt-3">{{'reservation-page-complete.order-information' | translate: {'0': reservationId, '1': reservationInfo.firstName + ' ' + reservationInfo.lastName} }}</div>
+    <div class="text-center text-body-secondary mt-3">{{'reservation-page-complete.order-information' | translate: {'0': reservationId, '1': reservationInfo.firstName + ' ' + reservationInfo.lastName} }}</div>
     <div class="text-center mt-1">
       <a href="https://alf.io" [attr.title]="'alfio.credits' | translate" target="_blank" rel="noreferrer noopener" translate="alfio.credits"></a>
     </div>

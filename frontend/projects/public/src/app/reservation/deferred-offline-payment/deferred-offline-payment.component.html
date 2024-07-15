@@ -8,8 +8,8 @@
             <h2 translate="reservation-page.title"></h2>
         </div>
         <app-summary-table [purchaseContext]="purchaseContext" [reservationInfo]="reservationInfo"></app-summary-table>
-    
-        <div class="text-center text-muted mt-5">{{'reservation-page-complete.order-information' | translate: {'0': reservationId, '1': reservationInfo.firstName + ' ' + reservationInfo.lastName} }}</div>
+
+        <div class="text-center text-body-secondary mt-5">{{'reservation-page-complete.order-information' | translate: {'0': reservationId, '1': reservationInfo.firstName + ' ' + reservationInfo.lastName} }}</div>
         <hr>
         <div class="row d-flex justify-content-between mt-2 mobile-add-margin-bottom mt-4">
             <div class="col-md-5 col-12 order-md-1" *ngIf="purchaseContext.invoicingConfiguration.userCanDownloadReceiptOrInvoice && reservationInfo.invoiceNumber !== null">

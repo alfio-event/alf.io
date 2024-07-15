@@ -7,7 +7,7 @@
     </div>
 
     <div *ngFor="let order of orders" class="mt-5">
-      <h2>{{ localizedTitle(order) }} <ng-container *ngIf="order.formattedStartDate"> - <small class="text-muted">{{order.formattedStartDate | translateDescription }}</small></ng-container></h2>
+      <h2>{{ localizedTitle(order) }} <ng-container *ngIf="order.formattedStartDate"> - <small class="text-body-secondary">{{order.formattedStartDate | translateDescription }}</small></ng-container></h2>
       <div class="row mt-4">
         <table class="table table-hover">
           <caption class="sr-only" translate="my-orders.for-pc.description" [translateParams]="{'0': 'purchase-context.'+order.type | translate, '1': localizedTitle(order)}"></caption>
@@ -33,7 +33,7 @@
                 <ul class="list-unstyled" *ngIf="reservation.items">
                   <li *ngFor="let item of reservation.items">
                     {{item.firstName}} {{item.lastName}}
-                    <ng-container *ngIf="order.type === 'event'"><i class="text-muted">({{item.type | translateDescription}})</i></ng-container>
+                    <ng-container *ngIf="order.type === 'event'"><i class="text-body-secondary">({{item.type | translateDescription}})</i></ng-container>
                   </li>
                 </ul>
               </td>

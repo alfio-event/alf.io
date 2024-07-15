@@ -45,7 +45,7 @@
     <h4 [innerHTML]="'reservation-page-waiting.questions' | translate: {'0': purchaseContext.organizationEmail, '1': reservationInfo.id}"></h4>
   </div>
 
-  <div class="text-center text-muted mt-5">{{'reservation-page-complete.order-information' | translate: {'0': reservationId, '1': reservationInfo.firstName + ' ' + reservationInfo.lastName} }}</div>
+  <div class="text-center text-body-secondary mt-5">{{'reservation-page-complete.order-information' | translate: {'0': reservationId, '1': reservationInfo.firstName + ' ' + reservationInfo.lastName} }}</div>
   <hr>
   <div class="row d-flex justify-content-between mobile-add-margin-bottom">
       <div class="col-md-5 col-12 order-md-1" *ngIf="invoiceAvailable">
