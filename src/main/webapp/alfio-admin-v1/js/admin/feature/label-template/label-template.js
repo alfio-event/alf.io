@@ -47,7 +47,7 @@
         }
 
         function qrCodeData() {
-            return _.join(ctrl.configValue.qrCode.additionalInfo, ctrl.configValue.qrcode.infoSeparator);
+            return ctrl.configValue.qrCode.additionalInfo.join(ctrl.configValue.qrCode.infoSeparator);
         }
 
         function getFirstRow() {

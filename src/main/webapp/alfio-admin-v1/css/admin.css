@@ -483,7 +483,11 @@ a.emulate-nav-pills-link {
     height: auto;
 }
 
-canvas.qrcode {
+sl-qr-code.qrcode {
+    display:inline;
+}
+
+canvas.qrcode, sl-qr-code.qrcode {
     margin-top: 20px;
     position: relative;
     left: -18px;
