@@ -129,7 +129,8 @@ public class CheckInManager {
                 var priceContainer = TicketPriceContainer.from(ticket, reservation.getVatStatus(), reservation.getVAT(), event.getVatStatus(), reservation.getDiscount().orElse(null));
                 amountToPay = event.getCurrency() + " " + MonetaryUtil.formatUnit(priceContainer.getFinalPrice(), event.getCurrency());
             }
-            return new AttendeeSearchResults.Attendee(ticket.getPublicUuid().toString(), ticket.getFirstName(),
+            return new AttendeeSearchResults.Attendee(ticket.getUuid(), // we use internal UUID here, as mobile app needs to (potentially) perform check-in / revert
+                ticket.getFirstName(),
                 ticket.getLastName(), fi.getTicketCategory().getName(), fi.getTicketAdditionalInfo(),
                 ticket.getStatus(), amountToPay);
         }).collect(Collectors.toList());

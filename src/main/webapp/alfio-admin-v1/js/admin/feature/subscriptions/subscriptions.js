@@ -485,7 +485,7 @@
             },
             createNew: function(subscription) {
                 var payload = self.modelToSubscriptionPayload(subscription);
-                return $http.post('/admin/api/organization/'+payload.organizationId+'/subscription/', payload)
+                return $http.post('/admin/api/organization/'+payload.organizationId+'/subscription', payload)
                     .error(HttpErrorHandler.handle);
             },
             update: function(subscription) {

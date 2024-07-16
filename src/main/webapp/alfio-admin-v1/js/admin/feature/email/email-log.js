@@ -86,7 +86,7 @@
     function EmailService($http, HttpErrorHandler) {
 
         this.loadEmailLog = function(type, publicIdentifier, page, search) {
-            return $http.get('/admin/api/'+type+'/'+publicIdentifier+'/email/', {params: {page: page, search: search}}).error(HttpErrorHandler.handle);
+            return $http.get('/admin/api/'+type+'/'+publicIdentifier+'/email', {params: {page: page, search: search}}).error(HttpErrorHandler.handle);
         };
 
         this.loadEmailDetail = function(type, publicIdentifier, messageId) {

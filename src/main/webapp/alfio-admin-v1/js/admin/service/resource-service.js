@@ -5,7 +5,7 @@
 angular.module('adminApplication').service('ResourceService', function($http, $q) {
     return {
         listTemplates: function() {
-            return $http.get('/admin/api/overridable-template/');
+            return $http.get('/admin/api/overridable-template');
         },
         getTemplateBody: function(name, locale) {
             return $http.get('/admin/api/overridable-template/'+name+'/'+locale);
@@ -23,10 +23,10 @@ angular.module('adminApplication').service('ResourceService', function($http, $q
             return $http.get('/admin/api/resource/'+name);
         },
         uploadOrganizationFile: function(orgId, file) {
-            return $http.post('/admin/api/resource-organization/'+orgId+'/', file);
+            return $http.post('/admin/api/resource-organization/'+orgId, file);
         },
         uploadSystemFile: function(file) {
-            return $http.post('/admin/api/resource/', file);
+            return $http.post('/admin/api/resource', file);
         },
         deleteOrganizationFile: function(orgId, name) {
             return $http.delete('/admin/api/resource-organization/'+orgId+'/'+name);

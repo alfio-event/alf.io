@@ -83,7 +83,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(defaultCacheControl);
 
-        registry.addResourceHandler( "/resources/images/*", alfioVersion +"/resources/images/*")
+        registry.addResourceHandler( "/resources/images/**", alfioVersion +"/resources/images/**")
             .addResourceLocations("classpath:/images/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(defaultCacheControl);

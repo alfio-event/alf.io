@@ -77,7 +77,7 @@ function copyEventCtrl(EventService, AdditionalFieldsService, $q, $templateCache
     ctrl.onSelect = function($item) {
         ctrl.selectedEvent = $item;
 
-        $http.get('/admin/api/event/'+$item.id+'/additional-services/').then(function(res) {
+        $http.get('/admin/api/event/'+$item.id+'/additional-services').then(function(res) {
             ctrl.additionalServices = res.data;
             ctrl.selectedAdditionalServices = {};
             angular.forEach(res.data, function(r) {
