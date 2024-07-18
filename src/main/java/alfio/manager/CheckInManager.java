@@ -51,6 +51,7 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.Principal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -60,6 +61,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static alfio.manager.AccessService.MEMBERSHIP_ROLES;
 import static alfio.manager.support.CheckInStatus.*;
 import static alfio.model.Audit.EventType.*;
 import static alfio.model.system.ConfigurationKeys.*;
@@ -90,6 +92,7 @@ public class CheckInManager {
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final PollRepository pollRepository;
     private final ClockProvider clockProvider;
+    private final AccessService accessService;
 
 
     private void checkIn(String uuid, Event event) {
@@ -113,7 +116,8 @@ public class CheckInManager {
         ticketReservationManager.registerAlfioTransactionForOnsitePayment(eventRepository.findById(ticket.getEventId()), ticket.getTicketsReservationId());
     }
 
-    public AttendeeSearchResults searchAttendees(Event event, String query, int page) {
+    public AttendeeSearchResults searchAttendees(Event event, String query, int page, Principal principal) {
+        accessService.checkEventMembership(principal, event.getShortName(), MEMBERSHIP_ROLES);
         if (StringUtils.isBlank(query)) {
             return new AttendeeSearchResults(0, 0, 0, 0, List.of());
         }
@@ -129,10 +133,14 @@ public class CheckInManager {
                 var priceContainer = TicketPriceContainer.from(ticket, reservation.getVatStatus(), reservation.getVAT(), event.getVatStatus(), reservation.getDiscount().orElse(null));
                 amountToPay = event.getCurrency() + " " + MonetaryUtil.formatUnit(priceContainer.getFinalPrice(), event.getCurrency());
             }
-            return new AttendeeSearchResults.Attendee(ticket.getUuid(), // we use internal UUID here, as mobile app needs to (potentially) perform check-in / revert
+            return new AttendeeSearchResults.AttendeeResult(ticket.getUuid(),
+                ticket.getPublicUuid(),
                 ticket.getFirstName(),
-                ticket.getLastName(), fi.getTicketCategory().getName(), fi.getTicketAdditionalInfo(),
-                ticket.getStatus(), amountToPay);
+                ticket.getLastName(),
+                fi.getTicketCategory().getName(),
+                fi.getTicketAdditionalInfo(),
+                ticket.getStatus(),
+                amountToPay);
         }).collect(Collectors.toList());
         int totalPages = (int) Math.ceil((statistics.getTotal() / (double) SEARCH_ATTENDEES_LIMIT));
         return new AttendeeSearchResults(statistics.getTotal(), statistics.getCheckedIn(), totalPages, page, attendees);

@@ -28,6 +28,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -41,11 +42,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static alfio.manager.AccessService.MEMBERSHIP_ROLES;
 import static alfio.util.Wrappers.optionally;
 
 @RestController
@@ -211,13 +212,13 @@ public class CheckInApiController {
                                                                  @RequestParam(value = "query", required = false) String query,
                                                                  @RequestParam(value = "page", required = false, defaultValue = "0") int page,
                                                                  Principal principal) {
-        accessService.checkEventMembership(principal, publicIdentifier, AccessService.CHECKIN_ROLES);
+        accessService.checkEventMembership(principal, publicIdentifier, MEMBERSHIP_ROLES);
         if (StringUtils.isBlank(query) || StringUtils.isBlank(publicIdentifier)) {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
 
         return ResponseEntity.of(eventManager.getOptionalByName(publicIdentifier, principal.getName())
-            .map(event -> checkInManager.searchAttendees(event, query, page)));
+            .map(event -> checkInManager.searchAttendees(event, query, page, principal)));
 
     }
 

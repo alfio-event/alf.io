@@ -1124,20 +1124,20 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                         assertTrue(results.getStatusCode().is2xxSuccessful());
                         assertNotNull(results.getBody());
                         var searchResults = results.getBody();
-                        assertEquals(1, searchResults.getTotalPages());
-                        var attendees = searchResults.getAttendees();
-                        int count = searchResults.getTotalResults();
+                        assertEquals(1, searchResults.totalPages());
+                        var attendees = searchResults.attendees();
+                        int count = searchResults.totalResults();
                         assertFalse(searchResults.hasMorePages());
                         assertFalse(attendees.isEmpty());
                         assertEquals(count, attendees.size());
-                        assertTrue(attendees.stream().anyMatch(sr -> sr.getLastName().equals(fullTicketInfo.getLastName())));
-                        assertTrue(attendees.stream().allMatch(sr -> sr.getAdditionalInfo() != null));
-                        assertEquals(List.of("value"), attendees.get(0).getAdditionalInfo().get("field1"));
+                        assertTrue(attendees.stream().anyMatch(sr -> sr.lastName().equals(fullTicketInfo.getLastName())));
+                        assertTrue(attendees.stream().allMatch(sr -> sr.additionalInfo() != null));
+                        assertEquals(List.of("value"), attendees.get(0).additionalInfo().get("field1"));
                         break;
                     case ONLINE:
                         assertTrue(results.getStatusCode().is2xxSuccessful());
                         assertNotNull(results.getBody());
-                        assertEquals(0, results.getBody().getTotalResults());
+                        assertEquals(0, results.getBody().totalResults());
                         break;
                 }
 
