@@ -25,11 +25,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
-import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
 import javax.sql.DataSource;
@@ -59,13 +56,5 @@ public class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {
             passwordEncoder,
             publicOpenIdAuthenticationManager,
             sessionRegistry);
-    }
-
-    @Override
-    protected void additionalConfiguration(HttpSecurity http, AuthenticationManager jdbcAuthenticationManager) throws Exception {
-        // see see https://stackoverflow.com/questions/75222930/spring-boot-3-0-2-adds-continue-query-parameter-to-request-url-after-login
-        HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
-        requestCache.setMatchingRequestParameterName(null);
-        http.requestCache((cache) -> cache.requestCache(requestCache));
     }
 }

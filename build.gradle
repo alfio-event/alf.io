@@ -38,8 +38,8 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.51.0'
     id 'com.github.hierynomus.license' version '0.16.1'
     id 'net.researchgate.release' version '3.0.2'
-    id 'org.springframework.boot' version '3.3.0'
-    id 'io.spring.dependency-management' version '1.1.4'
+    id 'org.springframework.boot' version '3.3.2'
+    id 'io.spring.dependency-management' version '1.1.6'
     id 'org.sonarqube' version '5.0.0.4638'
     // id 'net.ltgt.errorprone' version '3.1.0'
     id 'com.github.node-gradle.node' version '7.0.2'
@@ -174,6 +174,8 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-security", {
         exclude module : 'spring-boot-starter-logging'
     }
+    implementation "org.springframework.security:spring-security-oauth2-client"
+    implementation "org.springframework.security:spring-security-oauth2-jose"
 
     implementation "org.springframework.boot:spring-boot-starter-mail", {
         exclude module : 'spring-boot-starter-logging'

@@ -17,7 +17,6 @@
 package alfio.config;
 
 import alfio.manager.ExtensionManager;
-import alfio.manager.openid.AdminOpenIdAuthenticationManager;
 import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
@@ -28,8 +27,6 @@ import alfio.repository.user.join.UserOrganizationRepository;
 import alfio.util.Json;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -51,32 +48,6 @@ public class WebSecurityConfig {
         repository.setSessionAttributeName(CSRF_SESSION_ATTRIBUTE);
         repository.setParameterName(CSRF_PARAM_NAME);
         return repository;
-    }
-
-    @Bean
-    @Profile(Initializer.PROFILE_OPENID)
-    public AdminOpenIdAuthenticationManager adminOpenIdAuthenticationManager(Environment environment,
-                                                                             HttpClient httpClient,
-                                                                             ConfigurationManager configurationManager,
-                                                                             UserManager userManager,
-                                                                             UserRepository userRepository,
-                                                                             AuthorityRepository authorityRepository,
-                                                                             OrganizationRepository organizationRepository,
-                                                                             UserOrganizationRepository userOrganizationRepository,
-                                                                             NamedParameterJdbcTemplate jdbcTemplate,
-                                                                             PasswordEncoder passwordEncoder,
-                                                                             Json json) {
-        return new AdminOpenIdAuthenticationManager(environment,
-            httpClient,
-            configurationManager,
-            userManager,
-            userRepository,
-            authorityRepository,
-            organizationRepository,
-            userOrganizationRepository,
-            jdbcTemplate,
-            passwordEncoder,
-            json);
     }
 
     @Bean

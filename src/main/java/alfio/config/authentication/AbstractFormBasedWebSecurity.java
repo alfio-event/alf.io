@@ -48,9 +48,11 @@ import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
@@ -94,12 +96,12 @@ abstract class AbstractFormBasedWebSecurity {
     );
 
     private final Environment environment;
-    private final UserManager userManager;
+    protected final UserManager userManager;
     private final RecaptchaService recaptchaService;
     private final ConfigurationManager configurationManager;
     private final CsrfTokenRepository csrfTokenRepository;
     private final DataSource dataSource;
-    private final PasswordEncoder passwordEncoder;
+    protected final PasswordEncoder passwordEncoder;
     private final PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager;
     private final SpringSessionBackedSessionRegistry<?> sessionRegistry;
 
@@ -136,14 +138,10 @@ abstract class AbstractFormBasedWebSecurity {
         configureCsrf(http, configurer -> configurer.csrfTokenRepository(csrfTokenRepository));
         http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
             .authorizeHttpRequests(AbstractFormBasedWebSecurity::authorizeRequests)
-            .authenticationManager(authenticationManager)
-            .formLogin(login -> login
-                .loginPage("/authentication")
-                .loginProcessingUrl(AUTHENTICATE)
-                .defaultSuccessUrl("/admin")
-                .failureUrl("/authentication?failed")).logout(LogoutConfigurer::permitAll)
             // this allows us to sync between spring session and spring security, thus saving the principal name in the session table
             .sessionManagement(management -> management.maximumSessions(-1).sessionRegistry(sessionRegistry));
+
+        setupAuthenticationEndpoint(http, authenticationManager);
 
         http.addFilterBefore(openIdPublicCallbackLoginFilter(publicOpenIdAuthenticationManager, authenticationManager), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(openIdPublicAuthenticationFilter(publicOpenIdAuthenticationManager), AnonymousAuthenticationFilter.class);
@@ -159,7 +157,24 @@ abstract class AbstractFormBasedWebSecurity {
             http.addFilterAfter(new UserCreatorBeforeLoginFilter(userManager, AUTHENTICATE), RecaptchaLoginFilter.class);
         }
 
+        // see https://stackoverflow.com/questions/75222930/spring-boot-3-0-2-adds-continue-query-parameter-to-request-url-after-login
+        HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
+        requestCache.setMatchingRequestParameterName(null);
+        http.requestCache(cache -> cache.requestCache(requestCache))
+            .securityContext(context -> context
+                .securityContextRepository(new HttpSessionSecurityContextRepository())
+                .requireExplicitSave(true));
+
         return http.addFilterAfter(csrfPublisherFilter(), CsrfFilter.class).build();
+    }
+
+    protected void setupAuthenticationEndpoint(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+        http.authenticationManager(authenticationManager)
+            .formLogin(login -> login
+                .loginPage("/authentication")
+                .loginProcessingUrl(AUTHENTICATE)
+                .defaultSuccessUrl("/admin")
+                .failureUrl("/authentication?failed")).logout(LogoutConfigurer::permitAll);
     }
 
     private JdbcUserDetailsManager createUserDetailsManager() {
@@ -292,5 +307,13 @@ abstract class AbstractFormBasedWebSecurity {
             }
         });
         return filter;
+    }
+
+    protected Environment environment() {
+        return environment;
+    }
+
+    protected ConfigurationManager configurationManager() {
+        return configurationManager;
     }
 }

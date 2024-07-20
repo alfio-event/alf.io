@@ -19,7 +19,6 @@ package alfio.manager.openid;
 import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 import alfio.config.authentication.support.OpenIdAlfioUser;
 import alfio.manager.user.UserManager;
-import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
 import alfio.repository.user.AuthorityRepository;
@@ -32,11 +31,10 @@ import alfio.util.PasswordGenerator;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
 import com.fasterxml.jackson.core.type.TypeReference;
-import lombok.extern.log4j.Log4j2;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -44,12 +42,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import jakarta.servlet.http.HttpSession;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static alfio.util.HttpUtils.APPLICATION_FORM_URLENCODED;
@@ -124,13 +122,13 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     private OpenIdAlfioAuthentication createOrRetrieveUser(OpenIdAlfioUser user,
                                                            Map<String, Claim> idTokenClaims,
                                                            HttpSession session) {
-        if (!userManager.usernameExists(user.getEmail())) {
+        if (!userManager.usernameExists(user.email())) {
             var configuration = openIdConfiguration();
-            var result = userRepository.create(user.getEmail(),
+            var result = userRepository.create(user.email(),
                 passwordEncoder.encode(PasswordGenerator.generateRandomPassword()),
-                retrieveClaimOrBlank(idTokenClaims, configuration.getGivenNameClaim()),
-                retrieveClaimOrBlank(idTokenClaims, configuration.getFamilyNameClaim()),
-                user.getEmail(),
+                retrieveClaimOrBlank(idTokenClaims, configuration.givenNameClaim()),
+                retrieveClaimOrBlank(idTokenClaims, configuration.familyNameClaim()),
+                user.email(),
                 true,
                 getUserType(),
                 null,
@@ -138,14 +136,9 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
             onUserCreated(userRepository.findById(result.getKey()), session);
         }
 
-        if(syncRoles()) {
-            updateRoles(user.getAlfioRoles(), user.getEmail());
-            updateOrganizations(user);
-        }
-
-        List<GrantedAuthority> authorities = user.getAlfioRoles().stream().map(Role::getRoleName)
+        List<GrantedAuthority> authorities = user.alfioRoles().stream().map(Role::getRoleName)
             .map(SimpleGrantedAuthority::new).collect(Collectors.toList());
-        return new OpenIdAlfioAuthentication(authorities, user.getIdToken(), user.getSubject(), user.getEmail(), buildLogoutUrl(), user.isPublicUser());
+        return new OpenIdAlfioAuthentication(authorities, user.idToken(), user.subject(), user.email(), buildLogoutUrl(), user.isPublicUser());
     }
 
     private void onUserCreated(User user, HttpSession session) {
@@ -165,52 +158,6 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
         return StringUtils.trimToEmpty(claimValue);
     }
 
-    private void updateOrganizations(OpenIdAlfioUser alfioUser) {
-        int userId = userRepository.findIdByUserName(alfioUser.getEmail()).orElseThrow();
-        var databaseOrganizationIds = organizationRepository.findAllForUser(alfioUser.getEmail()).stream()
-            .map(Organization::getId).collect(Collectors.toSet());
-
-        if (alfioUser.isAdmin()) {
-            if(!databaseOrganizationIds.isEmpty()) {
-                userOrganizationRepository.removeOrganizationUserLinks(userId, databaseOrganizationIds);
-            }
-            return;
-        }
-
-        List<Integer> organizationIds;
-        var userOrg = alfioUser.getAlfioOrganizationAuthorizations().keySet();
-        if(!userOrg.isEmpty()) {
-            organizationIds = organizationRepository.findOrganizationIdsByExternalId(userOrg);
-        } else {
-            organizationIds = List.of();
-        }
-
-        var organizationsToUnlink = databaseOrganizationIds.stream()
-            .filter(orgId -> !organizationIds.contains(orgId))
-            .collect(Collectors.toSet());
-
-        if (!organizationsToUnlink.isEmpty()) {
-            userOrganizationRepository.removeOrganizationUserLinks(userId, organizationsToUnlink);
-        }
-
-        if (organizationIds.isEmpty()) {
-            throw new IllegalStateException("The user needs to be ADMIN or have at least one organization linked");
-        }
-
-        var params = organizationIds.stream().filter(orgId -> !databaseOrganizationIds.contains(orgId))
-            .map(id -> new MapSqlParameterSource("userId", userId).addValue("organizationId", id))
-            .toArray(MapSqlParameterSource[]::new);
-        jdbcTemplate.batchUpdate(userOrganizationRepository.bulkCreate(), params);
-    }
-
-    private void updateRoles(Set<Role> roles, String username) {
-        authorityRepository.revokeAll(username);
-        var rolesToAdd = roles.stream()
-            .map(r -> new MapSqlParameterSource("username", username).addValue("role", r.getRoleName()))
-            .toArray(MapSqlParameterSource[]::new);
-        jdbcTemplate.batchUpdate(authorityRepository.grantAll(), rolesToAdd);
-    }
-
     protected abstract OpenIdAlfioUser fromToken(String idToken, String subject, String email, Map<String, Claim> claims);
     protected abstract OpenIdConfiguration openIdConfiguration();
     protected abstract List<String> getScopes();
@@ -223,10 +170,10 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
 
         UriComponents uri = UriComponentsBuilder.newInstance()
             .scheme(HTTPS)
-            .host(openIdConfiguration().getDomain())
-            .path(openIdConfiguration().getAuthenticationUrl())
-            .queryParam(REDIRECT_URI, openIdConfiguration().getCallbackURI())
-            .queryParam("client_id", openIdConfiguration().getClientId())
+            .host(openIdConfiguration().domain())
+            .path(openIdConfiguration().authenticationUrl())
+            .queryParam(REDIRECT_URI, openIdConfiguration().callbackURI())
+            .queryParam("client_id", openIdConfiguration().clientId())
             .queryParam("state", state)
             .queryParam("scope", scopeParameter)
             .queryParam("response_type", "code")
@@ -238,8 +185,8 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     public String buildClaimsRetrieverUrl() {
         UriComponents uri = UriComponentsBuilder.newInstance()
             .scheme(HTTPS)
-            .host(openIdConfiguration().getDomain())
-            .path(openIdConfiguration().getTokenEndpoint())
+            .host(openIdConfiguration().domain())
+            .path(openIdConfiguration().tokenEndpoint())
             .build();
         return uri.toUriString();
     }
@@ -248,16 +195,16 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     public String buildLogoutUrl() {
         UriComponents uri = UriComponentsBuilder.newInstance()
             .scheme(HTTPS)
-            .host(openIdConfiguration().getDomain())
-            .path(openIdConfiguration().getLogoutUrl())
-            .queryParam(REDIRECT_URI, openIdConfiguration().getLogoutRedirectUrl())
+            .host(openIdConfiguration().domain())
+            .path(openIdConfiguration().logoutUrl())
+            .queryParam(REDIRECT_URI, openIdConfiguration().logoutRedirectUrl())
             .build();
         return uri.toString();
     }
 
     @Override
     public String buildRetrieveClaimsUrlBody(String code) {
-        var contentType = openIdConfiguration().getContentType();
+        var contentType = openIdConfiguration().contentType();
         if (contentType.equals(APPLICATION_JSON)) {
             return buildAccessTokenUrlJson(code);
         }
@@ -271,9 +218,9 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
         Map<String, String> body = Map.of(
             "grant_type", "authorization_code",
             "code", code,
-            "client_id", openIdConfiguration().getClientId(),
-            "client_secret", openIdConfiguration().getClientSecret(),
-            REDIRECT_URI, openIdConfiguration().getCallbackURI()
+            "client_id", openIdConfiguration().clientId(),
+            "client_secret", openIdConfiguration().clientSecret(),
+            REDIRECT_URI, openIdConfiguration().callbackURI()
         );
         return json.asJsonString(body);
     }
@@ -281,16 +228,16 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     private String buildAccessTokenUrlForm(String code) {
         return "grant_type=authorization_code" +
             "&code=" + code +
-            "&client_id=" + openIdConfiguration().getClientId() +
-            "&client_secret=" + openIdConfiguration().getClientSecret() +
-            "&redirect_uri=" + openIdConfiguration().getCallbackURI();
+            "&client_id=" + openIdConfiguration().clientId() +
+            "&client_secret=" + openIdConfiguration().clientSecret() +
+            "&redirect_uri=" + openIdConfiguration().callbackURI();
     }
 
     private Map<String, Object> retrieveAccessToken(String code){
         try {
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(buildClaimsRetrieverUrl()))
-                .header("Content-Type", openIdConfiguration().getContentType())
+                .header("Content-Type", openIdConfiguration().contentType())
                 .POST(HttpRequest.BodyPublishers.ofString(buildRetrieveClaimsUrlBody(code)))
                 .build();
 
