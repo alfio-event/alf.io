@@ -1,11 +1,11 @@
 import {Inject, Injectable, Injector, INJECTOR, PLATFORM_ID} from '@angular/core';
 import {
-  HttpEvent,
-  HttpHandler,
-  HttpInterceptor,
-  HttpRequest,
-  HttpResponse,
-  HttpXsrfTokenExtractor
+    HttpEvent,
+    HttpHandler,
+    HttpInterceptor,
+    HttpRequest,
+    HttpResponse,
+    HttpXsrfTokenExtractor
 } from '@angular/common/http';
 import {DOCUMENT} from '@angular/common';
 import {Observable} from 'rxjs';
@@ -26,7 +26,7 @@ export class DOMXsrfTokenExtractor implements HttpXsrfTokenExtractor {
     if (this.platform === 'server') {
       return null;
     }
-    return this.doc.head.querySelector<HTMLMetaElement>('meta[name="XSRF_TOKEN"]')?.content || null;
+    return this.doc.head.querySelector<HTMLMetaElement>('meta[name="XSRF_TOKEN"]')?.content ?? null;
   }
 
   updateToken(newVal: string | null): void {
@@ -51,7 +51,7 @@ export class DOMGidExtractor {
     if (this.platform === 'server') {
       return null;
     }
-    return this.doc.head.querySelector<HTMLMetaElement>('meta[name="GID"]')?.content || null;
+    return this.doc.head.querySelector<HTMLMetaElement>('meta[name="GID"]')?.content ?? null;
   }
 
   updateToken(newVal: string | null): void {
@@ -87,7 +87,7 @@ export class AuthTokenInterceptor implements HttpInterceptor {
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     this.init();
     return next.handle(req.clone({
-      headers: req.headers.set(GID_HEADER_NAME, this.domGidExtractor?.getToken() || '')
+      headers: req.headers.set(GID_HEADER_NAME, this.domGidExtractor?.getToken() ?? '')
     })).pipe(tap(response => {
       if (response instanceof HttpResponse) {
         if (response.headers.has(GID_HEADER_NAME)) {

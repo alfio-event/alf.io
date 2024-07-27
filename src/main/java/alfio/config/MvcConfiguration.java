@@ -21,6 +21,7 @@ import alfio.manager.system.ConfigurationManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -32,6 +33,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
@@ -138,37 +140,43 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
     @Bean
     public HttpSessionIdResolver httpSessionIdResolver(CookieSerializer cookieSerializer) {
-        var publicSessionIdResolver = HeaderHttpSessionIdResolver.xAuthToken();
-        var adminSessionIdResolver = new CookieHttpSessionIdResolver();
-        adminSessionIdResolver.setCookieSerializer(cookieSerializer);
+        var publicRequestMatcher = new AntPathRequestMatcher(API_V2_PUBLIC_PATH + "**");
+        var headerSessionIdResolver = HeaderHttpSessionIdResolver.xAuthToken();
+        var cookieSessionIdResolver = new CookieHttpSessionIdResolver();
+        cookieSessionIdResolver.setCookieSerializer(cookieSerializer);
         return new HttpSessionIdResolver() {
             @Override
             public List<String> resolveSessionIds(HttpServletRequest request) {
-                return isPublic(request) ? publicSessionIdResolver.resolveSessionIds(request)
-                    : adminSessionIdResolver.resolveSessionIds(request);
+                if (isPublic(request)) {
+                    var resolvedIds = headerSessionIdResolver.resolveSessionIds(request).stream()
+                        .filter(StringUtils::isNotBlank).toList();
+                    if (!resolvedIds.isEmpty()) {
+                        return resolvedIds;
+                    }
+                }
+                return cookieSessionIdResolver.resolveSessionIds(request);
             }
 
             @Override
             public void setSessionId(HttpServletRequest request, HttpServletResponse response, String sessionId) {
                 if (isPublic(request)) {
-                    publicSessionIdResolver.setSessionId(request, response, sessionId);
+                    headerSessionIdResolver.setSessionId(request, response, sessionId);
                 } else {
-                    adminSessionIdResolver.setSessionId(request, response, sessionId);
+                    cookieSessionIdResolver.setSessionId(request, response, sessionId);
                 }
             }
 
             @Override
             public void expireSession(HttpServletRequest request, HttpServletResponse response) {
                 if (isPublic(request)) {
-                    publicSessionIdResolver.expireSession(request, response);
+                    headerSessionIdResolver.expireSession(request, response);
                 } else {
-                    adminSessionIdResolver.expireSession(request, response);
+                    cookieSessionIdResolver.expireSession(request, response);
                 }
             }
 
-            private static boolean isPublic(HttpServletRequest request) {
-                var requestURI = request.getRequestURI();
-                return requestURI.startsWith(API_V2_PUBLIC_PATH);
+            private boolean isPublic(HttpServletRequest request) {
+                return publicRequestMatcher.matches(request);
             }
         };
     }

@@ -21,8 +21,8 @@ import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
 import alfio.config.authentication.FormBasedWebSecurity;
+import alfio.config.authentication.OpenIdUserSynchronizer;
 import alfio.config.authentication.support.APITokenAuthentication;
-import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.support.AccessDeniedException;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
@@ -80,9 +80,9 @@ class AccessServiceIntegrationTest {
                                           CsrfTokenRepository csrfTokenRepository,
                                           DataSource dataSource,
                                           PasswordEncoder passwordEncoder,
-                                          PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager,
-                                          SpringSessionBackedSessionRegistry<?> sessionRegistry) {
-            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, publicOpenIdAuthenticationManager, sessionRegistry);
+                                          SpringSessionBackedSessionRegistry<?> sessionRegistry,
+                                          OpenIdUserSynchronizer openIdUserSynchronizer) {
+            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, sessionRegistry, openIdUserSynchronizer);
         }
 
         @Bean

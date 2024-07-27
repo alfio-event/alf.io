@@ -352,20 +352,23 @@ export class BookingComponent implements OnInit, AfterViewInit {
   login(): void {
     // save reservation status
     const redirectToLogin = () => {
-      window.location.href = `/openid/authentication?reservation=${this.reservationId}&contextType=${this.purchaseContextType}&id=${this.publicIdentifier}`;
+      window.location.href = `/openid/${this.purchaseContextType}/${this.publicIdentifier}/reservation/${this.reservationId}`;
     };
     this.reservationService.validateToOverview(this.reservationId, this.contactAndTicketsForm.value, this.translate.currentLang, false)
-      .subscribe(() => {
-        // reservation is now saved. We can proceed to login
-        redirectToLogin();
-      }, error => {
-        const errorObj = getErrorObject(error);
-        if (errorObj != null) {
-          // reservation is not in a valid state. Proceed anyway
-          redirectToLogin();
-        } else {
-          this.feedbackService.showError(this.translate.instant('reservation-page.cannot-login.error'));
-        }
+      .subscribe({
+          next: () => {
+              // reservation is now saved. We can proceed to login
+              redirectToLogin();
+          },
+          error: err => {
+              const errorObj = getErrorObject(err);
+              if (errorObj != null) {
+                  // reservation is not in a valid state. Proceed anyway
+                  redirectToLogin();
+              } else {
+                  this.feedbackService.showError(this.translate.instant('reservation-page.cannot-login.error'));
+              }
+          }
       });
   }
 

@@ -16,13 +16,13 @@
  */
 package alfio.controller;
 
+import alfio.config.authentication.OpenIdUserSynchronizer;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.Language;
 import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.controller.support.CSPConfigurer;
 import alfio.manager.PurchaseContextManager;
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.openid.OpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -34,9 +34,11 @@ import alfio.util.Json;
 import alfio.util.MustacheCustomTag;
 import alfio.util.RequestUtils;
 import ch.digitalfondue.jfiveparse.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
@@ -46,9 +48,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -56,7 +55,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static alfio.config.Initializer.PROFILE_LIVE;
 import static alfio.controller.Constants.*;
@@ -229,10 +227,10 @@ public class IndexController {
             try (var os = response.getOutputStream(); var osw = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
                 var baseCustomCss = configurationManager.getForSystem(BASE_CUSTOM_CSS).getValueOrNull();
                 var idx = indexPage.cloneNode(true);
-                if(session.getAttribute(OpenIdAuthenticationManager.USER_SIGNED_UP) != null) {
+                if(session.getAttribute(OpenIdUserSynchronizer.USER_SIGNED_UP) != null) {
                     Optional.ofNullable(IterableUtils.get(idx.getElementsByTagName("html"), 0))
                         .ifPresent(html -> html.setAttribute("data-signed-up", "true"));
-                    session.removeAttribute(OpenIdAuthenticationManager.USER_SIGNED_UP);
+                    session.removeAttribute(OpenIdUserSynchronizer.USER_SIGNED_UP);
                 }
                 idx.getElementsByTagName("script").forEach(element -> element.setAttribute(NONCE, nonce));
                 var head = idx.getElementsByTagName("head").get(0);

@@ -18,7 +18,6 @@ package alfio.config.authentication;
 
 import alfio.config.Initializer;
 import alfio.manager.RecaptchaService;
-import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import org.springframework.context.annotation.Configuration;
@@ -45,8 +44,8 @@ public class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {
                                 CsrfTokenRepository csrfTokenRepository,
                                 DataSource dataSource,
                                 PasswordEncoder passwordEncoder,
-                                PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager,
-                                SpringSessionBackedSessionRegistry<?> sessionRegistry) {
+                                SpringSessionBackedSessionRegistry<?> sessionRegistry,
+                                OpenIdUserSynchronizer openIdUserSynchronizer) {
         super(environment,
             userManager,
             recaptchaService,
@@ -54,7 +53,7 @@ public class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {
             csrfTokenRepository,
             dataSource,
             passwordEncoder,
-            publicOpenIdAuthenticationManager,
-            sessionRegistry);
+            sessionRegistry,
+            openIdUserSynchronizer);
     }
 }

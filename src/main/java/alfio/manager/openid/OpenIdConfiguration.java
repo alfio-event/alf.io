@@ -22,6 +22,12 @@ import alfio.model.system.ConfigurationKeys;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.core.env.Environment;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static java.util.Objects.requireNonNullElse;
 import static org.apache.commons.lang3.StringUtils.removeEnd;
@@ -70,7 +76,34 @@ public record OpenIdConfiguration(
         this.alfioGroupsParameter = alfioGroupsParameter;
         this.logoutUrl = logoutUrl;
         this.logoutRedirectUrl = logoutRedirectUrl;
-        this.jwksPath = jwksPath;
+        this.jwksPath = requireNonNullElse(jwksPath, "/.well-known/jwks.json");
+    }
+
+    public ClientRegistration toClientRegistration(String registrationId,
+                                                   String redirectUri,
+                                                   boolean fullScopeList) {
+        var baseURI = UriComponentsBuilder.newInstance()
+            .scheme("https")
+            .host(domain);
+        var scopes = new ArrayList<>(List.of("openid", "email", "profile"));
+        if (fullScopeList) {
+            scopes.add("openid");
+            scopes.add(rolesParameter);
+            scopes.add(alfioGroupsParameter);
+            scopes.add(givenNameClaim);
+            scopes.add(familyNameClaim);
+        }
+
+        return ClientRegistration.withRegistrationId(registrationId)
+            .clientId(clientId)
+            .clientSecret(clientSecret)
+            .redirectUri(redirectUri)
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .scope(scopes)
+            .authorizationUri(baseURI.replacePath(authenticationUrl).toUriString())
+            .jwkSetUri(baseURI.replacePath(jwksPath).toUriString())
+            .tokenUri(baseURI.replacePath(tokenEndpoint).toUriString())
+            .build();
     }
 
     public static OpenIdConfiguration from(Environment environment, ConfigurationManager configurationManager) {
@@ -89,7 +122,7 @@ public record OpenIdConfiguration(
             environment.getProperty("openid.alfioGroupsParameter"),
             environment.getProperty("openid.logoutUrl"),
             environment.getProperty("openid.logoutRedirectUrl", baseUrl + "/admin"),
-            environment.getProperty("openid.jwksPath", "/.well-known/jwks.json")
+            environment.getProperty("openid.jwksPath")
         );
     }
 }
