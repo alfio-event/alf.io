@@ -16,7 +16,7 @@
  */
 package alfio.controller;
 
-import alfio.config.authentication.OpenIdUserSynchronizer;
+import alfio.config.authentication.support.OpenIdPrincipal;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.Language;
 import alfio.controller.api.v2.user.support.EventLoader;
@@ -42,6 +42,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -212,7 +214,8 @@ public class IndexController {
                              @RequestParam(value = "lang", required = false) String lang,
                              ServletWebRequest request,
                              HttpServletResponse response,
-                             HttpSession session) throws IOException {
+                             HttpSession session,
+                             Authentication authentication) throws IOException {
 
         response.setContentType(TEXT_HTML_CHARSET_UTF_8);
         response.setCharacterEncoding(UTF_8);
@@ -227,10 +230,12 @@ public class IndexController {
             try (var os = response.getOutputStream(); var osw = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
                 var baseCustomCss = configurationManager.getForSystem(BASE_CUSTOM_CSS).getValueOrNull();
                 var idx = indexPage.cloneNode(true);
-                if(session.getAttribute(OpenIdUserSynchronizer.USER_SIGNED_UP) != null) {
+                if(authentication instanceof OAuth2AuthenticationToken oauth
+                    && oauth.getPrincipal() instanceof OpenIdPrincipal principal
+                    && principal.isSignedUp()
+                    && session.isNew()) {
                     Optional.ofNullable(IterableUtils.get(idx.getElementsByTagName("html"), 0))
                         .ifPresent(html -> html.setAttribute("data-signed-up", "true"));
-                    session.removeAttribute(OpenIdUserSynchronizer.USER_SIGNED_UP);
                 }
                 idx.getElementsByTagName("script").forEach(element -> element.setAttribute(NONCE, nonce));
                 var head = idx.getElementsByTagName("head").get(0);

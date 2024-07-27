@@ -43,7 +43,6 @@ import java.util.stream.Collectors;
 
 @Transactional
 public class OpenIdUserSynchronizer {
-    public static final String USER_SIGNED_UP = "USER_SIGNED_UP";
     private final TransactionTemplate transactionTemplate;
     private final PasswordEncoder passwordEncoder;
     private final UserManager userManager;
@@ -74,11 +73,12 @@ public class OpenIdUserSynchronizer {
         this.extensionManager = extensionManager;
     }
 
-    public void syncUser(OidcUser oidcUser,
+    public boolean syncUser(OidcUser oidcUser,
                          OpenIdAlfioUser internalUser,
                          OpenIdConfiguration configuration) {
-        transactionTemplate.execute(tr -> {
+        return Boolean.TRUE.equals(transactionTemplate.execute(tr -> {
             String email = oidcUser.getEmail();
+            boolean userSignedUp = false;
             if (!userManager.usernameExists(email)) {
                 var result = userRepository.create(email,
                     passwordEncoder.encode(PasswordGenerator.generateRandomPassword()),
@@ -90,20 +90,18 @@ public class OpenIdUserSynchronizer {
                     null,
                     null);
                 Validate.isTrue(result.getAffectedRowCount() == 1, "Error while creating user");
-                // FIXME show tooltip when user signs up
-//                var session = ((ServletRequestAttributes)RequestContextHolder.getRequestAttributes()).getRequest().getSession(false);
-//                session.setAttribute(USER_SIGNED_UP, true);
                 if (internalUser.isPublicUser()) {
                     extensionManager.handlePublicUserSignUp(userRepository.findById(result.getKey()));
                 }
+                userSignedUp = true;
             }
 
             if (!internalUser.isPublicUser()) {
                 updateRoles(internalUser.alfioRoles(), email);
                 updateOrganizations(internalUser);
             }
-            return null;
-        });
+            return userSignedUp;
+        }));
     }
 
         private static String retrieveClaimOrBlank(String claim, OidcUser container) {

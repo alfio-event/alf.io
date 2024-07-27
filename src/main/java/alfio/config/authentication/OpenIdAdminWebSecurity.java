@@ -99,7 +99,7 @@ public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
 
             if (isAdmin) {
                 log.trace("User is admin");
-                principal = new OpenIdPrincipal(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")), oidcUser.getIdToken(), oidcUser.getUserInfo(), new OpenIdAlfioUser(null, oidcUser.getSubject(), oidcUser.getEmail(), User.Type.INTERNAL, Set.of(Role.ADMIN), null), buildLogoutUrl(openIdConfiguration));
+                principal = new OpenIdPrincipal(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")), oidcUser.getIdToken(), oidcUser.getUserInfo(), new OpenIdAlfioUser(null, oidcUser.getSubject(), oidcUser.getEmail(), User.Type.INTERNAL, Set.of(Role.ADMIN), null), buildLogoutUrl(openIdConfiguration), false);
             } else {
                 principal = parsePrincipal(openIdConfiguration, groups, oidcUser);
             }
@@ -128,7 +128,7 @@ public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
 
         // check if user exists
         var alfioUser = new OpenIdAlfioUser(null, oidcUser.getSubject(), oidcUser.getEmail(), User.Type.INTERNAL, alfioRoles, alfioOrganizationAuthorizations);
-        principal = new OpenIdPrincipal(mappedAuthorities, oidcUser.getIdToken(), oidcUser.getUserInfo(), alfioUser, buildLogoutUrl(openIdConfiguration));
+        principal = new OpenIdPrincipal(mappedAuthorities, oidcUser.getIdToken(), oidcUser.getUserInfo(), alfioUser, buildLogoutUrl(openIdConfiguration), false);
         return principal;
     }
 

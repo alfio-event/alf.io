@@ -17,7 +17,6 @@
 
 package alfio.manager;
 
-import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.extension.ExtensionService;
@@ -48,9 +47,9 @@ import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
 
@@ -568,7 +567,7 @@ public class ExtensionManager {
         asyncCall(PUBLIC_USER_SIGN_UP, null, Map.of("user", user));
     }
 
-    public void handlePublicUserDelete(OpenIdAlfioAuthentication authentication, User user) {
+    public void handlePublicUserDelete(OAuth2AuthenticationToken authentication, User user) {
         syncCall(PUBLIC_USER_DELETE, null, Map.of("user", user, "subject", authentication.getPrincipal()), Void.class);
     }
 

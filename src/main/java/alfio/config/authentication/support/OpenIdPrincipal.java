@@ -31,15 +31,18 @@ public class OpenIdPrincipal extends DefaultOidcUser {
     private static final long serialVersionUID = -3305276997530613807L;
     private final OpenIdAlfioUser alfioUser;
     private final String idpLogoutRedirectionUrl;
+    private final boolean signedUp;
 
     public OpenIdPrincipal(Collection<? extends GrantedAuthority> authorities,
                            OidcIdToken idToken,
                            OidcUserInfo userInfo,
                            OpenIdAlfioUser alfioUser,
-                           String idpLogoutRedirectionUrl) {
+                           String idpLogoutRedirectionUrl,
+                           boolean signedUp) {
         super(authorities, idToken, userInfo);
         this.alfioUser = alfioUser;
         this.idpLogoutRedirectionUrl = idpLogoutRedirectionUrl;
+        this.signedUp = signedUp;
     }
 
     public OpenIdAlfioUser user() {
@@ -73,5 +76,9 @@ public class OpenIdPrincipal extends DefaultOidcUser {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), alfioUser, idpLogoutRedirectionUrl);
+    }
+
+    public boolean isSignedUp() {
+        return signedUp;
     }
 }

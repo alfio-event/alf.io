@@ -201,8 +201,8 @@ abstract class AbstractFormBasedWebSecurity {
             OidcUser oidcUser = delegate.loadUser(userRequest);
             var alfioUser = new OpenIdAlfioUser(null, oidcUser.getSubject(), oidcUser.getEmail(), User.Type.PUBLIC, Set.of(), Map.of());
             var configuration = Json.fromJson(configurationManager.getPublicOpenIdConfiguration().get(OPENID_CONFIGURATION_JSON).getRequiredValue(), OpenIdConfiguration.class);
-            openIdUserSynchronizer.syncUser(oidcUser, alfioUser, configuration);
-            return new OpenIdPrincipal(List.of(), oidcUser.getIdToken(), oidcUser.getUserInfo(), alfioUser, buildLogoutUrl(configuration));
+            boolean signedUp = openIdUserSynchronizer.syncUser(oidcUser, alfioUser, configuration);
+            return new OpenIdPrincipal(List.of(), oidcUser.getIdToken(), oidcUser.getUserInfo(), alfioUser, buildLogoutUrl(configuration), signedUp);
         };
     }
 
