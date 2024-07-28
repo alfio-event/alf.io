@@ -1181,7 +1181,7 @@ class TicketReservationManagerTest {
 
         // OpenID active
         when(maybeOpenId.getValueAsBooleanOrDefault()).thenReturn(true);
-        Assertions.assertEquals(BASE_URL + "openid/authentication?reservation=" + RESERVATION_ID + "&contextType=" + PurchaseContext.PurchaseContextType.event + "&id=" + shortName, trm.reservationUrlForExternalClients(RESERVATION_ID, event, "en", true, null));
+        Assertions.assertEquals(BASE_URL + "openid/"+PurchaseContext.PurchaseContextType.event+"/"+ shortName+"/reservation/" + RESERVATION_ID, trm.reservationUrlForExternalClients(RESERVATION_ID, event, "en", true, null));
 
         // user not specified in the request
         Assertions.assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrlForExternalClients(RESERVATION_ID, event, "en", false, null));

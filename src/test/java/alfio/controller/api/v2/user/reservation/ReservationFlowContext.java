@@ -16,14 +16,16 @@
  */
 package alfio.controller.api.v2.user.reservation;
 
-import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 import alfio.model.Event;
+import org.mockito.Mockito;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 
 import java.security.Principal;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import static org.mockito.Mockito.when;
 
 public class ReservationFlowContext {
     final Event event;
@@ -58,7 +60,9 @@ public class ReservationFlowContext {
         this.publicUsername = publicUsername;
         this.publicUserId = publicUserId;
         if(publicUsername != null && publicUserId != null) {
-            this.authentication = new OpenIdAlfioAuthentication(List.of(), "", publicUsername, publicUsername, "", true);
+            var authentication = Mockito.mock(OAuth2AuthenticationToken.class);
+            when(authentication.getName()).thenReturn(publicUsername);
+            this.authentication = authentication;
         } else {
             this.authentication = null;
         }

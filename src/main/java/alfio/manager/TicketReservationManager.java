@@ -1169,7 +1169,7 @@ public class TicketReservationManager {
         var configMap = configurationManager.getFor(EnumSet.of(BASE_URL, OPENID_PUBLIC_ENABLED), purchaseContext.getConfigurationLevel());
         var baseUrl = StringUtils.removeEnd(configMap.get(BASE_URL).getRequiredValue(), "/");
         if(userLoggedIn && configMap.get(OPENID_PUBLIC_ENABLED).getValueAsBooleanOrDefault()) {
-            return baseUrl + "/openid/authentication?reservation=" + reservationId + "&contextType=" + purchaseContext.getType() + "&id=" + purchaseContext.getPublicIdentifier();
+            return baseUrl + "/openid/"+purchaseContext.getType()+"/"+purchaseContext.getPublicIdentifier()+"/reservation/" + reservationId;
         } else {
             var cleanSubscriptionId = StringUtils.trimToNull(subscriptionId);
             return ReservationUtil.reservationUrl(baseUrl, reservationId, purchaseContext, userLanguage, cleanSubscriptionId != null ? "subscription="+cleanSubscriptionId : null);

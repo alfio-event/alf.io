@@ -1,15 +1,15 @@
-import {Injectable, isDevMode, OnDestroy} from '@angular/core';
+import {Injectable, isDevMode} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {ANONYMOUS, AuthenticationStatus, ClientRedirect, PurchaseContextWithReservation, User} from '../model/user';
-import {BehaviorSubject, Observable, of, Subscription} from 'rxjs';
+import {BehaviorSubject, Observable, of} from 'rxjs';
 import {map, mergeMap, tap} from 'rxjs/operators';
 import {ValidatedResponse} from '../model/validated-response';
 
 @Injectable({ providedIn: 'root' })
-export class UserService implements OnDestroy {
+export class UserService {
 
   private authStatusSubject = new BehaviorSubject<AuthenticationStatus>({ enabled: false });
-  private authStatusSubscription?: Subscription;
+  private latestValue?: User;
   private authEnabled = false;
 
   constructor(private http: HttpClient) {
@@ -33,7 +33,8 @@ export class UserService implements OnDestroy {
     if (isDevMode()) {
       console.log('authentication enabled', enabled);
     }
-    this.authStatusSubject.next({ enabled });
+    const payload: AuthenticationStatus = enabled ? {enabled, user: this.latestValue} : {enabled: false};
+    this.authStatusSubject.next(payload);
   }
 
   private loadUserStatus(): Observable<{enabled: boolean, user?: User}> {
@@ -44,7 +45,12 @@ export class UserService implements OnDestroy {
           }
           return of({enabled, user: undefined});
         }),
-        tap(status => this.authEnabled = status.enabled)
+        tap(status => {
+            this.authEnabled = status.enabled;
+            if (status.user != null) {
+                this.latestValue = status.user;
+            }
+        })
       );
   }
 
@@ -57,10 +63,6 @@ export class UserService implements OnDestroy {
           return response.body;
         }
       }));
-  }
-
-  ngOnDestroy(): void {
-    this.authStatusSubscription?.unsubscribe();
   }
 
   logout(): Observable<ClientRedirect> {

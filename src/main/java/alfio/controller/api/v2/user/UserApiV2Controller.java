@@ -16,7 +16,7 @@
  */
 package alfio.controller.api.v2.user;
 
-import alfio.config.authentication.support.OpenIdAlfioAuthentication;
+import alfio.config.authentication.support.OpenIdPrincipal;
 import alfio.controller.api.v2.model.ClientRedirect;
 import alfio.controller.api.v2.model.PurchaseContextWithReservations;
 import alfio.controller.api.v2.model.User;
@@ -31,11 +31,14 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.PublicUserManager;
 import alfio.model.ContentLanguage;
 import alfio.util.ErrorsCode;
-import lombok.RequiredArgsConstructor;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,7 +49,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v2/public/user")
-@RequiredArgsConstructor
 public class UserApiV2Controller {
 
     private final PublicUserManager publicUserManager;
@@ -54,6 +56,20 @@ public class UserApiV2Controller {
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
     private final MessageSourceManager messageSourceManager;
+    private final SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
+
+    @Autowired
+    public UserApiV2Controller(PublicUserManager publicUserManager,
+                               TicketReservationManager ticketReservationManager,
+                               ConfigurationManager configurationManager,
+                               ExtensionManager extensionManager,
+                               MessageSourceManager messageSourceManager) {
+        this.publicUserManager = publicUserManager;
+        this.ticketReservationManager = ticketReservationManager;
+        this.configurationManager = configurationManager;
+        this.extensionManager = extensionManager;
+        this.messageSourceManager = messageSourceManager;
+    }
 
     @GetMapping("/me")
     public ResponseEntity<User> getUserIdentity(Authentication principal) {
@@ -112,11 +128,12 @@ public class UserApiV2Controller {
     }
 
     @DeleteMapping("/me")
-    public ResponseEntity<ClientRedirect> deleteCurrentUser(Authentication authentication) {
-        var alfioAuthentication = ((OpenIdAlfioAuthentication)authentication);
+    public ResponseEntity<ClientRedirect> deleteCurrentUser(HttpServletRequest request,
+                                                            HttpServletResponse response,
+                                                            OAuth2AuthenticationToken authentication) {
 
-        if(publicUserManager.deleteUserProfile(alfioAuthentication)) {
-            return redirectToIdpLogout(authentication);
+        if(publicUserManager.deleteUserProfile(authentication)) {
+            return redirectToIdpLogout(request, response, authentication);
         }
         return ResponseEntity.badRequest().build();
     }
@@ -127,8 +144,8 @@ public class UserApiV2Controller {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ClientRedirect> logout(Authentication authentication) {
-        return redirectToIdpLogout(authentication);
+    public ResponseEntity<ClientRedirect> logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
+        return redirectToIdpLogout(request, response, authentication);
     }
 
     @GetMapping("/reservations")
@@ -147,19 +164,20 @@ public class UserApiV2Controller {
                 .collect(Collectors.groupingBy(p -> p.getPurchaseContextType().name() + "/" + p.getPurchaseContextPublicIdentifier()))
                 .values().stream()
                 .map(pc -> PurchaseContextWithReservations.from(pc, datePatternsMap))
-                .collect(Collectors.toList());
+                .toList();
             return ResponseEntity.ok(results);
         }
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    private static ResponseEntity<ClientRedirect> redirectToIdpLogout(Authentication authentication) {
-        if(authentication != null) {
-            SecurityContextHolder.getContext().setAuthentication(null);
-        }
+    private ResponseEntity<ClientRedirect> redirectToIdpLogout(HttpServletRequest request,
+                                                               HttpServletResponse response,
+                                                               Authentication authentication) {
+        this.logoutHandler.logout(request, response, authentication);
         String redirectUrl = "/";
-        if(authentication instanceof OpenIdAlfioAuthentication alfioAuthentication) {
-            redirectUrl = alfioAuthentication.getIdpLogoutRedirectionUrl();
+        if(authentication instanceof OAuth2AuthenticationToken oauth
+            && oauth.getPrincipal() instanceof OpenIdPrincipal principal) {
+            redirectUrl = principal.idpLogoutRedirectionUrl();
         }
         return ResponseEntity.ok(new ClientRedirect(redirectUrl));
     }

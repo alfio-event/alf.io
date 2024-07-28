@@ -17,7 +17,6 @@
 package alfio.manager.user;
 
 
-import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.UpdateProfileForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
@@ -36,6 +35,7 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
@@ -56,7 +56,7 @@ public class PublicUserManager {
     private final UserManager userManager;
     private final PurchaseContextFieldRepository purchaseContextFieldRepository;
 
-    public boolean deleteUserProfile(OpenIdAlfioAuthentication authentication) {
+    public boolean deleteUserProfile(OAuth2AuthenticationToken authentication) {
         return userManager.findOptionalEnabledUserByUsername(authentication.getName())
             .filter(u -> u.getType() == User.Type.PUBLIC)
             .map(user -> {

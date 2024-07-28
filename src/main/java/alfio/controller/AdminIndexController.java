@@ -16,7 +16,7 @@
  */
 package alfio.controller;
 
-import alfio.config.authentication.support.OpenIdAlfioAuthentication;
+import alfio.config.authentication.support.OpenIdPrincipal;
 import alfio.controller.support.CSPConfigurer;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
@@ -33,6 +33,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -84,16 +85,18 @@ public class AdminIndexController {
     @GetMapping({"/admin", "/admin/"})
     public void adminHome(Model model, @Value("${alfio.version}") String version, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
         model.addAttribute("alfioVersion", version);
-        model.addAttribute("username", principal.getName());
         model.addAttribute("basicConfigurationNeeded", configurationManager.isBasicConfigurationNeeded());
 
-        boolean isDBAuthentication = !(principal instanceof OpenIdAlfioAuthentication);
+        boolean isDBAuthentication = !(principal instanceof OAuth2AuthenticationToken);
         model.addAttribute("isDBAuthentication", isDBAuthentication);
         if (!isDBAuthentication) {
-            String idpLogoutRedirectionUrl = ((OpenIdAlfioAuthentication) SecurityContextHolder.getContext().getAuthentication()).getIdpLogoutRedirectionUrl();
+            var openIdPrincipal = ((OpenIdPrincipal)((OAuth2AuthenticationToken) principal).getPrincipal());
+            String idpLogoutRedirectionUrl = openIdPrincipal.idpLogoutRedirectionUrl();
             model.addAttribute("idpLogoutRedirectionUrl", idpLogoutRedirectionUrl);
+            model.addAttribute("username", openIdPrincipal.user().email());
         } else {
             model.addAttribute("idpLogoutRedirectionUrl", null);
+            model.addAttribute("username", principal.getName());
         }
 
         Collection<String> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities()

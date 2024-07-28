@@ -40,7 +40,7 @@ export class TopBarComponent implements OnInit, OnDestroy, AfterViewInit {
     if (getFromSessionStorage(DELETE_ACCOUNT_CONFIRMATION) === 'y') {
       this.feedbackService.showSuccess('my-profile.delete.success');
       removeFromSessionStorage(DELETE_ACCOUNT_CONFIRMATION);
-    } else if (this.root != null && this.root.getAttribute('data-signed-up') != null) {
+    } else if (this.root?.getAttribute('data-signed-up') != null) {
       this.feedbackService.showSuccess('my-profile.sign-up.success');
       this.root.removeAttribute('data-signed-up');
     }

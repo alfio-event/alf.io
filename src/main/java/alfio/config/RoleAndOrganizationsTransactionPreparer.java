@@ -16,19 +16,19 @@
  */
 package alfio.config;
 
-import alfio.config.authentication.support.OpenIdAlfioAuthentication;
-import lombok.extern.log4j.Log4j2;
+import alfio.config.authentication.support.OpenIdPrincipal;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
@@ -78,8 +78,10 @@ class RoleAndOrganizationsTransactionPreparer {
 
     private static boolean isPublic() {
         SecurityContext context = SecurityContextHolder.getContext();
-        if (context != null && context.getAuthentication() instanceof OpenIdAlfioAuthentication) {
-            return ((OpenIdAlfioAuthentication) context.getAuthentication()).isPublicUser();
+        if (context != null
+            && context.getAuthentication() instanceof OAuth2AuthenticationToken oauth
+            && oauth.getPrincipal() instanceof OpenIdPrincipal principal) {
+            return principal.user().isPublicUser();
         }
         return false;
     }

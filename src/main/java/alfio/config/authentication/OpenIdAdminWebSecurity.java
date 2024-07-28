@@ -17,28 +17,35 @@
 package alfio.config.authentication;
 
 import alfio.config.Initializer;
-import alfio.config.authentication.support.OpenIdAuthenticationFilter;
-import alfio.config.authentication.support.OpenIdCallbackLoginFilter;
+import alfio.config.authentication.support.OpenIdAlfioUser;
+import alfio.config.authentication.support.OpenIdPrincipal;
 import alfio.manager.RecaptchaService;
-import alfio.manager.openid.AdminOpenIdAuthenticationManager;
-import alfio.manager.openid.PublicOpenIdAuthenticationManager;
+import alfio.manager.openid.OpenIdConfiguration;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import alfio.model.user.Role;
+import alfio.model.user.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
+import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
 import javax.sql.DataSource;
+import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Profile(Initializer.PROFILE_OPENID)
 @Configuration(proxyBeanMethods = false)
@@ -46,7 +53,7 @@ import javax.sql.DataSource;
 public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
 
     private static final Logger log = LoggerFactory.getLogger(OpenIdAdminWebSecurity.class);
-    private final AdminOpenIdAuthenticationManager adminOpenIdAuthenticationManager;
+    private static final String ALFIO_ADMIN_IDP = "alfio-admin-idp";
 
     public OpenIdAdminWebSecurity(Environment environment,
                                   UserManager userManager,
@@ -55,9 +62,8 @@ public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
                                   CsrfTokenRepository csrfTokenRepository,
                                   DataSource dataSource,
                                   PasswordEncoder passwordEncoder,
-                                  AdminOpenIdAuthenticationManager adminOpenIdAuthenticationManager,
-                                  PublicOpenIdAuthenticationManager openIdAuthenticationManager,
-                                  SpringSessionBackedSessionRegistry<?> sessionRegistry) {
+                                  SpringSessionBackedSessionRegistry<?> sessionRegistry,
+                                  OpenIdUserSynchronizer openIdUserSynchronizer) {
         super(environment,
             userManager,
             recaptchaService,
@@ -65,18 +71,94 @@ public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
             csrfTokenRepository,
             dataSource,
             passwordEncoder,
-            openIdAuthenticationManager,
-            sessionRegistry);
-        this.adminOpenIdAuthenticationManager = adminOpenIdAuthenticationManager;
+            sessionRegistry,
+            openIdUserSynchronizer);
     }
 
     @Override
-    protected void additionalConfiguration(HttpSecurity http, AuthenticationManager jdbcAuthenticationManager) {
-        var callbackLoginFilter = new OpenIdCallbackLoginFilter(adminOpenIdAuthenticationManager,
-            new AntPathRequestMatcher("/callback", "GET"),
-            jdbcAuthenticationManager);
-        http.addFilterBefore(callbackLoginFilter, UsernamePasswordAuthenticationFilter.class);
-        log.trace("adding openid filter");
-        http.addFilterAfter(new OpenIdAuthenticationFilter("/authentication", adminOpenIdAuthenticationManager, "/", false), OpenIdCallbackLoginFilter.class);
+    protected void setupAuthenticationEndpoint(HttpSecurity http) throws Exception {
+        var clientRegistrationRepository = new InMemoryClientRegistrationRepository(OpenIdConfiguration.from(environment(), configurationManager())
+            .toClientRegistration(ALFIO_ADMIN_IDP, "{baseUrl}/callback", true));
+        http.oauth2Login(oauth -> oauth.loginProcessingUrl("/callback")
+            .clientRegistrationRepository(clientRegistrationRepository)
+            .userInfoEndpoint(uie -> uie.oidcUserService(oidcUserService(OpenIdConfiguration.from(environment(), configurationManager()))))
+        );
+    }
+
+    private OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService(OpenIdConfiguration openIdConfiguration) {
+        final OidcUserService delegate = new OidcUserService();
+
+        return userRequest -> {
+            OidcUser oidcUser = delegate.loadUser(userRequest);
+
+            final OpenIdPrincipal principal;
+            List<String> groupsList = oidcUser.getClaim(openIdConfiguration.rolesParameter());
+            log.trace("IdToken contains the following groups: {}", groupsList);
+            List<String> groups = groupsList.stream().filter(group -> group.startsWith("ALFIO_")).toList();
+            boolean isAdmin = groups.contains("ALFIO_ADMIN");
+
+            if (isAdmin) {
+                log.trace("User is admin");
+                principal = new OpenIdPrincipal(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")), oidcUser.getIdToken(), oidcUser.getUserInfo(), new OpenIdAlfioUser(null, oidcUser.getSubject(), oidcUser.getEmail(), User.Type.INTERNAL, Set.of(Role.ADMIN), null), buildLogoutUrl(openIdConfiguration), false);
+            } else {
+                principal = parsePrincipal(openIdConfiguration, groups, oidcUser);
+            }
+            openIdUserSynchronizer.syncUser(oidcUser, principal.user(), openIdConfiguration);
+            return principal;
+        };
+    }
+
+    private static OpenIdPrincipal parsePrincipal(OpenIdConfiguration openIdConfiguration, List<String> groups, OidcUser oidcUser) {
+        final OpenIdPrincipal principal;
+        log.trace("User is NOT admin");
+
+        if(groups.isEmpty()){
+            String message = "Users must have at least a group called ALFIO_ADMIN or ALFIO_BACKOFFICE";
+            log.error(message);
+            throw new RuntimeException(message);
+        }
+
+        List<String> alfioOrganizationAuthorizationsRaw = oidcUser.getClaim(openIdConfiguration.alfioGroupsParameter());
+        log.trace("IdToken contains the following alfioGroups: {}", alfioOrganizationAuthorizationsRaw);
+        Map<String, Set<String>> alfioOrganizationAuthorizations = extractOrganizationRoles(alfioOrganizationAuthorizationsRaw);
+        Set<Role> alfioRoles = extractAlfioRoles(alfioOrganizationAuthorizations);
+
+        var mappedAuthorities = alfioRoles.stream().map(r -> new SimpleGrantedAuthority(r.getRoleName()))
+            .collect(Collectors.toSet());
+
+        // check if user exists
+        var alfioUser = new OpenIdAlfioUser(null, oidcUser.getSubject(), oidcUser.getEmail(), User.Type.INTERNAL, alfioRoles, alfioOrganizationAuthorizations);
+        principal = new OpenIdPrincipal(mappedAuthorities, oidcUser.getIdToken(), oidcUser.getUserInfo(), alfioUser, buildLogoutUrl(openIdConfiguration), false);
+        return principal;
+    }
+
+    private static Map<String, Set<String>> extractOrganizationRoles(List<String> alfioOrganizationAuthorizationsRaw) {
+        Map<String, Set<String>> alfioOrganizationAuthorizations = new HashMap<>();
+
+        for (String alfioOrgAuth : alfioOrganizationAuthorizationsRaw) {
+            String[] orgRole = Pattern.compile("/").split(alfioOrgAuth);
+            String organization = orgRole[1];
+            String role = orgRole[2];
+
+            if (alfioOrganizationAuthorizations.containsKey(organization)) {
+                alfioOrganizationAuthorizations.get(organization).add(role);
+                continue;
+            }
+            var roles = new HashSet<String>();
+            roles.add(role);
+            alfioOrganizationAuthorizations.put(organization, roles);
+        }
+        return alfioOrganizationAuthorizations;
+    }
+
+    private static Set<Role> extractAlfioRoles(Map<String, Set<String>> alfioOrganizationAuthorizations) {
+        Set<Role> alfioRoles = new HashSet<>();
+        //FIXME at the moment, the authorizations are NOT based on the organizations, they are global
+        alfioOrganizationAuthorizations.keySet().stream()
+            .map(alfioOrganizationAuthorizations::get)
+            .forEach(authorizations ->
+                authorizations.stream().map(auth -> Role.fromRoleName("ROLE_" + auth))
+                    .forEach(alfioRoles::add));
+        return alfioRoles;
     }
 }

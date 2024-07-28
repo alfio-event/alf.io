@@ -19,16 +19,16 @@ package alfio.config.authentication;
 import alfio.config.Initializer;
 import alfio.config.authentication.support.*;
 import alfio.manager.RecaptchaService;
-import alfio.manager.openid.OpenIdAuthenticationManager;
-import alfio.manager.openid.PublicOpenIdAuthenticationManager;
+import alfio.manager.openid.OpenIdConfiguration;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import alfio.model.user.User;
+import alfio.util.Json;
 import jakarta.servlet.Filter;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -44,21 +44,29 @@ import org.springframework.security.config.annotation.web.configurers.CsrfConfig
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -67,7 +75,9 @@ import static alfio.config.Initializer.API_V2_PUBLIC_PATH;
 import static alfio.config.Initializer.XSRF_TOKEN;
 import static alfio.config.WebSecurityConfig.CSRF_PARAM_NAME;
 import static alfio.config.authentication.support.AuthenticationConstants.*;
-import static alfio.config.authentication.support.OpenIdAuthenticationFilter.*;
+import static alfio.config.authentication.support.PublicOpenIdRequestResolver.OPENID_AUTHENTICATION_PATH;
+import static alfio.config.authentication.support.UserProvidedClientRegistrationRepository.OPENID_CALLBACK_PATH;
+import static alfio.model.system.ConfigurationKeys.OPENID_CONFIGURATION_JSON;
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
 abstract class AbstractFormBasedWebSecurity {
@@ -94,14 +104,14 @@ abstract class AbstractFormBasedWebSecurity {
     );
 
     private final Environment environment;
-    private final UserManager userManager;
+    protected final UserManager userManager;
     private final RecaptchaService recaptchaService;
     private final ConfigurationManager configurationManager;
     private final CsrfTokenRepository csrfTokenRepository;
     private final DataSource dataSource;
-    private final PasswordEncoder passwordEncoder;
-    private final PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager;
+    protected final PasswordEncoder passwordEncoder;
     private final SpringSessionBackedSessionRegistry<?> sessionRegistry;
+    protected final OpenIdUserSynchronizer openIdUserSynchronizer;
 
     protected AbstractFormBasedWebSecurity(Environment environment,
                                            UserManager userManager,
@@ -110,8 +120,8 @@ abstract class AbstractFormBasedWebSecurity {
                                            CsrfTokenRepository csrfTokenRepository,
                                            DataSource dataSource,
                                            PasswordEncoder passwordEncoder,
-                                           PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager,
-                                           SpringSessionBackedSessionRegistry<?> sessionRegistry) {
+                                           SpringSessionBackedSessionRegistry<?> sessionRegistry,
+                                           OpenIdUserSynchronizer openIdUserSynchronizer) {
         this.environment = environment;
         this.userManager = userManager;
         this.recaptchaService = recaptchaService;
@@ -119,8 +129,35 @@ abstract class AbstractFormBasedWebSecurity {
         this.csrfTokenRepository = csrfTokenRepository;
         this.dataSource = dataSource;
         this.passwordEncoder = passwordEncoder;
-        this.publicOpenIdAuthenticationManager = publicOpenIdAuthenticationManager;
         this.sessionRegistry = sessionRegistry;
+        this.openIdUserSynchronizer = openIdUserSynchronizer;
+    }
+
+    @Bean
+    public SecurityFilterChain publicOpenId(HttpSecurity http) throws Exception {
+        configureExceptionHandling(http);
+        configureCsrf(http, configurer -> configurer.csrfTokenRepository(csrfTokenRepository));
+        http.securityMatcher(new AntPathRequestMatcher("/openid/**"))
+            .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
+            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+            // this allows us to sync between spring session and spring security, thus saving the principal name in the session table
+            .sessionManagement(management -> management.maximumSessions(-1).sessionRegistry(sessionRegistry));
+
+
+        var registrationRepository = new UserProvidedClientRegistrationRepository(configurationManager);
+        http.oauth2Login(oauth -> oauth
+            .loginPage(OPENID_AUTHENTICATION_PATH)
+            .loginProcessingUrl(OPENID_CALLBACK_PATH)
+            .clientRegistrationRepository(registrationRepository)
+            .authorizationEndpoint(auth -> auth.authorizationRequestResolver(
+                new PublicOpenIdRequestResolver(registrationRepository)
+            ))
+            .userInfoEndpoint(uie -> uie.oidcUserService(publicOidcUserService(configurationManager)))
+        );
+
+        disableRequestCacheParameter(http);
+
+        return http.build();
     }
 
 
@@ -131,35 +168,51 @@ abstract class AbstractFormBasedWebSecurity {
                 .requiresChannel(channel -> channel.requestMatchers("/**").requiresSecure());
         }
 
-        var authenticationManager = createAuthenticationManager();
         configureExceptionHandling(http);
         configureCsrf(http, configurer -> configurer.csrfTokenRepository(csrfTokenRepository));
         http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
             .authorizeHttpRequests(AbstractFormBasedWebSecurity::authorizeRequests)
-            .authenticationManager(authenticationManager)
-            .formLogin(login -> login
-                .loginPage("/authentication")
-                .loginProcessingUrl(AUTHENTICATE)
-                .defaultSuccessUrl("/admin")
-                .failureUrl("/authentication?failed")).logout(LogoutConfigurer::permitAll)
             // this allows us to sync between spring session and spring security, thus saving the principal name in the session table
             .sessionManagement(management -> management.maximumSessions(-1).sessionRegistry(sessionRegistry));
 
-        http.addFilterBefore(openIdPublicCallbackLoginFilter(publicOpenIdAuthenticationManager, authenticationManager), UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(openIdPublicAuthenticationFilter(publicOpenIdAuthenticationManager), AnonymousAuthenticationFilter.class);
-
-
+        setupAuthenticationEndpoint(http);
         //
         http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, AUTHENTICATE, "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class);
-
-        // call implementation-specific logic
-        additionalConfiguration(http, authenticationManager);
 
         if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
             http.addFilterAfter(new UserCreatorBeforeLoginFilter(userManager, AUTHENTICATE), RecaptchaLoginFilter.class);
         }
 
+        disableRequestCacheParameter(http);
+
         return http.addFilterAfter(csrfPublisherFilter(), CsrfFilter.class).build();
+    }
+
+    // see https://stackoverflow.com/questions/75222930/spring-boot-3-0-2-adds-continue-query-parameter-to-request-url-after-login
+    private static void disableRequestCacheParameter(HttpSecurity http) throws Exception {
+        HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
+        requestCache.setMatchingRequestParameterName(null);
+        http.requestCache(cache -> cache.requestCache(requestCache));
+    }
+
+    private OAuth2UserService<OidcUserRequest, OidcUser> publicOidcUserService(ConfigurationManager configurationManager) {
+        final OidcUserService delegate = new OidcUserService();
+        return userRequest -> {
+            OidcUser oidcUser = delegate.loadUser(userRequest);
+            var alfioUser = new OpenIdAlfioUser(null, oidcUser.getSubject(), oidcUser.getEmail(), User.Type.PUBLIC, Set.of(), Map.of());
+            var configuration = Json.fromJson(configurationManager.getPublicOpenIdConfiguration().get(OPENID_CONFIGURATION_JSON).getRequiredValue(), OpenIdConfiguration.class);
+            boolean signedUp = openIdUserSynchronizer.syncUser(oidcUser, alfioUser, configuration);
+            return new OpenIdPrincipal(List.of(), oidcUser.getIdToken(), oidcUser.getUserInfo(), alfioUser, buildLogoutUrl(configuration), signedUp);
+        };
+    }
+
+    protected void setupAuthenticationEndpoint(HttpSecurity http) throws Exception {
+        http.authenticationManager(createAuthenticationManager())
+            .formLogin(login -> login
+                .loginPage("/authentication")
+                .loginProcessingUrl(AUTHENTICATE)
+                .defaultSuccessUrl("/admin")
+                .failureUrl("/authentication?failed")).logout(LogoutConfigurer::permitAll);
     }
 
     private JdbcUserDetailsManager createUserDetailsManager() {
@@ -174,7 +227,7 @@ abstract class AbstractFormBasedWebSecurity {
         var daoAuthenticationProvider = new DaoAuthenticationProvider();
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
         daoAuthenticationProvider.setUserDetailsService(userDetailsManager);
-        return new ProviderManager(List.of(daoAuthenticationProvider, new OpenIdAuthenticationProvider()));
+        return new ProviderManager(List.of(daoAuthenticationProvider));
     }
 
     private Filter csrfPublisherFilter() {
@@ -259,38 +312,21 @@ abstract class AbstractFormBasedWebSecurity {
         res.addCookie(cookie);
     }
 
-    /**
-     * This method is called right after applying the {@link RecaptchaLoginFilter}
-     *
-     * @param http
-     * @param jdbcAuthenticationManager
-     */
-    protected void additionalConfiguration(HttpSecurity http, AuthenticationManager jdbcAuthenticationManager) throws Exception {
+    protected Environment environment() {
+        return environment;
     }
 
-    private OpenIdAuthenticationFilter openIdPublicAuthenticationFilter(OpenIdAuthenticationManager openIdAuthenticationManager) {
-        return new OpenIdAuthenticationFilter("/openid/authentication", openIdAuthenticationManager, "/", true);
+    protected ConfigurationManager configurationManager() {
+        return configurationManager;
     }
 
-    private OpenIdCallbackLoginFilter openIdPublicCallbackLoginFilter(OpenIdAuthenticationManager openIdAuthenticationManager,
-                                                                      AuthenticationManager jdbcAuthenticationManager) {
-        var filter = new OpenIdCallbackLoginFilter(openIdAuthenticationManager,
-            new AntPathRequestMatcher("/openid/callback", "GET"),
-            jdbcAuthenticationManager);
-        filter.setAuthenticationSuccessHandler((request, response, authentication) -> {
-            var session = request.getSession();
-            var reservationId = (String) session.getAttribute(RESERVATION_KEY);
-            if(StringUtils.isNotBlank(reservationId)) {
-                var contextTypeKey = session.getAttribute(CONTEXT_TYPE_KEY);
-                var contextIdKey = session.getAttribute(CONTEXT_ID_KEY);
-                session.removeAttribute(CONTEXT_TYPE_KEY);
-                session.removeAttribute(CONTEXT_ID_KEY);
-                session.removeAttribute(RESERVATION_KEY);
-                response.sendRedirect("/"+contextTypeKey+"/"+ contextIdKey +"/reservation/"+reservationId+"/book");
-            } else {
-                response.sendRedirect("/");
-            }
-        });
-        return filter;
+    protected static String buildLogoutUrl(OpenIdConfiguration openIdConfiguration) {
+        UriComponents uri = UriComponentsBuilder.newInstance()
+            .scheme("https")
+            .host(openIdConfiguration.domain())
+            .path(openIdConfiguration.logoutUrl())
+            .queryParam("redirect_uri", openIdConfiguration.logoutRedirectUrl())
+            .build();
+        return uri.toString();
     }
 }

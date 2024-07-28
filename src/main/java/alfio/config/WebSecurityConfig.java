@@ -16,27 +16,21 @@
  */
 package alfio.config;
 
+import alfio.config.authentication.OpenIdUserSynchronizer;
 import alfio.manager.ExtensionManager;
-import alfio.manager.openid.AdminOpenIdAuthenticationManager;
-import alfio.manager.openid.PublicOpenIdAuthenticationManager;
-import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
-import alfio.util.Json;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
-
-import java.net.http.HttpClient;
+import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
@@ -54,53 +48,23 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    @Profile(Initializer.PROFILE_OPENID)
-    public AdminOpenIdAuthenticationManager adminOpenIdAuthenticationManager(Environment environment,
-                                                                             HttpClient httpClient,
-                                                                             ConfigurationManager configurationManager,
-                                                                             UserManager userManager,
-                                                                             UserRepository userRepository,
-                                                                             AuthorityRepository authorityRepository,
-                                                                             OrganizationRepository organizationRepository,
-                                                                             UserOrganizationRepository userOrganizationRepository,
-                                                                             NamedParameterJdbcTemplate jdbcTemplate,
-                                                                             PasswordEncoder passwordEncoder,
-                                                                             Json json) {
-        return new AdminOpenIdAuthenticationManager(environment,
-            httpClient,
-            configurationManager,
+    public OpenIdUserSynchronizer openIdUserSynchronizer(PlatformTransactionManager transactionManager,
+                                                         PasswordEncoder passwordEncoder,
+                                                         UserManager userManager,
+                                                         UserRepository userRepository,
+                                                         UserOrganizationRepository userOrganizationRepository,
+                                                         NamedParameterJdbcTemplate jdbcTemplate,
+                                                         AuthorityRepository authorityRepository,
+                                                         OrganizationRepository organizationRepository,
+                                                         ExtensionManager extensionManager) {
+        return new OpenIdUserSynchronizer(transactionManager,
+            passwordEncoder,
             userManager,
             userRepository,
-            authorityRepository,
-            organizationRepository,
             userOrganizationRepository,
             jdbcTemplate,
-            passwordEncoder,
-            json);
-    }
-
-    @Bean
-    public PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager(HttpClient httpClient,
-                                                                               ConfigurationManager configurationManager,
-                                                                               UserManager userManager,
-                                                                               UserRepository userRepository,
-                                                                               AuthorityRepository authorityRepository,
-                                                                               OrganizationRepository organizationRepository,
-                                                                               UserOrganizationRepository userOrganizationRepository,
-                                                                               NamedParameterJdbcTemplate jdbcTemplate,
-                                                                               PasswordEncoder passwordEncoder,
-                                                                               Json json,
-                                                                               ExtensionManager extensionManager) {
-        return new PublicOpenIdAuthenticationManager(httpClient,
-            configurationManager,
-            userManager,
-            userRepository,
             authorityRepository,
             organizationRepository,
-            userOrganizationRepository,
-            jdbcTemplate,
-            passwordEncoder,
-            json,
             extensionManager);
     }
 

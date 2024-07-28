@@ -12,7 +12,7 @@ export class HeaderInformationRetriever implements HttpInterceptor {
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return next.handle(req).pipe(tap({
       next: res => {
-        if (res instanceof HttpResponse) {
+        if (req.method === 'GET' && res instanceof HttpResponse) {
           this.userService.updateAuthenticationStatus("true" === res.headers.get("Alfio-OpenId-Enabled"));
         }
       }

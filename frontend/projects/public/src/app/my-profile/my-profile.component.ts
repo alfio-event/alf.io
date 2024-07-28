@@ -103,14 +103,17 @@ export class MyProfileComponent implements OnInit {
 
   save(): void {
     this.userService.updateUser(this.userForm.value)
-      .subscribe(res => {
-        if (res.success) {
-          this.feedbackService.showSuccess(this.translateService.instant('my-profile.update.success'));
-          this.user = res.value;
-        } else {
-          handleServerSideValidationError(res.validationErrors, this.userForm);
-        }
-      }, err => this.globalErrors = handleServerSideValidationError(err, this.userForm));
+      .subscribe({
+          next: res => {
+              if (res.success) {
+                  this.feedbackService.showSuccess(this.translateService.instant('my-profile.update.success'));
+                  this.user = res.value;
+              } else {
+                  handleServerSideValidationError(res.validationErrors, this.userForm);
+              }
+          },
+          error: err => this.globalErrors = handleServerSideValidationError(err, this.userForm)
+      });
   }
 
   deleteProfile(): void {
