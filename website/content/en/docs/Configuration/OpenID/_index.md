@@ -49,6 +49,7 @@ You will need to create a file called "application.properties" in your server fo
 - 'openid.alfioGroupsNameParameter' will contain the organization and the role of the user in the organization (e.g. organization1/SPONSOR)
 
 - 'openid.contentType' will contain the content type of the response that returns the claims (application/x-www-form-urlencoded or application/json)
+- 'openid.jwksPath' will contain the path to the JWKS file for validating tokens. Defaults to `/.well-known/jwks.json`
 
 This is what your application.properties file should look like.
 

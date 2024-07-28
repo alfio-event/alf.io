@@ -21,6 +21,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -80,7 +81,7 @@ public record OpenIdConfiguration(
     }
 
     public ClientRegistration toClientRegistration(String registrationId,
-                                                   String redirectUri,
+                                                   String fallbackRedirectURI,
                                                    boolean fullScopeList) {
         var baseURI = UriComponentsBuilder.newInstance()
             .scheme("https")
@@ -93,6 +94,8 @@ public record OpenIdConfiguration(
             scopes.add(givenNameClaim);
             scopes.add(familyNameClaim);
         }
+
+        var redirectUri = requireNonNullElse(StringUtils.trimToNull(callbackURI), fallbackRedirectURI);
 
         return ClientRegistration.withRegistrationId(registrationId)
             .clientId(clientId)
