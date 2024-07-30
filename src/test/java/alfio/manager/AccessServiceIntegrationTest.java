@@ -82,7 +82,7 @@ class AccessServiceIntegrationTest {
                                           PasswordEncoder passwordEncoder,
                                           SpringSessionBackedSessionRegistry<?> sessionRegistry,
                                           OpenIdUserSynchronizer openIdUserSynchronizer) {
-            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, sessionRegistry, openIdUserSynchronizer);
+            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, sessionRegistry, openIdUserSynchronizer, null, null);
         }
 
         @Bean

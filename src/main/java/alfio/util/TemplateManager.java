@@ -37,10 +37,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -144,6 +141,10 @@ public class TemplateManager {
         } catch (IOException ioe) {
             throw new IllegalStateException(ioe);
         }
+    }
+
+    public void renderHtml(Resource resource, Map<String, Object> model, Writer out) {
+        compile(resource, TemplateOutput.HTML).execute(model, out);
     }
 
     private Map<String, Object> modelEnricher(Map<String, Object> model, PurchaseContext purchaseContext, Locale locale) {

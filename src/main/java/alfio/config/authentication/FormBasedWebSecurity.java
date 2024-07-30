@@ -20,6 +20,7 @@ import alfio.config.Initializer;
 import alfio.manager.RecaptchaService;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import alfio.util.TemplateManager;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
@@ -27,6 +28,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
+import org.springframework.session.web.http.CookieSerializer;
 
 import javax.sql.DataSource;
 
@@ -45,7 +47,9 @@ public class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {
                                 DataSource dataSource,
                                 PasswordEncoder passwordEncoder,
                                 SpringSessionBackedSessionRegistry<?> sessionRegistry,
-                                OpenIdUserSynchronizer openIdUserSynchronizer) {
+                                OpenIdUserSynchronizer openIdUserSynchronizer,
+                                CookieSerializer cookieSerializer,
+                                TemplateManager templateManager) {
         super(environment,
             userManager,
             recaptchaService,
@@ -54,6 +58,8 @@ public class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {
             dataSource,
             passwordEncoder,
             sessionRegistry,
-            openIdUserSynchronizer);
+            openIdUserSynchronizer,
+            cookieSerializer,
+            templateManager);
     }
 }

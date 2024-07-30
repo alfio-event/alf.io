@@ -108,7 +108,7 @@ public class OpenIdUserSynchronizer {
             if (claim == null) {
                 return "";
             }
-            return StringUtils.trim(container.getClaim(claim));
+            return StringUtils.trimToEmpty(container.getClaim(claim));
         }
 
     private void updateOrganizations(OpenIdAlfioUser alfioUser) {

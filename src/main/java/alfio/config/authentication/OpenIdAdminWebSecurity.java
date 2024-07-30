@@ -18,13 +18,16 @@ package alfio.config.authentication;
 
 import alfio.config.Initializer;
 import alfio.config.authentication.support.OpenIdAlfioUser;
+import alfio.config.authentication.support.OpenIdLoginSuccessHandler;
 import alfio.config.authentication.support.OpenIdPrincipal;
+import alfio.config.authentication.support.PreAuthCookieWriterFilter;
 import alfio.manager.RecaptchaService;
 import alfio.manager.openid.OpenIdConfiguration;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.user.Role;
 import alfio.model.user.User;
+import alfio.util.TemplateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
@@ -38,9 +41,12 @@ import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
+import org.springframework.session.web.http.CookieSerializer;
 
 import javax.sql.DataSource;
 import java.util.*;
@@ -54,6 +60,8 @@ public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
 
     private static final Logger log = LoggerFactory.getLogger(OpenIdAdminWebSecurity.class);
     private static final String ALFIO_ADMIN_IDP = "alfio-admin-idp";
+    private static final String ADMIN_LOGIN_REDIRECT_PATH = "/oauth2/authorization/"+ ALFIO_ADMIN_IDP;
+    private static final String ADMIN_OPENID_CALLBACK_PATH = "/callback";
 
     public OpenIdAdminWebSecurity(Environment environment,
                                   UserManager userManager,
@@ -63,7 +71,9 @@ public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
                                   DataSource dataSource,
                                   PasswordEncoder passwordEncoder,
                                   SpringSessionBackedSessionRegistry<?> sessionRegistry,
-                                  OpenIdUserSynchronizer openIdUserSynchronizer) {
+                                  OpenIdUserSynchronizer openIdUserSynchronizer,
+                                  CookieSerializer cookieSerializer,
+                                  TemplateManager templateManager) {
         super(environment,
             userManager,
             recaptchaService,
@@ -72,17 +82,20 @@ public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
             dataSource,
             passwordEncoder,
             sessionRegistry,
-            openIdUserSynchronizer);
+            openIdUserSynchronizer,
+            cookieSerializer,
+            templateManager);
     }
 
     @Override
     protected void setupAuthenticationEndpoint(HttpSecurity http) throws Exception {
         var clientRegistrationRepository = new InMemoryClientRegistrationRepository(OpenIdConfiguration.from(environment(), configurationManager())
             .toClientRegistration(ALFIO_ADMIN_IDP, "{baseUrl}/callback", true));
-        http.oauth2Login(oauth -> oauth.loginProcessingUrl("/callback")
+        http.oauth2Login(oauth -> oauth.loginProcessingUrl(ADMIN_OPENID_CALLBACK_PATH)
             .clientRegistrationRepository(clientRegistrationRepository)
             .userInfoEndpoint(uie -> uie.oidcUserService(oidcUserService(OpenIdConfiguration.from(environment(), configurationManager()))))
-        );
+            .successHandler(new OpenIdLoginSuccessHandler(templateManager, cookieSerializer))
+        ).addFilterBefore(new PreAuthCookieWriterFilter(cookieSerializer, new AntPathRequestMatcher(ADMIN_LOGIN_REDIRECT_PATH)), OAuth2AuthorizationRequestRedirectFilter.class);
     }
 
     private OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService(OpenIdConfiguration openIdConfiguration) {

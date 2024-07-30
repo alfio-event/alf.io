@@ -18,12 +18,14 @@ package alfio.config.authentication;
 
 import alfio.config.Initializer;
 import alfio.config.authentication.support.*;
+import alfio.config.support.ContextAwareCookieSerializer;
 import alfio.manager.RecaptchaService;
 import alfio.manager.openid.OpenIdConfiguration;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.user.User;
 import alfio.util.Json;
+import alfio.util.TemplateManager;
 import jakarta.servlet.Filter;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.Cookie;
@@ -47,6 +49,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
@@ -60,6 +63,7 @@ import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
+import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -112,6 +116,8 @@ abstract class AbstractFormBasedWebSecurity {
     protected final PasswordEncoder passwordEncoder;
     private final SpringSessionBackedSessionRegistry<?> sessionRegistry;
     protected final OpenIdUserSynchronizer openIdUserSynchronizer;
+    protected final ContextAwareCookieSerializer cookieSerializer;
+    protected final TemplateManager templateManager;
 
     protected AbstractFormBasedWebSecurity(Environment environment,
                                            UserManager userManager,
@@ -121,7 +127,9 @@ abstract class AbstractFormBasedWebSecurity {
                                            DataSource dataSource,
                                            PasswordEncoder passwordEncoder,
                                            SpringSessionBackedSessionRegistry<?> sessionRegistry,
-                                           OpenIdUserSynchronizer openIdUserSynchronizer) {
+                                           OpenIdUserSynchronizer openIdUserSynchronizer,
+                                           CookieSerializer cookieSerializer,
+                                           TemplateManager templateManager) {
         this.environment = environment;
         this.userManager = userManager;
         this.recaptchaService = recaptchaService;
@@ -131,6 +139,8 @@ abstract class AbstractFormBasedWebSecurity {
         this.passwordEncoder = passwordEncoder;
         this.sessionRegistry = sessionRegistry;
         this.openIdUserSynchronizer = openIdUserSynchronizer;
+        this.cookieSerializer = (ContextAwareCookieSerializer) cookieSerializer;
+        this.templateManager = templateManager;
     }
 
     @Bean
@@ -153,7 +163,9 @@ abstract class AbstractFormBasedWebSecurity {
                 new PublicOpenIdRequestResolver(registrationRepository)
             ))
             .userInfoEndpoint(uie -> uie.oidcUserService(publicOidcUserService(configurationManager)))
+            .successHandler(new OpenIdLoginSuccessHandler(templateManager, cookieSerializer))
         );
+        http.addFilterBefore(new PreAuthCookieWriterFilter(cookieSerializer, new AntPathRequestMatcher(OPENID_AUTHENTICATION_PATH)), OAuth2AuthorizationRequestRedirectFilter.class);
 
         disableRequestCacheParameter(http);
 

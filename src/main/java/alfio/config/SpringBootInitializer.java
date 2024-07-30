@@ -16,18 +16,16 @@
  */
 package alfio.config;
 
+import alfio.config.support.ContextAwareCookieSerializer;
 import alfio.util.ClockProvider;
 import com.openhtmltopdf.util.XRLog;
 import jakarta.servlet.Filter;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.web.server.Cookie;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.core.env.Profiles;
 import org.springframework.session.web.http.CookieSerializer;
-import org.springframework.session.web.http.DefaultCookieSerializer;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
 import java.time.Clock;
@@ -56,13 +54,7 @@ public class SpringBootInitializer {
 
     @Bean
     public CookieSerializer cookieSerializer(Environment environment) {
-        DefaultCookieSerializer serializer = new DefaultCookieSerializer();
-        serializer.setCookieName("ALFIO_SESSION");
-        if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE))) {
-            serializer.setSameSite(Cookie.SameSite.STRICT.attributeValue());
-            serializer.setUseSecureCookie(true);
-        }
-        return serializer;
+        return new ContextAwareCookieSerializer(environment);
     }
 
     @Bean
