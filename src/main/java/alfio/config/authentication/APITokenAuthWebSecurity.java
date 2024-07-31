@@ -47,7 +47,6 @@ import java.util.List;
 import static alfio.config.authentication.support.AuthenticationConstants.*;
 
 @Configuration(proxyBeanMethods = false)
-@Order(0)
 public class APITokenAuthWebSecurity {
 
     public static final String API_KEY = "Api key ";
@@ -65,6 +64,7 @@ public class APITokenAuthWebSecurity {
 
     //https://stackoverflow.com/a/48448901
     @Bean
+    @Order(Integer.MIN_VALUE) // APIKey Authentication needs to have the highest priority
     public SecurityFilterChain configure(HttpSecurity http) throws Exception {
 
         APIKeyAuthFilter filter = new APIKeyAuthFilter();
