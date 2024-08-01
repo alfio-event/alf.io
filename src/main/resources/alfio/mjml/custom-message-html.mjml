@@ -89,12 +89,12 @@
         <mj-section background-color="#f8f8ff">
             <mj-raw>{{#googleWalletEnabled}}</mj-raw>
             <mj-column>
-                <mj-image width="199" css-class="wallet" rel="notrack" src="{{baseUrl}}/resources/images/email/enUS_add_to_google_wallet_add-wallet-badge.png" alt="Add to Google Wallet" align="center" href="{{baseUrl}}/api/wallet/event/{{event.shortName}}/v1/version/passes/{{ticket.uuid}}"></mj-image>
+                <mj-image width="199" css-class="wallet" rel="notrack" src="{{baseUrl}}/resources/images/email/enUS_add_to_google_wallet_add-wallet-badge.png" alt="Add to Google Wallet" align="center" href="{{baseUrl}}/api/wallet/event/{{event.shortName}}/v1/version/passes/{{ticket.publicUuid}}"></mj-image>
             </mj-column>
             <mj-raw>{{/googleWalletEnabled}}</mj-raw>
             <mj-raw>{{#appleWalletEnabled}}</mj-raw>
             <mj-column>
-                <mj-image width="193" css-class="wallet" rel="notrack" src="{{baseUrl}}/resources/images/email/add-to-apple-wallet-button.png" alt="Add to Apple Wallet" align="center" href="{{baseUrl}}/api/pass/event/{{event.shortName}}/v1/version/passes/{{ticket.uuid}}"></mj-image>
+                <mj-image width="193" css-class="wallet" rel="notrack" src="{{baseUrl}}/resources/images/email/add-to-apple-wallet-button.png" alt="Add to Apple Wallet" align="center" href="{{baseUrl}}/api/pass/event/{{event.shortName}}/v1/version/passes/{{ticket.publicUuid}}"></mj-image>
             </mj-column>
             <mj-raw>{{/appleWalletEnabled}}</mj-raw>
         </mj-section>

@@ -21,7 +21,10 @@ import alfio.manager.system.Mailer;
 import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
-import alfio.repository.*;
+import alfio.repository.EventDescriptionRepository;
+import alfio.repository.EventRepository;
+import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.LocaleUtil;
@@ -236,7 +239,7 @@ public class PassKitManager {
 
     public Optional<Pair<EventAndOrganizationId, Ticket>> retrieveTicketDetails(String eventName, String ticketUuid) {
         return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
-            .flatMap(e -> ticketRepository.findOptionalByUUID(ticketUuid)
+            .flatMap(e -> ticketRepository.findOptionalByPublicUUID(UUID.fromString(ticketUuid))
                 .filter(t -> e.getId() == t.getEventId())
                 .map(t -> Pair.of(e, t))
             );

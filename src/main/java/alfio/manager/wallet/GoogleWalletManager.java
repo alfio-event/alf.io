@@ -82,7 +82,7 @@ public class GoogleWalletManager {
         }
 
         var event = eventOptional.get();
-        return ticketRepository.findOptionalByUUID(ticketUuid)
+        return ticketRepository.findOptionalByPublicUUID(UUID.fromString(ticketUuid))
             .filter(t -> t.getEventId() == event.getId())
             .map(t -> Pair.of(event, t));
     }
