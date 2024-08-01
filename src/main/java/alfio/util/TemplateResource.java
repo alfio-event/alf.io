@@ -54,9 +54,6 @@ import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 public enum TemplateResource {
 
-    @Deprecated
-    GOOGLE_ANALYTICS("", "", TemplateManager.TemplateOutput.TEXT),
-
     CONFIRMATION_EMAIL_FOR_ORGANIZER("/alfio/templates/confirmation-email-for-organizer", TemplateResource.MULTIPART_ALTERNATIVE_MIMETYPE, TemplateManager.TemplateOutput.HTML) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, PurchaseContext event, Optional<ImageData> imageData) {
@@ -478,6 +475,7 @@ public enum TemplateResource {
         model.put("vatNr", vat.orElse(""));
         model.put("tickets", tickets);
         model.put("orderSummary", orderSummary);
+        model.put("publicId", reservationShortID);
         model.put(BASE_URL, baseUrl);
         model.put(RESERVATION_URL, reservationUrl);
         model.put("locale", reservation.getUserLanguage());

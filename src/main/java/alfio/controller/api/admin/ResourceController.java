@@ -85,7 +85,7 @@ public class ResourceController {
         return cause.orElse("Something went wrong. Please check the syntax and retry");
     }
 
-    @GetMapping("/overridable-template/")
+    @GetMapping("/overridable-template")
     public List<TemplateResource> getOverridableTemplates() {
         return Stream.of(TemplateResource.values()).filter(TemplateResource::overridable).collect(Collectors.toList());
     }
@@ -221,7 +221,7 @@ public class ResourceController {
 
     //------------------
 
-    @GetMapping("/resource/")
+    @GetMapping("/resource")
     public List<UploadedResource> findAll(Principal principal) {
         checkAccess(principal);
         return uploadedResourceManager.findAll();
@@ -274,19 +274,19 @@ public class ResourceController {
 
     //------------------
 
-    @PostMapping("/resource/")
+    @PostMapping("/resource")
     public void uploadFile(@RequestBody UploadBase64FileModification upload, Principal principal) {
         checkAccess(principal);
         uploadedResourceManager.saveResource(upload).orElseThrow(IllegalArgumentException::new);
     }
 
-    @PostMapping("/resource-organization/{organizationId}/")
+    @PostMapping("/resource-organization/{organizationId}")
     public void uploadFile(@PathVariable int organizationId, @RequestBody UploadBase64FileModification upload, Principal principal) {
         checkAccess(organizationId, principal);
         uploadedResourceManager.saveResource(organizationId, upload).orElseThrow(IllegalArgumentException::new);
     }
 
-    @PostMapping("/resource-event/{organizationId}/{eventId}/")
+    @PostMapping("/resource-event/{organizationId}/{eventId}")
     public void uploadFile(@PathVariable int organizationId, @PathVariable int eventId, @RequestBody UploadBase64FileModification upload, Principal principal) {
         checkAccess(organizationId, eventId, principal);
         uploadedResourceManager.saveResource(organizationId, eventId, upload).orElseThrow(IllegalArgumentException::new);
