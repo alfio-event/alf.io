@@ -1765,7 +1765,7 @@
 
             var filter = function(ticket) {
                 return ticket.eventId === eventId && (!query || query === '' ||
-                    ([ticket.fullName, ticket.email, ticket.ticketCategory.name, ticket.uuid, ticket.ticketsReservationId, ticket.extReference].join('/')).toLowerCase().indexOf(query.toLowerCase()) > -1);
+                    ([ticket.fullName, ticket.email, ticket.ticketCategory.name, ticket.uuid, ticket.publicUuid, ticket.ticketsReservationId, ticket.extReference].join('/')).toLowerCase().indexOf(query.toLowerCase()) > -1);
             };
 
             var deferred1 = $q.defer();

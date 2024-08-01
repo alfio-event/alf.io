@@ -461,7 +461,7 @@
             },
 
             createAdditionalService: function(eventId, additionalService) {
-                return $http.post('/admin/api/event/'+eventId+'/additional-services/', additionalService).error(HttpErrorHandler.handle);
+                return $http.post('/admin/api/event/'+eventId+'/additional-services', additionalService).error(HttpErrorHandler.handle);
             },
 
             updateEventMetadata: function(eventName, metadata) {
