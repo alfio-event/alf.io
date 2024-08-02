@@ -25,6 +25,8 @@ import '@shoelace-style/shoelace/dist/components/select/select';
 import '@shoelace-style/shoelace/dist/components/option/option';
 import '@shoelace-style/shoelace/dist/components/qr-code/qr-code.js';
 
+import './localization';
+
 
 
 // see https://vitejs.dev/guide/env-and-mode

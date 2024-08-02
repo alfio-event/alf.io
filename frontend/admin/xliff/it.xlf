@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+<file target-language="it" source-language="en" original="lit-localize-inputs" datatype="plaintext">
+<body>
+<trans-unit id="h8dbae751b47cca9d">
+  <source>Powered by <x id="0" equiv-text="&lt;a href=&quot;https://alf.io&quot; target=&quot;_blank&quot;&gt;"/>Alf.io<x id="1" equiv-text="&lt;/a&gt;"/> v.<x id="2" equiv-text="${this.alfioVersion}"/></source>
+</trans-unit>
+<trans-unit id="hf8ae7043408fe50a">
+  <source><x id="0" equiv-text="&lt;a href=&quot;https://github.com/alfio-event/alf.io/issues&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;"/>report an issue<x id="1" equiv-text="&lt;/a&gt;"/> or <x id="2" equiv-text="&lt;a href=&quot;https://github.com/alfio-event/alf.io/discussions&quot; target=&quot;_blank&quot; rel=&quot;nofollow noopener noreferrer&quot;&gt;"/>ask for help<x id="3" equiv-text="&lt;/a&gt;"/></source>
+</trans-unit>
+<trans-unit id="s66f7fb1ee5abad1b">
+  <source>Tell us about you!</source>
+</trans-unit>
+<trans-unit id="s453bbc36b1e1022b">
+  <source>Thank you for using Alf.io!</source>
+</trans-unit>
+<trans-unit id="scd07ca3518e4f6e4">
+  <source>We don't track usage in any way, because we respect your privacy</source>
+</trans-unit>
+<trans-unit id="sefdd01e68dc17845">
+  <source>...but we're very happy that you've decided to use Alf.io and we'd love to hear your story!</source>
+</trans-unit>
+<trans-unit id="sf4b7b3fc180a2259">
+  <source>Contribute on OpenCollective</source>
+</trans-unit>
+<trans-unit id="s12d6dde9b30c3093">
+  <source>Dismiss</source>
+</trans-unit>
+<trans-unit id="s902283dfce75a674">
+  <source>Your account has been deleted</source>
+</trans-unit>
+<trans-unit id="saf7a91f4fd57c858">
+  <source>We're very sorry to see you go!</source>
+</trans-unit>
+<trans-unit id="sd3840b8fb9e581ee">
+  <source>Export purchased items</source>
+</trans-unit>
+<trans-unit id="s34a09c44a8e0f805">
+  <source>Delete additional option?</source>
+</trans-unit>
+<trans-unit id="s2ae851d40073daf4">
+  <source>Do you want to delete Additional option "<x id="0" equiv-text="${item.title.map(t =&gt; t.value).join(&quot;/&quot;)}"/>"?</source>
+</trans-unit>
+<trans-unit id="se238fc1404e8d3b3">
+  <source>Additional Option successfully deleted</source>
+</trans-unit>
+<trans-unit id="s4da073b23725af53">
+  <source>Cannot delete additional option</source>
+</trans-unit>
+<trans-unit id="h4d83501e02f2cbb5">
+  <source>Cannot add <x id="0" equiv-text="&lt;span&gt;${model.type === 'DONATION' ? 'donations' : 'additional options'}&lt;/span&gt;"/> to an event marked as "free of charge".</source>
+</trans-unit>
+<trans-unit id="s4672cd3ee5f2f1ed">
+  <source>Please change this setting, add a default price &gt; 0, specify currency and Taxes</source>
+</trans-unit>
+<trans-unit id="s3c226dc60c81707a">
+  <source>Add new</source>
+</trans-unit>
+<trans-unit id="seca1f842c8ff513c">
+  <source>Inception</source>
+</trans-unit>
+<trans-unit id="scfb09c8ce6fde008">
+  <source>Expiration</source>
+</trans-unit>
+<trans-unit id="seed76e8afe9f604a">
+  <source>Price</source>
+</trans-unit>
+<trans-unit id="s5d73a3b3b68e6cba">
+  <source>User-defined</source>
+</trans-unit>
+<trans-unit id="s042baf59902a711f">
+  <source>Policy</source>
+</trans-unit>
+<trans-unit id="s1f038db75e39a25c">
+  <source>Max Qty per <x id="0" equiv-text="${item.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_TICKET' ? 'ticket' : 'order'}"/></source>
+</trans-unit>
+<trans-unit id="s29318c381c078618">
+  <source>How to format text</source>
+</trans-unit>
+<trans-unit id="s5e8250fb85d64c23">
+  <source>Close</source>
+</trans-unit>
+<trans-unit id="s5967a43bb2b82ece">
+  <source>Descriptions</source>
+</trans-unit>
+<trans-unit id="s9a91248c684a38b7">
+  <source>Availability and prices</source>
+</trans-unit>
+<trans-unit id="s33f85f24c0f5f008">
+  <source>Save</source>
+</trans-unit>
+<trans-unit id="sc1c56e01d95beed3">
+  <source>Please check the validity interval</source>
+</trans-unit>
+<trans-unit id="sd319aae1401f1e19">
+  <source>Fixed</source>
+</trans-unit>
+<trans-unit id="s432775ee0d345696">
+  <source>Text Preview</source>
+</trans-unit>
+<trans-unit id="s543906d1db8b2283">
+  <source>Edit </source>
+</trans-unit>
+<trans-unit id="s0fd72bc6a1aa85c3">
+  <source>New </source>
+</trans-unit>
+<trans-unit id="s74ee518bff39ba6b">
+  <source>Additional Item</source>
+</trans-unit>
+<trans-unit id="sfa4006a35dece11c">
+  <source>Donation Option</source>
+</trans-unit>
+<trans-unit id="s99f110d27e30b289">
+  <source>Title</source>
+</trans-unit>
+<trans-unit id="s63d894b1ddb06289">
+  <source>Description</source>
+</trans-unit>
+<trans-unit id="sc8d8c5da55fabab7">
+  <source>preview</source>
+</trans-unit>
+<trans-unit id="s8400e7c5d5db2b6b">
+  <source>Additional Item Policy</source>
+</trans-unit>
+<trans-unit id="s247a713893e47e04">
+  <source>Not long enough</source>
+</trans-unit>
+<trans-unit id="seb9e5aea588c24df">
+  <source>Valid from</source>
+</trans-unit>
+<trans-unit id="s998ed5720c8d342e">
+  <source>Valid to</source>
+</trans-unit>
+<trans-unit id="s3bb5ca2a00f4bac0">
+  <source>Price Policy</source>
+</trans-unit>
+<trans-unit id="s581257fb7bae38f0">
+  <source>Tax Policy</source>
+</trans-unit>
+<trans-unit id="s255169c55655cada">
+  <source>Min price</source>
+</trans-unit>
+<trans-unit id="se11cda5867361c84">
+  <source>Max price</source>
+</trans-unit>
+<trans-unit id="s6d604b9dc12aeabb">
+  <source>Max quantity per <x id="0" equiv-text="${this.type === 'DONATION' || formValue.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_RESERVATION' ? msg('order') : msg('ticket')}"/></source>
+</trans-unit>
+<trans-unit id="s63a96d942e6031eb">
+  <source>Total available quantity</source>
+</trans-unit>
+<trans-unit id="s417b90913e05bc17">
+  <source>Preview</source>
+</trans-unit>
+<trans-unit id="s6be60d7281a829f7">
+  <source>order</source>
+</trans-unit>
+<trans-unit id="s7bd70f38875a4245">
+  <source>ticket</source>
+</trans-unit>
+</body>
+</file>
+</xliff>
