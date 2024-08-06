@@ -7,60 +7,60 @@ import {AppComponent} from './app.component';
 import {HomeComponent} from './home/home.component';
 import {EventDisplayComponent} from './event-display/event-display.component';
 import {
-  HTTP_INTERCEPTORS,
-  HttpClient,
-  HttpClientModule,
-  HttpClientXsrfModule,
-  HttpXsrfTokenExtractor
+    HTTP_INTERCEPTORS,
+    HttpClient,
+    HttpClientModule,
+    HttpClientXsrfModule,
+    HttpXsrfTokenExtractor
 } from '@angular/common/http';
 
 import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {
-  faAddressCard,
-  faAngleDown,
-  faAngleUp,
-  faCheck,
-  faCircle,
-  faCog,
-  faCreditCard,
-  faDownload,
-  faEraser,
-  faExchangeAlt,
-  faExclamationCircle,
-  faExclamationTriangle,
-  faExternalLinkAlt,
-  faFileAlt,
-  faFileInvoice,
-  faFilePdf,
-  faGift,
-  faGlobe,
-  faInfoCircle,
-  faMapMarkerAlt,
-  faMoneyBill,
-  faMoneyCheckAlt,
-  faRedoAlt,
-  faSearchPlus,
-  faSignInAlt,
-  faSignOutAlt,
-  faThumbsUp,
-  faTicketAlt,
-  faTimes,
-  faTrash,
-  faUserAstronaut,
-  faWifi
+    faAddressCard,
+    faAngleDown,
+    faAngleUp,
+    faCheck,
+    faCircle,
+    faCog,
+    faCreditCard,
+    faDownload,
+    faEraser,
+    faExchangeAlt,
+    faExclamationCircle,
+    faExclamationTriangle,
+    faExternalLinkAlt,
+    faFileAlt,
+    faFileInvoice,
+    faFilePdf,
+    faGift,
+    faGlobe,
+    faInfoCircle,
+    faMapMarkerAlt,
+    faMoneyBill,
+    faMoneyCheckAlt,
+    faRedoAlt,
+    faSearchPlus,
+    faSignInAlt,
+    faSignOutAlt,
+    faThumbsUp,
+    faTicketAlt,
+    faTimes,
+    faTrash,
+    faUserAstronaut,
+    faWifi
 } from '@fortawesome/free-solid-svg-icons';
 import {
-  faBuilding,
-  faCalendarAlt,
-  faCalendarPlus,
-  faCheckCircle,
-  faClock,
-  faClone,
-  faCompass,
-  faCopy,
-  faEdit,
-  faEnvelope,
-  faHandshake
+    faBuilding,
+    faCalendarAlt,
+    faCalendarPlus,
+    faCheckCircle,
+    faClock,
+    faClone,
+    faCompass,
+    faCopy,
+    faEdit,
+    faEnvelope,
+    faHandshake
 } from '@fortawesome/free-regular-svg-icons';
 import {faApplePay, faIdeal, faPaypal, faStripe} from '@fortawesome/free-brands-svg-icons';
 import {TranslateLoader, TranslateModule} from '@ngx-translate/core';
@@ -97,7 +97,7 @@ import {TicketQuantitySelectorComponent} from './ticket-quantity-selector/ticket
 import {ItemSalePeriodComponent} from './category-sale-period/item-sale-period.component';
 import {ItemCardComponent} from './item-card/item-card.component';
 import {
-  AdditionalServiceQuantitySelectorComponent
+    AdditionalServiceQuantitySelectorComponent
 } from './additional-service-quantity-selector/additional-service-quantity-selector.component';
 import {ReservationExpiredComponent} from './reservation/expired-notification/reservation-expired.component';
 import {ReleaseTicketComponent} from './reservation/release-ticket/release-ticket.component';
@@ -105,7 +105,7 @@ import {CancelReservationComponent} from './reservation/cancel-reservation/cance
 import {FooterLinksComponent} from './event-footer-links/footer-links.component';
 import {ErrorComponent} from './reservation/error/error.component';
 import {
-  DeferredOfflinePaymentComponent
+    DeferredOfflinePaymentComponent
 } from './reservation/deferred-offline-payment/deferred-offline-payment.component';
 import {MolliePaymentProxyComponent} from './payment/mollie-payment-proxy/mollie-payment-proxy.component';
 import {PaymentMethodSelectorComponent} from './reservation/payment-method-selector/payment-method-selector.component';
@@ -121,7 +121,7 @@ import {BasicSubscriptionInfoComponent} from './basic-subscription-info/basic-su
 import {SubscriptionSummaryComponent} from './subscription-summary/subscription-summary.component';
 import {PurchaseContextContainerComponent} from './purchase-context-container/purchase-context-container.component';
 import {
-  ModalRemoveSubscriptionComponent
+    ModalRemoveSubscriptionComponent
 } from './reservation/modal-remove-subscription/modal-remove-subscription.component';
 import {UserService} from './shared/user.service';
 import {MyOrdersComponent} from './my-orders/my-orders.component';
@@ -133,6 +133,9 @@ import {AuthTokenInterceptor, DOMGidExtractor, DOMXsrfTokenExtractor} from './xs
 import {DownloadTicketComponent} from './reservation/download-ticket/download-ticket.component';
 import {AdditionalServiceFormComponent} from './additional-service-form/additional-service-form.component';
 import {HeaderInformationRetriever} from "./header-information-retriever";
+import {ChallengeComponent} from "./challenge/challenge.component";
+import {TurnstileChallengeComponent} from "./challenge/turnstile/turnstile-challenge.component";
+import {ChallengeCodeInterceptor} from "./challenge/challenge.interceptor";
 
 
 // AoT requires an exported function for factories
@@ -203,7 +206,9 @@ export function InitUserService(userService: UserService): () => Promise<boolean
         WaitingRoomComponent,
         MyProfileDeleteWarningComponent,
         TranslateDescriptionPipe,
-        AdditionalServiceFormComponent
+        AdditionalServiceFormComponent,
+        ChallengeComponent,
+        TurnstileChallengeComponent
     ],
     imports: [
         BrowserModule,
@@ -233,6 +238,7 @@ export function InitUserService(userService: UserService): () => Promise<boolean
       { provide: APP_INITIALIZER, useFactory: InitUserService, deps: [UserService], multi: true },
       { provide: HTTP_INTERCEPTORS, useClass: AuthTokenInterceptor, multi: true },
       { provide: HTTP_INTERCEPTORS, useClass: HeaderInformationRetriever, multi: true },
+      { provide: HTTP_INTERCEPTORS, useClass: ChallengeCodeInterceptor, multi: true },
       { provide: HttpXsrfTokenExtractor, useClass: DOMXsrfTokenExtractor },
       DOMGidExtractor,
       DOMXsrfTokenExtractor,

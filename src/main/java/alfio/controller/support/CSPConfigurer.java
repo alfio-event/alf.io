@@ -18,11 +18,11 @@ package alfio.controller.support;
 
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.security.SecureRandom;
 import java.util.List;
 
@@ -74,7 +74,8 @@ public class CSPConfigurer {
             "'unsafe-hashes' 'sha256-MhtPZXr7+LpJUY5qtMutB+qWfQtMaPccfe7QXtCcEYc='" // see https://github.com/angular/angular-cli/issues/20864#issuecomment-983672336
             +"; " +
             "base-uri 'self'; " +
-            "frame-ancestors " + frameAncestors + "; "
+            "frame-ancestors " + frameAncestors + "; "+
+            "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; "
             + reportUri);
 
         return nonce;

@@ -16,18 +16,19 @@
  */
 package alfio.controller.api.v2.model;
 
+public record EmptyChallengeConfiguration() implements ChallengeConfiguration {
+    @Override
+    public String apiKey() {
+        return null;
+    }
 
-public record AlfioInfo(
-    boolean demoModeEnabled,
-    boolean devModeEnabled,
-    boolean prodModeEnabled,
-    AnalyticsConfiguration analyticsConfiguration,
-    String globalPrivacyPolicyUrl,
-    String globalTermsUrl,
-    InvoicingConfiguration invoicingConfiguration,
-    String announcementBannerContentHTML,
-    WalletConfiguration walletConfiguration,
-    ChallengeConfiguration challengeConfiguration
-) {
+    @Override
+    public boolean enabled() {
+        return false;
+    }
 
+    @Override
+    public String providerId() {
+        return null;
+    }
 }

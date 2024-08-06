@@ -1,6 +1,7 @@
 import {AbstractControl} from '@angular/forms';
 import {ErrorDescriptor, ValidatedResponse} from '../model/validated-response';
 import {HttpErrorResponse} from '@angular/common/http';
+import {ChallengeService} from "../challenge/challenge.service";
 
 function applyValidationErrors(form: AbstractControl,
                                response: ValidatedResponse<any>,
@@ -79,7 +80,14 @@ export function handleServerSideValidationError(err: any,
           code: 'error.STEP_2_PAYMENT_REQUEST_CREATION',
           fieldName: '',
           arguments: []
-      }]
+      }];
+  }
+  if (ChallengeService.isChallengeError(err)) {
+      return [{
+          code: 'error.STEP_2_CAPTCHA_VALIDATION_FAILED',
+          fieldName: '',
+          arguments: []
+      }];
   }
   const errorObject = getErrorObject(err);
   if (errorObject != null) {
@@ -90,7 +98,7 @@ export function handleServerSideValidationError(err: any,
 
 export function getErrorObject(err: any): ValidatedResponse<any> | null {
   if (err instanceof ValidatedResponse) {
-    return err;
+    return err as ValidatedResponse<any>;
   } else if (err instanceof HttpErrorResponse && err.status === 422) {
     return err.error;
   }

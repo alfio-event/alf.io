@@ -520,7 +520,7 @@ abstract class Mjml4jTransformTask extends DefaultTask {
     @InputFiles
     FileTree files
 
-    @InputDirectory
+    @OutputDirectory
     Directory outputDir
 
     @TaskAction

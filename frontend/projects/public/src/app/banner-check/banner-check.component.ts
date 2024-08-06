@@ -23,7 +23,7 @@ export class BannerCheckComponent implements OnInit {
     this.hideAnnouncementBanner = !!getFromSessionStorage(hideAnnouncementBannerKey);
     this.infoService.getInfo().subscribe(info => {
       this.info = info;
-      this.secure = location.protocol.indexOf('https:') === 0;
+      this.secure = location.protocol.startsWith('https:');
     });
   }
 

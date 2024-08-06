@@ -60,6 +60,12 @@ public enum ConfigurationKeys {
     RECAPTCHA_SECRET("reCAPTCHA v2 secret", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     ENABLE_CAPTCHA_FOR_LOGIN("Enable captcha for login (default true)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.TRUE),
 
+    // CloudFlare Turnstile
+    CF_TURNSTILE_ENABLED("Enable CloudFlare Turnstile integration (default false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.FALSE),
+    CF_TURNSTILE_PRE_CLEARANCE("Use CloudFlare pre-clearance (default true)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.TRUE),
+    CF_TURNSTILE_SITE_KEY("CloudFlare Turnstile Site Key", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM), BooleanUtils.TRUE),
+    CF_TURNSTILE_SECRET_KEY("CloudFlare Turnstile Secret Key", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM), BooleanUtils.TRUE),
+
     DISPLAY_STATS_IN_EVENT_DETAIL("Display stats (sold tickets, gross income, pending reservations) in event detail (default true)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, PURCHASE_CONTEXT), BooleanUtils.TRUE),
 
     DEMO_MODE_ACCOUNT_EXPIRATION_DAYS("Account expiration days", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
@@ -387,7 +393,7 @@ public enum ConfigurationKeys {
     }
 
     public static List<ConfigurationKeys> byPathLevel(ConfigurationPathLevel pathLevel) {
-        return visibleStream().filter(k -> k.supports(pathLevel)).collect(toList());
+        return visibleStream().filter(k -> k.supports(pathLevel)).toList();
     }
 
     public static ConfigurationKeys safeValueOf(String key) {
