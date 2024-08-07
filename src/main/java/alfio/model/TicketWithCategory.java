@@ -82,4 +82,12 @@ public record TicketWithCategory(@JsonIgnore Ticket ticket, @JsonIgnore TicketCa
     public String getFullName() {
         return ticket.getFullName();
     }
+
+    public String getFormattedFinalPrice() {
+        return ticket.getFormattedFinalPrice();
+    }
+
+    public String getFormattedNetPrice() {
+        return ticket.getFormattedNetPrice();
+    }
 }
