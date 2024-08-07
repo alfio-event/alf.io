@@ -167,7 +167,7 @@ public class NotificationManager {
                     TemplateProcessor.getSubscriptionDetailsModelForTicket(ticket, subscriptionRepository::findDescriptorBySubscriptionId, locale),
                     additionalServiceHelper.findForTicket(ticket, event));
             } catch (IOException e) {
-                log.warn("was not able to generate ticket pdf for ticket with id" + ticket.getId(), e);
+                log.warn("Failed to generate ticket pdf for ticket with id" + ticket.getId(), e);
             }
             return baos.toByteArray();
         };
@@ -257,7 +257,7 @@ public class NotificationManager {
             reservationEmailModel.put("event", purchaseContext);
 
             if(receipt.isEmpty()) {
-                log.warn("was not able to generate the receipt for reservation id " + reservationId + " for locale " + language);
+                log.warn("Failed to generate the receipt for reservation id " + reservationId + " for locale " + language);
             }
             return receipt.orElse(null);
         };
@@ -561,7 +561,7 @@ public class NotificationManager {
                     extensionManager,
                     purchaseContextFieldManager);
             } catch (IOException e) {
-                log.warn("was not able to generate subscription pdf for " + subscription.getId(), e);
+                log.warn("Failed to generate subscription pdf for " + subscription.getId(), e);
             }
             return baos.toByteArray();
         };
