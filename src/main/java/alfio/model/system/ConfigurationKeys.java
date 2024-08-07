@@ -62,7 +62,7 @@ public enum ConfigurationKeys {
 
     // CloudFlare Turnstile
     CF_TURNSTILE_ENABLED("Enable CloudFlare Turnstile integration (default false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.FALSE),
-    CF_TURNSTILE_PRE_CLEARANCE("Use CloudFlare pre-clearance (default true)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.TRUE),
+    CF_TURNSTILE_PRE_CLEARANCE("Use CloudFlare pre-clearance (default false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.FALSE),
     CF_TURNSTILE_SITE_KEY("CloudFlare Turnstile Site Key", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM), BooleanUtils.TRUE),
     CF_TURNSTILE_SECRET_KEY("CloudFlare Turnstile Secret Key", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM), BooleanUtils.TRUE),
 
