@@ -42,6 +42,7 @@
 
               <div class="mt-4" *ngIf="ticketFormVisible">
                 <div class="alert alert-info" translate="reservation-page-complete.info-update" *ngIf="event.assignmentConfiguration.enableTicketTransfer && ticket.assigned && !ticket.locked"></div>
+@if (formGroup) {
                 <form [formGroup]="formGroup" (submit)="updateTicket()">
                     <app-ticket-form [ticket]="ticket" [purchaseContext]="event" [form]="formGroup"></app-ticket-form>
                     <div class="bg-white pb-3 pt-3" [class.sticky]="ticket.ticketFieldConfigurationAfterStandard.length > 0">
@@ -55,6 +56,7 @@
                       </div>
                     </div>
                 </form>
+}
               </div>
 
               <div class="alert alert-success mt-2 mb-2 hidden alert-dismissible" role="alert" *ngIf="emailSent">

@@ -23,11 +23,11 @@ import {DatePipe} from '@angular/common';
 })
 export class ViewTicketComponent implements OnInit {
 
-  event: Event;
-  ticketIdentifier: string;
-  ticketInfo: TicketInfo;
+  event?: Event;
+  ticketIdentifier?: string;
+  ticketInfo?: TicketInfo;
   groupedAdditionalServices: GroupedAdditionalServiceWithData[] = [];
-  private walletConfiguration: WalletConfiguration;
+  private walletConfiguration?: WalletConfiguration;
 
   constructor(
     private ticketService: TicketService,
@@ -46,14 +46,16 @@ export class ViewTicketComponent implements OnInit {
 
       const eventShortName = params['eventShortName'];
 
-      zip(this.eventService.getEvent(eventShortName), this.ticketService.getTicketInfo(eventShortName, this.ticketIdentifier), this.infoService.getInfo())
+      zip(this.eventService.getEvent(eventShortName), this.ticketService.getTicketInfo(eventShortName, this.ticketIdentifier as string), this.infoService.getInfo())
       .subscribe(([event, ticketInfo, generalInfo]) => {
         this.event = event;
         this.ticketInfo = ticketInfo;
         this.i18nService.setPageTitle('show-ticket.header.title', event);
         this.analytics.pageView(event.analyticsConfiguration);
         this.walletConfiguration = generalInfo.walletConfiguration;
-        this.groupedAdditionalServices = groupAdditionalData(ticketInfo.additionalServiceWithData);
+        if (ticketInfo.additionalServiceWithData) {
+          this.groupedAdditionalServices = groupAdditionalData(ticketInfo.additionalServiceWithData);
+        }
       }, e => {
         if (e instanceof HttpErrorResponse && e.status === 404) {
           this.router.navigate(['']);
@@ -75,7 +77,7 @@ export class ViewTicketComponent implements OnInit {
     return this.walletConfiguration != null && this.walletConfiguration.passEnabled;
   }
 
-  getValue(field: AdditionalField): string {
+  getValue(field: AdditionalField): string | null {
     if (field.type === 'input:dateOfBirth') {
       return this.dateFormat.transform(field.value, this.translate.instant('common.date-format'));
     }

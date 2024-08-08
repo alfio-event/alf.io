@@ -21,14 +21,14 @@ import {TicketAccessType} from '../model/ticket-category';
 })
 export class UpdateTicketComponent implements OnInit {
 
-  event: Event;
-  ticketIdentifier: string;
-  ticket: Ticket;
-  formGroup: UntypedFormGroup;
-  categoryName: string;
-  emailSent: boolean;
-  ticketFormVisible: boolean;
-  ticketAccessType: TicketAccessType;
+  event?: Event;
+  ticketIdentifier?: string;
+  ticket?: Ticket;
+  formGroup?: UntypedFormGroup;
+  categoryName?: string;
+  emailSent?: boolean;
+  ticketFormVisible: boolean = false;
+  ticketAccessType?: TicketAccessType;
 
   constructor(
     private ticketService: TicketService,
@@ -45,7 +45,7 @@ export class UpdateTicketComponent implements OnInit {
 
       const eventShortName = params['eventShortName'];
 
-      zip(this.eventService.getEvent(eventShortName), this.ticketService.getTicket(eventShortName, this.ticketIdentifier))
+      zip(this.eventService.getEvent(eventShortName), this.ticketService.getTicket(eventShortName, this.ticketIdentifier as string))
       .subscribe(([event, ticketsByCategory]) => {
         this.event = event;
         this.i18nService.setPageTitle('show-ticket.header.title', event);
@@ -68,17 +68,25 @@ export class UpdateTicketComponent implements OnInit {
   }
 
   updateTicket(): void {
+    if (!this.event || !this.ticket || !this.formGroup) {
+      return;
+    }
     this.ticketService.updateTicket(this.event.shortName, this.ticket.uuid, this.formGroup.value).subscribe(res => {
-      if (res.success) {
+      if (res.success && this.event && this.ticketIdentifier) {
         this.ticketService.getTicket(this.event.shortName, this.ticketIdentifier)
           .subscribe(t => this.handleTicketResponse(t));
       }
     }, (err) => {
-      handleServerSideValidationError(err, this.formGroup);
+      if (this.formGroup) {
+        handleServerSideValidationError(err, this.formGroup);
+      }
     });
   }
 
   sendEmailForTicket(): void {
+    if (!this.event || !this.ticket) {
+      return;
+    }
     this.ticketService.sendTicketByEmail(this.event.shortName, this.ticket.uuid).subscribe(res => {
       if (res) {
         this.emailSent = true;
@@ -87,30 +95,33 @@ export class UpdateTicketComponent implements OnInit {
   }
 
   releaseTicket() {
+    if (!this.event || !this.ticket) {
+      return;
+    }
     this.ticketService.openReleaseTicket(this.ticket, this.event.shortName)
       .subscribe(released => {
         if (released) {
-          this.router.navigate(['event', this.event.shortName], {replaceUrl: true});
+          this.router.navigate(['event', this.event?.shortName], {replaceUrl: true});
         }
       });
   }
 
   get isOnlineTicket(): boolean {
-    return this.event.format === 'ONLINE'
-      || (this.event.format === 'HYBRID' && this.ticketAccessType === 'ONLINE');
+    return this.event?.format === 'ONLINE'
+      || (this.event?.format === 'HYBRID' && this.ticketAccessType === 'ONLINE');
   }
 
-  get ticketOnlineCheckInDate(): string {
-    return this.ticket.formattedOnlineCheckInDate[this.translate.currentLang];
+  get ticketOnlineCheckInDate(): string | undefined {
+    return this.ticket?.formattedOnlineCheckInDate[this.translate.currentLang];
   }
 
   get canUpdateTicket(): boolean {
-    return !this.ticket.locked
+    return !this.ticket?.locked
       || this.ticket.ticketFieldConfigurationAfterStandard.length > 0
       || this.ticket.ticketFieldConfigurationBeforeStandard.length > 0;
   }
 
-  get title(): string {
-    return this.event.title[this.translate.currentLang];
+  get title(): string | undefined {
+    return this.event?.title[this.translate.currentLang];
   }
 }
