@@ -18,6 +18,7 @@ package alfio.config.authentication;
 
 import alfio.config.Initializer;
 import alfio.config.authentication.support.*;
+import alfio.config.challenge.CFTurnstileVerificationFilter;
 import alfio.config.support.ContextAwareCookieSerializer;
 import alfio.manager.RecaptchaService;
 import alfio.manager.openid.OpenIdConfiguration;
@@ -58,10 +59,7 @@ import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.security.web.util.matcher.*;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.web.util.UriComponents;
@@ -189,7 +187,13 @@ abstract class AbstractFormBasedWebSecurity {
 
         setupAuthenticationEndpoint(http);
         //
-        http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, AUTHENTICATE, "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, AUTHENTICATE, "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(new CFTurnstileVerificationFilter(configurationManager, new OrRequestMatcher(
+                // event
+                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/v2/public/event/{name}/reserve-tickets"),
+                // subscription
+                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/v2/public/subscription/{id}")
+            )), RecaptchaLoginFilter.class);
 
         if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
             http.addFilterAfter(new UserCreatorBeforeLoginFilter(userManager, AUTHENTICATE), RecaptchaLoginFilter.class);

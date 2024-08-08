@@ -154,21 +154,24 @@ export class EventDisplayComponent implements OnInit {
     if (reservation.additionalService != null && reservation.additionalService.length > 0) {
       request.additionalService = reservation.additionalService.filter(as => (as.amount != null && as.amount > 0) || (as.quantity != null && as.quantity > 0));
     }
-    this.reservationService.reserveTickets(eventShortName, request, this.translate.currentLang).subscribe(res => {
-      if (res.success) {
-        this.router.navigate(['event', eventShortName, 'reservation', res.value, 'book'], {
-          queryParams: SearchParams.transformParams(this.route.snapshot.queryParams, this.route.snapshot.params)
-        });
-      }
-    }, (err) => {
-      this.globalErrors = handleServerSideValidationError(err, this.reservationForm);
-      this.scrollToTickets();
+    this.reservationService.reserveTickets(eventShortName, request, this.translate.currentLang).subscribe({
+        next: res => {
+            if (res.success) {
+                this.router.navigate(['event', eventShortName, 'reservation', res.value, 'book'], {
+                    queryParams: SearchParams.transformParams(this.route.snapshot.queryParams, this.route.snapshot.params)
+                });
+            }
+        },
+        error: err => {
+            this.globalErrors = handleServerSideValidationError(err, this.reservationForm);
+            this.scrollToTickets();
+        }
     });
   }
 
   private scrollToTickets(): void {
     setTimeout(() => {
-      if (this.tickets != null && this.tickets.nativeElement != null) {
+      if (this.tickets?.nativeElement != null) {
         this.tickets.nativeElement.scrollIntoView(true);
       }
     }, 10);

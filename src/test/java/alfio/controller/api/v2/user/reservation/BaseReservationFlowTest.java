@@ -266,12 +266,12 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         ContentLanguage.ALL_LANGUAGES.forEach(cl -> assertFalse(translationsApiController.getPublicTranslations(cl.getLanguage(), true).isEmpty()));
 
         var alfioInfo = infoApiController.getInfo(new MockHttpSession());
-        assertFalse(alfioInfo.isDemoModeEnabled());
-        assertTrue(alfioInfo.isDevModeEnabled());
-        assertFalse(alfioInfo.isProdModeEnabled());
-        assertTrue(alfioInfo.getAnalyticsConfiguration().isGoogleAnalyticsScrambledInfo());
-        assertNull(alfioInfo.getAnalyticsConfiguration().getGoogleAnalyticsKey());
-        assertNull(alfioInfo.getAnalyticsConfiguration().getClientId());
+        assertFalse(alfioInfo.demoModeEnabled());
+        assertTrue(alfioInfo.devModeEnabled());
+        assertFalse(alfioInfo.prodModeEnabled());
+        assertTrue(alfioInfo.analyticsConfiguration().isGoogleAnalyticsScrambledInfo());
+        assertNull(alfioInfo.analyticsConfiguration().getGoogleAnalyticsKey());
+        assertNull(alfioInfo.analyticsConfiguration().getClientId());
 
         //
 

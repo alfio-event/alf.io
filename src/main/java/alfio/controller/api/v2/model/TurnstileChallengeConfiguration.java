@@ -17,17 +17,16 @@
 package alfio.controller.api.v2.model;
 
 
-public record AlfioInfo(
-    boolean demoModeEnabled,
-    boolean devModeEnabled,
-    boolean prodModeEnabled,
-    AnalyticsConfiguration analyticsConfiguration,
-    String globalPrivacyPolicyUrl,
-    String globalTermsUrl,
-    InvoicingConfiguration invoicingConfiguration,
-    String announcementBannerContentHTML,
-    WalletConfiguration walletConfiguration,
-    ChallengeConfiguration challengeConfiguration
-) {
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
+public record TurnstileChallengeConfiguration(@JsonIgnore String siteKey, boolean enabled) implements ChallengeConfiguration {
+    @Override
+    public String apiKey() {
+        return siteKey;
+    }
+
+    @Override
+    public String providerId() {
+        return "turnstile";
+    }
 }

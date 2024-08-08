@@ -19,6 +19,7 @@ package alfio.manager.system;
 import alfio.config.Initializer;
 import alfio.controller.api.v2.model.AlfioInfo;
 import alfio.controller.api.v2.model.AnalyticsConfiguration;
+import alfio.controller.api.v2.model.ChallengeConfiguration;
 import alfio.controller.api.v2.model.WalletConfiguration;
 import alfio.controller.api.v2.user.support.PurchaseContextInfoBuilder;
 import alfio.manager.system.ConfigurationLevels.CategoryLevel;
@@ -40,8 +41,8 @@ import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
 import com.github.benmanes.caffeine.cache.Cache;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -54,7 +55,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.servlet.http.HttpSession;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.*;
@@ -761,10 +761,14 @@ public class ConfigurationManager {
             ENABLE_REVERSE_CHARGE_ONLINE,
             ANNOUNCEMENT_BANNER_CONTENT,
             ENABLE_WALLET,
-            ENABLE_PASS);
+            ENABLE_PASS,
+            CF_TURNSTILE_SITE_KEY,
+            CF_TURNSTILE_ENABLED);
         var conf = getFor(options, ConfigurationLevel.system());
 
         var analyticsConf = AnalyticsConfiguration.build(conf, session);
+
+        var challengeConfiguration = ChallengeConfiguration.build(conf);
 
         return new AlfioInfo(demoMode,
             devMode,
@@ -774,11 +778,18 @@ public class ConfigurationManager {
             conf.get(GLOBAL_TERMS).getValueOrNull(),
             PurchaseContextInfoBuilder.invoicingInfo(this, conf),
             StringUtils.trimToNull(conf.get(ANNOUNCEMENT_BANNER_CONTENT).getValueOrNull()),
-            new WalletConfiguration(conf.get(ENABLE_WALLET).getValueAsBooleanOrDefault(), conf.get(ENABLE_PASS).getValueAsBooleanOrDefault()));
+            new WalletConfiguration(conf.get(ENABLE_WALLET).getValueAsBooleanOrDefault(), conf.get(ENABLE_PASS).getValueAsBooleanOrDefault()),
+            challengeConfiguration
+        );
     }
 
-    public Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> getPublicOpenIdConfiguration() {
+    public Map<ConfigurationKeys, MaybeConfiguration> getPublicOpenIdConfiguration() {
         return oneMinuteCache.get(EnumSet.of(OPENID_PUBLIC_ENABLED, OPENID_CONFIGURATION_JSON),
+            k -> getFor(k, ConfigurationLevel.system()));
+    }
+
+    public Map<ConfigurationKeys, MaybeConfiguration> getTurnstileConfiguration() {
+        return oneMinuteCache.get(EnumSet.of(CF_TURNSTILE_ENABLED, CF_TURNSTILE_SECRET_KEY, CF_TURNSTILE_SITE_KEY, CF_TURNSTILE_PRE_CLEARANCE),
             k -> getFor(k, ConfigurationLevel.system()));
     }
 

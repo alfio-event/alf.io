@@ -1,0 +1,14 @@
+<div class="modal-header">
+    <h5 class="modal-title">{{'challenge.modal.title' | translate}}</h5>
+    <button type="button" class="btn-close" [attr.aria-label]="'common.close' | translate" (click)="dismiss()"></button>
+</div>
+<div class="modal-body">
+    <p class="text-center">{{'challenge.modal.text' | translate}}</p>
+    <div class="d-flex align-content-center justify-content-center">
+    @switch (providerId) {
+        @case ('turnstile') {
+            <app-turnstile-challenge [siteKey]="challengeConfiguration.apiKey" (tokenError)="onError($event)" (tokenResult)="tokenResponse($event)"></app-turnstile-challenge>
+        }
+    }
+    </div>
+</div>

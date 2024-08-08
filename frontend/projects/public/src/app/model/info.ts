@@ -11,6 +11,13 @@ export interface Info {
   invoicingConfiguration?: InvoicingConfiguration;
   announcementBannerContentHTML?: string;
   walletConfiguration: WalletConfiguration;
+  challengeConfiguration: ChallengeConfiguration;
+}
+
+export interface ChallengeConfiguration {
+    apiKey?: string;
+    providerId?: string;
+    enabled: boolean;
 }
 
 export interface WalletConfiguration {
