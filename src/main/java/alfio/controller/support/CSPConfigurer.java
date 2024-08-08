@@ -74,8 +74,7 @@ public class CSPConfigurer {
             "'unsafe-hashes' 'sha256-MhtPZXr7+LpJUY5qtMutB+qWfQtMaPccfe7QXtCcEYc='" // see https://github.com/angular/angular-cli/issues/20864#issuecomment-983672336
             +"; " +
             "base-uri 'self'; " +
-            "frame-ancestors " + frameAncestors + "; "+
-            "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; "
+            "frame-ancestors " + frameAncestors + "; "
             + reportUri);
 
         return nonce;
