@@ -11,11 +11,11 @@ import {Observable} from 'rxjs';
 export class LanguageSelectorComponent implements OnInit, OnChanges {
 
   @Input()
-  contentLanguages: Language[];
-  private selectedLanguage: string;
+  contentLanguages: Language[] = [];
+  private selectedLanguage: string = '';
   private initialized = false;
-  currentLanguage: string;
-  filteredLanguages: Language[];
+  currentLanguage: string = '';
+  filteredLanguages: Language[] = [];
 
   constructor(private i18nService: I18nService, private router: Router) { }
 
@@ -26,7 +26,7 @@ export class LanguageSelectorComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.initialized && changes.contentLanguages) {
+    if (this.initialized && changes['contentLanguages']) {
       this.buildValues();
     }
   }

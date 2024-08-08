@@ -4,9 +4,11 @@
         <div class="ps-2 pe-2 d-flex justify-content-center align-items-center" [ngClass]="headerClass">
           <fa-icon [icon]="boxIcon" size="2x"></fa-icon>
         </div>
+@if(text) {
         <div class="p-2 d-flex align-items-center">
           <span class="message">{{text | translate}}</span>
         </div>
+}
       </div>
     </ngb-toast>
 }

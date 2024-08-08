@@ -14,25 +14,25 @@ import {mobile} from '../shared/util';
 export class AdditionalFieldComponent implements OnInit, OnDestroy {
 
   @Input()
-  field: AdditionalField;
+  field?: AdditionalField;
 
   @Input()
-  form: UntypedFormGroup;
+  form?: UntypedFormGroup;
 
   @Input()
-  elementUUID: string;
+  elementUUID?: string;
 
   @Input()
-  ticketAcquired: boolean;
+  ticketAcquired?: boolean;
 
-  countries: LocalizedCountry[];
+  countries: LocalizedCountry[] = [];
 
   isMobile = mobile;
 
   private subscriptions: Subscription[] = [];
-  private dateFormat: Intl.DateTimeFormat;
-  yesterday: string;
-  selectedDateDescription: string;
+  private dateFormat?: Intl.DateTimeFormat;
+  yesterday?: string;
+  selectedDateDescription?: string;
 
   constructor(private translate: TranslateService, private i18nService: I18nService) { }
 
@@ -44,9 +44,9 @@ export class AdditionalFieldComponent implements OnInit, OnDestroy {
   }
 
   private initFieldSpecificValues(firstInit: boolean): void {
-    if (this.field.type === 'country') {
+    if (this?.field?.type === 'country') {
       this.getCountries();
-    } else if (this.field.type === 'input:dateOfBirth') {
+    } else if (this?.field?.type === 'input:dateOfBirth') {
       if (firstInit) {
         this.yesterday = new Date(new Date().getTime() - 24 * 60 * 60 * 1000)
           .toISOString()
@@ -82,7 +82,7 @@ export class AdditionalFieldComponent implements OnInit, OnDestroy {
   }
 
   get editAllowed(): boolean {
-    return !this.ticketAcquired || this.field.value == null || this.field.value.trim().length === 0 || this.field.editable;
+    return !this.ticketAcquired || this?.field?.value == null || this.field.value.trim().length === 0 || this.field.editable;
   }
 
   getCountries(): void {
@@ -92,7 +92,7 @@ export class AdditionalFieldComponent implements OnInit, OnDestroy {
   }
 
   getRestrictedValueLabel(value: string): string {
-    if (this.field.description[this.translate.currentLang]) {
+    if (this?.field?.description[this.translate.currentLang]) {
       return this.field.description[this.translate.currentLang].restrictedValuesDescription[value] || value;
     } else {
       return value;
@@ -100,22 +100,22 @@ export class AdditionalFieldComponent implements OnInit, OnDestroy {
   }
 
   selectedCheckBox(index: number, value: string, checked: boolean) {
-    const fa = this.form.get(this.field.name) as UntypedFormArray;
+    const fa = this?.form?.get(this.field.name) as UntypedFormArray;
     fa.controls[index].setValue(checked ? value : null, {emitEvent: false, emitViewToModelChange: false});
   }
 
   get labelId(): string {
-    return this.elementUUID + '-' + this.field.name.replace(/[^a-zA-Z0-9]/g, '+') + '-label';
+    return this.elementUUID + '-' + this?.field?.name.replace(/[^a-zA-Z0-9]/g, '+') + '-label';
   }
 
   get hideLabelForAssistiveTechnologies(): boolean {
-    return this.field.type === 'checkbox';
+    return this?.field?.type === 'checkbox';
   }
 
   private localizedSelectedDate(): string {
     try {
       const value = (this.form.get(this.field.name) as UntypedFormArray).at(0)?.value;
-      if (value != null && value.trim() !== '') {
+      if (value != null && value.trim() !== '' && this.dateFormat) {
         return this.dateFormat.format(Date.parse(value));
       }
     } catch (err) {

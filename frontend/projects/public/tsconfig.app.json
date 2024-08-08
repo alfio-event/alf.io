@@ -6,15 +6,8 @@
     "types": [
       "@angular/localize"
     ],
-    /* temporarily disable strict checks, see https://www.typescriptlang.org/tsconfig */
-    "strict": false,
+    "strict": true,
     "noPropertyAccessFromIndexSignature": false
-  },
-  "angularCompilerOptions": {
-    /* temporarily disable strict checks */
-    "strictPropertyInitialization": false,
-    "strictInjectionParameters": false,
-    "strictTemplates": false
   },
   "files": [
     "src/main.ts"

@@ -8,10 +8,10 @@ import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 export class WarningModalComponent {
 
   @Input()
-  message: string;
+  message: string = '';
 
   @Input()
-  parameters: {[key: string]: string};
+  parameters: {[key: string]: string} = {};
 
   constructor(public activeModal: NgbActiveModal) {}
 }

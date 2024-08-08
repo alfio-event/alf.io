@@ -15,7 +15,7 @@ export class TopBarComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private authenticationStatusSubscription?: Subscription;
   @Input()
-  contentLanguages: Language[];
+  contentLanguages: Language[] = [];
   @Input()
   displayLoginButton = true;
   user?: User;
@@ -57,7 +57,7 @@ export class TopBarComponent implements OnInit, OnDestroy, AfterViewInit {
   logout(): void {
     this.userService.logout().subscribe(response => {
       this.user = undefined;
-      if (!response.empty) {
+      if (!response.empty && response.targetUrl) {
         window.location.href = response.targetUrl;
       }
     });

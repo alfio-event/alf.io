@@ -14,15 +14,15 @@ import {TranslateService} from '@ngx-translate/core';
 export class PurchaseContextHeaderComponent implements OnInit, OnDestroy {
 
   @Input()
-  purchaseContext: PurchaseContext;
+  purchaseContext?: PurchaseContext;
 
   @Input()
-  type: PurchaseContextType;
+  type?: PurchaseContextType;
 
   @Input()
   displayTopLoginButton = true;
 
-  schemaElem: HTMLScriptElement;
+  schemaElem?: HTMLScriptElement;
 
   constructor(private i18nService: I18nService, private translateService: TranslateService) {
   }
@@ -65,8 +65,8 @@ export class PurchaseContextHeaderComponent implements OnInit, OnDestroy {
     }
   }
 
-  get title(): string {
-    return this.purchaseContext.title[this.translateService.currentLang];
+  get title(): string | undefined {
+    return this.purchaseContext?.title[this.translateService.currentLang];
   }
 
   get isEvent(): boolean {
@@ -74,7 +74,7 @@ export class PurchaseContextHeaderComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    if (this.type === 'event') {
+    if (this.type === 'event' && this.schemaElem) {
       removeDOMNode(this.schemaElem);
     }
   }
