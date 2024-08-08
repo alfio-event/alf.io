@@ -12,10 +12,11 @@ Please note that the check-in app needs an active internet connection in order t
 
 <div class="row">
 <div class="col-3 offset-3">
-   <a href="https://play.google.com/store/apps/details?id=alfio.scan"><img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png" style="height: auto; width: 200px;"></a>
+   <a href="https://play.google.com/store/apps/details?id=alfio.scan">
+   <img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png" style="box-shadow: unset !important; margin: 0; height: auto; width: 200px;"></a>
 </div>
 <div class="col-3">
-    <a href="https://itunes.apple.com/us/app/alf-io-scan/id1425492093" style="display:inline-block;overflow:hidden;background:url(https://linkmaker.itunes.apple.com/assets/shared/badges/en-us/appstore-lrg.svg) no-repeat;width:180px;height:60px;background-size:contain;margin-top:9px;"></a>
+    <a href="https://itunes.apple.com/us/app/alf-io-scan/id1425492093" style="display:inline-block;overflow:hidden;background:url(https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=180x60) no-repeat;width:180px;height:55px;background-size:contain;margin-top:12px;"></a>
 </div>
 </div>
 

@@ -61,10 +61,10 @@ public enum ConfigurationKeys {
     ENABLE_CAPTCHA_FOR_LOGIN("Enable captcha for login (default true)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.TRUE),
 
     // CloudFlare Turnstile
-    CF_TURNSTILE_ENABLED("Enable CloudFlare Turnstile integration (default false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.FALSE),
-    CF_TURNSTILE_PRE_CLEARANCE("Use CloudFlare pre-clearance (default false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.FALSE),
-    CF_TURNSTILE_SITE_KEY("CloudFlare Turnstile Site Key", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM), BooleanUtils.TRUE),
-    CF_TURNSTILE_SECRET_KEY("CloudFlare Turnstile Secret Key", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM), BooleanUtils.TRUE),
+    CF_TURNSTILE_ENABLED("Enable Cloudflare Turnstile integration (default false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.FALSE),
+    CF_TURNSTILE_PRE_CLEARANCE("Use Cloudflare pre-clearance (default false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.FALSE),
+    CF_TURNSTILE_SITE_KEY("Cloudflare Turnstile Site Key", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM), BooleanUtils.TRUE),
+    CF_TURNSTILE_SECRET_KEY("Cloudflare Turnstile Secret Key", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM), BooleanUtils.TRUE),
 
     DISPLAY_STATS_IN_EVENT_DETAIL("Display stats (sold tickets, gross income, pending reservations) in event detail (default true)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, PURCHASE_CONTEXT), BooleanUtils.TRUE),
 
