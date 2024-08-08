@@ -1,4 +1,4 @@
-export class EventCode {
+export type EventCode = {
     code: string;
     type: EventCodeType;
     discountType: DiscountType;
@@ -8,7 +8,7 @@ export class EventCode {
 export type EventCodeType = 'SPECIAL_PRICE' | 'DISCOUNT' | 'ACCESS';
 export type DiscountType = 'FIXED_AMOUNT' | 'FIXED_AMOUNT_RESERVATION' | 'PERCENTAGE' | 'NONE';
 
-export interface DynamicDiscount {
+export type DynamicDiscount = {
     discount: string;
     discountType: DiscountType;
     formattedMessage: {[key: string]: string};

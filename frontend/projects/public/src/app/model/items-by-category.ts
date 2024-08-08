@@ -1,7 +1,7 @@
 import {TicketCategory} from './ticket-category';
 import {AdditionalService} from './additional-service';
 
-export class ItemsByCategory {
+export type ItemsByCategory = {
 
     ticketCategories: TicketCategory[];
     expiredCategories: TicketCategory[];
@@ -12,7 +12,7 @@ export class ItemsByCategory {
     ticketCategoriesForWaitingList: TicketCategoryForWaitingList[];
 }
 
-export class TicketCategoryForWaitingList {
+export type TicketCategoryForWaitingList = {
     id: number;
     name: string;
 }

@@ -2,7 +2,7 @@ import {DatesWithOffset, DateValidity} from './date-validity';
 import {EventFormat, Language} from './event';
 import {Localized} from './purchase-context';
 
-export class BasicEventInfo implements DateValidity, Localized {
+export interface BasicEventInfo extends DateValidity, Localized {
   shortName: string;
   fileBlobId: string;
   format: EventFormat;
@@ -18,5 +18,5 @@ export class BasicEventInfo implements DateValidity, Localized {
   formattedEndDate: {[key: string]: string};
   formattedEndTime: {[key: string]: string};
   //
-  contentLanguages: Language[] = [];
+  contentLanguages: Language[];
 }

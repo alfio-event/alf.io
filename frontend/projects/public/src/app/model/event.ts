@@ -72,7 +72,7 @@ export class Event implements DateValidity, PurchaseContext {
     };
 }
 
-export class InvoicingConfiguration {
+export type InvoicingConfiguration = {
     userCanDownloadReceiptOrInvoice: boolean;
     euVatCheckingEnabled: boolean;
     invoiceAllowed: boolean;
@@ -82,12 +82,12 @@ export class InvoicingConfiguration {
     vatNumberStrictlyRequired: boolean;
 }
 
-export class Language {
+export type Language = {
     locale: string;
     displayLanguage: string;
 }
 
-export class PaymentProxyWithParameters {
+export type PaymentProxyWithParameters {
     paymentProxy: PaymentProxy;
     parameters: {[key: string]: any};
 }

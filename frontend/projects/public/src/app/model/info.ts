@@ -1,7 +1,7 @@
 import {AnalyticsConfiguration} from './analytics-configuration';
 import {InvoicingConfiguration, TermsPrivacyLinksContainer} from './event';
 
-export interface Info {
+export type Info = {
   demoModeEnabled: boolean;
   devModeEnabled: boolean;
   prodModeEnabled: boolean;
@@ -13,7 +13,7 @@ export interface Info {
   walletConfiguration: WalletConfiguration;
 }
 
-export interface WalletConfiguration {
+export type WalletConfiguration = {
   gWalletEnabled: boolean;
   passEnabled: boolean;
 }

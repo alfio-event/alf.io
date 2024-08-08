@@ -1,6 +1,6 @@
 export type FeedbackType = 'SUCCESS' | 'ERROR' | 'INFO';
 
-export interface FeedbackContent {
+export type FeedbackContent = {
   type?: FeedbackType;
   active: boolean;
   message?: string;

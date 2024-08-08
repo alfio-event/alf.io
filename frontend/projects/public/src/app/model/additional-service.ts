@@ -1,4 +1,4 @@
-export class AdditionalService {
+export type AdditionalService = {
     id: number;
     type: AdditionalServiceType;
     supplementPolicy: SupplementPolicy;

@@ -18,12 +18,12 @@ import {TranslateService} from '@ngx-translate/core';
 })
 export class WaitingRoomComponent implements OnInit {
 
-  event: Event;
-  ticketIdentifier: string;
-  ticket: Ticket;
-  checkInCode: string;
-  categoryName: string;
-  checkInInfo: DateValidity;
+  event?: Event;
+  ticketIdentifier?: string;
+  ticket?: Ticket;
+  checkInCode?: string;
+  categoryName?: string;
+  checkInInfo?: DateValidity;
 
   constructor(
     private ticketService: TicketService,
@@ -41,8 +41,8 @@ export class WaitingRoomComponent implements OnInit {
       this.checkInCode = params['ticketCodeHash'];
       return zip(
         this.eventService.getEvent(eventShortName),
-        this.ticketService.getTicket(eventShortName, this.ticketIdentifier),
-        this.ticketService.getOnlineCheckInInfo(eventShortName, this.ticketIdentifier, this.checkInCode)
+        this.ticketService.getTicket(eventShortName, this.ticketIdentifier as string),
+        this.ticketService.getOnlineCheckInInfo(eventShortName, this.ticketIdentifier as string, this.checkInCode as string)
       );
     })).subscribe(([event, ticketInfo, checkInInfo]) => {
       this.event = event;
@@ -58,25 +58,34 @@ export class WaitingRoomComponent implements OnInit {
     });
   }
 
-  get checkInDate(): string {
-    return this.checkInInfo.formattedBeginDate[this.translate.currentLang];
+  get checkInDate(): string | undefined {
+    return this.checkInInfo?.formattedBeginDate[this.translate.currentLang];
   }
 
-  get checkInTime(): string {
-    return this.checkInInfo.formattedBeginTime[this.translate.currentLang];
+  get checkInTime(): string | undefined {
+    return this.checkInInfo?.formattedBeginTime[this.translate.currentLang];
   }
 
   get eventRunning(): boolean {
+    if (!this.checkInInfo) {
+      return false;
+    }
     const now = new Date().getTime();
     const dates = this.checkInInfo.datesWithOffset;
     return now > dates.startDateTime && now < dates.endDateTime;
   }
 
   get eventStartsInTheFuture(): boolean {
+    if (!this.checkInInfo) {
+      return false;
+    }
     return new Date().getTime() < this.checkInInfo.datesWithOffset.startDateTime;
   }
 
   get eventEnded(): boolean {
+    if (!this.checkInInfo) {
+      return true;
+    }
     return new Date().getTime() > this.checkInInfo.datesWithOffset.endDateTime;
   }
 }
