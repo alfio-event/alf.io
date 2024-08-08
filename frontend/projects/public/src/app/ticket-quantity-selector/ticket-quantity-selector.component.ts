@@ -9,20 +9,21 @@ import {UntypedFormGroup} from '@angular/forms';
 export class TicketQuantitySelectorComponent {
 
   @Input()
-  parentGroup: UntypedFormGroup;
+  parentGroup?: UntypedFormGroup;
 
   @Input()
-  category: TicketCategory;
+  category?: TicketCategory;
 
   @Input()
-  quantityRange: number[];
+  quantityRange: number[] = [];
 
   @Output()
   valueChange = new EventEmitter<number>();
 
-  formGroup: UntypedFormGroup;
+  formGroup?: UntypedFormGroup;
 
   selectionChanged(): void {
-    this.valueChange.next(this.parentGroup.get('amount').value);
+    const val = this.parentGroup?.get('amount')?.value;
+    this.valueChange.next(val);
   }
 }

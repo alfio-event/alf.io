@@ -21,10 +21,10 @@ import {SearchParams} from '../model/search-params';
 export class SubscriptionListAllComponent implements OnInit {
 
 
-  subscriptions: BasicSubscriptionInfo[];
-  languages: Language[];
-  linksContainer: TermsPrivacyLinksContainer;
-  queryParams: Params;
+  subscriptions: BasicSubscriptionInfo[] = [];
+  languages: Language[] = [];
+  linksContainer?: TermsPrivacyLinksContainer;
+  queryParams?: Params;
 
   constructor(private subscriptionService: SubscriptionService,
     private i18nService: I18nService,
@@ -49,7 +49,7 @@ export class SubscriptionListAllComponent implements OnInit {
         this.analytics.pageView(info.analyticsConfiguration);
         this.linksContainer = globalTermsPrivacyLinks(info);
         this.languages = filterAvailableLanguages(activeLanguages, res);
-        this.i18nService.setPageTitle('subscription.header.title', null);
+        this.i18nService.setPageTitle('subscription.header.title', undefined);
       }
     });
   }

@@ -12,6 +12,6 @@
     <h3 translate="subscription.no-subscriptions"></h3>
   </div>
 
-  <hr class="mt-5" *ngIf="linksContainer.termsAndConditionsUrl || linksContainer.privacyPolicyUrl">
+  <hr class="mt-5" *ngIf="linksContainer?.termsAndConditionsUrl || linksContainer?.privacyPolicyUrl">
   <app-footer-links [linksContainer]="linksContainer"></app-footer-links>
 </div>

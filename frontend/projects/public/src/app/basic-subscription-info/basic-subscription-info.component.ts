@@ -13,7 +13,7 @@ import {AdditionalField} from '../model/ticket';
 })
 export class BasicSubscriptionInfoComponent {
   @Input()
-  subscription: BasicSubscriptionInfo;
+  subscription?: BasicSubscriptionInfo;
   @Input()
   owner?: SubscriptionOwner;
   @Input()
@@ -21,7 +21,7 @@ export class BasicSubscriptionInfoComponent {
   @Input()
   fieldConfigurationAfterStandard: AdditionalField[] = [];
   @Input()
-  params: Params;
+  params?: Params;
 
   @Input()
   cardLayout = true;
