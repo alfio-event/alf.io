@@ -971,12 +971,16 @@ public class EventManager {
     }
 
     public List<Event> getActiveEvents() {
-        return getActiveEventsStream().collect(toList());
+        return getActiveEventsStream(1).toList();
     }
 
-    private Stream<Event> getActiveEventsStream() {
+    public List<Event> getEventsByDateRange(int days) {
+        return getActiveEventsStream(days).toList();
+    }
+
+    private Stream<Event> getActiveEventsStream(int days) {
         return eventRepository.findAll().stream()
-            .filter(e -> e.getEnd().truncatedTo(ChronoUnit.DAYS).plusDays(1).isAfter(ZonedDateTime.now(clockProvider.withZone(e.getZoneId())).truncatedTo(ChronoUnit.DAYS)));
+            .filter(e -> e.getEnd().truncatedTo(ChronoUnit.DAYS).plusDays(days).isAfter(ZonedDateTime.now(clockProvider.withZone(e.getZoneId())).truncatedTo(ChronoUnit.DAYS)));
     }
 
     public Function<Ticket, Boolean> checkTicketCancellationPrerequisites() {

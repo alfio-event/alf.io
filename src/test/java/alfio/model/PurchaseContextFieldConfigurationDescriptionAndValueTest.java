@@ -44,8 +44,9 @@ class PurchaseContextFieldConfigurationDescriptionAndValueTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"text",
-        "tel",
+    @ValueSource(strings = {
+        "input:text",
+        "input:tel",
         "textarea",
         "vat:eu"})
     void getValueDescriptionForTextField(String type) {

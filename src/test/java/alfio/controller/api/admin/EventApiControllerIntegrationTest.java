@@ -39,11 +39,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.math.BigDecimal;
-import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -80,7 +80,7 @@ class EventApiControllerIntegrationTest {
     void getAllEventsForExternalInPerson() {
         var eventAndUser = createEvent(Event.EventFormat.IN_PERSON);
         event = eventAndUser.getKey();
-        var principal = Mockito.mock(Principal.class);
+        var principal = Mockito.mock(Authentication.class);
         when(principal.getName()).thenReturn(eventAndUser.getValue());
         var events = eventApiController.getAllEventsForExternal(principal, new MockHttpServletRequest(), false);
 
@@ -93,7 +93,7 @@ class EventApiControllerIntegrationTest {
     void getAllEventsForExternalHybrid() {
         var eventAndUser = createEvent(Event.EventFormat.HYBRID);
         event = eventAndUser.getKey();
-        var principal = Mockito.mock(Principal.class);
+        var principal = Mockito.mock(Authentication.class);
         when(principal.getName()).thenReturn(eventAndUser.getValue());
         var events = eventApiController.getAllEventsForExternal(principal, new MockHttpServletRequest(), false);
 
@@ -106,7 +106,7 @@ class EventApiControllerIntegrationTest {
     void getAllEventsForExternalOnline() {
         var eventAndUser = createEvent(Event.EventFormat.ONLINE);
         event = eventAndUser.getKey();
-        var principal = Mockito.mock(Principal.class);
+        var principal = Mockito.mock(Authentication.class);
         when(principal.getName()).thenReturn(eventAndUser.getValue());
         var events = eventApiController.getAllEventsForExternal(principal, new MockHttpServletRequest(), false);
 

@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.config.authentication.support.AuthenticationConstants;
 import alfio.controller.api.support.EventListItem;
 import alfio.controller.api.support.PageAndContent;
 import alfio.controller.api.support.TicketHelper;
@@ -48,7 +49,6 @@ import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.commons.collections4.CollectionUtils;
@@ -61,6 +61,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.util.Assert;
 import org.springframework.util.StreamUtils;
 import org.springframework.validation.Errors;
@@ -155,11 +156,14 @@ public class EventApiController {
     }
 
     @GetMapping(value = "/events", headers = "Authorization")
-    public List<EventListItem> getAllEventsForExternal(Principal principal,
+    public List<EventListItem> getAllEventsForExternal(Authentication authentication,
                                                        HttpServletRequest request,
                                                        @RequestParam(value = "includeOnline", required = false, defaultValue = "false") boolean includeOnline) {
-        List<Integer> userOrganizations = userManager.findUserOrganizations(principal.getName()).stream().map(Organization::getId).collect(toList());
-        return eventManager.getActiveEvents().stream()
+        List<Integer> userOrganizations = userManager.findUserOrganizations(authentication.getName())
+            .stream().map(Organization::getId).toList();
+        // we let sponsors see past events, so that they can modify data if needed.
+        int dateRangeForEvents = isSponsor(authentication) ? 10 : 1;
+        return eventManager.getEventsByDateRange(dateRangeForEvents).stream()
             .filter(e -> userOrganizations.contains(e.getOrganizationId()) && (includeOnline || e.getFormat() != Event.EventFormat.ONLINE))
             .sorted(Comparator.comparing(e -> e.getBegin().withZoneSameInstant(ZoneId.systemDefault())))
             .map(s -> new EventListItem(s, request.getContextPath(), eventDescriptionRepository.findByEventId(s.getId())))
@@ -876,11 +880,13 @@ public class EventApiController {
         return singleEvent.orElseThrow();
     }
 
-    @Data
-    static class TicketsStatistics {
-        private final String granularity;
-        private final List<TicketsByDateStatistic> sold;
-        private final List<TicketsByDateStatistic> reserved;
+    record TicketsStatistics(String granularity, List<TicketsByDateStatistic> sold,
+                             List<TicketsByDateStatistic> reserved) {
+    }
+
+    private static boolean isSponsor(Authentication authentication) {
+        return CollectionUtils.emptyIfNull(authentication.getAuthorities()).stream()
+            .anyMatch(ga -> ga.getAuthority().equals("ROLE_" + AuthenticationConstants.SPONSOR));
     }
 
 }

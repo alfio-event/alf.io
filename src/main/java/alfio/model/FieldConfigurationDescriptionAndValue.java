@@ -45,8 +45,8 @@ public class FieldConfigurationDescriptionAndValue {
     private final String value;
 
     private static final List<String> TEXT_FIELD_TYPES = List.of(
-        "text",
-        "tel",
+        "input:text",
+        "input:tel",
         "textarea",
         "vat:eu",
         "dateOfBirth"
@@ -88,7 +88,7 @@ public class FieldConfigurationDescriptionAndValue {
     }
 
     public String getValueDescription() {
-        if(isText()) {
+        if(isText() || isCountryField()) {
             return value;
         } else if(isCheckboxField()) {
             var matches = new ArrayList<String>();

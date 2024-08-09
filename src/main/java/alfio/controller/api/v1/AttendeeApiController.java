@@ -21,7 +21,6 @@ import alfio.manager.AttendeeManager;
 import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.model.SponsorScan;
-import alfio.model.result.Result;
 import alfio.model.support.TicketWithAdditionalFields;
 import alfio.repository.SponsorScanRepository;
 import alfio.util.EventUtil;
@@ -29,7 +28,6 @@ import alfio.util.Wrappers;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,9 +120,15 @@ public class AttendeeApiController {
      * @return
      */
     @GetMapping("/{eventKey}/ticket/{UUID}")
-    public Result<TicketWithAdditionalFields> getTicketDetails(@PathVariable("eventKey") String eventShortName, @PathVariable("UUID") String uuid, Principal principal) {
+    public ResponseEntity<TicketWithAdditionalFields> getTicketDetails(@PathVariable("eventKey") String eventShortName, @PathVariable("UUID") String uuid, Principal principal) {
         accessService.canAccessTicket(principal, eventShortName, uuid);
-        return attendeeManager.retrieveTicket(eventShortName, uuid, principal.getName());
+        var result = attendeeManager.retrieveTicket(eventShortName, uuid, principal.getName());
+        if (result.isSuccess()) {
+            return ResponseEntity.ok(result.getData());
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
     }
 
     private static <T> ResponseEntity<T> notFound() {

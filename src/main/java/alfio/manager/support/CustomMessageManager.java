@@ -88,7 +88,7 @@ public class CustomMessageManager {
             categoryId.map(id -> ticketRepository.findConfirmedByCategoryId(event.getId(), id))
                 .orElseGet(() -> ticketRepository.findAllConfirmed(event.getId()))
                 .stream()
-                .filter(t -> isNotBlank(t.getFullName()) && isNotBlank(t.getEmail()))
+                .filter(t -> isNotBlank(t.getFullName()) && Validator.isEmailValid(t.getEmail()))
                 .parallel()
                 .map(t -> {
                     Model model = new ExtendedModelMap();

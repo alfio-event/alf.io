@@ -119,7 +119,7 @@ public class APITokenAuthWebSecurity {
             .requestMatchers(HttpMethod.GET, ADMIN_API + "/user-type", ADMIN_API + "/user/details").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
             .requestMatchers(ADMIN_API + "/**").denyAll()
             .requestMatchers(HttpMethod.POST, "/api/attendees/sponsor-scan").hasRole(SPONSOR)
-            .requestMatchers(HttpMethod.GET, "/api/attendees/*/ticket/*").hasAnyRole(OPERATOR, SUPERVISOR, API_CLIENT)
+            .requestMatchers(HttpMethod.GET, "/api/attendees/*/ticket/*").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
             .requestMatchers("/**").authenticated();
     }
 
