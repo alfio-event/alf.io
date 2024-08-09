@@ -46,7 +46,7 @@ public class EmailMessageApiController {
     private final PurchaseContextManager purchaseContextManager;
     private final AccessService accessService;
 
-    @GetMapping("/")
+    @GetMapping()
     public PageAndContent<List<LightweightEmailMessage>> loadEmailMessages(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
                                                                            @PathVariable String publicIdentifier,
                                                                            @RequestParam(value = "page", required = false) Integer page,

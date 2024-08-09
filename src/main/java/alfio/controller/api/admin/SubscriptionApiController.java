@@ -64,7 +64,7 @@ public class SubscriptionApiController {
         return ResponseEntity.of(subscriptionManager.findOne(subscriptionId, organizationId).map(SubscriptionDescriptorModification::fromModel));
     }
 
-    @PostMapping("/")
+    @PostMapping()
     ResponseEntity<UUID> create(@PathVariable int organizationId,
                                 @RequestBody SubscriptionDescriptorModification subscriptionDescriptor,
                                 Principal principal) {
