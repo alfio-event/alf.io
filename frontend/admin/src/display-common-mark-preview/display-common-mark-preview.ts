@@ -2,10 +2,12 @@ import {customElement, property, state} from "lit/decorators.js";
 import {unsafeHTML} from 'lit/directives/unsafe-html.js';
 import {css, html, LitElement, TemplateResult} from "lit";
 import {Task} from "@lit/task";
+import {msg, localized} from '@lit/localize';
 import {UtilService} from "../service/util.ts";
 import {row} from "../styles.ts";
 
 @customElement('alfio-display-commonmark-preview')
+@localized()
 export class DisplayCommonMarkPreview extends LitElement {
 
     static styles = [
@@ -34,14 +36,14 @@ export class DisplayCommonMarkPreview extends LitElement {
     protected render(): TemplateResult {
         return html`
             <div class="row">
-                <sl-button class="left" variant="text" target="_blank" href="https://commonmark.org/help/" size="small"><sl-icon name="markdown" slot="prefix"></sl-icon> How to format text</sl-button>
+                <sl-button class="left" variant="text" target="_blank" href="https://commonmark.org/help/" size="small"><sl-icon name="markdown" slot="prefix"></sl-icon> ${msg('How to format text')}</sl-button>
                 <sl-button class="right" variant="text" .disabled=${(this.text ?? '').trim().length === 0} @click=${this.openDialog} size="small"><sl-icon name="easel3" slot="prefix"></sl-icon> ${this.buttonText}</sl-button>
             </div>
-            <sl-dialog ?open=${this.dialogOpen} label="Text Preview" style="--width: 50vw;" class="dialog-markdown-preview" >
+            <sl-dialog ?open=${this.dialogOpen} label="${msg('Text Preview')}" style="--width: 50vw;" class="dialog-markdown-preview" >
                 <div style="height: 50vh; border: dashed 1px var(--sl-color-neutral-200); padding: 0 1rem;">
                     ${this.renderText()}
                 </div>
-                <sl-button slot="footer" variant="default" @click=${this.closeDialog}>Close</sl-button>
+                <sl-button slot="footer" variant="default" @click=${this.closeDialog}>${msg('Close')}</sl-button>
             </sl-dialog>
         `;
     }

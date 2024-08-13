@@ -14,6 +14,17 @@ See https://stackoverflow.com/a/76446465 for icon/static assets
 
 Then you can launch alf.io normally and go to localhost:8080/admin/ -> all the components exported in the main.ts will be available.
 
+
+## i18n
+
+### extract i18n and generate locales
+
+> npm run lit-localize-extract
+
+### Then update the translated xlf and run
+
+> npm run lit-localize-build
+
 ## update deps
 
 > npx npm-check-updates -u
