@@ -43,7 +43,6 @@ import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 import org.springframework.session.web.http.*;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -119,7 +118,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
         private final RequestMatcher staticContentToIgnore;
 
-        ExcludeSessionRepositoryFilter(@Value("${alfio.version}") String alfioVersion) {
+        ExcludeSessionRepositoryFilter(String alfioVersion) {
             this.staticContentToIgnore = RequestMatchers.anyOf(
                 antMatcher("/favicon.*"),
                 antMatcher("/resources/**"),
