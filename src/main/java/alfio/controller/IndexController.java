@@ -253,6 +253,7 @@ public class IndexController {
                     style.appendChild(new Text(baseCustomCss));
                     head.appendChild(style);
                 }
+                head.appendChild(buildMetaTag("authentication-enabled", Boolean.toString(configurationManager.isPublicOpenIdEnabled())));
                 preloadEventData(eventShortName, request, session, eventLoader, head, messageSourceManager, idx, json, lang);
                 JFiveParse.serialize(idx, osw);
             }
