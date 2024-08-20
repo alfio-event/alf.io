@@ -32,6 +32,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
@@ -119,7 +120,12 @@ public class MvcConfiguration implements WebMvcConfigurer {
         private final RequestMatcher staticContentToIgnore;
 
         ExcludeSessionRepositoryFilter(String alfioVersion) {
-            this.staticContentToIgnore = RequestMatchers.anyOf(
+            var methodMatcher = RequestMatchers.anyOf(antMatcher(HttpMethod.GET),
+                antMatcher(HttpMethod.HEAD),
+                antMatcher(HttpMethod.TRACE),
+                antMatcher(HttpMethod.OPTIONS)
+            );
+            var urlMatcher = RequestMatchers.anyOf(
                 antMatcher("/favicon.*"),
                 antMatcher("/resources/**"),
                 antMatcher(alfioVersion + "/resources/**"),
@@ -127,6 +133,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
                 antMatcher(alfioVersion + "/frontend-admin/**"),
                 antMatcher("/file/**")
             );
+            this.staticContentToIgnore = RequestMatchers.allOf(methodMatcher, urlMatcher);
         }
 
         @Override
