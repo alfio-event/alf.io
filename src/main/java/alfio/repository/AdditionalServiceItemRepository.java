@@ -155,6 +155,14 @@ public interface AdditionalServiceItemRepository {
     int deleteAdditionalServiceItemsByReservationId(@Bind("eventId") int eventId, @Bind("reservationId") String reservationId);
 
     @Query("""
+        delete from additional_service_item asi
+         using additional_service adds
+         where adds.id = asi.additional_service_id_fk and asi.event_id_fk = :eventId
+         and asi.status = 'FREE'
+        """)
+    int deleteByAdditionalServiceId(@Bind("eventId") int eventId, @Bind("additionalServiceId") int additionalServiceId);
+
+    @Query("""
         update additional_service_item asi set ticket_id_fk = null, status = 'FREE', tickets_reservation_uuid = null\
          from additional_service adds where adds.id = asi.additional_service_id_fk\
          and asi.event_id_fk = :eventId and asi.tickets_reservation_uuid = :reservationId\

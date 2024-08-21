@@ -610,4 +610,12 @@ public class AccessService {
         }
         return eventAndOrgId;
     }
+
+    public void checkAdditionalServiceOwnership(Principal principal, int eventId, int additionalServiceId) {
+        checkEventOwnership(principal, eventId);
+        if (!additionalServiceRepository.additionalServiceExistsForEvent(additionalServiceId, eventId)) {
+            log.warn("denying access to additional service {}", additionalServiceId);
+            throw new AccessDeniedException();
+        }
+    }
 }

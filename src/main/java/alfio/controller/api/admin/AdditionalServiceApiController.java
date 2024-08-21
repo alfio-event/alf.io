@@ -29,6 +29,7 @@ import alfio.repository.EventRepository;
 import alfio.util.ExportUtils;
 import alfio.util.MonetaryUtil;
 import alfio.util.Validator;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -40,7 +41,6 @@ import org.springframework.util.Assert;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.Principal;
@@ -141,22 +141,10 @@ public class AdditionalServiceApiController {
     @DeleteMapping("/event/{eventId}/additional-services/{additionalServiceId}")
     @Transactional
     public ResponseEntity<String> remove(@PathVariable int eventId, @PathVariable int additionalServiceId, Principal principal) {
-        var additionalService = additionalServiceManager.getOptionalById(additionalServiceId, eventId);
-        Assert.isTrue(additionalService.isPresent(), "Additional service " + additionalServiceId + " must be inside eventId " + eventId);
-        accessService.checkEventOwnership(principal, eventId);
-        return eventRepository.findOptionalById(eventId)
-            .map(event -> additionalService
-                .map(as -> {
-                    log.debug("{} is deleting additional service #{}", principal.getName(), additionalServiceId);
-                    int deletedTexts = additionalServiceManager.deleteAdditionalServiceTexts(additionalServiceId);
-                    log.debug("deleted {} texts", deletedTexts);
-                    //TODO add configuration fields and values
-                    additionalServiceManager.delete(additionalServiceId, eventId);
-                    log.debug("additional service #{} successfully deleted", additionalServiceId);
-                    return ResponseEntity.ok("OK");
-                })
-                .orElseGet(() -> new ResponseEntity<>("additional service not found", HttpStatus.NOT_FOUND)))
-            .orElseGet(() -> new ResponseEntity<>("event not found", HttpStatus.NOT_FOUND));
+        accessService.checkAdditionalServiceOwnership(principal, eventId, additionalServiceId);
+        log.debug("{} is deleting additional service #{}", principal.getName(), additionalServiceId);
+        additionalServiceManager.deleteAdditionalService(additionalServiceId, eventId);
+        return ResponseEntity.ok("OK");
     }
 
     @GetMapping("/events/{eventName}/additional-services/{type}/export")

@@ -114,6 +114,14 @@ public class AdditionalServiceManager {
         return additionalServiceRepository.getOptionalById(additionalServiceId, eventId);
     }
 
+    public void deleteAdditionalService(int additionalServiceId, int eventId) {
+        int deletedTexts = deleteAdditionalServiceTexts(additionalServiceId);
+        LOGGER.debug("deleted {} texts", deletedTexts);
+        int deletedItems = additionalServiceItemRepository.deleteByAdditionalServiceId(eventId, additionalServiceId);
+        LOGGER.debug("deleted {} items", deletedItems);
+        delete(additionalServiceId, eventId);
+        LOGGER.debug("additional service #{} successfully deleted", additionalServiceId);
+    }
 
     public int deleteAdditionalServiceTexts(int additionalServiceId) {
         return additionalServiceTextRepository.deleteAdditionalServiceTexts(additionalServiceId);

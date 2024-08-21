@@ -108,4 +108,7 @@ public interface AdditionalServiceRepository {
         });
         return res;
     }
+
+    @Query("select exists(select id from additional_service where event_id_fk = :eventId and id = :id)")
+    boolean additionalServiceExistsForEvent(@Bind("id") int additionalServiceId, @Bind("eventId") int eventId);
 }
