@@ -32,6 +32,8 @@ import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ClockProvider;
 import alfio.util.MonetaryUtil;
+import alfio.util.ReservationUtil;
+import jakarta.servlet.http.HttpSession;
 import lombok.AllArgsConstructor;
 import org.joda.money.CurrencyUnit;
 import org.springframework.context.MessageSource;
@@ -40,7 +42,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.MapBindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpSession;
 import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -153,7 +154,7 @@ public class SubscriptionsApiController {
         var bindingResult = new MapBindingResult(new HashMap<>(), "request");
         return subscriptionManager.getSubscriptionById(UUID.fromString(id))
             .map(subscriptionDescriptor -> {
-                var reservationOptional = reservationManager.createSubscriptionReservation(subscriptionDescriptor, locale, bindingResult, principal);
+                var reservationOptional = ReservationUtil.handleReservationCreationErrors(() -> reservationManager.createSubscriptionReservation(subscriptionDescriptor, locale, principal), bindingResult, subscriptionDescriptor.getType());
                 if (bindingResult.hasErrors()) {
                     return new ResponseEntity<ValidatedResponse<String>>(ValidatedResponse.toResponse(bindingResult, null), HttpStatus.UNPROCESSABLE_ENTITY);
                 } else {

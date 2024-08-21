@@ -702,6 +702,30 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             checkStatus(reservationId, HttpStatus.NOT_FOUND, null, null, context);
         }
 
+        // try to reserve more tickets than available
+        {
+            var category = retrieveCategories(context).get(0);
+            var freeTickets = jdbcTemplate.queryForList("select id from ticket where event_id = :eventId and status = 'FREE'", new MapSqlParameterSource("eventId", context.event.getId()), Integer.class);
+            // we leave one ticket
+            var lockedTickets = freeTickets.subList(1, freeTickets.size());
+            int result = jdbcTemplate.update("update ticket set status = 'PENDING' where id in (:freeTickets)", new MapSqlParameterSource("freeTickets", lockedTickets));
+            assertEquals(result, lockedTickets.size());
+            // try to reserve two ticket
+            var form = new ReservationForm();
+            var ticketReservation = new TicketReservationModification();
+            ticketReservation.setQuantity(2);
+            ticketReservation.setTicketCategoryId(category.getId());
+            form.setReservation(Collections.singletonList(ticketReservation));
+            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), context.getPublicUser());
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, res.getStatusCode());
+            assertTrue(requireNonNull(res.getBody()).getValidationErrors().stream().anyMatch(e -> ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS.equals(e.getCode())));
+            // ensure that reservation was not created
+            assertEquals(Boolean.FALSE, jdbcTemplate.queryForObject("select exists(select id from tickets_reservation where status = 'PENDING' and event_id_fk = :eventId)", new MapSqlParameterSource("eventId", context.event.getId()), Boolean.class));
+            // restore data
+            result = jdbcTemplate.update("update ticket set status = 'FREE' where id in (:freeTickets)", new MapSqlParameterSource("freeTickets", lockedTickets));
+            assertEquals(result, lockedTickets.size());
+        }
+
         //buy 2 ticket, with additional service + field
         {
             var form = new ReservationForm();

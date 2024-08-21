@@ -42,6 +42,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.*;
 
+import static alfio.util.ReservationUtil.handleReservationCreationErrors;
 import static java.util.Objects.requireNonNullElseGet;
 import static java.util.stream.Collectors.*;
 
@@ -138,7 +139,7 @@ public class ReservationApiV1Controller {
         var selected = ReservationUtil.validateCreateRequest(reservationCreationRequest, bindingResult, ticketReservationManager, eventManager, additionalServiceManager, "", event);
         if(selected.isPresent() && !bindingResult.hasErrors()) {
             var pair = selected.get();
-            return ticketReservationManager.createTicketReservation(event, pair.getLeft(), pair.getRight(), promoCodeDiscount, locale, bindingResult, principal)
+            return handleReservationCreationErrors(() -> ticketReservationManager.createTicketReservation(event, pair.getLeft(), pair.getRight(), promoCodeDiscount, locale, principal), bindingResult, event.getType())
                 .map(id -> ResponseEntity.ok(postCreate(reservationCreationRequest, id, event, locale)))
                 .orElseGet(() -> ResponseEntity.badRequest().build());
         } else {
@@ -162,7 +163,7 @@ public class ReservationApiV1Controller {
         }
         var subscriptionDescriptor = (SubscriptionDescriptor) optionalDescriptor.get();
         var locale = Locale.forLanguageTag(requireNonNullElseGet(creationRequest.getLanguage(), () -> subscriptionDescriptor.getContentLanguages().get(0).getLanguage()));
-        return ticketReservationManager.createSubscriptionReservation(subscriptionDescriptor, locale, bindingResult, principal, creationRequest.getMetadataOrNull())
+        return handleReservationCreationErrors(() -> ticketReservationManager.createSubscriptionReservation(subscriptionDescriptor, locale, principal, creationRequest.getMetadataOrNull()), bindingResult, subscriptionDescriptor.getType())
             .map(id -> ResponseEntity.ok(postCreate(creationRequest, id, subscriptionDescriptor, locale)))
             .orElseGet(() -> {
                 if (bindingResult.hasErrors()) {
