@@ -19,6 +19,8 @@ package alfio.config;
 import alfio.config.support.HeaderPublisherFilter;
 import alfio.manager.system.ConfigurationManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
@@ -26,21 +28,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatchers;
 import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
-import org.springframework.session.web.http.CookieHttpSessionIdResolver;
-import org.springframework.session.web.http.CookieSerializer;
-import org.springframework.session.web.http.HeaderHttpSessionIdResolver;
-import org.springframework.session.web.http.HttpSessionIdResolver;
+import org.springframework.session.web.http.*;
+import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -48,11 +52,13 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.AbstractUrlBasedView;
 import org.springframework.web.servlet.view.UrlBasedViewResolver;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
 import static alfio.config.Initializer.API_V2_PUBLIC_PATH;
+import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
 
 @Configuration(proxyBeanMethods = false)
@@ -104,7 +110,45 @@ public class MvcConfiguration implements WebMvcConfigurer {
             .addResourceLocations("classpath:/resources/alfio-admin-frontend/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(CacheControl.maxAge(Duration.ofDays(60)));
+    }
 
+    // see https://github.com/spring-projects/spring-session/issues/244#issuecomment-296605144
+    @Order(SessionRepositoryFilter.DEFAULT_ORDER - 1)
+    public static class ExcludeSessionRepositoryFilter extends OncePerRequestFilter {
+
+
+        private final RequestMatcher staticContentToIgnore;
+
+        ExcludeSessionRepositoryFilter(String alfioVersion) {
+            var methodMatcher = RequestMatchers.anyOf(antMatcher(HttpMethod.GET),
+                antMatcher(HttpMethod.HEAD),
+                antMatcher(HttpMethod.TRACE),
+                antMatcher(HttpMethod.OPTIONS)
+            );
+            var urlMatcher = RequestMatchers.anyOf(
+                antMatcher("/favicon.*"),
+                antMatcher("/resources/**"),
+                antMatcher(alfioVersion + "/resources/**"),
+                antMatcher("/frontend-public/**"),
+                antMatcher(alfioVersion + "/frontend-admin/**"),
+                antMatcher("/file/**")
+            );
+            this.staticContentToIgnore = RequestMatchers.allOf(methodMatcher, urlMatcher);
+        }
+
+        @Override
+        protected void doFilterInternal(HttpServletRequest httpRequest, HttpServletResponse httpResponse,
+                                        FilterChain filterChain) throws ServletException, IOException {
+            if (staticContentToIgnore.matches(httpRequest)) {
+                httpRequest.setAttribute("org.springframework.session.web.http.SessionRepositoryFilter.FILTERED", Boolean.TRUE);
+            }
+            filterChain.doFilter(httpRequest, httpResponse);
+        }
+    }
+
+    @Bean
+    public ExcludeSessionRepositoryFilter excludeSessionRepositoryFilter() {
+        return new ExcludeSessionRepositoryFilter(alfioVersion);
     }
 
     @Override
