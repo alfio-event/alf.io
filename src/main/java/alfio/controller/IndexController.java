@@ -60,6 +60,7 @@ import java.util.regex.Pattern;
 
 import static alfio.config.Initializer.PROFILE_LIVE;
 import static alfio.controller.Constants.*;
+import static alfio.model.system.ConfigurationKeys.BASE_CUSTOM_CSS;
 import static alfio.util.HttpUtils.APPLICATION_JSON;
 import static java.util.Objects.requireNonNull;
 
@@ -227,8 +228,7 @@ public class IndexController {
             }
         } else {
             try (var os = response.getOutputStream(); var osw = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
-                var indexInfo = configurationManager.getInfo(session);
-                var baseCustomCss = indexInfo.customCss();
+                var baseCustomCss = configurationManager.getForSystem(BASE_CUSTOM_CSS).getValueOrNull();
                 var idx = indexPage.cloneNode(true);
                 if(authentication instanceof OAuth2AuthenticationToken oauth
                     && oauth.getPrincipal() instanceof OpenIdPrincipal principal
@@ -239,7 +239,7 @@ public class IndexController {
                 }
                 idx.getElementsByTagName("script").forEach(element -> element.setAttribute(NONCE, nonce));
                 var head = idx.getElementsByTagName("head").get(0);
-                head.appendChild(buildScripTag(json.asJsonString(indexInfo.alfioInfo()), APPLICATION_JSON, "preload-info", null));
+                head.appendChild(buildScripTag(json.asJsonString(configurationManager.getInfo(session)), APPLICATION_JSON, "preload-info", null));
                 var httpServletRequest = requireNonNull(request.getNativeRequest(HttpServletRequest.class));
                 head.appendChild(buildMetaTag("GID", request.getSessionId()));
                 var csrf = csrfTokenRepository.loadToken(httpServletRequest);
@@ -253,6 +253,7 @@ public class IndexController {
                     style.appendChild(new Text(baseCustomCss));
                     head.appendChild(style);
                 }
+                head.appendChild(buildMetaTag("authentication-enabled", Boolean.toString(configurationManager.isPublicOpenIdEnabled())));
                 preloadEventData(eventShortName, request, session, eventLoader, head, messageSourceManager, idx, json, lang);
                 JFiveParse.serialize(idx, osw);
             }
