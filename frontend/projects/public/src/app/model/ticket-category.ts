@@ -21,6 +21,7 @@ export interface TicketCategory {
     //
 
     saleableAndLimitNotReached: boolean;
+    containsPendingTickets: boolean;
     accessRestricted: boolean;
     soldOutOrLimitReached: boolean;
 

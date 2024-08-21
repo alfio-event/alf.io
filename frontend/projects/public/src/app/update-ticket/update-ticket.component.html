@@ -6,7 +6,7 @@
     </header>
     <main class="mt-5">
         <div class="alert mb-5" [ngClass]="{'alert-info': !ticket.onlineEventStarted, 'alert-success': ticket.onlineEventStarted}" *ngIf="isOnlineTicket && !ticketFormVisible">
-          <div class="font-weight-bold text-center">
+          <div class="fw-bold text-center">
             <span *ngIf="!ticket.onlineEventStarted">{{'event.online.not-started' | translate:{ '0' : ticketOnlineCheckInDate } }}</span>
             <span *ngIf="ticket.onlineEventStarted">{{'event.online.started' | translate }}</span>
           </div>

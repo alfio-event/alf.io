@@ -102,6 +102,22 @@ public interface TicketRepository {
     @Query("select count(*) from ticket where status = 'FREE'  and category_id = :categoryId and event_id = :eventId")
     Integer countFreeTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
+    @Query("""
+        select count(*) filter (where status = 'FREE') as available_tickets,
+               count(*) filter (where status = 'PENDING' or status = 'RELEASED') as pending_tickets
+        from ticket
+        where category_id = :categoryId and event_id = :eventId
+        """)
+    CategoryAvailability getCategoryAvailability(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
+
+    @Query("""
+        select count(*) filter (where category_id is null and status = 'FREE') as available_tickets,
+               count(*) filter (where (category_id = :categoryId and status = 'PENDING') or status = 'RELEASED') as pending_tickets
+        from ticket
+        where event_id = :eventId
+        """)
+    CategoryAvailability getUnboundedCategoryAvailability(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
+
     @Query("select count(*) from ticket where status = 'FREE' and category_id is null and event_id = :eventId")
     Integer countFreeTicketsForUnbounded(@Bind("eventId") int eventId);
 

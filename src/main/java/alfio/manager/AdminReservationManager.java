@@ -314,6 +314,8 @@ public class AdminReservationManager {
                 var newPrice = ticketReservationManager.totalReservationCostWithVAT(r.withVatStatus(newVatStatus)).getLeft();
                 ticketReservationRepository.resetVat(reservationId, r.isInvoiceRequested(), newVatStatus, r.getSrcPriceCts(), newPrice.getPriceWithVAT(),
                     newPrice.getVAT(), Math.abs(newPrice.getDiscount()), r.getCurrencyCode());
+                // propagate status to tickets
+                ticketRepository.updateVatStatusForReservation(reservationId, newVatStatus);
             }
         }
 

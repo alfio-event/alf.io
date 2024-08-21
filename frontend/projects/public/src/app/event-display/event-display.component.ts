@@ -1,4 +1,4 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {EventService} from '../shared/event.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {UntypedFormArray, UntypedFormBuilder, UntypedFormGroup} from '@angular/forms';
@@ -8,7 +8,7 @@ import {TranslateService} from '@ngx-translate/core';
 import {TicketCategory} from '../model/ticket-category';
 import {ReservationRequest} from '../model/reservation-request';
 import {handleServerSideValidationError} from '../shared/validation-helper';
-import {zip} from 'rxjs';
+import {debounceTime, Subject, Subscription, zip} from 'rxjs';
 import {AdditionalService} from '../model/additional-service';
 import {I18nService} from '../shared/i18n.service';
 import {WaitingListSubscriptionRequest} from '../model/waiting-list-subscription-request';
@@ -17,13 +17,14 @@ import {DynamicDiscount, EventCode} from '../model/event-code';
 import {AnalyticsService} from '../shared/analytics.service';
 import {ErrorDescriptor} from '../model/validated-response';
 import {SearchParams} from '../model/search-params';
+import {FeedbackService} from "../shared/feedback/feedback.service";
 
 @Component({
   selector: 'app-event-display',
   templateUrl: './event-display.component.html',
   styleUrls: ['./event-display.component.scss']
 })
-export class EventDisplayComponent implements OnInit {
+export class EventDisplayComponent implements OnInit, OnDestroy {
 
   event: AlfioEvent;
   ticketCategories: TicketCategory[];
@@ -59,6 +60,9 @@ export class EventDisplayComponent implements OnInit {
   expiredCategoriesExpanded = false;
 
   private dynamicDiscount: DynamicDiscount;
+  private refreshDebouncer = new Subject<any>();
+  private subscription?: Subscription;
+  submitInProgress: boolean = false;
 
   // https://alligator.io/angular/reactive-forms-formarray-dynamic-fields/
 
@@ -70,10 +74,14 @@ export class EventDisplayComponent implements OnInit {
     private formBuilder: UntypedFormBuilder,
     public translate: TranslateService,
     private i18nService: I18nService,
-    private analytics: AnalyticsService) { }
+    private analytics: AnalyticsService,
+    private feedbackService: FeedbackService) { }
 
   ngOnInit(): void {
 
+    this.subscription = this.refreshDebouncer
+        .pipe(debounceTime(500))
+        .subscribe(() => this.doRefreshCategories());
     const code = this.route.snapshot.queryParams['code'];
     const errors = this.route.snapshot.queryParams['errors'];
     if (errors) {
@@ -107,6 +115,10 @@ export class EventDisplayComponent implements OnInit {
         }
       });
     });
+  }
+
+  ngOnDestroy() {
+      this.subscription?.unsubscribe();
   }
 
   private applyItemsByCat(itemsByCat: ItemsByCategory) {
@@ -150,6 +162,11 @@ export class EventDisplayComponent implements OnInit {
   }
 
   submitForm(eventShortName: string, reservation: ReservationRequest) {
+    if (this.submitInProgress) {
+        // ignoring click, as there is a pending request
+        return;
+    }
+    this.submitInProgress = true;
     const request = reservation;
     if (reservation.additionalService != null && reservation.additionalService.length > 0) {
       request.additionalService = reservation.additionalService.filter(as => (as.amount != null && as.amount > 0) || (as.quantity != null && as.quantity > 0));
@@ -161,8 +178,10 @@ export class EventDisplayComponent implements OnInit {
                     queryParams: SearchParams.transformParams(this.route.snapshot.queryParams, this.route.snapshot.params)
                 });
             }
+            this.submitInProgress = false;
         },
         error: err => {
+            this.submitInProgress = false;
             this.globalErrors = handleServerSideValidationError(err, this.reservationForm);
             this.scrollToTickets();
         }
@@ -298,7 +317,18 @@ export class EventDisplayComponent implements OnInit {
   }
 
   get displayMap(): boolean {
-    return (this.event.mapUrl && this.event.mapUrl.length > 0) && !this.isEventOnline;
+    return (this.event.mapUrl?.length > 0) && !this.isEventOnline;
   }
 
+  handleRefreshCommand() {
+    this.refreshDebouncer.next(null);
+  }
+
+  private doRefreshCategories() {
+    this.eventService.getEventTicketsInfo(this.event.shortName)
+        .subscribe(itemsByCat => {
+            this.applyItemsByCat(itemsByCat);
+            this.feedbackService.showSuccess('show-event.category-refresh.complete');
+        })
+  }
 }

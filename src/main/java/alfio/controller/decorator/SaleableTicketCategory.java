@@ -16,10 +16,7 @@
  */
 package alfio.controller.decorator;
 
-import alfio.model.Event;
-import alfio.model.PriceContainer;
-import alfio.model.PromoCodeDiscount;
-import alfio.model.TicketCategory;
+import alfio.model.*;
 import alfio.util.MonetaryUtil;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.StringUtils;
@@ -40,12 +37,13 @@ public class SaleableTicketCategory implements PriceContainer {
     private final boolean inSale;
     private final int availableTickets;
     private final int maxTickets;
+    private final boolean hasPendingTickets;
     private final PromoCodeDiscount promoCodeDiscount;
 
     public SaleableTicketCategory(TicketCategory ticketCategory,
                                   ZonedDateTime now,
                                   Event event,
-                                  int availableTickets,
+                                  CategoryAvailability categoryAvailability,
                                   int maxTickets,
                                   PromoCodeDiscount promoCodeDiscount) {
         this.ticketCategory = ticketCategory;
@@ -53,9 +51,10 @@ public class SaleableTicketCategory implements PriceContainer {
         this.zoneId = event.getZoneId();
         this.event = event;
         this.inSale = isCurrentlyInSale(now, ticketCategory, event.getZoneId());
-        this.soldOut = inSale && availableTickets == 0;
-        this.availableTickets = availableTickets;
+        this.soldOut = inSale && categoryAvailability.availableTickets() == 0;
+        this.availableTickets = categoryAvailability.availableTickets();
         this.maxTickets = maxTickets;
+        this.hasPendingTickets = categoryAvailability.hasPendingTickets();
         this.promoCodeDiscount = promoCodeDiscount;
     }
 
@@ -124,6 +123,10 @@ public class SaleableTicketCategory implements PriceContainer {
 
     public int getAvailableTickets() {
         return availableTickets;
+    }
+
+    public boolean hasPendingTickets() {
+        return hasPendingTickets;
     }
 
     public String getDiscountedPrice() {

@@ -1,10 +1,26 @@
 <div [formGroup]="parentGroup">
-  <ng-container *ngIf="category.saleableAndLimitNotReached">
+  @if (category.saleableAndLimitNotReached) {
     <label class="sr-only" [for]="'category-'+category.id+'-qty'" translate="show-event.category.quantity"></label>
     <select [id]="'category-'+category.id+'-qty'" formControlName="amount" class="form-select" (change)="selectionChanged()">
-      <option *ngFor="let qty of quantityRange" [ngValue]="qty">{{qty}}</option>
+      @for (qty of quantityRange; track qty) {
+        <option [ngValue]="qty">{{qty}}</option>
+      }
     </select>
-  </ng-container>
-  <span class="font-weight-bold" *ngIf="!category.saleableAndLimitNotReached && category.soldOutOrLimitReached" translate="show-event.sold-out"></span>
-  <span class="font-weight-bold" *ngIf="!category.saleableAndLimitNotReached && !category.soldOutOrLimitReached" translate="show-event.not-available"></span>
+  } @else {
+      <div class="d-flex flex-column align-items-center gap-2">
+      @if (category.containsPendingTickets) {
+          <span class="fw-bold" translate="show-event.all-tickets-reserved"></span>
+      } @else if (category.soldOutOrLimitReached) {
+          <span class="fw-bold" translate="show-event.sold-out"></span>
+      } @else {
+          <span class="fw-bold" translate="show-event.not-available"></span>
+      }
+
+      @if (category.containsPendingTickets || !category.soldOutOrLimitReached) {
+          <button type="button" class="btn btn-sm btn-default" (click)="refreshCategories()">
+              <fa-icon [icon]="['fas', 'redo-alt']"></fa-icon> {{'common.refresh' | translate}}
+          </button>
+      }
+      </div>
+  }
 </div>

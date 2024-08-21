@@ -22,6 +22,7 @@ export class SubscriptionDisplayComponent implements OnInit {
   submitError: ErrorDescriptor;
   subscription: SubscriptionInfo;
   subscriptionId: string;
+  submitInProgress: boolean = false;
 
   constructor(private route: ActivatedRoute,
               private router: Router,
@@ -45,18 +46,28 @@ export class SubscriptionDisplayComponent implements OnInit {
 
 
   submitForm() {
-    this.subscriptionService.reserve(this.subscriptionId).subscribe(res => {
-      this.router.navigate(['subscription', this.subscriptionId, 'reservation', res.value, 'book']);
-    }, (err) => {
-      const errorObject = getErrorObject(err);
-      let errorCode: string;
-      if (errorObject != null) {
-        errorCode = errorObject.validationErrors[0].code;
-      } else {
-        errorCode = 'reservation-page-error-status.header.title';
+      if (this.submitInProgress) {
+          // ignoring click, as there is a pending request
+          return;
       }
-      this.feedbackService.showError(errorCode);
-    });
+      this.submitInProgress = true;
+      this.subscriptionService.reserve(this.subscriptionId).subscribe({
+          next: res => {
+              this.submitInProgress = false;
+              this.router.navigate(['subscription', this.subscriptionId, 'reservation', res.value, 'book']);
+          },
+          error: err => {
+              this.submitInProgress = false;
+              const errorObject = getErrorObject(err);
+              let errorCode: string;
+              if (errorObject != null) {
+                  errorCode = errorObject.validationErrors[0].code;
+              } else {
+                  errorCode = 'reservation-page-error-status.header.title';
+              }
+              this.feedbackService.showError(errorCode);
+          }
+      });
   }
 
 }

@@ -140,7 +140,8 @@ public class ReservationUtil {
                                          Event event, int maxAmountOfTicket, List<TicketReservationWithOptionalCodeModification> res,
                                          Optional<SpecialPrice> specialCode, ZonedDateTime now, T r) {
         TicketCategory tc = eventManager.getTicketCategoryById(r.getTicketCategoryId(), event.getId());
-        SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, tickReservationManager.countAvailableTickets(event, tc), maxAmountOfTicket, null);
+        var categoryAvailability = tickReservationManager.countAvailableTickets(event, tc);
+        SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, categoryAvailability, maxAmountOfTicket, null);
 
         if (!ticketCategory.getSaleable()) {
             bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE);

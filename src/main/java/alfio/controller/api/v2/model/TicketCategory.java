@@ -43,6 +43,7 @@ public class TicketCategory {
     //
     private final boolean expired;
     private final boolean saleInFuture;
+    private final boolean containsPendingTickets;
     private final Map<String, String> formattedInception;
     private final Map<String, String> formattedExpiration;
     private final boolean saleableAndLimitNotReached;
@@ -73,6 +74,7 @@ public class TicketCategory {
         //
         this.expired = saleableTicketCategory.getExpired();
         this.saleInFuture = saleableTicketCategory.getSaleInFuture();
+        this.containsPendingTickets = saleableTicketCategory.hasPendingTickets();
         this.formattedInception = formattedInception;
         this.formattedExpiration = formattedExpiration;
         //

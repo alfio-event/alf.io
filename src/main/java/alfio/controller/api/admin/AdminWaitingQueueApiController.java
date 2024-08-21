@@ -26,18 +26,17 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
 import alfio.util.ExportUtils;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.STOP_WAITING_QUEUE_SUBSCRIPTIONS;
@@ -69,8 +68,11 @@ public class AdminWaitingQueueApiController {
         List<SaleableTicketCategory> stcList = eventManager.loadTicketCategories(event)
             .stream()
             .filter(tc -> !tc.isAccessRestricted())
-            .map(tc -> new SaleableTicketCategory(tc, now, event, ticketReservationManager.countAvailableTickets(event, tc), tc.getMaxTickets(), null))
-            .collect(Collectors.toList());
+            .map(tc -> {
+                var categoryAvailability = ticketReservationManager.countAvailableTickets(event, tc);
+                return new SaleableTicketCategory(tc, now, event, categoryAvailability, tc.getMaxTickets(), null);
+            })
+            .toList();
         boolean active = EventUtil.checkWaitingQueuePreconditions(event, stcList, configurationManager, eventStatisticsManager.noSeatsAvailable());
         boolean paused = active && configurationManager.getFor(STOP_WAITING_QUEUE_SUBSCRIPTIONS, event.getConfigurationLevel()).getValueAsBooleanOrDefault();
         Map<String, Boolean> result = new HashMap<>();
