@@ -100,4 +100,19 @@ public class WorkingDaysAdjustersTest {
         assertEquals(19, adjusted.getHour());
         assertEquals(59, adjusted.getMinute());
     }
+
+    @Test
+    @DisplayName("add days, ignore weekend")
+    void addDaysIgnoreWeekend() {
+        LocalDateTime localDateTime = LocalDateTime.of(2015, Month.AUGUST, 14, 10, 0);
+        assertEquals(LocalDateTime.of(2015, Month.AUGUST, 19, 10, 0), WorkingDaysAdjusters.addDays(localDateTime, 3));
+        assertEquals(LocalDateTime.of(2015, Month.AUGUST, 25, 10, 0), WorkingDaysAdjusters.addDays(localDateTime, 7));
+    }
+
+    @Test
+    @DisplayName("add days")
+    void addDays() {
+        LocalDateTime localDateTime = LocalDateTime.of(2015, Month.AUGUST, 11, 10, 0);
+        assertEquals(LocalDateTime.of(2015, Month.AUGUST, 14, 10, 0), WorkingDaysAdjusters.addDays(localDateTime, 3));
+    }
 }

@@ -16,8 +16,6 @@
  */
 package alfio.util;
 
-import lombok.experimental.UtilityClass;
-
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
@@ -35,6 +33,15 @@ public class WorkingDaysAdjusters {
 
     public static TemporalAdjuster defaultWorkingDays() {
         return temporal -> adjust(temporal, MON_FRI, ALL_DAY);
+    }
+
+    public static Temporal addDays(Temporal start, int days) {
+        // adjust start to make sure it is on a working day
+        var end = start;
+        for(int i = 0; i < days; i++) {
+            end = adjust(end.plus(1, ChronoUnit.DAYS), MON_FRI, ALL_DAY);
+        }
+        return end;
     }
 
     private static Temporal adjust(Temporal in, Set<DayOfWeek> dayOfWeeks, List<HoursRange> hoursRanges) {
