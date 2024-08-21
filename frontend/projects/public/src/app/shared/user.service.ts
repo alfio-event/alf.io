@@ -10,7 +10,6 @@ export class UserService {
 
   private authStatusSubject = new BehaviorSubject<AuthenticationStatus>({ enabled: false });
   private latestValue?: User;
-  private authEnabled = false;
 
   constructor(private http: HttpClient) {
   }
@@ -38,15 +37,20 @@ export class UserService {
   }
 
   private loadUserStatus(): Observable<{enabled: boolean, user?: User}> {
-    return this.http.get<boolean>('/api/v2/public/user/authentication-enabled')
-      .pipe(mergeMap(enabled => {
+
+    const preloaded = document.querySelector('meta[name=authentication-enabled]');
+
+    const enabled$ = preloaded
+      ? of(preloaded.getAttribute('content') === 'true')
+      : this.http.get<boolean>('/api/v2/public/user/authentication-enabled');
+
+    return enabled$.pipe(mergeMap(enabled => {
           if (enabled) {
             return this.getUserIdentity().pipe(map(user => ({enabled, user})));
           }
           return of({enabled, user: undefined});
         }),
         tap(status => {
-            this.authEnabled = status.enabled;
             if (status.user != null) {
                 this.latestValue = status.user;
             }
