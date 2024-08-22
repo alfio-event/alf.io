@@ -19,5 +19,8 @@
     <div class="card-text pt-2">
       <div class="markdown-content mt-2" [innerHTML]="item.description[currentLang]"></div>
     </div>
+    <div>
+        <ng-content select=".item-info"></ng-content>
+    </div>
   </div>
 </div>

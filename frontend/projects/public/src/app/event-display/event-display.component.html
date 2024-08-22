@@ -117,8 +117,15 @@
               <app-ticket-quantity-selector [parentGroup]="reservationFormItem(reservationForm, counter)"
                 [category]="category"
                 [quantityRange]="ticketCategoryAmount[category.id]"
-                (valueChange)="selectionChange()"></app-ticket-quantity-selector>
+                (valueChange)="selectionChange()"
+                (refreshCommand)="handleRefreshCommand()"></app-ticket-quantity-selector>
           </div>
+          @if (!waitingList && !category.saleableAndLimitNotReached && category.containsPendingTickets) {
+              <div class="item-info border-top pt-2">
+                  <fa-icon [icon]="['fas', 'info-circle']" class="text-primary"></fa-icon>
+                  {{ 'show-event.all-tickets-reserved.info' | translate }}
+              </div>
+          }
         </app-item-card>
       </div>
 
@@ -206,7 +213,14 @@
       <hr class="mt-5">
 
       <div class="row d-flex justify-content-between mobile-add-margin-bottom">
-        <div class="col-md-5 order-md-1 col-12"><button type="submit" class="block-button btn btn-success" translate="show-event.continue"></button></div>
+        <div class="col-md-5 order-md-1 col-12">
+            <button type="submit" class="block-button btn btn-success">
+                @if (submitInProgress) {
+                    <fa-icon [icon]="['fas', 'circle-notch']" [animation]="'spin'"></fa-icon>
+                }
+                <span [ngClass]="{'ms-2': submitInProgress}">{{(submitInProgress ? 'reservation.payment-in-progress' : 'show-event.continue') | translate}}</span>
+            </button>
+        </div>
         <div class="col-md-5 order-md-0 col-12 "><a [href]="event.websiteUrl" class="block-button btn btn-light" translate="to-event-site"></a></div>
       </div>
     </form>

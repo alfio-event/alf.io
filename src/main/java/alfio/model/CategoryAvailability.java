@@ -14,19 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.api.v2.model;
+package alfio.model;
 
-import java.util.List;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 
-public record ItemsByCategory(
-    List<TicketCategory> ticketCategories,
-    List<TicketCategory> expiredCategories,
-    List<AdditionalService> additionalServices,
-    boolean waitingList,
-    boolean preSales,
-    List<TicketCategoryForWaitingList> ticketCategoriesForWaitingList
-) {
-
-    public record TicketCategoryForWaitingList(int id, String name) {
+public record CategoryAvailability(@Column("available_tickets") int availableTickets,
+                                   @Column("pending_tickets") int pendingTickets) {
+    public boolean hasPendingTickets() {
+        return pendingTickets > 0;
     }
 }

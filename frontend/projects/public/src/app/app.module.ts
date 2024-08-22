@@ -21,6 +21,7 @@ import {
     faAngleUp,
     faCheck,
     faCircle,
+    faCircleNotch,
     faCog,
     faCreditCard,
     faDownload,
@@ -251,7 +252,7 @@ export class AppModule {
     library.addIcons(faInfoCircle, faGift, faTicketAlt, faCheck, faAddressCard, faFileAlt, faThumbsUp, faMoneyBill,
       faDownload, faSearchPlus, faExchangeAlt, faExclamationTriangle, faCreditCard, faCog, faEraser, faTimes, faFileInvoice, faGlobe,
       faAngleDown, faAngleUp, faCircle, faCheckCircle, faMoneyCheckAlt, faWifi, faTrash, faCopy, faExclamationCircle, faUserAstronaut,
-      faSignInAlt, faSignOutAlt, faExternalLinkAlt, faMapMarkerAlt, faRedoAlt);
+      faSignInAlt, faSignOutAlt, faExternalLinkAlt, faMapMarkerAlt, faRedoAlt, faCircleNotch);
     library.addIcons(faCalendarAlt, faCalendarPlus, faCompass, faClock, faEnvelope, faEdit, faClone, faHandshake, faBuilding);
     library.addIcons(faPaypal, faStripe, faIdeal, faApplePay, faFilePdf);
   }

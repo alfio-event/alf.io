@@ -1550,12 +1550,11 @@ public class TicketReservationManager {
         return configurationManager.getShortReservationID(event, findById(reservationId).orElseThrow());
     }
 
-
-    public int countAvailableTickets(EventAndOrganizationId event, TicketCategory category) {
+    public CategoryAvailability countAvailableTickets(EventAndOrganizationId event, TicketCategory category) {
         if(category.isBounded()) {
-            return ticketRepository.countFreeTickets(event.getId(), category.getId());
+            return ticketRepository.getCategoryAvailability(event.getId(), category.getId());
         }
-        return ticketRepository.countFreeTicketsForUnbounded(event.getId());
+        return ticketRepository.getUnboundedCategoryAvailability(event.getId(), category.getId());
     }
 
     public void releaseTicket(Event event, TicketReservation ticketReservation, final Ticket ticket) {

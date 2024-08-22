@@ -21,7 +21,16 @@
           <hr class="mt-5">
 
           <div class="row d-flex justify-content-between mobile-add-margin-bottom">
-            <div class="col-md-5 order-md-1 col-12"><button type="submit" *ngIf="subscription.numAvailable > 0" class="block-button btn btn-success" translate="show-event.continue"></button></div>
+            <div class="col-md-5 order-md-1 col-12">
+                @if (subscription.numAvailable > 0) {
+                    <button type="submit" class="block-button btn btn-success">
+                        @if (submitInProgress) {
+                            <fa-icon [icon]="['fas', 'circle-notch']" [animation]="'spin'"></fa-icon>
+                        }
+                        <span [ngClass]="{'ms-2': submitInProgress}">{{(submitInProgress ? 'reservation.payment-in-progress' : 'show-event.continue') | translate}}</span>
+                    </button>
+                }
+            </div>
             <div class="col-md-5 order-md-0 col-12 "><a [href]="subscription.websiteUrl" class="block-button btn btn-light" translate="common.back-to-organizer"></a></div>
           </div>
         </form>

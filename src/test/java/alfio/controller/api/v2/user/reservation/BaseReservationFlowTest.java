@@ -398,14 +398,14 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
             assertNotNull(items);
 
-            assertEquals(1, items.getTicketCategories().size());
-            var visibleCat = items.getTicketCategories().get(0);
+            assertEquals(1, items.ticketCategories().size());
+            var visibleCat = items.ticketCategories().get(0);
             assertEquals("default", visibleCat.getName());
             assertEquals("10.00", visibleCat.getFormattedFinalPrice());
             assertFalse(visibleCat.isHasDiscount());
 
-            assertEquals(1, items.getAdditionalServices().size());
-            var additionalItem = items.getAdditionalServices().get(0);
+            assertEquals(1, items.additionalServices().size());
+            var additionalItem = items.additionalServices().get(0);
             assertEquals("40.00", additionalItem.getFormattedFinalPrice());
             assertEquals("1.00", additionalItem.getVatPercentage());
             assertEquals(1, additionalItem.getTitle().size()); //TODO: check: if there are missing lang, we should at least copy them (?)
@@ -414,8 +414,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertEquals("<p>additional desc</p>\n", additionalItem.getDescription().get("en"));
 
             // check presence of reservation list
-            assertFalse(items.isWaitingList());
-            assertFalse(items.isPreSales());
+            assertFalse(items.waitingList());
+            assertFalse(items.preSales());
             //
 
             // fix dates to enable reservation list
@@ -424,8 +424,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             //
             items = eventApiV2Controller.getTicketCategories(context.event.getShortName(), null).getBody();
             assertNotNull(items);
-            assertTrue(items.isWaitingList());
-            assertTrue(items.isPreSales());
+            assertTrue(items.waitingList());
+            assertTrue(items.preSales());
             //
 
             var subForm = new WaitingQueueSubscriptionForm();
@@ -501,9 +501,9 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             var itemsRes2 = eventApiV2Controller.getTicketCategories(context.event.getShortName(), HIDDEN_CODE);
             var items2 = itemsRes2.getBody();
             assertNotNull(items2);
-            assertEquals(2, items2.getTicketCategories().size());
+            assertEquals(2, items2.ticketCategories().size());
 
-            var hiddenCat = items2.getTicketCategories().stream().filter(t -> t.isAccessRestricted()).findFirst().get();
+            var hiddenCat = items2.ticketCategories().stream().filter(t -> t.isAccessRestricted()).findFirst().get();
             assertEquals(hiddenCategoryId, hiddenCat.getId());
             assertEquals("hidden", hiddenCat.getName());
             assertEquals("1.00", hiddenCat.getFormattedFinalPrice());
@@ -626,8 +626,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             var items3 = itemsRes3.getBody();
             assertNotNull(items3);
 
-            assertEquals(1, items3.getTicketCategories().size());
-            var visibleCat = items3.getTicketCategories().get(0);
+            assertEquals(1, items3.ticketCategories().size());
+            var visibleCat = items3.ticketCategories().get(0);
             assertEquals("default", visibleCat.getName());
             assertEquals("10.00", visibleCat.getFormattedFinalPrice());
             assertTrue(visibleCat.isHasDiscount());
@@ -672,7 +672,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         //check blacklist payment methods
         {
             var form = new ReservationForm();
-            var categories = eventApiV2Controller.getTicketCategories(context.event.getShortName(), HIDDEN_CODE).getBody().getTicketCategories();
+            var categories = eventApiV2Controller.getTicketCategories(context.event.getShortName(), HIDDEN_CODE).getBody().ticketCategories();
 
             var c1 = new TicketReservationModification();
             c1.setQuantity(1);
@@ -1531,7 +1531,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
     private List<alfio.controller.api.v2.model.TicketCategory> retrieveCategories(ReservationFlowContext context) {
         var response = requireNonNull(eventApiV2Controller.getTicketCategories(context.event.getShortName(), null));
-        return requireNonNull(response.getBody()).getTicketCategories();
+        return requireNonNull(response.getBody()).ticketCategories();
     }
 
     protected void performAdditionalTests(ReservationFlowContext reservationFlowContext) {}
@@ -1575,7 +1575,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         var categoriesResponse = eventApiV2Controller.getTicketCategories(context.event.getShortName(), null);
         assertTrue(categoriesResponse.getStatusCode().is2xxSuccessful());
         assertNotNull(categoriesResponse.getBody());
-        var categoryId = categoriesResponse.getBody().getTicketCategories().stream()
+        var categoryId = categoriesResponse.getBody().ticketCategories().stream()
             .filter(t -> t.getName().equals(categoryName))
             .findFirst()
             .orElseThrow()

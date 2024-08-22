@@ -706,11 +706,11 @@ class TicketReservationManagerTest {
         //count how many tickets yet available for a category
         when(ticketCategory.isBounded()).thenReturn(true);
         trm.countAvailableTickets(event, ticketCategory);
-        verify(ticketRepository).countFreeTickets(eq(EVENT_ID), eq(TICKET_CATEGORY_ID));
+        verify(ticketRepository).getCategoryAvailability(eq(EVENT_ID), eq(TICKET_CATEGORY_ID));
         //count how many tickets are available for unbounded categories
         when(ticketCategory.isBounded()).thenReturn(false);
         trm.countAvailableTickets(event, ticketCategory);
-        verify(ticketRepository).countFreeTicketsForUnbounded(eq(EVENT_ID));
+        verify(ticketRepository).getUnboundedCategoryAvailability(eq(EVENT_ID), eq(TICKET_CATEGORY_ID));
     }
 
     private void initReleaseTicket() {
