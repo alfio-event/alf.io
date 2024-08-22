@@ -548,6 +548,10 @@ public class EventManager {
         reallocateTickets(ticketCategory, Optional.empty(), event);
     }
 
+    public List<TicketCategory> findCategoriesById(Collection<Integer> categoryIds, EventAndOrganizationId event) {
+        return ticketCategoryRepository.getByIdsAndActive(categoryIds, event.getId());
+    }
+
     MapSqlParameterSource[] prepareTicketsBulkInsertParameters(ZonedDateTime creation,
                                                                Event event, int requestedTickets, TicketStatus ticketStatus) {
 

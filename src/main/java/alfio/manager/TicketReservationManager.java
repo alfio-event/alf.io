@@ -2046,27 +2046,16 @@ public class TicketReservationManager {
 
     public Optional<String> createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor,
                                                           Locale locale,
-                                                          BindingResult bindingResult,
                                                           Principal principal) {
-        return createSubscriptionReservation(subscriptionDescriptor, locale, bindingResult, principal, SubscriptionMetadata.empty());
+        return createSubscriptionReservation(subscriptionDescriptor, locale, principal, SubscriptionMetadata.empty());
     }
 
     public Optional<String> createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor,
                                                           Locale locale,
-                                                          BindingResult bindingResult,
                                                           Principal principal,
                                                           SubscriptionMetadata metadata) {
         Date expiration = DateUtils.addMinutes(new Date(), getReservationTimeout(subscriptionDescriptor));
-        try {
-            return Optional.of(createSubscriptionReservation(subscriptionDescriptor, expiration, locale, retrievePublicUserId(principal), metadata));
-        } catch (CannotProceedWithPayment cannotProceedWithPayment) {
-            bindingResult.reject("error.STEP_1_PAYMENT_METHODS_ERROR");
-            log.error("missing payment methods", cannotProceedWithPayment);
-        } catch (NotEnoughTicketsException nex) {
-            log.error("cannot acquire subscription", nex);
-            bindingResult.reject("show-subscription.sold-out.message");
-        }
-        return Optional.empty();
+        return Optional.of(createSubscriptionReservation(subscriptionDescriptor, expiration, locale, retrievePublicUserId(principal), metadata));
     }
 
     public Optional<String> createTicketReservation(Event event,
@@ -2074,32 +2063,17 @@ public class TicketReservationManager {
                                                     List<ASReservationWithOptionalCodeModification> additionalServices,
                                                     Optional<String> promoCodeDiscount,
                                                     Locale locale,
-                                                    BindingResult bindingResult,
                                                     Principal principal) {
         Date expiration = DateUtils.addMinutes(new Date(), getReservationTimeout(event));
-        try {
-            var reservationId = createTicketReservation(event,
-                list,
-                additionalServices,
-                expiration,
-                promoCodeDiscount,
-                locale,
-                false,
-                principal);
-            return Optional.of(reservationId);
-        } catch (NotEnoughTicketsException | NotEnoughItemsException nete) {
-            bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
-        } catch (MissingSpecialPriceTokenException missing) {
-            bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
-        } catch (InvalidSpecialPriceTokenException invalid) {
-            bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
-        } catch (TooManyTicketsForDiscountCodeException tooMany) {
-            bindingResult.reject(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
-        } catch (CannotProceedWithPayment cannotProceedWithPayment) {
-            bindingResult.reject(ErrorsCode.STEP_1_CATEGORIES_NOT_COMPATIBLE);
-            log.error("missing payment methods", cannotProceedWithPayment);
-        }
-        return Optional.empty();
+        var reservationId = createTicketReservation(event,
+            list,
+            additionalServices,
+            expiration,
+            promoCodeDiscount,
+            locale,
+            false,
+            principal);
+        return Optional.of(reservationId);
     }
 
     boolean canProceedWithPayment(PurchaseContext purchaseContext, TotalPrice totalPrice, String reservationId) {

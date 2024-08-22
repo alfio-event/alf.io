@@ -212,7 +212,7 @@ public class PromoCodeRequestManager {
                                                      Optional<String> promoCodeDiscount,
                                                      Principal principal) {
         return ReservationUtil.validateCreateRequest(reservation, bindingResult, ticketReservationManager, eventManager, additionalServiceManager, promoCodeDiscount.orElse(null), event)
-            .flatMap(selected -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, bindingResult, principal));
+            .flatMap(selected -> ReservationUtil.handleReservationCreationErrors(() -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, principal), bindingResult, event.getType()));
     }
 
     public Optional<PromoCodeDiscount> findById(int id) {

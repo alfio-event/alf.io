@@ -22,6 +22,7 @@ import alfio.manager.AdditionalServiceManager;
 import alfio.manager.EventManager;
 import alfio.manager.PromoCodeRequestManager;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.support.reservation.*;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -32,19 +33,23 @@ import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.repository.TicketCategoryRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
 
 public class ReservationUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(ReservationUtil.class);
 
     private ReservationUtil() {
     }
@@ -88,7 +93,7 @@ public class ReservationUtil {
 
         List<Pair<ReservationRequest, Integer>> maxTicketsByTicketReservation = selected(request.getTickets()).stream()
             .map(r -> Pair.of((ReservationRequest) r, tickReservationManager.maxAmountOfTicketsForCategory(event, r.getTicketCategoryId(), validatedPromoCodeDiscount)))
-            .collect(toList());
+            .toList();
         Optional<Pair<ReservationRequest, Integer>> error = maxTicketsByTicketReservation.stream()
             .filter(p -> p.getKey().getQuantity() > p.getValue())
             .findAny();
@@ -98,15 +103,12 @@ public class ReservationUtil {
             return Optional.empty();
         }
 
-        final var categories = selected(request.getTickets());
+
+        final var selectedCategoryIds = selected(request.getTickets()).stream().map(ReservationRequest::getTicketCategoryId).collect(Collectors.toSet());
+        final var availableCategoryIds = eventManager.findCategoriesById(selectedCategoryIds, event).stream().map(TicketCategory::getId).collect(Collectors.toSet());
+        final boolean validCategorySelection = availableCategoryIds.equals(selectedCategoryIds);
+
         final List<AdditionalServiceReservationModification> additionalServices = selectedAdditionalServices(request.getAdditionalServices());
-
-        final boolean validCategorySelection = categories.stream().allMatch(c -> {
-            TicketCategory tc = eventManager.getTicketCategoryById(c.getTicketCategoryId(), event.getId());
-            return eventManager.eventExistsById(tc.getEventId());
-        });
-
-
         final boolean validAdditionalServiceSelected = additionalServices.stream().allMatch(asm -> {
             AdditionalService as = additionalServiceManager.getAdditionalServiceById(asm.getAdditionalServiceId(), event.getId());
             ZonedDateTime now = event.now(ClockProvider.clock());
@@ -129,7 +131,7 @@ public class ReservationUtil {
         //
         final ZonedDateTime now = event.now(ClockProvider.clock());
         maxTicketsByTicketReservation.forEach(pair -> validateCategory(bindingResult, tickReservationManager, eventManager, event, pair.getRight(), res, specialCode, now, pair.getLeft()));
-        return bindingResult.hasErrors() ? Optional.empty() : Optional.of(Pair.of(res, additionalServices.stream().map(as -> new ASReservationWithOptionalCodeModification(as, specialCode)).collect(Collectors.toList())));
+        return bindingResult.hasErrors() ? Optional.empty() : Optional.of(Pair.of(res, additionalServices.stream().map(as -> new ASReservationWithOptionalCodeModification(as, specialCode)).toList()));
     }
 
     private static <T extends ReservationRequest> int ticketSelectionCount(List<T> tickets) {
@@ -156,7 +158,7 @@ public class ReservationUtil {
             .orElse(emptyList())
             .stream()
             .filter(e -> e != null && e.getQuantity() != null && e.getTicketCategoryId() != null && e.getQuantity() > 0)
-            .collect(toList());
+            .toList();
     }
 
     private static List<AdditionalServiceReservationModification> selectedAdditionalServices(List<AdditionalServiceReservationModification> additionalServices) {
@@ -164,7 +166,7 @@ public class ReservationUtil {
             .orElse(emptyList())
             .stream()
             .filter(e -> e != null && e.getQuantity() != null && e.getAdditionalServiceId() != null && e.getQuantity() > 0)
-            .collect(toList());
+            .toList();
     }
 
     public static boolean hasPrivacyPolicy(PurchaseContext event) {
@@ -201,7 +203,7 @@ public class ReservationUtil {
             ticketsWithCategory = ticketCategoryRepository.findByIds(ticketsByCategory.keySet())
                 .stream()
                 .flatMap(tc -> ticketsByCategory.get(tc.getId()).stream().map(t -> new TicketWithCategory(t, tc)))
-                .collect(toList());
+                .toList();
         } else {
             ticketsWithCategory = Collections.emptyList();
         }
@@ -210,5 +212,30 @@ public class ReservationUtil {
 
     public static Locale getReservationLocale(TicketReservation reservation) {
         return StringUtils.isEmpty(reservation.getUserLanguage()) ? Locale.ENGLISH : LocaleUtil.forLanguageTag(reservation.getUserLanguage());
+    }
+
+    public static Optional<String> handleReservationCreationErrors(Supplier<Optional<String>> reservationCreationCall,
+                                                                   BindingResult bindingResult,
+                                                                   PurchaseContext.PurchaseContextType purchaseContextType) {
+        try {
+            return reservationCreationCall.get();
+        } catch (NotEnoughTicketsException | NotEnoughItemsException nete) {
+            if (purchaseContextType == PurchaseContext.PurchaseContextType.event) {
+                bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
+            } else {
+                log.error("cannot acquire subscription", nete);
+                bindingResult.reject("show-subscription.sold-out.message");
+            }
+        } catch (MissingSpecialPriceTokenException missing) {
+            bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
+        } catch (InvalidSpecialPriceTokenException invalid) {
+            bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
+        } catch (TooManyTicketsForDiscountCodeException tooMany) {
+            bindingResult.reject(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
+        } catch (CannotProceedWithPayment cannotProceedWithPayment) {
+            bindingResult.reject(ErrorsCode.STEP_1_CATEGORIES_NOT_COMPATIBLE);
+            log.error("missing payment methods", cannotProceedWithPayment);
+        }
+        return Optional.empty();
     }
 }
