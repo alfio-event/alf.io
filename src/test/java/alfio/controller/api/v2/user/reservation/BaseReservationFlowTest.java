@@ -94,6 +94,7 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.sql.JDBCType;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -700,6 +701,35 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertEquals(HttpStatus.OK, cancelRes.getStatusCode());
 
             checkStatus(reservationId, HttpStatus.NOT_FOUND, null, null, context);
+        }
+
+        // try to reserve more tickets than available
+        {
+            var category = retrieveCategories(context).get(0);
+            Integer categoryIdFilter = category.isBounded() ? category.getId() : null;
+            var freeTickets = jdbcTemplate.queryForList("select id from ticket where event_id = :eventId and status = 'FREE' and ((:categoryFilter::int is null and category_id is null) or category_id = :categoryFilter::int)", new MapSqlParameterSource("eventId", context.event.getId()).addValue("categoryFilter", categoryIdFilter), Integer.class);
+            // we leave one ticket
+            var lockedTickets = freeTickets.subList(1, freeTickets.size());
+            int result = jdbcTemplate.update("update ticket set status = 'PENDING', category_id = :categoryId where id in (:freeTickets)", new MapSqlParameterSource("freeTickets", lockedTickets).addValue("categoryId", category.getId()));
+            assertEquals(result, lockedTickets.size());
+
+            var freeTicketsCount = jdbcTemplate.queryForObject("select count(*) from ticket where category_id "+ (category.isBounded() ? " = :categoryId" : "is null") + " and status = 'FREE' and event_id = :eventId", Map.of("eventId", context.event.getId(), "categoryId", category.getId()), Integer.class);
+            assertEquals(1, freeTicketsCount);
+
+            // try to reserve two ticket
+            var form = new ReservationForm();
+            var ticketReservation = new TicketReservationModification();
+            ticketReservation.setQuantity(2);
+            ticketReservation.setTicketCategoryId(category.getId());
+            form.setReservation(Collections.singletonList(ticketReservation));
+            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), context.getPublicUser());
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, res.getStatusCode());
+            assertEquals(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS, requireNonNull(res.getBody()).getValidationErrors().get(0).getCode());
+            // ensure that reservation was not created
+            assertEquals(Boolean.FALSE, jdbcTemplate.queryForObject("select exists(select id from tickets_reservation where status = 'PENDING' and event_id_fk = :eventId)", new MapSqlParameterSource("eventId", context.event.getId()), Boolean.class));
+            // restore data
+            result = jdbcTemplate.update("update ticket set status = 'FREE', category_id = :categoryId where id in (:freeTickets)", new MapSqlParameterSource("freeTickets", lockedTickets).addValue("categoryId", category.isBounded() ? category.getId() : null, JDBCType.INTEGER.getVendorTypeNumber()));
+            assertEquals(result, lockedTickets.size());
         }
 
         //buy 2 ticket, with additional service + field
