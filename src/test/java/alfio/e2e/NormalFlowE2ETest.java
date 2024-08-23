@@ -184,7 +184,7 @@ class NormalFlowE2ETest {
         dropdown.findElement(By.xpath("//option[. = '1']")).click();
         //
         // click continue button, submit form
-        browserWebDriver.driver.findElement(By.cssSelector("button.btn-success[translate='show-event.continue']")).sendKeys(Keys.RETURN);
+        browserWebDriver.driver.findElement(By.id("show-event-continue")).sendKeys(Keys.RETURN);
 
     }
 
