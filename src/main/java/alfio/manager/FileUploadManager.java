@@ -64,6 +64,11 @@ public class FileUploadManager {
         return repository.findById(id);
     }
 
+    public boolean hasCached(String digest) {
+        Assert.isTrue(IS_HEX.matcher(digest).matches(), "id must be an hex value");
+        return fileBlobCacheManager.fileExists(FILE_SECTION, digest);
+    }
+
     private static final Pattern IS_HEX = Pattern.compile("^\\p{XDigit}+$");
 
     public void outputFile(String id, OutputStream out) {
