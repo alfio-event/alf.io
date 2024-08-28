@@ -10,9 +10,9 @@ import {IconProp} from '@fortawesome/fontawesome-svg-core';
   styleUrls: ['./feedback.component.scss']
 })
 export class FeedbackComponent {
-  text: string;
-  active: boolean;
-  private type: FeedbackType;
+  text?: string;
+  active: boolean = false;
+  private type: FeedbackType = 'SUCCESS';
 
   constructor(private feedbackService: FeedbackService) {
     this.feedbackService.displayNotification().subscribe(details => {

@@ -63,6 +63,7 @@ export class EventDisplayComponent implements OnInit, OnDestroy {
   private refreshDebouncer = new Subject<any>();
   private subscription?: Subscription;
   submitInProgress: boolean = false;
+  refreshInProgress: boolean = false;
 
   // https://alligator.io/angular/reactive-forms-formarray-dynamic-fields/
 
@@ -325,10 +326,12 @@ export class EventDisplayComponent implements OnInit, OnDestroy {
   }
 
   private doRefreshCategories() {
+    this.refreshInProgress = true;
     this.eventService.getEventTicketsInfo(this.event.shortName)
         .subscribe(itemsByCat => {
             this.applyItemsByCat(itemsByCat);
             this.feedbackService.showSuccess('show-event.category-refresh.complete');
+            this.refreshInProgress = false;
         })
   }
 }

@@ -17,6 +17,9 @@ export class TicketQuantitySelectorComponent {
   @Input()
   quantityRange: number[];
 
+  @Input()
+  refreshInProgress: boolean = false;
+
   @Output()
   valueChange = new EventEmitter<number>();
 

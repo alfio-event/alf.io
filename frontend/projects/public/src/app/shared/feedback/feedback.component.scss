@@ -2,13 +2,12 @@
 @import "bootstrap/scss/mixins";
 @import "bootstrap/scss/variables";
 
-:host ::ng-deep .toast {
-
+:host .toast {
+  --bs-toast-padding-x: 0;
   @include media-breakpoint-down(lg) {
     position: fixed;
-    top: 0;
-    left: 0;
-    margin: 2em;
+    top: 16px;
+    left: calc(50% - $toast-max-width / 2);
     max-width: unset;
     background-color: white;
   }

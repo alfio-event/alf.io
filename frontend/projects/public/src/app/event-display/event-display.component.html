@@ -118,7 +118,8 @@
                 [category]="category"
                 [quantityRange]="ticketCategoryAmount[category.id]"
                 (valueChange)="selectionChange()"
-                (refreshCommand)="handleRefreshCommand()"></app-ticket-quantity-selector>
+                (refreshCommand)="handleRefreshCommand()"
+                [refreshInProgress]="refreshInProgress"></app-ticket-quantity-selector>
           </div>
           @if (!waitingList && !category.saleableAndLimitNotReached && category.containsPendingTickets) {
               <div class="item-info border-top pt-2">

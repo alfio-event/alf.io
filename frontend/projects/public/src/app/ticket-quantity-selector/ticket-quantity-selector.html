@@ -18,7 +18,7 @@
 
       @if (category.containsPendingTickets || !category.soldOutOrLimitReached) {
           <button type="button" class="btn btn-sm btn-default" (click)="refreshCategories()">
-              <fa-icon [icon]="['fas', 'redo-alt']"></fa-icon> {{'common.refresh' | translate}}
+              <fa-icon [icon]="['fas', 'redo-alt']" [animation]="refreshInProgress ? 'spin' : undefined"></fa-icon> {{'common.refresh' | translate}}
           </button>
       }
       </div>
