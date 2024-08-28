@@ -84,8 +84,10 @@ public class TicketCategoryAvailabilityManager {
 
     public Optional<ItemsByCategory> getTicketCategories(String eventName, String code) {
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
-
-            var configurations = configurationManager.getFor(List.of(DISPLAY_TICKETS_LEFT_INDICATOR, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, DISPLAY_EXPIRED_CATEGORIES), event.getConfigurationLevel());
+            var configurations = configurationManager.getFor(List.of(
+                DISPLAY_TICKETS_LEFT_INDICATOR, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, DISPLAY_EXPIRED_CATEGORIES,
+                STOP_WAITING_QUEUE_SUBSCRIPTIONS, ENABLE_PRE_REGISTRATION, ENABLE_WAITING_QUEUE // used by EventUtil
+                ), event.getConfigurationLevel());
             var ticketCategoryLevelConfiguration = configurationManager.getAllCategoriesAndValueWith(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
             var messageSource = messageSourceManager.getMessageSourceFor(event);
             var appliedPromoCode = promoCodeRequestManager.checkCode(event, code);
@@ -165,7 +167,7 @@ public class TicketCategoryAvailabilityManager {
             //
 
             // waiting queue parameters
-            boolean displayWaitingQueueForm = EventUtil.displayWaitingQueueForm(event, saleableTicketCategories, configurationManager, eventStatisticsManager.noSeatsAvailable());
+            boolean displayWaitingQueueForm = EventUtil.displayWaitingQueueForm(event, saleableTicketCategories, configurations, eventStatisticsManager.noSeatsAvailable());
             boolean preSales = EventUtil.isPreSales(event, saleableTicketCategories);
             Predicate<SaleableTicketCategory> waitingQueueTargetCategory = tc -> !tc.getExpired() && !tc.isBounded();
             List<SaleableTicketCategory> unboundedCategories = saleableTicketCategories.stream().filter(waitingQueueTargetCategory).collect(Collectors.toList());
