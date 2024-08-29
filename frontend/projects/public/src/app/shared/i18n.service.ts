@@ -10,7 +10,7 @@ import {catchError, map, mergeMap, shareReplay, tap} from 'rxjs/operators';
 import {EventService} from './event.service';
 import {PurchaseContextType} from './purchase-context.service';
 import {PurchaseContext} from '../model/purchase-context';
-import {getFromSessionStorage, writeToSessionStorage} from './util';
+import {getFromSessionStorage, loadPreloaded, writeToSessionStorage} from './util';
 
 @Injectable({
   providedIn: 'root'
@@ -41,11 +41,11 @@ export class I18nService {
       if (this.countriesCache.empty) {
           const vatCountries = document.getElementById('preload-vat-countries');
           if (vatCountries != null && vatCountries.getAttribute('data-param') != null) {
-              this.countriesCache.countriesForVat[vatCountries.getAttribute('data-param')] = JSON.parse(vatCountries.textContent);
+              this.countriesCache.countriesForVat[vatCountries.getAttribute('data-param')] = loadPreloaded('preload-vat-countries');
           }
           const allCountries = document.getElementById('preload-countries');
           if (allCountries != null && allCountries.getAttribute('data-param') != null) {
-              this.countriesCache.allCountries[allCountries.getAttribute('data-param')] = JSON.parse(allCountries.textContent);
+              this.countriesCache.allCountries[allCountries.getAttribute('data-param')] = loadPreloaded('preload-countries');
           }
           this.countriesCache.markAsInitialized();
       }
@@ -153,7 +153,7 @@ export class CustomLoader implements TranslateLoader {
     if (!translationCache[lang]) {
       const preloadBundle = document.getElementById('preload-bundle');
       if (preloadBundle && preloadBundle.getAttribute('data-param') === lang) {
-        translationCache[lang] = of(JSON.parse(preloadBundle.textContent)).pipe(shareReplay(1));
+        translationCache[lang] = of(loadPreloaded('preload-bundle')).pipe(shareReplay(1));
       } else {
         translationCache[lang] = this.http.get(`/api/v2/public/i18n/bundle/${lang}`).pipe(shareReplay(1));
       }

@@ -10,6 +10,7 @@ import {shareReplay} from 'rxjs/operators';
 import {EventCode} from '../model/event-code';
 import {DateValidity} from '../model/date-validity';
 import {SearchParams} from '../model/search-params';
+import { loadPreloaded } from './util';
 
 @Injectable({
   providedIn: 'root'
@@ -33,7 +34,7 @@ export class EventService {
     if (!this.eventCache[eventShortName]) {
       const preloadEvent = document.getElementById('preload-event');
       if (preloadEvent && preloadEvent.getAttribute('data-param') === eventShortName) {
-        this.eventCache[eventShortName] = of(JSON.parse(preloadEvent.textContent)).pipe(shareReplay(1));
+        this.eventCache[eventShortName] = of(loadPreloaded('preload-event')).pipe(shareReplay(1));
       } else {
         this.eventCache[eventShortName] = this.http.get<Event>(`/api/v2/public/event/${eventShortName}`).pipe(shareReplay(1));
       }

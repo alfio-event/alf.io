@@ -96,3 +96,14 @@ export function groupAdditionalData(data: AdditionalServiceWithData[]): GroupedA
 export interface GroupedAdditionalServiceWithData extends AdditionalServiceWithData {
   count: number;
 }
+
+// load preloaded data which are json and url encoded
+export function loadPreloaded(id: string) {
+  const preload = document.getElementById(id);
+  if (preload && preload.textContent) {
+    return JSON.parse(decodeURIComponent(preload.textContent));
+  } else {
+    return undefined;
+  }
+  
+}
