@@ -51,6 +51,12 @@ public class FileBlobCacheManager {
         Assert.isTrue(childPath.startsWith(parentPath), () -> "Resource path " + childPath + "must be inside the blob path " + parentPath);
     }
 
+    public boolean fileExists(String section, String id) {
+        var resourcePath = getBlobDir(section).resolve(id);
+        checkPath(resourcePath, section);
+        return Files.exists(resourcePath);
+    }
+
     public File getFile(String section, String id, Supplier<File> supplier) {
         var resourcePath = getBlobDir(section).resolve(id);
         checkPath(resourcePath, section);

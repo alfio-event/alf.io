@@ -41,10 +41,20 @@ public class FileController {
     @GetMapping("/file/{digest}")
     public void showFile(@PathVariable String digest, HttpServletRequest request, HttpServletResponse response) throws IOException {
 
+
+        // fast path if the user has the header If-None-Match set and there is a matching file
+        // this avoid a db connection
+        var digestNoneMatchHeader =  request.getHeader("If-None-Match");
+        if (digest.equals(digestNoneMatchHeader) && manager.hasCached(digest)) {
+            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+            return;
+        }
+        //
+
         Optional<FileBlobMetadata> res = manager.findMetadata(digest);
         if (res.isPresent()) {
             FileBlobMetadata metadata = res.get();
-            if (digest.equals(request.getHeader("If-None-Match"))) {
+            if (digest.equals(digestNoneMatchHeader)) {
                 response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
             } else {
                 response.setContentType(metadata.getContentType());
