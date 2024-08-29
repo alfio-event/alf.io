@@ -23,7 +23,6 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.time.ZonedDateTime;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -106,12 +105,12 @@ public interface PromoCodeDiscountRepository {
     @Query("select count(*) from promo_code where event_id_fk = :eventId or (event_id_fk is null and organization_id_fk = :organizationId)")
     Integer countByEventAndOrganizationId(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId);
 
-    @Query("""
-        select count(b.id) from tickets_reservation a, ticket b\
-         where (:currentId is null or a.id <> :currentId) and a.status in ('OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT', 'COMPLETE', 'STUCK') and a.promo_code_id_fk = :id\
-         and b.tickets_reservation_id = a.id and (:categoriesJson is null or b.category_id in (:categories))\
-        """)
-    Integer countConfirmedPromoCode(@Bind("id") int id, @Bind("categories") Collection<Integer> categories, @Bind("currentId") String currentReservationId, @Bind("categoriesJson") String categoriesJson);
+
+    @Query("select promo_code_use from promocode_count where promo_code_id = :id")
+    Integer countConfirmedPromoCode(@Bind("id") int id);
+
+    @Query("select promo_code_use from promocode_count_all where promo_code_id = :id")
+    Integer countUsedPromoCode(@Bind("id") int id);
 
     @Query("update promo_code set valid_to = :end where id = :id")
     int updateEventPromoCodeEnd(@Bind("id") int id, @Bind("end") ZonedDateTime end);
@@ -135,4 +134,7 @@ public interface PromoCodeDiscountRepository {
         """)
     List<PromoCodeUsageResult> findDetailedUsage(@Bind("promoCode") String promoCode,
                                                  @Bind("eventId") Integer eventId);
+
+    @Query("select id from promo_code where id = :id for update")
+    Integer lockForCount(@Bind("id") int id);
 }

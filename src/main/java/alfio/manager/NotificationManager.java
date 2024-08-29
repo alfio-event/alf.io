@@ -346,6 +346,11 @@ public class NotificationManager {
 
     public void sendSimpleEmail(PurchaseContext purchaseContext, String reservationId, String recipient, List<String> cc, String subject, TemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
 
+        if (recipient == null) {
+            log.warn("No recipient provided, mail for reservation id {} with subject {} will be ignored", reservationId, subject);
+            return;
+        }
+
         String encodedAttachments = attachments.isEmpty() ? null : encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String encodedCC = Json.toJson(cc);
 

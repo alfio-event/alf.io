@@ -85,6 +85,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.validation.BindingResult;
 
 import java.math.BigDecimal;
@@ -325,6 +326,17 @@ public class TicketReservationManager {
             .flatMap(promoCodeDiscount -> promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), promoCodeDiscount));
 
         Optional<PromoCodeDiscount> dynamicDiscount = createDynamicPromoCode(discount, event, list, reservationId);
+
+        discount.ifPresent(d -> {
+            if (d.getMaxUsage() != null) {
+                promoCodeDiscountRepository.lockForCount(d.getId());
+                var discountedCategories = d.getCategories();
+                var appliedDiscountCount = CollectionUtils.isEmpty(discountedCategories) ? list.size() : list.stream().filter(t -> discountedCategories.contains(t.getTicketCategoryId())).count();
+                if (d.getMaxUsage() < promoCodeDiscountRepository.countUsedPromoCode(d.getId()) + appliedDiscountCount) {
+                    throw new TooManyTicketsForDiscountCodeException();
+                }
+            }
+        });
 
         ticketReservationRepository.createNewReservation(reservationId,
             event.now(clockProvider),
@@ -707,12 +719,12 @@ public class TicketReservationManager {
         TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
         if(reservation.getPromoCodeDiscountId() != null) {
             final PromoCodeDiscount promoCode = promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId());
-            if(promoCode.getMaxUsage() == null) {
+            if (promoCode.getMaxUsage() == null) {
                 return false;
             }
             int currentTickets = ticketReservationRepository.countTicketsInReservationForCategories(reservationId, categoriesOrNull(promoCode));
             return Boolean.TRUE.equals(serializedTransactionTemplate.execute(status -> {
-                Integer confirmedPromoCode = promoCodeDiscountRepository.countConfirmedPromoCode(promoCode.getId(), categoriesOrNull(promoCode), reservationId, categoriesOrNull(promoCode) != null ? "X" : null);
+                Integer confirmedPromoCode = promoCodeDiscountRepository.countConfirmedPromoCode(promoCode.getId());
                 return promoCode.getMaxUsage() < currentTickets + confirmedPromoCode;
             }));
         }
