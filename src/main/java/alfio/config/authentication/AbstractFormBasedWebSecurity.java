@@ -22,6 +22,8 @@ import alfio.config.challenge.CFTurnstileVerificationFilter;
 import alfio.config.support.ContextAwareCookieSerializer;
 import alfio.manager.RecaptchaService;
 import alfio.manager.openid.OpenIdConfiguration;
+import alfio.manager.payment.MollieConnectManager;
+import alfio.manager.payment.StripeConnectManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.user.User;
@@ -172,7 +174,7 @@ abstract class AbstractFormBasedWebSecurity {
 
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, StripeConnectManager stripeConnectManager, MollieConnectManager mollieConnectManager) throws Exception {
         if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE))) {
             http.requiresChannel(channel -> channel.requestMatchers("/healthz").requiresInsecure())
                 .requiresChannel(channel -> channel.requestMatchers("/**").requiresSecure());
@@ -193,7 +195,8 @@ abstract class AbstractFormBasedWebSecurity {
                 AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/v2/public/event/{name}/reserve-tickets"),
                 // subscription
                 AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/v2/public/subscription/{id}")
-            )), RecaptchaLoginFilter.class);
+            )), RecaptchaLoginFilter.class)
+            .addFilterAfter(new PaymentProviderConnectFilter(templateManager, userManager, stripeConnectManager, mollieConnectManager), CFTurnstileVerificationFilter.class);
 
         if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
             http.addFilterAfter(new UserCreatorBeforeLoginFilter(userManager, AUTHENTICATE), RecaptchaLoginFilter.class);

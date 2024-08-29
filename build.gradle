@@ -100,8 +100,8 @@ configurations {
 }
 
 repositories {
-    mavenLocal()
     mavenCentral()
+    mavenLocal()
     maven { url 'https://repo.spring.io/milestone' }
 }
 
