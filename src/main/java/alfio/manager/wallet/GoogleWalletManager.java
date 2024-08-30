@@ -54,6 +54,7 @@ import java.util.stream.Stream;
 
 import static alfio.config.Initializer.*;
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.util.MiscUtils.removeTabsAndNewlines;
 
 @Component
 @AllArgsConstructor
@@ -77,7 +78,9 @@ public class GoogleWalletManager {
     public Optional<Pair<EventAndOrganizationId, Ticket>> validateTicket(String eventName, String ticketUuid) {
         var eventOptional = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName);
         if (eventOptional.isEmpty()) {
-            log.trace("event {} not found", eventName);
+            if (log.isTraceEnabled()) {
+                log.trace("event {} not found", removeTabsAndNewlines(eventName));
+            }
             return Optional.empty();
         }
 

@@ -67,6 +67,7 @@ import static alfio.manager.system.AdminJobExecutor.JobName.RETRY_RESERVATION_CO
 import static alfio.model.Audit.EventType.SUBSCRIPTION_ACQUIRED;
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.util.MiscUtils.removeTabsAndNewlines;
 import static alfio.util.ReservationUtil.hasPrivacyPolicy;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -482,7 +483,7 @@ public class ReservationFinalizer {
             transactionRepository.update(transaction.getId(), transactionId, null, transactionTimestamp,
                 platformFee, 0L, Transaction.Status.COMPLETE, buildTransactionMetadata(transactionMetadataModification));
         } else {
-            log.warn("ON-Site check-in: ignoring transaction registration for reservationId {}", reservationId);
+            log.warn("ON-Site check-in: ignoring transaction registration for reservationId {}", removeTabsAndNewlines(reservationId));
         }
     }
 

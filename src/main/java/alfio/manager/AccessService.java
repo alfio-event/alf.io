@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 
 import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM_API_CLIENT;
 import static alfio.manager.user.UserManager.ADMIN_USERNAME;
+import static alfio.util.MiscUtils.removeTabsAndNewlines;
 import static java.util.Objects.requireNonNullElse;
 
 /**
@@ -530,7 +531,7 @@ public class AccessService {
     public EventAndOrganizationId checkWaitingQueueSubscriberInEvent(Principal principal, int subscriberId, String eventName) {
         var eventAndOrgId = checkEventOwnership(principal, eventName);
         if (!waitingQueueRepository.exists(subscriberId, eventAndOrgId.getId())) {
-            log.warn("subscriberId {} does not exists in event {}", subscriberId, eventName);
+            log.warn("subscriberId {} does not exists in event {}", subscriberId, removeTabsAndNewlines(eventName));
             throw new AccessDeniedException();
         }
         return eventAndOrgId;
@@ -605,7 +606,7 @@ public class AccessService {
     public EventAndOrganizationId checkEventTicketIdentifierMembership(Principal principal, String eventName, String ticketIdentifier, Set<Role> roles) {
         var eventAndOrgId = checkEventMembership(principal, eventName, roles);
         if (!ticketRepository.isTicketInEvent(eventAndOrgId.getId(), ticketIdentifier)) {
-            log.warn("ticket {} is not in eventId {}", ticketIdentifier, eventAndOrgId.getId());
+            log.warn("ticket {} is not in eventId {}", removeTabsAndNewlines(ticketIdentifier), eventAndOrgId.getId());
             throw new AccessDeniedException();
         }
         return eventAndOrgId;

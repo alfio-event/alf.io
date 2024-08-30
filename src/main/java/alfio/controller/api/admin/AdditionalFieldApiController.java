@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static alfio.util.MiscUtils.removeTabsAndNewlines;
 import static java.util.stream.Collectors.toList;
 
 @RestController
@@ -62,7 +63,9 @@ public class AdditionalFieldApiController {
     @GetMapping("/templates")
     public List<DynamicFieldTemplate> loadTemplates(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
                                                     @PathVariable String publicIdentifier) {
-        LOGGER.trace("Loading templates for {} {}", purchaseContextType, publicIdentifier);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Loading templates for {} {}", purchaseContextType, removeTabsAndNewlines(publicIdentifier));
+        }
         return dynamicFieldTemplateRepository.loadAll();
     }
 

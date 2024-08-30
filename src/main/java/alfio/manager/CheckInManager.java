@@ -65,6 +65,7 @@ import static alfio.manager.AccessService.MEMBERSHIP_ROLES;
 import static alfio.manager.support.CheckInStatus.*;
 import static alfio.model.Audit.EventType.*;
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.util.MiscUtils.removeTabsAndNewlines;
 import static alfio.util.Wrappers.optionally;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
@@ -102,8 +103,8 @@ public class CheckInManager {
         ticketRepository.toggleTicketLocking(ticket.getId(), ticket.getCategoryId(), true);
         if (event.supportsLinkedAdditionalServices()) {
             int n = additionalServiceItemRepository.updateItemsStatusWithTicketId(event.getId(), ticket.getTicketsReservationId(), ticket.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CHECKED_IN);
-            if (n > 0) {
-                log.debug("Checked in {} additional services for ticket {}", n, uuid);
+            if (n > 0 && log.isDebugEnabled()) {
+                log.debug("Checked in {} additional services for ticket {}", n, removeTabsAndNewlines(uuid));
             }
         }
         extensionManager.handleTicketCheckedIn(ticketRepository.findByUUID(uuid));

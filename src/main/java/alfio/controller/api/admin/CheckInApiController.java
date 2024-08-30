@@ -47,6 +47,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.manager.AccessService.MEMBERSHIP_ROLES;
+import static alfio.util.MiscUtils.removeTabsAndNewlines;
 import static alfio.util.Wrappers.optionally;
 
 @RestController
@@ -159,7 +160,7 @@ public class CheckInApiController {
                                  @PathVariable String ticketIdentifier,
                                  Principal principal) {
         accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier, AccessService.CHECKIN_ROLES);
-        log.warn("for event id : {} and ticket : {}, a revert of the check in has been done by {}", eventId, ticketIdentifier, principal.getName());
+        log.warn("for event id : {} and ticket : {}, a revert of the check in has been done by {}", eventId, removeTabsAndNewlines(ticketIdentifier), principal.getName());
         return checkInManager.revertCheckIn(eventId, ticketIdentifier, principal.getName());
     }
 

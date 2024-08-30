@@ -37,7 +37,6 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.gson.*;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -68,6 +67,7 @@ import java.util.stream.Stream;
 
 import static alfio.model.EmailMessage.Status.*;
 import static alfio.model.system.ConfigurationKeys.INCLUDE_CHECK_IN_URL_ICAL;
+import static alfio.util.MiscUtils.removeTabsAndNewlines;
 import static alfio.util.checkin.TicketCheckInUtil.*;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
@@ -347,7 +347,7 @@ public class NotificationManager {
     public void sendSimpleEmail(PurchaseContext purchaseContext, String reservationId, String recipient, List<String> cc, String subject, TemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
 
         if (recipient == null) {
-            log.warn("No recipient provided, mail for reservation id {} with subject {} will be ignored", reservationId, subject);
+            log.warn("No recipient provided, mail for reservation id {} with subject {} will be ignored", removeTabsAndNewlines(reservationId), removeTabsAndNewlines(subject));
             return;
         }
 

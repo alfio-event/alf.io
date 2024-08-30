@@ -29,4 +29,8 @@ public class MiscUtils {
         return elements.get(index);
     }
 
+    public static String removeTabsAndNewlines(String input) {
+        return input != null ? input.replaceAll("[\n\r]", "_") : "";
+    }
+
 }

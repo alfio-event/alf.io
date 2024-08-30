@@ -84,6 +84,7 @@ import static alfio.model.TicketCategory.TicketCheckInStrategy.ONCE_PER_EVENT;
 import static alfio.model.modification.DateTimeModification.atZone;
 import static alfio.model.system.ConfigurationKeys.CHECK_IN_COLOR_CONFIGURATION;
 import static alfio.util.EventUtil.*;
+import static alfio.util.MiscUtils.removeTabsAndNewlines;
 import static alfio.util.Wrappers.optionally;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -1048,7 +1049,7 @@ public class EventManager {
             int[] results = jdbcTemplate.batchUpdate(ticketCategoryRepository.updateOrdinal(), parameterSources);
             Validate.isTrue(IntStream.of(results).sum() == categories.size(), "Unexpected result from update.");
         } else {
-            log.warn("unauthorized access to event {}", eventName);
+            log.warn("unauthorized access to event {}", removeTabsAndNewlines(eventName));
         }
     }
 
