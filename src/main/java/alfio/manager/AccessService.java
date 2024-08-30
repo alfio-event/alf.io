@@ -380,7 +380,7 @@ public class AccessService {
             // user is requesting to remove all subscriptions from event
             return event;
         }
-        var descriptorsId = descriptorsToLink.stream().map(LinkSubscriptionsToEventRequest::getDescriptorId).collect(Collectors.toList());
+        var descriptorsId = descriptorsToLink.stream().map(LinkSubscriptionsToEventRequest::getDescriptorId).toList();
         var count = subscriptionRepository.countDescriptorsBelongingToOrganization(descriptorsId, event.getOrganizationId());
         if (count == null || descriptorsToLink.size() != count) {
             throw new AccessDeniedException();
@@ -531,7 +531,9 @@ public class AccessService {
     public EventAndOrganizationId checkWaitingQueueSubscriberInEvent(Principal principal, int subscriberId, String eventName) {
         var eventAndOrgId = checkEventOwnership(principal, eventName);
         if (!waitingQueueRepository.exists(subscriberId, eventAndOrgId.getId())) {
-            log.warn("subscriberId {} does not exists in event {}", subscriberId, removeTabsAndNewlines(eventName));
+            if (log.isWarnEnabled()) {
+                log.warn("subscriberId {} does not exists in event {}", subscriberId, removeTabsAndNewlines(eventName));
+            }
             throw new AccessDeniedException();
         }
         return eventAndOrgId;
@@ -558,7 +560,9 @@ public class AccessService {
             subscriptionUuid = UUID.fromString(publicIdentifier);
         }
         if (additionalFieldIds.size() != purchaseContextFieldRepository.countMatchingAdditionalFieldsForPurchaseContext(eventId, subscriptionUuid, additionalFieldIds)) {
-            log.warn("Some additional field ids {} are not inside purchaseContext {}", additionalFieldIds, publicIdentifier);
+            if (log.isWarnEnabled()) {
+                log.warn("Some additional field ids {} are not inside purchaseContext {}", additionalFieldIds, removeTabsAndNewlines(publicIdentifier));
+            }
             throw new AccessDeniedException();
         }
     }
@@ -574,7 +578,9 @@ public class AccessService {
     public void checkEventAndReservationOwnership(Principal principal, String eventName, Set<String> reservationIds) {
         var eventAndOrgId = checkEventOwnership(principal, eventName);
         if (reservationIds.size() != reservationRepository.countReservationsWithEventId(reservationIds, eventAndOrgId.getId())) {
-            log.warn("Some reservation ids {} are not in the event {}", reservationIds, eventName);
+            if (log.isWarnEnabled()) {
+                log.warn("Some reservation ids {} are not in the event {}", reservationIds, removeTabsAndNewlines(eventName));
+            }
             throw new AccessDeniedException();
         }
     }
@@ -582,7 +588,9 @@ public class AccessService {
     public void checkEventAndReservationAndTransactionOwnership(Principal principal, String eventName, String reservationId, int transactionId) {
         checkEventAndReservationOwnership(principal, eventName, Set.of(reservationId));
         if (!reservationRepository.hasReservationWithTransactionId(reservationId, transactionId)) {
-         log.warn("Reservation id {} does not have transaction id {}", reservationId, transactionId);
+            if (log.isWarnEnabled()) {
+                log.warn("Reservation id {} does not have transaction id {}", removeTabsAndNewlines(reservationId), transactionId);
+            }
             throw new AccessDeniedException();
         }
     }
@@ -598,7 +606,9 @@ public class AccessService {
     public void checkEventTicketIdentifierMembership(Principal principal, int eventId, String ticketIdentifier, Set<Role> roles) {
         checkEventMembership(principal, eventId, roles);
         if (!ticketRepository.isTicketInEvent(eventId, ticketIdentifier)) {
-            log.warn("ticket {} is not in eventId {}", ticketIdentifier, eventId);
+            if (log.isWarnEnabled()) {
+                log.warn("ticket {} is not in eventId {}", removeTabsAndNewlines(ticketIdentifier), eventId);
+            }
             throw new AccessDeniedException();
         }
     }
@@ -606,7 +616,9 @@ public class AccessService {
     public EventAndOrganizationId checkEventTicketIdentifierMembership(Principal principal, String eventName, String ticketIdentifier, Set<Role> roles) {
         var eventAndOrgId = checkEventMembership(principal, eventName, roles);
         if (!ticketRepository.isTicketInEvent(eventAndOrgId.getId(), ticketIdentifier)) {
-            log.warn("ticket {} is not in eventId {}", removeTabsAndNewlines(ticketIdentifier), eventAndOrgId.getId());
+            if (log.isWarnEnabled()) {
+                log.warn("ticket {} is not in eventId {}", removeTabsAndNewlines(ticketIdentifier), eventAndOrgId.getId());
+            }
             throw new AccessDeniedException();
         }
         return eventAndOrgId;

@@ -42,12 +42,8 @@ import alfio.util.ClockProvider;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -58,7 +54,6 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 
-import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -91,8 +86,6 @@ class DiscountIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private PromoCodeDiscountRepository promoCodeDiscountRepository;
-
-    private static final Logger log = LoggerFactory.getLogger(DiscountIntegrationTest.class);
 
     @Test
     void checkConcurrency() throws InterruptedException {
