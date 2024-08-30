@@ -260,7 +260,9 @@ public class PassKitManager {
 
         var eventOptional = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName);
         if(eventOptional.isEmpty()) {
-            log.trace("event {} not found", eventName);
+            if (log.isTraceEnabled()) {
+                log.trace("event {} not found", removeTabsAndNewlines(eventName));
+            }
             return Optional.empty();
         }
 

@@ -34,6 +34,7 @@ import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
+import alfio.util.MiscUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
@@ -579,7 +580,7 @@ public class AccessService {
         var eventAndOrgId = checkEventOwnership(principal, eventName);
         if (reservationIds.size() != reservationRepository.countReservationsWithEventId(reservationIds, eventAndOrgId.getId())) {
             if (log.isWarnEnabled()) {
-                log.warn("Some reservation ids {} are not in the event {}", reservationIds, removeTabsAndNewlines(eventName));
+                log.warn("Some reservation ids {} are not in the event {}", reservationIds.stream().map(MiscUtils::removeTabsAndNewlines).collect(Collectors.toSet()), removeTabsAndNewlines(eventName));
             }
             throw new AccessDeniedException();
         }
