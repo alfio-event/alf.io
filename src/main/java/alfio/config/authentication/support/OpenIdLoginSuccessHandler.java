@@ -18,7 +18,6 @@ package alfio.config.authentication.support;
 
 import alfio.config.support.ContextAwareCookieSerializer;
 import alfio.util.TemplateManager;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
@@ -46,7 +45,7 @@ public class OpenIdLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
-                                        Authentication authentication) throws IOException, ServletException {
+                                        Authentication authentication) throws IOException {
         String targetPath;
         var savedRequest = this.requestCache.getRequest(request, response);
         if (savedRequest == null || StringUtils.isBlank(savedRequest.getRedirectUrl())) {
