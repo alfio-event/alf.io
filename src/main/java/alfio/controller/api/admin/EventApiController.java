@@ -325,8 +325,8 @@ public class EventApiController {
     
     @PutMapping("/events/reallocate")
     public String reallocateTickets(@RequestBody TicketAllocationModification form, Principal principal) {
-        accessService.checkCategoryOwnership(principal, form.getEventId(), Set.of(form.getSrcCategoryId(), form.getTargetCategoryId()));
-        eventManager.reallocateTickets(form.getSrcCategoryId(), form.getTargetCategoryId(), form.getEventId());
+        var event = accessService.checkCategoryOwnership(principal, form.getEventId(), Set.of(form.getSrcCategoryId(), form.getTargetCategoryId()));
+        eventManager.reallocateTickets(form.getSrcCategoryId(), form.getTargetCategoryId(), event);
         return OK;
     }
 

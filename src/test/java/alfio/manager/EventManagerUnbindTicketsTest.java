@@ -134,6 +134,7 @@ public class EventManagerUnbindTicketsTest {
         when(categoryStatisticView.isBounded()).thenReturn(true);
         when(categoryStatisticView.getNotSoldTicketsCount()).thenReturn(2);
         when(categoryStatisticView.getId()).thenReturn(categoryId);
+        when(categoryStatisticView.getMaxTickets()).thenReturn(notSold);
         when(ticketCategoryRepository.findStatisticWithId(eq(categoryId), eq(eventId))).thenReturn(categoryStatisticView);
 
         eventManager.unbindTickets(eventName, categoryId, username);

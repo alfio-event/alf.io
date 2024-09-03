@@ -1021,6 +1021,63 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         BaseIntegrationTest.testTransferEventToAnotherOrg(event.getId(), event.getOrganizationId(), username, jdbcTemplate);
     }
 
+    @Test
+    void reallocateCategory() {
+        var categories = List.of(
+            new TicketCategoryModification(null, "first", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS - 10,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 2, null, null, AlfioMetadata.empty()),
+            new TicketCategoryModification(null, "second", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS - 10,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 2, null, null, AlfioMetadata.empty())
+        );
+
+        var eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, List.of(), Event.EventFormat.ONLINE);
+        var event = eventAndUsername.getLeft();
+        var ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+        var category1 = ticketCategories.get(0);
+        var category2 = ticketCategories.get(1);
+        // expire category 1
+        ticketCategoryRepository.update(category1.getId(), category1.getName(), category1.getUtcInception().minusDays(1), category1.getUtcExpiration().minusDays(1), category1.getMaxTickets(), category1.isAccessRestricted(), category1.getSrcPriceCts(), category1.getCode(), null, null, null, null, category1.getTicketCheckInStrategy(), category1.getTicketAccessType());
+        var stats = ticketCategoryRepository.findStatisticWithId(category1.getId(), event.getId());
+        assertEquals(category1.getMaxTickets(), stats.getNotSoldTicketsCount());
+        // move tickets from category 1 to category 2
+        eventManager.reallocateTickets(category1.getId(), category2.getId(), event);
+
+        // process released tickets
+        waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
+
+        // category 1 should now have 0 tickets
+        assertEquals(0, ticketRepository.countFreeTickets(event.getId(), category1.getId()));
+        assertEquals(0, ticketCategoryRepository.getById(category1.getId()).getMaxTickets());
+        // category 2 should have all tickets
+        assertEquals(AVAILABLE_SEATS, ticketRepository.countFreeTickets(event.getId(), category2.getId()));
+        assertEquals(AVAILABLE_SEATS, ticketCategoryRepository.getById(category2.getId()).getMaxTickets());
+
+        // create a reservation, then move tickets back
+        List<Integer> tickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), category2.getId(), 1, Collections.singletonList(Ticket.TicketStatus.FREE.name()));
+        String reservationId = "12345678";
+        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(clockProvider.getClock()), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency(), event.getOrganizationId(), null);
+        ticketRepository.reserveTickets(reservationId, tickets, category2, "en", event.getVatStatus(), i -> null);
+
+        assertEquals(1, ticketRepository.countPendingOrReleasedForCategory(event.getId(), category2.getId()));
+
+        // move tickets back
+        eventManager.reallocateTickets(category2.getId(), category1.getId(), event);
+
+        // process released tickets
+        waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
+
+        // category 1 should now have AVAILABLE_SEATS - 1 tickets
+        assertEquals(AVAILABLE_SEATS - 1, ticketRepository.countFreeTickets(event.getId(), category1.getId()));
+        assertEquals(AVAILABLE_SEATS - 1, ticketCategoryRepository.getById(category1.getId()).getMaxTickets());
+        // category 2 should have 1 ticket
+        assertEquals(1, ticketRepository.countPendingOrReleasedForCategory(event.getId(), category2.getId()));
+        assertEquals(1, ticketCategoryRepository.getById(category2.getId()).getMaxTickets());
+    }
+
 
     private Pair<Event, String> generateAndEditEvent(int newEventSize) {
         List<TicketCategoryModification> categories = Collections.singletonList(
