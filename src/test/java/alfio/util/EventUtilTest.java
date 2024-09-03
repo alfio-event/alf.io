@@ -90,7 +90,11 @@ class EventUtilTest {
     @DisplayName("display the waiting list form if the last category is not expired and sold-out")
     void displayWaitingQueueFormIfSoldOut() {
         List<SaleableTicketCategory> categories = asList(first, last);
-        var conf = Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true));
+        var conf = Map.of(
+            STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS),
+            ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true),
+            ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION)
+        );
         assertTrue(EventUtil.displayWaitingQueueForm(event, categories, conf, EventUtilTest::ticketsNotAvailable));
     }
 
@@ -98,7 +102,11 @@ class EventUtilTest {
     @DisplayName("display the waiting list form if the last category is not expired and sold-out (reversed)")
     void displayWaitingQueueFormIfSoldOutReversed() {
         List<SaleableTicketCategory> categories = asList(last, first);
-        var conf = Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true));
+        var conf = Map.of(
+            STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS),
+            ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true),
+            ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION)
+        );
         assertTrue(EventUtil.displayWaitingQueueForm(event, categories, conf, EventUtilTest::ticketsNotAvailable));
     }
 
@@ -106,7 +114,11 @@ class EventUtilTest {
     @DisplayName("display the waiting list form if the only category is not expired and sold-out")
     void displayWaitingQueueFormIfSingleCategorySoldOut() {
         List<SaleableTicketCategory> categories = Collections.singletonList(last);
-        var conf = Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true));
+        var conf = Map.of(
+            STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS),
+            ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true),
+            ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION)
+        );
         assertTrue(EventUtil.displayWaitingQueueForm(event, categories, conf, EventUtilTest::ticketsNotAvailable));
     }
 
@@ -115,7 +127,11 @@ class EventUtilTest {
     void doNotDisplayWaitingQueueFormIfAvailableSeats() {
         List<SaleableTicketCategory> categories = Collections.singletonList(last);
         when(last.getAvailableTickets()).thenReturn(1);
-        var conf = Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true));
+        var conf = Map.of(
+            STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS),
+            ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true),
+            ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION)
+        );
         assertFalse(EventUtil.displayWaitingQueueForm(event, categories, conf, EventUtilTest::ticketsAvailable));
     }
 
@@ -131,7 +147,11 @@ class EventUtilTest {
         when(first.getZonedInception()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).minusDays(2));
         when(first.getUtcInception()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).minusDays(2));
         when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).minusDays(1).minusHours(1));
-        var conf = Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true));
+        var conf = Map.of(
+            STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS),
+            ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true),
+            ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION)
+        );
         assertFalse(EventUtil.displayWaitingQueueForm(event, categories, conf, EventUtilTest::ticketsNotAvailable));
     }
 
@@ -144,7 +164,11 @@ class EventUtilTest {
         when(last.getZonedInception()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).minusDays(2));
         when(last.getUtcInception()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).minusDays(2));
         when(last.getAvailableTickets()).thenReturn(0);
-        var conf = Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true));
+        var conf = Map.of(
+            STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS),
+            ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true),
+            ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION)
+        );
         assertFalse(EventUtil.displayWaitingQueueForm(event, categories, conf, EventUtilTest::ticketsNotAvailable));
     }
 
@@ -152,7 +176,11 @@ class EventUtilTest {
     @DisplayName("do not display the waiting list form if the category list is empty")
     void doNotDisplayWaitingQueueFormIfNoCategories() {
         List<SaleableTicketCategory> categories = Collections.emptyList();
-        var conf = Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true));
+        var conf = Map.of(
+            STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS),
+            ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true),
+            ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION)
+        );
         assertFalse(EventUtil.displayWaitingQueueForm(event, categories, conf, EventUtilTest::ticketsNotAvailable));
     }
 
@@ -164,7 +192,11 @@ class EventUtilTest {
         when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).minusDays(1));
         when(last.getZonedInception()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).minusDays(2));
         when(last.getUtcInception()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).minusDays(2));
-        var conf = Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, false));
+        var conf = Map.of(
+            STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS),
+            ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, false),
+            ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION)
+        );
         assertFalse(EventUtil.displayWaitingQueueForm(event, categories, conf, EventUtilTest::ticketsNotAvailable));
     }
 
@@ -172,7 +204,11 @@ class EventUtilTest {
     @DisplayName("display the waiting list form before sales start")
     void displayWaitingQueueFormBeforeSalesStart() {
         List<SaleableTicketCategory> categories = Collections.singletonList(last);
-        var conf = Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION, true));
+        var conf = Map.of(
+            STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS),
+            ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION, true),
+            ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE)
+        );
         when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).plusDays(2));
         when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).plusDays(2));
         when(last.getZonedInception()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).plusDays(1));
@@ -185,7 +221,11 @@ class EventUtilTest {
     @DisplayName("display the waiting list form before sales start (2 categories)")
     void displayWaitingQueueFormBeforeSalesStart2() {
         List<SaleableTicketCategory> categories = asList(first, last);
-        var conf = Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION, true));
+        var conf = Map.of(
+            STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS),
+            ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION, true),
+            ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE)
+        );
         when(first.getZonedExpiration()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).plusDays(2));
         when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).plusDays(2));
         when(first.getZonedInception()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).plusDays(1));
@@ -203,7 +243,11 @@ class EventUtilTest {
     @DisplayName("not display the waiting list form before sales start if pre-registration is not enabled")
     void doNotDisplayFormBeforeStartIfPreRegistrationDisabled() {
         List<SaleableTicketCategory> categories = Collections.singletonList(last);
-        var conf = Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION, false));
+        var conf = Map.of(
+            STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS),
+            ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION, false),
+            ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE)
+        );
         when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).plusDays(2));
         when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).plusDays(2));
         when(last.getZonedInception()).thenReturn(ZonedDateTime.now(clockProvider().getClock()).plusDays(1));
