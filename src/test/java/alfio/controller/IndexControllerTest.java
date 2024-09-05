@@ -19,6 +19,7 @@ package alfio.controller;
 import alfio.controller.api.v2.model.EventWithAdditionalInfo;
 import alfio.controller.api.v2.model.Language;
 import alfio.controller.api.v2.user.support.EventLoader;
+import alfio.controller.support.DataPreloaderManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.model.Event;
 import alfio.util.Json;
@@ -84,7 +85,7 @@ class IndexControllerTest {
         @Test
         void singleLanguage() {
             when(eventInfo.getContentLanguages()).thenReturn(List.of(new Language("it", "")));
-            IndexController.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, null);
+            DataPreloaderManager.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, null);
             verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("it"), same(MessageSourceManager.PUBLIC_FRONTEND));
             verify(html).setAttribute("lang", "it");
             verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("en"), same(MessageSourceManager.PUBLIC_FRONTEND)); //for non en language we preload also the fallback
@@ -93,7 +94,7 @@ class IndexControllerTest {
         @Test
         void singleLanguageWithWrongParam() {
             when(eventInfo.getContentLanguages()).thenReturn(List.of(new Language("it", "")));
-            IndexController.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, "de");
+            DataPreloaderManager.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, "de");
             verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("it"), same(MessageSourceManager.PUBLIC_FRONTEND));
             verify(html).setAttribute("lang", "it");
         }
@@ -101,7 +102,7 @@ class IndexControllerTest {
         @Test
         void singleLanguageWithParam() {
             when(eventInfo.getContentLanguages()).thenReturn(List.of(new Language("de", "")));
-            IndexController.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, "de");
+            DataPreloaderManager.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, "de");
             verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("de"), same(MessageSourceManager.PUBLIC_FRONTEND));
             verify(html).setAttribute("lang", "de");
         }
@@ -109,7 +110,7 @@ class IndexControllerTest {
         @Test
         void multipleLanguages() {
             when(eventInfo.getContentLanguages()).thenReturn(List.of(new Language("de", ""), new Language("it", "")));
-            IndexController.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, null);
+            DataPreloaderManager.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, null);
             verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("de"), same(MessageSourceManager.PUBLIC_FRONTEND));
             verify(html).setAttribute("lang", "de");
         }
@@ -118,7 +119,7 @@ class IndexControllerTest {
         @ValueSource(strings = {"it", "de"})
         void multipleLanguagesWithParam(String param) {
             when(eventInfo.getContentLanguages()).thenReturn(List.of(new Language("de", ""), new Language("it", "")));
-            IndexController.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, param);
+            DataPreloaderManager.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, param);
             verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq(param), same(MessageSourceManager.PUBLIC_FRONTEND));
             verify(html).setAttribute("lang", param);
         }
@@ -132,11 +133,11 @@ class IndexControllerTest {
 
     @Test
     void preloadTranslationsEventNotPresent() {
-        IndexController.preloadEventData(null, request, session, eventLoader, head, messageSourceManager, index, json, null);
+        DataPreloaderManager.preloadEventData(null, request, session, eventLoader, head, messageSourceManager, index, json, null);
         verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("en"), same(MessageSourceManager.PUBLIC_FRONTEND));
         verify(html).setAttribute("lang", "en");
 
-        IndexController.preloadEventData(null, request, session, eventLoader, head, messageSourceManager, index, json, "it");
+        DataPreloaderManager.preloadEventData(null, request, session, eventLoader, head, messageSourceManager, index, json, "it");
         verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("it"), same(MessageSourceManager.PUBLIC_FRONTEND));
         verify(html).setAttribute("lang", "it");
     }
@@ -145,7 +146,7 @@ class IndexControllerTest {
     void checkMetaNoIndexWhenEventExpired() {
         when(eventInfo.getContentLanguages()).thenReturn(List.of(new Language("it", "")));
         when(event.getEnd()).thenReturn(ZonedDateTime.now(FIXED_TIME_CLOCK.getClock()).minusSeconds(1));
-        IndexController.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, null);
+        DataPreloaderManager.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, null);
         var robotsNodes = head.getElementsByTagName("meta").stream().filter(n -> "robots".equals(n.getAttribute("name"))).collect(Collectors.toList());
         assertEquals(1, robotsNodes.size());
         assertEquals("noindex", robotsNodes.get(0).getAttribute("content"));
