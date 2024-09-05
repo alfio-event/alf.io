@@ -9,7 +9,7 @@ const initAttribute = 'data-alfio-init-complete';
 })
 export class AnalyticsService {
 
-    private gaScript: Observable<[Function, AnalyticsConfiguration, string]> = null;
+    private gaScript: Observable<[Function, AnalyticsConfiguration, string]> | null = null;
 
     constructor() {
     }
@@ -60,18 +60,26 @@ export class AnalyticsService {
             window['dataLayer'].push(arguments as any);
         };
         const gtag = window['gtag'];
+        const consentConf: { [k: string]: string} = {
+            'ad_storage': 'denied',
+            'ad_user_data': 'denied',
+            'ad_personalization': 'denied'
+        };
         if (configuration.googleAnalyticsScrambledInfo) {
             // deny everything
-            gtag('consent', 'default', {
-                'ad_storage': 'denied',
-                'ad_user_data': 'denied',
-                'ad_personalization': 'denied',
-                'analytics_storage': 'denied'
-            });
+            consentConf['analytics_storage'] = 'denied';
         }
+        gtag('consent', 'default', consentConf);
         gtag('js', new Date());
         gtag('config', configuration.googleAnalyticsKey);
         script.setAttribute(initAttribute, 'true');
         return gtag;
+    }
+}
+
+declare global {
+    interface Window {
+        dataLayer?: any;
+        gtag?: any;
     }
 }
