@@ -27,7 +27,6 @@ import ch.digitalfondue.jfiveparse.JFiveParse;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -44,11 +43,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import static alfio.config.Initializer.PROFILE_LIVE;
 import static alfio.controller.Constants.*;
 
 @Controller
-@Profile(PROFILE_LIVE)
 public class IndexController {
 
     private static final String TEXT_HTML_CHARSET_UTF_8 = "text/html;charset=UTF-8";

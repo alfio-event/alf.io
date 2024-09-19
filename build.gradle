@@ -337,6 +337,14 @@ bootRun {
         opts += externalConfig.readLines()
     }
     jvmArgs = opts
+    dependsOn 'copyFrontendDev'
+    classpath(layout.buildDirectory.dir('index-transformed'), layout.buildDirectory.dir('frontend-dev'))
+}
+
+tasks.register('copyFrontendDev', Copy) {
+    dependsOn 'publicFrontendIndexTransform'
+    from 'frontend/dist/'
+    into layout.buildDirectory.dir("frontend-dev/resources/")
 }
 
 // -- code-coverage
