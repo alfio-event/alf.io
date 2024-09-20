@@ -16,19 +16,9 @@
  */
 package alfio.model.system.command;
 
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.metadata.TicketMetadataContainer;
+import alfio.model.PurchaseContext;
 
-import java.util.Objects;
+import java.util.List;
 
-/**
- * Signals that access for the ticket must be invalidated on external systems
- */
-public record InvalidateAccess(Ticket ticket, TicketMetadataContainer ticketMetadataContainer, Event event) {
-
-    @Override
-    public TicketMetadataContainer ticketMetadataContainer() {
-        return Objects.requireNonNullElseGet(ticketMetadataContainer, TicketMetadataContainer::empty);
-    }
+public record CleanupReservations(PurchaseContext purchaseContext, List<String> reservationIds, boolean expired) {
 }

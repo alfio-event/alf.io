@@ -14,21 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.system.command;
+package alfio.model;
 
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.metadata.TicketMetadataContainer;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 
-import java.util.Objects;
+import java.util.UUID;
 
-/**
- * Signals that access for the ticket must be invalidated on external systems
- */
-public record InvalidateAccess(Ticket ticket, TicketMetadataContainer ticketMetadataContainer, Event event) {
-
-    @Override
-    public TicketMetadataContainer ticketMetadataContainer() {
-        return Objects.requireNonNullElseGet(ticketMetadataContainer, TicketMetadataContainer::empty);
-    }
+public record DescriptorIdAndReservationId(@Column("descriptor_id") UUID descriptorId,
+                                           @Column("reservation_id") String reservationId,
+                                           @Column("max_available") int maxAvailable) {
 }

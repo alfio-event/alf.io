@@ -50,6 +50,7 @@ import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.WarningMessage;
 import alfio.model.subscription.*;
+import alfio.model.system.command.CleanupReservations;
 import alfio.model.system.command.FinalizeReservation;
 import alfio.model.system.command.InvalidateAccess;
 import alfio.model.transaction.*;
@@ -1041,7 +1042,8 @@ public class TicketReservationManager {
         specialPriceRepository.resetToFreeAndCleanupForReservation(toDelete);
         ticketRepository.resetCategoryIdForUnboundedCategories(toDelete);
         purchaseContextFieldRepository.deleteAllValuesForReservations(toDelete);
-        subscriptionRepository.deleteSubscriptionWithReservationId(toDelete);
+
+        applicationEventPublisher.publishEvent(new CleanupReservations(null, toDelete, true));
         ticketRepository.freeFromReservation(toDelete);
         waitingQueueManager.cleanExpiredReservations(toDelete);
 
@@ -1053,7 +1055,7 @@ public class TicketReservationManager {
         reservationIdsByEvent.forEach((eventId, reservations) -> {
             Event event = eventRepository.findById(eventId);
             List<String> reservationIds = reservations.stream().map(ReservationIdAndEventId::getId).collect(toList());
-            extensionManager.handleReservationsExpiredForEvent(event, reservationIds);
+            extensionManager.handleReservationsExpired(event, reservationIds);
             billingDocumentRepository.deleteForReservations(reservationIds, eventId);
             transactionRepository.deleteForReservations(reservationIds);
         });
@@ -1263,7 +1265,7 @@ public class TicketReservationManager {
         ticketRepository.resetCategoryIdForUnboundedCategories(reservationIdsToRemove);
         int tfvDeleted = purchaseContextFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
         log.debug("deleted {} field values", tfvDeleted);
-        subscriptionRepository.deleteSubscriptionWithReservationId(List.of(reservationId));
+        applicationEventPublisher.publishEvent(new CleanupReservations(purchaseContext, List.of(reservationId), expired));
         purchaseContext.event().ifPresent(event -> {
             int deletedItems = additionalServiceItemRepository.deleteAdditionalServiceItemsByReservationId(event.getId(), reservationId);
             int updatedItems = additionalServiceItemRepository.revertAdditionalServiceItemsByReservationId(event.getId(), reservationId);
@@ -1290,9 +1292,9 @@ public class TicketReservationManager {
         }
         //
         if(expired) {
-            extensionManager.handleReservationsExpiredForEvent(purchaseContext, wrappedReservationIdToRemove);
+            extensionManager.handleReservationsExpired(purchaseContext, wrappedReservationIdToRemove);
         } else {
-            extensionManager.handleReservationsCancelledForEvent(purchaseContext, wrappedReservationIdToRemove);
+            extensionManager.handleReservationsCancelled(purchaseContext, wrappedReservationIdToRemove);
         }
         int removedReservation = ticketReservationRepository.remove(wrappedReservationIdToRemove);
         Validate.isTrue(removedReservation == 1, "expected exactly one removed reservation, got " + removedReservation);

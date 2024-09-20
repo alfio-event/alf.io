@@ -232,11 +232,11 @@ public class ExtensionManager {
             Map.of("waitingQueueSubscription", waitingQueueSubscription, ADDITIONAL_INFO, Map.of()));
     }
 
-    void handleReservationsExpiredForEvent(PurchaseContext purchaseContext, Collection<String> reservationIdsToRemove) {
+    void handleReservationsExpired(PurchaseContext purchaseContext, Collection<String> reservationIdsToRemove) {
         handleReservationRemoval(purchaseContext, reservationIdsToRemove, ExtensionEvent.RESERVATION_EXPIRED);
     }
 
-    void handleReservationsCancelledForEvent(PurchaseContext purchaseContext, Collection<String> reservationIdsToRemove) {
+    void handleReservationsCancelled(PurchaseContext purchaseContext, Collection<String> reservationIdsToRemove) {
         handleReservationRemoval(purchaseContext, reservationIdsToRemove, ExtensionEvent.RESERVATION_CANCELLED);
     }
 

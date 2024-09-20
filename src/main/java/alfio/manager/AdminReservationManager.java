@@ -1040,7 +1040,7 @@ public class AdminReservationManager {
         if(!removeReservation) {
             extensionManager.handleTicketCancelledForEvent(purchaseContext, ticketUUIDs);
         } else {
-            extensionManager.handleReservationsCancelledForEvent(purchaseContext, reservationIds);
+            extensionManager.handleReservationsCancelled(purchaseContext, reservationIds);
         }
     }
 
