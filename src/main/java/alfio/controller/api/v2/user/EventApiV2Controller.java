@@ -16,13 +16,9 @@
  */
 package alfio.controller.api.v2.user;
 
-import alfio.controller.api.v2.model.AdditionalService;
 import alfio.controller.api.v2.model.EventWithAdditionalInfo;
-import alfio.controller.api.v2.model.TicketCategory;
 import alfio.controller.api.v2.model.*;
 import alfio.controller.api.v2.user.support.EventLoader;
-import alfio.controller.decorator.SaleableAdditionalService;
-import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.form.SearchOptions;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
@@ -36,12 +32,14 @@ import alfio.model.*;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
-import alfio.repository.*;
+import alfio.repository.EventDescriptionRepository;
+import alfio.repository.EventRepository;
+import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketRepository;
 import alfio.util.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -56,41 +54,68 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.stream.Collectors.*;
 
 
 @RestController
 @RequestMapping("/api/v2/public/")
-@AllArgsConstructor
 public class EventApiV2Controller {
 
     private final EventManager eventManager;
     private final EventRepository eventRepository;
     private final ConfigurationManager configurationManager;
     private final EventDescriptionRepository eventDescriptionRepository;
-    private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
+    private final TicketCategoryAvailabilityManager ticketCategoryAvailabilityManager;
     private final MessageSourceManager messageSourceManager;
     private final WaitingQueueManager waitingQueueManager;
     private final I18nManager i18nManager;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketRepository ticketRepository;
     private final TicketReservationManager ticketReservationManager;
-    private final PromoCodeDiscountRepository promoCodeRepository;
-    private final EventStatisticsManager eventStatisticsManager;
     private final RecaptchaService recaptchaService;
     private final PromoCodeRequestManager promoCodeRequestManager;
     private final EventLoader eventLoader;
     private final ExtensionManager extensionManager;
-    private final ClockProvider clockProvider;
     private final AdditionalServiceManager additionalServiceManager;
+
+    public EventApiV2Controller(EventManager eventManager,
+                                EventRepository eventRepository,
+                                ConfigurationManager configurationManager,
+                                EventDescriptionRepository eventDescriptionRepository,
+                                TicketCategoryAvailabilityManager ticketCategoryAvailabilityManager,
+                                MessageSourceManager messageSourceManager,
+                                WaitingQueueManager waitingQueueManager,
+                                I18nManager i18nManager,
+                                TicketCategoryRepository ticketCategoryRepository,
+                                TicketRepository ticketRepository,
+                                TicketReservationManager ticketReservationManager,
+                                RecaptchaService recaptchaService,
+                                PromoCodeRequestManager promoCodeRequestManager,
+                                EventLoader eventLoader,
+                                ExtensionManager extensionManager,
+                                AdditionalServiceManager additionalServiceManager) {
+        this.eventManager = eventManager;
+        this.eventRepository = eventRepository;
+        this.configurationManager = configurationManager;
+        this.eventDescriptionRepository = eventDescriptionRepository;
+        this.ticketCategoryAvailabilityManager = ticketCategoryAvailabilityManager;
+        this.messageSourceManager = messageSourceManager;
+        this.waitingQueueManager = waitingQueueManager;
+        this.i18nManager = i18nManager;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.ticketRepository = ticketRepository;
+        this.ticketReservationManager = ticketReservationManager;
+        this.recaptchaService = recaptchaService;
+        this.promoCodeRequestManager = promoCodeRequestManager;
+        this.eventLoader = eventLoader;
+        this.extensionManager = extensionManager;
+        this.additionalServiceManager = additionalServiceManager;
+    }
 
 
     @GetMapping("events")
@@ -140,110 +165,11 @@ public class EventApiV2Controller {
     public ResponseEntity<ItemsByCategory> getTicketCategories(@PathVariable String eventName, @RequestParam(value = "code", required = false) String code) {
 
         //
-        return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
-
-            var configurations = configurationManager.getFor(List.of(DISPLAY_TICKETS_LEFT_INDICATOR, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, DISPLAY_EXPIRED_CATEGORIES), event.getConfigurationLevel());
-            var ticketCategoryLevelConfiguration = configurationManager.getAllCategoriesAndValueWith(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
-            var messageSource = messageSourceManager.getMessageSourceFor(event);
-            var appliedPromoCode = promoCodeRequestManager.checkCode(event, code);
-
-
-            Optional<SpecialPrice> specialCode = appliedPromoCode.getValue().getLeft();
-            Optional<PromoCodeDiscount> promoCodeDiscount = appliedPromoCode.getValue().getRight();
-
-            final ZonedDateTime now = event.now(clockProvider);
-            //hide access restricted ticket categories
-            var ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
-
-            List<SaleableTicketCategory> saleableTicketCategories = ticketCategories.stream()
-                .filter((c) -> !c.isAccessRestricted() || shouldDisplayRestrictedCategory(specialCode, c, promoCodeDiscount))
-                .map((category) -> {
-                    int maxTickets = getMaxAmountOfTicketsPerReservation(configurations, ticketCategoryLevelConfiguration, category.getId());
-                    PromoCodeDiscount filteredPromoCode = promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, category)).orElse(null);
-                    if (specialCode.isPresent()) {
-                        maxTickets = Math.min(1, maxTickets);
-                    } else if (filteredPromoCode != null && filteredPromoCode.getMaxUsage() != null) {
-                        maxTickets = filteredPromoCode.getMaxUsage() - promoCodeRepository.countConfirmedPromoCode(filteredPromoCode.getId());
-                    }
-                    return new SaleableTicketCategory(category,
-                        now, event, ticketReservationManager.countAvailableTickets(event, category), maxTickets,
-                        filteredPromoCode);
-                })
-                .collect(Collectors.toList());
-
-
-            var valid = saleableTicketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList());
-
-            //
-
-            var ticketCategoryIds = valid.stream().map(SaleableTicketCategory::getId).collect(Collectors.toList());
-            var ticketCategoryDescriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoryIds);
-            var categoriesNoTax = configurationManager.getCategoriesWithNoTaxes(ticketCategoryIds);
-
-            boolean displayTicketsLeft = configurations.get(DISPLAY_TICKETS_LEFT_INDICATOR).getValueAsBooleanOrDefault();
-            var categoriesByExpiredFlag = saleableTicketCategories.stream()
-                .map(stc -> {
-                    var description = Formatters.applyCommonMark(ticketCategoryDescriptions.getOrDefault(stc.getId(), Collections.emptyMap()), messageSource);
-                    var expiration = Formatters.getFormattedDate(event, stc.getZonedExpiration(), "common.ticket-category.date-format", messageSource);
-                    var inception = Formatters.getFormattedDate(event, stc.getZonedInception(), "common.ticket-category.date-format", messageSource);
-                    return new TicketCategory(stc, description, inception, expiration, displayTicketsLeft && !stc.isAccessRestricted(), !categoriesNoTax.contains(stc.getId()));
-                })
-                .sorted(Comparator.comparingInt(TicketCategory::getOrdinal))
-                .collect(partitioningBy(TicketCategory::isExpired));
-
-
-            var promoCode = Optional.of(appliedPromoCode).filter(ValidatedResponse::isSuccess)
-                .map(ValidatedResponse::getValue)
-                .flatMap(Pair::getRight);
-
-            //
-            var saleableAdditionalServices = additionalServiceManager.loadAllForEvent(event.getId())
-                .stream()
-                .map(as -> new SaleableAdditionalService(event, as, promoCode.orElse(null)))
-                .filter(Predicate.not(SaleableAdditionalService::isExpired))
-                .collect(Collectors.toList());
-
-            // will be used for fetching descriptions and titles for all the languages
-            var saleableAdditionalServicesIds = saleableAdditionalServices.stream().map(SaleableAdditionalService::id).collect(Collectors.toList());
-
-            var additionalServiceTexts = additionalServiceManager.getDescriptionsByAdditionalServiceIds(saleableAdditionalServicesIds);
-
-            var additionalServicesRes = saleableAdditionalServices.stream().map(as -> {
-                var expiration = Formatters.getFormattedDate(event, as.getZonedExpiration(), "common.ticket-category.date-format", messageSource);
-                var inception = Formatters.getFormattedDate(event, as.getZonedInception(), "common.ticket-category.date-format", messageSource);
-                var title = additionalServiceTexts.getOrDefault(as.id(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.TITLE, Collections.emptyMap());
-                var description = Formatters.applyCommonMark(additionalServiceTexts.getOrDefault(as.id(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.DESCRIPTION, Collections.emptyMap()), messageSource);
-                return new AdditionalService(as.id(), as.type(), as.supplementPolicy(),
-                    as.fixPrice(), as.availableItems(), as.maxQtyPerOrder(),
-                    as.getFree(), as.getFormattedFinalPrice(), as.getSupportsDiscount(), as.getDiscountedPrice(), as.getVatApplies(), as.getVatIncluded(), as.getVatPercentage().toString(),
-                    as.isExpired(), as.getSaleInFuture(),
-                    inception, expiration, title, description);
-            }).collect(Collectors.toList());
-            //
-
-            // waiting queue parameters
-            boolean displayWaitingQueueForm = EventUtil.displayWaitingQueueForm(event, saleableTicketCategories, configurationManager, eventStatisticsManager.noSeatsAvailable());
-            boolean preSales = EventUtil.isPreSales(event, saleableTicketCategories);
-            Predicate<SaleableTicketCategory> waitingQueueTargetCategory = tc -> !tc.getExpired() && !tc.isBounded();
-            List<SaleableTicketCategory> unboundedCategories = saleableTicketCategories.stream().filter(waitingQueueTargetCategory).collect(Collectors.toList());
-            var tcForWaitingList = unboundedCategories.stream().map(stc -> new ItemsByCategory.TicketCategoryForWaitingList(stc.getId(), stc.getName())).collect(toList());
-            //
-            var activeCategories = categoriesByExpiredFlag.get(false);
-            var expiredCategories = configurations.get(DISPLAY_EXPIRED_CATEGORIES).getValueAsBooleanOrDefault() ? categoriesByExpiredFlag.get(true) : List.<TicketCategory>of();
-
-            return new ResponseEntity<>(new ItemsByCategory(activeCategories, expiredCategories, additionalServicesRes, displayWaitingQueueForm, preSales, tcForWaitingList), getCorsHeaders(), HttpStatus.OK);
-        }).orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
+        return ticketCategoryAvailabilityManager
+            .getTicketCategories(eventName, code).map(i -> new ResponseEntity<>(i, getCorsHeaders(), HttpStatus.OK))
+            .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }
 
-    private static int getMaxAmountOfTicketsPerReservation(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> eventLevelConf,
-                                                           Map<Integer, String> ticketCategoryLevelConf,
-                                                           int ticketCategory) {
-
-        if (ticketCategoryLevelConf.containsKey(ticketCategory)) {
-            return Integer.parseInt(ticketCategoryLevelConf.get(ticketCategory));
-        }
-        return eventLevelConf.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).getValueAsIntOrDefault(5);
-    }
 
     @GetMapping("event/{eventName}/calendar/{locale}")
     public void getCalendar(@PathVariable String eventName,
@@ -405,23 +331,6 @@ public class EventApiV2Controller {
                 }
             );
         return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY).header(HttpHeaders.LOCATION, url).build();
-    }
-
-    private boolean shouldDisplayRestrictedCategory(Optional<SpecialPrice> specialCode, alfio.model.TicketCategory c, Optional<PromoCodeDiscount> optionalPromoCode) {
-        if(optionalPromoCode.isPresent()) {
-            var promoCode = optionalPromoCode.get();
-            if(promoCode.getCodeType() == PromoCodeDiscount.CodeType.ACCESS && c.getId() == promoCode.getHiddenCategoryId()) {
-                return true;
-            }
-        }
-        return specialCode.filter(sc -> sc.getTicketCategoryId() == c.getId()).isPresent();
-    }
-
-    private static boolean shouldApplyDiscount(PromoCodeDiscount promoCodeDiscount, alfio.model.TicketCategory ticketCategory) {
-        if(promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT) {
-            return promoCodeDiscount.getCategories().isEmpty() || promoCodeDiscount.getCategories().contains(ticketCategory.getId());
-        }
-        return ticketCategory.isAccessRestricted() && ticketCategory.getId() == promoCodeDiscount.getHiddenCategoryId();
     }
 
     private static HttpHeaders getCorsHeaders() {

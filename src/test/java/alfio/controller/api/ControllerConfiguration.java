@@ -19,6 +19,7 @@ package alfio.controller.api;
 import alfio.controller.IndexController;
 import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.controller.support.CSPConfigurer;
+import alfio.controller.support.DataPreloaderManager;
 import alfio.manager.PurchaseContextManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationManager;
@@ -67,31 +68,10 @@ public class ControllerConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    public IndexController indexController(ConfigurationManager configurationManager,
-                                           EventRepository eventRepository,
-                                           FileUploadRepository fileUploadRepository,
-                                           MessageSourceManager messageSourceManager,
-                                           EventDescriptionRepository eventDescriptionRepository,
-                                           OrganizationRepository organizationRepository,
+    public IndexController indexController(EventRepository eventRepository,
                                            TicketReservationRepository ticketReservationRepository,
                                            SubscriptionRepository subscriptionRepository,
-                                           EventLoader eventLoader,
-                                           PurchaseContextManager purchaseContextManager,
-                                           CsrfTokenRepository csrfTokenRepository,
-                                           CSPConfigurer cspConfigurer,
-                                           Json json) {
-        return new IndexController(configurationManager,
-            eventRepository,
-            fileUploadRepository,
-            messageSourceManager,
-            eventDescriptionRepository,
-            organizationRepository,
-            ticketReservationRepository,
-            subscriptionRepository,
-            eventLoader,
-            purchaseContextManager,
-            csrfTokenRepository,
-            cspConfigurer,
-            json);
+                                           DataPreloaderManager dataPreloaderManager) {
+        return new IndexController(eventRepository, ticketReservationRepository, subscriptionRepository, dataPreloaderManager);
     }
 }
