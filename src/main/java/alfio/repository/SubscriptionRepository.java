@@ -191,8 +191,9 @@ public interface SubscriptionRepository {
     @Query("""
         select tr.id as reservation_id, sd.id as descriptor_id, sd.max_available as max_available
             from tickets_reservation tr
-            join subscription_descriptor sd on tr.subscription_id_fk = sd.id
-        where tr.id in (:ids) and subscription_id_fk is not null
+            join subscription s on s.reservation_id_fk = tr.id
+            join subscription_descriptor sd on s.subscription_descriptor_fk = sd.id
+        where tr.id in (:ids)
         """)
     List<DescriptorIdAndReservationId> findDescriptorsByReservationIds(@Bind("ids") Collection<String> reservationIds);
 
