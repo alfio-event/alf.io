@@ -312,10 +312,14 @@ class SubscriptionManagerIntegrationTest {
     }
 
     private SubscriptionDescriptorModification buildSubscriptionDescriptor(int orgId, UUID id, BigDecimal price) {
-        return buildSubscriptionDescriptor(orgId, id, price, 42);
+        return buildSubscriptionDescriptor(orgId, id, price, 42, fileBlobId);
     }
 
     private SubscriptionDescriptorModification buildSubscriptionDescriptor(int orgId, UUID id, BigDecimal price, Integer maxAvailable) {
+        return buildSubscriptionDescriptor(orgId, id, price, maxAvailable, fileBlobId);
+    }
+
+    static SubscriptionDescriptorModification buildSubscriptionDescriptor(int orgId, UUID id, BigDecimal price, Integer maxAvailable, String fileBlobId) {
 
         return new SubscriptionDescriptorModification(id,
             Map.of("en", "title"),

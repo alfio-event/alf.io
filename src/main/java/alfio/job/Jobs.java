@@ -21,7 +21,6 @@ import alfio.manager.*;
 import alfio.manager.system.AdminJobExecutor;
 import alfio.manager.system.AdminJobManager;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -103,7 +102,7 @@ public class Jobs {
         try {
             adminJobManager.scheduleExecution(AdminJobExecutor.JobName.ASSIGN_TICKETS_TO_SUBSCRIBERS, Map.of());
         } finally {
-            log.trace("end job sendOfflinePaymentReminderToEventOrganizers");
+            log.trace("end job assignTicketsToSubscribers");
         }
     }
 

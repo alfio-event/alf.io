@@ -35,6 +35,7 @@ import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.system.command.CleanupReservations;
 import alfio.model.system.command.FinalizeReservation;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
@@ -264,8 +265,7 @@ class TicketReservationManagerTest {
             reservationCostCalculator,
             reservationHelper,
             reservationFinalizer,
-            osm,
-            additionalServiceItemRepository);
+            osm);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
@@ -691,15 +691,12 @@ class TicketReservationManagerTest {
         List<String> reservationIds = singletonList("reservation-id");
         when(ticketReservationRepository.findExpiredReservationForUpdate(now)).thenReturn(reservationIds);
         trm.cleanupExpiredReservations(now);
+        verify(applicationEventPublisher).publishEvent(new CleanupReservations(null, reservationIds, true));
         verify(ticketReservationRepository).findExpiredReservationForUpdate(now);
-        verify(specialPriceRepository).resetToFreeAndCleanupForReservation(reservationIds);
-        verify(ticketRepository).resetCategoryIdForUnboundedCategories(reservationIds);
-        verify(ticketRepository).freeFromReservation(reservationIds);
         verify(ticketReservationRepository).remove(reservationIds);
         verify(waitingQueueManager).cleanExpiredReservations(reservationIds);
-        verify(ticketReservationRepository).getReservationIdAndEventId(reservationIds);
         verify(ticketReservationRepository).findReservationsWithPendingTransaction(reservationIds);
-        verifyNoMoreInteractions(ticketReservationRepository, specialPriceRepository, ticketRepository);
+        verifyNoMoreInteractions(ticketReservationRepository, specialPriceRepository, ticketRepository, applicationEventPublisher);
     }
 
     @Test
@@ -1419,16 +1416,13 @@ class TicketReservationManagerTest {
                 .thenReturn(PaymentWebhookResult.successful(new StripeCreditCardToken("")));
             when(reservationCostCalculator.totalReservationCostWithVAT(pendingReservationMock)).thenReturn(Pair.of(new TotalPrice(0, 0, 0, 0, "CHF"), Optional.empty()));
             trm.cleanupExpiredReservations(now);
+            verify(applicationEventPublisher).publishEvent(new CleanupReservations(null, expiredReservationIds, true));
             verify(ticketReservationRepository).findExpiredReservationForUpdate(now);
-            verify(specialPriceRepository).resetToFreeAndCleanupForReservation(expiredReservationIds);
-            verify(ticketRepository).resetCategoryIdForUnboundedCategories(expiredReservationIds);
-            verify(ticketRepository).freeFromReservation(expiredReservationIds);
             verify(ticketReservationRepository).remove(expiredReservationIds);
             verify(waitingQueueManager).cleanExpiredReservations(expiredReservationIds);
-            verify(ticketReservationRepository).getReservationIdAndEventId(expiredReservationIds);
             verify(ticketReservationRepository).findReservationsWithPendingTransaction(reservationIds);
             verify(ticketReservationRepository).findOptionalStatusAndValidationById(PENDING_RESERVATION_ID);
-            verifyNoMoreInteractions(ticketReservationRepository, specialPriceRepository, ticketRepository);
+            verifyNoMoreInteractions(ticketReservationRepository, specialPriceRepository, ticketRepository, applicationEventPublisher);
         }
 
         @Test
@@ -1450,12 +1444,9 @@ class TicketReservationManagerTest {
                 .thenReturn(1);
             trm.cleanupExpiredReservations(now);
             verify(ticketReservationRepository).findExpiredReservationForUpdate(now);
-            verify(specialPriceRepository).resetToFreeAndCleanupForReservation(reservationIds);
-            verify(ticketRepository).resetCategoryIdForUnboundedCategories(reservationIds);
-            verify(ticketRepository).freeFromReservation(reservationIds);
+            verify(applicationEventPublisher).publishEvent(new CleanupReservations(null, reservationIds, true));
             verify(ticketReservationRepository).remove(reservationIds);
             verify(waitingQueueManager).cleanExpiredReservations(reservationIds);
-            verify(ticketReservationRepository).getReservationIdAndEventId(reservationIds);
             verify(transactionRepository).deleteForReservationsWithStatus(List.of(PENDING_RESERVATION_ID), Transaction.Status.PENDING);
             verify(ticketReservationRepository).findOptionalReservationById(PENDING_RESERVATION_ID);
             verify(transactionRepository).loadOptionalByReservationId(PENDING_RESERVATION_ID);

@@ -17,8 +17,10 @@
 package alfio.repository;
 
 import alfio.model.AllocationStatus;
+import alfio.model.DescriptorIdAndReservationId;
 import alfio.model.PriceContainer.VatStatus;
 import alfio.model.metadata.SubscriptionMetadata;
+import alfio.model.modification.SubscriptionDescriptorModification;
 import alfio.model.subscription.*;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionTimeUnit;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType;
@@ -30,15 +32,22 @@ import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 import ch.digitalfondue.npjt.QueryType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.stream.Stream;
 
 @QueryRepository
 public interface SubscriptionRepository {
+
+    Logger log = LoggerFactory.getLogger(SubscriptionRepository.class);
 
     String FETCH_SUBSCRIPTION_LINK = """
         select sd.id subscription_descriptor_id, sd.title subscription_descriptor_title, e.id event_id,\
@@ -179,6 +188,18 @@ public interface SubscriptionRepository {
     @Query("select * from subscription_descriptor where id = (select subscription_descriptor_fk from subscription where reservation_id_fk = :reservationId) and status = 'ACTIVE'")
     Optional<SubscriptionDescriptor> findDescriptorByReservationId(@Bind("reservationId") String reservationId);
 
+    @Query("""
+        select tr.id as reservation_id, sd.id as descriptor_id, sd.max_available as max_available
+            from tickets_reservation tr
+            join subscription s on s.reservation_id_fk = tr.id
+            join subscription_descriptor sd on s.subscription_descriptor_fk = sd.id
+        where tr.id in (:ids)
+        """)
+    List<DescriptorIdAndReservationId> findDescriptorsByReservationIds(@Bind("ids") Collection<String> reservationIds);
+
+    @Query("select * from subscription_descriptor where id in (:ids)")
+    List<SubscriptionDescriptor> findByIds(@Bind("ids") Set<UUID> ids);
+
     @Query("select * from subscription_descriptor where id = (select subscription_descriptor_fk from subscription where id = :id) and status = 'ACTIVE'")
     SubscriptionDescriptor findDescriptorBySubscriptionId(@Bind("id") UUID subscriptionId);
 
@@ -248,8 +269,35 @@ public interface SubscriptionRepository {
     int removeAllLinksForSubscription(@Bind("subscriptionId") UUID subscriptionId,
                                       @Bind("organizationId") int organizationId);
 
-    @Query(type = QueryType.TEMPLATE, value = INSERT_SUBSCRIPTION)
-    String batchCreateSubscription();
+    default void preGenerateSubscriptions(SubscriptionDescriptorModification subscriptionDescriptor, UUID subscriptionDescriptorId, int quantity) {
+        var results = getJdbcTemplate().batchUpdate(INSERT_SUBSCRIPTION, Stream.generate(UUID::randomUUID)
+            .limit(quantity)
+            .map(subscriptionId -> new MapSqlParameterSource("id", subscriptionId)
+                .addValue("subscriptionDescriptorId", subscriptionDescriptorId)
+                .addValue("maxUsage", subscriptionDescriptor.getMaxEntries())
+                .addValue("validFrom", toOffsetDateTime(subscriptionDescriptor.getValidityFrom()))
+                .addValue("validTo", toOffsetDateTime(subscriptionDescriptor.getValidityTo()))
+                .addValue("srcPriceCts", subscriptionDescriptor.getPriceCts())
+                .addValue("currency", subscriptionDescriptor.getCurrency())
+                .addValue("organizationId", subscriptionDescriptor.getOrganizationId())
+                .addValue("status", AllocationStatus.FREE.name())
+                .addValue("maxEntries", subscriptionDescriptor.getMaxEntries())
+                .addValue("reservationId", null)
+                .addValue("timeZone", subscriptionDescriptor.getTimeZone().toString())
+            ).toArray(MapSqlParameterSource[]::new));
+        var added = Arrays.stream(results).sum();
+        if(added != quantity) {
+            log.warn("wanted to generate {} subscriptions, got {} instead", quantity, added);
+            throw new IllegalStateException("Cannot set max availability");
+        }
+    }
+
+    private static OffsetDateTime toOffsetDateTime(ZonedDateTime in) {
+        if(in == null) {
+            return null;
+        }
+        return in.withZoneSameInstant(ZoneId.of("UTC")).toOffsetDateTime();
+    }
 
     @Query(INSERT_SUBSCRIPTION)
     int createSubscription(@Bind("id") UUID id,

@@ -18,7 +18,6 @@ package alfio.manager;
 
 import alfio.config.Initializer;
 import alfio.controller.form.SearchOptions;
-import alfio.model.AllocationStatus;
 import alfio.model.modification.SubscriptionDescriptorModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
@@ -41,12 +40,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNullElse;
 
@@ -104,40 +100,10 @@ public class SubscriptionManager {
 
         // pre-generate subscriptions if descriptor has a limited quantity
         if(maxAvailable > 0) {
-            preGenerateSubscriptions(subscriptionDescriptor, id, maxAvailable);
+            subscriptionRepository.preGenerateSubscriptions(subscriptionDescriptor, id, maxAvailable);
         }
 
         return Optional.of(id);
-    }
-
-    private void preGenerateSubscriptions(SubscriptionDescriptorModification subscriptionDescriptor, UUID subscriptionDescriptorId, int quantity) {
-        var results = jdbcTemplate.batchUpdate(subscriptionRepository.batchCreateSubscription(), Stream.generate(UUID::randomUUID)
-            .limit(quantity)
-            .map(subscriptionId -> new MapSqlParameterSource("id", subscriptionId)
-                .addValue("subscriptionDescriptorId", subscriptionDescriptorId)
-                .addValue("maxUsage", subscriptionDescriptor.getMaxEntries())
-                .addValue("validFrom", toOffsetDateTime(subscriptionDescriptor.getValidityFrom()))
-                .addValue("validTo", toOffsetDateTime(subscriptionDescriptor.getValidityTo()))
-                .addValue("srcPriceCts", subscriptionDescriptor.getPriceCts())
-                .addValue("currency", subscriptionDescriptor.getCurrency())
-                .addValue("organizationId", subscriptionDescriptor.getOrganizationId())
-                .addValue("status", AllocationStatus.FREE.name())
-                .addValue("maxEntries", subscriptionDescriptor.getMaxEntries())
-                .addValue("reservationId", null)
-                .addValue("timeZone", subscriptionDescriptor.getTimeZone().toString())
-            ).toArray(MapSqlParameterSource[]::new));
-        var added = Arrays.stream(results).sum();
-        if(added != quantity) {
-            log.warn("wanted to generate {} subscriptions, got {} instead", quantity, added);
-            throw new IllegalStateException("Cannot set max availability");
-        }
-    }
-
-    private static OffsetDateTime toOffsetDateTime(ZonedDateTime in) {
-        if(in == null) {
-            return null;
-        }
-        return in.withZoneSameInstant(ZoneId.of("UTC")).toOffsetDateTime();
     }
 
     public Optional<UUID> updateSubscriptionDescriptor(SubscriptionDescriptorModification subscriptionDescriptor) {
@@ -149,7 +115,7 @@ public class SubscriptionManager {
                 int result = subscriptionRepository.updateSubscriptionDescriptor(
                     subscriptionDescriptor.getTitle(),
                     subscriptionDescriptor.getDescription(),
-                    requireNonNullElse(maxAvailable, -1),
+                    maxAvailable,
                     subscriptionDescriptor.getOnSaleFrom(),
                     subscriptionDescriptor.getOnSaleTo(),
                     subscriptionDescriptor.getPriceCts(),
@@ -183,7 +149,7 @@ public class SubscriptionManager {
 
                 if(maxAvailable > 0 && maxAvailable > original.getMaxAvailable()) {
                     int existing = Math.max(0, original.getMaxAvailable());
-                    preGenerateSubscriptions(subscriptionDescriptor, subscriptionDescriptorId, maxAvailable - existing);
+                    subscriptionRepository.preGenerateSubscriptions(subscriptionDescriptor, subscriptionDescriptorId, maxAvailable - existing);
                 } else if(maxAvailable > -1 && maxAvailable < original.getMaxAvailable()) {
                     int amount = original.getMaxAvailable() - maxAvailable;
                     int invalidated = subscriptionRepository.invalidateSubscriptions(subscriptionDescriptorId, amount);

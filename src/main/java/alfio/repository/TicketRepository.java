@@ -415,8 +415,8 @@ public interface TicketRepository {
         return getNamedParameterJdbcTemplate().batchUpdate(RELEASE_TICKET_QUERY, args);
     }
 
-    @Query("update ticket set status = 'RELEASED', uuid = :newUuid, public_uuid = :newPublicUuid, " + RESET_TICKET + " where id = :ticketId and status = 'PENDING' and tickets_reservation_id = :reservationId and event_id = :eventId")
-    int releaseExpiredTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId, @Bind("newUuid") String newUuid, @Bind("newPublicUuid") UUID newPublicUuid);
+    @Query(type = QueryType.TEMPLATE, value = "update ticket set status = 'RELEASED', uuid = :newUuid, public_uuid = :newPublicUuid, " + RESET_TICKET + " where id = :ticketId and status = 'PENDING' and tickets_reservation_id = :reservationId and event_id = :eventId")
+    String batchReleaseTickets();
 
     NamedParameterJdbcTemplate getNamedParameterJdbcTemplate();
 
