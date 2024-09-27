@@ -265,8 +265,7 @@ class TicketReservationManagerTest {
             reservationCostCalculator,
             reservationHelper,
             reservationFinalizer,
-            osm,
-            additionalServiceItemRepository);
+            osm);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);

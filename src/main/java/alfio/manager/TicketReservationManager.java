@@ -174,7 +174,6 @@ public class TicketReservationManager {
     private final ReservationAuditingHelper auditingHelper;
     private final ReservationFinalizer reservationFinalizer;
     private final AdditionalServiceManager additionalServiceManager;
-    private final AdditionalServiceItemRepository additionalServiceItemRepository;
 
     public TicketReservationManager(EventRepository eventRepository,
                                     OrganizationRepository organizationRepository,
@@ -210,8 +209,7 @@ public class TicketReservationManager {
                                     ReservationCostCalculator reservationCostCalculator,
                                     ReservationEmailContentHelper reservationHelper,
                                     ReservationFinalizer reservationFinalizer,
-                                    OrderSummaryGenerator orderSummaryGenerator,
-                                    AdditionalServiceItemRepository additionalServiceItemRepository) {
+                                    OrderSummaryGenerator orderSummaryGenerator) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -228,7 +226,6 @@ public class TicketReservationManager {
         this.templateManager = templateManager;
         this.waitingQueueManager = waitingQueueManager;
         this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
-        this.additionalServiceItemRepository = additionalServiceItemRepository;
         DefaultTransactionDefinition serialized = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         serialized.setIsolationLevel(TransactionDefinition.ISOLATION_SERIALIZABLE);
         this.serializedTransactionTemplate = new TransactionTemplate(transactionManager, serialized);

@@ -166,8 +166,7 @@ class TicketReservationManagerUnitTest {
             reservationCostCalculator,
             mock(ReservationEmailContentHelper.class),
             mock(ReservationFinalizer.class),
-            mock(OrderSummaryGenerator.class),
-            mock(AdditionalServiceItemRepository.class));
+            mock(OrderSummaryGenerator.class));
     }
 
     @Test
