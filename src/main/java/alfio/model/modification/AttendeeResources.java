@@ -14,17 +14,19 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.api.v1.admin;
+package alfio.model.modification;
 
-import alfio.model.TicketReservation;
-import alfio.model.api.v1.admin.subscription.Owner;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import java.util.List;
+public record AttendeeResources(
+    @JsonInclude(Include.NON_NULL) String ticketPdf,
+    @JsonInclude(Include.NON_NULL) String ticketQrCode,
+    @JsonInclude(Include.NON_NULL) String googleWallet,
+    @JsonInclude(Include.NON_NULL) String applePass
+) {
 
-public record ReservationDetail(String id,
-                                TicketReservation.TicketReservationStatus status,
-                                ReservationUser user,
-                                List<AttendeesByCategory> tickets,
-                                List<Owner> subscriptionOwners) {
-
+    public static AttendeeResources empty() {
+        return new AttendeeResources(null, null, null, null);
+    }
 }

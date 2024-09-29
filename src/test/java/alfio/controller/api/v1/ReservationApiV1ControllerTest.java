@@ -34,6 +34,7 @@ import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.modification.AdminReservationModification.Notification;
 import alfio.model.modification.AdminReservationModification.TransactionDetails;
 import alfio.model.modification.AttendeeData;
+import alfio.model.modification.AttendeeResources;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.subscription.SubscriptionDescriptor;
@@ -54,6 +55,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.web.util.UriTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -61,6 +63,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 
+import static alfio.controller.Constants.TICKET_PDF_URI;
+import static alfio.controller.Constants.TICKET_QR_CODE_URI;
 import static alfio.controller.api.v1.SubscriptionApiV1IntegrationTest.modificationRequest;
 import static alfio.model.system.ConfigurationKeys.OPENID_PUBLIC_ENABLED;
 import static alfio.test.util.IntegrationTestUtil.*;
@@ -207,8 +211,11 @@ class ReservationApiV1ControllerTest {
         var detailResponse = controller.retrieveDetail(PurchaseContext.PurchaseContextType.event, event.getPublicIdentifier(), reservationId, principal);
         assertNotNull(detailResponse.getBody());
         var detailBody = detailResponse.getBody();
-        assertEquals(reservationId, detailBody.getId());
-        assertEquals(TicketReservation.TicketReservationStatus.PENDING, detailBody.getStatus());
+        assertEquals(reservationId, detailBody.id());
+        assertEquals(TicketReservation.TicketReservationStatus.PENDING, detailBody.status());
+        var resources = detailBody.tickets().get(0).getAttendees().get(0).getResources();
+        assertNull(resources.ticketPdf());
+        assertNull(resources.ticketQrCode());
         var confirmationRequest = new ReservationConfirmationRequest(
             new TransactionDetails("TRID", new BigDecimal("100.00"), LocalDateTime.now(clockProvider.getClock()), "notes", PaymentProxy.ON_SITE),
             new Notification(true, true)
@@ -220,17 +227,17 @@ class ReservationApiV1ControllerTest {
         assertTrue(detailResponse.getStatusCode().is2xxSuccessful());
         assertNotNull(detailResponse.getBody());
         detailBody = detailResponse.getBody();
-        assertEquals(reservationId, detailBody.getId());
-        assertEquals(TicketReservation.TicketReservationStatus.COMPLETE, detailBody.getStatus());
-        assertNotNull(detailBody.getUser());
-        var reservationUser = detailBody.getUser();
+        assertEquals(reservationId, detailBody.id());
+        assertEquals(TicketReservation.TicketReservationStatus.COMPLETE, detailBody.status());
+        assertNotNull(detailBody.user());
+        var reservationUser = detailBody.user();
         assertEquals("Test", reservationUser.getFirstName());
         assertEquals("McTest", reservationUser.getLastName());
         assertEquals("test@example.org", reservationUser.getEmail());
-        assertTrue(detailBody.getSubscriptionOwners().isEmpty());
-        assertFalse(detailBody.getTickets().isEmpty());
-        assertEquals(1, detailBody.getTickets().size());
-        var byCategory = detailBody.getTickets().get(0);
+        assertTrue(detailBody.subscriptionOwners().isEmpty());
+        assertFalse(detailBody.tickets().isEmpty());
+        assertEquals(1, detailBody.tickets().size());
+        var byCategory = detailBody.tickets().get(0);
         assertEquals(category.getId(), byCategory.getTicketCategoryId());
         assertEquals(1, byCategory.getAttendees().size());
         var attendee = byCategory.getAttendees().get(0);
@@ -239,6 +246,17 @@ class ReservationApiV1ControllerTest {
         assertEquals("test@test.org", attendee.getEmail());
         assertEquals(List.of("value1"), attendee.getAdditional().get(FIELD_NAME));
         assertEquals(Map.of("property", "value-first"), attendee.getMetadata());
+        resources = attendee.getResources();
+        var pdfTemplate = new UriTemplate(BASE_URL + TICKET_PDF_URI);
+        assertTrue(pdfTemplate.matches(resources.ticketPdf()));
+        var match = pdfTemplate.match(resources.ticketPdf());
+        assertEquals(event.getShortName(), match.get("eventName"));
+        var publicUuid = ticketRepository.findTicketsInReservation(reservationId).get(0).getPublicUuid().toString();
+        assertEquals(publicUuid, match.get("ticketIdentifier"));
+        var qrCodeTemplate = new UriTemplate(BASE_URL + TICKET_QR_CODE_URI);
+        assertTrue(qrCodeTemplate.matches(resources.ticketQrCode()));
+        assertNull(resources.googleWallet());
+        assertNull(resources.applePass());
     }
 
     @Test
@@ -537,11 +555,11 @@ class ReservationApiV1ControllerTest {
         assertTrue(detailResponse.getStatusCode().is2xxSuccessful());
         assertNotNull(detailResponse.getBody());
         var detailBody = detailResponse.getBody();
-        assertEquals(reservationId, detailBody.getId());
-        assertTrue(detailBody.getTickets().isEmpty());
-        assertFalse(detailBody.getSubscriptionOwners().isEmpty());
-        assertEquals(1, detailBody.getSubscriptionOwners().size());
-        var owner = detailBody.getSubscriptionOwners().get(0);
+        assertEquals(reservationId, detailBody.id());
+        assertTrue(detailBody.tickets().isEmpty());
+        assertFalse(detailBody.subscriptionOwners().isEmpty());
+        assertEquals(1, detailBody.subscriptionOwners().size());
+        var owner = detailBody.subscriptionOwners().get(0);
         assertEquals("Test", owner.getFirstName());
         assertEquals("Test1", owner.getLastName());
         assertEquals("test@test.org", owner.getEmail());

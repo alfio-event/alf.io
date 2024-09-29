@@ -16,20 +16,21 @@
  */
 package alfio.controller.api.v1.admin;
 
+import alfio.controller.Constants;
 import alfio.manager.*;
-import alfio.model.Event;
-import alfio.model.PurchaseContext;
+import alfio.manager.system.ConfigurationManager;
+import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
-import alfio.model.PurchaseContextFieldValue;
-import alfio.model.ReservationMetadata;
 import alfio.model.api.v1.admin.*;
 import alfio.model.api.v1.admin.ReservationConfirmationResponse.HolderDetail;
 import alfio.model.api.v1.admin.subscription.Owner;
 import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.modification.AdminReservationModification.Notification;
 import alfio.model.modification.AttendeeData;
+import alfio.model.modification.AttendeeResources;
 import alfio.model.result.ErrorCode;
 import alfio.model.subscription.SubscriptionDescriptor;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Role;
 import alfio.util.ReservationUtil;
 import org.apache.commons.collections4.CollectionUtils;
@@ -38,10 +39,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriTemplate;
 
 import java.security.Principal;
 import java.util.*;
 
+import static alfio.controller.Constants.*;
+import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.ReservationUtil.handleReservationCreationErrors;
 import static java.util.Objects.requireNonNullElseGet;
 import static java.util.stream.Collectors.*;
@@ -58,6 +62,7 @@ public class ReservationApiV1Controller {
     private final AdditionalServiceManager additionalServiceManager;
     private final AccessService accessService;
     private final PurchaseContextFieldManager purchaseContextFieldManager;
+    private final ConfigurationManager configurationManager;
 
     public ReservationApiV1Controller(TicketReservationManager ticketReservationManager,
                                       PurchaseContextManager purchaseContextManager,
@@ -66,7 +71,8 @@ public class ReservationApiV1Controller {
                                       AccessService accessService,
                                       AdditionalServiceManager additionalServiceManager,
                                       AdminReservationManager adminReservationManager,
-                                      PurchaseContextFieldManager purchaseContextFieldManager) {
+                                      PurchaseContextFieldManager purchaseContextFieldManager,
+                                      ConfigurationManager configurationManager) {
         this.ticketReservationManager = ticketReservationManager;
         this.purchaseContextManager = purchaseContextManager;
         this.promoCodeRequestManager = promoCodeRequestManager;
@@ -75,6 +81,7 @@ public class ReservationApiV1Controller {
         this.additionalServiceManager = additionalServiceManager;
         this.adminReservationManager = adminReservationManager;
         this.purchaseContextFieldManager = purchaseContextFieldManager;
+        this.configurationManager = configurationManager;
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/reservation/{id}")
@@ -89,6 +96,7 @@ public class ReservationApiV1Controller {
         List<AttendeesByCategory> attendeesByCategories = List.of();
         List<Owner> subscriptionOwners = List.of();
         if (purchaseContext.ofType(PurchaseContextType.event)) {
+            var conf = configurationManager.getFor(EnumSet.of(ENABLE_WALLET, ENABLE_PASS, BASE_URL), purchaseContext.getConfigurationLevel());
             var tickets = adminReservationManager.findTicketsWithMetadata(reservationId);
             var valuesByTicketId = purchaseContextFieldManager.findAllValuesByTicketIds(tickets.stream().map(t -> t.getTicket().getId())
                 .collect(toList()));
@@ -99,7 +107,13 @@ public class ReservationApiV1Controller {
                     var ticket = tfc.getTicket();
                     var additional = valuesByTicketId.getOrDefault(ticket.getId(), List.of()).stream()
                         .collect(groupingBy(PurchaseContextFieldValue::getName, mapping(PurchaseContextFieldValue::getValue, toList())));
-                    return new AttendeeData(ticket.getFirstName(), ticket.getLastName(), ticket.getEmail(), tfc.getAttributes(), additional);
+                    return new AttendeeData(
+                        ticket.getFirstName(),
+                        ticket.getLastName(),
+                        ticket.getEmail(),
+                        tfc.getAttributes(),
+                        additional,
+                        generateAttendeeResources(purchaseContext, ticket, conf));
                 }).collect(toList());
                 return new AttendeesByCategory(categoryId, ticketsForCategory.size(), attendeesData, List.of());
             }).collect(toList());
@@ -120,6 +134,43 @@ public class ReservationApiV1Controller {
             new ReservationDetail(reservationId, reservation.getStatus(), new ReservationUser(null, reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(), null), attendeesByCategories, subscriptionOwners)
         );
     }
+
+    private AttendeeResources generateAttendeeResources(PurchaseContext purchaseContext, Ticket ticket, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> conf) {
+        if (ticket.getStatus() == Ticket.TicketStatus.PENDING) {
+            return AttendeeResources.empty();
+        }
+        var baseUrl = conf.get(BASE_URL).getValueOrNull();
+        var ticketPdfUriTemplate = new UriTemplate(baseUrl + TICKET_PDF_URI);
+        var walletUriTemplate = new UriTemplate(baseUrl + WALLET_API_BASE_URI + Constants.WALLET_API_GET_URI);
+        var passUriTemplate = new UriTemplate(baseUrl + PASS_API_BASE_URI + Constants.WALLET_API_GET_URI);
+        var qrCodeTemplate = new UriTemplate(baseUrl + TICKET_QR_CODE_URI);
+        return new AttendeeResources(
+            expandUriTemplate(ticketPdfUriTemplate, purchaseContext, ticket),
+            expandUriTemplate(qrCodeTemplate, purchaseContext, ticket),
+            generateGoogleWalletUrl(walletUriTemplate, conf, purchaseContext, ticket),
+            generatePasskitUrl(passUriTemplate, conf, purchaseContext, ticket)
+        );
+    }
+
+    private String generateGoogleWalletUrl(UriTemplate walletUriTemplate, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> conf, PurchaseContext purchaseContext, Ticket ticket) {
+        if (conf.get(ENABLE_WALLET).getValueAsBooleanOrDefault()) {
+            return expandUriTemplate(walletUriTemplate, purchaseContext, ticket);
+        }
+        return null;
+    }
+
+    private String generatePasskitUrl(UriTemplate passkitUriTemplate, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> conf, PurchaseContext purchaseContext, Ticket ticket) {
+        if (conf.get(ENABLE_PASS).getValueAsBooleanOrDefault()) {
+            return expandUriTemplate(passkitUriTemplate, purchaseContext, ticket);
+        }
+        return null;
+    }
+
+    private static String expandUriTemplate(UriTemplate template, PurchaseContext purchaseContext, Ticket ticket) {
+        return template.expand(purchaseContext.getPublicIdentifier(), ticket.getPublicUuid().toString())
+            .toString();
+    }
+
 
     @PostMapping("/event/{slug}/reservation")
     @Transactional

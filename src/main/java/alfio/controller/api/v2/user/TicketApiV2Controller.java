@@ -62,6 +62,8 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
+import static alfio.controller.Constants.TICKET_PDF_URI;
+import static alfio.controller.Constants.TICKET_QR_CODE_URI;
 import static alfio.model.PurchaseContextFieldConfiguration.EVENT_RELATED_CONTEXTS;
 import static alfio.util.EventUtil.firstMatchingCallLink;
 import static alfio.util.ExportUtils.markAsNoIndex;
@@ -87,7 +89,7 @@ public class TicketApiV2Controller {
 
 
     @GetMapping(value = {
-        "/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/code.png",
+        TICKET_QR_CODE_URI,
         "/event/{eventName}/ticket/{ticketIdentifier}/code.png"
     })
     public void showQrCode(@PathVariable String eventName,
@@ -112,7 +114,7 @@ public class TicketApiV2Controller {
         }
     }
 
-    @GetMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/download-ticket")
+    @GetMapping(TICKET_PDF_URI)
     public void generateTicketPdf(@PathVariable String eventName,
                                   @PathVariable UUID ticketIdentifier,
                                   HttpServletResponse response) {

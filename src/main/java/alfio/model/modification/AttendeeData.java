@@ -30,6 +30,7 @@ public class AttendeeData {
     private final String email;
     private final Map<String, String> metadata;
     private final Map<String, List<String>> additional;
+    private final AttendeeResources resources;
 
     @JsonCreator
     public AttendeeData(@JsonProperty("firstName") String firstName,
@@ -37,11 +38,21 @@ public class AttendeeData {
                         @JsonProperty("email") String email,
                         @JsonProperty("metadata") Map<String, String> metadata,
                         @JsonProperty("additional") Map<String, List<String>> additional) {
+        this(firstName, lastName, email, metadata, additional, AttendeeResources.empty());
+    }
+
+    public AttendeeData(String firstName,
+                         String lastName,
+                         String email,
+                         Map<String, String> metadata,
+                         Map<String, List<String>> additional,
+                         AttendeeResources resources) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.metadata = metadata;
         this.additional = additional;
+        this.resources = resources;
     }
 
     public String getFirstName() {
@@ -83,6 +94,10 @@ public class AttendeeData {
         return StringUtils.isNotBlank(firstName)
             || StringUtils.isNotBlank(lastName)
             || StringUtils.isNotBlank(email);
+    }
+
+    public AttendeeResources getResources() {
+        return resources;
     }
 
     public static AttendeeData empty() {
