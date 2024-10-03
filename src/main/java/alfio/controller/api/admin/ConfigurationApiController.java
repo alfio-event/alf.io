@@ -26,13 +26,14 @@ import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
-import alfio.model.EventAndOrganizationId;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.util.ClockProvider;
+import alfio.util.Json;
 import alfio.util.RequestUtils;
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
@@ -85,7 +86,7 @@ public class ConfigurationApiController {
     @PostMapping(value = "/update-bulk")
     public boolean updateConfiguration(@RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
         accessService.ensureAdmin(principal);
-        List<ConfigurationModification> list = Objects.requireNonNull(input).values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+        List<ConfigurationModification> list = Objects.requireNonNull(input).values().stream().flatMap(Collection::stream).toList();
         configurationManager.saveAllSystemConfiguration(list);
         return true;
     }
@@ -102,7 +103,7 @@ public class ConfigurationApiController {
         // id of input are not used, so not needed to check for consistency
         accessService.checkOrganizationOwnership(principal, organizationId);
         //
-        configurationManager.saveAllOrganizationConfiguration(organizationId, input.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), principal.getName());
+        configurationManager.saveAllOrganizationConfiguration(organizationId, input.values().stream().flatMap(Collection::stream).toList(), principal.getName());
         return true;
     }
 
@@ -152,7 +153,7 @@ public class ConfigurationApiController {
         // id of input are not used, so not needed to check for consistency
         accessService.checkEventOwnership(principal, eventId, organizationId);
         //
-        configurationManager.saveAllEventConfiguration(eventId, organizationId, input.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), principal.getName());
+        configurationManager.saveAllEventConfiguration(eventId, organizationId, input.values().stream().flatMap(Collection::stream).toList(), principal.getName());
         return true;
     }
 
@@ -162,7 +163,7 @@ public class ConfigurationApiController {
         // id of input are not used, so no needed to check for consistency
         accessService.checkCategoryOwnership(principal, eventId, categoryId);
         //
-        configurationManager.saveCategoryConfiguration(categoryId, eventId, input.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), principal.getName());
+        configurationManager.saveCategoryConfiguration(categoryId, eventId, input.values().stream().flatMap(Collection::stream).toList(), principal.getName());
         return true;
     }
 
@@ -294,6 +295,32 @@ public class ConfigurationApiController {
         }
 
         return ResponseEntity.ok(adminJobManager.scheduleExecution(ASSIGN_TICKETS_TO_SUBSCRIBERS, requireNonNullElse(jobMetadata, Map.of())));
+    }
+
+    @GetMapping(value = "/global-translations-override")
+    public Map<String, Map<String, String>> loadTranslations() {
+        return configurationManager.getFor(TRANSLATION_OVERRIDE, ConfigurationLevel.system())
+            .getValue()
+            .map(v -> Json.fromJson(v, new TypeReference<Map<String, Map<String, String>>>() {}))
+            .orElse(Map.of());
+    }
+
+    @GetMapping(value = "/organizations/{organizationId}/translations-override")
+    public Map<String, Map<String, String>> loadTranslationsOverrideForOrganization(@PathVariable int organizationId, Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
+        return configurationManager.getFor(TRANSLATION_OVERRIDE, ConfigurationLevel.organization(organizationId))
+            .getValue()
+            .map(v -> Json.fromJson(v, new TypeReference<Map<String, Map<String, String>>>() {}))
+            .orElse(Map.of());
+    }
+
+    @GetMapping(value = "/events/{eventId}/translations-override")
+    public Map<String, Map<String, String>> loadTranslationsOverrideForEvent(@PathVariable int eventId, Principal principal) {
+        var eventAndOrgId = accessService.checkEventOwnership(principal, eventId);
+        return configurationManager.getFor(TRANSLATION_OVERRIDE, ConfigurationLevel.event(eventAndOrgId))
+            .getValue()
+            .map(v -> Json.fromJson(v, new TypeReference<Map<String, Map<String, String>>>() {}))
+            .orElse(Map.of());
     }
 
     @Data
