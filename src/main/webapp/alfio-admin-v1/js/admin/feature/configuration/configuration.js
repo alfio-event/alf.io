@@ -103,6 +103,15 @@
             loadEventConfig: function(eventId) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/load').error(HttpErrorHandler.handle)
             },
+            loadTranslationsOverrideForEvent: function(eventId) {
+                return $http.get('/admin/api/configuration/events/'+eventId+'/translations-override').error(HttpErrorHandler.handle)
+            },
+            loadTranslationsOverrideForOrganization: function(orgId) {
+                return $http.get('/admin/api/configuration/organizations/'+orgId+'/translations-override').error(HttpErrorHandler.handle)
+            },
+            loadSystemTranslationsOverride: function() {
+                return $http.get('/admin/api/configuration/global-translations-override').error(HttpErrorHandler.handle)
+            },
             loadSingleConfigForEvent: function(eventName, key) {
                 if (!window.USER_IS_OWNER) {
                     return $q.reject('not authorized');

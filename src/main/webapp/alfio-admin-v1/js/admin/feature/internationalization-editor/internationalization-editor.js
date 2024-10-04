@@ -44,15 +44,14 @@
 
         function loadOverride() {
             loadOverrideFor(ctrl.organizationId, ctrl.eventId).then(function(res) {
-                ctrl.translationsKey = res[0];
-                ctrl.translationsData = res[1];
+                ctrl.translationsData = res;
             });
         }
 
         function loadOverrideForPreviousLevel() {
             if(ctrl.eventId !== undefined) {
                 return $q.all([loadOverrideFor(undefined, undefined), loadOverrideFor(ctrl.organizationId, undefined)]).then(function(toBeMerged) {
-                    return [null, _.merge(toBeMerged[0][1], toBeMerged[1][1])];
+                    return [null, _.merge(toBeMerged[0], toBeMerged[1])];
                 });
             } else if(ctrl.organizationId !== undefined) {
                 return loadOverrideFor(undefined, undefined);
@@ -65,51 +64,44 @@
             var $promiseConf;
             if(eventId !== undefined) {
                 //event
-                $promiseConf = ConfigurationService.loadEventConfig(ctrl.eventId)
+                $promiseConf = ConfigurationService.loadTranslationsOverrideForEvent(ctrl.eventId)
             } else if (organizationId !== undefined) {
                 //organization
-                $promiseConf = ConfigurationService.loadOrganizationConfig(ctrl.organizationId)
+                $promiseConf = ConfigurationService.loadTranslationsOverrideForOrganization(ctrl.organizationId)
             } else {
-                $promiseConf = ConfigurationService.loadAll()
+                $promiseConf = ConfigurationService.loadSystemTranslationsOverride()
                 //system
             }
 
             return $promiseConf.then(function(res) {
-                var translations = _.find(res.data['TRANSLATIONS'], function(v) {return v.key === 'TRANSLATION_OVERRIDE'});
-                if(!translations) {
-                    return [];
-                }
-                return [translations, JSON.parse(translations.value || '{}')]
+                return res.data;
             });
         }
 
         function loadForLocale(locale) {
-            $q.all([$http.get('/api/v2/public/i18n/bundle/'+locale, {params: {withSystemOverride: false}}), loadOverrideForPreviousLevel()]).then(function(resAll) {
-                var overrideFromPreviousLevel = resAll[1][1];
-                var res = resAll[0];
 
+            loadOverrideForPreviousLevel().then(function(res) {
+                loadAndCustomizeBundle(locale, res);
+            }, function() {
+                loadAndCustomizeBundle(locale, undefined);
+            });
+        }
+
+        function loadAndCustomizeBundle(locale, overrideFromPreviousLevel) {
+            $http.get('/api/v2/public/i18n/bundle/'+locale, {params: {withSystemOverride: false}}).then(function(res) {
                 var keys = Object.keys(res.data).sort();
                 ctrl.bundleKeys[locale] = keys;
-
-
                 for(var i = 0; i < keys.length; i++) {
-
                     var key = keys[i];
-
                     var value = res.data[key];
-
                     //check if override is present
                     if(overrideFromPreviousLevel && overrideFromPreviousLevel[locale] && overrideFromPreviousLevel[locale][key]) {
                         value = overrideFromPreviousLevel[locale][key];
                     }
-
                     // from {{0}} to {0}
                     res.data[keys[i]] = hideEscaping(value);
                 }
-
                 ctrl.bundle[locale] = res.data;
-
-
             });
         }
 

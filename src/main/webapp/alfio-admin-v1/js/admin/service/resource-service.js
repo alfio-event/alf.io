@@ -42,7 +42,7 @@ angular.module('adminApplication').service('ResourceService', function($http, $q
             return $http.get('/admin/api/resource-event/'+orgId+'/'+eventId+'/'+name);
         },
         uploadFile: function(orgId, eventId, file) {
-            return $http.post('/admin/api/resource-event/'+orgId+'/'+eventId+'/', file);
+            return $http.post('/admin/api/resource-event/'+orgId+'/'+eventId, file);
         },
         deleteFile: function(orgId, eventId, name) {
             return $http.delete('/admin/api/resource-event/'+orgId+'/'+eventId+'/'+name);

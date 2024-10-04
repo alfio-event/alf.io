@@ -54,7 +54,7 @@ public class AdditionalServiceHelper {
         if (purchaseContext.ofType(PurchaseContext.PurchaseContextType.event) && ((Event)purchaseContext).supportsLinkedAdditionalServices()) {
             var event = ((Event)purchaseContext);
             if (!additionalServiceItems.isEmpty()) {
-                var additionalServiceIds = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(Collectors.toList());
+                var additionalServiceIds = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).toList();
                 var additionalItemDescriptionsById = additionalServiceManager.getDescriptionsByAdditionalServiceIds(additionalServiceIds);
                 var additionalItemTypeById = additionalServiceManager.getTypeByIds(additionalServiceIds);
                 var additionalFieldsById = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.getId()).stream()
@@ -81,15 +81,15 @@ public class AdditionalServiceHelper {
                                     isBeforeStandardFields(fieldConfiguration),
                                     fromFieldDescriptions(descriptionsByTicketFieldId.get(fieldConfiguration.getId())));
                             })
-                            .collect(Collectors.toList());
+                            .toList();
                         var ticketUUID = tickets.stream().filter(t -> ticketId != null && t.getId() == ticketId)
-                            .map(Ticket::getUuid)
+                            .map(t -> t.getPublicUuid().toString())
                             .findFirst()
                             .orElse(null);
                         return new AdditionalServiceWithData(additionalItemTitle, as.getId(), as.getAdditionalServiceId(), ticketUUID, fields, additionalItemTypeById.get(as.getAdditionalServiceId()));
                     })
                     .sorted(Comparator.comparing(AdditionalServiceWithData::getServiceId))
-                    .collect(Collectors.toList());
+                    .toList();
             }
         }
         return List.of();
@@ -101,7 +101,7 @@ public class AdditionalServiceHelper {
         }
         var additionalServiceItems = additionalServiceManager.findItemsForTicket(ticket);
         Map<Integer, List<AdditionalServiceFieldValue>> additionalServicesByItemId = additionalServiceItems.isEmpty() ? Map.of() :
-            purchaseContextFieldRepository.findAdditionalServicesValueByItemIds(additionalServiceItems.stream().map(AdditionalServiceItem::getId).collect(Collectors.toList()))
+            purchaseContextFieldRepository.findAdditionalServicesValueByItemIds(additionalServiceItems.stream().map(AdditionalServiceItem::getId).toList())
                 .stream().collect(groupingBy(AdditionalServiceFieldValue::getAdditionalServiceItemId));
         var descriptionsByTicketFieldId = purchaseContextFieldManager.findDescriptionsGroupedByFieldId(event);
         return getAdditionalServicesWithData(event, additionalServiceItems, additionalServicesByItemId, descriptionsByTicketFieldId, List.of(ticket));
