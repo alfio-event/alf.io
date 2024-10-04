@@ -27,6 +27,11 @@ import org.springframework.ui.Model;
 import jakarta.servlet.http.HttpServletRequest;
 
 public interface Constants {
+    String TICKET_QR_CODE_URI = "/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/code.png";
+    String WALLET_API_BASE_URI = "/api/wallet/event/{eventName}/v1";
+    String PASS_API_BASE_URI = "/api/pass/event/{eventName}/v1";
+    String WALLET_API_GET_URI = "/version/passes/{uuid}";
+    String TICKET_PDF_URI = "/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/download-ticket";
     String TEXT_HTML_CHARSET_UTF_8 = "text/html;charset=UTF-8";
     String UTF_8 = "UTF-8";
     String NONCE = "nonce";
