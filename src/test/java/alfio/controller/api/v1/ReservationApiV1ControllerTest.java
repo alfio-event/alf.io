@@ -34,7 +34,6 @@ import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.modification.AdminReservationModification.Notification;
 import alfio.model.modification.AdminReservationModification.TransactionDetails;
 import alfio.model.modification.AttendeeData;
-import alfio.model.modification.AttendeeResources;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.subscription.SubscriptionDescriptor;
