@@ -157,7 +157,9 @@
                         description: promocode.description,
                         emailReference: promocode.emailReference,
                         codeType: promocode.codeType,
-                        hiddenCategoryId: promocode.hiddenCategoryId
+                        hiddenCategoryId: promocode.hiddenCategoryId,
+                        eventId: promocode.eventId,
+                        organizationId: promocode.organizationId
                     };
                     $scope.validCategories = _.map(ctrl.event.ticketCategories, function(c) {
                         var c1 = angular.copy(c, {});
