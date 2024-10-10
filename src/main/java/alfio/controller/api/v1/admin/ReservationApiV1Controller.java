@@ -113,7 +113,7 @@ public class ReservationApiV1Controller {
                         ticket.getEmail(),
                         tfc.getAttributes(),
                         additional,
-                        generateAttendeeResources(purchaseContext, ticket, conf));
+                        AttendeeResources.fromTicket(ticket, purchaseContext, conf));
                 }).collect(toList());
                 return new AttendeesByCategory(categoryId, ticketsForCategory.size(), attendeesData, List.of());
             }).collect(toList());
@@ -134,43 +134,6 @@ public class ReservationApiV1Controller {
             new ReservationDetail(reservationId, reservation.getStatus(), new ReservationUser(null, reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(), null), attendeesByCategories, subscriptionOwners)
         );
     }
-
-    private AttendeeResources generateAttendeeResources(PurchaseContext purchaseContext, Ticket ticket, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> conf) {
-        if (ticket.getStatus() == Ticket.TicketStatus.PENDING) {
-            return AttendeeResources.empty();
-        }
-        var baseUrl = conf.get(BASE_URL).getValueOrNull();
-        var ticketPdfUriTemplate = new UriTemplate(baseUrl + TICKET_PDF_URI);
-        var walletUriTemplate = new UriTemplate(baseUrl + WALLET_API_BASE_URI + Constants.WALLET_API_GET_URI);
-        var passUriTemplate = new UriTemplate(baseUrl + PASS_API_BASE_URI + Constants.WALLET_API_GET_URI);
-        var qrCodeTemplate = new UriTemplate(baseUrl + TICKET_QR_CODE_URI);
-        return new AttendeeResources(
-            expandUriTemplate(ticketPdfUriTemplate, purchaseContext, ticket),
-            expandUriTemplate(qrCodeTemplate, purchaseContext, ticket),
-            generateGoogleWalletUrl(walletUriTemplate, conf, purchaseContext, ticket),
-            generatePasskitUrl(passUriTemplate, conf, purchaseContext, ticket)
-        );
-    }
-
-    private String generateGoogleWalletUrl(UriTemplate walletUriTemplate, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> conf, PurchaseContext purchaseContext, Ticket ticket) {
-        if (conf.get(ENABLE_WALLET).getValueAsBooleanOrDefault()) {
-            return expandUriTemplate(walletUriTemplate, purchaseContext, ticket);
-        }
-        return null;
-    }
-
-    private String generatePasskitUrl(UriTemplate passkitUriTemplate, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> conf, PurchaseContext purchaseContext, Ticket ticket) {
-        if (conf.get(ENABLE_PASS).getValueAsBooleanOrDefault()) {
-            return expandUriTemplate(passkitUriTemplate, purchaseContext, ticket);
-        }
-        return null;
-    }
-
-    private static String expandUriTemplate(UriTemplate template, PurchaseContext purchaseContext, Ticket ticket) {
-        return template.expand(purchaseContext.getPublicIdentifier(), ticket.getPublicUuid().toString())
-            .toString();
-    }
-
 
     @PostMapping("/event/{slug}/reservation")
     @Transactional

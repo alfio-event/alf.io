@@ -221,6 +221,11 @@ A result of type [`TicketMetadata`](https://github.com/alfio-event/alf.io/blob/m
                 <td>`Map<String, List<String>>`</td>
                 <td>Additional information provided by the ticket holder</td>
             </tr>
+            <tr>
+                <td>`attendeeResources`</td>
+                <td>[`AttendeeResources`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/modification/AttendeeResources.java)</td>
+                <td>Attendee resources, such as Ticket PDF</td>
+            </tr>
         </tbody>
     </table>
 </div>

@@ -35,6 +35,7 @@ import alfio.model.metadata.AlfioMetadata;
 import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.metadata.TicketMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
+import alfio.model.modification.AttendeeResources;
 import alfio.model.modification.EventModification;
 import alfio.model.subscription.Subscription;
 import alfio.model.subscription.SubscriptionDescriptor;
@@ -66,6 +67,7 @@ import java.util.stream.Collectors;
 import static alfio.extension.ExtensionService.toPath;
 import static alfio.manager.support.extension.ExtensionEvent.*;
 import static alfio.model.PromoCodeDiscount.DiscountType.PERCENTAGE;
+import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
 @AllArgsConstructor
@@ -600,6 +602,7 @@ public class ExtensionManager {
         context.put(TICKET, ticketWithMetadata.getTicket());
         context.put(TICKET_METADATA, ticketWithMetadata.getMetadata().getMetadataForKey(TicketMetadataContainer.GENERAL).orElseGet(TicketMetadata::empty));
         context.put(ADDITIONAL_INFO, Objects.requireNonNullElse(additionalInfo, Map.of()));
+        context.put("attendeeResources", AttendeeResources.fromTicket(ticketWithMetadata.getTicket(), event, configurationManager.getFor(EnumSet.of(ENABLE_WALLET, ENABLE_PASS, BASE_URL), event.getConfigurationLevel())));
         return Optional.ofNullable(syncCall(ExtensionEvent.TICKET_ASSIGNED_GENERATE_METADATA, event, context, TicketMetadata.class, false));
     }
 

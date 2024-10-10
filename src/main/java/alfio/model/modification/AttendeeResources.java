@@ -16,8 +16,20 @@
  */
 package alfio.model.modification;
 
+import alfio.controller.Constants;
+import alfio.manager.system.ConfigurationManager;
+import alfio.model.PurchaseContext;
+import alfio.model.Ticket;
+import alfio.model.system.ConfigurationKeys;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import org.springframework.web.util.UriTemplate;
+
+import java.util.Map;
+
+import static alfio.controller.Constants.*;
+import static alfio.controller.Constants.TICKET_QR_CODE_URI;
+import static alfio.model.system.ConfigurationKeys.*;
 
 public record AttendeeResources(
     @JsonInclude(Include.NON_NULL) String ticketPdf,
@@ -28,5 +40,47 @@ public record AttendeeResources(
 
     public static AttendeeResources empty() {
         return new AttendeeResources(null, null, null, null);
+    }
+
+    public static AttendeeResources fromTicket(Ticket ticket, PurchaseContext purchaseContext, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> conf) {
+        if (ticket.getStatus() == Ticket.TicketStatus.PENDING) {
+            return AttendeeResources.empty();
+        }
+        var baseUrl = conf.get(BASE_URL).getRequiredValue();
+        var ticketPdfUriTemplate = new UriTemplate(baseUrl + TICKET_PDF_URI);
+        var walletUriTemplate = new UriTemplate(baseUrl + WALLET_API_BASE_URI + Constants.WALLET_API_GET_URI);
+        var passUriTemplate = new UriTemplate(baseUrl + PASS_API_BASE_URI + Constants.WALLET_API_GET_URI);
+        var qrCodeTemplate = new UriTemplate(baseUrl + TICKET_QR_CODE_URI);
+        return new AttendeeResources(
+            expandUriTemplate(ticketPdfUriTemplate, purchaseContext, ticket),
+            expandUriTemplate(qrCodeTemplate, purchaseContext, ticket),
+            generateGoogleWalletUrl(walletUriTemplate, conf, purchaseContext, ticket),
+            generatePasskitUrl(passUriTemplate, conf, purchaseContext, ticket)
+        );
+    }
+
+    private static String generateGoogleWalletUrl(UriTemplate walletUriTemplate,
+                                                  Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> conf,
+                                                  PurchaseContext purchaseContext,
+                                                  Ticket ticket) {
+        if (conf.get(ENABLE_WALLET).getValueAsBooleanOrDefault()) {
+            return expandUriTemplate(walletUriTemplate, purchaseContext, ticket);
+        }
+        return null;
+    }
+
+    private static String generatePasskitUrl(UriTemplate passkitUriTemplate,
+                                             Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> conf,
+                                             PurchaseContext purchaseContext,
+                                             Ticket ticket) {
+        if (conf.get(ENABLE_PASS).getValueAsBooleanOrDefault()) {
+            return expandUriTemplate(passkitUriTemplate, purchaseContext, ticket);
+        }
+        return null;
+    }
+
+    private static String expandUriTemplate(UriTemplate template, PurchaseContext purchaseContext, Ticket ticket) {
+        return template.expand(purchaseContext.getPublicIdentifier(), ticket.getPublicUuid().toString())
+            .toString();
     }
 }
