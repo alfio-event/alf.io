@@ -28,7 +28,6 @@ import org.springframework.web.util.UriTemplate;
 import java.util.Map;
 
 import static alfio.controller.Constants.*;
-import static alfio.controller.Constants.TICKET_QR_CODE_URI;
 import static alfio.model.system.ConfigurationKeys.*;
 
 public record AttendeeResources(
@@ -37,6 +36,27 @@ public record AttendeeResources(
     @JsonInclude(Include.NON_NULL) String googleWallet,
     @JsonInclude(Include.NON_NULL) String applePass
 ) {
+
+    // adding explicit getters to allow Rhino to access the record properties
+    // this is a temporary addition, until Rhino adds explicit support for records.
+    @JsonInclude(Include.NON_NULL)
+    public String getTicketPdf() {
+        return ticketPdf;
+    }
+
+    @JsonInclude(Include.NON_NULL)
+    public String getTicketQrCode() {
+        return ticketQrCode;
+    }
+
+    @JsonInclude(Include.NON_NULL)
+    public String getGoogleWallet() {
+        return googleWallet;
+    }
+
+    public String getApplePass() {
+        return applePass;
+    }
 
     public static AttendeeResources empty() {
         return new AttendeeResources(null, null, null, null);
