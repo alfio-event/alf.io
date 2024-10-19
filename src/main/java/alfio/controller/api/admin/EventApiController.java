@@ -45,6 +45,7 @@ import alfio.repository.SponsorScanRepository;
 import alfio.util.*;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -585,10 +586,14 @@ public class EventApiController {
         record Transaction(String reservationId, BigDecimal price) {}
         var csvMapper = new CsvMapper();
         try(InputStreamReader isr = new InputStreamReader(file.getInputStream(), UTF_8)) {
-            MappingIterator<Transaction> iterator = csvMapper.readerFor(Transaction.class)
+            MappingIterator<List<String>> iterator = csvMapper.readerFor(Transaction.class)
                 .with(CsvSchema.emptySchema().withoutHeader())
+                .with(CsvParser.Feature.WRAP_AS_ARRAY)
                 .readValues(isr);
-            var all = iterator.readAll();
+            var all = iterator.readAll().stream()
+                .filter(line -> line.size() > 1)
+                .map(line -> new Transaction(line.get(0), new BigDecimal(line.get(1))))
+                .toList();
 
             var reservationIds = all.stream()
                 .map(Transaction::reservationId)
