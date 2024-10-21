@@ -1149,8 +1149,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 // try to search ticket
                 var results = checkInApiController.searchAttendees(eventName, fullTicketInfo.getEmail(), 0, principal);
                 switch (context.event.getFormat()) {
-                    case IN_PERSON:
-                    case HYBRID:
+                    case IN_PERSON, HYBRID:
                         assertTrue(results.getStatusCode().is2xxSuccessful());
                         assertNotNull(results.getBody());
                         var searchResults = results.getBody();
@@ -1463,22 +1462,22 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
     }
 
     static void insertExtension(ExtensionService extensionService, String path, Stream<String> events) throws IOException {
-        insertExtension(extensionService, path, true, true, events);
+        insertExtension(extensionService, path, true, true, "Extension", events);
     }
 
     static Stream<String> allEvents() {
         return Arrays.stream(ExtensionEvent.values()).map(ee -> "'"+ee.name()+"'");
     }
 
-    static void insertExtension(ExtensionService extensionService, String path, boolean async, boolean sync, Stream<String> events) throws IOException {
+    static void insertExtension(ExtensionService extensionService, String path, boolean async, boolean sync, String name, Stream<String> events) throws IOException {
         try (var extensionInputStream = requireNonNull(BaseReservationFlowTest.class.getResourceAsStream(path))) {
             List<String> extensionStream = IOUtils.readLines(new InputStreamReader(extensionInputStream, StandardCharsets.UTF_8));
             String concatenation = String.join("\n", extensionStream).replace("EVENTS", events.collect(Collectors.joining(",")));
             if (sync) {
-                extensionService.createOrUpdate(null, null, new Extension("-", "syncName", concatenation.replace("placeHolder", "false"), true));
+                extensionService.createOrUpdate(null, null, new Extension("-", "sync"+name, concatenation.replace("placeHolder", "false"), true));
             }
             if (async) {
-                extensionService.createOrUpdate(null, null, new Extension("-", "asyncName", concatenation.replace("placeHolder", "true"), true));
+                extensionService.createOrUpdate(null, null, new Extension("-", "async"+name, concatenation.replace("placeHolder", "true"), true));
             }
         }
     }

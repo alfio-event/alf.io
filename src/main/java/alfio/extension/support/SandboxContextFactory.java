@@ -67,4 +67,12 @@ public class SandboxContextFactory extends ContextFactory {
         mcx.startTime = System.currentTimeMillis();
         return super.doTopCall(callable, cx, scope, thisObj, args);
     }
+
+    @Override
+    protected boolean hasFeature(Context cx, int featureIndex) {
+        if (featureIndex == Context.FEATURE_ENABLE_JAVA_MAP_ACCESS) {
+            return true;
+        }
+        return super.hasFeature(cx, featureIndex);
+    }
 }

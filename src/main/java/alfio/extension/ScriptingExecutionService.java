@@ -29,7 +29,6 @@ import alfio.util.Json;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
-import lombok.extern.log4j.Log4j2;
 import org.mozilla.javascript.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -170,8 +169,7 @@ public class ScriptingExecutionService {
 
     @SuppressWarnings("unchecked")
     private <T> T executeScriptFinally(String name, String script, Map<String, Object> params, Class<T> clazz,  ExtensionLogger extensionLogger) {
-        Context cx = Context.enter();
-        try {
+        try (var cx = Context.enter()) {
             if(params == null) {
                 params = Collections.emptyMap();
             }
@@ -228,8 +226,6 @@ public class ScriptingExecutionService {
         } catch (Exception ex) { //
             extensionLogger.logError("Error while executing script: " + ex.getMessage());
             throw new IllegalStateException(ex);
-        } finally {
-            Context.exit();
         }
     }
 
