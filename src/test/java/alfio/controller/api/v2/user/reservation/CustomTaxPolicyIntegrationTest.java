@@ -106,7 +106,7 @@ class CustomTaxPolicyIntegrationTest {
     private ReservationFlowContext createContext(PriceContainer.VatStatus vatStatus) {
         try {
             IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
-            insertExtension(extensionService, "/custom-tax-policy-extension.js", false, true, allEvents());
+            insertExtension(extensionService, "/custom-tax-policy-extension.js", false, true, "CustomTaxPolicy", allEvents());
             List<TicketCategoryModification> categories = Arrays.asList(
                 new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                     new DateTimeModification(LocalDate.now(clockProvider.getClock()).minusDays(1), LocalTime.now(clockProvider.getClock())),

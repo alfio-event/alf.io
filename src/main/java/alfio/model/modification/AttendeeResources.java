@@ -16,7 +16,6 @@
  */
 package alfio.model.modification;
 
-import alfio.controller.Constants;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.PurchaseContext;
 import alfio.model.Ticket;
@@ -37,45 +36,33 @@ public record AttendeeResources(
     @JsonInclude(Include.NON_NULL) String applePass
 ) {
 
-    // adding explicit getters to allow Rhino to access the record properties
-    // this is a temporary addition, until Rhino adds explicit support for records.
-    @JsonInclude(Include.NON_NULL)
-    public String getTicketPdf() {
-        return ticketPdf;
-    }
-
-    @JsonInclude(Include.NON_NULL)
-    public String getTicketQrCode() {
-        return ticketQrCode;
-    }
-
-    @JsonInclude(Include.NON_NULL)
-    public String getGoogleWallet() {
-        return googleWallet;
-    }
-
-    public String getApplePass() {
-        return applePass;
-    }
-
     public static AttendeeResources empty() {
         return new AttendeeResources(null, null, null, null);
     }
 
-    public static AttendeeResources fromTicket(Ticket ticket, PurchaseContext purchaseContext, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> conf) {
-        if (ticket.getStatus() == Ticket.TicketStatus.PENDING) {
+    public static AttendeeResources fromTicket(Ticket ticket,
+                                               PurchaseContext purchaseContext,
+                                               Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> conf) {
+        return fromTicket(ticket, purchaseContext, conf, false);
+    }
+
+    public static AttendeeResources fromTicket(Ticket ticket,
+                                               PurchaseContext purchaseContext,
+                                               Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> conf,
+                                               boolean allowPendingTickets) {
+        if (ticket.getStatus() == Ticket.TicketStatus.PENDING && !allowPendingTickets) {
             return AttendeeResources.empty();
         }
         var baseUrl = conf.get(BASE_URL).getRequiredValue();
         var ticketPdfUriTemplate = new UriTemplate(baseUrl + TICKET_PDF_URI);
-        var walletUriTemplate = new UriTemplate(baseUrl + WALLET_API_BASE_URI + Constants.WALLET_API_GET_URI);
-        var passUriTemplate = new UriTemplate(baseUrl + PASS_API_BASE_URI + Constants.WALLET_API_GET_URI);
+        var walletUriTemplate = new UriTemplate(baseUrl + WALLET_API_BASE_URI + WALLET_API_GET_URI);
+        var passUriTemplate = new UriTemplate(baseUrl + PASS_API_BASE_URI + WALLET_API_GET_URI);
         var qrCodeTemplate = new UriTemplate(baseUrl + TICKET_QR_CODE_URI);
         return new AttendeeResources(
-            expandUriTemplate(ticketPdfUriTemplate, purchaseContext, ticket),
-            expandUriTemplate(qrCodeTemplate, purchaseContext, ticket),
-            generateGoogleWalletUrl(walletUriTemplate, conf, purchaseContext, ticket),
-            generatePasskitUrl(passUriTemplate, conf, purchaseContext, ticket)
+                expandUriTemplate(ticketPdfUriTemplate, purchaseContext, ticket),
+                expandUriTemplate(qrCodeTemplate, purchaseContext, ticket),
+                generateGoogleWalletUrl(walletUriTemplate, conf, purchaseContext, ticket),
+                generatePasskitUrl(passUriTemplate, conf, purchaseContext, ticket)
         );
     }
 

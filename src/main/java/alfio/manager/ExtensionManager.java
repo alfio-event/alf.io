@@ -602,7 +602,7 @@ public class ExtensionManager {
         context.put(TICKET, ticketWithMetadata.getTicket());
         context.put(TICKET_METADATA, ticketWithMetadata.getMetadata().getMetadataForKey(TicketMetadataContainer.GENERAL).orElseGet(TicketMetadata::empty));
         context.put(ADDITIONAL_INFO, Objects.requireNonNullElse(additionalInfo, Map.of()));
-        context.put("attendeeResources", AttendeeResources.fromTicket(ticketWithMetadata.getTicket(), event, configurationManager.getFor(EnumSet.of(ENABLE_WALLET, ENABLE_PASS, BASE_URL), event.getConfigurationLevel())));
+        context.put("attendeeResources", new AttendeeResourcesContainer(AttendeeResources.fromTicket(ticketWithMetadata.getTicket(), event, configurationManager.getFor(EnumSet.of(ENABLE_WALLET, ENABLE_PASS, BASE_URL), event.getConfigurationLevel()), true)));
         return Optional.ofNullable(syncCall(ExtensionEvent.TICKET_ASSIGNED_GENERATE_METADATA, event, context, TicketMetadata.class, false));
     }
 
