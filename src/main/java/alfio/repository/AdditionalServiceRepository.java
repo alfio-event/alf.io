@@ -49,6 +49,12 @@ public interface AdditionalServiceRepository {
         return res;
     }
 
+    @Query("select ordinal from additional_service_with_currency where id = :id and event_id_fk = :eventId")
+    Optional<Integer> getServiceOrdinal(@Bind("id") int id, @Bind("eventId") int eventId);
+
+    @Query("update additional_service set ordinal = :ordinal where id = :id")
+    int updateOrdinal(@Bind("id") int id, @Bind("ordinal") int ordinal);
+
     @Query("select * from additional_service_with_currency where id = :id and event_id_fk = :eventId")
     AdditionalService getById(@Bind("id") int id, @Bind("eventId") int eventId);
 

@@ -108,4 +108,9 @@ public class EventWithCheckInInfo extends EventAndOrganizationId implements Even
     public boolean supportsLinkedAdditionalServices() {
         return EventUtil.supportsLinkedAdditionalServices(version);
     }
+
+    @Override
+    public boolean supportsAdditionalServicesOrdinal() {
+        return EventUtil.supportsAdditionalItemsOrdinal(version);
+    }
 }

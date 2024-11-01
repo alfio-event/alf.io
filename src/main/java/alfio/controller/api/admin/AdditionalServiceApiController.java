@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.controller.api.support.AdditionalItemSwapRequest;
 import alfio.manager.AccessService;
 import alfio.manager.AdditionalServiceManager;
 import alfio.manager.EventManager;
@@ -49,7 +50,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNullElse;
@@ -88,7 +88,7 @@ public class AdditionalServiceApiController {
                                             .withText(additionalServiceManager.findAllTextByAdditionalServiceId(as.id()))
                                             .withZoneId(event.getZoneId())
                                             .withPriceContainer(buildPriceContainer(event, as)).build())
-                            .collect(Collectors.toList()))
+                            .toList())
             .orElse(Collections.emptyList());
     }
 
@@ -96,6 +96,16 @@ public class AdditionalServiceApiController {
     public Map<Integer, Map<AdditionalServiceItem.AdditionalServiceItemStatus, Integer>> countUse(@PathVariable int eventId, Principal principal) {
         accessService.checkEventOwnership(principal, eventId);
         return additionalServiceManager.countUsageForEvent(eventId);
+    }
+
+    @PostMapping(
+        "/event/{eventId}/additional-services/swap-position"
+    )
+    public void swapPosition(@PathVariable int eventId,
+                             @RequestBody AdditionalItemSwapRequest request,
+                             Principal principal) {
+        accessService.checkEventOwnership(principal, eventId);
+        additionalServiceManager.swapAdditionalServicesPosition(eventId, request.id1(), request.id2());
     }
 
     @PutMapping("/event/{eventId}/additional-services/{additionalServiceId}")

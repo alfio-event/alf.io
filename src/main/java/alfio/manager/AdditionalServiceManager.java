@@ -576,6 +576,13 @@ public class AdditionalServiceManager {
         return asr -> as.id() == asr.getAdditionalServiceId();
     }
 
+    public void swapAdditionalServicesPosition(int eventId, int id1, int id2) {
+        int id1Ordinal = additionalServiceRepository.getServiceOrdinal(id1, eventId).orElseThrow();
+        int id2Ordinal = additionalServiceRepository.getServiceOrdinal(id2, eventId).orElseThrow();
+        additionalServiceRepository.updateOrdinal(id1, id2Ordinal);
+        additionalServiceRepository.updateOrdinal(id2, id1Ordinal);
+    }
+
     record MappedRequestedService(ASReservationWithOptionalCodeModification requested, AdditionalService additionalService) {
     }
 }

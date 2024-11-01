@@ -55,8 +55,7 @@ import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static alfio.model.EventCheckInInfo.VERSION_FOR_CODE_CASE_INSENSITIVE;
-import static alfio.model.EventCheckInInfo.VERSION_FOR_LINKED_ADDITIONAL_SERVICE;
+import static alfio.model.EventCheckInInfo.*;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.time.temporal.ChronoField.*;
 
@@ -297,5 +296,10 @@ public final class EventUtil {
     public static boolean supportsLinkedAdditionalServices(String version) {
         return version != null
             && MigrationVersion.fromVersion(version).compareTo(MigrationVersion.fromVersion(VERSION_FOR_LINKED_ADDITIONAL_SERVICE)) >= 0;
+    }
+
+    public static boolean supportsAdditionalItemsOrdinal(String version) {
+        return version != null
+            && MigrationVersion.fromVersion(version).compareTo(MigrationVersion.fromVersion(VERSION_FOR_ADDITIONAL_ITEMS_ORDINAL)) >= 0;
     }
 }

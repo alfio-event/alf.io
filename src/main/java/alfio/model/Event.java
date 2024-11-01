@@ -23,7 +23,6 @@ import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.flywaydb.core.api.MigrationVersion;
@@ -136,7 +135,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         this.allowedPaymentProxies = Arrays.stream(Optional.ofNullable(allowedPaymentProxies).orElse("").split(","))
                 .filter(StringUtils::isNotBlank)
                 .map(PaymentProxy::valueOf)
-                .collect(Collectors.toList());
+                .toList();
         this.vatStatus = vatStatus;
         this.srcPriceCts = srcPriceInCents;
         this.version = version;
@@ -256,6 +255,11 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
 
     public boolean supportsQRCodeCaseInsensitive() {
         return EventUtil.supportsCaseInsensitiveQRCode(version);
+    }
+
+    @Override
+    public boolean supportsAdditionalServicesOrdinal() {
+        return EventUtil.supportsAdditionalItemsOrdinal(version);
     }
 
     @Override

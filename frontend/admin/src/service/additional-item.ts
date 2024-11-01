@@ -29,5 +29,12 @@ export class AdditionalItemService {
         return await callDelete(`/admin/api/event/${eventId}/additional-services/${additionalItemId}`)
     }
 
+    static async swapItems(eventId: number, firstId: number, secondId: number): Promise<Response> {
+        return await postJson(`/admin/api/event/${eventId}/additional-services/swap-position`, {
+            id1: firstId,
+            id2: secondId
+        })
+    }
+
 }
 

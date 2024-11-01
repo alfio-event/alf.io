@@ -101,4 +101,8 @@ public class EventWithAdditionalInfo implements StatisticsContainer, PriceContai
     public boolean isSupportsAdditionalItemsQuantity() {
         return event.supportsLinkedAdditionalServices();
     }
+
+    public boolean isSupportsAdditionalServicesOrdinal() {
+        return event.supportsAdditionalServicesOrdinal();
+    }
 }

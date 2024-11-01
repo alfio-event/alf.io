@@ -143,6 +143,8 @@ public class IntegrationTestUtil {
         Assertions.assertEquals(AVAILABLE_SEATS, eventRepository.countExistingTickets(event.getId()).intValue());
         Assertions.assertTrue(event.mustUseFirstAndLastName());
         Assertions.assertTrue(event.supportsQRCodeCaseInsensitive());
+        Assertions.assertTrue(event.supportsLinkedAdditionalServices());
+        Assertions.assertTrue(event.supportsAdditionalServicesOrdinal());
         return Pair.of(event, username);
     }
 

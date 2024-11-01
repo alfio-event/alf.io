@@ -373,7 +373,8 @@ export class AdditionalItemEdit extends LitElement {
         editedItem: AdditionalItem | null,
         supportedLanguages: ContentLanguage[],
         event: AlfioEvent,
-        type: AdditionalItemType
+        type: AdditionalItemType,
+        ordinal: number
     }): Promise<boolean> {
         if (this.dialog != null) {
             this.editedItem = request.editedItem;
@@ -383,12 +384,12 @@ export class AdditionalItemEdit extends LitElement {
             this.#form.api.update({
                 defaultValues: this.buildDefaultValues(this.#form.api.state),
                 onSubmit: async (values) => {
-                    await this.save(values.value);
+                    await this.save(values.value, request.ordinal);
                 },
                 validators: {
                     onSubmitAsync: async props => {
                         const errors: { [k:string]: string} = {};
-                        const additionalItemRequest: Partial<AdditionalItem> = this.buildServerPayload(props.value);
+                        const additionalItemRequest: Partial<AdditionalItem> = this.buildServerPayload(props.value, request.ordinal);
                         const result = await AdditionalItemService.validateAdditionalItem(additionalItemRequest);
                         if (!result.success) {
                             result.validationErrors.forEach(error => {
@@ -425,7 +426,7 @@ export class AdditionalItemEdit extends LitElement {
         }
     }
 
-    private buildServerPayload(value: FormData): Partial<AdditionalItem> {
+    private buildServerPayload(value: FormData, ordinal: number): Partial<AdditionalItem> {
         return {
             id: this.editedItem?.id,
             maxQtyPerOrder: value.availabilityAndPrices.maxQtyPerOrder ?? -1,
@@ -442,11 +443,12 @@ export class AdditionalItemEdit extends LitElement {
             fixPrice: value.availabilityAndPrices.fixPrice,
             minPrice: value.availabilityAndPrices.minPrice,
             maxPrice: value.availabilityAndPrices.maxPrice,
+            ordinal
         };
     }
 
-    private async save(value: FormData) {
-        const additionalItemRequest: Partial<AdditionalItem> = this.buildServerPayload(value);
+    private async save(value: FormData, ordinal: number) {
+        const additionalItemRequest: Partial<AdditionalItem> = this.buildServerPayload(value, ordinal);
         const update = await AdditionalItemService.updateAdditionalItem(additionalItemRequest, this.event!.id);
         if (update.ok) {
             await this.close(true);
