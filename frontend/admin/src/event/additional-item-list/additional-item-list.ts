@@ -6,7 +6,9 @@ import {Task} from "@lit/task";
 import {AlfioEvent, ContentLanguage} from "../../model/event.ts";
 import {
     AdditionalItem,
-    AdditionalItemType, isMandatory,
+    AdditionalItemLocalizedContent,
+    AdditionalItemType,
+    isMandatory,
     isMandatoryPercentage,
     supplementPolicyDescriptions
 } from "../../model/additional-item.ts";
@@ -30,6 +32,10 @@ interface ListData {
     items: Array<AdditionalItem>;
     usageCount: UsageCount;
     allowDownload: boolean;
+}
+
+interface EnhancedAdditionalItemLocalizedContent extends AdditionalItemLocalizedContent {
+    localeLabel: string;
 }
 
 @customElement('alfio-additional-item-list')
@@ -237,7 +243,20 @@ export class AdditionalItemList extends LitElement {
         return when(model.event.freeOfCharge, warning, () => renderIf(() => !this.editActive, footer));
     }
 
+    private sortContentLanguages(item: AdditionalItem, model: Model): EnhancedAdditionalItemLocalizedContent[] {
+        return model.event.contentLanguages
+            .filter(cl => {
+                return item.description.some(d => d.locale === cl.locale)
+            }).map(cl => {
+                return {
+                    localeLabel: cl.displayLanguage,
+                    ...item.description.find(d => d.locale === cl.locale)!
+                };
+            });
+    }
+
     private iterateItems(model: Model) {
+
         return model.dataTask.render({
             initial: () => html`loading...`,
             complete: listData => html`${repeat(listData.items, (item) => item.id, (item) => {
@@ -283,8 +302,8 @@ export class AdditionalItemList extends LitElement {
                         </div>
 
                         <sl-tab-group>
-                            ${repeat(item.description, d => d.id, (d) => html`
-                                <sl-tab slot="nav" panel=${d.locale}>${d.locale}</sl-tab>
+                            ${repeat(this.sortContentLanguages(item, model), d => d.locale, (d) => html`
+                                <sl-tab slot="nav" panel=${d.locale}>${d.localeLabel}</sl-tab>
                                 <sl-tab-panel name=${d.locale}>
                                     <div class="panel-content">
                                         <alfio-display-commonmark-preview data-button-text="Preview" data-text=${d.value}></alfio-display-commonmark-preview>

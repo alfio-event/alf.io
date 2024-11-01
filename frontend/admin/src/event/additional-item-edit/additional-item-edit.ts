@@ -49,8 +49,8 @@ export class AdditionalItemEdit extends LitElement {
             const item = this.editedItem;
             return {
                 availabilityAndPrices: this.buildAvailabilityAndPricesFromItem(item),
-                descriptions: item.title.map(((title, i) => {
-                    const description = item.description[i];
+                descriptions: item.title.map(((title) => {
+                    const description = item.description.find(d => d.locale === title.locale)!;
                     return {
                         locale: title.locale,
                         title: title.value,
