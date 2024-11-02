@@ -79,7 +79,7 @@ public class SpecialPriceTokenGenerator {
         stopWatch.start();
         specialPriceRepository.findWaitingElements().forEach(this::generateCode);
         stopWatch.stop();
-        log.trace("end. Took {} ms", stopWatch.getTime());
+        log.trace("end. Took {} ms", stopWatch.getDuration().toMillis());
     }
 
     public void generatePendingCodesForCategory(int categoryId) {
