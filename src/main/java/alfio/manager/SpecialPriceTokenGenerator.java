@@ -25,7 +25,6 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
 import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketCategoryRepository;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.text.RandomStringGenerator;
 import org.slf4j.Logger;
