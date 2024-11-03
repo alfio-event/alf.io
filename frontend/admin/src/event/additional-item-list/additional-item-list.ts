@@ -52,21 +52,17 @@ export class AdditionalItemList extends LitElement {
     @state()
     editActive: boolean = false;
     @state()
-    allowDownload: boolean = false;
-    @state()
     refreshCount: number = 0;
 
     private readonly retrievePageDataTask = new Task<ReadonlyArray<string>, Model>(this,
         async ([publicIdentifier]) => {
             const event = (await EventService.load(publicIdentifier)).event;
-            const dataTask = new Task<ReadonlyArray<number>, ListData>(this, async ([]) => {
+            const dataTask = new Task<ReadonlyArray<number>, ListData>(this, async (_) => {
                 const [items, count] = await Promise.all([AdditionalItemService.loadAll({eventId: event.id}), AdditionalItemService.useCount(event.id)]);
-                const allowDownload = Object.values(count).some(p => Object.values(p).reduce((pv: number, cv: number) => pv + cv) > 0);
-                this.allowDownload = allowDownload;
                 return {
                     items: items.filter(i => i.type === this.type),
                     usageCount: count,
-                    allowDownload: allowDownload,
+                    allowDownload: Object.values(count).some(p => Object.values(p).reduce((pv: number, cv: number) => pv + cv, 0) > 0),
                 }
             }, () => [this.refreshCount]);
             return {
@@ -158,6 +154,12 @@ export class AdditionalItemList extends LitElement {
         .pb-2 {
             padding-bottom: 2rem;
         }
+
+        .download-container {
+            display: flex;
+            align-items: center;
+            justify-content: end;
+        }
     `];
 
     render() {
@@ -169,10 +171,6 @@ export class AdditionalItemList extends LitElement {
                     <h3>
                         <sl-icon name=${model.icon}></sl-icon> ${model.title}
                     </h3>
-                    ${ this.allowDownload ?
-                        html`<sl-button href=${`/admin/api/events/${model.event.publicIdentifier}/additional-services/${this.type}/export`} target="_blank" rel="noopener">
-                                <sl-icon name="download"></sl-icon> Export purchased items
-                            </sl-button>` : nothing}
                 </div>
 
                 ${this.iterateItems(model)}
@@ -279,6 +277,7 @@ export class AdditionalItemList extends LitElement {
         return model.dataTask.render({
             initial: () => html`loading...`,
             complete: listData => html`
+                ${this.displayDownloadButton(listData, model)}
                 ${repeat(listData.items, (item) => item.id, (item, index) => {
                     return html`
                     <div id=${`additional-service-${item.id}`}></div>
@@ -344,6 +343,18 @@ export class AdditionalItemList extends LitElement {
                 ${this.generateFooter(model, listData)}
             `
         })
+    }
+
+    private displayDownloadButton(listData: ListData, model: Model) {
+        if (listData.allowDownload) {
+            return html`
+                <div class="download-container pb-2">
+                    <sl-button href=${`/admin/api/events/${model.event.publicIdentifier}/additional-services/${this.type}/export`} target="_blank" rel="noopener">
+                                <sl-icon name="download"></sl-icon> Export purchased items
+                    </sl-button>
+                </div>`;
+        }
+        return nothing;
     }
 
     private renderMoveButtons(listData: ListData, index: number, item: AdditionalItem, model: Model) {
