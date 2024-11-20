@@ -2,13 +2,14 @@
 
 ## Supported Versions
 
-We support the latest major release, which is at the moment **2.0-M4**.
+We support the latest major release, which is at the moment **2.0-M5**.
 In case of direct or transitive vulnerability in that code, we'll release a new version as soon as possible. 
 Please follow us on [Twitter](https://twitter.com/alfio_event) for release announcements, and keep your alf.io updated!
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 2.0-M4  | :white_check_mark: |
+| 2.0-M5  | :white_check_mark: |
+| 2.0-M4  | :x: |
 | 2.0-M3  | :x:                |
 | 2.0-M2  | :x:                |
 | 2.0-M1  | :x:                |
