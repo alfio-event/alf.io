@@ -22,10 +22,5 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
-@Getter
-@RequiredArgsConstructor
-public class AdditionalServiceInfo {
-    private final String name;
-    private final int count;
-    private final List<AdditionalServiceFieldValue> fields;
+public record AdditionalServiceInfo(String name, int count, List<AdditionalServiceFieldValue> fields) {
 }
