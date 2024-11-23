@@ -44,10 +44,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -61,6 +63,7 @@ import static alfio.test.util.TestUtil.clockProvider;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @AlfioIntegrationTest
@@ -137,7 +140,7 @@ class EventApiControllerIntegrationTest {
     }
 
     @Test
-    void testListAttendeesWithFieldsUploadAndSameFieldsAvailableOnDownload() {
+    void testGivenListOfAttendeesWithFieldsUploadThenSameFieldsAvailableOnDownload() throws IOException {
         // GIVEN - creation of event and registration of attendees
         var eventAndUser = createEvent(Event.EventFormat.HYBRID);
         event = eventAndUser.getKey();
@@ -150,7 +153,7 @@ class EventApiControllerIntegrationTest {
         assertEquals(1, requestStatus.getData().getCountPending());
         // WHEN - processing of pending reservations completes
         this.adminReservationRequestManager.processPendingReservations();
-        // THEN
+        // THEN - assert correctness of data persisted
         var tickets = this.ticketRepository.findAllConfirmedForCSV(event.getId());
         assertEquals(1, tickets.size());
         var foundTicket = tickets.get(0).getTicket();
@@ -159,6 +162,14 @@ class EventApiControllerIntegrationTest {
         assertEquals("Test0", foundTicket.getLastName());
         assertEquals("attendee0@test.ch", foundTicket.getEmail());
         assertEquals("en", foundTicket.getUserLanguage());
+        // THEN - assert correct order of CSV fields upon download
+        MockHttpServletRequest mockRequest = new MockHttpServletRequest();
+        mockRequest.addParameter("fields", EventApiController.FIXED_FIELDS.toArray(new String[0]));
+        MockHttpServletResponse mockResponse = new MockHttpServletResponse();
+        this.eventApiController.downloadAllTicketsCSV(event.getShortName(), "csv", mockRequest, mockResponse, principal);
+        String expected = "\""+foundTicket.getUuid()+"\""+",default,"+"\""+event.getShortName()+"\""+",ACQUIRED,0,0,0,0,"+"\""+foundTicket.getTicketsReservationId()+"\""+",\"Attendee 0 Test0\",\"Attendee 0\",Test0,attendee0@test.ch,false,en";
+        assertTrue(String.join(",",mockResponse.getContentAsString().trim()).contains(expected));
+        assertTrue(String.join(",",mockResponse.getContentAsString().trim()).endsWith("\"Billing Address\",,,,123"));
     }
 
     private AdminReservationModification getTestAdminReservationModification() {
