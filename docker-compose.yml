@@ -4,29 +4,22 @@ services:
     depends_on:
         db:
             condition: service_healthy
-    environment:
-      POSTGRES_PORT_5432_TCP_PORT: 5432
-      POSTGRES_PORT_5432_TCP_ADDR: db
-      POSTGRES_ENV_POSTGRES_DB: alfio
-      POSTGRES_ENV_POSTGRES_USERNAME: alfio
-      POSTGRES_ENV_POSTGRES_PASSWORD: alfio
-      SPRING_PROFILES_ACTIVE: dev,jdbc-session
+    env_file:
+         - .env
     ports:
       - "8080:8080"
     profiles:
         - prod
   db:
     image: postgres:10
+    env_file:
+        - .env
     healthcheck:
         test: [ "CMD-SHELL", "pg_isready -U alfio -d alfio" ]
         interval: 10s
         retries: 5
         start_period: 30s
         timeout: 10s
-    environment:
-      POSTGRES_DB: alfio
-      POSTGRES_USER: alfio
-      POSTGRES_PASSWORD: alfio
     ports:
       - target: 5432
         published: 5432
