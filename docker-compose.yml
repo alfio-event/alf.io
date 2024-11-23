@@ -19,12 +19,15 @@ services:
               mode: host
         volumes:
             - data-volume:/var/lib/postgresql/data
-    alfio:
-        image: alfio/alf.io
-        env_file:
-            - .env
-        depends_on:
-            db:
-                condition: service_healthy
-        ports:
-            - "8080:8080"
+###########################################################################
+# If you want to try out Alf.io, you can uncomment the following service: #
+###########################################################################
+#    alfio:
+#        image: alfio/alf.io
+#        env_file:
+#            - .env
+#        depends_on:
+#            db:
+#                condition: service_healthy
+#        ports:
+#            - "8080:8080"
