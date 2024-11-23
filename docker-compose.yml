@@ -1,6 +1,8 @@
 services:
   alfio:
     image: alfio/alf.io
+    depends_on:
+        - db
     environment:
       POSTGRES_PORT_5432_TCP_PORT: 5432
       POSTGRES_PORT_5432_TCP_ADDR: db
