@@ -10,6 +10,8 @@ services:
       SPRING_PROFILES_ACTIVE: dev,jdbc-session
     ports:
       - "8080:8080"
+    profiles:
+        - prod
   db:
     image: postgres:10
     environment:
@@ -23,5 +25,8 @@ services:
         mode: host
     volumes:
       - data-volume:/var/lib/postgresql/data
+    profiles:
+        - dev
+        - prod
 volumes:
   data-volume:
