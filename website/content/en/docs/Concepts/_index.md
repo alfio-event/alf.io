@@ -23,7 +23,7 @@ description: >
 
 5. **Statistics and Reporting**: Detailed statistics and reporting tools are available to provide insights into ticket sales, attendee demographics, and other important metrics.
 
-6. **Customization**: The platform is highly customizable, allowing event organizers to tailor the system to their specific needs. This includes custom fields, themes, and extensions.
+6. **Customization**: The platform is highly customizable, allowing event organizers to tailor the system to their specific needs. This includes custom fields, CSS, and extensions.
 
 ## Components
 
@@ -64,7 +64,6 @@ description: >
 
 - **Sales Reports**: Detailed reports on ticket sales, revenue, and attendee demographics.
 - **Attendee Insights**: Information about who is attending the event, their preferences, and behavior.
-- **Custom Reports**: Ability to generate custom reports based on specific needs and criteria.
 
 ### Customization
 
