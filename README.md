@@ -19,11 +19,11 @@ The open source ticket reservation system.
   <summary>Table of Contents</summary>
   <ol>
     <li><a href="#prerequisites">Prerequisites</a></li>
-    <li><a href="#run-on-your-machine">Run on your machine</a></li>
-    <li><a href="#developing-alf.io">Developing alf.io</a></li>
+    <li><a href="#spring-profiles">Spring profiles</a></li>
+    <li><a href="#run-in-development-mode">Run in development mode</a></li>
+    <li><a href="#contributing-to-alf.io">Contributing to alf.io</a></li>
     <li><a href="#check-dependencies-to-update">Check dependencies to update</a></li>
-    <li><a href="#docker">Docker</a></li>
-    <li><a href="#spring-profile">Spring profiles</a></li>
+    <li><a href="#running-docker-containers">Running Docker containers</a></li>
     <li><a href="#contributors">Contributors</a></li>
 
   </ol>
@@ -41,7 +41,17 @@ Additionally, the database user that creates and uses the tables should not be a
 > As the work for Alf.io [v2](https://github.com/alfio-event/alf.io/milestones) has started, this branch may contain **unstable** and **untested** code.
 > If you want to build and deploy alf.io by yourself, please start from a [Released version](https://github.com/alfio-event/alf.io/releases).
 
-## Run on your machine
+## Spring profiles
+
+There are the following spring profiles
+
+- `dev`: enable dev mode
+- `spring-boot`: added when launched by spring-boot
+- `demo`: enable demo mode, the accounts for the admin will be created on the fly
+- `disable-jobs`: disable jobs
+- `jdbc-session`: persist the user session in the database
+
+## Run in development mode
 
 ### Gradle Build
 
@@ -70,12 +80,6 @@ docker run -d --name alfio-db -p 5432:5432 -e POSTGRES_PASSWORD=password -e POST
 
 once started, alf.io will create all the required tables in the database, and be available at http://localhost:8080/admin. You can log in using the default Username _admin_ and the password which was printed on the console.
 
-The following profiles are supported
-
-* `dev`
-* `dev-pgsql`
-* `docker-test`
-
 You can get a list of all supported Gradle tasks by running
 ```
 ./gradlew tasks --all
@@ -93,7 +97,7 @@ Please be aware that since this file could contain sensitive information (such a
 Add a new line with: `-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005` in custom.jvmargs
 
 
-## Developing alf.io
+## Contributing to alf.io
 Importing the Gradle project into Intellij and Eclipse both work.
 
 **Notes**:
@@ -129,20 +133,21 @@ To be noted:
 
 `./gradlew dependencyUpdates`
 
-## Docker
+## Running Docker containers
 
 Container images are available on https://hub.docker.com/r/alfio/alf.io/tags.
 
-alf.io can also be run with Docker Compose (*experimental*):
+alf.io can also be run with Docker Compose (*development mode*):
 
     docker-compose up
 
 Running alf.io in production using Docker compose is not officially supported.
 However, if you decide to do so, then you need to make a couple of changes:
 
+* Uncomment the `alfio` service in the `docker-compose.yml` file
+* Check the user and password for the services in the `.env` file
 * Add a mapping for port `8443`
 * Handle SSL termination (e.g. with something like `tutum/haproxy`)
-* Remove the `SPRING_PROFILES_ACTIVE: dev` environment variable
 
 ### Test alf.io application
 * Check alfio logs: `docker logs alfio`
@@ -176,14 +181,7 @@ Use it at your own risk.
 The certificate at src/main/resources/alfio/certificates/AppleWWDRCAG4.cer has been imported for https://github.com/ryantenney/passkit4j#usage functionality.
 It will expire the 2030-10-12 (YYYY-MM-DD - as of https://www.apple.com/certificateauthority/).
 
-## Spring profiles
 
-There are the following spring profiles
-
-- dev: enable dev mode
-- spring-boot: added when launched by spring-boot
-- demo: enable demo mode, the accounts for the admin will be created on the fly
-- disable-jobs: disable jobs
 
 ## Contributors
 
