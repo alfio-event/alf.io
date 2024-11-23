@@ -1,4 +1,3 @@
-version: "3.7"
 services:
   alfio:
     image: alfio/alf.io
