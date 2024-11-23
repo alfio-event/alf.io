@@ -137,16 +137,17 @@ To be noted:
 
 Container images are available on https://hub.docker.com/r/alfio/alf.io/tags.
 
-alf.io can also be run with Docker Compose (*trial mode*):
+alf.io can also be run with Docker Compose (*development mode*):
 
     docker-compose up
 
 Running alf.io in production using Docker compose is not officially supported.
 However, if you decide to do so, then you need to make a couple of changes:
 
+* Uncomment the `alfio` service in the `docker-compose.yml` file
+* Check the user and password for the services in the `.env` file
 * Add a mapping for port `8443`
 * Handle SSL termination (e.g. with something like `tutum/haproxy`)
-* Remove the `SPRING_PROFILES_ACTIVE: dev` environment variable
 
 ### Test alf.io application
 * Check alfio logs: `docker logs alfio`
