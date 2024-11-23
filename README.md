@@ -70,12 +70,6 @@ docker run -d --name alfio-db -p 5432:5432 -e POSTGRES_PASSWORD=password -e POST
 
 once started, alf.io will create all the required tables in the database, and be available at http://localhost:8080/admin. You can log in using the default Username _admin_ and the password which was printed on the console.
 
-The following profiles are supported
-
-* `dev`
-* `dev-pgsql`
-* `docker-test`
-
 You can get a list of all supported Gradle tasks by running
 ```
 ./gradlew tasks --all
