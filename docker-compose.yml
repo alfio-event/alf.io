@@ -1,3 +1,6 @@
+volumes:
+    data-volume:
+
 services:
   alfio:
     image: alfio/alf.io
@@ -25,5 +28,3 @@ services:
         mode: host
     volumes:
       - data-volume:/var/lib/postgresql/data
-volumes:
-  data-volume:
