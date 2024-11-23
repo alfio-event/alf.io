@@ -64,6 +64,10 @@ The local "bootRun" task has the following prerequisites:
 - a _postgres_ user having a password: _password_
 - a database named _alfio_
 
+```
+docker run -d --name alfio-db -p 5432:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_DB=alfio --restart unless-stopped postgres 
+```
+
 once started, alf.io will create all the required tables in the database, and be available at http://localhost:8080/admin. You can log in using the default Username _admin_ and the password which was printed on the console.
 
 The following profiles are supported
