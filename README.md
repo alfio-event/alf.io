@@ -14,6 +14,21 @@ The open source ticket reservation system.
 [![Docker Hub Pulls](https://img.shields.io/docker/pulls/alfio/alf.io.svg)](https://hub.docker.com/r/alfio/alf.io/tags)
 [![Open Source Helpers](https://www.codetriage.com/alfio-event/alf.io/badges/users.svg)](https://www.codetriage.com/alfio-event/alf.io)
 
+<!-- TABLE OF CONTENTS -->
+<details open>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li><a href="#prerequisites">Prerequisites</a></li>
+    <li><a href="#run-on-your-machine">Run on your machine</a></li>
+    <li><a href="#developing-alf.io">Developing alf.io</a></li>
+    <li><a href="#check-dependencies-to-update">Check dependencies to update</a></li>
+    <li><a href="#docker">Docker</a></li>
+    <li><a href="#spring-profile">Spring profiles</a></li>
+    <li><a href="#contributors">Contributors</a></li>
+
+  </ol>
+</details>
+
 ## Prerequisites
 
 You should have installed Java version **17** (e.g. [Oracle's](http://www.oracle.com/technetwork/java/javase/downloads/index.html), [OpenJDK](http://openjdk.java.net/install/), or any other distribution) to build and run alf.io. Please note that for the build process the JDK is required.
@@ -157,7 +172,9 @@ Use it at your own risk.
 The certificate at src/main/resources/alfio/certificates/AppleWWDRCAG4.cer has been imported for https://github.com/ryantenney/passkit4j#usage functionality.
 It will expire the 2030-10-12 (YYYY-MM-DD - as of https://www.apple.com/certificateauthority/).
 
-## Available spring profiles:
+## Spring profiles
+
+There are the following spring profiles
 
 - dev: enable dev mode
 - spring-boot: added when launched by spring-boot
