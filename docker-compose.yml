@@ -8,8 +8,6 @@ services:
          - .env
     ports:
       - "8080:8080"
-    profiles:
-        - prod
   db:
     image: postgres:10
     env_file:
@@ -27,8 +25,5 @@ services:
         mode: host
     volumes:
       - data-volume:/var/lib/postgresql/data
-    profiles:
-        - dev
-        - prod
 volumes:
   data-volume:
