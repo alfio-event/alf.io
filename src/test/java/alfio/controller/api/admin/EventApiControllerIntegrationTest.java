@@ -177,8 +177,8 @@ class EventApiControllerIntegrationTest {
         this.eventApiController.downloadAllTicketsCSV(event.getShortName(), "csv", mockRequest, mockResponse, principal);
         String expectedTestAttendeeCsvLine = "\""+foundTicket.getUuid()+"\""+",default,"+"\""+event.getShortName()+"\""+",ACQUIRED,0,0,0,0,"+"\""+foundTicket.getTicketsReservationId()+"\""+",\""+TEST_ATTENDEE_FIRST_NAME+" "+TEST_ATTENDEE_LAST_NAME+"\","+TEST_ATTENDEE_FIRST_NAME+","+TEST_ATTENDEE_LAST_NAME+","+TEST_ATTENDEE_EMAIL+",false,"+TEST_ATTENDEE_USER_LANGUAGE;
         String returnedCsvContent = mockResponse.getContentAsString().trim().replace("\uFEFF", ""); // remove BOM
-        assertTrue(String.join(",",returnedCsvContent).startsWith(getExpectedHeaderCsvLine() + "\n" + expectedTestAttendeeCsvLine));
-        assertTrue(String.join(",",returnedCsvContent).endsWith("\"Billing Address\",,,," + TEST_ATTENDEE_EXTERNAL_REFERENCE));
+        assertTrue(returnedCsvContent.startsWith(getExpectedHeaderCsvLine() + "\n" + expectedTestAttendeeCsvLine));
+        assertTrue(returnedCsvContent.endsWith("\"Billing Address\",,,," + TEST_ATTENDEE_EXTERNAL_REFERENCE));
     }
 
     private AdminReservationModification getTestAdminReservationModification() {
