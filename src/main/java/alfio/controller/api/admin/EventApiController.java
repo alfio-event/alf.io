@@ -356,7 +356,8 @@ public class EventApiController {
     }
 
     private static final String PAYMENT_METHOD = "Payment Method";
-    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Country Code", "Payment ID", PAYMENT_METHOD);
+    private static final String EXTERNAL_REFERENCE = "External Reference";
+    static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Country Code", "Payment ID", PAYMENT_METHOD, EXTERNAL_REFERENCE);
     private static final List<SerializablePair<String, String>> FIXED_PAIRS = FIXED_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList());
     private static final String FISCAL_CODE = "Fiscal Code";
     private static final String REFERENCE_TYPE = "Reference Type";
@@ -435,6 +436,7 @@ public class EventApiController {
                 if(paymentIdRequested) { line.add(Objects.toString(transaction.map(Transaction::getPaymentId).orElse(null), transaction.map(Transaction::getTransactionId).orElse(""))); }
                 if(paymentGatewayRequested) { line.add(transaction.map(tr -> tr.getPaymentProxy().name()).orElse("")); }
             }
+            if(fields.contains(EXTERNAL_REFERENCE)) {line.add(t.getExtReference());}
 
             if(eInvoicingEnabled) {
                 var billingDetails = trs.getBillingDetails();
