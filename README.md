@@ -146,8 +146,7 @@ However, if you decide to do so, then you need to make a couple of changes:
 
 * Uncomment the `alfio` service in the `docker-compose.yml` file
 * Check the user and password for the services in the `.env` file
-* Add a mapping for port `8443`
-* Handle SSL termination (e.g. with something like `tutum/haproxy`)
+* Handle SSL termination (e.g. with something like `tutum/haproxy`) 443 -> 8080
 
 ### Test alf.io application
 * Check alfio logs: `docker logs alfio`
