@@ -152,6 +152,7 @@ public enum ConfigurationKeys {
     OFFLINE_PAYMENT_DAYS("Maximum number of days allowed to pay an offline ticket", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, PURCHASE_CONTEXT)),
     OFFLINE_REMINDER_HOURS("How many hours before expiration should be sent a reminder e-mail for offline payments?", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, PURCHASE_CONTEXT)),
 
+    CUSTOM_OFFLINE_PAYMENTS("Defines custom payment methods defined by organizers", true, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(ORGANIZATION)),
 
     ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS("Enable captcha for offline payments / free of charge tickets (default false)", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.FALSE),
     BANK_ACCOUNT_NR("Bank Account number", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, PURCHASE_CONTEXT)),
