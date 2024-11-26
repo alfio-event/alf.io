@@ -68,7 +68,7 @@ export class OfflinePaymentConfigBlock extends LitElement {
                         <br/>
                         <div style="display: flex; flex-direction: row; justify-content: flex-end;">
                             <sl-icon-button
-                                style="background-color: rgb(153, 95, 13); margin-right: 5px;"
+                                style="color: #E8E0E0; background-color: rgb(153, 95, 13); margin-right: 5px;"
                                 name="pencil-square"
                                 label="Edit"
                                 @click=${() => {
@@ -78,7 +78,7 @@ export class OfflinePaymentConfigBlock extends LitElement {
                             <sl-icon-button
                                 label="Delete"
                                 name="trash"
-                                style="background-color: rgb(148, 35, 32);"
+                                style="color: #E8E0E0; background-color: rgb(148, 35, 32);"
                                 @click=${() => {
                                     this._selectedPaymentMethod = config.paymentName;
                                     this.confirmDialog?.openDialog()
