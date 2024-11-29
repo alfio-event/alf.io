@@ -16,7 +16,6 @@
  */
 package alfio.manager.support;
 
-import alfio.model.AdditionalServiceFieldValue;
 import alfio.model.FieldValueAndDescription;
 import alfio.model.TicketWithCategory;
 

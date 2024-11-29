@@ -17,8 +17,6 @@
 package alfio.manager.support;
 
 import alfio.model.AdditionalServiceFieldValue;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
