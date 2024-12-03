@@ -330,7 +330,7 @@ public class EventApiV2Controller {
                     return backToEvent.build(Map.of("eventShortName", eventName)).toString();
                 }
             );
-        return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY).header(HttpHeaders.LOCATION, url).build();
+        return ResponseEntity.status(HttpStatus.TEMPORARY_REDIRECT).header(HttpHeaders.LOCATION, url).build();
     }
 
     private static HttpHeaders getCorsHeaders() {
