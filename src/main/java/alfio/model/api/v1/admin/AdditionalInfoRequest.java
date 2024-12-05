@@ -46,6 +46,7 @@ public class AdditionalInfoRequest {
     private List<DescriptionRequest> placeholder;
     private List<RestrictedValueRequest> restrictedValues;
     private ContentLengthRequest contentLength;
+    private Boolean displayAtCheckIn;
 
     public boolean isValid() {
         return StringUtils.isNotBlank(name)
@@ -77,7 +78,9 @@ public class AdditionalInfoRequest {
             restrictedValueList,
             toDescriptionMap(EventCreationRequest.orEmpty(label), EventCreationRequest.orEmpty(placeholder), EventCreationRequest.orEmpty(this.restrictedValues)),
             null,
-            null);
+            null,
+            displayAtCheckIn
+            );
     }
 
     private static Map<String, EventModification.Description> toDescriptionMap(List<DescriptionRequest> label,

@@ -7,22 +7,22 @@
 
     <div class="form-horizontal">
         <div class="form-group" data-ng-if="addNewField">
-            <label class="col-xs-2 control-label">From Template</label>
+            <label class="col-xs-3 control-label">From Template</label>
             <div class="col-sm-10">
                 <button type="button" data-ng-repeat="template in dynamicFieldTemplates" class="btn btn-default btn-sm mr-10" data-ng-click="addFromTemplate(template)">{{template.name}}</button>
             </div>
         </div>
         <div class="form-group" bs-form-error="editFieldForm.name">
-            <label class="col-xs-2 control-label">Name</label>
-            <div class="col-xs-10">
+            <label class="col-xs-3 control-label">Name</label>
+            <div class="col-xs-9">
                 <input type="text" name="name" ng-model="field.name" class="form-control" required data-ng-if="addNewField">
                 <field-error data-form-obj="editFieldForm" data-field-obj="editFieldForm.name" data-field-label="'Field name'" data-show-existing-errors="showExistingErrors"></field-error>
                 <pre class="form-control-static" data-ng-if="!addNewField">{{field.name}}</pre>
             </div>
         </div>
         <div class="form-group">
-            <label class="col-xs-2 control-label">Type</label>
-            <div class="col-xs-10">
+            <label class="col-xs-3 control-label">Type</label>
+            <div class="col-xs-9">
                 <select ng-model="field.type" ng-options="k as v for (k,v) in fieldTypes" class="form-control" required data-ng-if="addNewField">
                     <option></option>
                 </select>
@@ -30,16 +30,27 @@
             </div>
         </div>
         <div class="form-group">
-            <label class="col-xs-2 control-label">Required</label>
-            <div class="col-xs-2">
+            <label class="col-xs-3 control-label">Required</label>
+            <div class="col-xs-3">
                 <div class="checkbox">
                     <label><input type="checkbox" data-ng-model="field.required" name="fieldRequired" id="fieldRequired"></label>
                 </div>
             </div>
         </div>
+        <div class="form-group">
+            <label class="col-xs-3 control-label" for="displayAtCheckIn" uib-tooltip="When enabled, this information will be visible to the check-in staff.">
+                Show at check-in
+                <i class="fa fa-info-circle"></i>
+            </label>
+            <div class="col-xs-3">
+                <div class="checkbox">
+                    <label><input type="checkbox" data-ng-model="field.displayAtCheckIn" name="fieldDisplayAtCheckIn" id="displayAtCheckIn"></label>
+                </div>
+            </div>
+        </div>
         <div class="form-group" ng-if="!addNewField">
-            <label class="col-xs-2 control-label">Read Only</label>
-            <div class="col-xs-2">
+            <label class="col-xs-3 control-label">Read Only</label>
+            <div class="col-xs-3">
                 <div class="checkbox">
                     <label><input type="checkbox" data-ng-model="field.readOnly" name="fieldReadOnly" id="fieldReadOnly"></label>
                 </div>
@@ -60,8 +71,8 @@
 
     <div class="form-horizontal" data-ng-if="event && event.ticketCategories.length > 0">
         <div class="form-group">
-            <label class="col-xs-2 control-label">Collect for</label>
-            <div class="col-xs-10">
+            <label class="col-xs-3 control-label">Collect for</label>
+            <div class="col-xs-9">
                 <div class="input-group">
                     <div class="checkbox">
                         <label>
@@ -94,15 +105,15 @@
                         </div>
                     </div>
                     <div class="form-group" ng-class="{'text-muted disabled-value': !isRestrictedValueEnabled(restrictedValue, field)}">
-                        <label class="col-xs-2 control-label">Value</label>
-                        <div class="col-xs-10">
+                        <label class="col-xs-3 control-label">Value</label>
+                        <div class="col-xs-9">
                             <input ng-model="restrictedValue.value" class="form-control" required data-ng-if="addNewField || restrictedValue.isNew">
                             <pre class="form-control-static" data-ng-if="!addNewField && !restrictedValue.isNew">{{restrictedValue}}</pre>
                         </div>
                     </div>
                     <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, locales)" class="form-group" ng-class="{'text-muted disabled-value': !isRestrictedValueEnabled(restrictedValue, field)}">
-                        <label class="col-xs-2 control-label">Text ({{lang.displayLanguage}})</label>
-                        <div class="col-xs-10">
+                        <label class="col-xs-3 control-label">Text ({{lang.displayLanguage}})</label>
+                        <div class="col-xs-9">
                             <input ng-model="field.description[lang.locale].restrictedValues[restrictedValue.value]" class="form-control" required data-ng-if="addNewField">
                             <input ng-model="field.description[lang.locale].description.restrictedValues[restrictedValue]" class="form-control" required data-ng-if="!addNewField && !restrictedValue.isNew">
                             <input ng-model="field.description[lang.locale].description.restrictedValues[restrictedValue.value]" class="form-control" required data-ng-if="!addNewField && restrictedValue.isNew">
@@ -117,15 +128,15 @@
             </div>
             <div class="form-horizontal" data-ng-if="field.type === 'input:text' || field.type === 'input:tel' || field.type === 'textarea' || field.type === 'input:dateOfBirth'">
                 <div class="form-group">
-                    <label class="col-xs-2 control-label">Min {{ field.type === 'input:dateOfBirth' ? 'age (years)' : 'length'}}</label>
-                    <div class="col-xs-10">
+                    <label class="col-xs-3 control-label">Min {{ field.type === 'input:dateOfBirth' ? 'age (years)' : 'length'}}</label>
+                    <div class="col-xs-9">
                         <input type="number" ng-model="field.minLength" class="form-control" data-ng-if="addNewField">
                         <pre class="form-control-static" data-ng-if="!addNewField">{{field.minLength}}</pre>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="col-xs-2 control-label">Max {{ field.type === 'input:dateOfBirth' ? 'age (years)' : 'length'}}</label>
-                    <div class="col-xs-10">
+                    <label class="col-xs-3 control-label">Max {{ field.type === 'input:dateOfBirth' ? 'age (years)' : 'length'}}</label>
+                    <div class="col-xs-9">
                         <input type="number" ng-model="field.maxLength" class="form-control" data-ng-if="addNewField">
                         <pre class="form-control-static" data-ng-if="!addNewField">{{field.maxLength}}</pre>
                     </div>
@@ -136,8 +147,8 @@
 
     <div class="form-horizontal" data-ng-if="addNewField && event.additionalServices.length > 0">
         <div class="form-group">
-            <label class="col-xs-2 control-label">Only if</label>
-            <div class="col-xs-10">
+            <label class="col-xs-3 control-label">Only if</label>
+            <div class="col-xs-9">
                 <div class="input-group">
                     <select data-ng-options="item as joinTitle(item.title) for item in event.additionalServices" data-ng-model="field.forAdditionalService" class="form-control"></select>
                     <div class="input-group-btn"><button type="button" class="btn btn-default" data-ng-click="field.forAdditionalService = undefined"><i class="fa fa-close"></i> <span class="sr-only">reset</span></button></div>
@@ -156,15 +167,15 @@
         <h4>{{lang.displayLanguage}}</h4>
         <div class="form-horizontal">
             <div class="form-group">
-                <label class="col-xs-2 control-label">Label</label>
-                <div class="col-xs-10">
+                <label class="col-xs-3 control-label">Label</label>
+                <div class="col-xs-9">
                     <input ng-model="field.description[lang.locale].label" type="text" placeholder="label" class="form-control mr-10" required data-ng-if="addNewField">
                     <input ng-model="field.description[lang.locale].description.label" type="text" placeholder="label" class="form-control mr-10" required data-ng-if="!addNewField">
                 </div>
             </div>
             <div class="form-group">
-                <label class="col-xs-2 control-label">Placeholder</label>
-                <div class="col-xs-10">
+                <label class="col-xs-3 control-label">Placeholder</label>
+                <div class="col-xs-9">
                     <input ng-model="field.description[lang.locale].placeholder" type="text" placeholder="placeholder" class="form-control mr-10" data-ng-if="addNewField">
                     <input ng-model="field.description[lang.locale].description.placeholder" type="text" placeholder="placeholder" class="form-control mr-10" data-ng-if="!addNewField">
                 </div>

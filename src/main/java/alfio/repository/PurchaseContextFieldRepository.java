@@ -65,6 +65,15 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
         " where ticket_id_fk = :ticketId and field_name in (:fieldNames)")
     List<FieldValueAndDescription> findValueForTicketId(@Bind("ticketId") int id, @Bind("fieldNames") Set<String> fieldNames);
 
+    /**
+     * Returns **only** info that don't belong already to an additional item.
+     * @param id ticketId
+     * @return List of FieldValueAndDescription
+     */
+    @Query("select "+FIELD_VALUE_COLUMNS+", description from all_ticket_field_values " +
+        " where ticket_id_fk = :ticketId and display_at_check_in = true and additional_service_item_id_fk is null")
+    List<FieldValueAndDescription> findValuesForTicketAtCheckIn(@Bind("ticketId") int id);
+
     @Query("update purchase_context_field_value set field_value = :value where " + TICKET_ID_OR_SUBSCRIPTION_ID +
         " and field_configuration_id_fk = :fieldConfigurationId")
     int updateValue(@Bind("ticketId") Integer ticketId,

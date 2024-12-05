@@ -16,6 +16,7 @@
  */
 package alfio.manager.support;
 
+import alfio.model.FieldValueAndDescription;
 import alfio.model.TicketWithCategory;
 
 import java.util.List;
@@ -24,14 +25,17 @@ import static alfio.manager.support.CheckInStatus.SUCCESS;
 
 public class SuccessfulCheckIn extends TicketAndCheckInResult {
     private final List<AdditionalServiceInfo> additionalServices;
+    private final List<FieldValueAndDescription> fieldsToDisplay;
     private final String boxColor;
 
     public SuccessfulCheckIn(TicketWithCategory ticket,
                              List<AdditionalServiceInfo> additionalServices,
+                             List<FieldValueAndDescription> fieldsToDisplay,
                              String boxColor) {
         super(ticket, new DefaultCheckInResult(SUCCESS, "success"));
         this.additionalServices = additionalServices;
         this.boxColor = boxColor;
+        this.fieldsToDisplay = fieldsToDisplay;
     }
 
     public List<AdditionalServiceInfo> getAdditionalServices() {
@@ -40,5 +44,9 @@ public class SuccessfulCheckIn extends TicketAndCheckInResult {
 
     public String getBoxColor() {
         return boxColor;
+    }
+
+    public List<FieldValueAndDescription> getFieldsToDisplay() {
+        return fieldsToDisplay;
     }
 }

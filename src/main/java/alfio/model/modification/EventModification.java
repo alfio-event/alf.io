@@ -181,6 +181,7 @@ public class EventModification {
         private final Map<String, TicketFieldDescriptionModification> description;
         private final List<String> disabledValues;
         private final List<Integer> linkedCategoriesIds;
+        private final boolean displayAtCheckIn;
 
         @JsonCreator
         public UpdateAdditionalField(@JsonProperty("type") String type,
@@ -189,7 +190,8 @@ public class EventModification {
                                      @JsonProperty("restrictedValues") List<String> restrictedValues,
                                      @JsonProperty("disabledValues") List<String> disabledValues,
                                      @JsonProperty("description") Map<String, TicketFieldDescriptionModification> description,
-                                     @JsonProperty("categoryIds") List<Integer> linkedCategoriesIds) {
+                                     @JsonProperty("categoryIds") List<Integer> linkedCategoriesIds,
+                                     @JsonProperty("displayAtCheckIn") Boolean displayAtCheckIn) {
             this.type = type;
             this.required = required;
             this.readOnly = readOnly;
@@ -197,6 +199,7 @@ public class EventModification {
             this.disabledValues = disabledValues;
             this.description = description;
             this.linkedCategoriesIds = linkedCategoriesIds;
+            this.displayAtCheckIn = Boolean.TRUE.equals(displayAtCheckIn);
         }
 
         @Override
