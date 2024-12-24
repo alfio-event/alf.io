@@ -258,16 +258,12 @@ public class PaymentManager {
     public Optional<PaymentResult> getTransactionStatus(TicketReservation reservation, PaymentMethod paymentMethod) {
         return transactionRepository.loadOptionalByReservationId(reservation.getId())
             .filter(transaction -> transaction.getPaymentProxy().getPaymentMethod() == paymentMethod)
-            .map(transaction -> {
-                switch(transaction.getStatus()) {
-                    case COMPLETE:
-                        return PaymentResult.successful(transaction.getPaymentId());
-                    case FAILED:
-                        return PaymentResult.failed(null);
-                    default:
-                        return PaymentResult.initialized(transaction.getPaymentId());
-                }
-            });
+            .map(transaction ->
+                switch (transaction.getStatus()) {
+                    case COMPLETE -> PaymentResult.successful(transaction.getPaymentId());
+                    case FAILED -> PaymentResult.failed(null);
+                    default -> PaymentResult.initialized(transaction.getPaymentId());
+                });
     }
 
     public Optional<PaymentToken> getPaymentToken(String reservationId) {

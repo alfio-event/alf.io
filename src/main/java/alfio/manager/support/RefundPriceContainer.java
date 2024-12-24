@@ -60,20 +60,12 @@ public class RefundPriceContainer implements PriceContainer {
     }
 
     private static VatStatus determineRefundVatStatus(VatStatus reservationVatStatus) {
-        switch (reservationVatStatus) {
-            case NOT_INCLUDED_NOT_CHARGED:
-            case INCLUDED_NOT_CHARGED:
-                return VatStatus.NOT_INCLUDED_NOT_CHARGED;
-            case NOT_INCLUDED_EXEMPT:
-            case INCLUDED_EXEMPT:
-                return VatStatus.NOT_INCLUDED_EXEMPT;
-            case INCLUDED:
-            case NOT_INCLUDED:
-                return VatStatus.INCLUDED;
-            case NONE:
-                return VatStatus.NONE;
-            default:
-                throw new IllegalStateException("Vat status "+reservationVatStatus+ " not mapped");
-        }
+        return switch (reservationVatStatus) {
+            case NOT_INCLUDED_NOT_CHARGED, INCLUDED_NOT_CHARGED -> VatStatus.NOT_INCLUDED_NOT_CHARGED;
+            case NOT_INCLUDED_EXEMPT, INCLUDED_EXEMPT -> VatStatus.NOT_INCLUDED_EXEMPT;
+            case INCLUDED, NOT_INCLUDED -> VatStatus.INCLUDED;
+            case NONE -> VatStatus.NONE;
+            default -> throw new IllegalStateException("Vat status " + reservationVatStatus + " not mapped");
+        };
     }
 }

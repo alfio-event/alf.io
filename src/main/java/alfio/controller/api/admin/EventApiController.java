@@ -665,16 +665,14 @@ public class EventApiController {
         Optional<byte[]> pdf;
         var language = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
 
-        switch(document.getType()) {
-            case CREDIT_NOTE:
-                pdf = TemplateProcessor.buildCreditNotePdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
-                break;
-            case RECEIPT:
-                pdf = TemplateProcessor.buildReceiptPdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
-                break;
-            default:
-                pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
-        }
+        pdf = switch (document.getType()) {
+            case CREDIT_NOTE ->
+                TemplateProcessor.buildCreditNotePdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
+            case RECEIPT ->
+                TemplateProcessor.buildReceiptPdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
+            default ->
+                TemplateProcessor.buildInvoicePdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
+        };
 
         if (pdf.isPresent()) {
             String fileName = FileUtil.getBillingDocumentFileName(event.getShortName(), reservation.getId(), document);

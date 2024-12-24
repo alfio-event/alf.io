@@ -111,19 +111,11 @@ public class EuVatChecker {
         List<Map<String, Object>> modifications = List.of(
             Map.of("vatNumber", detail.getVatNr(), "country", detail.getCountry(), "validationType", detail.getType())
         );
-        Audit.EventType eventType = null;
-        switch(detail.getType()) {
-            case VIES:
-            case EXTRA_EU:
-                eventType = VAT_VALIDATION_SUCCESSFUL;
-            break;
-            case SKIPPED:
-                eventType = VAT_VALIDATION_SKIPPED;
-            break;
-            case FORMAL:
-                eventType = VAT_FORMAL_VALIDATION_SUCCESSFUL;
-            break;
-        }
+        Audit.EventType eventType = switch (detail.getType()) {
+            case VIES, EXTRA_EU -> VAT_VALIDATION_SUCCESSFUL;
+            case SKIPPED -> VAT_VALIDATION_SKIPPED;
+            case FORMAL -> VAT_FORMAL_VALIDATION_SUCCESSFUL;
+        };
         auditingRepository.insert(reservationId, null, purchaseContext, eventType, new Date(), RESERVATION, reservationId, modifications);
     }
 

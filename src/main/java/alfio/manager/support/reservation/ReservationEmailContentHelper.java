@@ -210,16 +210,15 @@ public class ReservationEmailContentHelper {
         purchaseContext.event().ifPresent(event -> model.put("eventId", Integer.toString(event.getId())));
         model.put("language", Json.toJson(language));
         model.put("reservationEmailModel", Json.toJson(billingDocumentModel));//ticketReservation.getHasInvoiceNumber()
-        switch (documentType) {
-            case INVOICE:
-                return Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, APPLICATION_PDF.getType(), model, Mailer.AttachmentIdentifier.INVOICE_PDF));
-            case RECEIPT:
-                return Collections.singletonList(new Mailer.Attachment("receipt.pdf", null, APPLICATION_PDF.getType(), model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
-            case CREDIT_NOTE:
-                return Collections.singletonList(new Mailer.Attachment("credit-note.pdf", null, APPLICATION_PDF.getType(), model, Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF));
-            default:
-                throw new IllegalStateException(documentType+" is not supported");
-        }
+        return switch (documentType) {
+            case INVOICE ->
+                Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, APPLICATION_PDF.getType(), model, Mailer.AttachmentIdentifier.INVOICE_PDF));
+            case RECEIPT ->
+                Collections.singletonList(new Mailer.Attachment("receipt.pdf", null, APPLICATION_PDF.getType(), model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
+            case CREDIT_NOTE ->
+                Collections.singletonList(new Mailer.Attachment("credit-note.pdf", null, APPLICATION_PDF.getType(), model, Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF));
+            default -> throw new IllegalStateException(documentType + " is not supported");
+        };
     }
 
     public String getReservationEmailSubject(PurchaseContext purchaseContext, Locale reservationLanguage, String key, String id) {

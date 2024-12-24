@@ -67,11 +67,11 @@ public interface PurchaseContext extends Configurable, TimeZoneInfo, LocalizedCo
         }
 
         public static PurchaseContextType from(String purchaseContextType) {
-            switch (purchaseContextType) {
-                case "subscription": return subscription;
-                case "event": return event;
-                default: throw new IllegalStateException("Purchase type not supported:" + purchaseContextType);
-            }
+            return switch (purchaseContextType) {
+                case "subscription" -> subscription;
+                case "event" -> event;
+                default -> throw new IllegalStateException("Purchase type not supported:" + purchaseContextType);
+            };
         }
 
         public String getUrlComponent() {

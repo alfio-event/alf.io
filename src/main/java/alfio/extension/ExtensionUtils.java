@@ -127,17 +127,14 @@ public class ExtensionUtils {
 
     private static Object parseIdScriptableObject(IdScriptableObject object) {
         var className = object.getClassName();
-        switch (className) {
-            case "String":
-                return ScriptRuntime.toCharSequence(object);
-            case "Boolean":
-                return Context.jsToJava(object, Boolean.class);
-            case "Date": {
-                return Context.jsToJava(object, Date.class);
-            }
-        }
-        // better safe than sorry: we ignore all the unknown objects
-        return null;
+        return switch (className) {
+            case "String" -> ScriptRuntime.toCharSequence(object);
+            case "Boolean" -> Context.jsToJava(object, Boolean.class);
+            case "Date" -> Context.jsToJava(object, Date.class);
+            default ->
+                // better safe than sorry: we ignore all the unknown objects
+                null;
+        };
     }
 
     /**
