@@ -42,13 +42,15 @@ public final class ImageUtil {
 
     private static final Logger log = LoggerFactory.getLogger(ImageUtil.class);
 
-    private static final String DEJA_VU_SANS = "/alfio/font/DejaVuSansMono.ttf";
+    private static final String DEJA_VU_SANS_MONO = "/alfio/font/DejaVuSansMono.ttf";
+    private static final String DEJA_VU_SANS = "/alfio/font/DejaVuSans.ttf";
+    private static final String DEJA_VU_SERIF = "/alfio/font/DejaVuSerif.ttf";
     private static final String FONT_SECTION = "font";
 
-    private static File loadDejaVuFont() {
+    private static File loadDejaVuFont(String name) {
         try {
             var cachedFile = File.createTempFile("font-cache", ".tmp");
-            try (InputStream is = new ClassPathResource(DEJA_VU_SANS).getInputStream(); OutputStream tmpOs = new FileOutputStream(cachedFile)) {
+            try (InputStream is = new ClassPathResource(name).getInputStream(); OutputStream tmpOs = new FileOutputStream(cachedFile)) {
                 is.transferTo(tmpOs);
             }
             return cachedFile;
@@ -59,7 +61,15 @@ public final class ImageUtil {
     }
 
     public static File getDejaVuSansMonoFont(FileUploadManager fileUploadManager) {
-        return fileUploadManager.getFile(FONT_SECTION, "DejaVuSansMono", () -> loadDejaVuFont());
+        return fileUploadManager.getFile(FONT_SECTION, "DejaVuSansMono", () -> loadDejaVuFont(DEJA_VU_SANS_MONO));
+    }
+
+    public static File getDejaVuSansFont(FileUploadManager fileUploadManager) {
+        return fileUploadManager.getFile(FONT_SECTION, "DejaVuSans", () -> loadDejaVuFont(DEJA_VU_SANS));
+    }
+
+    public static File getDejaVuSerifFont(FileUploadManager fileUploadManager) {
+        return fileUploadManager.getFile(FONT_SECTION, "DejaVuSerif", () -> loadDejaVuFont(DEJA_VU_SERIF));
     }
 
 
