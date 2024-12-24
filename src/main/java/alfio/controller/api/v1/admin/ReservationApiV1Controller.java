@@ -16,7 +16,6 @@
  */
 package alfio.controller.api.v1.admin;
 
-import alfio.controller.Constants;
 import alfio.manager.*;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -30,7 +29,6 @@ import alfio.model.modification.AttendeeData;
 import alfio.model.modification.AttendeeResources;
 import alfio.model.result.ErrorCode;
 import alfio.model.subscription.SubscriptionDescriptor;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Role;
 import alfio.util.ReservationUtil;
 import org.apache.commons.collections4.CollectionUtils;
@@ -39,12 +37,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriTemplate;
 
 import java.security.Principal;
 import java.util.*;
 
-import static alfio.controller.Constants.*;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.ReservationUtil.handleReservationCreationErrors;
 import static java.util.Objects.requireNonNullElseGet;
@@ -201,8 +197,9 @@ public class ReservationApiV1Controller {
 
         var result = adminReservationManager.confirmReservation(reservationId,
             principal,
-            reservationConfirmationRequest.getTransaction(),
-            Notification.orEmpty(reservationConfirmationRequest.getNotification()));
+            reservationConfirmationRequest.transaction(),
+            Notification.orEmpty(reservationConfirmationRequest.notification()),
+            reservationConfirmationRequest.reservationBillingData());
 
         if (result.isSuccess()) {
             var data = result.getData();

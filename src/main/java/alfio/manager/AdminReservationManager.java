@@ -26,6 +26,7 @@ import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.TicketReservation.TicketReservationStatus;
+import alfio.model.api.v1.admin.ReservationBillingData;
 import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.metadata.SubscriptionMetadata;
@@ -171,7 +172,8 @@ public class AdminReservationManager {
     public Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> confirmReservation(String reservationId,
                                                                                                Principal principal,
                                                                                                TransactionDetails transaction,
-                                                                                               Notification notification) {
+                                                                                               Notification notification,
+                                                                                               ReservationBillingData billingData) {
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
         TransactionTemplate template = new TransactionTemplate(transactionManager, definition);
         return template.execute(t -> {
@@ -181,6 +183,21 @@ public class AdminReservationManager {
             }
             var purchaseContext = purchaseContextOptional.get();
             accessService.checkOrganizationOwnership(principal, purchaseContext.getOrganizationId());
+            if (billingData != null) {
+                log.debug("Setting billing address to reservation {}", reservationId);
+                var billingAddress = TicketReservationManager.buildCompleteBillingAddress(
+                    new CustomerName(billingData.fullName(), null, null, false),
+                    billingData.company(),
+                    billingData.line1(),
+                    billingData.line2(),
+                    billingData.zip(),
+                    billingData.city(),
+                    billingData.state(),
+                    billingData.countryCode(),
+                    Locale.forLanguageTag(ticketReservationRepository.loadUserLanguage(reservationId))
+                );
+                Validate.isTrue( 1 == ticketReservationRepository.updateBillingAddress(billingAddress, reservationId));
+            }
             return confirmReservation(purchaseContext.getType(), purchaseContext.getPublicIdentifier(), reservationId, principal.getName(), notification, transaction, null);
         });
     }

@@ -92,6 +92,9 @@ public interface OrganizationDeleterRepository {
     @Query("delete from purchase_context_field_configuration where organization_id_fk in (:organizationIds)")
     int deleteFieldConfiguration(@Bind("organizationIds") List<Integer> organizationIds);
 
+    @Query("delete from billing_document where organization_id_fk in (:organizationIds)")
+    int deleteBillingDocuments(@Bind("organizationIds") List<Integer> organizationIds);
+
     default void deleteEmptyOrganizations(List<Integer> organizationIds) {
         // delete invoice sequences
         int deletedSequences = deleteInvoiceSequencesForEmptyOrganizations(organizationIds);
@@ -125,6 +128,10 @@ public interface OrganizationDeleterRepository {
 
         int deletedTransactions = deleteAllTransactions(organizationIds);
         LOGGER.info("deleted {} transactions", deletedTransactions);
+
+        // delete all billing documents
+        int deletedBillingDocuments = deleteBillingDocuments(organizationIds);
+        LOGGER.info("deleted {} billing documents", deletedBillingDocuments);
 
         // delete all reservations
         int deletedReservations = deleteReservations(organizationIds);

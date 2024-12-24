@@ -16,19 +16,14 @@
  */
 package alfio.model.api.v1.admin;
 
-import alfio.model.modification.AdminReservationModification.Notification;
-import alfio.model.modification.AdminReservationModification.TransactionDetails;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record ReservationConfirmationRequest(@JsonProperty("transaction") TransactionDetails transaction,
-                                             @JsonProperty("notification") Notification notification,
-                                             @JsonProperty("billingData") ReservationBillingData reservationBillingData) {
-    @Override
-    public Notification notification() {
-        return Notification.orEmpty(notification);
-    }
-
-    public boolean isValid() {
-        return transaction != null && transaction.getPaymentProvider() != null;
-    }
+public record ReservationBillingData(@JsonProperty("fullName") String fullName,
+                                     @JsonProperty("company") String company,
+                                     @JsonProperty("line1") String line1,
+                                     @JsonProperty("line2") String line2,
+                                     @JsonProperty("zip") String zip,
+                                     @JsonProperty("city") String city,
+                                     @JsonProperty("state") String state,
+                                     @JsonProperty("countryCode") String countryCode) {
 }

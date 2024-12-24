@@ -190,7 +190,7 @@ class TicketReservationManagerUnitTest {
         void setUp() {
             var subscriptionRepository = mock(SubscriptionRepository.class);
             generator = new OrderSummaryGenerator(ticketReservationRepository, auditingRepository, paymentManager, ticketCategoryRepository, additionalServiceTextRepository, subscriptionRepository, ticketRepository, messageSourceManager,
-                new ReservationCostCalculator(ticketReservationRepository, mock(PurchaseContextManager.class), promoCodeDiscountRepository, subscriptionRepository, ticketRepository, additionalServiceRepository, additionalServiceItemRepository));
+                new ReservationCostCalculator(ticketReservationRepository, mock(PurchaseContextManager.class), promoCodeDiscountRepository, subscriptionRepository, ticketRepository, additionalServiceRepository, additionalServiceItemRepository), transactionRepository);
         }
 
         @Test

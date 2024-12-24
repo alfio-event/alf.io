@@ -54,6 +54,12 @@ public interface TicketReservationRepository {
     @Query("select * from tickets_reservation tr join ba_user u on u.id = tr.user_id_fk where u.username = :username")
     List<TicketReservation> loadByOwner(@Bind("username") String username);
 
+    @Query("select user_language from tickets_reservation where id = :reservationId")
+    String loadUserLanguage(@Bind("reservationId") String reservationId);
+
+    @Query("update tickets_reservation set billing_address = :billingAddress where id = :reservationId")
+    int updateBillingAddress(@Bind("billingAddress") String billingAddress, @Bind("reservationId") String reservationId);
+
     @Query("""
         update tickets_reservation set status = :status, full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email,\
          user_language = :userLanguage, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod, customer_reference = :customerReference where id = :reservationId\

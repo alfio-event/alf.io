@@ -49,6 +49,7 @@ import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -217,7 +218,8 @@ class ReservationApiV1ControllerTest {
         assertNull(resources.ticketQrCode());
         var confirmationRequest = new ReservationConfirmationRequest(
             new TransactionDetails("TRID", new BigDecimal("100.00"), LocalDateTime.now(clockProvider.getClock()), "notes", PaymentProxy.ON_SITE),
-            new Notification(true, true)
+            new Notification(true, true),
+            null
         );
         var confirmationResponse = controller.confirmReservation(reservationId, confirmationRequest, principal);
         assertTrue(confirmationResponse.getStatusCode().is2xxSuccessful());
@@ -305,23 +307,7 @@ class ReservationApiV1ControllerTest {
         configurationRepository.insert(OPENID_PUBLIC_ENABLED.name(), "true", "");
         var category = ticketCategoryRepository.findFirstWithAvailableTickets(event.getId()).orElseThrow();
         var firstTicketProperties = Map.of("property", "value-first");
-        var ticket = new AttendeesByCategory(category.getId(), 1, List.of(), List.of(firstTicketProperties));
-        var user = new ReservationUser(
-            "test@example.org",
-            "Test",
-            "McTest",
-            "test@example.org",
-            "EXTERNALID"
-        );
-        var creationRequest = new TicketReservationCreationRequest(
-            List.of(ticket),
-            List.of(),
-            null,
-            user,
-            null,
-            "en",
-            null
-        );
+        var creationRequest = getTicketReservationCreationRequest(new AttendeesByCategory(category.getId(), 1, List.of(), List.of(firstTicketProperties)));
         var principal = new APITokenAuthentication(username, null, List.of());
         var response = controller.createTicketsReservation(event.getShortName(), creationRequest, principal);
         assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -355,25 +341,9 @@ class ReservationApiV1ControllerTest {
     void createSingleTicketWithAttendees() {
         var category = ticketCategoryRepository.findFirstWithAvailableTickets(event.getId()).orElseThrow();
         var firstTicketProperties = Map.of("property", "value-first");
-        var ticket = new AttendeesByCategory(category.getId(), 1, List.of(
+        var creationRequest = getTicketReservationCreationRequest(new AttendeesByCategory(category.getId(), 1, List.of(
             new AttendeeData("firstName", "lastName", "example@example.org", firstTicketProperties, null)
-        ), null);
-        var user = new ReservationUser(
-            "test@example.org",
-            "Test",
-            "McTest",
-            "test@example.org",
-            "EXTERNALID"
-        );
-        var creationRequest = new TicketReservationCreationRequest(
-            List.of(ticket),
-            List.of(),
-            null,
-            user,
-            null,
-            "en",
-            null
-        );
+        ), null));
         var principal = new APITokenAuthentication(username, null, List.of());
         var response = controller.createTicketsReservation(event.getShortName(), creationRequest, principal);
         assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -403,13 +373,7 @@ class ReservationApiV1ControllerTest {
         assertFalse(createdUser.isPresent());
     }
 
-    @Test
-    void createSingleTicketWithFields() {
-        var category = ticketCategoryRepository.findFirstWithAvailableTickets(event.getId()).orElseThrow();
-        var firstTicketProperties = Map.of("property", "value-first");
-        var ticket = new AttendeesByCategory(category.getId(), 1, List.of(
-            new AttendeeData("firstName", "lastName", "example@example.org", firstTicketProperties, Map.of(FIELD_NAME, List.of("value1")))
-        ), null);
+    private static @NotNull TicketReservationCreationRequest getTicketReservationCreationRequest(AttendeesByCategory category) {
         var user = new ReservationUser(
             "test@example.org",
             "Test",
@@ -417,8 +381,8 @@ class ReservationApiV1ControllerTest {
             "test@example.org",
             "EXTERNALID"
         );
-        var creationRequest = new TicketReservationCreationRequest(
-            List.of(ticket),
+        return new TicketReservationCreationRequest(
+            List.of(category),
             List.of(),
             null,
             user,
@@ -426,6 +390,15 @@ class ReservationApiV1ControllerTest {
             "en",
             null
         );
+    }
+
+    @Test
+    void createSingleTicketWithFields() {
+        var category = ticketCategoryRepository.findFirstWithAvailableTickets(event.getId()).orElseThrow();
+        var firstTicketProperties = Map.of("property", "value-first");
+        var creationRequest = getTicketReservationCreationRequest(new AttendeesByCategory(category.getId(), 1, List.of(
+            new AttendeeData("firstName", "lastName", "example@example.org", firstTicketProperties, Map.of(FIELD_NAME, List.of("value1")))
+        ), null));
         var principal = new APITokenAuthentication(username, null, List.of());
         var response = controller.createTicketsReservation(event.getShortName(), creationRequest, principal);
         assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -465,26 +438,10 @@ class ReservationApiV1ControllerTest {
     void createMultipleTicketsWithAttendees() {
         var category = ticketCategoryRepository.findFirstWithAvailableTickets(event.getId()).orElseThrow();
         var firstTicketProperties = Map.of("property", "value-first");
-        var ticket = new AttendeesByCategory(category.getId(), 2, List.of(
+        var creationRequest = getTicketReservationCreationRequest(new AttendeesByCategory(category.getId(), 2, List.of(
             new AttendeeData("firstName", "lastName", "example@example.org", firstTicketProperties, null),
             new AttendeeData("firstName", "lastName", "example@example.org", firstTicketProperties, null)
-        ), null);
-        var user = new ReservationUser(
-            "test@example.org",
-            "Test",
-            "McTest",
-            "test@example.org",
-            "EXTERNALID"
-        );
-        var creationRequest = new TicketReservationCreationRequest(
-            List.of(ticket),
-            List.of(),
-            null,
-            user,
-            null,
-            "en",
-            null
-        );
+        ), null));
         var principal = new APITokenAuthentication(username, null, List.of());
         var response = controller.createTicketsReservation(event.getShortName(), creationRequest, principal);
         assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -543,7 +500,8 @@ class ReservationApiV1ControllerTest {
         assertEquals("value1", fieldValues.get(0).getValue());
         var confirmationRequest = new ReservationConfirmationRequest(
             new TransactionDetails("TRID", new BigDecimal("100.00"), LocalDateTime.now(clockProvider.getClock()), "notes", PaymentProxy.ON_SITE),
-            new Notification(true, true)
+            new Notification(true, true),
+            null
         );
         var principal = new APITokenAuthentication(username, null, List.of());
         var response = controller.confirmReservation(reservationId, confirmationRequest, principal);
@@ -573,7 +531,8 @@ class ReservationApiV1ControllerTest {
         var reservationId = createAndValidateSubscription();
         var confirmationRequest = new ReservationConfirmationRequest(
             new TransactionDetails("TRID", new BigDecimal("100.00"), LocalDateTime.now(clockProvider.getClock()), "notes", PaymentProxy.ON_SITE),
-            new Notification(true, true)
+            new Notification(true, true),
+            null
         );
         var principal = new APITokenAuthentication(username, null, List.of());
         var response = controller.confirmReservation(reservationId, confirmationRequest, principal);
@@ -588,11 +547,35 @@ class ReservationApiV1ControllerTest {
     }
 
     @Test
+    void createAndConfirmSubscriptionWithBillingData() {
+        var reservationId = createAndValidateSubscription();
+        var confirmationRequest = new ReservationConfirmationRequest(
+            new TransactionDetails("TRID", new BigDecimal("100.00"), LocalDateTime.now(clockProvider.getClock()), "notes", PaymentProxy.ON_SITE),
+            new Notification(true, true),
+            new ReservationBillingData("First Last", null, null, null, null, null, null, null)
+        );
+        var principal = new APITokenAuthentication(username, null, List.of());
+        var response = controller.confirmReservation(reservationId, confirmationRequest, principal);
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+        var body = response.getBody();
+        assertNotNull(body);
+        assertEquals(1, body.getHolders().size());
+        var subscription = subscriptionRepository.findFirstSubscriptionByReservationIdForUpdate(reservationId).orElseThrow();
+        assertEquals(AllocationStatus.ACQUIRED, subscription.getStatus());
+        var emails = emailMessageRepository.findBySubscriptionDescriptorAndReservationId(subscription.getSubscriptionDescriptorId(), reservationId);
+        assertEquals(1, emails.size());
+        // verify billing address
+        var reservation = ticketReservationRepository.findReservationById(reservationId);
+        assertEquals("First Last", reservation.getBillingAddress());
+    }
+
+    @Test
     void createAndConfirmTicket() {
         String reservationId = createAndValidateTicketReservation();
         var confirmationRequest = new ReservationConfirmationRequest(
             new TransactionDetails("TRID", new BigDecimal("100.00"), LocalDateTime.now(clockProvider.getClock()), "notes", PaymentProxy.ON_SITE),
-            new Notification(true, true)
+            new Notification(true, true),
+            null
         );
         var principal = new APITokenAuthentication(username, null, List.of());
         var response = controller.confirmReservation(reservationId, confirmationRequest, principal);

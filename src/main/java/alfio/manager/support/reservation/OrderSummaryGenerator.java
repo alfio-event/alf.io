@@ -61,6 +61,7 @@ public class OrderSummaryGenerator {
     private final TicketRepository ticketRepository;
     private final MessageSourceManager messageSourceManager;
     private final ReservationCostCalculator reservationCostCalculator;
+    private final TransactionRepository transactionRepository;
 
     public OrderSummaryGenerator(TicketReservationRepository ticketReservationRepository,
                                  AuditingRepository auditingRepository,
@@ -70,7 +71,7 @@ public class OrderSummaryGenerator {
                                  SubscriptionRepository subscriptionRepository,
                                  TicketRepository ticketRepository,
                                  MessageSourceManager messageSourceManager,
-                                 ReservationCostCalculator reservationCostCalculator) {
+                                 ReservationCostCalculator reservationCostCalculator, TransactionRepository transactionRepository) {
         this.ticketReservationRepository = ticketReservationRepository;
         this.auditingRepository = auditingRepository;
         this.paymentManager = paymentManager;
@@ -80,6 +81,7 @@ public class OrderSummaryGenerator {
         this.ticketRepository = ticketRepository;
         this.messageSourceManager = messageSourceManager;
         this.reservationCostCalculator = reservationCostCalculator;
+        this.transactionRepository = transactionRepository;
     }
 
     public OrderSummary orderSummaryForReservationId(String reservationId, PurchaseContext purchaseContext) {
@@ -108,10 +110,14 @@ public class OrderSummaryGenerator {
             formatCents(reservationCost.getVAT(), currencyCode),
             reservation.getStatus() == TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT,
             reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT,
-            reservation.getPaymentMethod() == PaymentProxy.ON_SITE,
+            isCashPayment(reservation),
             Optional.ofNullable(context.getVat()).map(p -> MonetaryUtil.formatCents(MonetaryUtil.unitToCents(p, currencyCode), currencyCode)).orElse(null),
             reservation.getVatStatus(),
             refundedAmount);
+    }
+
+    private boolean isCashPayment(TicketReservation reservation) {
+        return reservation.getPaymentMethod() == PaymentProxy.ON_SITE && !transactionRepository.transactionExists(reservation.getId());
     }
 
     public OrderSummary orderSummaryForCreditNote(TicketReservation reservation, PurchaseContext purchaseContext, List<Ticket> removedTickets) {
@@ -128,7 +134,7 @@ public class OrderSummaryGenerator {
             formatCents(reservationCost.getVAT(), currencyCode),
             reservation.getStatus() == TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT,
             reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT,
-            reservation.getPaymentMethod() == PaymentProxy.ON_SITE,
+            isCashPayment(reservation),
             Optional.ofNullable(purchaseContext.getVat()).map(p -> MonetaryUtil.formatCents(MonetaryUtil.unitToCents(p, currencyCode), currencyCode)).orElse(null),
             reservation.getVatStatus(),
             null);
