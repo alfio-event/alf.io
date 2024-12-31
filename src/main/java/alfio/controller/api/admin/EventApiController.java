@@ -586,9 +586,8 @@ public class EventApiController {
                                                                   Principal principal,
                                                                   @RequestBody UploadBase64FileModification file) throws IOException {
         record Transaction(String reservationId, BigDecimal price) {}
-        var csvMapper = new CsvMapper();
         try(InputStreamReader isr = new InputStreamReader(file.getInputStream(), UTF_8)) {
-            MappingIterator<List<String>> iterator = csvMapper.readerFor(Transaction.class)
+            MappingIterator<List<String>> iterator = new CsvMapper().readerForListOf(String.class)
                 .with(CsvSchema.emptySchema().withoutHeader())
                 .with(CsvParser.Feature.WRAP_AS_ARRAY)
                 .readValues(isr);
@@ -600,7 +599,7 @@ public class EventApiController {
             var reservationIds = all.stream()
                 .map(Transaction::reservationId)
                 .collect(Collectors.toSet());
-            accessService.checkEventAndReservationOwnership(principal, eventName, reservationIds);
+            accessService.checkEventAndReservationOwnership(principal, eventName, reservationIds, true);
 
             Event event = loadEvent(eventName, principal);
             return all.stream()

@@ -17,11 +17,13 @@
 package alfio.repository;
 
 import alfio.model.*;
+import alfio.model.support.Array;
 import alfio.model.support.JSONData;
 import alfio.model.support.UserIdAndOrganizationId;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -327,6 +329,14 @@ public interface TicketReservationRepository {
 
     @Query("select count(id) from tickets_reservation where id in (:ids) and event_id_fk = :eventId")
     int countReservationsWithEventId(@Bind("ids") Set<String> reservationIds, @Bind("eventId") int eventId);
+
+
+    @Query("""
+        SELECT count(id) from tickets_reservation where id ilike ANY(
+                    select s || '%' from unnest(:ids::text[]) s(s)
+                ) and event_id_fk = :eventId
+        """)
+    int countReservationWithShortIdsForEvent(@Bind("ids") @Array List<String> reservationIds, @Bind("eventId") int eventId);
 
     @Query("select exists(select id from b_transaction where id = :transactionId and reservation_id = reservationId)")
     boolean hasReservationWithTransactionId(@Bind("reservationId") String reservationId, @Bind("transactionId") int transactionId);

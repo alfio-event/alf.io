@@ -577,8 +577,18 @@ public class AccessService {
     }
 
     public void checkEventAndReservationOwnership(Principal principal, String eventName, Set<String> reservationIds) {
+        checkEventAndReservationOwnership(principal, eventName, reservationIds, false);
+    }
+
+    public void checkEventAndReservationOwnership(Principal principal, String eventName, Set<String> reservationIds, boolean partialIds) {
         var eventAndOrgId = checkEventOwnership(principal, eventName);
-        if (reservationIds.size() != reservationRepository.countReservationsWithEventId(reservationIds, eventAndOrgId.getId())) {
+        int countExisting;
+        if (partialIds) {
+            countExisting = reservationRepository.countReservationWithShortIdsForEvent(List.copyOf(reservationIds), eventAndOrgId.getId());
+        } else {
+            countExisting = reservationRepository.countReservationsWithEventId(reservationIds, eventAndOrgId.getId());
+        }
+        if (reservationIds.size() != countExisting) {
             if (log.isWarnEnabled()) {
                 log.warn("Some reservation ids {} are not in the event {}", reservationIds.stream().map(MiscUtils::removeTabsAndNewlines).collect(Collectors.toSet()), removeTabsAndNewlines(eventName));
             }
