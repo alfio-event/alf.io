@@ -584,7 +584,7 @@ public class AccessService {
         var eventAndOrgId = checkEventOwnership(principal, eventName);
         int countExisting;
         if (partialIds) {
-            countExisting = reservationRepository.countReservationWithShortIdsForEvent(List.copyOf(reservationIds), eventAndOrgId.getId());
+            countExisting = reservationRepository.countReservationWithShortIdsForEvent(reservationIds.stream().map(String::toLowerCase).toList(), eventAndOrgId.getId());
         } else {
             countExisting = reservationRepository.countReservationsWithEventId(reservationIds, eventAndOrgId.getId());
         }

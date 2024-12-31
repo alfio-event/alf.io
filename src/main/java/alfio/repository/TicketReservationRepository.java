@@ -331,7 +331,7 @@ public interface TicketReservationRepository {
 
 
     @Query("""
-        SELECT count(id) from tickets_reservation where id ilike ANY(
+        SELECT count(id) from tickets_reservation where id like ANY(
                     select s || '%' from unnest(:ids::text[]) s(s)
                 ) and event_id_fk = :eventId
         """)
