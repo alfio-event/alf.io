@@ -18,7 +18,7 @@ buildscript {
         // for processing the index.html at build time
         classpath "ch.digitalfondue.jfiveparse:jfiveparse:1.1.1"
         // for processing the mjml templates at build time
-        classpath "ch.digitalfondue.mjml4j:mjml4j:1.0.3"
+        classpath "ch.digitalfondue.mjml4j:mjml4j:1.1.1"
     }
 
 
