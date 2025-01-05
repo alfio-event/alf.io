@@ -65,6 +65,11 @@
               [method]="selectedPaymentMethod"
               (paymentProvider)="registerCurrentPaymentProvider($event)">
             </app-saferpay-payment-proxy>
+            <app-custom-offline-payment-proxy
+              [proxy]="selectedPaymentProxy"
+              [method]="selectedPaymentMethod"
+              (paymentProvider)="registerCurrentPaymentProvider($event)">
+            </app-custom-offline-payment-proxy>
         </div>
 
     </div>
