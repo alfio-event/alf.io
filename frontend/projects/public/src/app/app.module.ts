@@ -81,11 +81,13 @@ import {TicketFormComponent} from './reservation/ticket-form/ticket-form.compone
 import {CountdownComponent} from './countdown/countdown.component';
 import {BannerCheckComponent} from './banner-check/banner-check.component';
 import {OfflinePaymentComponent} from './reservation/offline-payment/offline-payment.component';
+import {CustomOfflinePaymentComponent} from './reservation/custom-offline-payment/custom-offline-payment.component';
 import {OfflinePaymentProxyComponent} from './payment/offline-payment-proxy/offline-payment-proxy.component';
 import {OnsitePaymentProxyComponent} from './payment/onsite-payment-proxy/onsite-payment-proxy.component';
 import {PaypalPaymentProxyComponent} from './payment/paypal-payment-proxy/paypal-payment-proxy.component';
 import {StripePaymentProxyComponent} from './payment/stripe-payment-proxy/stripe-payment-proxy.component';
 import {SaferpayPaymentProxyComponent} from './payment/saferpay-payment-proxy/saferpay-payment-proxy.component';
+import {CustomOfflinePaymentProxyComponent} from 'projects/public/src/app/payment/custom-offline-payment-proxy/custom-offline-payment-proxy.component';
 import {ProcessingPaymentComponent} from './reservation/processing-payment/processing-payment.component';
 import {SummaryTableComponent} from './reservation/summary-table/summary-table.component';
 import {InvoiceFormComponent} from './reservation/invoice-form/invoice-form.component';
@@ -167,11 +169,13 @@ export function InitUserService(userService: UserService): () => Promise<boolean
         CountdownComponent,
         BannerCheckComponent,
         OfflinePaymentComponent,
+        CustomOfflinePaymentComponent,
         OfflinePaymentProxyComponent,
         OnsitePaymentProxyComponent,
         PaypalPaymentProxyComponent,
         StripePaymentProxyComponent,
         SaferpayPaymentProxyComponent,
+        CustomOfflinePaymentProxyComponent,
         ProcessingPaymentComponent,
         SummaryTableComponent,
         InvoiceFormComponent,
