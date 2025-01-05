@@ -124,7 +124,7 @@ export class SummaryRow {
 }
 
 export type ReservationStatus = 'PENDING' | 'IN_PAYMENT' | 'EXTERNAL_PROCESSING_PAYMENT' |
-                                'WAITING_EXTERNAL_CONFIRMATION' | 'OFFLINE_PAYMENT' | 'DEFERRED_OFFLINE_PAYMENT' |
+                                'WAITING_EXTERNAL_CONFIRMATION' | 'OFFLINE_PAYMENT' | 'CUSTOM_OFFLINE_PAYMENT' | 'DEFERRED_OFFLINE_PAYMENT' |
                                 'OFFLINE_FINALIZING' | 'FINALIZING' | 'COMPLETE' | 'STUCK' | 'CANCELLED' |
                                 'CREDIT_NOTE_ISSUED' | 'NOT_FOUND';
 

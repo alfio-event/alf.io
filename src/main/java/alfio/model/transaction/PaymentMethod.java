@@ -34,7 +34,8 @@ public enum PaymentMethod {
     PRZELEWY_24,
     ALIPAY,
     POSTFINANCE,
-    TWINT;
+    TWINT,
+    ETRANSFER;
 
     public static PaymentMethod safeParse(String asString) {
         return Arrays.stream(PaymentMethod.values()).filter(v -> v.name().equals(asString)).findFirst().orElse(null);
