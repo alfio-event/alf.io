@@ -1,3 +1,19 @@
+/**
+ * This file is part of alf.io.
+ *
+ * alf.io is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * alf.io is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package alfio.manager.payment;
 
 import java.time.ZonedDateTime;
@@ -35,11 +51,10 @@ public class CustomOfflinePaymentManager implements PaymentProvider {
     private static final Logger log = LoggerFactory.getLogger(CustomOfflinePaymentManager.class);
 
     public CustomOfflinePaymentManager(
-        ClockProvider clockProvider,
-        ConfigurationRepository configurationRepository,
-        TicketReservationRepository ticketReservationRepository,
-        TransactionRepository transactionRepository
-    ) {
+            ClockProvider clockProvider,
+            ConfigurationRepository configurationRepository,
+            TicketReservationRepository ticketReservationRepository,
+            TransactionRepository transactionRepository) {
         this.clockProvider = clockProvider;
         this.configurationRepository = configurationRepository;
         this.ticketReservationRepository = ticketReservationRepository;
@@ -51,7 +66,7 @@ public class CustomOfflinePaymentManager implements PaymentProvider {
             TransactionRequest transactionRequest) {
         OptionalInt orgId = paymentContext.getConfigurationLevel().getOrganizationId();
 
-        if(orgId.isPresent()) {
+        if (orgId.isPresent()) {
             configurationRepository.findByKeyAtOrganizationLevel(orgId.getAsInt(), "CUSTOM_OFFLINE_PAYMENTS");
         }
 
@@ -66,14 +81,14 @@ public class CustomOfflinePaymentManager implements PaymentProvider {
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context, TransactionRequest transactionRequest) {
         // TODO Auto-generated method stub
-        //throw new UnsupportedOperationException("Unimplemented method 'accept'");
+        // throw new UnsupportedOperationException("Unimplemented method 'accept'");
         return true;
     }
 
     @Override
     public boolean accept(Transaction transaction) {
         // TODO Auto-generated method stub
-        //throw new UnsupportedOperationException("Unimplemented method 'accept'");
+        // throw new UnsupportedOperationException("Unimplemented method 'accept'");
         return true;
     }
 
@@ -85,7 +100,7 @@ public class CustomOfflinePaymentManager implements PaymentProvider {
 
     @Override
     public boolean isActive(PaymentContext paymentContext) {
-        //throw new UnsupportedOperationException("Unimplemented method 'isActive'");
+        // throw new UnsupportedOperationException("Unimplemented method 'isActive'");
         return true;
     }
 
@@ -98,34 +113,32 @@ public class CustomOfflinePaymentManager implements PaymentProvider {
 
         // POST PONE
         int updatedReservation = ticketReservationRepository.postponePayment(
-            spec.getReservationId(),
-            CUSTOM_OFFLINE_PAYMENT,
-            Date.from(deadline.toInstant()),
-            spec.getEmail(),
-            spec.getCustomerName().getFullName(),
-            spec.getCustomerName().getFirstName(),
-            spec.getCustomerName().getLastName(),
-            spec.getBillingAddress(),
-            spec.getCustomerReference()
-        );
+                spec.getReservationId(),
+                CUSTOM_OFFLINE_PAYMENT,
+                Date.from(deadline.toInstant()),
+                spec.getEmail(),
+                spec.getCustomerName().getFullName(),
+                spec.getCustomerName().getFirstName(),
+                spec.getCustomerName().getLastName(),
+                spec.getBillingAddress(),
+                spec.getCustomerReference());
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
 
         // OVERRIDE EXISTING TRANSACTION
         PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
         transactionRepository.insert(
-            UUID.randomUUID().toString(),
-            null,
-            spec.getReservationId(),
-            ZonedDateTime.now(clockProvider.getClock()),
-            spec.getPriceWithVAT(),
-            spec.getCurrencyCode(),
-            "",
-            PaymentProxy.OFFLINE.name(),
-            0L,
-            0L,
-            Transaction.Status.PENDING,
-            Map.of()
-        );
+                UUID.randomUUID().toString(),
+                null,
+                spec.getReservationId(),
+                ZonedDateTime.now(clockProvider.getClock()),
+                spec.getPriceWithVAT(),
+                spec.getCurrencyCode(),
+                "",
+                PaymentProxy.OFFLINE.name(),
+                0L,
+                0L,
+                Transaction.Status.PENDING,
+                Map.of());
 
         // RETURN RESULT
         return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
