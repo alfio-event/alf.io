@@ -29,7 +29,7 @@ export class InvalidFeedbackDirective implements OnInit, OnDestroy {
   ngOnInit(): void {
 
     if (this.control == null && this.invalidFeedbackForm != null && this.invalidFeedbackFieldName != null) {
-      this.targetControl = this.invalidFeedbackForm.get(this.invalidFeedbackFieldName);
+      this.targetControl = this.invalidFeedbackForm.get([this.invalidFeedbackFieldName]);
       this.targetControl.statusChanges.subscribe(e => {
         this.checkValidation();
       });
