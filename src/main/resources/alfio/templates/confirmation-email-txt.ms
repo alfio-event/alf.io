@@ -36,8 +36,11 @@
 
 ########################
 {{#i18n}}reservation.complete.email.subscription.used{{/i18n}}
-{{#subscriptionUsageDetails}}{{#i18n}}reservation-page-complete.subscription.usage.available [{{subscriptionUsageDetails.available}}]{{/i18n}}{{/subscriptionUsageDetails}}
-reservation.confirmation.email.subscription.button: {{subscriptionUrl}}
+{{#subscriptionUsageDetails}}
+{{#i18n}}reservation-page-complete.subscription.usage.available [{{subscriptionUsageDetails.available}}]{{/i18n}}
+{{#i18n}}reservation.confirmation.email.subscription.button{{/i18n}}: {{subscriptionUrl}}
+{{/subscriptionUsageDetails}}
+
 ########################
 
 {{/displaySubscriptionUsage}}

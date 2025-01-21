@@ -25,7 +25,7 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 
 public class TicketReservationWithEventIdentifier {
-    @Delegate
+    @Delegate(excludes = PriceContainer.class)
     private final TicketReservation reservation;
     private final String eventPublicIdentifier;
 
@@ -101,5 +101,13 @@ public class TicketReservationWithEventIdentifier {
 
     public String getEventPublicIdentifier() {
         return eventPublicIdentifier;
+    }
+
+    public int getFinalPriceCts() {
+        return reservation.getFinalPriceCts();
+    }
+
+    public String getPaidAmount() {
+        return reservation.getPaidAmount();
     }
 }

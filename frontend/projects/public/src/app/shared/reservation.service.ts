@@ -80,7 +80,7 @@ export class ReservationService {
     }
 
     applySubscriptionCode(reservationId: string, code: string, email: string): Observable<ValidatedResponse<boolean>> {
-        return this.http.post<ValidatedResponse<boolean>>(`/api/v2/public/reservation/${reservationId}/apply-code/`, {code: code, email: email, amount: 1, type: 'SUBSCRIPTION'});
+        return this.http.post<ValidatedResponse<boolean>>(`/api/v2/public/reservation/${reservationId}/apply-code`, {code: code, email: email, amount: 1, type: 'SUBSCRIPTION'});
     }
 
     removeSubscription(reservationId: string): Observable<boolean> {
