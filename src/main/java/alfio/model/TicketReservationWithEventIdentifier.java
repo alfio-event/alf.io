@@ -110,4 +110,8 @@ public class TicketReservationWithEventIdentifier {
     public String getPaidAmount() {
         return reservation.getPaidAmount();
     }
+
+    public String getCurrencyCode() {
+        return reservation.getCurrencyCode();
+    }
 }
