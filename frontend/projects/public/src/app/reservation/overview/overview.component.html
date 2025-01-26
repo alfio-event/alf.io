@@ -49,7 +49,7 @@
       </div>
     </div>
 
-    <div *ngIf="purchaseContext.canApplySubscriptions && !appliedSubscription" class="mb-3">
+    <div *ngIf="purchaseContext.canApplySubscriptions && !appliedSubscription" class="mb-3" [class.invisible]="submitting">
       <h2 class="page-header mt-2" translate="reservation-page.subscription"></h2>
 
       <div *ngIf="!displaySubscriptionForm" class="row mt-2 mb-3">

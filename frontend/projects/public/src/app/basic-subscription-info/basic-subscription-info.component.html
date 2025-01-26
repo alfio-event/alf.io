@@ -5,7 +5,7 @@
   <div [class.card-body]="cardLayout">
     <h2 [class.card-title]="cardLayout">{{title}}</h2>
     <div class="mt-3">
-      <app-subscription-summary [subscription]="subscription" [owner]="owner"></app-subscription-summary>
+      <app-subscription-summary [subscription]="subscription" [owner]="owner" [fieldConfigurationBeforeStandard]="fieldConfigurationBeforeStandard" [fieldConfigurationAfterStandard]="fieldConfigurationAfterStandard"></app-subscription-summary>
     </div>
   </div>
   <div class="card-footer border-top-0 bg-white" *ngIf="cardLayout">

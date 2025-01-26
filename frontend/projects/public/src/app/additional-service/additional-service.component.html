@@ -8,7 +8,8 @@
       </span>
     </div>
     <div class="item-qty-selector">
-      <app-additional-service-quantity-selector [parentGroup]="additionalServiceFormGroup" [event]="event" [additionalService]="additionalService" [validSelectionValues]="validSelectionValues"></app-additional-service-quantity-selector>
+      <div class="text-center" translate="show-event.not-available" *ngIf="!availableForSale"></div>
+      <app-additional-service-quantity-selector *ngIf="availableForSale" [parentGroup]="additionalServiceFormGroup" [event]="event" [additionalService]="additionalService" [validSelectionValues]="validSelectionValues"></app-additional-service-quantity-selector>
     </div>
   </app-item-card>
 </div>

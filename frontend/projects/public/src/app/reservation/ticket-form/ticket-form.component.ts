@@ -1,8 +1,8 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {UntypedFormGroup} from '@angular/forms';
-import {Ticket} from '../../model/ticket';
-import {PurchaseContext} from '../../model/purchase-context';
 import {ReservationMetadata} from '../../model/reservation-info';
+import {Ticket} from "../../model/ticket";
+import {PurchaseContext} from "../../model/purchase-context";
 
 @Component({
   selector: 'app-ticket-form',
@@ -21,8 +21,6 @@ export class TicketFormComponent implements OnInit {
 
   @Input()
   reservationMetadata: ReservationMetadata;
-
-  constructor() { }
 
   public ngOnInit(): void {
     if (this.form && this.purchaseContext && this.purchaseContext.contentLanguages && this.purchaseContext.contentLanguages.length === 1) {

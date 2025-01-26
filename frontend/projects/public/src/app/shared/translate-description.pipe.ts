@@ -9,7 +9,7 @@ export class TranslateDescriptionPipe implements PipeTransform {
 
   constructor(private translate: TranslateService) {}
 
-  transform(value?: {[k: string]: string}): any {
+  transform(value?: {[k: string]: any}): any {
     if (value != null) {
       const lang = this.translate.currentLang;
       return getLocalizedContent(value, lang);

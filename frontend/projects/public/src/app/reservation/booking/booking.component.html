@@ -66,7 +66,7 @@
     <ng-container *ngIf="purchaseContextType === 'event'">
       <h2 translate="reservation-page.attendees"></h2>
 
-      <div class="form-check mb-3" *ngIf="!purchaseContext.assignmentConfiguration.forceAssignment && ticketCounts > 1 && !reservationInfo.containsCategoriesLinkedToGroups">
+      <div class="form-check mb-3" *ngIf="additionalServicesCount === 0 && !purchaseContext.assignmentConfiguration.forceAssignment && ticketCounts > 1 && !reservationInfo.containsCategoriesLinkedToGroups">
         <input class="form-check-input" type="checkbox" formControlName="postponeAssignment" id="postpone-assignment" value="true">
         <label class="form-check-label" for="postpone-assignment">{{' '}}{{'reservation-page.postpone-assignment'|translate}}</label>
       </div>
@@ -93,11 +93,22 @@
               <div class="h3 mb-3"><small class="text-muted">{{tc.name}}</small></div>
               <app-ticket-form [ticket]="ticket" [purchaseContext]="purchaseContext" [form]="getTicketForm(ticket)" [reservationMetadata]="reservationInfo.metadata"></app-ticket-form>
             </div>
+            <app-additional-service-form [ticket]="ticket"
+                                         [otherTickets]="getOtherTickets(ticket)"
+                                         (moveAdditionalServiceRequest)="moveAdditionalService($event)"
+                                         [additionalServicesForm]="getAdditionalDataForm(ticket)"
+                                         [additionalServices]="getAdditionalData(ticket)"></app-additional-service-form>
           </div>
         </div>
       </ng-container>
     </ng-container>
     <ng-container *ngIf="purchaseContextType === 'subscription'">
+      <div class="page-header">
+        <h2 translate="reservation-page.subscription-owner"></h2>
+      </div>
+      <div *ngFor="let field of subscriptionInfo.fieldConfigurationBeforeStandard">
+        <app-additional-field [field]="field" [elementUUID]="'subscription'" [form]="subscriptionAdditionalForm" [ticketAcquired]="false"></app-additional-field>
+      </div>
       <div class="form-check mb-3">
         <input class="form-check-input" type="checkbox" formControlName="differentSubscriptionOwner" id="show-subscription-owner" value="true">
         <label class="form-check-label" for="show-subscription-owner">{{' '}}{{'reservation-page.subscription.different-owner' | translate}}</label>
@@ -123,6 +134,9 @@
             </div>
           </div>
         </div>
+      </div>
+      <div *ngFor="let field of subscriptionInfo.fieldConfigurationAfterStandard">
+        <app-additional-field [field]="field" [elementUUID]="'subscription'" [form]="subscriptionAdditionalForm" [ticketAcquired]="false"></app-additional-field>
       </div>
     </ng-container>
 

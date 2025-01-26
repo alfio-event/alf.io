@@ -2,7 +2,7 @@
   <div *ngIf="ticket" [formGroup]="form" class="col">
     <div *ngFor="let field of ticket.ticketFieldConfigurationBeforeStandard" class="row g-2 mb-3">
       <div class="col-12">
-        <app-additional-field [field]="field" [ticketUUID]="ticket.uuid" [form]="getAdditional(form)" [ticketAcquired]="ticket.acquired"></app-additional-field>
+        <app-additional-field [field]="field" [elementUUID]="ticket.uuid" [form]="getAdditional(form)" [ticketAcquired]="ticket.acquired"></app-additional-field>
       </div>
     </div>
 
@@ -30,20 +30,16 @@
     </div>
     <div class="row g-2 mb-3" *ngFor="let field of ticket.ticketFieldConfigurationAfterStandard">
       <div class="col-12">
-        <app-additional-field [field]="field" [ticketUUID]="ticket.uuid" [form]="getAdditional(form)" [ticketAcquired]="ticket.acquired"></app-additional-field>
-      </div>
-    </div>
-    <div class="row g-2 mb-3">
-      <div class="col-12">
-        <div class="form-group" *ngIf="purchaseContext && purchaseContext.contentLanguages.length > 1">
-            <label class="form-label" [attr.for]="ticket.uuid + '-userLanguage'" translate="reservation-page-complete.language"></label>
-            <select [attr.id]="ticket.uuid + '-userLanguage'" formControlName="userLanguage" class="form-select" appInvalidFeedback>
-              <option value=""></option>
-              <option *ngFor="let lang of purchaseContext.contentLanguages" [ngValue]="lang.locale">{{lang.displayLanguage}}</option>
-            </select>
-          </div>
-        </div>
+        <app-additional-field [field]="field" [elementUUID]="ticket.uuid" [form]="getAdditional(form)" [ticketAcquired]="ticket.acquired"></app-additional-field>
       </div>
     </div>
 
+    <div class="form-group" *ngIf="purchaseContext && purchaseContext.contentLanguages.length > 1">
+      <label [attr.for]="ticket.uuid + '-userLanguage'" translate="reservation-page-complete.language"></label>
+      <select [attr.id]="ticket.uuid + '-userLanguage'" formControlName="userLanguage" class="custom-select" appInvalidFeedback>
+        <option value=""></option>
+        <option *ngFor="let lang of purchaseContext.contentLanguages" [ngValue]="lang.locale">{{lang.displayLanguage}}</option>
+      </select>
+    </div>
+  </div>
 </div>

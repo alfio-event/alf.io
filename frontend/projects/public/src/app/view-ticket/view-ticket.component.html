@@ -34,6 +34,19 @@
           </dl>
         </div>
 
+        <div class="mt-3 mb-3" *ngIf="groupedAdditionalServices.length > 0">
+          <h2 translate="show-event.additional-services"></h2>
+          <div *ngFor="let asw of groupedAdditionalServices; let first = first" [class.mt-3]="first">
+            <h5 class="pl-4">{{ asw.count }} x {{ asw.title | translateDescription }}</h5>
+            <dl class="row" *ngIf="asw.ticketFieldConfiguration.length > 0">
+              <ng-container *ngFor="let field of asw.ticketFieldConfiguration">
+                <dt class="col-sm-3 align-right-mobile-aware">{{ (field.description | translateDescription).label}}</dt>
+                <dd class="col-sm-9">{{ getValue(field) }}</dd>
+              </ng-container>
+            </dl>
+          </div>
+        </div>
+
 
         <div *ngIf="ticketInfo.deskPaymentRequired" class="text-center mt-3 mb-3">
           <h3 translate="ticket.payment-required"></h3>

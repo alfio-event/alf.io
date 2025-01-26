@@ -5,17 +5,17 @@ import {Event} from '../../model/event';
 import {EventService} from '../../shared/event.service';
 import {TicketService} from '../../shared/ticket.service';
 import {Ticket} from '../../model/ticket';
-import {ReservationInfo, TicketsByTicketCategory} from '../../model/reservation-info';
+import {AdditionalServiceWithData, ReservationInfo, TicketsByTicketCategory} from '../../model/reservation-info';
 import {I18nService} from '../../shared/i18n.service';
 import {AnalyticsService} from '../../shared/analytics.service';
 import {handleServerSideValidationError} from '../../shared/validation-helper';
-import {UntypedFormGroup} from '@angular/forms';
+import {UntypedFormGroup, UntypedFormArray} from '@angular/forms';
 import {TranslateService} from '@ngx-translate/core';
 import {InfoService} from '../../shared/info.service';
 import {first} from 'rxjs/operators';
 import {WalletConfiguration} from '../../model/info';
 import {ReservationStatusChanged} from '../../model/embedding-configuration';
-import {embedded, pollReservationStatus} from '../../shared/util';
+import {GroupedAdditionalServiceWithData, embedded, groupAdditionalData, pollReservationStatus} from '../../shared/util';
 
 @Component({
   selector: 'app-success',
@@ -41,6 +41,8 @@ export class SuccessComponent implements OnInit {
   reservationFinalized = true;
   invoiceReceiptReady = true;
   private walletConfiguration: WalletConfiguration;
+
+  private additionalServicesWithData: {[uuid: string]: AdditionalServiceWithData[]} = {};
 
   constructor(
     private route: ActivatedRoute,
@@ -91,6 +93,15 @@ export class SuccessComponent implements OnInit {
     this.invoiceReceiptReady = res.metadata.readyForConfirmation;
     this.unlockedTicketCount = 0;
     //
+    const additionalServices = res.additionalServiceWithData ?? [];
+    this.additionalServicesWithData = {};
+    additionalServices.forEach(asd => {
+      if (this.additionalServicesWithData[asd.ticketUUID] != null) {
+        this.additionalServicesWithData[asd.ticketUUID].push(asd);
+      } else {
+        this.additionalServicesWithData[asd.ticketUUID] = [asd];
+      }
+    });
     res.ticketsByCategory.forEach((tc) => {
       tc.tickets.forEach((ticket: Ticket) => {
         this.buildFormControl(ticket);
@@ -103,7 +114,7 @@ export class SuccessComponent implements OnInit {
   }
 
   private buildFormControl(ticket: Ticket): void {
-    this.ticketsFormControl[ticket.uuid] = this.ticketService.buildFormGroupForTicket(ticket);
+    this.ticketsFormControl[ticket.uuid] = this.ticketService.buildFormGroupForTicket(ticket, null, this.additionalServicesWithData[ticket.uuid]);
   }
 
   sendEmailForTicket(ticketIdentifier: string): void {
@@ -170,12 +181,6 @@ export class SuccessComponent implements OnInit {
     return this.event.title[this.translateService.currentLang];
   }
 
-  get showReservationButtons(): boolean {
-    return this.reservationFinalized
-      && (!embedded || !this.event.embeddingConfiguration.enabled)
-      && !this.reservationInfo.metadata.hideConfirmationButtons;
-  }
-
   get walletIntegrationEnabled(): boolean {
     return this.walletConfiguration != null &&
       (this.walletConfiguration.gWalletEnabled || this.walletConfiguration.passEnabled);
@@ -185,4 +190,28 @@ export class SuccessComponent implements OnInit {
     this.ticketService.openDownloadTicket(ticket, this.eventShortName, this.walletConfiguration)
       .subscribe(() => {});
   }
+
+  get showReservationButtons(): boolean {
+    return this.reservationFinalized
+      && (!embedded || !this.event.embeddingConfiguration.enabled)
+      && !this.reservationInfo.metadata.hideConfirmationButtons;
+  }
+
+  getAdditionalDataForm(ticket: Ticket): UntypedFormArray | null {
+    const linksGroup = <UntypedFormGroup>(this.ticketsFormControl[ticket.uuid]).get('additionalServices');
+    return linksGroup.contains(ticket.uuid) ? <UntypedFormArray>linksGroup.get(ticket.uuid) : null;
+  }
+
+  getAdditionalData(ticket: Ticket): AdditionalServiceWithData[] {
+    return this.additionalServicesWithData[ticket.uuid] ?? [];
+  }
+
+  hasAdditionalData(ticket: Ticket): boolean {
+    return this.getAdditionalData(ticket).length > 0;
+  }
+
+  getGroupedAdditionalData(ticket: Ticket): GroupedAdditionalServiceWithData[] {
+    return groupAdditionalData(this.additionalServicesWithData[ticket.uuid] ?? []);
+  }
 }
+

@@ -112,7 +112,7 @@
       <div class="col-12 col-md-6">
         <div class="form-group">
           <label class="form-label" for="italyEInvoicingReferenceType">{{'invoice-fields.addresseeItalyEInvoice' | translate}}{{' *'}}</label>
-          <select class="form-select" id="italyEInvoicingReferenceType" required aria-required="true" formControlName="italyEInvoicingReferenceType">
+          <select class="form-select" id="italyEInvoicingReferenceType" required aria-required="true" formControlName="italyEInvoicingReferenceType" appInvalidFeedback>
             <option value="ADDRESSEE_CODE" translate="invoice-fields.addressee-code"></option>
             <option value="PEC" translate="invoice-fields.pec"></option>
             <option value="NONE" translate="invoice.fields.neither"></option>

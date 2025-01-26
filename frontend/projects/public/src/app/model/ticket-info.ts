@@ -1,4 +1,5 @@
 import {DatesWithOffset, DateValidity} from './date-validity';
+import {AdditionalServiceWithData} from './reservation-info';
 
 export class TicketInfo implements DateValidity {
     fullName: string;
@@ -19,4 +20,6 @@ export class TicketInfo implements DateValidity {
     formattedBeginTime: {[key: string]: string}; // the hour/minute component
     formattedEndDate: {[key: string]: string};
     formattedEndTime: {[key: string]: string};
+
+    additionalServiceWithData?: Array<AdditionalServiceWithData>;
 }

@@ -38,7 +38,7 @@
 
     <div class="row mt-5">
       <div class="col-12 col-lg-6">
-        <app-basic-subscription-info [cardLayout]="false" [subscription]="subscription" [owner]="subscriptionInfo.owner"></app-basic-subscription-info>
+        <app-basic-subscription-info [cardLayout]="false" [subscription]="subscription" [owner]="subscriptionInfo.owner" [fieldConfigurationBeforeStandard]="subscriptionInfo.fieldConfigurationBeforeStandard" [fieldConfigurationAfterStandard]="subscriptionInfo.fieldConfigurationAfterStandard"></app-basic-subscription-info>
         <p class="lead">
           <span *ngIf="subscriptionInfo.usageDetails.used > 0">{{ 'reservation-page-complete.subscription.usage' | translate:{'0': subscriptionInfo.usageDetails.used} }}</span>
           <span *ngIf="subscriptionInfo.usageDetails.available">&nbsp;{{ 'reservation-page-complete.subscription.usage.available' | translate: {'0': subscriptionInfo.usageDetails.available} }}</span>
