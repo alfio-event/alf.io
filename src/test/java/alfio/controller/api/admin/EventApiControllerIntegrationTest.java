@@ -1,16 +1,16 @@
 /**
  * This file is part of alf.io.
- *
+ * <p>
  * alf.io is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * <p>
  * alf.io is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -24,6 +24,7 @@ import alfio.manager.AdminReservationRequestManager;
 import alfio.manager.EventManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
+import alfio.model.PromoCodeDiscount;
 import alfio.model.TicketCategory;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.AdminReservationModification;
@@ -31,8 +32,10 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.repository.EventDeleterRepository;
 import alfio.repository.EventRepository;
+import alfio.repository.PromoCodeDiscountRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
+import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.AlfioIntegrationTest;
@@ -58,7 +61,10 @@ import java.util.Collections;
 import java.util.List;
 
 import static alfio.controller.api.admin.EventApiController.FIXED_FIELDS;
-import static alfio.test.util.IntegrationTestUtil.*;
+import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
+import static alfio.test.util.IntegrationTestUtil.DESCRIPTION;
+import static alfio.test.util.IntegrationTestUtil.initEvent;
+import static alfio.test.util.IntegrationTestUtil.owner;
 import static alfio.test.util.TestUtil.clockProvider;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -92,6 +98,10 @@ class EventApiControllerIntegrationTest {
     private TicketCategoryRepository ticketCategoryRepository;
     @Autowired
     private TicketRepository ticketRepository;
+    @Autowired
+    private PromoCodeDiscountRepository promoCodeDiscountRepository;
+    @Autowired
+    private TicketReservationRepository ticketReservationRepository;
 
     private Event event;
     private static final String TEST_ATTENDEE_EXTERNAL_REFERENCE = "123";
@@ -99,6 +109,7 @@ class EventApiControllerIntegrationTest {
     private static final String TEST_ATTENDEE_FIRST_NAME = "Attendee";
     private static final String TEST_ATTENDEE_LAST_NAME = "Test";
     private static final String TEST_ATTENDEE_EMAIL = "attendee@test.com";
+    private static final String TEST_PROMO_CODE = "test-promo-code";
 
     @Test
     void getAllEventsForExternalInPerson() {
@@ -152,6 +163,7 @@ class EventApiControllerIntegrationTest {
         when(principal.getName()).thenReturn(owner(eventAndUser.getValue()));
         var modification = getTestAdminReservationModification();
         var result = this.attendeeBulkImportApiController.createReservations(eventAndUser.getKey().getShortName(), modification, false, principal);
+        var organizationId = organizationRepository.findAllForUser(eventAndUser.getRight()).get(0).getId();
 
         // GIVEN - invocation of async processing job
         var requestStatus = this.attendeeBulkImportApiController.getRequestsStatus(eventAndUser.getKey().getShortName(), result.getData(), principal);
@@ -159,6 +171,7 @@ class EventApiControllerIntegrationTest {
 
         // WHEN - processing of pending reservations completes
         this.adminReservationRequestManager.processPendingReservations();
+        createPromoCode(organizationId, modification.getCustomerData().getEmailAddress());
 
         // THEN - assert correctness of data persisted
         var tickets = this.ticketRepository.findAllConfirmedForCSV(event.getId());
@@ -178,7 +191,7 @@ class EventApiControllerIntegrationTest {
         String expectedTestAttendeeCsvLine = "\""+foundTicket.getUuid()+"\""+",default,"+"\""+event.getShortName()+"\""+",ACQUIRED,0,0,0,0,"+"\""+foundTicket.getTicketsReservationId()+"\""+",\""+TEST_ATTENDEE_FIRST_NAME+" "+TEST_ATTENDEE_LAST_NAME+"\","+TEST_ATTENDEE_FIRST_NAME+","+TEST_ATTENDEE_LAST_NAME+","+TEST_ATTENDEE_EMAIL+",false,"+TEST_ATTENDEE_USER_LANGUAGE;
         String returnedCsvContent = mockResponse.getContentAsString().trim().replace("\uFEFF", ""); // remove BOM
         assertTrue(returnedCsvContent.startsWith(getExpectedHeaderCsvLine() + "\n" + expectedTestAttendeeCsvLine));
-        assertTrue(returnedCsvContent.endsWith("\"Billing Address\",,,," + TEST_ATTENDEE_EXTERNAL_REFERENCE));
+        assertTrue(returnedCsvContent.endsWith("\"Billing Address\",,"+TEST_PROMO_CODE+",,," + TEST_ATTENDEE_EXTERNAL_REFERENCE));
     }
 
     private AdminReservationModification getTestAdminReservationModification() {
@@ -202,6 +215,14 @@ class EventApiControllerIntegrationTest {
 
     }
 
+    private void createPromoCode(int organizationId, String email) {
+        var eventId = event.getId();
+        promoCodeDiscountRepository.addPromoCode(TEST_PROMO_CODE, eventId, organizationId, ZonedDateTime.now(), ZonedDateTime.now()
+                                                                                                                             .plusDays(3), 10, PromoCodeDiscount.DiscountType.FIXED_AMOUNT, "[1,2,3]", 1, "test promo code", "test-email@gmail.com", PromoCodeDiscount.CodeType.DISCOUNT, 21, "usd");
+        var promoCodeId = promoCodeDiscountRepository.findAllInEvent(eventId).get(0).getId();
+        ticketReservationRepository.setPromotionCodeDiscountId(email, promoCodeId);
+    }
+
     private String getExpectedHeaderCsvLine() {
         String expectedHeaderCsvLine = String.join(",", FIXED_FIELDS);
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Full Name", "\"Full Name\"");
@@ -209,6 +230,7 @@ class EventApiControllerIntegrationTest {
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Last Name", "\"Last Name\"");
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Billing Address", "\"Billing Address\"");
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Country Code", "\"Country Code\"");
+        expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Voucher Code", "\"Voucher Code\"");
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Payment ID", "\"Payment ID\"");
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Payment Method", "\"Payment Method\"");
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("External Reference", "\"External Reference\"");

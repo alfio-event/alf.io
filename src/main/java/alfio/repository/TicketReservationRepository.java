@@ -1,22 +1,32 @@
 /**
  * This file is part of alf.io.
- *
+ * <p>
  * alf.io is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * <p>
  * alf.io is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
 package alfio.repository;
 
-import alfio.model.*;
+import alfio.model.BillingDetails;
+import alfio.model.PriceContainer;
+import alfio.model.ReservationIdAndEventId;
+import alfio.model.ReservationMetadata;
+import alfio.model.ReservationWithPurchaseContext;
+import alfio.model.TicketReservation;
+import alfio.model.TicketReservationAdditionalInfo;
+import alfio.model.TicketReservationInfo;
+import alfio.model.TicketReservationStatusAndValidation;
+import alfio.model.TicketReservationWithEventIdentifier;
+import alfio.model.TicketsByDateStatistic;
 import alfio.model.support.Array;
 import alfio.model.support.JSONData;
 import alfio.model.support.UserIdAndOrganizationId;
@@ -26,7 +36,12 @@ import ch.digitalfondue.npjt.QueryRepository;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 @QueryRepository
 public interface TicketReservationRepository {
@@ -45,6 +60,12 @@ public interface TicketReservationRepository {
                              @Bind("currencyCode") String currencyCode,
                              @Bind("organizationId") int organizationId,
                              @Bind("userId") Integer userId);
+
+    @Query("""
+             update tickets_reservation set promo_code_id_fk = :promotionCodeDiscountId\
+             where email_address = :email
+        """)
+    int setPromotionCodeDiscountId(@Bind("email") String email, @Bind("promotionCodeDiscountId") Integer promotionCodeDiscountId);
 
     @Query("update tickets_reservation set user_id_fk = :userId where id = :reservationId")
     int setReservationOwner(@Bind("reservationId") String reservationId, @Bind("userId") Integer userId);
@@ -177,7 +198,7 @@ public interface TicketReservationRepository {
                           @Bind("vatCountry") String country,
                           @Bind("invoiceRequested") boolean invoiceRequested,
                           @Bind("reservationId") String reservationId);
-    
+
 
     @Query("select min(confirmation_ts) from tickets_reservation where event_id_fk = :eventId and confirmation_ts is not null")
     Optional<ZonedDateTime> getFirstConfirmationTimestampForEvent(@Bind("eventId") int eventId);
@@ -202,7 +223,6 @@ public interface TicketReservationRepository {
          group by 1 order by 1\
         """)
     List<TicketsByDateStatistic> getReservedStatistic(@Bind("eventId") int eventId, @Bind("fromDate") ZonedDateTime from, @Bind("toDate") ZonedDateTime to, @Bind("granularity") String granularity);
-
 
 
     @Query("select id, event_id_fk from tickets_reservation where id in (:ids) and event_id_fk is not null")
@@ -285,7 +305,7 @@ public interface TicketReservationRepository {
 
 
     default Integer countTicketsInReservationForCategories(String reservationId, Collection<Integer> categories) {
-        if(categories == null || categories.isEmpty()) {
+        if (categories == null || categories.isEmpty()) {
             return this.countTicketsInReservationNoCategories(reservationId);
         } else {
             return this.countTicketsInReservationForExistingCategories(reservationId, categories);
