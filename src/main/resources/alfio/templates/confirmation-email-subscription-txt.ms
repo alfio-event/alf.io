@@ -1,7 +1,7 @@
 {{purchaseContextTitle}}
 
 {{#i18n}}email.hello [{{fullName}}]{{/i18n}}
-{{custom-header-text}}
+{{#render-markdown}}{{custom-header-text}}.text{{/render-markdown}}
 {{^orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.subscription.completed{{/i18n}}{{/orderSummary.waitingForPayment}}
 {{#orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.subscription.waiting-for-payment [{{reservationUrl}}]{{/i18n}}{{/orderSummary.waitingForPayment}}
 
@@ -35,9 +35,9 @@
 {{^orderSummary.free}}{{#hasVat}}{{#i18n}}email-confirmation.vatNr [{{vatTranslation}}]{{/i18n}}: {{vatNr}}{{/hasVat}}{{/orderSummary.free}}
 
 {{#i18n}}email-confirmation.order-information{{/i18n}}: {{ticketReservation.id}}
-{{custom-body-text}}
+{{#render-markdown}}{{custom-body-text}}.text{{/render-markdown}}
 
-{{custom-footer-text}}
+{{#render-markdown}}{{custom-footer-text}}.text{{/render-markdown}}
 {{#i18n}}email.kind-regards{{/i18n}}
 
 {{organization.name}} <{{organization.email}}>
