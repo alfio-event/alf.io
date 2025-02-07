@@ -78,7 +78,7 @@ public class AdditionalFieldApiController {
         final Map<Long, List<PurchaseContextFieldDescription>> descById = purchaseContextFieldManager.findDescriptionsGroupedByFieldId(purchaseContext);
         return purchaseContextFieldManager.findAdditionalFields(purchaseContext).stream()
             .map(field -> new FieldConfigurationAndAllDescriptions(field, descById.getOrDefault(field.getId(), Collections.emptyList())))
-            .collect(toList());
+            .toList();
     }
 
     @GetMapping("/{id}/stats")
@@ -93,7 +93,6 @@ public class AdditionalFieldApiController {
     }
 
     @PostMapping(
-        // "/events/{eventName}/additional-field/new" // old
         "/new"
     )
     public ValidationResult addAdditionalField(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,

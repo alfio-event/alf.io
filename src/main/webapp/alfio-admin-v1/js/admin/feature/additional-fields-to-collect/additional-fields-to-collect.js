@@ -355,8 +355,8 @@
                     _.forEach(result.data.validationErrors, function(error) {
                         var field = fieldsContainer[error.fieldName];
                         if(angular.isDefined(field)) {
-                            if (error.code === ERROR_CODES.DUPLICATE) {
-                                field.$setValidity(ERROR_CODES.DUPLICATE, false);
+                            if (error.code === ERROR_CODES.DUPLICATE || error.code === 'pattern') {
+                                field.$setValidity(error.code, false);
                                 field.$setTouched();
                             } else {
                                 field.$setValidity('required', false);

@@ -58,6 +58,7 @@ public final class Validator {
     private static final Pattern SIMPLE_E_MAIL_PATTERN = Pattern.compile("^\\p{javaLetterOrDigit}[^\\s@]*@\\p{javaLetterOrDigit}[^\\s]*$");
     // this regex validates the e-mail to be a canonical address (i.e. test@example.org)
     private static final Pattern CANONICAL_MAIL_VALIDATOR = Pattern.compile("^\\p{javaLetterOrDigit}[^\\s@]*@\\p{javaLetterOrDigit}[^\\s@]*\\.\\p{javaAlphabetic}{2,}$");
+    private static final Pattern FIELD_NAME_VALIDATOR = Pattern.compile("^[a-zA-Z0-9][a-zA-Z0-9-_]*$");
     private static final String ERROR_DESCRIPTION = "error.description";
     private static final String EMAIL_KEY = "email";
     private static final String ERROR_EMAIL = "error.email";
@@ -211,7 +212,7 @@ public final class Validator {
         if (errors.hasFieldErrors()) {
             return ValidationResult.failed(errors.getFieldErrors()
                     .stream().map(ValidationResult.ErrorDescriptor::fromFieldError)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
         return ValidationResult.success();
     }
@@ -287,8 +288,7 @@ public final class Validator {
                     }
                     boolean included = isAdditionalServiceIncluded(f, additionalServiceIds);
                     return included && (!eventSupportsAdditionalFieldsLink || checkLinked(ticket, additionalServiceItems, f));
-                })
-                .collect(Collectors.toList());
+                }).toList();
         }
 
         private static boolean checkLinked(Ticket ticket, List<AdditionalServiceItem> additionalServiceItems, PurchaseContextFieldConfiguration tfc) {
@@ -664,11 +664,17 @@ public final class Validator {
     }
 
     public static ValidationResult validateAdditionalFields(List<PurchaseContextFieldConfiguration> fieldConf, AdditionalFieldRequest field, Errors errors){
-        String duplicateName = fieldConf.stream().filter(f->f.getName().equalsIgnoreCase(field.getName())).map(PurchaseContextFieldConfiguration::getName).findAny().orElse("");
+        String duplicateName = fieldConf.stream().map(PurchaseContextFieldConfiguration::getName).filter(name -> name.equalsIgnoreCase(field.getName())).findAny().orElse("");
         if(StringUtils.isNotBlank(duplicateName)){
             errors.rejectValue("name", ErrorCode.DUPLICATE);
+        } else if (!validateAdditionalInfoName(field.getName())) {
+            errors.rejectValue("name", "pattern");
         }
         return evaluateValidationResult(errors);
+    }
+
+    public static boolean validateAdditionalInfoName(String additionalInfoName) {
+        return FIELD_NAME_VALIDATOR.matcher(additionalInfoName).matches();
     }
 
     @RequiredArgsConstructor

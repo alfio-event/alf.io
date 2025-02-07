@@ -44,6 +44,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.ExtensionRepository;
 import alfio.util.Json;
+import alfio.util.Validator;
 import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -105,6 +106,7 @@ public class EventApiV1Controller {
             .checkPrecondition(() -> isNotBlank(request.getTimezone()), ErrorCode.custom("invalid.timezone", "Invalid Timezone"))
             .checkPrecondition(() -> isNotBlank(imageRef), ErrorCode.custom("invalid.image", "Image is either missing or too big (max 200kb)"))
             .checkPrecondition(() -> validateCategoriesSalesPeriod(request), ErrorCode.custom("invalid.categories", "Ticket categories: sales period not compatible with event dates"))
+            .checkPrecondition(() -> validateAdditionalFields(request), ErrorCode.custom("invalid.additionalInfo", "Additional info not valid"))
             .checkPrecondition(() -> {
                 EventModification eventModification = request.toEventModification(organization, eventNameManager::generateShortName, imageRef);
                 errorsContainer.set(new BeanPropertyBindingResult(eventModification, "event"));
@@ -125,6 +127,12 @@ public class EventApiV1Controller {
             return ResponseEntity.badRequest().body(Json.toJson(result.getErrors()));
         }
 
+    }
+
+    private boolean validateAdditionalFields(EventCreationRequest request) {
+        return request.getAdditionalInfo().isEmpty() || request.getAdditionalInfo()
+            .stream()
+            .allMatch(f -> Validator.validateAdditionalInfoName(f.getName()));
     }
 
     private boolean validateCategoriesSalesPeriod(EventCreationRequest request) {
@@ -335,7 +343,7 @@ public class EventApiV1Controller {
                                 return pair.getRight().isPresent();
                             })
                             .map(pair -> new ExtensionMetadataValue(pair.getRight().get().getId(), pair.getLeft().getValue()))
-                            .collect(Collectors.toList());
+                            .toList();
                         extensionService.bulkUpdateEventSettings(organization, event, values);
                     });
 
