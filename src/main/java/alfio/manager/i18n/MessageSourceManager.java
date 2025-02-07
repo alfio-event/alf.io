@@ -97,7 +97,9 @@ public class MessageSourceManager {
 
     public static Map<String, Map<String, String>> convertPlaceholdersForEachLanguage(Map<String, Map<String, String>> bundles) {
         Map<String, Map<String, String>> res = new HashMap<>(bundles.size());
-        bundles.forEach((l, b) -> res.put(l, convertPlaceholders(b)));
+        bundles.entrySet().stream()
+            .filter(entry -> entry.getValue() != null)
+            .forEach(entry -> res.put(entry.getKey(), convertPlaceholders(entry.getValue())));
         return res;
     }
 
@@ -126,7 +128,9 @@ public class MessageSourceManager {
 
         private MessageSourceWithOverride(CustomResourceBundleMessageSource messageSource, Map<String, Map<String, String>> override) {
             this.messageSource = messageSource;
-            this.override = override;
+            this.override = override.entrySet().stream()
+                .filter(entry -> entry.getValue() != null)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
 
         @Override
@@ -146,7 +150,7 @@ public class MessageSourceManager {
 
     static Map<String, String> cleanTranslationsForFrontend(Map<String, String> translations) {
         return translations.entrySet().stream()
-            .map(entry -> Pair.of(entry.getKey(), cleanArguments(entry.getValue(), "{{$1}}").replaceAll("''", "'")))
+            .map(entry -> Pair.of(entry.getKey(), cleanArguments(entry.getValue(), "{{$1}}").replace("''", "'")))
             .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
     }
 }

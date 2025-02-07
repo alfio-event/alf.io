@@ -973,7 +973,7 @@
             templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/configuration/setting.html',
             link: angular.noop,
             controller: function($scope, $rootScope, ConfigurationService) {
-                $scope.displayDelete = $scope.displayDeleteIfNeeded && angular.isDefined($scope.setting) && !angular.isDefined($scope.setting.pluginId);
+                $scope.displayDelete = $scope.displayDeleteIfNeeded && $scope.setting && !angular.isDefined($scope.setting.pluginId);
                 $scope.removeConfiguration = function(config) {
                     $scope.loading = true;
                     $scope.deleteHandler({config: config}).then(function() {$rootScope.$broadcast('ReloadSettings');});
