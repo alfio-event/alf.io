@@ -130,7 +130,7 @@ public class EventApiV1Controller {
     }
 
     private boolean validateAdditionalFields(EventCreationRequest request) {
-        return request.getAdditionalInfo().isEmpty() || request.getAdditionalInfo()
+        return CollectionUtils.isEmpty(request.getAdditionalInfo()) || request.getAdditionalInfo()
             .stream()
             .allMatch(f -> Validator.validateAdditionalInfoName(f.getName()));
     }
