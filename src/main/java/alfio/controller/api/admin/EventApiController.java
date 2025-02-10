@@ -357,7 +357,7 @@ public class EventApiController {
 
     private static final String PAYMENT_METHOD = "Payment Method";
     private static final String EXTERNAL_REFERENCE = "External Reference";
-    static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Country Code", "Payment ID", PAYMENT_METHOD, EXTERNAL_REFERENCE);
+    static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Country Code", "Voucher Code" ,"Payment ID", PAYMENT_METHOD, EXTERNAL_REFERENCE);
     private static final List<SerializablePair<String, String>> FIXED_PAIRS = FIXED_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList());
     private static final String FISCAL_CODE = "Fiscal Code";
     private static final String REFERENCE_TYPE = "Reference Type";
@@ -429,6 +429,7 @@ public class EventApiController {
             if(fields.contains("Confirmation")) {line.add(reservation.getConfirmationTimestamp().withZoneSameInstant(eventZoneId).toString());}
             if(fields.contains("Billing Address")) {line.add(reservation.getBillingAddress());}
             if(fields.contains("Country Code")) {line.add(reservation.getVatCountryCode());}
+            if(fields.contains("Voucher Code")) {line.add(trs.getPromoCode());}
             boolean paymentIdRequested = fields.contains("Payment ID");
             boolean paymentGatewayRequested = fields.contains(PAYMENT_METHOD);
             if((paymentIdRequested || paymentGatewayRequested)) {
