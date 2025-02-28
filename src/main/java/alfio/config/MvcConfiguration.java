@@ -41,6 +41,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatchers;
 import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.jdbc.PostgreSqlJdbcIndexedSessionRepositoryCustomizer;
 import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 import org.springframework.session.web.http.*;
@@ -223,5 +224,10 @@ public class MvcConfiguration implements WebMvcConfigurer {
                 return publicRequestMatcher.matches(request);
             }
         };
+    }
+
+    @Bean
+    public PostgreSqlJdbcIndexedSessionRepositoryCustomizer sessionRepositoryCustomizer() {
+        return new PostgreSqlJdbcIndexedSessionRepositoryCustomizer();
     }
 }
