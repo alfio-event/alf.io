@@ -9,6 +9,7 @@ import {TicketCategory} from '../model/ticket-category';
 import {ReservationRequest} from '../model/reservation-request';
 import {handleServerSideValidationError} from '../shared/validation-helper';
 import {debounceTime, Subject, Subscription, zip} from 'rxjs';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {AdditionalService} from '../model/additional-service';
 import {I18nService} from '../shared/i18n.service';
 import {WaitingListSubscriptionRequest} from '../model/waiting-list-subscription-request';
@@ -106,6 +107,15 @@ export class EventDisplayComponent implements OnInit, OnDestroy {
 
         this.promoCodeForm = this.formBuilder.group({
           promoCode: this.formBuilder.control(code)
+        });
+
+	//Add changes to handle always uppercase for promocode
+	this.promoCodeForm.get('promoCode').valueChanges
+	  .pipe(takeUntilDestroyed(this))
+	  .subscribe(value=> { 
+	    if (value) {
+	      this.promoCodeForm.get('promoCode').setValue(value.toUpperCase(), { emitEvent: false });
+	  }
         });
 
         this.applyItemsByCat(itemsByCat);
