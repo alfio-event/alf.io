@@ -20,6 +20,7 @@ import alfio.config.authentication.support.APIKeyAuthFilter;
 import alfio.config.authentication.support.APITokenAuthentication;
 import alfio.config.authentication.support.RequestTypeMatchers;
 import alfio.config.authentication.support.WrongAccountTypeException;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.User;
 import alfio.repository.system.ConfigurationRepository;
@@ -52,14 +53,14 @@ public class APITokenAuthWebSecurity {
     public static final String API_KEY = "Api key ";
     private final UserRepository userRepository;
     private final AuthorityRepository authorityRepository;
-    private final ConfigurationRepository configurationRepository;
+    private final ConfigurationManager configurationManager;
 
     public APITokenAuthWebSecurity(UserRepository userRepository,
                                    AuthorityRepository authorityRepository,
-                                   ConfigurationRepository configurationRepository) {
+                                   ConfigurationManager configurationManager) {
         this.userRepository = userRepository;
         this.authorityRepository = authorityRepository;
-        this.configurationRepository = configurationRepository;
+        this.configurationManager = configurationManager;
     }
 
     //https://stackoverflow.com/a/48448901
@@ -73,7 +74,7 @@ public class APITokenAuthWebSecurity {
             String apiKey = (String) authentication.getPrincipal();
 
             // check if API Key is system
-            var systemApiKeyOptional = configurationRepository.findOptionalByKey(ConfigurationKeys.SYSTEM_API_KEY.name());
+            var systemApiKeyOptional = configurationManager.getForSystem(ConfigurationKeys.SYSTEM_API_KEY).getValue();
 
             if (systemApiKeyOptional.isPresent() && apiKeyMatches(apiKey, systemApiKeyOptional.get())) {
                 return new APITokenAuthentication(
@@ -123,8 +124,8 @@ public class APITokenAuthWebSecurity {
             .requestMatchers("/**").authenticated();
     }
 
-    private static boolean apiKeyMatches(String input, alfio.model.system.Configuration systemApiKeyConfiguration) {
+    private static boolean apiKeyMatches(String input, String configurationValue) {
         return MessageDigest.isEqual(input.getBytes(StandardCharsets.UTF_8),
-            systemApiKeyConfiguration.getValue().getBytes(StandardCharsets.UTF_8));
+            configurationValue.getBytes(StandardCharsets.UTF_8));
     }
 }
