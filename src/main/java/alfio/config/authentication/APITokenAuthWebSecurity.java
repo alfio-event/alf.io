@@ -23,7 +23,6 @@ import alfio.config.authentication.support.WrongAccountTypeException;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.User;
-import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.ClockProvider;
@@ -39,6 +38,7 @@ import org.springframework.security.config.annotation.web.configurers.AuthorizeH
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.NullSecurityContextRepository;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -101,6 +101,8 @@ public class APITokenAuthWebSecurity {
                 authorityRepository.findRoles(apiKey).stream().map(SimpleGrantedAuthority::new).toList());
         });
 
+        // do NOT attempt to persist context in session
+        filter.setSecurityContextRepository(new NullSecurityContextRepository());
 
         return http.securityMatchers(matchers -> matchers.requestMatchers(RequestTypeMatchers::isTokenAuthentication))
             .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
