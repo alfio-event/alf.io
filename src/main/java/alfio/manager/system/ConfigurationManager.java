@@ -334,6 +334,10 @@ public class ConfigurationManager {
         return getFirstConfigurationResult(configurationRepository.findByOrganizationAndKey(organizationId, key.name()), keyAsString);
     }
 
+    public boolean isNotifyOrganizerOnReservationEnabled(Configurable configurable) {
+        return getFor(NOTIFY_ORGANIZER_ON_RESERVATION, configurable.getConfigurationLevel()).getValueAsBooleanOrDefault();
+    }
+
     public String getSingleConfigForEvent(int eventId, String keyAsString, String username) {
         User user = userManager.findUserByUsername(username);
         EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
