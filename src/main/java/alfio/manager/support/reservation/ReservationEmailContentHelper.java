@@ -189,11 +189,12 @@ public class ReservationEmailContentHelper {
             attachments = generateAttachmentForConfirmationEmail(purchaseContext, ticketReservation, language, summary, username);
         }
 
-
-        String shortReservationID = configurationManager.getShortReservationID(purchaseContext, ticketReservation);
-        notificationManager.sendSimpleEmail(purchaseContext, null, organization.getEmail(), cc, "Reservation complete " + shortReservationID,
-            () -> templateManager.renderTemplate(purchaseContext, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, reservationEmailModel, language),
-            attachments);
+        if(configurationManager.isNotifyOrganizerOnReservationEnabled(purchaseContext)){
+            String shortReservationID = configurationManager.getShortReservationID(purchaseContext, ticketReservation);
+            notificationManager.sendSimpleEmail(purchaseContext, null, organization.getEmail(), cc, "Reservation complete " + shortReservationID,
+                () -> templateManager.renderTemplate(purchaseContext, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, reservationEmailModel, language),
+                attachments);
+        }
     }
 
     private static boolean mustGenerateBillingDocument(OrderSummary summary, TicketReservation ticketReservation) {
