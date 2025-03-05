@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.io.IOException;
@@ -79,7 +80,7 @@ public class Organization {
      * @deprecated use {@link #getExternalId()}
      * @return the external ID, if present
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public String getNameOpenId() {
         return externalId;
     }
@@ -104,7 +105,8 @@ public class Organization {
                 gen.writeStringField("name", value.getName());
                 gen.writeStringField("email", value.getEmail());
                 gen.writeStringField("description", value.getDescription());
-                if(RequestUtils.isAdmin(SecurityContextHolder.getContext().getAuthentication())) {
+                var authentication = SecurityContextHolder.getContext().getAuthentication();
+                if(RequestUtils.isAdmin(authentication) || RequestUtils.isSystemApiKey(authentication)) {
                     gen.writeStringField("externalId", value.getExternalId());
                     gen.writeStringField("slug", value.getSlug());
                 } else {
