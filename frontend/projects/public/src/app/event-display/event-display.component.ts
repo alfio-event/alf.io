@@ -62,6 +62,8 @@ export class EventDisplayComponent implements OnInit, OnDestroy {
   private dynamicDiscount: DynamicDiscount;
   private refreshDebouncer = new Subject<any>();
   private subscription?: Subscription;
+  private promoCodeSubscription?: Subscription; //Fix for #1437
+
   submitInProgress: boolean = false;
   refreshInProgress: boolean = false;
 
@@ -108,6 +110,14 @@ export class EventDisplayComponent implements OnInit, OnDestroy {
           promoCode: this.formBuilder.control(code)
         });
 
+	// Added for #1437
+        this.promoCodeSubscription = this.promoCodeForm.get('promoCode').valueChanges
+	  .subscribe(value => {
+	    if (value) {
+	      this.promoCodeForm.get('promoCode').setValue(value.toUpperCase(), { emitEvent: false });
+	  }
+	});
+
         this.applyItemsByCat(itemsByCat);
         this.analytics.pageView(event.analyticsConfiguration);
 
@@ -120,6 +130,7 @@ export class EventDisplayComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
       this.subscription?.unsubscribe();
+      this.promoCodeSubscription?.unsubscribe(); //Added for #1437
   }
 
   private applyItemsByCat(itemsByCat: ItemsByCategory) {
