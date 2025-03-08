@@ -38,7 +38,7 @@
             if (!ctrl.paymentInfo.supportRefund && ctrl.canGenerateCreditNote && ctrl.issueCreditNote) {
                 // if payment provider does not support refund, but credit note has been requested,
                 // we simulate a refund anyway, otherwise credit note does
-                ctrl.toRefund = [ctrl.ticketId];
+                ctrl.toRefund[ctrl.ticketId] = true;
             }
             return EventService.removeTickets(ctrl.event.shortName, ctrl.reservationId, [ctrl.ticketId], ctrl.toRefund, ctrl.notify, ctrl.issueCreditNote).then(function(result) {
                 ctrl.onSuccess({ result: result.data.data.creditNoteGenerated });

@@ -17,6 +17,7 @@
 package alfio.repository;
 
 import alfio.model.*;
+import alfio.model.support.Array;
 import alfio.model.support.JSONData;
 import alfio.model.support.UserIdAndOrganizationId;
 import ch.digitalfondue.npjt.Bind;
@@ -53,6 +54,12 @@ public interface TicketReservationRepository {
 
     @Query("select * from tickets_reservation tr join ba_user u on u.id = tr.user_id_fk where u.username = :username")
     List<TicketReservation> loadByOwner(@Bind("username") String username);
+
+    @Query("select user_language from tickets_reservation where id = :reservationId")
+    String loadUserLanguage(@Bind("reservationId") String reservationId);
+
+    @Query("update tickets_reservation set billing_address = :billingAddress where id = :reservationId")
+    int updateBillingAddress(@Bind("billingAddress") String billingAddress, @Bind("reservationId") String reservationId);
 
     @Query("""
         update tickets_reservation set status = :status, full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email,\
@@ -321,6 +328,14 @@ public interface TicketReservationRepository {
 
     @Query("select count(id) from tickets_reservation where id in (:ids) and event_id_fk = :eventId")
     int countReservationsWithEventId(@Bind("ids") Set<String> reservationIds, @Bind("eventId") int eventId);
+
+
+    @Query("""
+        SELECT count(id) from tickets_reservation where id like ANY(
+                    select s || '%' from unnest(:ids::text[]) s(s)
+                ) and event_id_fk = :eventId
+        """)
+    int countReservationWithShortIdsForEvent(@Bind("ids") @Array List<String> reservationIds, @Bind("eventId") int eventId);
 
     @Query("select exists(select id from b_transaction where id = :transactionId and reservation_id = reservationId)")
     boolean hasReservationWithTransactionId(@Bind("reservationId") String reservationId, @Bind("transactionId") int transactionId);

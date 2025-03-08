@@ -356,7 +356,8 @@ public class EventApiController {
     }
 
     private static final String PAYMENT_METHOD = "Payment Method";
-    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Country Code", "Payment ID", PAYMENT_METHOD);
+    private static final String EXTERNAL_REFERENCE = "External Reference";
+    static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Country Code", "Payment ID", PAYMENT_METHOD, EXTERNAL_REFERENCE);
     private static final List<SerializablePair<String, String>> FIXED_PAIRS = FIXED_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList());
     private static final String FISCAL_CODE = "Fiscal Code";
     private static final String REFERENCE_TYPE = "Reference Type";
@@ -435,6 +436,7 @@ public class EventApiController {
                 if(paymentIdRequested) { line.add(Objects.toString(transaction.map(Transaction::getPaymentId).orElse(null), transaction.map(Transaction::getTransactionId).orElse(""))); }
                 if(paymentGatewayRequested) { line.add(transaction.map(tr -> tr.getPaymentProxy().name()).orElse("")); }
             }
+            if(fields.contains(EXTERNAL_REFERENCE)) {line.add(t.getExtReference());}
 
             if(eInvoicingEnabled) {
                 var billingDetails = trs.getBillingDetails();
@@ -584,9 +586,8 @@ public class EventApiController {
                                                                   Principal principal,
                                                                   @RequestBody UploadBase64FileModification file) throws IOException {
         record Transaction(String reservationId, BigDecimal price) {}
-        var csvMapper = new CsvMapper();
         try(InputStreamReader isr = new InputStreamReader(file.getInputStream(), UTF_8)) {
-            MappingIterator<List<String>> iterator = csvMapper.readerFor(Transaction.class)
+            MappingIterator<List<String>> iterator = new CsvMapper().readerForListOf(String.class)
                 .with(CsvSchema.emptySchema().withoutHeader())
                 .with(CsvParser.Feature.WRAP_AS_ARRAY)
                 .readValues(isr);
@@ -598,7 +599,7 @@ public class EventApiController {
             var reservationIds = all.stream()
                 .map(Transaction::reservationId)
                 .collect(Collectors.toSet());
-            accessService.checkEventAndReservationOwnership(principal, eventName, reservationIds);
+            accessService.checkEventAndReservationOwnership(principal, eventName, reservationIds, true);
 
             Event event = loadEvent(eventName, principal);
             return all.stream()
@@ -663,16 +664,14 @@ public class EventApiController {
         Optional<byte[]> pdf;
         var language = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
 
-        switch(document.getType()) {
-            case CREDIT_NOTE:
-                pdf = TemplateProcessor.buildCreditNotePdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
-                break;
-            case RECEIPT:
-                pdf = TemplateProcessor.buildReceiptPdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
-                break;
-            default:
-                pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
-        }
+        pdf = switch (document.getType()) {
+            case CREDIT_NOTE ->
+                TemplateProcessor.buildCreditNotePdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
+            case RECEIPT ->
+                TemplateProcessor.buildReceiptPdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
+            default ->
+                TemplateProcessor.buildInvoicePdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
+        };
 
         if (pdf.isPresent()) {
             String fileName = FileUtil.getBillingDocumentFileName(event.getShortName(), reservation.getId(), document);

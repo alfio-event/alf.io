@@ -1727,7 +1727,7 @@ public class TicketReservationManager {
         Validate.isTrue(ticketReservationRepository.setMetadata(reservationId, metadata) == 1, "Error while updating metadata");
     }
 
-    static String buildCompleteBillingAddress(CustomerName customerName,
+    public static String buildCompleteBillingAddress(CustomerName customerName,
                                               String billingAddressCompany,
                                               String billingAddressLine1,
                                               String billingAddressLine2,
@@ -1750,7 +1750,7 @@ public class TicketReservationManager {
                 .orElse(null);
         }
 
-        return Arrays.stream(stripAll(Objects.toString(companyName, fullName), billingAddressLine1, billingAddressLine2, stripToEmpty(billingAddressZip) + " " + stripToEmpty(billingAddressCity) + " " + stripToEmpty(billingAddressState), stripToNull(country)))
+        return Arrays.stream(stripAll(Objects.requireNonNullElse(companyName, fullName), billingAddressLine1, billingAddressLine2, stripToEmpty(billingAddressZip) + " " + stripToEmpty(billingAddressCity) + " " + stripToEmpty(billingAddressState), stripToNull(country)))
             .filter(Predicate.not(StringUtils::isEmpty))
             .collect(joining("\n"));
     }
@@ -1908,21 +1908,16 @@ public class TicketReservationManager {
                 var paymentWebhookResult = providerAndWebhookResult.getRight();
                 handlePaymentWebhookResult(purchaseContext, providerAndWebhookResult.getLeft(), paymentWebhookResult, reservation, transaction, paymentContext, "force-check", true);
 
-                switch(paymentWebhookResult.getType()) {
-                    case FAILED:
-                    case REJECTED:
-                    case CANCELLED:
-                        return PaymentResult.failed(paymentWebhookResult.getReason());
-                    case NOT_RELEVANT:
-                    case ERROR:
+                return switch (paymentWebhookResult.getType()) {
+                    case FAILED, REJECTED, CANCELLED -> PaymentResult.failed(paymentWebhookResult.getReason());
+                    case NOT_RELEVANT, ERROR ->
                         // to be on the safe side, we ignore errors when trying to reload the payment
                         // because they could be caused by network/availability problems
-                        return PaymentResult.pending(transaction.getPaymentId());
-                    case TRANSACTION_INITIATED:
-                        return StringUtils.isNotEmpty(paymentWebhookResult.getRedirectUrl()) ? PaymentResult.redirect(paymentWebhookResult.getRedirectUrl()) : PaymentResult.pending(transaction.getPaymentId());
-                    default:
-                        return PaymentResult.successful(paymentWebhookResult.getPaymentToken().getToken());
-                }
+                        PaymentResult.pending(transaction.getPaymentId());
+                    case TRANSACTION_INITIATED ->
+                        StringUtils.isNotEmpty(paymentWebhookResult.getRedirectUrl()) ? PaymentResult.redirect(paymentWebhookResult.getRedirectUrl()) : PaymentResult.pending(transaction.getPaymentId());
+                    default -> PaymentResult.successful(paymentWebhookResult.getPaymentToken().getToken());
+                };
 
             });
     }

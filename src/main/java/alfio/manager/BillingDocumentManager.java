@@ -100,16 +100,14 @@ public class BillingDocumentManager {
         model.put("eventId", purchaseContext.event().map(ev -> Integer.toString(ev.getId())).orElse(null));
         model.put("language", json.asJsonString(language));
         model.put("reservationEmailModel", json.asJsonString(internalGetOrCreate(purchaseContext, ticketReservation, username, orderSummary).getModel()));
-        switch (documentType) {
-            case INVOICE:
-                return Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, APPLICATION_PDF, model, Mailer.AttachmentIdentifier.INVOICE_PDF));
-            case RECEIPT:
-                return Collections.singletonList(new Mailer.Attachment("receipt.pdf", null, APPLICATION_PDF, model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
-            case CREDIT_NOTE:
-                return Collections.singletonList(new Mailer.Attachment("credit-note.pdf", null, APPLICATION_PDF, model, Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF));
-            default:
-                throw new IllegalStateException(documentType+" is not supported");
-        }
+        return switch (documentType) {
+            case INVOICE ->
+                Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, APPLICATION_PDF, model, Mailer.AttachmentIdentifier.INVOICE_PDF));
+            case RECEIPT ->
+                Collections.singletonList(new Mailer.Attachment("receipt.pdf", null, APPLICATION_PDF, model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
+            case CREDIT_NOTE ->
+                Collections.singletonList(new Mailer.Attachment("credit-note.pdf", null, APPLICATION_PDF, model, Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF));
+        };
     }
 
     @Transactional

@@ -51,7 +51,7 @@ export class AdditionalFieldComponent implements OnInit, OnDestroy {
         this.yesterday = new Date(new Date().getTime() - 24 * 60 * 60 * 1000)
           .toISOString()
           .substring(0, 10);
-        this.subscriptions.push(this.form.get(this.field.name).valueChanges
+        this.subscriptions.push(this.form.get([this.field.name]).valueChanges
           .subscribe(() => this.selectedDateDescription = this.localizedSelectedDate()));
       }
       this.dateFormat = new Intl.DateTimeFormat(this.translate.currentLang, {
@@ -100,7 +100,7 @@ export class AdditionalFieldComponent implements OnInit, OnDestroy {
   }
 
   selectedCheckBox(index: number, value: string, checked: boolean) {
-    const fa = this.form.get(this.field.name) as UntypedFormArray;
+    const fa = this.form.get([this.field.name]) as UntypedFormArray;
     fa.controls[index].setValue(checked ? value : null, {emitEvent: false, emitViewToModelChange: false});
   }
 
@@ -114,7 +114,7 @@ export class AdditionalFieldComponent implements OnInit, OnDestroy {
 
   private localizedSelectedDate(): string {
     try {
-      const value = (this.form.get(this.field.name) as UntypedFormArray).at(0)?.value;
+      const value = (this.form.get([this.field.name]) as UntypedFormArray).at(0)?.value;
       if (value != null && value.trim() !== '') {
         return this.dateFormat.format(Date.parse(value));
       }

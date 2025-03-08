@@ -34,7 +34,7 @@
         <mj-section background-color="white">
             <mj-column width="100%">
                 <mj-text align="left" font-size="14px">
-                    {{#i18n}}email.hello [{{fullName}}]{{/i18n}}<br />{{custom-header-text}}
+                    {{#i18n}}email.hello [{{fullName}}]{{/i18n}}<br />{{#render-markdown}}{{custom-header-text}}.html{{/render-markdown}}
                 </mj-text>
                 <mj-raw>{{^orderSummary.waitingForPayment}}</mj-raw>
                 <mj-text align="left" font-size="14px">{{#i18n}}email-confirmation.subscription.completed{{/i18n}}</mj-text>
@@ -124,19 +124,19 @@
                 <mj-text align="center">
                     {{#orderSummary.notYetPaid}}{{#i18n}}reservation.not-yet-paid [{{orderSummary.totalPrice}} {{purchaseContext.currency}}]{{/i18n}}{{/orderSummary.notYetPaid}}
                     <br />
-                    {{custom-body-text}}
+                    {{#render-markdown}}{{custom-body-text}}.html{{/render-markdown}}
                 </mj-text>
             </mj-column>
         </mj-section>
-        <mj-raw>{{#custom-footer-text?}}</mj-raw>
+        <mj-raw>{{#custom-footer-text}}</mj-raw>
         <mj-section background-color="white">
             <mj-column width="100%">
                 <mj-text align="center">
-                    {{custom-footer-text}}
+                    {{#render-markdown}}{{.}}.html{{/render-markdown}}
                 </mj-text>
             </mj-column>
         </mj-section>
-        <mj-raw>{{/custom-footer-text?}}</mj-raw>
+        <mj-raw>{{/custom-footer-text}}</mj-raw>
         <mj-raw>{{#hasMailFooter}}</mj-raw>
         <mj-section padding-bottom="0px" background-color="white">
             <mj-column width="100%">

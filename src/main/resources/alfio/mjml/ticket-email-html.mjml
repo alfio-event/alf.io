@@ -76,17 +76,19 @@
    		<mj-section background-color="white">
 			<mj-column width="100%">
 		        <mj-text align="center" font-size="14px">
-		        	{{#i18n}}email.hello [{{ticket.fullName}}]{{/i18n}}<br/>
-              		{{custom-header-text}}
+		        	{{#i18n}}email.hello [{{ticket.fullName}}]{{/i18n}}
+		        </mj-text>
+                <mj-text align="center" font-size="14px">
+                    {{#render-markdown}}{{custom-header-text}}.html{{/render-markdown}}
 		        </mj-text>
 	        
 	        	<mj-text align="center" font-size="20px">{{#i18n}}email-ticket.thank-you{{/i18n}}</mj-text>
 				
 				<mj-text align="center" font-size="14px">{{#i18n}}email-ticket.attached [{{event.displayName}}]{{/i18n}}</mj-text>
 			    
-			    <mj-raw>{{#custom-body-text?}}</mj-raw>
-			    <mj-text align="center" font-size="14px">{{custom-body-text}}</mj-text>
-			    <mj-raw>{{/custom-body-text?}}</mj-raw>
+			    <mj-raw>{{#custom-body-text}}</mj-raw>
+			    <mj-text align="center" font-size="14px">{{#render-markdown}}{{.}}.html{{/render-markdown}}</mj-text>
+			    <mj-raw>{{/custom-body-text}}</mj-raw>
 			    
 			</mj-column>
 		</mj-section>
@@ -148,15 +150,15 @@
             </mj-column>
 	    </mj-section>
 	   	
-	   	<mj-raw>{{#custom-footer-text?}}</mj-raw>
+	   	<mj-raw>{{#custom-footer-text}}</mj-raw>
 	    <mj-section background-color="white">
 	      <mj-column width="100%">
 	    	<mj-text align="center">
-	        	{{custom-footer-text}}
+                {{#render-markdown}}{{.}}.html{{/render-markdown}}
 	        </mj-text>
 	      </mj-column>
 	    </mj-section>
-	    <mj-raw>{{/custom-footer-text?}}</mj-raw>
+	    <mj-raw>{{/custom-footer-text}}</mj-raw>
 
         <mj-section>
             <mj-column width="100%">

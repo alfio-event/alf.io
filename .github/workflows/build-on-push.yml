@@ -29,12 +29,6 @@ jobs:
                   distribution: temurin
             - name: Build with Gradle
               run: ./gradlew build distribution jacocoTestReport -Dpgsql.version=${{ matrix.postgresql }}
-            - name: upload to sonarcloud
-              if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '16'}}
-              run: ./gradlew sonarqube
-              env:
-                  SONARCLOUD_TOKEN: ${{ secrets.SONAR_TOKEN }}
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             -   name: 'Upload Build'
                 if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '10'}}
                 uses: actions/upload-artifact@v4

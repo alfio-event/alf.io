@@ -150,16 +150,25 @@ public final class TemplateProcessor {
         builder.useProtocolsStreamImplementation(new AlfioInternalFSStreamFactory(), "alfio-internal");
         builder.useProtocolsStreamImplementation(new InvalidProtocolFSStreamFactory(), "http", "https", "file", "jar");
         builder.useFastMode();
-        builder.usePdfUaAccessbility(true);
+        builder.usePdfUaAccessibility(true);
         builder.usePdfAConformance(PdfRendererBuilder.PdfAConformance.PDFA_3_U);
 
         var parser = new Parser();
 
         builder.withW3cDocument(W3CDom.toW3CDocument(parser.parse(page)), "");
         try (PdfBoxRenderer renderer = builder.buildPdfRenderer()) {
-            File defaultFont = ImageUtil.getDejaVuSansMonoFont(fileUploadManager);
-            if (defaultFont != null) {
-                renderer.getFontResolver().addFont(defaultFont, "DejaVu Sans Mono", null, null, false, PdfBoxFontResolver.FontGroup.MAIN);
+            File monoFont = ImageUtil.getDejaVuSansMonoFont(fileUploadManager);
+            if (monoFont != null) {
+                renderer.getFontResolver().addFont(monoFont, "DejaVu Sans Mono", null, null, false, PdfBoxFontResolver.FontGroup.MAIN);
+                renderer.getFontResolver().addFont(monoFont, "Monospaced", null, null, false, PdfBoxFontResolver.FontGroup.MAIN);
+            }
+            File sansFont = ImageUtil.getDejaVuSansFont(fileUploadManager);
+            if (sansFont != null) {
+                renderer.getFontResolver().addFont(sansFont, "SansSerif", null, null, false, PdfBoxFontResolver.FontGroup.MAIN);
+            }
+            File serifFont = ImageUtil.getDejaVuSerifFont(fileUploadManager);
+            if (serifFont != null) {
+                renderer.getFontResolver().addFont(sansFont, "Serif", null, null, false, PdfBoxFontResolver.FontGroup.MAIN);
             }
             renderer.layout();
             renderer.createPDF();
@@ -242,16 +251,15 @@ public final class TemplateProcessor {
     }
 
     public static Optional<byte[]> buildBillingDocumentPdf(BillingDocument.Type documentType, PurchaseContext purchaseContext, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, ExtensionManager extensionManager) {
-        switch (documentType) {
-            case INVOICE:
-                return buildInvoicePdf(purchaseContext, fileUploadManager, language, templateManager, model, extensionManager);
-            case RECEIPT:
-                return buildReceiptPdf(purchaseContext, fileUploadManager, language, templateManager, model, extensionManager);
-            case CREDIT_NOTE:
-                return buildCreditNotePdf(purchaseContext, fileUploadManager, language, templateManager, model, extensionManager);
-            default:
-                throw new IllegalStateException(documentType + " not supported");
-        }
+        return switch (documentType) {
+            case INVOICE ->
+                buildInvoicePdf(purchaseContext, fileUploadManager, language, templateManager, model, extensionManager);
+            case RECEIPT ->
+                buildReceiptPdf(purchaseContext, fileUploadManager, language, templateManager, model, extensionManager);
+            case CREDIT_NOTE ->
+                buildCreditNotePdf(purchaseContext, fileUploadManager, language, templateManager, model, extensionManager);
+            default -> throw new IllegalStateException(documentType + " not supported");
+        };
     }
 
     private static Optional<byte[]> buildFrom(PurchaseContext purchaseContext,

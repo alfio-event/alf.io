@@ -31,7 +31,11 @@ public class APITokenAuthentication extends AbstractAuthenticationToken {
         super(authorities);
         this.credentials = credentials;
         this.principal = principal;
-        setAuthenticated(true);
+    }
+
+    @Override
+    public boolean isAuthenticated() {
+        return true;
     }
 
     @Override

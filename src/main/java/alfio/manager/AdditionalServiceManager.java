@@ -151,7 +151,7 @@ public class AdditionalServiceManager {
             additionalService.getVat(),
             additionalService.getVatType(),
             additionalService.getType(),
-            additionalService.getSupplementPolicy(),
+            Objects.requireNonNullElse(additionalService.getSupplementPolicy(), OPTIONAL_UNLIMITED_AMOUNT),
             additionalService.getMinPrice() != null ? MonetaryUtil.unitToCents(additionalService.getMinPrice(), event.getCurrency()) : null,
             additionalService.getMaxPrice() != null ? MonetaryUtil.unitToCents(additionalService.getMaxPrice(), event.getCurrency()) : null);
         Validate.isTrue(result.getAffectedRowCount() == 1, "too many records updated");

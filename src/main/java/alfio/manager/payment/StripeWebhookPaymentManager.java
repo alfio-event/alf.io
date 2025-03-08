@@ -313,19 +313,15 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
             }
             var reservation = optionalReservation.get();
             var purchaseContext = paymentContext.getPurchaseContext();
-            switch(payload.getType()) {
-                case PAYMENT_INTENT_CREATED: {
-                    return PaymentWebhookResult.processStarted(buildTokenFromTransaction(transaction, purchaseContext, false));
-                }
-                case PAYMENT_INTENT_SUCCEEDED: {
-                    return processSuccessfulPaymentIntent(transaction, paymentIntent, reservation, purchaseContext, baseStripeManager.options(purchaseContext).orElseThrow());
-                }
-                case PAYMENT_INTENT_PAYMENT_FAILED: {
-                    return processFailedPaymentIntent(transaction, reservation, purchaseContext);
-                }
-                default:
-                    return PaymentWebhookResult.notRelevant("event is not relevant");
-            }
+            return switch (payload.getType()) {
+                case PAYMENT_INTENT_CREATED ->
+                    PaymentWebhookResult.processStarted(buildTokenFromTransaction(transaction, purchaseContext, false));
+                case PAYMENT_INTENT_SUCCEEDED ->
+                    processSuccessfulPaymentIntent(transaction, paymentIntent, reservation, purchaseContext, baseStripeManager.options(purchaseContext).orElseThrow());
+                case PAYMENT_INTENT_PAYMENT_FAILED ->
+                    processFailedPaymentIntent(transaction, reservation, purchaseContext);
+                default -> PaymentWebhookResult.notRelevant("event is not relevant");
+            };
 
         } catch (Exception e) {
             log.error("Error while trying to confirm the reservation", e);
@@ -491,19 +487,15 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
             PurchaseContext purchaseContext = paymentContext.getPurchaseContext();
             var options = baseStripeManager.options(purchaseContext, builder -> builder.setIdempotencyKey(reservation.getId())).orElseThrow();
             var intent = PaymentIntent.retrieve(transaction.getPaymentId(), options);
-            switch(intent.getStatus()) {
-                case "processing":
-                case "requires_action":
-                case "requires_confirmation":
-                    return PaymentWebhookResult.pending();
-                case "succeeded":
-                    return processSuccessfulPaymentIntent(transaction, intent, reservation, purchaseContext, options);
-                case REQUIRES_PAYMENT_METHOD:
+            return switch (intent.getStatus()) {
+                case "processing", "requires_action", "requires_confirmation" -> PaymentWebhookResult.pending();
+                case "succeeded" ->
+                    processSuccessfulPaymentIntent(transaction, intent, reservation, purchaseContext, options);
+                case REQUIRES_PAYMENT_METHOD ->
                     //payment is failed.
-                    return processFailedPaymentIntent(transaction, reservation, purchaseContext);
-                default:
-                    return null;
-            }
+                    processFailedPaymentIntent(transaction, reservation, purchaseContext);
+                default -> null;
+            };
         } catch(Exception ex) {
             log.error("Error trying to check PaymentIntent status", ex);
             return PaymentWebhookResult.error("failed");

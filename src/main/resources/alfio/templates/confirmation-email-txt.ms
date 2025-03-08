@@ -3,7 +3,7 @@
 {{^orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.completed [{{event.displayName}}] [{{reservationUrl}}]{{/i18n}}{{/orderSummary.waitingForPayment}}
 {{#orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.waiting-for-payment [{{event.displayName}}] [{{reservationUrl}}]{{/i18n}}{{/orderSummary.waitingForPayment}}
 
-{{custom-header-text}}
+{{#render-markdown}}{{custom-header-text}}.text{{/render-markdown}}
 
 #### {{#i18n}}email-confirmation.reservation-summary{{/i18n}} ####
 
@@ -21,7 +21,7 @@
 {{^orderSummary.free}}{{#hasVat}}{{#i18n}}email-confirmation.vatNr [{{vatTranslation}}]{{/i18n}}: {{vatNr}}{{/hasVat}}{{/orderSummary.free}}
 
 {{#i18n}}email-confirmation.order-information{{/i18n}}: {{ticketReservation.id}}
-{{custom-body-text}}
+{{#render-markdown}}{{custom-body-text}}.text{{/render-markdown}}
 #### {{#i18n}}email.event-info{{/i18n}} ####
 
 {{#i18n}}email.event-reminder-location{{/i18n}}
@@ -36,12 +36,15 @@
 
 ########################
 {{#i18n}}reservation.complete.email.subscription.used{{/i18n}}
-{{#subscriptionUsageDetails}}{{#i18n}}reservation-page-complete.subscription.usage.available [{{subscriptionUsageDetails.available}}]{{/i18n}}{{/subscriptionUsageDetails}}
-reservation.confirmation.email.subscription.button: {{subscriptionUrl}}
+{{#subscriptionUsageDetails}}
+{{#i18n}}reservation-page-complete.subscription.usage.available [{{subscriptionUsageDetails.available}}]{{/i18n}}
+{{#i18n}}reservation.confirmation.email.subscription.button{{/i18n}}: {{subscriptionUrl}}
+{{/subscriptionUsageDetails}}
+
 ########################
 
 {{/displaySubscriptionUsage}}
-{{custom-footer-text}}
+{{#render-markdown}}{{custom-footer-text}}.text{{/render-markdown}}
 {{#i18n}}email.kind-regards{{/i18n}}
 
 {{organization.name}} <{{organization.email}}>
