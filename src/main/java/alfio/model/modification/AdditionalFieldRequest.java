@@ -42,6 +42,7 @@ public class AdditionalFieldRequest implements EventModification.WithRestrictedV
     private final Map<String, EventModification.Description> description;
     private final EventModification.AdditionalService linkedAdditionalService;
     private final List<Integer> linkedCategoryIds;
+    private final boolean displayAtCheckIn;
 
 
     @JsonCreator
@@ -56,7 +57,8 @@ public class AdditionalFieldRequest implements EventModification.WithRestrictedV
                                   @JsonProperty("restrictedValues") List<EventModification.RestrictedValue> restrictedValues,
                                   @JsonProperty("description") Map<String, EventModification.Description> description,
                                   @JsonProperty("forAdditionalService") EventModification.AdditionalService linkedAdditionalService,
-                                  @JsonProperty("categoryIds") List<Integer> linkedCategoryIds) {
+                                  @JsonProperty("categoryIds") List<Integer> linkedCategoryIds,
+                                  @JsonProperty("displayAtCheckIn") Boolean displayAtCheckIn) {
         this.order = order;
         this.useDefinedOrder = Boolean.TRUE.equals(useDefinedOrder);
         this.name = name;
@@ -69,6 +71,7 @@ public class AdditionalFieldRequest implements EventModification.WithRestrictedV
         this.description = description;
         this.linkedAdditionalService = linkedAdditionalService;
         this.linkedCategoryIds = linkedCategoryIds;
+        this.displayAtCheckIn = Boolean.TRUE.equals(displayAtCheckIn);
     }
 
     @Override
