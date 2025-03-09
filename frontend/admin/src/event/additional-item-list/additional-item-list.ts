@@ -3,7 +3,7 @@ import {customElement, property, state} from 'lit/decorators.js'
 import {repeat} from 'lit/directives/repeat.js';
 import {AdditionalItemService, UsageCount} from "../../service/additional-item.ts";
 import {Task} from "@lit/task";
-import {AlfioEvent, ContentLanguage} from "../../model/event.ts";
+import {AlfioEvent} from "../../model/event.ts";
 import {
     AdditionalItem,
     AdditionalItemLocalizedContent,
@@ -14,10 +14,11 @@ import {
 } from "../../model/additional-item.ts";
 import {EventService} from "../../service/event.ts";
 import {renderIf, supportedLanguages} from "../../service/helpers.ts";
-import {pageHeader, textColors} from "../../styles.ts";
+import {itemsList, pageHeader, textColors} from "../../styles.ts";
 import {when} from "lit/directives/when.js";
 import {AlfioDialogClosed, dispatchFeedback} from "../../model/dom-events.ts";
 import {ConfirmationDialogService} from "../../service/confirmation-dialog.ts";
+import {ContentLanguage} from "../../model/purchase-context.ts";
 
 interface Model {
     event: AlfioEvent;
@@ -76,59 +77,7 @@ export class AdditionalItemList extends LitElement {
         },
         () => [this.publicIdentifier!]);
 
-    static readonly styles = [pageHeader, textColors, css`
-        .item {
-            width: 100%;
-            margin-bottom: 1rem;
-        }
-        .item [slot='header'] {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .item [slot='footer'] {
-            display: flex;
-            align-items: center;
-            justify-content: end;
-            gap: 1em;
-        }
-
-        .item [slot='footer'].multiple {
-            justify-content: space-between;
-        }
-
-        .item [slot='footer'] > div.button-container {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 1em;
-        }
-
-        .item .body {
-            display: grid;
-            row-gap: 0.5rem;
-        }
-
-        .item .body .info-container {
-            display: grid;
-            row-gap: 0.5rem;
-        }
-
-        .item .body .info-container .info {
-            display: grid;
-            grid-template-columns: 0.5fr 1.3fr;
-            grid-auto-rows: auto;
-            column-gap: 3rem;
-        }
-
-
-        @media only screen and (min-width: 768px) {
-            .item > .body {
-                grid-template-columns: 1fr 1.3fr;
-                grid-auto-rows: auto;
-                column-gap: 3rem;
-            }
-        }
+    static readonly styles = [pageHeader, textColors, itemsList, css`
 
         sl-tab-group {
             height: 100%;

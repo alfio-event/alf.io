@@ -25,9 +25,73 @@ export const textColors = css`
     .text-danger {
         color: var(--sl-color-danger-600);
     }
+`;
+
+export const cardBgColors = css`
+    sl-card.bg-primary::part(header) {
+        background: var(--sl-color-primary-700);
+        color: var(--sl-color-neutral-0);
+    }
+
+    sl-card.bg-primary {
+        --border-color: var(--sl-color-primary-700);
+    }
 `
 
+export const itemsList = css`
+    .item {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+    .item [slot='header'] {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .item [slot='footer'] {
+        display: flex;
+        align-items: center;
+        justify-content: end;
+        gap: 1em;
+    }
 
+    .item [slot='footer'].multiple {
+        justify-content: space-between;
+    }
+
+    .item [slot='footer'] > div.button-container {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 1em;
+    }
+
+    .item .body {
+        display: grid;
+        row-gap: 0.5rem;
+    }
+
+    .item .body .info-container {
+        display: grid;
+        row-gap: 0.5rem;
+    }
+
+    .item .body .info-container .info {
+        display: grid;
+        grid-template-columns: 0.5fr 1.3fr;
+        grid-auto-rows: auto;
+        column-gap: 3rem;
+    }
+
+
+    @media only screen and (min-width: 768px) {
+        .item > .body {
+            grid-template-columns: 1fr 1.3fr;
+            grid-auto-rows: auto;
+            column-gap: 3rem;
+        }
+    }
+`;
 
 export const row = css`
 
