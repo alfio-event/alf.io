@@ -10,7 +10,7 @@ import {
     taxTypeDescriptions
 } from "../../model/additional-item.ts";
 import {SlDialog, SlRequestCloseEvent} from "@shoelace-style/shoelace";
-import {AlfioEvent, ContentLanguage} from "../../model/event.ts";
+import {AlfioEvent} from "../../model/event.ts";
 import {repeat} from "lit/directives/repeat.js";
 import {TanStackFormController} from "@tanstack/lit-form";
 import {FormState} from '@tanstack/form-core';
@@ -18,6 +18,7 @@ import {dialog, form, pageHeader, row, textColors} from "../../styles.ts";
 import {extractDateTime, notifyChange, renderIf, toDateTimeModification} from "../../service/helpers.ts";
 import {classMap} from "lit/directives/class-map.js";
 import {AdditionalItemService} from "../../service/additional-item.ts";
+import {ContentLanguage} from "../../model/purchase-context.ts";
 
 @customElement('alfio-additional-item-edit')
 export class AdditionalItemEdit extends LitElement {
