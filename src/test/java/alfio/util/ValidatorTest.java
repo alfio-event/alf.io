@@ -22,6 +22,7 @@ import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.ValidationResult;
 import alfio.test.util.TestUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,9 +33,12 @@ import org.springframework.validation.MapBindingResult;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
@@ -87,21 +91,21 @@ class ValidatorTest {
     @Test
     void successfulCategoryDescriptionValidation() {
         when(ticketCategoryModification.getDescription()).thenReturn(Map.of("it", "12345", "en", "1234"));
-        Validator.validateCategory(ticketCategoryModification, errors, 5);
+        Validator.validateCategory(ticketCategoryModification, errors, "", eventModification, 5);
         assertFalse(errors.hasFieldErrors("description"));
     }
 
     @Test
     void successfulCategoryDescriptionValidationWhenEmpty() {
         when(ticketCategoryModification.getDescription()).thenReturn(Map.of());
-        Validator.validateCategory(ticketCategoryModification, errors, 5);
+        Validator.validateCategory(ticketCategoryModification, errors, "", eventModification, 5);
         assertFalse(errors.hasFieldErrors("description"));
     }
 
     @Test
     void failedCategoryDescriptionValidation() {
         when(ticketCategoryModification.getDescription()).thenReturn(Map.of("it", "12345", "en", "1234"));
-        Validator.validateCategory(ticketCategoryModification, errors, 4);
+        Validator.validateCategory(ticketCategoryModification, errors,"", eventModification, 4);
         assertTrue(errors.hasFieldErrors("description"));
     }
 
@@ -315,5 +319,29 @@ class ValidatorTest {
         // not valid because date is tomorrow
         Validator.validateDateInThePast(now.format(DateTimeFormatter.ISO_LOCAL_DATE), "date", validationResult);
         assertTrue(validationResult.hasErrors());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "2025-03-13T08:00:00,2025-03-13T18:00:00,,,false,OK",
+        "2025-03-13T08:00:00,2025-03-13T18:00:00,,,true,OK",
+        "2025-03-13T08:00:00,2025-03-13T18:00:00,2025-03-13T08:00:00,2025-03-13T18:00:00,false,OK",
+        "2025-03-13T08:00:00,2025-03-13T18:00:00,2025-03-13T08:00:00,2025-03-13T18:00:00,true,OK",
+        "2025-03-13T08:00:00,2025-03-13T18:00:00,2025-03-12T08:00:00,2025-03-13T18:00:00,false,OK",
+        "2025-03-13T08:00:00,2025-03-13T18:00:00,2025-03-12T08:00:00,2025-03-13T18:00:00,true,FAILED_BEGIN",
+    })
+    void rangeValidation(String eventBegin, String eventEnd, String initialDate, String finalDate, String strict, String expectedResult) {
+        var parsedEventBegin = LocalDateTime.parse(eventBegin, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        var parsedEventEnd = LocalDateTime.parse(eventEnd, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        assertEquals(Validator.RangeValidationResultType.valueOf(expectedResult), Validator.checkDateRange(safeParse(initialDate), safeParse(finalDate), parsedEventBegin, parsedEventEnd, Boolean.parseBoolean(strict)));
+    }
+
+    private static Supplier<DateTimeModification> safeParse(String dateTime) {
+        return () -> {
+            if (StringUtils.isEmpty(dateTime)) {
+                return null;
+            }
+            return new DateTimeModification(LocalDate.parse(dateTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME), LocalTime.parse(dateTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        };
     }
 }
