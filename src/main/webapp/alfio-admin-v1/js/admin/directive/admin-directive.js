@@ -792,7 +792,8 @@
                     { code: 'warning', description: 'yellow' },
                     { code: 'info', description: 'cyan'},
                     { code: 'light', description: 'white' },
-                    { code: 'dark', description: 'black' }
+                    { code: 'dark', description: 'black' },
+                    { code: 'purple', description: 'purple' }
                 ];
                 $scope.checkInStrategiesVisible = eventEndDate.endOf('day').diff(eventStartDate.startOf('day'), 'days') > 0;
                 $scope.ticketCheckInStrategy = $scope.ticketCategory.ticketCheckInStrategy || 'ONCE_PER_EVENT';
