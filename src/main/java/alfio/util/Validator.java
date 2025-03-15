@@ -43,6 +43,7 @@ import org.springframework.validation.ValidationUtils;
 import java.math.BigDecimal;
 import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.*;
 import java.util.function.Function;
@@ -168,6 +169,15 @@ public final class Validator {
                                                     String prefix,
                                                     EventModification eventModification,
                                                     int descriptionMaxLength) {
+        return validateCategory(category, prefix, eventModification.getBegin().toLocalDateTime(), eventModification.getEnd().toLocalDateTime(), errors, descriptionMaxLength);
+    }
+
+    public static ValidationResult validateCategory(TicketCategoryModification category,
+                                                    String prefix,
+                                                    LocalDateTime eventBegin,
+                                                    LocalDateTime eventEnd,
+                                                    Errors errors,
+                                                    int descriptionMaxLength) {
         if(StringUtils.isBlank(category.getName())) {
             errors.rejectValue(prefix + "name", "error.category.name");
         }
@@ -177,13 +187,58 @@ public final class Validator {
         if(!category.getInception().isBefore(category.getExpiration())) {
             errors.rejectValue(prefix + "dateString", "error.date");
         }
-        if(eventModification != null && isCategoryExpirationAfterEventEnd(category, eventModification)) {
+        if(isCategoryExpirationAfterEventEnd(category, eventEnd)) {
             errors.rejectValue(prefix + "expiration", "error.date.overflow");
         }
         if(isCategoryDescriptionTooLong(category, descriptionMaxLength)) {
             errors.rejectValue(prefix + DESCRIPTION, ERROR_DESCRIPTION);
         }
+
+        // ticket validity dates
+        var ticketValidityCheckStatus = checkDateRange(category::getTicketValidityStart, category::getTicketValidityEnd, eventBegin, eventEnd, true);
+        if (ticketValidityCheckStatus != RangeValidationResultType.OK) {
+            String propertyName = ticketValidityCheckStatus == RangeValidationResultType.FAILED_BEGIN ? "ticketValidityStart" : "ticketValidityEnd";
+            errors.rejectValue(prefix + propertyName, "error.validity.date.overflow");
+        }
+
+        // check-in dates
+        var checkInDateCheckStatus = checkDateRange(category::getValidCheckInFrom, category::getValidCheckInTo, eventBegin, eventEnd, false);
+        if (checkInDateCheckStatus != RangeValidationResultType.OK) {
+            String propertyName = checkInDateCheckStatus == RangeValidationResultType.FAILED_BEGIN ? "validCheckInFrom" : "validCheckInTo";
+            errors.rejectValue(prefix + propertyName, "error.checkin.date.overflow");
+        }
+
         return evaluateValidationResult(errors);
+    }
+
+    enum RangeValidationResultType {
+        OK,
+        FAILED_BEGIN,
+        FAILED_END
+    }
+
+    static RangeValidationResultType checkDateRange(
+        Supplier<DateTimeModification> dateFromSupplier,
+        Supplier<DateTimeModification> dateToSupplier,
+        LocalDateTime eventBegin,
+        LocalDateTime eventEnd,
+        boolean strictBegin) {
+        var start = toLocalDateTimeOrElse(dateFromSupplier.get(), eventBegin);
+        var end = toLocalDateTimeOrElse(dateToSupplier.get(), eventEnd);
+
+        if (start.isAfter(end) || (strictBegin && start.isBefore(eventBegin))) {
+            return RangeValidationResultType.FAILED_BEGIN;
+        } else if (!end.isAfter(eventBegin) || end.isAfter(eventEnd)) {
+            return RangeValidationResultType.FAILED_END;
+        }
+        return RangeValidationResultType.OK;
+    }
+
+    private static LocalDateTime toLocalDateTimeOrElse(DateTimeModification input, LocalDateTime defaultValue) {
+        if (input != null) {
+            return input.toLocalDateTime();
+        }
+        return Objects.requireNonNull(defaultValue);
     }
 
     private static boolean isCategoryDescriptionTooLong(TicketCategoryModification category, int descriptionMaxLength) {
@@ -194,14 +249,12 @@ public final class Validator {
                 .anyMatch(v -> v.length() > descriptionMaxLength);
     }
 
-    private static boolean isCategoryExpirationAfterEventEnd(TicketCategoryModification category, EventModification eventModification) {
-        return eventModification.getEnd() == null
-            || eventModification.getEnd().getDate() == null
-            || category.getExpiration().isAfter(eventModification.getEnd());
+    private static boolean isCategoryExpirationAfterEventEnd(TicketCategoryModification category, LocalDateTime eventEnd) {
+        return category.getExpiration().toLocalDateTime().isAfter(eventEnd);
     }
 
-    public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors, int descriptionMaxLength) {
-        return validateCategory(category, errors, "", null, descriptionMaxLength);
+    public static ValidationResult validateCategory(TicketCategoryModification category, LocalDateTime eventBegin, LocalDateTime eventEnd, Errors errors, int descriptionMaxLength) {
+        return validateCategory(category, "", eventBegin, eventEnd, errors, descriptionMaxLength);
     }
 
     private static boolean isCollectionEmpty(Collection<?> collection) {
@@ -353,7 +406,7 @@ public final class Validator {
 
         return evaluateValidationResult(errors);
     }
-    
+
     public static ValidationResult validateAdditionalItemFieldsForTicket(AdditionalServiceLinkForm form,
                                                                          List<PurchaseContextFieldConfiguration> additionalFieldsForTicket,
                                                                          BindingResult errors,

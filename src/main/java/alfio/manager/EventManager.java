@@ -123,7 +123,7 @@ public class EventManager {
     private final PaymentManager paymentManager;
     private final ClockProvider clockProvider;
     private final SubscriptionRepository subscriptionRepository;
-    public final AdditionalServiceManager additionalServiceManager;
+    private final AdditionalServiceManager additionalServiceManager;
 
 
     public Event getSingleEvent(String eventName, String username) {
@@ -933,7 +933,7 @@ public class EventManager {
         promoCodeRepository.addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType,
             Json.GSON.toJson(categoriesId), maxUsage, description, emailReference, codeType, hiddenCategoryId, currencyCode);
     }
-    
+
     public void deletePromoCode(int promoCodeId) {
         promoCodeRepository.deletePromoCode(promoCodeId);
     }
@@ -945,7 +945,7 @@ public class EventManager {
 
         promoCodeRepository.updateEventPromoCode(promoCodeId, start, end, maxUsage, categoriesJson, description, emailReference, hiddenCategoryId);
     }
-    
+
     public List<PromoCodeDiscountWithFormattedTimeAndAmount> findPromoCodesInEvent(int eventId) {
         var event = eventRepository.findById(eventId);
         return promoCodeRepository.findAllInEvent(eventId).stream().map(p -> new PromoCodeDiscountWithFormattedTimeAndAmount(p, event.getZoneId(), event.getCurrency())).collect(toList());
