@@ -51,11 +51,15 @@ class ValidatorTest {
 
     private static final DateTimeModification VALID_EXPIRATION;
     private static final DateTimeModification VALID_INCEPTION;
+    private static final DateTimeModification EVENT_BEGIN;
+    private static final DateTimeModification EVENT_END;
 
     static {
         var clock = TestUtil.clockProvider().getClock();
         VALID_EXPIRATION = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(clock).plusHours(1L));
         VALID_INCEPTION = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(clock).minusDays(1L));
+        EVENT_BEGIN = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(clock).plusHours(2L));
+        EVENT_END = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(clock).plusHours(3L));
     }
 
     private EventModification eventModification;
@@ -69,6 +73,8 @@ class ValidatorTest {
         eventModification = mock(EventModification.class);
         errors = new MapBindingResult(new HashMap<>(), "test");
         ticketCategoryModification = mock(TicketCategoryModification.class);
+        when(eventModification.getBegin()).thenReturn(EVENT_BEGIN);
+        when(eventModification.getEnd()).thenReturn(EVENT_END);
         when(ticketCategoryModification.getInception()).thenReturn(VALID_INCEPTION);
         when(ticketCategoryModification.getExpiration()).thenReturn(VALID_EXPIRATION);
         when(ticketCategoryModification.getName()).thenReturn("name");
@@ -328,7 +334,11 @@ class ValidatorTest {
         "2025-03-13T08:00:00,2025-03-13T18:00:00,2025-03-13T08:00:00,2025-03-13T18:00:00,false,OK",
         "2025-03-13T08:00:00,2025-03-13T18:00:00,2025-03-13T08:00:00,2025-03-13T18:00:00,true,OK",
         "2025-03-13T08:00:00,2025-03-13T18:00:00,2025-03-12T08:00:00,2025-03-13T18:00:00,false,OK",
+        "2025-03-13T08:00:00,2025-03-13T18:00:00,2025-03-13T07:59:59,2025-03-13T18:00:00,true,FAILED_BEGIN",
         "2025-03-13T08:00:00,2025-03-13T18:00:00,2025-03-12T08:00:00,2025-03-13T18:00:00,true,FAILED_BEGIN",
+        "2025-03-13T08:00:00,2025-03-13T18:00:00,2025-03-12T08:00:00,2025-03-13T18:00:00,true,FAILED_BEGIN",
+        "2025-03-13T08:00:00,2025-03-13T18:00:00,2025-03-13T08:00:00,2025-03-13T18:00:01,false,FAILED_END",
+        "2025-03-13T08:00:00,2025-03-13T18:00:00,2025-03-13T08:00:00,2025-03-13T18:00:01,true,FAILED_END",
     })
     void rangeValidation(String eventBegin, String eventEnd, String initialDate, String finalDate, String strict, String expectedResult) {
         var parsedEventBegin = LocalDateTime.parse(eventBegin, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
