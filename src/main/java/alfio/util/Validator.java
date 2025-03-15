@@ -198,14 +198,14 @@ public final class Validator {
         var ticketValidityCheckStatus = checkDateRange(category::getTicketValidityStart, category::getTicketValidityEnd, eventBegin, eventEnd, true);
         if (ticketValidityCheckStatus != RangeValidationResultType.OK) {
             String propertyName = ticketValidityCheckStatus == RangeValidationResultType.FAILED_BEGIN ? "ticketValidityStart" : "ticketValidityEnd";
-            errors.rejectValue(prefix + propertyName, "error.date.overflow");
+            errors.rejectValue(prefix + propertyName, "error.validity.date.overflow");
         }
 
         // check-in dates
         var checkInDateCheckStatus = checkDateRange(category::getValidCheckInFrom, category::getValidCheckInTo, eventBegin, eventEnd, false);
         if (checkInDateCheckStatus != RangeValidationResultType.OK) {
             String propertyName = checkInDateCheckStatus == RangeValidationResultType.FAILED_BEGIN ? "validCheckInFrom" : "validCheckInTo";
-            errors.rejectValue(prefix + propertyName, "error.date.overflow");
+            errors.rejectValue(prefix + propertyName, "error.checkin.date.overflow");
         }
 
         return evaluateValidationResult(errors);
@@ -222,13 +222,13 @@ public final class Validator {
         Supplier<DateTimeModification> dateToSupplier,
         LocalDateTime eventBegin,
         LocalDateTime eventEnd,
-        boolean strict) {
+        boolean strictBegin) {
         var start = toLocalDateTimeOrElse(dateFromSupplier.get(), eventBegin);
         var end = toLocalDateTimeOrElse(dateToSupplier.get(), eventEnd);
 
-        if (start.isAfter(end) || (strict && start.isBefore(eventBegin))) {
+        if (start.isAfter(end) || (strictBegin && start.isBefore(eventBegin))) {
             return RangeValidationResultType.FAILED_BEGIN;
-        } else if (end.isBefore(eventBegin) || end.isAfter(eventEnd)) {
+        } else if (!end.isAfter(eventBegin) || end.isAfter(eventEnd)) {
             return RangeValidationResultType.FAILED_END;
         }
         return RangeValidationResultType.OK;

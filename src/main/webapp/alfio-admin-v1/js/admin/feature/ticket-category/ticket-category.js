@@ -94,9 +94,9 @@
         };
     }
 
-    TicketCategoryEditorService.prototype.$inject = ['$uibModal', 'EventService'];
+    TicketCategoryEditorService.prototype.$inject = ['$uibModal', 'EventService', 'NotificationHandler'];
 
-    function TicketCategoryEditorService($uibModal, EventService) {
+    function TicketCategoryEditorService($uibModal, EventService, NotificationHandler) {
         this.openCategoryDialog = function(parentScope, category, event, validationErrorHandler, reloadIfSeatsModification) {
             var editCategory = $uibModal.open({
                 size:'lg',
@@ -130,6 +130,17 @@
                                 })
                             }
                             EventService.saveTicketCategory(event, category).then(function(result) {
+                                if (result.data['errorCount'] > 0 && result.data.validationErrors.some(e => e.fieldName.startsWith('ticketValidity') || e.fieldName.startsWith('validCheckIn'))) {
+                                    // handle special cases
+                                    let messages = [];
+                                    if (result.data.validationErrors.some(e => e.fieldName.startsWith('ticketValidity'))) {
+                                        messages.push('Ticket Validity');
+                                    }
+                                    if (result.data.validationErrors.some(e => e.fieldName.startsWith('validCheckIn'))) {
+                                        messages.push('Check In Dates');
+                                    }
+                                    NotificationHandler.showError("Please check " + messages.join(' and '));
+                                }
                                 validationErrorHandler(result, form, form).then(function() {
                                     reloadIfSeatsModification(!original || (original.bounded ^ category.bounded || original.maxTickets !== category.maxTickets))
                                         .then(function() {
