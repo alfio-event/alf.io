@@ -1,15 +1,20 @@
 import {customElement, property, state} from "lit/decorators.js";
-import {html, LitElement} from "lit";
+import {css, html, LitElement} from "lit";
 import {AlfioEvent} from "../../model/event.ts";
 import {Task} from "@lit/task";
-import {AdditionalField, renderAdditionalFieldType, supportsMinMaxLength} from "../../model/additional-field.ts";
+import {
+    AdditionalField,
+    PurchaseContextFieldDescriptionContainer,
+    renderAdditionalFieldType,
+    supportsMinMaxLength
+} from "../../model/additional-field.ts";
 import {ContentLanguage, PurchaseContext, PurchaseContextType} from "../../model/purchase-context.ts";
 import {SubscriptionDescriptor} from "../../model/subscription-descriptor.ts";
 import {PurchaseContextService} from "../../service/purchase-context.ts";
 import {AdditionalFieldService} from "../../service/additional-field.ts";
 import {repeat} from "lit/directives/repeat.js";
 import {renderIf} from "../../service/helpers.ts";
-import {cardBgColors, itemsList, pageHeader, textColors} from "../../styles.ts";
+import {badges, cardBgColors, itemsList, pageHeader, textColors} from "../../styles.ts";
 
 interface Model {
     purchaseContextType: PurchaseContextType;
@@ -23,6 +28,12 @@ interface Model {
 interface ListData {
     items: ReadonlyArray<AdditionalField>;
     standardIndex: number;
+}
+
+interface LocalizedAdditionalFieldContent {
+    locale: string,
+    localeLabel: string,
+    description: PurchaseContextFieldDescriptionContainer
 }
 
 @customElement('alfio-additional-field-list')
@@ -63,7 +74,11 @@ export class AdditionalFieldList extends LitElement {
         },
         () => [this.publicIdentifier!, this.purchaseContextType!, this.organizationId!]);
 
-    static readonly styles = [pageHeader, textColors, itemsList, cardBgColors];
+    static readonly styles = [pageHeader, textColors, itemsList, cardBgColors, badges, css`
+        sl-tab-group {
+            height: 100%;
+        }
+    `];
 
     protected render(): unknown {
         return this.retrievePageDataTask.render({
@@ -100,37 +115,43 @@ export class AdditionalFieldList extends LitElement {
                         <div id=${`additional-field-${field.id}`}></div>
                         <sl-card class="item">
                             <div slot="header">
-                                <div class="col">${field.name}</div>
+                                <div class="col"><strong>${field.name}</strong></div>
                                 <div class="col">
+                                    ${renderIf(() => field.required, () => html`
+                                        <sl-tooltip content="This information is required">
+                                            <sl-badge variant="warning" pill>required</sl-badge>
+                                        </sl-tooltip>
+                                    `)}
+                                    ${renderIf(() => !field.editable, () => html`
+                                        <sl-tooltip content="Information cannot be modified after set">
+                                            <sl-badge variant="neutral" pill>read-only</sl-badge>
+                                        </sl-tooltip>
+                                    `)}
+                                    ${renderIf(() => field.displayAtCheckIn, () => html`
+                                        <sl-tooltip
+                                            content="This information will be shown in the check-in app upon successful scan">
+                                            <sl-badge variant="success" pill>shown at check-in</sl-badge>
+                                        </sl-tooltip>
+                                    `)}
+                                </div>
+                            </div>
+                            <div slot="footer" class="multiple">
+                                <div class="button-container">
+                                    ${this.showMoveUpDownButtons(index, field, listData, model)}
+                                </div>
+                                <div class="button-container">
                                     <sl-button type="button" variant="default" @click=${() => console.log('todo')}>
                                         <sl-icon name="pencil" slot="prefix"></sl-icon>
                                         Edit
                                     </sl-button>
-                                    ${renderIf(() => index > 0 || field.order >= listData.standardIndex, () => html`
-                                        <sl-button type="button" variant="default" @click=${() => this.fieldUp(field, index, listData, (model.event ?? model.subscriptionDescriptor)!)}>
-                                            <sl-icon name="arrow-up" slot="prefix"></sl-icon>
-                                            Move up
-                                        </sl-button>
-                                    `)}
-                                    ${renderIf(() => (index < listData.items.length) || field.order < 0, () => html`
-                                        <sl-button type="button" variant="default" @click=${() => this.fieldDown(field, index, listData, (model.event ?? model.subscriptionDescriptor)!)}>
-                                            <sl-icon name="arrow-down" slot="prefix"></sl-icon>
-                                            Move down
-                                        </sl-button>
-                                    `)}
                                     <sl-button type="button" variant="danger" @click=${() => console.log('todo')}>
                                         <sl-icon name="trash" slot="prefix"></sl-icon>
                                         Delete
                                     </sl-button>
                                 </div>
                             </div>
-                            <!-- TODO footer -->
                             <div class="body">
                                 <div class="info-container">
-                                    <div class="info">
-                                        <strong>Field name</strong>
-                                        <span>${field.name}</span>
-                                    </div>
                                     <div class="info">
                                         <strong>Type</strong>
                                         <span>${renderAdditionalFieldType(field.type)}</span>
@@ -145,35 +166,19 @@ export class AdditionalFieldList extends LitElement {
                                             <span>${field.maxLength}</span>
                                         </div>
                                     `)}
-                                    <div class="row">
-                                        <div class="col-sm-4"><strong>Label</strong></div>
-                                        <div class="col-sm-8">
-                                            <span data-ng-repeat="lang in $ctrl.allLanguages | selectedLanguages:$ctrl.selectedLocales"><span title="{{lang.displayLanguage}}">{{field.description[lang.locale].description.label}}</span><span data-ng-if="!$last"> / </span></span>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-sm-4"><strong>Placeholder</strong></div>
-                                        <div class="col-sm-8">
-                                        <span data-ng-repeat="lang in $ctrl.allLanguages | selectedLanguages:$ctrl.selectedLocales">
-                                            <span title="{{lang.displayLanguage}}">{{field.description[lang.locale].description.placeholder}}</span><span data-ng-if="!$last"> / </span>
-                                        </span>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-sm-4"><strong>Required</strong></div>
-                                        <div class="col-sm-8">{{field.required}}</div>
-                                    </div>
-                                    <div class="row" data-ng-if="field.readOnly">
-                                        <div class="col-sm-4"><strong>Read Only</strong></div>
-                                        <div class="col-sm-8">{{field.readOnly}}</div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-sm-4" uib-tooltip="When enabled, this information will be visible to the check-in staff.">
-                                            <strong>Show at Check-in</strong>
-                                            <i class="fa fa-info-circle" ></i>
-                                        </div>
-                                        <div class="col-sm-8">{{field.displayAtCheckIn ? 'yes' : 'no'}}</div>
-                                    </div>
+                                </div>
+                                <div>
+                                <strong>Preview</strong>
+                                <sl-tab-group>
+                                    ${repeat(this.sortContentLanguages(field, model), d => d.localeLabel, d => html`
+                                        <sl-tab slot="nav" panel=${d.locale}>${d.localeLabel}</sl-tab>
+                                        <sl-tab-panel name=${d.locale}>
+                                            <div class="info-container">
+                                                ${this.renderPreview(d, field)}
+                                            </div>
+                                        </sl-tab-panel>
+                                    `)}
+                                </sl-tab-group>
                                 </div>
                             </div>
                         </sl-card>
@@ -189,6 +194,25 @@ export class AdditionalFieldList extends LitElement {
                 return renderedItems;
             }
         })
+    }
+
+    private showMoveUpDownButtons(index: number, field: AdditionalField, listData: ListData, model: Model) {
+        return html`
+        ${renderIf(() => index > 0 || field.order >= listData.standardIndex,
+            () => html`
+                <sl-button type="button" variant="default" @click=${() => this.fieldUp(field, index, listData, (model.event ?? model.subscriptionDescriptor)!)}>
+                    <sl-icon name="arrow-up" slot="prefix"></sl-icon>
+                    Move up
+                </sl-button>
+            `)}
+        ${renderIf(() => (index < listData.items.length) || field.order < 0,
+            () => html`
+                <sl-button type="button" variant="default" @click=${() => this.fieldDown(field, index, listData, (model.event ?? model.subscriptionDescriptor)!)}>
+                    <sl-icon name="arrow-down" slot="prefix"></sl-icon>
+                    Move down
+                </sl-button>
+            `)}
+        `;
     }
 
     private renderStandard() {
@@ -233,6 +257,81 @@ export class AdditionalFieldList extends LitElement {
         }
         this.refreshCount++;
     }
+
+    private sortContentLanguages(item: AdditionalField, model: Model): LocalizedAdditionalFieldContent[] {
+        return model.supportedLanguages
+            .filter(cl => {
+                return item.description[cl.locale] != null;
+            }).map(cl => {
+                return {
+                    locale: cl.locale,
+                    localeLabel: cl.displayLanguage,
+                    description: item.description[cl.locale]
+                };
+            });
+    }
+
+    private renderPreview(fieldContent: LocalizedAdditionalFieldContent, field: AdditionalField) {
+        const localizedConfiguration = fieldContent.description.description;
+        switch(field.type) {
+            case "checkbox":
+                return html`
+                    ${repeat(Object.entries(localizedConfiguration.restrictedValues ?? {}), ([k]) => k, ([value, label]) => html`
+                        <sl-checkbox value=${value}>${label}</sl-checkbox>
+                    `)}
+
+                `;
+            case "radio":
+                return html`
+                    <sl-radio-group label=${localizedConfiguration.label} name=${field.name}>
+                        ${repeat(Object.entries(localizedConfiguration.restrictedValues ?? {}), ([k]) => k, ([value, label]) => html`
+                            <sl-radio value=${value}> ${label}</sl-radio>
+                        `)}
+                    </sl-radio-group>
+                `;
+            case "country":
+                return html`
+                    <label>${localizedConfiguration.label}</label>
+                    <sl-select hoist>
+                        <sl-option value="C1">Country 1</sl-option>
+                        <sl-option value="C2">Country 2</sl-option>
+                        <sl-option value="C3">Country 3</sl-option>
+                    </sl-select>
+                `;
+            case "select":
+
+                return html`
+                    <label>${localizedConfiguration.label}</label>
+                    <sl-select hoist>
+                        ${repeat(Object.entries(localizedConfiguration.restrictedValues ?? {}), ([k]) => k, ([value, label]) => html`
+                            <sl-option value=${value}>${label}</sl-option>
+                        `)}
+                    </sl-select>
+                `;
+
+            case "textarea":
+                return html`
+                    <sl-textarea label=${localizedConfiguration.label} placeholder=${localizedConfiguration.placeholder ?? ''}></sl-textarea>
+                `;
+
+        }
+
+        let inputType;
+
+        if (field.type === 'input:dateOfBirth') {
+            inputType = 'date';
+        } else if (field.type === 'vat:eu') {
+            inputType = 'text';
+        } else {
+            inputType = field.type.substring(field.type.indexOf(':') + 1);
+        }
+
+        return html`
+            <sl-input type=${inputType} label=${localizedConfiguration.label} placeholder=${localizedConfiguration.placeholder ?? ''}>
+        `;
+    }
+
+
 }
 
 declare global {

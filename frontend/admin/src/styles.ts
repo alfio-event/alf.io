@@ -38,6 +38,12 @@ export const cardBgColors = css`
     }
 `
 
+export const badges = css`
+    sl-badge::part(base) {
+        border: unset;
+    }
+`;
+
 export const itemsList = css`
     .item {
         width: 100%;

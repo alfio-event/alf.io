@@ -34,7 +34,7 @@ const descriptions = {
 
 export interface PurchaseContextFieldDescriptionContainer {
     locale: string;
-    description: {[lang: string]: PurchaseContextFieldDescription};
+    description: PurchaseContextFieldDescription;
     fieldName: string;
 }
 
