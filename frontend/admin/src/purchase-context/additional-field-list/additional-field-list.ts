@@ -3,7 +3,7 @@ import {css, html, LitElement} from "lit";
 import {AlfioEvent} from "../../model/event.ts";
 import {Task} from "@lit/task";
 import {
-    AdditionalField,
+    AdditionalField, AdditionalFieldTemplate,
     PurchaseContextFieldDescriptionContainer,
     renderAdditionalFieldType,
     supportsMinMaxLength
@@ -15,6 +15,8 @@ import {AdditionalFieldService} from "../../service/additional-field.ts";
 import {repeat} from "lit/directives/repeat.js";
 import {renderIf} from "../../service/helpers.ts";
 import {badges, cardBgColors, itemsList, pageHeader, textColors} from "../../styles.ts";
+import {ConfirmationDialogService} from "../../service/confirmation-dialog.ts";
+import {dispatchFeedback} from "../../model/dom-events.ts";
 
 interface Model {
     purchaseContextType: PurchaseContextType;
@@ -23,6 +25,7 @@ interface Model {
     supportedLanguages: ContentLanguage[];
     dataTask: Task<ReadonlyArray<number>, ListData>;
     isSubscription: boolean;
+    templates: ReadonlyArray<AdditionalFieldTemplate>
 }
 
 interface ListData {
@@ -54,6 +57,7 @@ export class AdditionalFieldList extends LitElement {
             const result = await PurchaseContextService.load(publicIdentifier, purchaseContextType as PurchaseContextType, parseInt(organizationId, 10));
             const isSubscription = (purchaseContextType as PurchaseContextType) === 'subscription';
             const purchaseContext = isSubscription ? result.subscriptionDescriptor! : result.eventWithOrganization!.event;
+            const templates = await AdditionalFieldService.loadTemplates(purchaseContext);
             const supportedLanguages = purchaseContext.contentLanguages;
             const dataTask = new Task<ReadonlyArray<number>, ListData>(this, async (_) => {
                 const items = await AdditionalFieldService.loadAllByPurchaseContext(purchaseContext);
@@ -69,7 +73,8 @@ export class AdditionalFieldList extends LitElement {
                 subscriptionDescriptor: result.subscriptionDescriptor,
                 supportedLanguages,
                 dataTask,
-                isSubscription
+                isSubscription,
+                templates
             }
         },
         () => [this.publicIdentifier!, this.purchaseContextType!, this.organizationId!]);
@@ -77,6 +82,10 @@ export class AdditionalFieldList extends LitElement {
     static readonly styles = [pageHeader, textColors, itemsList, cardBgColors, badges, css`
         sl-tab-group {
             height: 100%;
+        }
+        div.m-1 {
+            margin-top: 1em;
+            margin-bottom: 1em;
         }
     `];
 
@@ -93,11 +102,36 @@ export class AdditionalFieldList extends LitElement {
                     </h5>
                 </div>
 
-                ${this.iterateItems(model)}
+                ${this.renderCreateButton(model)}
 
-                <div class="pb-2"></div>
+                <div class="m-1">
+                    ${this.iterateItems(model)}
+                </div>
+
+                ${this.renderCreateButton(model)}
+
+                <div class="m-1"></div>
             `
         });
+    }
+
+    private renderCreateButton(model: Model) {
+        return html`
+            <sl-dropdown>
+                <sl-button variant="success" slot="trigger" caret>Create new</sl-button>
+                <sl-menu>
+                    <sl-menu-item>
+                        From Template
+                        <sl-menu slot="submenu">
+                            ${repeat(model.templates, t => t.name, (template) => html`
+                                    <sl-menu-item>${template.description['en'].label} (${template.name})</sl-menu-item>
+                                `)}
+                        </sl-menu>
+                    </sl-menu-item>
+                    <sl-menu-item>Custom</sl-menu-item>
+                </sl-menu>
+            </sl-dropdown>
+        `;
     }
 
     private iterateItems(model: Model) {
@@ -139,12 +173,13 @@ export class AdditionalFieldList extends LitElement {
                                 <div class="button-container">
                                     ${this.showMoveUpDownButtons(index, field, listData, model)}
                                 </div>
+                                ${this.showStatisticsButton(field, model)}
                                 <div class="button-container">
                                     <sl-button type="button" variant="default" @click=${() => console.log('todo')}>
                                         <sl-icon name="pencil" slot="prefix"></sl-icon>
                                         Edit
                                     </sl-button>
-                                    <sl-button type="button" variant="danger" @click=${() => console.log('todo')}>
+                                    <sl-button type="button" variant="danger" @click=${() => this.delete(field, model)}>
                                         <sl-icon name="trash" slot="prefix"></sl-icon>
                                         Delete
                                     </sl-button>
@@ -168,17 +203,17 @@ export class AdditionalFieldList extends LitElement {
                                     `)}
                                 </div>
                                 <div>
-                                <strong>Preview</strong>
-                                <sl-tab-group>
-                                    ${repeat(this.sortContentLanguages(field, model), d => d.localeLabel, d => html`
-                                        <sl-tab slot="nav" panel=${d.locale}>${d.localeLabel}</sl-tab>
-                                        <sl-tab-panel name=${d.locale}>
-                                            <div class="info-container">
-                                                ${this.renderPreview(d, field)}
-                                            </div>
-                                        </sl-tab-panel>
-                                    `)}
-                                </sl-tab-group>
+                                    <strong>Preview</strong>
+                                    <sl-tab-group>
+                                        ${repeat(this.sortContentLanguages(field, model), d => d.localeLabel, d => html`
+                                            <sl-tab slot="nav" panel=${d.locale}>${d.localeLabel}</sl-tab>
+                                            <sl-tab-panel name=${d.locale}>
+                                                <div class="info-container">
+                                                    ${this.renderPreview(d, field)}
+                                                </div>
+                                            </sl-tab-panel>
+                                        `)}
+                                    </sl-tab-group>
                                 </div>
                             </div>
                         </sl-card>
@@ -205,7 +240,7 @@ export class AdditionalFieldList extends LitElement {
                     Move up
                 </sl-button>
             `)}
-        ${renderIf(() => (index < listData.items.length) || field.order < 0,
+        ${renderIf(() => (index < listData.items.length - 1) || field.order < 0,
             () => html`
                 <sl-button type="button" variant="default" @click=${() => this.fieldDown(field, index, listData, (model.event ?? model.subscriptionDescriptor)!)}>
                     <sl-icon name="arrow-down" slot="prefix"></sl-icon>
@@ -329,6 +364,60 @@ export class AdditionalFieldList extends LitElement {
         return html`
             <sl-input type=${inputType} label=${localizedConfiguration.label} placeholder=${localizedConfiguration.placeholder ?? ''}>
         `;
+    }
+
+    async delete(field: AdditionalField, model: Model): Promise<boolean> {
+        try {
+            const confirmation = await ConfirmationDialogService.requestConfirm(
+                `Delete field ${field.name}`,
+                `Are you sure to delete the field "${field.name}"? All the values in the tickets associated to this field will be removed and they cannot be recovered.`,
+                'danger'
+            );
+            if (confirmation) {
+                const response = await AdditionalFieldService.deleteField((model.event ?? model.subscriptionDescriptor)!, field.id);
+                if(response.ok) {
+                    dispatchFeedback({
+                        type: 'success',
+                        message: `Field ${field.name} successfully deleted`
+                    }, this);
+                    this.refreshCount++;
+                    return true;
+                } else {
+                    dispatchFeedback({
+                        type: 'danger',
+                        message: `Cannot delete field ${field.name}`
+                    }, this);
+                }
+            }
+            return false;
+        } catch(e) {
+            return false;
+        }
+    }
+
+    private showStatisticsButton(field: AdditionalField, model: Model) {
+        return renderIf(() => field.type === 'select' || field.type === 'country', () => html`
+            <div class="button-container">
+                <sl-button @click=${() => this.openStatisticsDetail(model, field)}><sl-icon name="bar-chart-line" slot="prefix"></sl-icon> Statistics</sl-button>
+            </div>
+        `);
+    }
+
+    private async openStatisticsDetail(model: Model, field: AdditionalField): Promise<void> {
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <alfio-additional-field-statistics></alfio-additional-field-statistics>
+        `;
+        const component = div.querySelector('alfio-additional-field-statistics')!;
+        document.body.appendChild(div);
+        await customElements.whenDefined('alfio-additional-field-statistics');
+        component.addEventListener('alfio-drawer-closed', async () => {
+            setTimeout(() => document.body.removeChild(div));
+        });
+        await component.show({
+            purchaseContext: (model.event ?? model.subscriptionDescriptor)!,
+            field
+        });
     }
 
 

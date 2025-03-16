@@ -26,6 +26,12 @@ import '@shoelace-style/shoelace/dist/components/tooltip/tooltip.js';
 import '@shoelace-style/shoelace/dist/components/radio/radio.js';
 import '@shoelace-style/shoelace/dist/components/radio-group/radio-group.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
+import '@shoelace-style/shoelace/dist/components/button-group/button-group.js';
+import '@shoelace-style/shoelace/dist/components/menu/menu.js';
+import '@shoelace-style/shoelace/dist/components/menu-item/menu-item.js';
+import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
+import '@shoelace-style/shoelace/dist/components/spinner/spinner.js';
+import '@shoelace-style/shoelace/dist/components/drawer/drawer.js';
 
 
 
@@ -43,3 +49,4 @@ export { DisplayCommonMarkPreview } from './display-common-mark-preview/display-
 export { AdditionalItemEdit } from './event/additional-item-edit/additional-item-edit';
 export { FeedbackVisualizer } from './feedback-visualizer/feedback-visualizer';
 export { AdditionalFieldList } from './purchase-context/additional-field-list/additional-field-list';
+export { AdditionalFieldStatistics } from './purchase-context/additional-field-statistics/additional-field-statistics';

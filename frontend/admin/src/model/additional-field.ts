@@ -16,6 +16,21 @@ export interface AdditionalField {
     description: {[lang: string]: PurchaseContextFieldDescriptionContainer};
 }
 
+export interface AdditionalFieldTemplate {
+    name: string;
+    type: AdditionalFieldType;
+    maxLength?: number;
+    minLength?: number;
+    restrictedValues?: string[];
+    description: {[lang: string]: PurchaseContextFieldDescription};
+}
+
+export interface AdditionalFieldStats {
+    name: string;
+    count: number;
+    percentage: number;
+}
+
 export type AdditionalFieldContext = 'ATTENDEE' | 'ADDITIONAL_SERVICE' | 'SUBSCRIPTION';
 
 export type AdditionalFieldType = 'input:text' | 'input:tel' | 'vat:eu' | 'textarea' | 'country' | 'select' | 'checkbox' | 'radio' | 'input:dateOfBirth';

@@ -1,13 +1,13 @@
 import {PurchaseContext} from "../model/purchase-context.ts";
-import {AdditionalField} from "../model/additional-field.ts";
+import {AdditionalField, AdditionalFieldStats, AdditionalFieldTemplate} from "../model/additional-field.ts";
 import {callDelete, fetchJson, postJson} from "./helpers.ts";
 
 export class AdditionalFieldService {
-    /*
-            getRestrictedValuesStats: function(purchaseContextType, publicIdentifier, id) {
-                return $http.get('/admin/api/'+purchaseContextType+'/'+publicIdentifier+'/additional-field/'+id+'/stats').error(HttpErrorHandler.handle);
-            }
-     */
+
+    static loadRestrictedValuesStats(purchaseContext: PurchaseContext, id: number): Promise<ReadonlyArray<AdditionalFieldStats>> {
+        return fetchJson(`/admin/api/${purchaseContext.type}/${purchaseContext.publicIdentifier}/additional-field/${id}/stats`);
+    }
+
     static loadAllByPurchaseContext(purchaseContext: PurchaseContext): Promise<ReadonlyArray<AdditionalField>> {
         return fetchJson(`/admin/api/${purchaseContext.type}/${purchaseContext.publicIdentifier}/additional-field`);
     }
@@ -24,6 +24,10 @@ export class AdditionalFieldService {
         const body = new URLSearchParams();
         body.append("newPosition", String(position));
         return postJson(`/admin/api/${purchaseContext.type}/${purchaseContext.publicIdentifier}/additional-field/set-position/${id}`, body);
+    }
+
+    static loadTemplates(purchaseContext: PurchaseContext): Promise<ReadonlyArray<AdditionalFieldTemplate>> {
+        return fetchJson(`/admin/api/${purchaseContext.type}/${purchaseContext.publicIdentifier}/additional-field/templates`);
     }
 
 }

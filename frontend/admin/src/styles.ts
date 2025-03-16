@@ -44,6 +44,20 @@ export const badges = css`
     }
 `;
 
+export const textAlign = css`
+    .text-center {
+        text-align: center;
+    }
+
+    .text-start {
+        text-align: start;
+    }
+
+    .text-end {
+        text-align: end;
+    }
+`;
+
 export const itemsList = css`
     .item {
         width: 100%;
