@@ -36,6 +36,12 @@ export const cardBgColors = css`
     sl-card.bg-primary {
         --border-color: var(--sl-color-primary-700);
     }
+
+    sl-card.bg-default::part(header) {
+        color: var(--sl-color-neutral-950);
+        background-color: var(--sl-color-gray-100);
+        border-color: var(--sl-color-gray-200);
+    }
 `
 
 export const badges = css`

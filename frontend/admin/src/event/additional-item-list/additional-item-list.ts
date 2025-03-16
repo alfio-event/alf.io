@@ -14,7 +14,7 @@ import {
 } from "../../model/additional-item.ts";
 import {EventService} from "../../service/event.ts";
 import {renderIf, supportedLanguages} from "../../service/helpers.ts";
-import {itemsList, pageHeader, textColors} from "../../styles.ts";
+import {cardBgColors, itemsList, pageHeader, textColors} from "../../styles.ts";
 import {when} from "lit/directives/when.js";
 import {AlfioDialogClosed, dispatchFeedback} from "../../model/dom-events.ts";
 import {ConfirmationDialogService} from "../../service/confirmation-dialog.ts";
@@ -77,7 +77,7 @@ export class AdditionalItemList extends LitElement {
         },
         () => [this.publicIdentifier!]);
 
-    static readonly styles = [pageHeader, textColors, itemsList, css`
+    static readonly styles = [pageHeader, cardBgColors, textColors, itemsList, css`
 
         sl-tab-group {
             height: 100%;
@@ -230,7 +230,7 @@ export class AdditionalItemList extends LitElement {
                 ${repeat(listData.items, (item) => item.id, (item, index) => {
                     return html`
                     <div id=${`additional-service-${item.id}`}></div>
-                    <sl-card class="item">
+                    <sl-card class="item bg-default">
                         <div slot="header">
                             <div class="col">${showItemTitle(item)}</div>
                             <div class="text-success"> ${`Confirmed: ${formatSoldCount(listData, item.id)}`}</div>
@@ -239,7 +239,7 @@ export class AdditionalItemList extends LitElement {
                             ${this.renderMoveButtons(listData, index, item, model)}
                             <div class="button-container">
                                 <sl-button variant="default" title="edit" @click=${() => this.edit(item, model)} type="button"><sl-icon name="pencil" slot="prefix"></sl-icon> edit</sl-button>
-                                ${renderIf(() => countUsage(listData, item.id) === 0, () => html`<sl-button title="delete" variant="danger" @click=${() => this.delete(item, model)} type="button"><sl-icon name="trash" slot="prefix"></sl-icon> delete</sl-button>`)}
+                                ${this.renderDelete(listData, item, model)}
                             </div>
                         </div>
                         <div class="body">
@@ -371,6 +371,12 @@ export class AdditionalItemList extends LitElement {
 
     private triggerListRefresh(): void {
         this.refreshCount++;
+    }
+
+    private renderDelete(listData: ListData, item: AdditionalItem, model: Model) {
+        return renderIf(() => countUsage(listData, item.id) === 0, () => html`
+            <sl-button title="delete" variant="danger" @click=${() => this.delete(item, model)} type="button"><sl-icon name="trash" slot="prefix"></sl-icon> delete</sl-button>
+        `);
     }
 }
 

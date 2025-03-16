@@ -147,7 +147,7 @@ export class AdditionalFieldList extends LitElement {
                         ${renderIf(() => index === listData.standardIndex, this.renderStandard)}
 
                         <div id=${`additional-field-${field.id}`}></div>
-                        <sl-card class="item">
+                        <sl-card class="item bg-default">
                             <div slot="header">
                                 <div class="col"><strong>${field.name}</strong></div>
                                 <div class="col">
