@@ -16,6 +16,7 @@ export interface AdditionalField {
     description: {[lang: string]: PurchaseContextFieldDescriptionContainer};
 }
 
+
 export interface AdditionalFieldTemplate {
     name: string;
     type: AdditionalFieldType;
@@ -23,6 +24,10 @@ export interface AdditionalFieldTemplate {
     minLength?: number;
     restrictedValues?: string[];
     description: {[lang: string]: PurchaseContextFieldDescription};
+}
+
+export interface NewAdditionalFieldFromTemplate extends AdditionalFieldTemplate {
+    order: number;
 }
 
 export interface AdditionalFieldStats {

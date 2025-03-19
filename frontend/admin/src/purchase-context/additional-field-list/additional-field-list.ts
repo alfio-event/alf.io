@@ -3,7 +3,7 @@ import {css, html, LitElement} from "lit";
 import {AlfioEvent} from "../../model/event.ts";
 import {Task} from "@lit/task";
 import {
-    AdditionalField, AdditionalFieldTemplate,
+    AdditionalField, AdditionalFieldTemplate, NewAdditionalFieldFromTemplate,
     PurchaseContextFieldDescriptionContainer,
     renderAdditionalFieldType,
     supportsMinMaxLength
@@ -108,8 +108,6 @@ export class AdditionalFieldList extends LitElement {
                     ${this.iterateItems(model)}
                 </div>
 
-                ${this.renderCreateButton(model)}
-
                 <div class="m-1"></div>
             `
         });
@@ -124,7 +122,7 @@ export class AdditionalFieldList extends LitElement {
                         From Template
                         <sl-menu slot="submenu">
                             ${repeat(model.templates, t => t.name, (template) => html`
-                                    <sl-menu-item>${template.description['en'].label} (${template.name})</sl-menu-item>
+                                    <sl-menu-item @click=${() => this.newFromTemplate(template)}>${template.description['en'].label} (${template.name})</sl-menu-item>
                                 `)}
                         </sl-menu>
                     </sl-menu-item>
@@ -421,6 +419,14 @@ export class AdditionalFieldList extends LitElement {
     }
 
 
+    private async newFromTemplate(template: AdditionalFieldTemplate, fieldsCount: number) {
+        const ordinal = fieldsCount + 1;
+        const newField: NewAdditionalFieldFromTemplate = {
+            ...template,
+            order: ordinal
+        };
+        return undefined;
+    }
 }
 
 declare global {

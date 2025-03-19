@@ -13,7 +13,6 @@ import {SlDialog, SlRequestCloseEvent} from "@shoelace-style/shoelace";
 import {AlfioEvent} from "../../model/event.ts";
 import {repeat} from "lit/directives/repeat.js";
 import {TanStackFormController} from "@tanstack/lit-form";
-import {FormState} from '@tanstack/form-core';
 import {dialog, form, pageHeader, row, textColors} from "../../styles.ts";
 import {extractDateTime, notifyChange, renderIf, toDateTimeModification} from "../../service/helpers.ts";
 import {classMap} from "lit/directives/class-map.js";
@@ -31,21 +30,20 @@ export class AdditionalItemEdit extends LitElement {
     private type: AdditionalItemType | null = null;
 
     @query("sl-dialog#editDialog")
-    dialog?: SlDialog;
+    dialog: SlDialog | null = null;
 
     displayForm: boolean = false;
 
-    // waiting for https://github.com/TanStack/form/pull/656 to be complete
     private validationErrors?: { [k: string]: string};
 
-    #form: TanStackFormController<FormData> = new TanStackFormController(this, {
+    #form = new TanStackFormController(this, {
         defaultValues: {
             descriptions: [] as DescriptionForm[],
             availabilityAndPrices: {} as AvailabilityAndPricesForm,
         }
     });
 
-    private buildDefaultValues(currentState: FormState<FormData>): FormData {
+    private buildDefaultValues(currentState: { values: FormData }): FormData {
         if (this.editedItem != null) {
             const item = this.editedItem;
             return {
