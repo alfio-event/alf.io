@@ -95,8 +95,8 @@ export class PaymentProxyWithParameters {
 export type EventFormat = 'IN_PERSON' | 'ONLINE' | 'HYBRID';
 
 export type PaymentMethod = 'CREDIT_CARD' | 'PAYPAL' | 'IDEAL' | 'BANK_TRANSFER' | 'ON_SITE'
-                            | 'APPLE_PAY' | 'BANCONTACT' | 'ING_HOME_PAY' | 'BELFIUS' | 'PRZELEWY_24' | 'KBC' | 'NONE';
-export type PaymentProxy = 'STRIPE' | 'ON_SITE' | 'OFFLINE' | 'PAYPAL' | 'MOLLIE' | 'SAFERPAY';
+                            | 'APPLE_PAY' | 'BANCONTACT' | 'ING_HOME_PAY' | 'BELFIUS' | 'PRZELEWY_24' | 'KBC' | 'ETRANSFER' | 'NONE';
+export type PaymentProxy = 'STRIPE' | 'ON_SITE' | 'OFFLINE' | 'PAYPAL' | 'MOLLIE' | 'SAFERPAY' | 'CUSTOM_OFFLINE';
 export interface PaymentMethodDetails {
     labelKey: string;
     icon: [IconPrefix, IconName];
@@ -146,6 +146,10 @@ export const paymentMethodDetails: {[key in PaymentMethod]: PaymentMethodDetails
     'KBC': {
         labelKey: 'reservation-page.payment-method.kbc',
         icon: ['fas', 'money-check-alt']
+    },
+    'ETRANSFER': {
+        labelKey: 'reservation-page.payment-method.etransfer',
+        icon: ['fas', 'exchange-alt']
     },
     'NONE': {
         labelKey: null,
