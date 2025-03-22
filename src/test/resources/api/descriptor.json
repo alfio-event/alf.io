@@ -26814,21 +26814,6 @@
           "refundedAmount" : {
             "type" : "string"
           },
-          "singleTicketOrder" : {
-            "type" : "boolean"
-          },
-          "displayVat" : {
-            "type" : "boolean"
-          },
-          "totalNetPrice" : {
-            "type" : "string"
-          },
-          "displaySplitPaymentNote" : {
-            "type" : "boolean"
-          },
-          "priceBeforeTaxes" : {
-            "type" : "string"
-          },
           "vatExempt" : {
             "type" : "boolean"
           },
@@ -26845,6 +26830,21 @@
           },
           "notYetPaid" : {
             "type" : "boolean"
+          },
+          "singleTicketOrder" : {
+            "type" : "boolean"
+          },
+          "displayVat" : {
+            "type" : "boolean"
+          },
+          "totalNetPrice" : {
+            "type" : "string"
+          },
+          "displaySplitPaymentNote" : {
+            "type" : "boolean"
+          },
+          "priceBeforeTaxes" : {
+            "type" : "string"
           }
         }
       },
@@ -26887,14 +26887,14 @@
           "key" : {
             "$ref" : "#/components/schemas/TicketCategory"
           },
-          "left" : {
-            "$ref" : "#/components/schemas/TicketCategory"
-          },
           "right" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/Ticket"
             }
+          },
+          "left" : {
+            "$ref" : "#/components/schemas/TicketCategory"
           }
         }
       },
@@ -27483,14 +27483,10 @@
           "userLanguage" : {
             "type" : "string"
           },
-          "paymentMethod" : {
-            "type" : "string",
-            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
-          },
-          "billingAddress" : {
+          "invoiceNumber" : {
             "type" : "string"
           },
-          "invoiceNumber" : {
+          "billingAddress" : {
             "type" : "string"
           },
           "invoiceRequested" : {
@@ -27507,6 +27503,10 @@
           "discountCts" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "paymentMethod" : {
+            "type" : "string",
+            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
           },
           "vatNr" : {
             "type" : "string"
@@ -27777,6 +27777,9 @@
               "type" : "integer",
               "format" : "int32"
             }
+          },
+          "displayAtCheckIn" : {
+            "type" : "boolean"
           },
           "linkedAdditionalService" : {
             "$ref" : "#/components/schemas/AdditionalService"
@@ -28778,6 +28781,9 @@
           "contentLength" : {
             "$ref" : "#/components/schemas/ContentLengthRequest"
           },
+          "displayAtCheckIn" : {
+            "type" : "boolean"
+          },
           "valid" : {
             "type" : "boolean"
           }
@@ -29597,6 +29603,9 @@
               "format" : "int32"
             }
           },
+          "displayAtCheckIn" : {
+            "type" : "boolean"
+          },
           "linkedCategoriesIds" : {
             "type" : "array",
             "items" : {
@@ -30066,12 +30075,12 @@
                           "type" : "string",
                           "format" : "date-time"
                         },
-                        "overlap" : {
-                          "type" : "boolean"
-                        },
                         "instant" : {
                           "type" : "string",
                           "format" : "date-time"
+                        },
+                        "overlap" : {
+                          "type" : "boolean"
                         }
                       }
                     }
@@ -30269,11 +30278,11 @@
           "key" : {
             "type" : "boolean"
           },
-          "left" : {
-            "type" : "boolean"
-          },
           "right" : {
             "type" : "string"
+          },
+          "left" : {
+            "type" : "boolean"
           }
         }
       },
@@ -30612,11 +30621,11 @@
       "TripleBooleanStringString" : {
         "type" : "object",
         "properties" : {
-          "left" : {
-            "type" : "boolean"
-          },
           "right" : {
             "type" : "string"
+          },
+          "left" : {
+            "type" : "boolean"
           },
           "middle" : {
             "type" : "string"
@@ -30807,6 +30816,10 @@
             "type" : "string",
             "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
           },
+          "publicUuid" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
           "subscriptionId" : {
             "type" : "string",
             "format" : "uuid"
@@ -30814,10 +30827,6 @@
           "eventId" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "publicUuid" : {
-            "type" : "string",
-            "format" : "uuid"
           },
           "formattedFinalPrice" : {
             "type" : "string"
@@ -31172,12 +31181,12 @@
                           "type" : "string",
                           "format" : "date-time"
                         },
-                        "overlap" : {
-                          "type" : "boolean"
-                        },
                         "instant" : {
                           "type" : "string",
                           "format" : "date-time"
+                        },
+                        "overlap" : {
+                          "type" : "boolean"
                         }
                       }
                     }
@@ -31643,6 +31652,10 @@
               "$ref" : "#/components/schemas/ContentLanguage"
             }
           },
+          "begin" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
           "allowedPaymentProxies" : {
             "type" : "array",
             "items" : {
@@ -31652,10 +31665,6 @@
           },
           "publicIdentifier" : {
             "type" : "string"
-          },
-          "begin" : {
-            "type" : "string",
-            "format" : "date-time"
           },
           "freeOfCharge" : {
             "type" : "boolean"
@@ -32471,6 +32480,9 @@
               "type" : "string"
             }
           },
+          "regularPrice" : {
+            "type" : "number"
+          },
           "fileBlobIdIsPresent" : {
             "type" : "boolean"
           },
@@ -32479,9 +32491,6 @@
           },
           "publicIdentifier" : {
             "type" : "string"
-          },
-          "regularPrice" : {
-            "type" : "number"
           },
           "freeOfCharge" : {
             "type" : "boolean"
@@ -32631,14 +32640,14 @@
             "type" : "string",
             "enum" : [ "IN_PERSON", "ONLINE", "HYBRID" ]
           },
-          "shortName" : {
-            "type" : "string"
-          },
           "title" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             }
+          },
+          "shortName" : {
+            "type" : "string"
           },
           "websiteUrl" : {
             "type" : "string"
@@ -33159,12 +33168,12 @@
           "descriptor" : {
             "$ref" : "#/components/schemas/SubscriptionDescriptor"
           },
+          "unitPrice" : {
+            "type" : "number"
+          },
           "availableCount" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "unitPrice" : {
-            "type" : "number"
           }
         }
       },
@@ -33300,6 +33309,10 @@
             "type" : "string",
             "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
           },
+          "publicUuid" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
           "subscriptionId" : {
             "type" : "string",
             "format" : "uuid"
@@ -33307,10 +33320,6 @@
           "eventId" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "publicUuid" : {
-            "type" : "string",
-            "format" : "uuid"
           },
           "formattedFinalPrice" : {
             "type" : "string"
@@ -33693,12 +33702,12 @@
                           "type" : "string",
                           "format" : "date-time"
                         },
-                        "overlap" : {
-                          "type" : "boolean"
-                        },
                         "instant" : {
                           "type" : "string",
                           "format" : "date-time"
+                        },
+                        "overlap" : {
+                          "type" : "boolean"
                         }
                       }
                     }
@@ -33793,14 +33802,13 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "recipient" : {
-            "type" : "string"
+          "subscriptionDescriptorId" : {
+            "type" : "string",
+            "format" : "uuid"
           },
-          "cc" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
+          "eventId" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "requestTimestamp" : {
             "type" : "string",
@@ -33810,13 +33818,14 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "subscriptionDescriptorId" : {
-            "type" : "string",
-            "format" : "uuid"
+          "recipient" : {
+            "type" : "string"
           },
-          "eventId" : {
-            "type" : "integer",
-            "format" : "int32"
+          "cc" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           },
           "subject" : {
             "type" : "string"
@@ -33888,26 +33897,8 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "inputField" : {
-            "type" : "boolean"
-          },
-          "textareaField" : {
-            "type" : "boolean"
-          },
-          "selectField" : {
-            "type" : "boolean"
-          },
-          "euVat" : {
-            "type" : "boolean"
-          },
-          "maxLengthDefined" : {
-            "type" : "boolean"
-          },
-          "minLengthDefined" : {
-            "type" : "boolean"
-          },
-          "textField" : {
-            "type" : "boolean"
+          "inputType" : {
+            "type" : "string"
           },
           "order" : {
             "type" : "integer",
@@ -33945,8 +33936,11 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "inputType" : {
-            "type" : "string"
+          "countryField" : {
+            "type" : "boolean"
+          },
+          "displayAtCheckIn" : {
+            "type" : "boolean"
           },
           "categoryIds" : {
             "type" : "array",
@@ -33958,9 +33952,6 @@
           "dateOfBirth" : {
             "type" : "boolean"
           },
-          "countryField" : {
-            "type" : "boolean"
-          },
           "editable" : {
             "type" : "boolean"
           },
@@ -33969,6 +33960,27 @@
             "items" : {
               "type" : "string"
             }
+          },
+          "inputField" : {
+            "type" : "boolean"
+          },
+          "textareaField" : {
+            "type" : "boolean"
+          },
+          "selectField" : {
+            "type" : "boolean"
+          },
+          "euVat" : {
+            "type" : "boolean"
+          },
+          "maxLengthDefined" : {
+            "type" : "boolean"
+          },
+          "minLengthDefined" : {
+            "type" : "boolean"
+          },
+          "textField" : {
+            "type" : "boolean"
           }
         }
       },
@@ -34038,12 +34050,27 @@
               "type" : "string"
             }
           },
+          "displayAtCheckIn" : {
+            "type" : "boolean"
+          },
           "readOnly" : {
             "type" : "boolean"
           },
           "count" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "inputType" : {
+            "type" : "string"
+          },
+          "checkboxField" : {
+            "type" : "boolean"
+          },
+          "countryField" : {
+            "type" : "boolean"
+          },
+          "dateOfBirth" : {
+            "type" : "boolean"
           },
           "inputField" : {
             "type" : "boolean"
@@ -34064,18 +34091,6 @@
             "type" : "boolean"
           },
           "textField" : {
-            "type" : "boolean"
-          },
-          "checkboxField" : {
-            "type" : "boolean"
-          },
-          "inputType" : {
-            "type" : "string"
-          },
-          "dateOfBirth" : {
-            "type" : "boolean"
-          },
-          "countryField" : {
             "type" : "boolean"
           }
         }
@@ -34841,11 +34856,8 @@
           "currencyCode" : {
             "type" : "string"
           },
-          "formattedStart" : {
-            "type" : "string"
-          },
-          "formattedEnd" : {
-            "type" : "string"
+          "dynamic" : {
+            "type" : "boolean"
           },
           "description" : {
             "type" : "string"
@@ -34894,9 +34906,6 @@
           "expired" : {
             "type" : "boolean"
           },
-          "dynamic" : {
-            "type" : "boolean"
-          },
           "utcStart" : {
             "type" : "string",
             "format" : "date-time"
@@ -34913,6 +34922,12 @@
             "type" : "boolean"
           },
           "emailReference" : {
+            "type" : "string"
+          },
+          "formattedStart" : {
+            "type" : "string"
+          },
+          "formattedEnd" : {
             "type" : "string"
           }
         }
@@ -35196,19 +35211,16 @@
           "displayName" : {
             "type" : "string"
           },
-          "formattedEnd" : {
-            "type" : "string"
-          },
           "status" : {
             "type" : "string",
             "enum" : [ "DRAFT", "PUBLIC", "DISABLED" ]
           },
-          "shortName" : {
-            "type" : "string"
-          },
           "organizationId" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "shortName" : {
+            "type" : "string"
           },
           "allowedPaymentProxies" : {
             "type" : "array",
@@ -35243,6 +35255,10 @@
           "expired" : {
             "type" : "boolean"
           },
+          "notAllocatedTickets" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "pendingTickets" : {
             "type" : "integer",
             "format" : "int32"
@@ -35251,12 +35267,8 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "notAllocatedTickets" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "warningNeeded" : {
-            "type" : "boolean"
+          "formattedEnd" : {
+            "type" : "string"
           },
           "formattedBegin" : {
             "type" : "string"
@@ -35265,6 +35277,9 @@
             "type" : "boolean"
           },
           "displayStatistics" : {
+            "type" : "boolean"
+          },
+          "warningNeeded" : {
             "type" : "boolean"
           }
         }
@@ -35284,10 +35299,10 @@
           "timeZone" : {
             "type" : "string"
           },
-          "url" : {
+          "end" : {
             "type" : "string"
           },
-          "end" : {
+          "url" : {
             "type" : "string"
           },
           "begin" : {
@@ -35407,10 +35422,10 @@
           "key" : {
             "type" : "string"
           },
-          "left" : {
+          "right" : {
             "type" : "string"
           },
-          "right" : {
+          "left" : {
             "type" : "string"
           }
         }
@@ -35615,10 +35630,10 @@
           "key" : {
             "type" : "string"
           },
-          "left" : {
+          "right" : {
             "type" : "string"
           },
-          "right" : {
+          "left" : {
             "type" : "string"
           }
         }

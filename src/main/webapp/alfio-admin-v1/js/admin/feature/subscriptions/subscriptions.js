@@ -84,7 +84,7 @@
         })
         .state('subscriptions.single.additional-fields', {
             url:'/additional-fields',
-            template: '<additional-fields subscription-descriptor="ctrl.subscriptionDescriptor"></additional-fields>',
+            template: '<alfio-additional-field-list data-public-identifier="{{ctrl.subscriptionDescriptor.publicIdentifier}}" data-purchase-context-type="subscription" data-organization-id="{{ctrl.subscriptionDescriptor.organizationId}}"></alfio-additional-field-list>',
             controller: function(loadSubscription) {
                 this.subscriptionDescriptor = loadSubscription.data;
             },

@@ -66,6 +66,13 @@
                         <div class="col-sm-4"><strong>Read Only</strong></div>
                         <div class="col-sm-8">{{field.readOnly}}</div>
                     </div>
+                    <div class="row">
+                        <div class="col-sm-4" uib-tooltip="When enabled, this information will be visible to the check-in staff.">
+                            <strong>Show at Check-in</strong>
+                            <i class="fa fa-info-circle" ></i>
+                        </div>
+                        <div class="col-sm-8">{{field.displayAtCheckIn ? 'yes' : 'no'}}</div>
+                    </div>
                 </div>
             </div>
             <hr data-ng-if="field.type == 'select' || field.type == 'country'" />
