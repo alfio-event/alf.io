@@ -159,7 +159,7 @@ export class AdditionalItemEdit extends LitElement {
                     ${
                         // title
                         this.#form.field({name: `descriptions[${index}].title`, validators: {
-                            onChange: ({ value }: { value: string }) => {
+                            onChange: ({ value }) => {
                                 return value && value.length < 3
                                     ? 'error.title'
                                     : undefined
@@ -171,7 +171,7 @@ export class AdditionalItemEdit extends LitElement {
                             `
                     })}
                     ${this.#form.field({name: `descriptions[${index}].description`, validators: {
-                                onChange: ({ value }: { value: string }) => {
+                                onChange: ({ value }) => {
                                     return value && value.length < 3
                                         ? 'error.description'
                                         : undefined
@@ -214,7 +214,7 @@ export class AdditionalItemEdit extends LitElement {
             <div class="row">
                 <div class="col">
                     ${this.#form.field({name: `availabilityAndPrices.inception`, validators: {
-                                onChange: ({ value }: { value: string }) => {
+                                onChange: ({ value }) => {
                                     return value && value.length < 3
                                         ? 'Not long enough'
                                         : undefined
@@ -230,7 +230,7 @@ export class AdditionalItemEdit extends LitElement {
                 </div>
                 <div class="col">
                     ${this.#form.field({name: `availabilityAndPrices.expiration`, validators: {
-                                onChange: ({ value }: { value: string }) => {
+                                onChange: ({ value }) => {
                                     return value && value.length < 3
                                         ? 'Not long enough'
                                         : undefined

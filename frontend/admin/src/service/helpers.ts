@@ -1,7 +1,6 @@
 import {DateTimeModification} from "../model/event.ts";
 import {html, nothing, TemplateResult} from "lit";
 import {when} from "lit/directives/when.js";
-import {FieldApi} from "@tanstack/lit-form";
 import {ContentLanguage} from "../model/purchase-context.ts";
 
 export function postJson(url: string, payload: any): Promise<Response> {
@@ -74,7 +73,7 @@ export function extractDateTime(isoString?: string): string {
 }
 
 export function notifyChange(event: InputEvent,
-                             field: FieldApi<any, any>,
+                             field: { handleChange: (m: any) => void },
                              // helps with boolean / number values
                              valueTransformer: (v: string) => any = (s) => s): void {
     const target = event.currentTarget as HTMLInputElement | null;

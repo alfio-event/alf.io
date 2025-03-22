@@ -3,7 +3,6 @@ import {html, LitElement, TemplateResult} from "lit";
 import {SlDialog, SlRequestCloseEvent} from "@shoelace-style/shoelace";
 import {
     AdditionalField,
-    AdditionalFieldTemplate,
     NewAdditionalFieldFromTemplate
 } from "../../model/additional-field.ts";
 import {ContentLanguage, PurchaseContext} from "../../model/purchase-context.ts";

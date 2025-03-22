@@ -51,6 +51,8 @@ export class AdditionalFieldList extends LitElement {
     editActive: boolean = false;
     @state()
     refreshCount: number = 0;
+    @state()
+    itemsCount: number = 0;
 
     private readonly retrievePageDataTask = new Task<ReadonlyArray<string>, Model>(this,
         async ([publicIdentifier, purchaseContextType, organizationId]) => {
@@ -122,7 +124,7 @@ export class AdditionalFieldList extends LitElement {
                         From Template
                         <sl-menu slot="submenu">
                             ${repeat(model.templates, t => t.name, (template) => html`
-                                    <sl-menu-item @click=${() => this.newFromTemplate(template)}>${template.description['en'].label} (${template.name})</sl-menu-item>
+                                    <sl-menu-item @click=${() => this.newFromTemplate(template, this.itemsCount)}>${template.description['en'].label} (${template.name})</sl-menu-item>
                                 `)}
                         </sl-menu>
                     </sl-menu-item>
@@ -136,6 +138,7 @@ export class AdditionalFieldList extends LitElement {
         return model.dataTask.render({
             initial: () => html`loading...`,
             complete: listData => {
+                this.itemsCount = listData.items.length;
                 if (listData.items.length === 0) {
                     return this.renderStandard();
                 }
@@ -425,7 +428,7 @@ export class AdditionalFieldList extends LitElement {
             ...template,
             order: ordinal
         };
-        return undefined;
+        return newField;
     }
 }
 
