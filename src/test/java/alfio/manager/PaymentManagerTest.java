@@ -20,6 +20,8 @@ import alfio.manager.payment.MollieWebhookPaymentManager;
 import alfio.manager.payment.StripeWebhookPaymentManager;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.StaticPaymentMethods;
+import alfio.model.transaction.webhook.MollieWebhookPayload;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -27,9 +29,11 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -53,19 +57,33 @@ class PaymentManagerTest {
 
     @Test
     void validSelection() {
-        when(stripe.getSupportedPaymentMethods(any(), any())).thenReturn(EnumSet.of(PaymentMethod.CREDIT_CARD));
-        when(mollie.getSupportedPaymentMethods(any(), any())).thenReturn(EnumSet.of(PaymentMethod.IDEAL));
+        doReturn(
+            EnumSet.of(StaticPaymentMethods.CREDIT_CARD)
+                .stream()
+                .map(paymentMethod -> (PaymentMethod) paymentMethod)
+                .collect(Collectors.toSet())
+        )
+            .when(stripe)
+            .getSupportedPaymentMethods(any(), any());
+
+        doReturn(EnumSet.of(StaticPaymentMethods.IDEAL))
+            .when(mollie)
+            .getSupportedPaymentMethods(any(), any());
         assertTrue(paymentManager.validateSelection(List.of(PaymentProxy.STRIPE, PaymentProxy.MOLLIE), 1).isEmpty());
     }
 
     @Test
     void selectionConflict() {
-        when(stripe.getSupportedPaymentMethods(any(), any())).thenReturn(EnumSet.of(PaymentMethod.CREDIT_CARD));
-        when(mollie.getSupportedPaymentMethods(any(), any())).thenReturn(EnumSet.of(PaymentMethod.CREDIT_CARD, PaymentMethod.IDEAL));
+        doReturn(EnumSet.of(StaticPaymentMethods.CREDIT_CARD))
+            .when(stripe)
+            .getSupportedPaymentMethods(any(), any());
+        doReturn(EnumSet.of(StaticPaymentMethods.CREDIT_CARD, StaticPaymentMethods.IDEAL))
+            .when(mollie)
+            .getSupportedPaymentMethods(any(), any());
         List<Map.Entry<PaymentMethod, Set<PaymentProxy>>> entries = paymentManager.validateSelection(List.of(PaymentProxy.STRIPE, PaymentProxy.MOLLIE), 1);
         assertFalse(entries.isEmpty());
         assertEquals(1, entries.size());
-        assertSame(entries.get(0).getKey(), PaymentMethod.CREDIT_CARD);
+        assertSame(entries.get(0).getKey(), StaticPaymentMethods.CREDIT_CARD);
         assertEquals(entries.get(0).getValue(), EnumSet.of(PaymentProxy.STRIPE, PaymentProxy.MOLLIE));
     }
 }

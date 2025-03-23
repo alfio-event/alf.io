@@ -29,6 +29,7 @@ import alfio.model.system.ConfigurationPathLevel;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.StaticPaymentMethods;
 import alfio.model.transaction.Transaction;
 import alfio.repository.TicketRepository;
 import alfio.repository.system.ConfigurationRepository;
@@ -289,7 +290,7 @@ class BaseStripeManager {
     boolean accept(PaymentMethod paymentMethod, PaymentContext context,
                    EnumSet<ConfigurationKeys> additionalKeys,
                    Predicate<Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration>> subValidator) {
-        return paymentMethod == PaymentMethod.CREDIT_CARD
+        return paymentMethod == StaticPaymentMethods.CREDIT_CARD
             && isActive(context, additionalKeys, subValidator);
     }
 

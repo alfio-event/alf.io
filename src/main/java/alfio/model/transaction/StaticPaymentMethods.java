@@ -16,19 +16,21 @@
  */
 package alfio.model.transaction;
 
-import java.util.Arrays;
-
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-
-@JsonDeserialize(using = PaymentMethodDeserializer.class)
-public interface PaymentMethod {
-    public String name();
-
-    public static PaymentMethod safeParse(String asString) {
-        return Arrays
-            .stream(StaticPaymentMethods.values())
-            .filter(v -> v.name().equals(asString))
-            .findFirst()
-            .orElse(null);
-    }
+public enum StaticPaymentMethods implements PaymentMethod {
+    CREDIT_CARD,
+    PAYPAL,
+    IDEAL,
+    BANK_TRANSFER,
+    ON_SITE,
+    NONE,
+    APPLE_PAY,
+    BANCONTACT,
+    ING_HOME_PAY,
+    BELFIUS,
+    KBC,
+    PRZELEWY_24,
+    ALIPAY,
+    POSTFINANCE,
+    TWINT,
+    ETRANSFER;
 }

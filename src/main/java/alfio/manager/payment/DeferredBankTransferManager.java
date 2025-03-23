@@ -43,7 +43,7 @@ public class DeferredBankTransferManager implements PaymentProvider {
     }
 
     @Override
-    public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
+    public Set<? extends PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
         return bankTransferManager.getSupportedPaymentMethods(paymentContext, transactionRequest);
     }
 

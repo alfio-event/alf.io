@@ -60,8 +60,8 @@ class DeferredBankTransferManagerTest {
             new MaybeConfiguration(DEFERRED_BANK_TRANSFER_ENABLED, new ConfigurationKeyValuePathLevel(DEFERRED_BANK_TRANSFER_ENABLED.name(), "true", null))));
         when(bankTransferManager.bankTransferEnabledForMethod(any(), eq(paymentContext), anyMap())).thenReturn(true);
         when(bankTransferManager.isPaymentDeferredEnabled(anyMap())).thenCallRealMethod();
-        assertTrue(deferredBankTransferManager.accept(PaymentMethod.BANK_TRANSFER, paymentContext, TransactionRequest.empty()));
-        assertFalse(deferredBankTransferManager.accept(PaymentMethod.BANK_TRANSFER, new PaymentContext(), TransactionRequest.empty()));
+        assertTrue(deferredBankTransferManager.accept(StaticPaymentMethods.BANK_TRANSFER, paymentContext, TransactionRequest.empty()));
+        assertFalse(deferredBankTransferManager.accept(StaticPaymentMethods.BANK_TRANSFER, new PaymentContext(), TransactionRequest.empty()));
     }
 
     @Test
@@ -71,7 +71,7 @@ class DeferredBankTransferManagerTest {
             new MaybeConfiguration(DEFERRED_BANK_TRANSFER_ENABLED)));
         when(bankTransferManager.bankTransferEnabledForMethod(any(), eq(paymentContext), anyMap())).thenReturn(true);
         when(bankTransferManager.isPaymentDeferredEnabled(anyMap())).thenCallRealMethod();
-        assertFalse(deferredBankTransferManager.accept(PaymentMethod.BANK_TRANSFER, paymentContext, TransactionRequest.empty()));
+        assertFalse(deferredBankTransferManager.accept(StaticPaymentMethods.BANK_TRANSFER, paymentContext, TransactionRequest.empty()));
     }
 
     @Test

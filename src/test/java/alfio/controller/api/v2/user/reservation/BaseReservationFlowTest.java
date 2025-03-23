@@ -46,8 +46,8 @@ import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.audit.ScanAudit;
 import alfio.model.modification.*;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.StaticPaymentMethods;
 import alfio.model.user.User;
 import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
@@ -566,7 +566,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
             var activePaymentMethods = reservationInfo.getBody().getActivePaymentMethods();
             assertFalse(activePaymentMethods.isEmpty());
-            assertTrue(activePaymentMethods.containsKey(PaymentMethod.BANK_TRANSFER));
+            assertTrue(activePaymentMethods.containsKey(StaticPaymentMethods.BANK_TRANSFER));
 
             configurationRepository.insertTicketCategoryLevel(context.event.getOrganizationId(), context.event.getId(), hiddenCategoryId, ConfigurationKeys.PAYMENT_METHODS_BLACKLIST.name(), PaymentProxy.OFFLINE.name(), "");
 
@@ -639,7 +639,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertNotNull(reservationInfo.getBody());
             assertEquals(reservationId, reservationInfo.getBody().getId());
             assertEquals(1, reservationInfo.getBody().getActivePaymentMethods().size());
-            assertTrue(reservationInfo.getBody().getActivePaymentMethods().containsKey(PaymentMethod.BANK_TRANSFER));
+            assertTrue(reservationInfo.getBody().getActivePaymentMethods().containsKey(StaticPaymentMethods.BANK_TRANSFER));
 
             assertEquals(1, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
 
@@ -1537,7 +1537,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         paymentForm.setPrivacyPolicyAccepted(true);
         paymentForm.setTermAndConditionsAccepted(true);
         paymentForm.setPaymentProxy(PaymentProxy.OFFLINE);
-        paymentForm.setSelectedPaymentMethod(PaymentMethod.BANK_TRANSFER);
+        paymentForm.setSelectedPaymentMethod(StaticPaymentMethods.BANK_TRANSFER);
 
         // bank transfer does not have a transaction, it's created on confirmOverview call
         var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
@@ -1718,7 +1718,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         var paymentForm = new PaymentForm();
         paymentForm.setPrivacyPolicyAccepted(true);
         paymentForm.setTermAndConditionsAccepted(true);
-        paymentForm.setSelectedPaymentMethod(PaymentMethod.NONE);
+        paymentForm.setSelectedPaymentMethod(StaticPaymentMethods.NONE);
 
         var propertyBindingResult = new BeanPropertyBindingResult(paymentForm, "paymentForm");
         var handleRes = reservationApiV2Controller.confirmOverview(reservationId, "en", paymentForm, propertyBindingResult, new MockHttpServletRequest(), null);
