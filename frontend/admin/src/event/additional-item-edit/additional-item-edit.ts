@@ -30,7 +30,7 @@ export class AdditionalItemEdit extends LitElement {
     private type: AdditionalItemType | null = null;
 
     @query("sl-dialog#editDialog")
-    dialog: SlDialog | null = null;
+    dialog?: SlDialog;
 
     displayForm: boolean = false;
 
@@ -40,7 +40,7 @@ export class AdditionalItemEdit extends LitElement {
         defaultValues: {
             descriptions: [] as DescriptionForm[],
             availabilityAndPrices: {} as AvailabilityAndPricesForm,
-        }
+        } as FormData
     });
 
     private buildDefaultValues(currentState: { values: FormData }): FormData {

@@ -124,11 +124,11 @@ export class AdditionalFieldList extends LitElement {
                         From Template
                         <sl-menu slot="submenu">
                             ${repeat(model.templates, t => t.name, (template) => html`
-                                    <sl-menu-item @click=${() => this.newFromTemplate(template, this.itemsCount)}>${template.description['en'].label} (${template.name})</sl-menu-item>
+                                    <sl-menu-item @click=${() => this.newFromTemplate(model, template, this.itemsCount)}>${template.description['en'].label} (${template.name})</sl-menu-item>
                                 `)}
                         </sl-menu>
                     </sl-menu-item>
-                    <sl-menu-item>Custom</sl-menu-item>
+                    <sl-menu-item @click=${() => this.newCustom(model, this.itemsCount)}>Custom</sl-menu-item>
                 </sl-menu>
             </sl-dropdown>
         `;
@@ -273,9 +273,9 @@ export class AdditionalFieldList extends LitElement {
         const targetPosition = field.order ?? 0;
         if (index > 0) {
             const prevTargetId = listData.items[index - 1].id;
-            await AdditionalFieldService.swapFieldPosition(purchaseContext, targetId, prevTargetId);
+            await AdditionalFieldService.swapFieldPosition(purchaseContext, targetId!, prevTargetId!);
         } else {
-            await AdditionalFieldService.moveField(purchaseContext, targetId, targetPosition - 1);
+            await AdditionalFieldService.moveField(purchaseContext, targetId!, targetPosition - 1);
         }
         this.refreshCount++;
     }
@@ -284,12 +284,12 @@ export class AdditionalFieldList extends LitElement {
         if (index < listData.items.length) {
             const nextField = listData.items[index + 1];
             if (field.order < 0 && nextField.order >= 0) {
-                await AdditionalFieldService.moveField(purchaseContext, field.id, 0);
+                await AdditionalFieldService.moveField(purchaseContext, field.id!, 0);
             } else {
-                await AdditionalFieldService.swapFieldPosition(purchaseContext, field.id, nextField.id);
+                await AdditionalFieldService.swapFieldPosition(purchaseContext, field.id!, nextField.id!);
             }
         } else {
-            await AdditionalFieldService.moveField(purchaseContext, field.id, 0);
+            await AdditionalFieldService.moveField(purchaseContext, field.id!, 0);
         }
         this.refreshCount++;
     }
@@ -375,7 +375,7 @@ export class AdditionalFieldList extends LitElement {
                 'danger'
             );
             if (confirmation) {
-                const response = await AdditionalFieldService.deleteField((model.event ?? model.subscriptionDescriptor)!, field.id);
+                const response = await AdditionalFieldService.deleteField((model.event ?? model.subscriptionDescriptor)!, field.id!);
                 if(response.ok) {
                     dispatchFeedback({
                         type: 'success',
@@ -421,14 +421,41 @@ export class AdditionalFieldList extends LitElement {
         });
     }
 
+    private async openEditDialog(model: Model,
+                                 ordinal: number,
+                                 field?: AdditionalField,
+                                 template?: NewAdditionalFieldFromTemplate): Promise<void> {
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <alfio-additional-field-edit></alfio-additional-field-edit>
+        `;
+        const component = div.querySelector('alfio-additional-field-edit')!;
+        document.body.appendChild(div);
+        await customElements.whenDefined('alfio-additional-field-edit');
+        component.addEventListener('alfio-dialog-closed', async () => {
+            setTimeout(() => document.body.removeChild(div));
+        });
+        const purchaseContext: PurchaseContext = (model.isSubscription ? model.subscriptionDescriptor : model.event)!;
+        await component.open({
+            field,
+            template,
+            purchaseContext,
+            ordinal
+        });
+    }
 
-    private async newFromTemplate(template: AdditionalFieldTemplate, fieldsCount: number) {
+
+    private async newFromTemplate(model: Model, template: AdditionalFieldTemplate, fieldsCount: number) {
         const ordinal = fieldsCount + 1;
         const newField: NewAdditionalFieldFromTemplate = {
             ...template,
             order: ordinal
         };
-        return newField;
+        await this.openEditDialog(model, ordinal, undefined, newField);
+    }
+
+    private async newCustom(model: Model, itemsCount: number) {
+        await this.openEditDialog(model, itemsCount + 1);
     }
 }
 

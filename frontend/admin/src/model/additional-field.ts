@@ -1,5 +1,5 @@
 export interface AdditionalField {
-    id: number;
+    id?: number;
     name: string;
     order: number;
     type: AdditionalFieldType;
@@ -40,7 +40,7 @@ export type AdditionalFieldContext = 'ATTENDEE' | 'ADDITIONAL_SERVICE' | 'SUBSCR
 
 export type AdditionalFieldType = 'input:text' | 'input:tel' | 'vat:eu' | 'textarea' | 'country' | 'select' | 'checkbox' | 'radio' | 'input:dateOfBirth';
 
-const descriptions = {
+export const additionalFieldTypesWithDescription = {
     'input:text': 'Single-line text input',
     'input:tel': 'Phone number input',
     'vat:eu': 'European VAT number input',
@@ -51,6 +51,15 @@ const descriptions = {
     'checkbox': 'Multiple-choice checkboxes',
     'input:dateOfBirth': 'Date of birth input'
 };
+
+export function supportsPlaceholder(fieldType: AdditionalFieldType) {
+    return fieldType === 'input:text'
+        || fieldType === 'input:tel'
+        || fieldType === 'vat:eu'
+        || fieldType === 'textarea'
+        || fieldType === 'input:dateOfBirth';
+}
+
 
 export interface PurchaseContextFieldDescriptionContainer {
     locale: string;
@@ -65,10 +74,13 @@ export interface PurchaseContextFieldDescription {
 }
 
 export function renderAdditionalFieldType(type: AdditionalFieldType): string {
-    const mapped = descriptions[type];
+    const mapped = additionalFieldTypesWithDescription[type];
     return mapped ?? 'unknown';
 }
 
-export function supportsMinMaxLength(type: AdditionalFieldType): boolean {
-    return type === 'input:text' || type === 'input:tel' || type === 'textarea';
+export function supportsMinMaxLength(fieldType: AdditionalFieldType): boolean {
+    return fieldType === 'input:text'
+        || fieldType === 'input:tel'
+        || fieldType === 'textarea'
+        || fieldType === 'input:dateOfBirth';
 }

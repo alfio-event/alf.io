@@ -50,7 +50,10 @@ export class AdditionalFieldStatistics extends LitElement {
 
     private readonly retrievePageDataTask = new Task<ReadonlyArray<boolean>, ReadonlyArray<AdditionalFieldStats>>(this,
         async () => {
-            return await AdditionalFieldService.loadRestrictedValuesStats(this.purchaseContext!, this.field!.id);
+            if (this.field?.id != null) {
+                return await AdditionalFieldService.loadRestrictedValuesStats(this.purchaseContext!, this.field!.id);
+            }
+            return [];
         },
         () => [this.active]);
 

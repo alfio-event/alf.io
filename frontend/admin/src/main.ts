@@ -50,3 +50,4 @@ export { AdditionalItemEdit } from './event/additional-item-edit/additional-item
 export { FeedbackVisualizer } from './feedback-visualizer/feedback-visualizer';
 export { AdditionalFieldList } from './purchase-context/additional-field-list/additional-field-list';
 export { AdditionalFieldStatistics } from './purchase-context/additional-field-statistics/additional-field-statistics';
+export { AdditionalFieldEdit } from './purchase-context/additional-field-edit/additional-field-edit';
