@@ -28,6 +28,7 @@ import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProvider;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.StaticPaymentMethods;
 import alfio.model.transaction.Transaction;
 import alfio.model.transaction.TransactionRequest;
 import alfio.repository.TicketReservationRepository;
@@ -70,7 +71,7 @@ public class CustomOfflinePaymentManager implements PaymentProvider {
             configurationRepository.findByKeyAtOrganizationLevel(orgId.getAsInt(), "CUSTOM_OFFLINE_PAYMENTS");
         }
 
-        return Set.of(PaymentMethod.ETRANSFER);
+        return Set.of(StaticPaymentMethods.ETRANSFER);
     }
 
     @Override

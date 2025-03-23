@@ -17,7 +17,7 @@
 package alfio.manager.payment.saferpay;
 
 import alfio.manager.payment.PaymentSpecification;
-import alfio.model.transaction.PaymentMethod;
+import alfio.model.transaction.StaticPaymentMethods;
 import com.google.gson.stream.JsonWriter;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -32,7 +32,7 @@ public class PaymentPageInitializeRequestBuilder {
     public static final String CANCEL_URL_TEMPLATE = "/{purchaseContextType}/{purchaseContextIdentifier}/reservation/{reservationId}/payment/saferpay/cancel";
 
     static final Set<String> SUPPORTED_METHODS = Set.of(
-        PaymentMethod.ALIPAY.name(),
+        StaticPaymentMethods.ALIPAY.name(),
 
         //CREDIT_CARD
         "AMEX",
@@ -45,8 +45,8 @@ public class PaymentPageInitializeRequestBuilder {
         "MASTERCARD",
         "POSTCARD",
 
-        PaymentMethod.POSTFINANCE.name(),
-        PaymentMethod.TWINT.name()
+        StaticPaymentMethods.POSTFINANCE.name(),
+        StaticPaymentMethods.TWINT.name()
     );
 
     private String customerId;
