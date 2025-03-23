@@ -106,11 +106,11 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
     }
 
     @Override
-    public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
+    public Set<? extends PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
         if(!isActive(paymentContext)) {
-            return EnumSet.noneOf(PaymentMethod.class);
+            return EnumSet.noneOf(StaticPaymentMethods.class);
         }
-        return EnumSet.of(PaymentMethod.CREDIT_CARD);
+        return EnumSet.of(StaticPaymentMethods.CREDIT_CARD);
     }
 
     @Override
@@ -138,7 +138,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
 
     @Override
     public PaymentMethod getPaymentMethodForTransaction(Transaction transaction) {
-        return PaymentMethod.CREDIT_CARD;
+        return StaticPaymentMethods.CREDIT_CARD;
     }
 
     @Override
