@@ -75,16 +75,16 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
 
     private static final Logger log = LoggerFactory.getLogger(MollieWebhookPaymentManager.class);
     public static final String WEBHOOK_URL_TEMPLATE = "/api/payment/webhook/mollie/reservation/{reservationId}";
-    private static final Set<PaymentMethod> EMPTY_METHODS = Collections.unmodifiableSet(EnumSet.noneOf(PaymentMethod.class));
-    static final Map<String, PaymentMethod> SUPPORTED_METHODS = Map.of(
-        "ideal", PaymentMethod.IDEAL,
-        "creditcard", PaymentMethod.CREDIT_CARD,
-        "applepay", PaymentMethod.APPLE_PAY,
-        "bancontact", PaymentMethod.BANCONTACT,
-        "inghomepay", PaymentMethod.ING_HOME_PAY,
-        "belfius", PaymentMethod.BELFIUS,
-        "przelewy24", PaymentMethod.PRZELEWY_24,
-        "kbc", PaymentMethod.KBC
+    private static final Set<PaymentMethod> EMPTY_METHODS = Collections.unmodifiableSet(EnumSet.noneOf(StaticPaymentMethods.class));
+    static final Map<String, StaticPaymentMethods> SUPPORTED_METHODS = Map.of(
+        "ideal", StaticPaymentMethods.IDEAL,
+        "creditcard", StaticPaymentMethods.CREDIT_CARD,
+        "applepay", StaticPaymentMethods.APPLE_PAY,
+        "bancontact", StaticPaymentMethods.BANCONTACT,
+        "inghomepay", StaticPaymentMethods.ING_HOME_PAY,
+        "belfius", StaticPaymentMethods.BELFIUS,
+        "przelewy24", StaticPaymentMethods.PRZELEWY_24,
+        "kbc", StaticPaymentMethods.KBC
         /*
             other available:
             banktransfer, paypal, sofort, klarnapaylater, klarnasliceit, giftcard, giropay, eps
@@ -109,7 +109,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
     private static final String VALUE = "value";
     private static final String CURRENCY = "currency";
     private static final String STATUS_FAILED = "failed";
-    private final Cache<MethodCacheKey, Set<PaymentMethod>> methodsCache = Caffeine.newBuilder()
+    private final Cache<MethodCacheKey, Set<? extends PaymentMethod>> methodsCache = Caffeine.newBuilder()
         .expireAfterAccess(Duration.ofMinutes(5)).build();
     private final Cache<Integer, String> accessTokenCache = Caffeine.newBuilder()
         .expireAfterWrite(Duration.ofMinutes(45)).build(); // token lifetime is 1h
@@ -141,7 +141,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
     }
 
     @Override
-    public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
+    public Set<? extends PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
         var configuration = getConfiguration(paymentContext.getConfigurationLevel());
         if (checkIfActive(configuration) && isPlatformConfigurationPresent(configuration)) {
             return retrieveAvailablePaymentMethods(transactionRequest, configuration, paymentContext.getConfigurationLevel());
@@ -174,7 +174,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         return configurationManager.getFor(ALL_OPTIONS, configurationLevel);
     }
 
-    private Set<PaymentMethod> retrieveAvailablePaymentMethods(TransactionRequest transactionRequest, Map<ConfigurationKeys, MaybeConfiguration> configuration, ConfigurationLevel configurationLevel) {
+    private Set<? extends PaymentMethod> retrieveAvailablePaymentMethods(TransactionRequest transactionRequest, Map<ConfigurationKeys, MaybeConfiguration> configuration, ConfigurationLevel configurationLevel) {
         try {
             return methodsCache.get(MethodCacheKey.from(transactionRequest, configuration),
                 key -> fetchAvailablePaymentMethods(key, configuration, configurationLevel));
@@ -184,7 +184,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         }
     }
 
-    private Set<PaymentMethod> fetchAvailablePaymentMethods(MethodCacheKey key, Map<ConfigurationKeys, MaybeConfiguration> configuration, ConfigurationLevel configurationLevel) {
+    private Set<? extends PaymentMethod> fetchAvailablePaymentMethods(MethodCacheKey key, Map<ConfigurationKeys, MaybeConfiguration> configuration, ConfigurationLevel configurationLevel) {
 
         var params = new ArrayList<String>();
         if(key.amount != null) {
@@ -218,7 +218,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
                 }
                 var methodsObj = body.getAsJsonObject("_embedded").getAsJsonArray("methods");
                 var rejectedMethods = new ArrayList<String>();
-                var result = EnumSet.noneOf(PaymentMethod.class);
+                Set<StaticPaymentMethods> result = EnumSet.noneOf(StaticPaymentMethods.class);
                 for(int i = 0; i < count; i++) {
                     var methodId = methodsObj.get(i).getAsJsonObject().get("id").getAsString();
                     var parsed = SUPPORTED_METHODS.get(methodId);

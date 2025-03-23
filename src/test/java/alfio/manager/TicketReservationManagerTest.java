@@ -38,8 +38,8 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.command.CleanupReservations;
 import alfio.model.system.command.FinalizeReservation;
 import alfio.model.transaction.PaymentContext;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.StaticPaymentMethods;
 import alfio.model.transaction.Transaction;
 import alfio.model.transaction.capabilities.ServerInitiatedTransaction;
 import alfio.model.transaction.capabilities.WebhookHandler;
@@ -887,7 +887,7 @@ class TicketReservationManagerTest {
         when(ticket.getFullName()).thenReturn("Giuseppe Garibaldi");
         when(ticket.getUserLanguage()).thenReturn("en");
         StripeCreditCardManager stripeCreditCardManager = mock(StripeCreditCardManager.class);
-        when(stripeCreditCardManager.accept(eq(PaymentMethod.CREDIT_CARD), any(), any())).thenReturn(true);
+        when(stripeCreditCardManager.accept(eq(StaticPaymentMethods.CREDIT_CARD), any(), any())).thenReturn(true);
         when(paymentManager.streamActiveProvidersByProxy(eq(PaymentProxy.STRIPE), any())).thenReturn(Stream.of(stripeCreditCardManager));
         when(stripeCreditCardManager.getTokenAndPay(any())).thenReturn(PaymentResult.successful(TRANSACTION_ID));
         PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, new StripeCreditCardToken(GATEWAY_TOKEN), 100, event, "test@email",
@@ -895,7 +895,7 @@ class TicketReservationManagerTest {
             true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         when(ticketReservation.getStatus()).thenReturn(IN_PAYMENT);
         when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(List.of());
-        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.STRIPE, PaymentMethod.CREDIT_CARD, null);
+        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.STRIPE, StaticPaymentMethods.CREDIT_CARD, null);
         if(expectSuccess) {
             Assertions.assertTrue(result.isSuccessful());
             Assertions.assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayId());
@@ -936,10 +936,10 @@ class TicketReservationManagerTest {
         StripeCreditCardManager stripeCreditCardManager = mock(StripeCreditCardManager.class);
         when(paymentManager.streamActiveProvidersByProxy(eq(PaymentProxy.STRIPE), any())).thenReturn(Stream.of(stripeCreditCardManager));
         when(stripeCreditCardManager.getTokenAndPay(any())).thenReturn(PaymentResult.failed("error-code"));
-        when(stripeCreditCardManager.accept(eq(PaymentMethod.CREDIT_CARD), any(), any())).thenReturn(true);
+        when(stripeCreditCardManager.accept(eq(StaticPaymentMethods.CREDIT_CARD), any(), any())).thenReturn(true);
         when(ticketReservationRepository.findOptionalStatusAndValidationById(RESERVATION_ID)).thenReturn(Optional.of(new TicketReservationStatusAndValidation(PENDING, true)));
         PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, new StripeCreditCardToken(GATEWAY_TOKEN), 100, event, "email@user", new CustomerName("Full Name", null, null, event.mustUseFirstAndLastName()), null, null, Locale.ENGLISH, true, false, null, "IT", "12345", PriceContainer.VatStatus.INCLUDED, true, false);
-        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.STRIPE, PaymentMethod.CREDIT_CARD, null);
+        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.STRIPE, StaticPaymentMethods.CREDIT_CARD, null);
         Assertions.assertFalse(result.isSuccessful());
         Assertions.assertFalse(result.getGatewayId().isPresent());
         Assertions.assertEquals(Optional.of("error-code"), result.getErrorCode());
@@ -962,7 +962,7 @@ class TicketReservationManagerTest {
         );
         when(configurationManager.getFor(eq(BANKING_KEY), any())).thenReturn(BANKING_INFO);
         OnSiteManager onSiteManager = mock(OnSiteManager.class);
-        when(onSiteManager.accept(eq(PaymentMethod.ON_SITE), any(), any())).thenReturn(true);
+        when(onSiteManager.accept(eq(StaticPaymentMethods.ON_SITE), any(), any())).thenReturn(true);
         when(paymentManager.streamActiveProvidersByProxy(eq(PaymentProxy.ON_SITE), any())).thenReturn(Stream.of(onSiteManager));
         when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
         when(onSiteManager.getTokenAndPay(any())).thenReturn(PaymentResult.successful(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
@@ -970,7 +970,7 @@ class TicketReservationManagerTest {
             new CustomerName("Full Name", null, null, event.mustUseFirstAndLastName()),
             "", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), anyString(), anyString(), anyString(), isNull(), isNull(), eq(Locale.ENGLISH.getLanguage()), isNull(), any(), any(), isNull())).thenReturn(1);
-        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.ON_SITE, PaymentMethod.ON_SITE, null);
+        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.ON_SITE, StaticPaymentMethods.ON_SITE, null);
         Assertions.assertTrue(result.isSuccessful());
         Assertions.assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
         verify(specialPriceRepository).updateStatusForReservation(singletonList(RESERVATION_ID), SpecialPrice.Status.TAKEN.toString());
@@ -994,7 +994,7 @@ class TicketReservationManagerTest {
         when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
         when(configurationManager.getFor(eq(BANKING_KEY), any())).thenReturn(BANKING_INFO);
         BankTransferManager bankTransferManager = mock(BankTransferManager.class);
-        when(bankTransferManager.accept(eq(PaymentMethod.BANK_TRANSFER), any(), any())).thenReturn(true);
+        when(bankTransferManager.accept(eq(StaticPaymentMethods.BANK_TRANSFER), any(), any())).thenReturn(true);
         when(paymentManager.streamActiveProvidersByProxy(eq(PaymentProxy.OFFLINE), any())).thenReturn(Stream.of(bankTransferManager));
         when(bankTransferManager.getTokenAndPay(any())).thenReturn(PaymentResult.successful(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
         PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, new StripeCreditCardToken(GATEWAY_TOKEN), 100, event, "test@email",
@@ -1002,7 +1002,7 @@ class TicketReservationManagerTest {
             "", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         var invoiceNumber = "1234";
         when(billingDocumentManager.generateInvoiceNumber(eq(spec), any())).thenReturn(Optional.of(invoiceNumber));
-        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0,"CHF"), PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
+        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0,"CHF"), PaymentProxy.OFFLINE, StaticPaymentMethods.BANK_TRANSFER, null);
         Assertions.assertTrue(result.isSuccessful());
         Assertions.assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
         verify(waitingQueueManager, never()).fireReservationConfirmed(eq(RESERVATION_ID));
@@ -1330,7 +1330,7 @@ class TicketReservationManagerTest {
         when(totalPrice.requiresPayment()).thenReturn(false);
         when(configurationManager.getFor(eq(RESERVATION_TIMEOUT), any())).thenReturn(new MaybeConfiguration(RESERVATION_TIMEOUT));
         when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1));
-        when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(Arrays.asList(PaymentMethod.values()));
+        when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(Arrays.asList(StaticPaymentMethods.values()));
         when(paymentManager.getPaymentMethods(eq(event), any())).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, pp.getPaymentMethod(), PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
         Assertions.assertTrue(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
     }
@@ -1339,8 +1339,8 @@ class TicketReservationManagerTest {
     void testValidatePaymentMethodsPayPalError() {
         when(totalPrice.requiresPayment()).thenReturn(true);
         when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1));
-        when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(new ArrayList<>(EnumSet.complementOf(EnumSet.of(PaymentMethod.PAYPAL, PaymentMethod.NONE))));
-        when(paymentManager.getPaymentMethods(eq(event), any())).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, pp.getPaymentMethod(), pp.getPaymentMethod() == PaymentMethod.PAYPAL ? PaymentMethodStatus.ERROR : PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
+        when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(new ArrayList<>(EnumSet.complementOf(EnumSet.of(StaticPaymentMethods.PAYPAL, StaticPaymentMethods.NONE))));
+        when(paymentManager.getPaymentMethods(eq(event), any())).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, pp.getPaymentMethod(), pp.getPaymentMethod() == StaticPaymentMethods.PAYPAL ? PaymentMethodStatus.ERROR : PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
         Assertions.assertFalse(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
     }
 
@@ -1348,7 +1348,7 @@ class TicketReservationManagerTest {
     void testValidatePaymentMethodsAllBlacklisted() {
         when(totalPrice.requiresPayment()).thenReturn(true);
         when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1));
-        when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(new ArrayList<>(EnumSet.complementOf(EnumSet.of(PaymentMethod.NONE))));
+        when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(new ArrayList<>(EnumSet.complementOf(EnumSet.of(StaticPaymentMethods.NONE))));
         when(paymentManager.getPaymentMethods(eq(event), any())).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, pp.getPaymentMethod(), PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
         Assertions.assertFalse(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
     }
@@ -1366,7 +1366,7 @@ class TicketReservationManagerTest {
     void testValidatePaymentMethodsPartiallyAllowed() {
         when(totalPrice.requiresPayment()).thenReturn(true);
         when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1, 2));
-        when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(List.of(PaymentMethod.CREDIT_CARD));
+        when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(List.of(StaticPaymentMethods.CREDIT_CARD));
         when(paymentManager.getPaymentMethods(eq(event), any())).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, pp.getPaymentMethod(), PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
         Assertions.assertTrue(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
     }
