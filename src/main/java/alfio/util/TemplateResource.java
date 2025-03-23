@@ -25,8 +25,8 @@ import alfio.model.modification.SendCodeModification;
 import alfio.model.subscription.Subscription;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionValidityType;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.StaticPaymentMethods;
 import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -437,7 +437,7 @@ public enum TemplateResource {
             "reservationCancelled", true,
             RESERVATION, reservation,
             EVENT_NAME, event.getDisplayName(),
-            "provider", PaymentMethod.CREDIT_CARD.name(),
+            "provider", StaticPaymentMethods.CREDIT_CARD.name(),
             "reason", "this is the reason from the provider",
             RESERVATION_URL, "http://your-domain.tld/reservation-url/",
             ORGANIZATION, organization
