@@ -1,7 +1,7 @@
-import {ContentLanguage, DateTimeModification} from "../model/event.ts";
+import {DateTimeModification} from "../model/event.ts";
 import {html, nothing, TemplateResult} from "lit";
 import {when} from "lit/directives/when.js";
-import {FieldApi} from "@tanstack/lit-form";
+import {ContentLanguage} from "../model/purchase-context.ts";
 
 export function postJson(url: string, payload: any): Promise<Response> {
     return performRequest(url, 'POST', payload);
@@ -18,14 +18,25 @@ export function callDelete(url: string): Promise<Response> {
 function performRequest(url: string, method: 'PUT' | 'POST' | 'DELETE', payload: any): Promise<Response> {
     const xsrfName = document.querySelector('meta[name=_csrf_header]')?.getAttribute('content') as string;
     const xsrfValue = document.querySelector('meta[name=_csrf]')?.getAttribute('content') as string;
+
+    let body: URLSearchParams | string | null = null;
+
+    if (payload instanceof URLSearchParams) {
+        body = payload;
+    } else if (payload != null) {
+        body = JSON.stringify(payload);
+    }
+
     return fetch(url, {
-        method, credentials: 'include', headers: {
+        method,
+        credentials: 'include',
+        headers: {
             'Accept': 'application/json',
-            'Content-Type': 'application/json',
+            'Content-Type': payload instanceof URLSearchParams ? 'application/x-www-form-urlencoded' : 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
             [xsrfName]: xsrfValue
         },
-        body: payload != null ? JSON.stringify(payload) : null
+        body
     })
 }
 
@@ -62,7 +73,7 @@ export function extractDateTime(isoString?: string): string {
 }
 
 export function notifyChange(event: InputEvent,
-                             field: FieldApi<any, any>,
+                             field: { handleChange: (m: any) => void },
                              // helps with boolean / number values
                              valueTransformer: (v: string) => any = (s) => s): void {
     const target = event.currentTarget as HTMLInputElement | null;

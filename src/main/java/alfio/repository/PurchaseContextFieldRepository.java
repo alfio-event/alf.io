@@ -17,7 +17,6 @@
 package alfio.repository;
 
 import alfio.model.*;
-import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
@@ -26,15 +25,12 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 import ch.digitalfondue.npjt.QueryType;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -64,6 +60,15 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     @Query("select "+FIELD_VALUE_COLUMNS+", description from all_ticket_field_values " +
         " where ticket_id_fk = :ticketId and field_name in (:fieldNames)")
     List<FieldValueAndDescription> findValueForTicketId(@Bind("ticketId") int id, @Bind("fieldNames") Set<String> fieldNames);
+
+    /**
+     * Returns **only** info that don't belong already to an additional item.
+     * @param id ticketId
+     * @return List of FieldValueAndDescription
+     */
+    @Query("select "+FIELD_VALUE_COLUMNS+", description from all_ticket_field_values " +
+        " where ticket_id_fk = :ticketId and display_at_check_in = true and additional_service_item_id_fk is null")
+    List<FieldValueAndDescription> findValuesForTicketAtCheckIn(@Bind("ticketId") int id);
 
     @Query("update purchase_context_field_value set field_value = :value where " + TICKET_ID_OR_SUBSCRIPTION_ID +
         " and field_configuration_id_fk = :fieldConfigurationId")
