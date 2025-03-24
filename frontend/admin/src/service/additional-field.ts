@@ -1,5 +1,10 @@
 import {PurchaseContext} from "../model/purchase-context.ts";
-import {AdditionalField, AdditionalFieldStats, AdditionalFieldTemplate} from "../model/additional-field.ts";
+import {
+    AdditionalField,
+    AdditionalFieldCreateRequest,
+    AdditionalFieldStats,
+    AdditionalFieldTemplate
+} from "../model/additional-field.ts";
 import {callDelete, fetchJson, postJson} from "./helpers.ts";
 
 export class AdditionalFieldService {
@@ -30,4 +35,12 @@ export class AdditionalFieldService {
         return fetchJson(`/admin/api/${purchaseContext.type}/${purchaseContext.publicIdentifier}/additional-field/templates`);
     }
 
+    static async createNewField(purchaseContext: PurchaseContext, field: AdditionalFieldCreateRequest): Promise<Response> {
+        return postJson(`/admin/api/${purchaseContext.type}/${purchaseContext.publicIdentifier}/additional-field/new`, field);
+    }
+
+    static async saveField(purchaseContext: PurchaseContext, field: AdditionalField): Promise<Response> {
+        const url = `/admin/api/${purchaseContext.type}/${purchaseContext.publicIdentifier}/additional-field/${field.id}`;
+        return postJson(url, field);
+    }
 }

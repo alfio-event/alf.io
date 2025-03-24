@@ -2,9 +2,15 @@ import {customElement, query, state} from "lit/decorators.js";
 import {html, LitElement, nothing, TemplateResult} from "lit";
 import {SlDialog, SlRequestCloseEvent} from "@shoelace-style/shoelace";
 import {
-    AdditionalField, additionalFieldTypesWithDescription,
+    AdditionalField,
+    additionalFieldTypesWithDescription,
+    DescriptionRequest,
     NewAdditionalFieldFromTemplate,
-    PurchaseContextFieldDescriptionContainer, supportsMinMaxLength, supportsPlaceholder
+    PurchaseContextFieldDescriptionContainer,
+    RestrictedValueRequest,
+    supportsMinMaxLength,
+    supportsPlaceholder,
+    supportsRestrictedValues
 } from "../../model/additional-field.ts";
 import {PurchaseContext} from "../../model/purchase-context.ts";
 import {TanStackFormController} from "@tanstack/lit-form";
@@ -12,6 +18,7 @@ import {notifyChange, renderIf} from "../../service/helpers.ts";
 import {repeat} from "lit/directives/repeat.js";
 import {dialog as dialogStyling, form, pageHeader, row, textColors} from "../../styles.ts";
 import {AlfioEvent, TicketCategory} from "../../model/event.ts";
+import {AdditionalFieldService} from "../../service/additional-field.ts";
 
 @customElement('alfio-additional-field-edit')
 export class AdditionalFieldEdit extends LitElement {
@@ -74,6 +81,15 @@ export class AdditionalFieldEdit extends LitElement {
                 <sl-divider></sl-divider>
                 <h3>Field Configuration</h3>
                 ${this.renderFieldConfiguration()}
+                ${this.renderValues()}
+                <div slot="footer">
+                    <sl-divider></sl-divider>
+                    <div class="row" style="--alfio-row-cols: 3">
+                        <sl-button variant="default" size="large" @click=${() => this.close(false)}>Close</sl-button>
+                        <div></div>
+                        <sl-button variant="success" type="submit" size="large" .disabled=${!this.#form.api.state.canSubmit}>Save</sl-button>
+                    </div>
+                </div>
             </form>
         `;
     }
@@ -165,7 +181,7 @@ export class AdditionalFieldEdit extends LitElement {
                             ${renderIf(() => supportsPlaceholder(this.#form.api.state.values.type),
                                 () => html`
                                     ${this.#form.field({name: `description.${cl.locale}.description.placeholder`}, (field) => html`
-                                        <sl-input label="Placeholder" required .value=${field.state.value ?? nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
+                                        <sl-input label="Placeholder" .value=${field.state.value ?? nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
                                     `)}
                                 `)}
                         </div>
@@ -174,6 +190,31 @@ export class AdditionalFieldEdit extends LitElement {
             </div>
         `;
     }
+
+    private renderValues() {
+        if (!supportsRestrictedValues(this.#form.api.state.values.type)) {
+            return nothing;
+        }
+        const restrictedValues = this.#form.api.state.values.restrictedValues ?? [];
+        return html`
+            <h3>Values</h3>
+            <sl-button variant="success" @click={}>Add New</sl-button>
+
+            ${repeat(restrictedValues, rv => html`
+                <div>${rv}</div>
+            `)}
+        `;
+    }
+
+    private async close(success: boolean):Promise<boolean> {
+        if (this.dialog != null) {
+            await this.dialog.hide();
+        }
+        this.dispatchEvent(new CustomEvent('alfio-dialog-closed', { detail: { success } }));
+        return this.dialog != null;
+    }
+
+
 
     private renderCollectFor() {
         if (this.purchaseContext?.type === 'event') {
@@ -228,12 +269,12 @@ export class AdditionalFieldEdit extends LitElement {
             return html`
                 ${this.#form.field({name: 'minLength'},
                     (field) => html`
-                         <sl-input label=${fieldType === 'input:dateOfBirth' ? "Min age (years)" : "Min length"} required .value=${field.state.value ?? nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
+                         <sl-input label=${fieldType === 'input:dateOfBirth' ? "Min age (years)" : "Min length"} .value=${field.state.value ?? nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
                     `)}
 
                 ${this.#form.field({name: 'maxLength'},
                     (field) => html`
-                         <sl-input label=${fieldType === 'input:dateOfBirth' ? "Max age (years)" : "Max length"} required .value=${field.state.value ?? nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
+                         <sl-input label=${fieldType === 'input:dateOfBirth' ? "Max age (years)" : "Max length"} .value=${field.state.value ?? nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
                     `)}
             `;
         }
@@ -254,12 +295,6 @@ export class AdditionalFieldEdit extends LitElement {
                 defaultValues: this.buildDefaultValues(request.purchaseContext, request.ordinal, request.field, request.template),
                 onSubmit: async (state) => {
                     await this.save(state.value);
-                },
-                validators: {
-                    onSubmitAsync: async state => {
-                        console.log('submitting', state.value);
-                        return undefined;
-                    }
                 }
             });
             this.displayForm = true;
@@ -320,7 +355,44 @@ export class AdditionalFieldEdit extends LitElement {
 
 
     private async save(value: AdditionalField) {
-        console.log(value);
+        let updateResult: Response;
+        if (value.id != null) {
+            updateResult = await AdditionalFieldService.saveField(this.purchaseContext!, value);
+        } else {
+            const descriptionRequest: {[locale: string]: DescriptionRequest} = {};
+            const restrictedValues: RestrictedValueRequest[] = [];
+            Object.entries(value.description).forEach(([key, value]) => {
+               descriptionRequest[key] = {
+                   label: value.description.label,
+                   placeholder: value.description.placeholder ?? ''
+               }
+               if (value.description.restrictedValues != null) {
+                   restrictedValues.push({
+                       value: value.description.restrictedValues[key],
+                       enabled: true
+                   });
+               }
+            });
+            updateResult = await AdditionalFieldService.createNewField(this.purchaseContext!, {
+                type: value.type,
+                name: value.name,
+                order: value.order,
+                categoryIds: value.categoryIds ?? [],
+                displayAtCheckIn: value.displayAtCheckIn,
+                forAdditionalService: undefined, // TODO
+                maxLength: value.maxLength,
+                minLength: value.minLength,
+                readOnly: !value.editable,
+                required: value.required,
+                description: descriptionRequest,
+                restrictedValues: restrictedValues,
+                userDefinedOrder: false
+            });
+        }
+
+        if (updateResult.ok) {
+            await this.close(true);
+        }
     }
 }
 

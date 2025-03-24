@@ -48,6 +48,6 @@ export { AdditionalItemList } from './event/additional-item-list/additional-item
 export { DisplayCommonMarkPreview } from './display-common-mark-preview/display-common-mark-preview';
 export { AdditionalItemEdit } from './event/additional-item-edit/additional-item-edit';
 export { FeedbackVisualizer } from './feedback-visualizer/feedback-visualizer';
-export { AdditionalFieldList } from './purchase-context/additional-field-list/additional-field-list';
-export { AdditionalFieldStatistics } from './purchase-context/additional-field-statistics/additional-field-statistics';
-export { AdditionalFieldEdit } from './purchase-context/additional-field-edit/additional-field-edit';
+export { AdditionalFieldList } from './purchase-context/additional-field/additional-field-list.ts';
+export { AdditionalFieldStatistics } from './purchase-context/additional-field/additional-field-statistics.ts';
+export { AdditionalFieldEdit } from './purchase-context/additional-field/additional-field-edit.ts';

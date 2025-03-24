@@ -1,3 +1,5 @@
+import {AdditionalItem} from "./additional-item.ts";
+
 export interface AdditionalField {
     id?: number;
     name: string;
@@ -14,6 +16,32 @@ export interface AdditionalField {
     disabledValues?: string[];
     displayAtCheckIn: boolean;
     description: {[lang: string]: PurchaseContextFieldDescriptionContainer};
+}
+
+export interface RestrictedValueRequest {
+    value: string;
+    enabled: boolean;
+}
+
+export interface DescriptionRequest {
+    label: string;
+    placeholder: string;
+}
+
+export interface AdditionalFieldCreateRequest {
+    order: number;
+    userDefinedOrder: boolean;
+    name: string;
+    type: AdditionalFieldType;
+    required: boolean;
+    readOnly: boolean;
+    minLength?: number;
+    maxLength?: number;
+    restrictedValues?: RestrictedValueRequest[];
+    description: {[lang: string]: DescriptionRequest};
+    forAdditionalService?: AdditionalItem;
+    categoryIds: number[];
+    displayAtCheckIn: boolean;
 }
 
 
@@ -60,6 +88,11 @@ export function supportsPlaceholder(fieldType: AdditionalFieldType) {
         || fieldType === 'input:dateOfBirth';
 }
 
+export function supportsRestrictedValues(fieldType: AdditionalFieldType) {
+    return fieldType === 'checkbox'
+        || fieldType === 'radio'
+        || fieldType === 'select';
+}
 
 export interface PurchaseContextFieldDescriptionContainer {
     locale: string;

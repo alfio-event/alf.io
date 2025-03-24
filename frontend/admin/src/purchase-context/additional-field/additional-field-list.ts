@@ -4,7 +4,6 @@ import {AlfioEvent} from "../../model/event.ts";
 import {Task} from "@lit/task";
 import {
     AdditionalField, AdditionalFieldTemplate, NewAdditionalFieldFromTemplate,
-    PurchaseContextFieldDescriptionContainer,
     renderAdditionalFieldType,
     supportsMinMaxLength
 } from "../../model/additional-field.ts";
@@ -16,8 +15,8 @@ import {repeat} from "lit/directives/repeat.js";
 import {renderIf} from "../../service/helpers.ts";
 import {badges, cardBgColors, itemsList, pageHeader, textColors} from "../../styles.ts";
 import {ConfirmationDialogService} from "../../service/confirmation-dialog.ts";
-import {dispatchFeedback} from "../../model/dom-events.ts";
-
+import {AlfioDialogClosed, dispatchFeedback} from "../../model/dom-events.ts";
+import {LocalizedAdditionalFieldContent, renderPreview} from "./additional-field-util.ts";
 interface Model {
     purchaseContextType: PurchaseContextType;
     event?: AlfioEvent;
@@ -33,11 +32,6 @@ interface ListData {
     standardIndex: number;
 }
 
-interface LocalizedAdditionalFieldContent {
-    locale: string,
-    localeLabel: string,
-    description: PurchaseContextFieldDescriptionContainer
-}
 
 @customElement('alfio-additional-field-list')
 export class AdditionalFieldList extends LitElement {
@@ -210,7 +204,7 @@ export class AdditionalFieldList extends LitElement {
                                             <sl-tab slot="nav" panel=${d.locale}>${d.localeLabel}</sl-tab>
                                             <sl-tab-panel name=${d.locale}>
                                                 <div class="info-container">
-                                                    ${this.renderPreview(d, field)}
+                                                    ${renderPreview(d, field)}
                                                 </div>
                                             </sl-tab-panel>
                                         `)}
@@ -307,66 +301,6 @@ export class AdditionalFieldList extends LitElement {
             });
     }
 
-    private renderPreview(fieldContent: LocalizedAdditionalFieldContent, field: AdditionalField) {
-        const localizedConfiguration = fieldContent.description.description;
-        switch(field.type) {
-            case "checkbox":
-                return html`
-                    ${repeat(Object.entries(localizedConfiguration.restrictedValues ?? {}), ([k]) => k, ([value, label]) => html`
-                        <sl-checkbox value=${value}>${label}</sl-checkbox>
-                    `)}
-
-                `;
-            case "radio":
-                return html`
-                    <sl-radio-group label=${localizedConfiguration.label} name=${field.name}>
-                        ${repeat(Object.entries(localizedConfiguration.restrictedValues ?? {}), ([k]) => k, ([value, label]) => html`
-                            <sl-radio value=${value}> ${label}</sl-radio>
-                        `)}
-                    </sl-radio-group>
-                `;
-            case "country":
-                return html`
-                    <label>${localizedConfiguration.label}</label>
-                    <sl-select hoist>
-                        <sl-option value="C1">Country 1</sl-option>
-                        <sl-option value="C2">Country 2</sl-option>
-                        <sl-option value="C3">Country 3</sl-option>
-                    </sl-select>
-                `;
-            case "select":
-
-                return html`
-                    <label>${localizedConfiguration.label}</label>
-                    <sl-select hoist>
-                        ${repeat(Object.entries(localizedConfiguration.restrictedValues ?? {}), ([k]) => k, ([value, label]) => html`
-                            <sl-option value=${value}>${label}</sl-option>
-                        `)}
-                    </sl-select>
-                `;
-
-            case "textarea":
-                return html`
-                    <sl-textarea label=${localizedConfiguration.label} placeholder=${localizedConfiguration.placeholder ?? ''}></sl-textarea>
-                `;
-
-        }
-
-        let inputType;
-
-        if (field.type === 'input:dateOfBirth') {
-            inputType = 'date';
-        } else if (field.type === 'vat:eu') {
-            inputType = 'text';
-        } else {
-            inputType = field.type.substring(field.type.indexOf(':') + 1);
-        }
-
-        return html`
-            <sl-input type=${inputType} label=${localizedConfiguration.label} placeholder=${localizedConfiguration.placeholder ?? ''}>
-        `;
-    }
-
     async delete(field: AdditionalField, model: Model): Promise<boolean> {
         try {
             const confirmation = await ConfirmationDialogService.requestConfirm(
@@ -432,7 +366,8 @@ export class AdditionalFieldList extends LitElement {
         const component = div.querySelector('alfio-additional-field-edit')!;
         document.body.appendChild(div);
         await customElements.whenDefined('alfio-additional-field-edit');
-        component.addEventListener('alfio-dialog-closed', async () => {
+        component.addEventListener('alfio-dialog-closed', async (e) => {
+            await this.editDialogClosed(e);
             setTimeout(() => document.body.removeChild(div));
         });
         const purchaseContext: PurchaseContext = (model.isSubscription ? model.subscriptionDescriptor : model.event)!;
@@ -456,6 +391,17 @@ export class AdditionalFieldList extends LitElement {
 
     private async newCustom(model: Model, itemsCount: number) {
         await this.openEditDialog(model, itemsCount + 1);
+    }
+
+    private async editDialogClosed(e: AlfioDialogClosed) {
+        this.editActive = false;
+        if (e.detail.success) {
+            this.refreshCount++;
+            dispatchFeedback({
+                type: 'success',
+                message: 'Operation completed successfully'
+            }, this);
+        }
     }
 }
 
