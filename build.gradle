@@ -307,7 +307,7 @@ compileJava {
 compileJava.dependsOn(processResources)
 
 //propagate the system properties to the tests
-tasks.named('test') {
+tasks.withType(Test).configureEach {
     useJUnitPlatform()
     systemProperties = System.properties
     systemProperties.remove("java.endorsed.dirs")
@@ -315,6 +315,10 @@ tasks.named('test') {
         events "failed"
         exceptionFormat "full"
         info.events = ["failed"]
+    }
+    reports {
+        junitXml.required = true  // Enable JUnit XML report
+        html.required = true      // Enable HTML report (optional)
     }
 }
 

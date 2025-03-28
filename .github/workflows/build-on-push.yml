@@ -32,8 +32,13 @@ jobs:
             - name: Upload coverage to Codecov
               if: ${{ matrix.postgresql == '16'}}
               uses: codecov/codecov-action@v5
-              env:
-                CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+              with:
+                token: ${{ secrets.CODECOV_TOKEN }}
+            - name: Upload test results to Codecov
+              if: ${{ !cancelled() && matrix.postgresql == '16'}}
+              uses: codecov/test-results-action@v1
+              with:
+                  token: ${{ secrets.CODECOV_TOKEN }}
             - name: 'Upload Build'
               if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '10'}}
               uses: actions/upload-artifact@v4
