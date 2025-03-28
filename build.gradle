@@ -356,15 +356,9 @@ jacocoTestReport {
     sourceDirectories.from(project.files(sourceSets.main.allSource.srcDirs))
     classDirectories.from(project.files(sourceSets.main.output))
     reports {
-        xml {
-            enabled(true)
-        }
-        csv {
-            enabled(false)
-        }
-        html {
-            enabled(true)
-        }
+        xml.required = true
+        html.required = true
+        csv.required = true
     }
 }
 
