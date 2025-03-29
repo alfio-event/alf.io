@@ -46,6 +46,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.Authentication;
@@ -59,6 +60,7 @@ import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static alfio.controller.api.admin.EventApiController.FIXED_FIELDS;
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
@@ -102,6 +104,8 @@ class EventApiControllerIntegrationTest {
     private PromoCodeDiscountRepository promoCodeDiscountRepository;
     @Autowired
     private TicketReservationRepository ticketReservationRepository;
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     private Event event;
     private static final String TEST_ATTENDEE_EXTERNAL_REFERENCE = "123";
@@ -220,7 +224,10 @@ class EventApiControllerIntegrationTest {
         promoCodeDiscountRepository.addPromoCode(TEST_PROMO_CODE, eventId, organizationId, ZonedDateTime.now(), ZonedDateTime.now()
                                                                                                                              .plusDays(3), 10, PromoCodeDiscount.DiscountType.FIXED_AMOUNT, "[1,2,3]", 1, "test promo code", "test-email@gmail.com", PromoCodeDiscount.CodeType.DISCOUNT, 21, "usd");
         var promoCodeId = promoCodeDiscountRepository.findAllInEvent(eventId).get(0).getId();
-        ticketReservationRepository.setPromotionCodeDiscountId(email, promoCodeId);
+        namedParameterJdbcTemplate.update("""
+                 update tickets_reservation set promo_code_id_fk = :promotionCodeDiscountId
+                 where email_address = :email
+            """, Map.of("promotionCodeDiscountId",promoCodeId,"email",email));
     }
 
     private String getExpectedHeaderCsvLine() {
@@ -230,7 +237,7 @@ class EventApiControllerIntegrationTest {
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Last Name", "\"Last Name\"");
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Billing Address", "\"Billing Address\"");
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Country Code", "\"Country Code\"");
-        expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Voucher Code", "\"Voucher Code\"");
+        expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Promo Code", "\"Promo Code\"");
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Payment ID", "\"Payment ID\"");
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Payment Method", "\"Payment Method\"");
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("External Reference", "\"External Reference\"");

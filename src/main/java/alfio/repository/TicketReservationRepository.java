@@ -61,12 +61,6 @@ public interface TicketReservationRepository {
                              @Bind("organizationId") int organizationId,
                              @Bind("userId") Integer userId);
 
-    @Query("""
-             update tickets_reservation set promo_code_id_fk = :promotionCodeDiscountId\
-             where email_address = :email
-        """)
-    int setPromotionCodeDiscountId(@Bind("email") String email, @Bind("promotionCodeDiscountId") Integer promotionCodeDiscountId);
-
     @Query("update tickets_reservation set user_id_fk = :userId where id = :reservationId")
     int setReservationOwner(@Bind("reservationId") String reservationId, @Bind("userId") Integer userId);
 
