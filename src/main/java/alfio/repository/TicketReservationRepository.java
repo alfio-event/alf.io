@@ -16,7 +16,17 @@
  */
 package alfio.repository;
 
-import alfio.model.*;
+import alfio.model.BillingDetails;
+import alfio.model.PriceContainer;
+import alfio.model.ReservationIdAndEventId;
+import alfio.model.ReservationMetadata;
+import alfio.model.ReservationWithPurchaseContext;
+import alfio.model.TicketReservation;
+import alfio.model.TicketReservationAdditionalInfo;
+import alfio.model.TicketReservationInfo;
+import alfio.model.TicketReservationStatusAndValidation;
+import alfio.model.TicketReservationWithEventIdentifier;
+import alfio.model.TicketsByDateStatistic;
 import alfio.model.support.Array;
 import alfio.model.support.JSONData;
 import alfio.model.support.UserIdAndOrganizationId;
@@ -26,7 +36,12 @@ import ch.digitalfondue.npjt.QueryRepository;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 @QueryRepository
 public interface TicketReservationRepository {
@@ -177,7 +192,7 @@ public interface TicketReservationRepository {
                           @Bind("vatCountry") String country,
                           @Bind("invoiceRequested") boolean invoiceRequested,
                           @Bind("reservationId") String reservationId);
-    
+
 
     @Query("select min(confirmation_ts) from tickets_reservation where event_id_fk = :eventId and confirmation_ts is not null")
     Optional<ZonedDateTime> getFirstConfirmationTimestampForEvent(@Bind("eventId") int eventId);
