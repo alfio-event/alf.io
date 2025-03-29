@@ -219,6 +219,7 @@ public interface TicketReservationRepository {
     List<TicketsByDateStatistic> getReservedStatistic(@Bind("eventId") int eventId, @Bind("fromDate") ZonedDateTime from, @Bind("toDate") ZonedDateTime to, @Bind("granularity") String granularity);
 
 
+
     @Query("select id, event_id_fk from tickets_reservation where id in (:ids) and event_id_fk is not null")
     List<ReservationIdAndEventId> getReservationIdAndEventId(@Bind("ids") Collection<String> ids);
 
@@ -299,7 +300,7 @@ public interface TicketReservationRepository {
 
 
     default Integer countTicketsInReservationForCategories(String reservationId, Collection<Integer> categories) {
-        if (categories == null || categories.isEmpty()) {
+        if(categories == null || categories.isEmpty()) {
             return this.countTicketsInReservationNoCategories(reservationId);
         } else {
             return this.countTicketsInReservationForExistingCategories(reservationId, categories);

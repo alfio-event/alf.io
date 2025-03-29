@@ -219,17 +219,6 @@ class EventApiControllerIntegrationTest {
 
     }
 
-    /*private void createPromoCode(int organizationId, String email) {
-        var eventId = event.getId();
-        promoCodeDiscountRepository.addPromoCode(TEST_PROMO_CODE, eventId, organizationId, ZonedDateTime.now(), ZonedDateTime.now()
-                                                                                                                             .plusDays(3), 10, PromoCodeDiscount.DiscountType.FIXED_AMOUNT, "[1,2,3]", 1, "test promo code", "test-email@gmail.com", PromoCodeDiscount.CodeType.DISCOUNT, 21, "usd");
-        var promoCodeId = promoCodeDiscountRepository.findAllInEvent(eventId).get(0).getId();
-        namedParameterJdbcTemplate.update("""
-                 update tickets_reservation set promo_code_id_fk = :promotionCodeDiscountId
-                 where email_address = :email
-            """, Map.of("promotionCodeDiscountId",promoCodeId,"email",email));
-    }*/
-
     private String getExpectedHeaderCsvLine() {
         String expectedHeaderCsvLine = String.join(",", FIXED_FIELDS);
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Full Name", "\"Full Name\"");
