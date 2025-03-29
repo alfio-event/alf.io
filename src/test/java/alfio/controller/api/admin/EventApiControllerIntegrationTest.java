@@ -38,6 +38,7 @@ import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.toolkit.PromoCodeDiscountIntegrationTestingToolkit;
 import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
@@ -46,7 +47,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.Authentication;
@@ -63,6 +63,7 @@ import java.util.List;
 import java.util.Map;
 
 import static alfio.controller.api.admin.EventApiController.FIXED_FIELDS;
+import static alfio.test.toolkit.PromoCodeDiscountIntegrationTestingToolkit.TEST_PROMO_CODE;
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.DESCRIPTION;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
@@ -105,7 +106,7 @@ class EventApiControllerIntegrationTest {
     @Autowired
     private TicketReservationRepository ticketReservationRepository;
     @Autowired
-    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+    private PromoCodeDiscountIntegrationTestingToolkit promoCodeDiscountIntegrationTestingToolkit;
 
     private Event event;
     private static final String TEST_ATTENDEE_EXTERNAL_REFERENCE = "123";
@@ -113,7 +114,6 @@ class EventApiControllerIntegrationTest {
     private static final String TEST_ATTENDEE_FIRST_NAME = "Attendee";
     private static final String TEST_ATTENDEE_LAST_NAME = "Test";
     private static final String TEST_ATTENDEE_EMAIL = "attendee@test.com";
-    private static final String TEST_PROMO_CODE = "test-promo-code";
 
     @Test
     void getAllEventsForExternalInPerson() {
@@ -175,8 +175,8 @@ class EventApiControllerIntegrationTest {
 
         // WHEN - processing of pending reservations completes
         this.adminReservationRequestManager.processPendingReservations();
-        createPromoCode(organizationId, modification.getCustomerData().getEmailAddress());
-
+        promoCodeDiscountIntegrationTestingToolkit.createPromoCodeDiscount(event.getId(), organizationId, modification.getCustomerData()
+                                                                                                                      .getEmailAddress());
         // THEN - assert correctness of data persisted
         var tickets = this.ticketRepository.findAllConfirmedForCSV(event.getId());
         assertEquals(1, tickets.size());
@@ -219,7 +219,7 @@ class EventApiControllerIntegrationTest {
 
     }
 
-    private void createPromoCode(int organizationId, String email) {
+    /*private void createPromoCode(int organizationId, String email) {
         var eventId = event.getId();
         promoCodeDiscountRepository.addPromoCode(TEST_PROMO_CODE, eventId, organizationId, ZonedDateTime.now(), ZonedDateTime.now()
                                                                                                                              .plusDays(3), 10, PromoCodeDiscount.DiscountType.FIXED_AMOUNT, "[1,2,3]", 1, "test promo code", "test-email@gmail.com", PromoCodeDiscount.CodeType.DISCOUNT, 21, "usd");
@@ -228,7 +228,7 @@ class EventApiControllerIntegrationTest {
                  update tickets_reservation set promo_code_id_fk = :promotionCodeDiscountId
                  where email_address = :email
             """, Map.of("promotionCodeDiscountId",promoCodeId,"email",email));
-    }
+    }*/
 
     private String getExpectedHeaderCsvLine() {
         String expectedHeaderCsvLine = String.join(",", FIXED_FIELDS);
