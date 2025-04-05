@@ -67,6 +67,9 @@ public interface TicketReservationRepository {
     @Query("select user_id_fk user_id, organization_id_fk organization_id from tickets_reservation where id = :reservationId and user_id_fk is not null")
     Optional<UserIdAndOrganizationId> getReservationOwnerAndOrganizationId(@Bind("reservationId") String reservationId);
 
+    @Query("select organization_id_fk organization_id from tickets_reservation where id = :reservationId")
+    int getEventOrganizationIDForReservation(@Bind("reservationId") String reservationId);
+
     @Query("select * from tickets_reservation tr join ba_user u on u.id = tr.user_id_fk where u.username = :username")
     List<TicketReservation> loadByOwner(@Bind("username") String username);
 

@@ -78,7 +78,7 @@ class DeferredBankTransferManagerTest {
     void doPayment() {
         var eventBegin = ZonedDateTime.now(Clock.systemUTC()).plusDays(7);
         when(event.getBegin()).thenReturn(eventBegin);
-        var paymentSpecification = new PaymentSpecification("reservation-id", null, 1, event, "", null);
+        var paymentSpecification = new PaymentSpecification("reservation-id", null, null, 1, event, "", null);
         assertEquals(PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID), deferredBankTransferManager.doPayment(paymentSpecification));
         verify(bankTransferManager).postponePayment(eq(paymentSpecification), eq(DEFERRED_OFFLINE_PAYMENT), eq(eventBegin));
         verify(bankTransferManager).overrideExistingTransactions(paymentSpecification);
