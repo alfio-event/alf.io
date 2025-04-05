@@ -161,7 +161,7 @@ public class ReservationFinalizer {
         var costResult = reservationCostCalculator.totalReservationCostWithVAT(reservation);
         var totalPrice = costResult.getLeft();
         var orderSummary = orderSummaryGenerator.orderSummaryForReservation(reservation, purchaseContext);
-        var paymentSpecification = new PaymentSpecification(reservation, totalPrice, purchaseContext, null, orderSummary, retryFinalizeReservation.isTcAccepted(), retryFinalizeReservation.isPrivacyPolicyAccepted());
+        var paymentSpecification = new PaymentSpecification(reservation, totalPrice, purchaseContext, null, null, orderSummary, retryFinalizeReservation.isTcAccepted(), retryFinalizeReservation.isPrivacyPolicyAccepted());
         transactionTemplate.executeWithoutResult(ctx -> processFinalizeReservation(new FinalizeReservation(paymentSpecification, retryFinalizeReservation.getPaymentProxy(), retryFinalizeReservation.isSendReservationConfirmationEmail(), retryFinalizeReservation.isSendTickets(), retryFinalizeReservation.getUsername(), retryFinalizeReservation.getOriginalStatus()), ctx, false));
     }
 

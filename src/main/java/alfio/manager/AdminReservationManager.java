@@ -474,6 +474,7 @@ public class AdminReservationManager {
 
             PaymentSpecification spec = new PaymentSpecification(reservationId,
                 null,
+                null,
                 reservation.getFinalPriceCts(),
                 purchaseContext,
                 reservation.getEmail(),

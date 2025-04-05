@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 @JsonDeserialize(using = PaymentMethodDeserializer.class)
 public interface PaymentMethod {
     public String name();
+    public String getPaymentMethodId();
 
     public static PaymentMethod safeParse(String asString) {
         return Arrays

@@ -17,25 +17,54 @@
 package alfio.model.transaction;
 
 import java.io.IOException;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class PaymentMethodDeserializer extends JsonDeserializer<PaymentMethod> {
-    @Override
-    public PaymentMethod deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        TextNode node = p.getCodec().readTree(p);
-        String name = node.asText();
+    private static final Logger log = LoggerFactory.getLogger(PaymentMethodDeserializer.class);
 
-        for(StaticPaymentMethods paymentMethod : StaticPaymentMethods.values()) {
-            if(paymentMethod.name().equals(name)) {
-                return paymentMethod;
+    @Override
+    public PaymentMethod deserialize(JsonParser parser, DeserializationContext context) throws IOException {
+        JsonNode node = parser.getCodec().readTree(parser);
+
+        if (node == null) {
+            log.warn("PaymentMethodDeserializer(): Passed node is NULL");
+            return null;
+        }
+
+        if(node.isTextual()) {
+            String name = node.asText();
+            for(StaticPaymentMethods paymentMethod : StaticPaymentMethods.values()) {
+                if(paymentMethod.name().equals(name)) {
+                    return paymentMethod;
+                }
             }
         }
 
-        // FIXME: ADD REAL USER DEFINED PAYMENT
-        return StaticPaymentMethods.NONE;
+        if(node.isObject()) {
+            String paymentMethodId = node.get("paymentMethodId").isNull() ? null
+                                    : node.get("paymentMethodId").asText();
+
+            JsonNode localizationsNode = node.get("localizations");
+            ObjectMapper mapper = (ObjectMapper) parser.getCodec();
+
+            var localizations = mapper.readValue(
+                localizationsNode.toString(),
+                new TypeReference<Map<String, UserDefinedOfflinePaymentMethod.Localization>>() {}
+            );
+
+            return new UserDefinedOfflinePaymentMethod(paymentMethodId, localizations);
+        }
+
+        return null;
     }
 }
