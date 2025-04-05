@@ -33,8 +33,10 @@ export class OfflinePaymentDialog extends LitElement {
 
     #form = new TanStackFormController(this, {
         defaultValues: {
-            payment: {} as CustomOfflinePayment
-        }
+            paymentName: "",
+            paymentDescription: "",
+            paymentInstructions: ""
+        } as CustomOfflinePaymentLocalization
     });
 
     protected render(): TemplateResult {
@@ -65,7 +67,7 @@ export class OfflinePaymentDialog extends LitElement {
         >
             ${this.#form.field(
                 {
-                    name: `payment.paymentName`,
+                    name: `paymentName`,
                     validators: {
                         onChange: ({ value }: {value: string}) => {
                             return value.length < 3 ? 'Name is too short.' : undefined;
@@ -95,7 +97,7 @@ export class OfflinePaymentDialog extends LitElement {
             )}
             ${this.#form.field(
                 {
-                    name: `payment.paymentDescription`,
+                    name: `paymentDescription`,
                     validators: {
                     onChange: ({ value }: {value: string}) =>
                         value.length < 3 ? 'Description is too short' : undefined,
@@ -131,7 +133,7 @@ export class OfflinePaymentDialog extends LitElement {
             )}
             ${this.#form.field(
                 {
-                    name: `payment.paymentInstructions`,
+                    name: `paymentInstructions`,
                     validators: {
                     onChange: ({ value }: {value: string}) =>
                         value.length < 3 ? 'Instructions are too short.' : undefined,
@@ -188,15 +190,19 @@ export class OfflinePaymentDialog extends LitElement {
         this.editObject = editObject;
 
         if(this.dialog) {
+            // TODO: Support multiple localizations instead of defaulting to 'en'
             this.#form.api.update({
-                defaultValues: {
-                    payment: this._buildInitialFormValues(),
-                },
-                onSubmit: async (formResult) => {
+                defaultValues: this._buildInitialFormValues().localizations.en,
+                onSubmit: async ({value}) => {
                     this.dispatchEvent(
                         new CustomEvent("offlinePaymentDialogSave", {
                             detail: {
-                                payment: formResult.value.payment,
+                                newPayment: {
+                                    paymentMethodId: this.editObject?.paymentMethodId ?? null,
+                                    localizations: {
+                                        en: value
+                                    }
+                                },
                                 oldPayment: this.editObject
                             }
                         })
@@ -206,7 +212,7 @@ export class OfflinePaymentDialog extends LitElement {
                     onSubmitAsync: async props => {
                         if(
                             !this.editObject
-                            && this.currentMethods.some(method => method.paymentName === props.value.payment.paymentName)
+                            && this.currentMethods.some(method => method.localizations.en.paymentName === props.value.paymentName)
                         ) {
                             return 'Chosen payment method name matches one already created for this organization. Please choose a different name';
                         }
@@ -228,19 +234,30 @@ export class OfflinePaymentDialog extends LitElement {
         return (meta.isTouched && meta.errors.length > 0);
     }
 
+    // TODO: Support multiple localizations instead of defaulting to 'en'
     private _buildInitialFormValues() : CustomOfflinePayment {
         if(this.editObject) {
             return {
-                paymentName: this.editObject.paymentName,
-                paymentDescription: this.editObject.paymentDescription,
-                paymentInstructions: this.editObject.paymentInstructions
+                paymentMethodId: this.editObject.paymentMethodId,
+                localizations: {
+                    en: {
+                        paymentName: this.editObject.localizations.en.paymentName,
+                        paymentDescription: this.editObject.localizations.en.paymentDescription,
+                        paymentInstructions: this.editObject.localizations.en.paymentInstructions
+                    }
+                }
             };
         }
 
         return {
-            paymentName: "",
-            paymentDescription: "",
-            paymentInstructions: "",
+            paymentMethodId: null,
+            localizations: {
+                en: {
+                    paymentName: "",
+                    paymentDescription: "",
+                    paymentInstructions: "",
+                }
+            }
         }
     }
 }

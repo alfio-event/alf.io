@@ -166,7 +166,7 @@ class DiscountIntegrationTest extends BaseIntegrationTest {
                         if (reservationId != null) {
                             Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
                             TotalPrice totalPrice = priceAndDiscount.getLeft();
-                            PaymentSpecification specification = new PaymentSpecification(reservationId, null, totalPrice.getPriceWithVAT(),
+                            PaymentSpecification specification = new PaymentSpecification(reservationId, null, null, totalPrice.getPriceWithVAT(),
                                 event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
                                 "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
                             var paymentResult = ticketReservationManager.performPayment(specification, totalPrice, PaymentProxy.OFFLINE, StaticPaymentMethods.BANK_TRANSFER, null);

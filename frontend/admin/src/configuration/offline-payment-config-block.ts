@@ -2,10 +2,10 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { html, LitElement, type TemplateResult } from "lit";
 import { repeat } from "lit/directives/repeat.js";
 
-import type { OfflinePaymentDialog } from "./offline-payment-dialog";
-import { OrganizationConfigurationService } from "../service/configuration";
+import { CustomPaymentMethodsService } from "../service/custom-payment-methods";
 import { dispatchFeedback } from "../model/dom-events";
 import type { ConfirmationDialog } from "./confirmation-dialog";
+import type { OfflinePaymentDialog } from "./offline-payment-dialog";
 
 /**
  * Displays defined custom payment methods for org. Allows
@@ -14,7 +14,7 @@ import type { ConfirmationDialog } from "./confirmation-dialog";
 @customElement('offline-payment-config-block')
 export class OfflinePaymentConfigBlock extends LitElement {
     @property({attribute: "organization", type: Number})
-    organization?: number;
+    organization: number = -1;
 
     @query("offline-payment-dialog")
     paymentCreationDialog?: OfflinePaymentDialog;
@@ -26,7 +26,7 @@ export class OfflinePaymentConfigBlock extends LitElement {
     @state()
     protected _paymentConfig: CustomOfflinePayment[] = [];
 
-    configService?: OrganizationConfigurationService;
+    paymentMethodService?: CustomPaymentMethodsService;
 
     constructor() {
         super();
@@ -35,7 +35,7 @@ export class OfflinePaymentConfigBlock extends LitElement {
 
     async updated(changedProperties: Map<string, unknown>) {
         if(changedProperties.has("organization") && this.organization) {
-            this.configService = new OrganizationConfigurationService(this.organization);
+            this.paymentMethodService = new CustomPaymentMethodsService();
             await this.updateConfigFromServer();
         }
     }
@@ -56,15 +56,16 @@ export class OfflinePaymentConfigBlock extends LitElement {
         `;
     }
 
+    // TODO: Support multiple localizations instead of defaulting to 'en'
     protected renderPaymentMethodDetails() {
         return html`
             <div>
-                ${repeat(this._paymentConfig, (config) => config.paymentName, (config) => html`
-                    <sl-details style="margin: 10px 0;" summary="${config.paymentName}">
+                ${repeat(this._paymentConfig, (config) => config.localizations.en.paymentName, (config) => html`
+                    <sl-details style="margin: 10px 0;" summary="${config.localizations.en.paymentName}">
                         <h3>Description</h3>
-                        ${config.paymentDescription}
+                        ${config.localizations.en.paymentDescription}
                         <h3>Instructions</h3>
-                        ${config.paymentInstructions}
+                        ${config.localizations.en.paymentInstructions}
                         <br/>
                         <div style="display: flex; flex-direction: row; justify-content: flex-end;">
                             <sl-icon-button
@@ -80,7 +81,7 @@ export class OfflinePaymentConfigBlock extends LitElement {
                                 name="trash"
                                 style="color: #E8E0E0; background-color: rgb(148, 35, 32);"
                                 @click=${() => {
-                                    this._selectedPaymentMethod = config.paymentName;
+                                    this._selectedPaymentMethod = config.paymentMethodId;
                                     this.confirmDialog?.openDialog()
                                 }}
                             ></sl-icon-button>
@@ -102,18 +103,14 @@ export class OfflinePaymentConfigBlock extends LitElement {
 
 
     private async _handleDeletePaymentMethod() {
-        await this.updateConfigFromServer();
+        if(!this._selectedPaymentMethod) {
+            return;
+        }
 
-        const updatedPaymentMethodList = this._paymentConfig.filter(method => method.paymentName !== this._selectedPaymentMethod);
-        const submitResult = await this.configService?.updateConfigurationEntries({
-            PAYMENT_OFFLINE: [
-                {
-                    id: -1,
-                    key: "CUSTOM_OFFLINE_PAYMENTS",
-                    value: JSON.stringify(updatedPaymentMethodList),
-                }
-            ]
-        });
+        const submitResult = await this.paymentMethodService?.deletePaymentMethod(
+            this.organization,
+            this._selectedPaymentMethod
+        );
 
         if (submitResult?.ok) {
             dispatchFeedback({
@@ -121,8 +118,9 @@ export class OfflinePaymentConfigBlock extends LitElement {
                 message: "Deleted Offline Payment Method."
             }, this);
             this.paymentCreationDialog?.closeDialog();
-            this._paymentConfig = this._paymentConfig.filter(method => method.paymentName !== this._selectedPaymentMethod);
+            this._paymentConfig = this._paymentConfig.filter(method => method.paymentMethodId !== this._selectedPaymentMethod);
             this._selectedPaymentMethod = null;
+            await this.updateConfigFromServer();
         } else {
             dispatchFeedback({
                 type: "danger",
@@ -131,31 +129,22 @@ export class OfflinePaymentConfigBlock extends LitElement {
         }
     }
 
-    private async _saveCustomPaymentMethod(event: CustomEvent<{payment: CustomOfflinePayment, oldPayment?: CustomOfflinePayment}>) {
-        const {payment, oldPayment} = event.detail;
+    private async _saveCustomPaymentMethod(event: CustomEvent<{newPayment: CustomOfflinePayment, oldPayment?: CustomOfflinePayment}>) {
+        const {newPayment, oldPayment} = event.detail;
 
-        await this.updateConfigFromServer();
-
-        if(oldPayment) {
-            this._paymentConfig = this._paymentConfig.filter(config => config.paymentName !== oldPayment.paymentName);
+        let submitResult;
+        if (oldPayment && oldPayment.paymentMethodId) {
+            submitResult = await this.paymentMethodService?.updatePaymentMethod(
+                this.organization,
+                oldPayment.paymentMethodId,
+                newPayment
+            );
+        } else {
+            submitResult = await this.paymentMethodService?.createPaymentMethod(
+                this.organization,
+                newPayment
+            );
         }
-
-        this._paymentConfig = [...this._paymentConfig, {
-            paymentName: payment.paymentName,
-            paymentDescription: payment.paymentDescription,
-            paymentInstructions: payment.paymentInstructions,
-        }];
-        const submitResult = await this.configService?.updateConfigurationEntries(
-            {
-                PAYMENT_OFFLINE: [
-                    {
-                        id: -1,
-                        key: "CUSTOM_OFFLINE_PAYMENTS",
-                        value: JSON.stringify(this._paymentConfig),
-                    }
-                ]
-            }
-        );
 
         if (submitResult?.ok) {
             dispatchFeedback({
@@ -163,6 +152,7 @@ export class OfflinePaymentConfigBlock extends LitElement {
                 message: `${oldPayment ? "Edited" : "Created"} Offline Payment Method.`
             }, this);
             this.paymentCreationDialog?.closeDialog();
+            await this.updateConfigFromServer();
         } else {
             dispatchFeedback({
                 type: "danger",
@@ -172,22 +162,11 @@ export class OfflinePaymentConfigBlock extends LitElement {
     }
 
     async updateConfigFromServer() {
-        let curConfigStr: string | undefined;
-
-        try {
-            curConfigStr = await this.configService?.getConfigurationEntry<string>("CUSTOM_OFFLINE_PAYMENTS");
-        } catch(e) {
-            console.warn("Failed to get offline payments config from server", e);
-        }
-
-        if (!curConfigStr) {
+        const result = await this.paymentMethodService?.getPaymentMethodsForOrganization(this.organization);
+        if(!result) {
             return;
         }
 
-        try {
-            this._paymentConfig = JSON.parse(curConfigStr);
-        } catch (e) {
-            console.error("Failed to parse offline payments JSON from DB:", e);
-        }
+        this._paymentConfig = result
     }
 }

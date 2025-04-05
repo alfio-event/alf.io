@@ -13,32 +13,9 @@
   <app-summary-table [purchaseContext]="purchaseContext" [reservationInfo]="reservationInfo"></app-summary-table>
 
   <ng-container *ngIf="reservationFinalized">
-
-    <h4 [innerHTML]="'reservation-page-waiting.required-steps'|translate" class="mt-5"></h4>
-    <h4>CUSTOM OFFLINE PAYMENTS PAGE</h4>
-
-    <ng-template #basicInstruction>
-      <li *ngIf="purchaseContext.bankAccountOwner.length > 0" class="mb-2">
-        <p class="no-margin-bottom" [innerHTML]="'reservation-page-waiting.required-steps.1.with-bank-account-owner' | translate: {'0': purchaseContext.currency+' '+reservationInfo.orderSummary.totalPrice, '1': purchaseContext.bankAccount}"></p>
-        <p class="bank-account-owner-info" *ngFor="let ownerLine of purchaseContext.bankAccountOwner">{{ownerLine}}</p>
-        <p class="no-margin-bottom" [innerHTML]="'reservation-page-waiting.required-steps.1.with-bank-account-owner.2' | translate: {'0': paymentReason}"></p>
-      </li>
-      <li *ngIf="purchaseContext.bankAccountOwner.length === 0" class="mb-2"
-          [innerHTML]="'reservation-page-waiting.required-steps.1' | translate: {'0': purchaseContext.currency+' '+reservationInfo.orderSummary.totalPrice, '1': purchaseContext.bankAccount, '2': paymentReason}">
-      </li>
-    </ng-template>
-    <ng-container *ngIf="purchaseContext.offlinePaymentConfiguration?.showOnlyBasicInstructions">
-      <ul class="mt-3 list-unstyled">
-        <ng-container *ngTemplateOutlet="basicInstruction"></ng-container>
-      </ul>
-    </ng-container>
-    <ng-container *ngIf="!purchaseContext.offlinePaymentConfiguration?.showOnlyBasicInstructions">
-      <ol class="mt-3">
-        <ng-container *ngTemplateOutlet="basicInstruction"></ng-container>
-        <li class="mb-2" [innerHTML]="'reservation-page-waiting.required-steps.2' | translate: {'0': purchaseContext.organizationEmail, '1': reservationInfo.id}"></li>
-        <li class="mb-2" [innerHTML]="'reservation-page-waiting.required-steps.3' | translate"></li>
-      </ol>
-    </ng-container>
+    <h2 [innerHTML]="'invoice.payment-instruction'|translate"></h2>
+    <!-- TODO: Support multiple localizations instead of defaulting to 'en' -->
+    <div class="markdown-content" [innerHTML]="customPaymentMethodDetails.localizations.en.paymentInstructions"></div>
   </ng-container>
 
 

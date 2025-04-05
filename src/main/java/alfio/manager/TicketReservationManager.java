@@ -1850,7 +1850,8 @@ public class TicketReservationManager {
                 var totalPrice = totalReservationCostWithVAT(reservation).getLeft();
                 var paymentToken = paymentWebhookResult.getPaymentToken();
                 var paymentSpecification = new PaymentSpecification(reservation, totalPrice, purchaseContext, paymentToken,
-                    orderSummaryForReservation(reservation, purchaseContext), true, hasPrivacyPolicy(purchaseContext));
+                    paymentProvider.getPaymentMethodForTransaction(transaction), orderSummaryForReservation(reservation, purchaseContext),
+                    true, hasPrivacyPolicy(purchaseContext));
                 transitionToComplete(paymentSpecification, paymentToken.getPaymentProvider(), null);
                 break;
             }
@@ -1976,7 +1977,7 @@ public class TicketReservationManager {
         var messageSource = messageSourceManager.getMessageSourceFor(purchaseContext);
         var provider = (ServerInitiatedTransaction) optionalProvider.get();
         var paymentSpecification = new PaymentSpecification(reservation,
-            totalReservationCostWithVAT(reservation).getLeft(), purchaseContext, null,
+            totalReservationCostWithVAT(reservation).getLeft(), purchaseContext, null, paymentMethod,
             orderSummaryForReservation(reservation, purchaseContext), false, false);
         if(!acquireGroupMembers(reservationId, purchaseContext)) {
             groupManager.deleteWhitelistedTicketsForReservation(reservationId);

@@ -107,8 +107,6 @@ public class CustomOfflinePaymentManager implements PaymentProvider {
 
     @Override
     public PaymentResult doPayment(PaymentSpecification spec) {
-        // TODO: Add Real Payment Processing
-
         // GET EVENT END TIME AS DEADLINE
         ZonedDateTime deadline = spec.getPurchaseContext().event().get().getEnd();
 
@@ -139,7 +137,7 @@ public class CustomOfflinePaymentManager implements PaymentProvider {
                 0L,
                 0L,
                 Transaction.Status.PENDING,
-                Map.of());
+                Map.of("selectedPaymentMethod", spec.getSelectedPaymentMethod().getPaymentMethodId()));
 
         // RETURN RESULT
         return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);

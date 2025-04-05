@@ -16,26 +16,8 @@
  */
 package alfio.model.transaction;
 
-public enum StaticPaymentMethods implements PaymentMethod {
-    CREDIT_CARD,
-    PAYPAL,
-    IDEAL,
-    BANK_TRANSFER,
-    ON_SITE,
-    NONE,
-    APPLE_PAY,
-    BANCONTACT,
-    ING_HOME_PAY,
-    BELFIUS,
-    KBC,
-    PRZELEWY_24,
-    ALIPAY,
-    POSTFINANCE,
-    TWINT,
-    ETRANSFER;
-
-    @Override
-    public String getPaymentMethodId() {
-        return this.name();
-    }
-}
+/**
+ * A payment method which is instantiated at runtime
+ * using user-provided configuration.
+ */
+public interface UserDefinedPaymentMethod {}
