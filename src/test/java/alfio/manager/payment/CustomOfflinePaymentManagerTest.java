@@ -17,6 +17,7 @@
 package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.CustomerName;
 import alfio.model.Event;
 import alfio.model.TicketReservation.TicketReservationStatus;
@@ -40,6 +41,7 @@ import static alfio.test.util.TestUtil.clockProvider;
 class CustomOfflinePaymentManagerTest {
 
     private ConfigurationRepository configurationRepository;
+    private ConfigurationManager configurationManager;
     private CustomOfflinePaymentManager customOfflinePaymentManager;
     private Event event;
     private TicketReservationRepository ticketReservationRepository;
@@ -49,6 +51,7 @@ class CustomOfflinePaymentManagerTest {
     @BeforeEach
     void init() {
         configurationRepository = mock(ConfigurationRepository.class);
+        configurationManager = mock(ConfigurationManager.class);
 
         final int EXPECTED_NUM_MODIFIED_RESERVATIONS = 1;
         ticketReservationRepository = spy(TicketReservationRepository.class);
@@ -86,7 +89,8 @@ class CustomOfflinePaymentManagerTest {
             clockProvider(),
             configurationRepository,
             ticketReservationRepository,
-            transactionRepository
+            transactionRepository,
+            configurationManager
         );
     }
 

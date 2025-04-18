@@ -3,7 +3,8 @@ import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '
 import {PaymentProvider} from '../payment-provider';
 import {UntypedFormGroup} from '@angular/forms';
 import { CustomOfflinePaymentProvider } from './custom-offline-payment-provider';
-import {PaymentMethod, PaymentProxy} from '../../model/event';
+import { CustomOfflinePayment, type PaymentMethodId } from '../../model/event';
+import {PaymentProxy} from '../../model/event';
 
 @Component({
   selector: 'app-custom-offline-payment-proxy',
@@ -12,10 +13,13 @@ import {PaymentMethod, PaymentProxy} from '../../model/event';
 export class CustomOfflinePaymentProxyComponent implements OnChanges {
 
   @Input()
-  method?: PaymentMethod;
+  method?: PaymentMethodId;
 
   @Input()
   proxy?: PaymentProxy;
+
+  @Input()
+  availableMethods?: CustomOfflinePayment[];
 
   @Input()
   parameters?: {[key: string]: any};
@@ -26,8 +30,6 @@ export class CustomOfflinePaymentProxyComponent implements OnChanges {
   @Output()
   paymentProvider: EventEmitter<PaymentProvider> = new EventEmitter<PaymentProvider>();
 
-  private compatibleMethods: PaymentMethod[] | string[] = ['ETRANSFER'];
-
   constructor() { }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -37,11 +39,23 @@ export class CustomOfflinePaymentProxyComponent implements OnChanges {
   }
 
   public get matchProxyAndMethod(): boolean {
-    if (!this.method) {
+    if (!this.method || !this.availableMethods) {
         return false;
     }
 
-    return (this.compatibleMethods.includes(this.method)) && this.proxy === 'CUSTOM_OFFLINE';
+    return this.availableMethods.some(pm => pm.paymentMethodId === this.method)
+        && this.proxy === 'CUSTOM_OFFLINE';
+  }
+
+  get selectedPaymentMethodDescription(): string {
+    const maybeMethod = this.availableMethods?.find(pm => pm.paymentMethodId === this.method)
+    if(!maybeMethod) {
+        return "";
+    }
+
+    // FIXME: Use localizations instead of hardcoding 'en'.
+    const method = maybeMethod!;
+    return method.localizations.en.paymentDescription
   }
 
 }
