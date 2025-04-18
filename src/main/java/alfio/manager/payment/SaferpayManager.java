@@ -79,8 +79,8 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
     private final ClockProvider clockProvider;
 
     @Override
-    public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
-        return EnumSet.of(PaymentMethod.CREDIT_CARD);
+    public Set<? extends PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
+        return EnumSet.of(StaticPaymentMethods.CREDIT_CARD);
     }
 
     @Override
@@ -90,7 +90,7 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context, TransactionRequest transactionRequest) {
-        return paymentMethod == PaymentMethod.CREDIT_CARD
+        return paymentMethod == StaticPaymentMethods.CREDIT_CARD
             && isActive(context);
     }
 
@@ -101,7 +101,7 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
 
     @Override
     public PaymentMethod getPaymentMethodForTransaction(Transaction transaction) {
-        return PaymentMethod.CREDIT_CARD; // TODO retrieve payment method from transaction
+        return StaticPaymentMethods.CREDIT_CARD; // TODO retrieve payment method from transaction
     }
 
     @Override

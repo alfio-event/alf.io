@@ -3,7 +3,7 @@ import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '
 import {PaymentProvider} from '../payment-provider';
 import {UntypedFormGroup} from '@angular/forms';
 import {MolliePaymentProvider} from './mollie-payment-provider';
-import {PaymentMethod, PaymentProxy} from '../../model/event';
+import {PaymentProxy, type PaymentMethodId} from '../../model/event';
 
 @Component({
   selector: 'app-mollie-payment-proxy',
@@ -12,7 +12,7 @@ import {PaymentMethod, PaymentProxy} from '../../model/event';
 export class MolliePaymentProxyComponent implements OnChanges {
 
   @Input()
-  method: PaymentMethod;
+  method: PaymentMethodId;
 
   @Input()
   proxy: PaymentProxy;
@@ -26,7 +26,7 @@ export class MolliePaymentProxyComponent implements OnChanges {
   @Output()
   paymentProvider: EventEmitter<PaymentProvider> = new EventEmitter<PaymentProvider>();
 
-  private compatibleMethods: PaymentMethod[] = ['CREDIT_CARD', 'IDEAL', 'APPLE_PAY', 'BANCONTACT', 'BELFIUS', 'ING_HOME_PAY', 'KBC', 'PRZELEWY_24'];
+  private compatibleMethods: PaymentMethodId[] = ['CREDIT_CARD', 'IDEAL', 'APPLE_PAY', 'BANCONTACT', 'BELFIUS', 'ING_HOME_PAY', 'KBC', 'PRZELEWY_24'];
 
   constructor() { }
 
