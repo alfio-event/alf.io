@@ -9,7 +9,7 @@ import {AnalyticsService} from '../../shared/analytics.service';
 import {PurchaseContext} from '../../model/purchase-context';
 import {PurchaseContextService, PurchaseContextType} from '../../shared/purchase-context.service';
 import {pollReservationStatus} from '../../shared/util';
-import {CustomOfflinePayment} from '../../model/payment';
+import {CustomOfflinePayment} from '../../model/event';
 
 @Component({
   selector: 'app-custom-offline-payment',
@@ -45,7 +45,7 @@ export class CustomOfflinePaymentComponent implements OnInit {
       zip(
         this.purchaseContextService.getContext(this.purchaseContextType, this.publicIdentifier),
         this.reservationService.getReservationInfo(this.reservationId),
-        this.reservationService.getCustomPaymentMethodDetails(this.reservationId!)
+        this.reservationService.getSelectedCustomPaymentMethodDetails(this.reservationId!)
       ).subscribe(([ev, reservationInfo, customPaymentMethodDetails]) => {
         this.customPaymentMethodDetails = customPaymentMethodDetails;
         this.purchaseContext = ev;
