@@ -566,7 +566,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
             var activePaymentMethods = reservationInfo.getBody().getActivePaymentMethods();
             assertFalse(activePaymentMethods.isEmpty());
-            assertTrue(activePaymentMethods.containsKey(StaticPaymentMethods.BANK_TRANSFER));
+            assertTrue(activePaymentMethods.containsKey(StaticPaymentMethods.BANK_TRANSFER.getPaymentMethodId()));
 
             configurationRepository.insertTicketCategoryLevel(context.event.getOrganizationId(), context.event.getId(), hiddenCategoryId, ConfigurationKeys.PAYMENT_METHODS_BLACKLIST.name(), PaymentProxy.OFFLINE.name(), "");
 
@@ -639,7 +639,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertNotNull(reservationInfo.getBody());
             assertEquals(reservationId, reservationInfo.getBody().getId());
             assertEquals(1, reservationInfo.getBody().getActivePaymentMethods().size());
-            assertTrue(reservationInfo.getBody().getActivePaymentMethods().containsKey(StaticPaymentMethods.BANK_TRANSFER));
+            assertTrue(reservationInfo.getBody().getActivePaymentMethods().containsKey(StaticPaymentMethods.BANK_TRANSFER.getPaymentMethodId()));
 
             assertEquals(1, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
 

@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
-import {PaymentMethod, PaymentProxy} from '../../model/event';
+import {PaymentProxy, type PaymentMethodId} from '../../model/event';
 import {PaymentProvider, SimplePaymentProvider} from '../payment-provider';
 import {UntypedFormGroup} from '@angular/forms';
 
@@ -10,7 +10,7 @@ import {UntypedFormGroup} from '@angular/forms';
 export class OfflinePaymentProxyComponent implements OnChanges {
 
   @Input()
-  method: PaymentMethod;
+  method: PaymentMethodId;
 
   @Input()
   proxy: PaymentProxy;

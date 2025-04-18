@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
-import {PaymentMethod, PaymentProxy} from '../../model/event';
+import {PaymentProxy, type PaymentMethodId} from '../../model/event';
 import {ReservationInfo} from '../../model/reservation-info';
 import {PaymentProvider} from '../payment-provider';
 import {SaferpayPaymentProvider} from './saferpay-payment-provider';
@@ -10,7 +10,7 @@ import {SaferpayPaymentProvider} from './saferpay-payment-provider';
 })
 export class SaferpayPaymentProxyComponent implements OnChanges {
   @Input()
-  method: PaymentMethod;
+  method: PaymentMethodId;
 
   @Input()
   proxy: PaymentProxy;

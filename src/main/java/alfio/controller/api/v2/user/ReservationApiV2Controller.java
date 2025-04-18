@@ -259,7 +259,7 @@ public class ReservationApiV2Controller {
         return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    private Map<PaymentMethod, PaymentProxyWithParameters> getActivePaymentMethods(PurchaseContext purchaseContext,
+    private Map<String, PaymentProxyWithParameters> getActivePaymentMethods(PurchaseContext purchaseContext,
                                                                                    Collection<Integer> categoryIds,
                                                                                    OrderSummary orderSummary,
                                                                                    String reservationId) {
@@ -269,7 +269,15 @@ public class ReservationApiV2Controller {
                 .stream()
                 .filter(p -> !blacklistedMethodsForReservation.contains(p.getPaymentMethod()))
                 .filter(p -> TicketReservationManager.isValidPaymentMethod(p, purchaseContext, configurationManager))
-                .collect(toMap(PaymentManager.PaymentMethodDTO::getPaymentMethod, pm -> new PaymentProxyWithParameters(pm.getPaymentProxy(), paymentManager.loadModelOptionsFor(List.of(pm.getPaymentProxy()), purchaseContext))));
+                .collect(
+                    toMap(
+                        PaymentManager.PaymentMethodDTO::getPaymentMethodId,
+                        pm -> new PaymentProxyWithParameters(
+                            pm.getPaymentProxy(),
+                            paymentManager.loadModelOptionsFor(List.of(pm.getPaymentProxy()), purchaseContext)
+                        )
+                    )
+                );
         } else {
             return Map.of();
         }
@@ -720,8 +728,45 @@ public class ReservationApiV2Controller {
         return ResponseEntity.ok(res);
     }
 
-    @GetMapping("/reservation/{reservationId}/get-custom-payment-method-details")
-    public ResponseEntity<?> getCustomPaymentMethodDetails(@PathVariable String reservationId) throws JsonMappingException, JsonProcessingException {
+    @GetMapping("/reservation/{reservationId}/get-applicable-custom-payment-method-details")
+    public ResponseEntity<?> getApplicableCustomPaymentMethodDetails(@PathVariable String reservationId) throws JsonMappingException, JsonProcessingException {
+        var orgId = ticketReservationRepository.getEventOrganizationIDForReservation(reservationId);
+        var config = configurationRepository
+            .findByKeyAtOrganizationLevel(orgId, ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.getValue())
+            .orElse(null);
+
+        if(config == null) {
+            return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Tried to get custom payment details for reservation {}, but no matching payment method is in the db.");
+        }
+
+        var paymentMethods = objectMapper.readValue(
+            config.getValue(),
+            new TypeReference<List<UserDefinedOfflinePaymentMethod>>(){}
+        );
+
+        // FIXME: This should filter methods enabled for the event in question
+        paymentMethods
+            .forEach(paymentMethod ->
+            paymentMethod
+                .getLocalizations()
+                .forEach((key, locale) -> {
+                    Map<String, String> localeTexts = new HashMap<>();
+                    localeTexts.put("instructions", locale.getPaymentInstructions());
+                    localeTexts.put("description", locale.getPaymentDescription());
+                    localeTexts = Formatters.applyCommonMark(localeTexts);
+
+                    locale.setPaymentInstructions(localeTexts.get("instructions"));
+                    locale.setPaymentDescription(localeTexts.get("description"));
+                })
+        );
+
+        return ResponseEntity.ok(paymentMethods);
+    }
+
+    @GetMapping("/reservation/{reservationId}/get-selected-custom-payment-method-details")
+    public ResponseEntity<?> getSelectedCustomPaymentMethodDetails(@PathVariable String reservationId) throws JsonMappingException, JsonProcessingException {
         var orgId = ticketReservationRepository.getEventOrganizationIDForReservation(reservationId);
         var config = configurationRepository
             .findByKeyAtOrganizationLevel(orgId, "CUSTOM_OFFLINE_PAYMENTS")
@@ -746,17 +791,15 @@ public class ReservationApiV2Controller {
             .findFirst()
             .orElseThrow();
 
-        Map<String, String> markdownTexts = new HashMap<>();
-
         respPaymentMethod
             .getLocalizations()
             .forEach((key, locale) -> {
                 Map<String, String> localeTexts = new HashMap<>();
                 localeTexts.put("instructions", locale.getPaymentInstructions());
                 localeTexts.put("description", locale.getPaymentDescription());
-                localeTexts = Formatters.applyCommonMark(markdownTexts);
+                localeTexts = Formatters.applyCommonMark(localeTexts);
 
-                locale.setPaymentInstructions(localeTexts.get("description"));
+                locale.setPaymentInstructions(localeTexts.get("instructions"));
                 locale.setPaymentDescription(localeTexts.get("description"));
             });
 
