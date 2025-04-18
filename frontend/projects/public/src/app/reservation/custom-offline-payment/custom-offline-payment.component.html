@@ -13,8 +13,10 @@
   <app-summary-table [purchaseContext]="purchaseContext" [reservationInfo]="reservationInfo"></app-summary-table>
 
   <ng-container *ngIf="reservationFinalized">
-    <h2 [innerHTML]="'invoice.payment-instruction'|translate"></h2>
     <!-- TODO: Support multiple localizations instead of defaulting to 'en' -->
+    <h2>{{customPaymentMethodDetails.localizations.en.paymentName}}</h2>
+    <div class="markdown-content" [innerHTML]="customPaymentMethodDetails.localizations.en.paymentDescription"></div>
+    <h4 [innerHTML]="'invoice.payment-instruction'|translate"></h4>
     <div class="markdown-content" [innerHTML]="customPaymentMethodDetails.localizations.en.paymentInstructions"></div>
   </ng-container>
 

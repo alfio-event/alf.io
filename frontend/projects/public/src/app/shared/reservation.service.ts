@@ -6,7 +6,8 @@ import {ValidatedResponse} from '../model/validated-response';
 import {OverviewConfirmation} from '../model/overview-confirmation';
 import {ReservationInfo, ReservationStatusInfo} from '../model/reservation-info';
 import {ReservationPaymentResult} from '../model/reservation-payment-result';
-import {TransactionInitializationToken, CustomOfflinePayment} from '../model/payment';
+import {TransactionInitializationToken} from '../model/payment';
+import {CustomOfflinePayment} from '../model/event';
 import {DynamicDiscount} from '../model/event-code';
 import {PurchaseContextType} from './purchase-context.service';
 
@@ -87,8 +88,12 @@ export class ReservationService {
         return this.http.delete<boolean>(`/api/v2/public/reservation/${reservationId}/remove-code`, {params: {type: 'SUBSCRIPTION'}});
     }
 
-    getCustomPaymentMethodDetails(reservationId: string) {
-        return this.http.get<CustomOfflinePayment>(`/api/v2/public/reservation/${reservationId}/get-custom-payment-method-details`);
+    getApplicableCustomPaymentMethodDetails(reservationId: string) {
+        return this.http.get<CustomOfflinePayment[]>(`/api/v2/public/reservation/${reservationId}/get-applicable-custom-payment-method-details`);
+    }
+
+    getSelectedCustomPaymentMethodDetails(reservationId: string) {
+        return this.http.get<CustomOfflinePayment>(`/api/v2/public/reservation/${reservationId}/get-selected-custom-payment-method-details`);
     }
 
 }

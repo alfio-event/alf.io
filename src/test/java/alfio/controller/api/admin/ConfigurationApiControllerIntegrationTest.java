@@ -43,6 +43,7 @@ import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
 import alfio.manager.user.UserManager;
 import alfio.model.modification.OrganizationModification;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
@@ -67,8 +68,6 @@ public class ConfigurationApiControllerIntegrationTest {
 
     private Principal mockPrincipal;
     private Organization organization;
-
-    final static String CONFIGURATION_KEY = "CUSTOM_OFFLINE_PAYMENTS";
 
     @BeforeEach
     public void ensureConfiguration() {
@@ -128,7 +127,7 @@ public class ConfigurationApiControllerIntegrationTest {
 
         var maybeSaved = configurationRepository.findByKeyAtOrganizationLevel(
             organization.getId(),
-            CONFIGURATION_KEY
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name()
         );
 
         assertTrue(maybeSaved.isPresent());
@@ -159,7 +158,7 @@ public class ConfigurationApiControllerIntegrationTest {
 
         var insertResult = configurationRepository.insertOrganizationLevel(
             organization.getId(),
-            CONFIGURATION_KEY,
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
             EXISTING_CONFIG,
             null
         );
@@ -213,7 +212,7 @@ public class ConfigurationApiControllerIntegrationTest {
 
         configurationRepository.insertOrganizationLevel(
             organization.getId(),
-            CONFIGURATION_KEY,
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
             jsonPayload,
             null
         );
@@ -227,7 +226,7 @@ public class ConfigurationApiControllerIntegrationTest {
 
         var maybeSaved = configurationRepository.findByKeyAtOrganizationLevel(
             organization.getId(),
-            CONFIGURATION_KEY
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name()
         );
 
         assertTrue(maybeSaved.isPresent());
@@ -265,7 +264,7 @@ public class ConfigurationApiControllerIntegrationTest {
 
         var insertResult = configurationRepository.insertOrganizationLevel(
             organization.getId(),
-            CONFIGURATION_KEY,
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
             EXISTING_CONFIG,
             null
         );
@@ -291,7 +290,7 @@ public class ConfigurationApiControllerIntegrationTest {
 
         var maybeSaved = configurationRepository.findByKeyAtOrganizationLevel(
             organization.getId(),
-            CONFIGURATION_KEY
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name()
         );
 
         assertTrue(maybeSaved.isPresent());
@@ -322,7 +321,7 @@ public class ConfigurationApiControllerIntegrationTest {
 
         configurationRepository.insertOrganizationLevel(
             organization.getId(),
-            CONFIGURATION_KEY,
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
             EXISTING_CONFIG,
             null
         );
@@ -337,7 +336,7 @@ public class ConfigurationApiControllerIntegrationTest {
 
         var maybeSaved = configurationRepository.findByKeyAtOrganizationLevel(
             organization.getId(),
-            CONFIGURATION_KEY
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name()
         );
 
         assertTrue(maybeSaved.isPresent());

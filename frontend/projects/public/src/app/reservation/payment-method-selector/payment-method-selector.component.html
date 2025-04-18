@@ -1,18 +1,18 @@
 <div class="row" [formGroup]="overviewForm">
     <div class="col-12" [class.col-md-5]="verticalLayout" *ngIf="activePaymentsCount > 1">
         <div *ngIf="verticalLayout" class="mb-md-4">
-            <div *ngFor="let method of sortedAvailablePaymentMethods" class="form-check pt-3 pb-3"
-                [ngClass]="{ 'fw-bold border-top border-bottom': selectedPaymentMethod == method, 'text-body-secondary border-right-md': selectedPaymentMethod != null && selectedPaymentMethod != method }">
-                <input class="form-check-input" [attr.id]="method" type="radio" [value]="method" name="selectedPaymentMethod" formControlName="selectedPaymentMethod" role="radiogroup" [attr.aria-labelledby]="method + '-label'">
-                <label class="form-check-label ms-2 w-100 h-100" [attr.for]="method" [id]="method + '-label'"><fa-icon [icon]="getPaymentMethodDetails(method).icon" a11yRole="presentation" class="ms-2 me-3"></fa-icon> {{ getPaymentMethodDetails(method).labelKey | translate }}</label>
+            <div *ngFor="let methodID of sortedAvailablePaymentMethodIDs" class="form-check pt-3 pb-3"
+                [ngClass]="{ 'fw-bold border-top border-bottom': selectedPaymentMethod == methodID, 'text-body-secondary border-right-md': selectedPaymentMethod != null && selectedPaymentMethod != methodID }">
+                <input class="form-check-input" [attr.id]="methodID" type="radio" [value]="methodID" name="selectedPaymentMethod" formControlName="selectedPaymentMethod" role="radiogroup" [attr.aria-labelledby]="methodID + '-label'">
+                <label class="form-check-label ms-2 w-100 h-100" [attr.for]="methodID" [id]="methodID + '-label'"><fa-icon [icon]="getPaymentMethodDetails(methodID).icon" a11yRole="presentation" class="ms-2 me-3"></fa-icon> {{ getPaymentMethodDetails(methodID).labelKey | translate }}</label>
             </div>
         </div>
         <div class="row align-items-center mb-3" *ngIf="!verticalLayout">
-            <div class="col-12 col-md-auto mb-2 mb-md-0 me-0 me-md-3" *ngFor="let method of sortedAvailablePaymentMethods" [class.active]="selectedPaymentMethod == method">
+            <div class="col-12 col-md-auto mb-2 mb-md-0 me-0 me-md-3" *ngFor="let methodID of sortedAvailablePaymentMethodIDs" [class.active]="selectedPaymentMethod == method">
                 <div class="form-check me-sm-2">
-                    <input class="form-check-input" [attr.id]="method" type="radio" [value]="method" name="selectedPaymentMethod" formControlName="selectedPaymentMethod" [attr.aria-labelledby]="method + '-label'">
-                    <label class="form-check-label ms-2 w-100 h-100" [attr.for]="method" [id]="method + '-label'" [ngClass]="{ 'fw-bold': selectedPaymentMethod == method, 'text-body-secondary': selectedPaymentMethod != null && selectedPaymentMethod != method }">
-                        <fa-icon [icon]="getPaymentMethodDetails(method).icon" class="ms-2 me-3" a11yRole="presentation"></fa-icon> {{ getPaymentMethodDetails(method).labelKey | translate }}
+                    <input class="form-check-input" [attr.id]="methodID" type="radio" [value]="methodID" name="selectedPaymentMethod" formControlName="selectedPaymentMethod" [attr.aria-labelledby]="methodID + '-label'">
+                    <label class="form-check-label ms-2 w-100 h-100" [attr.for]="methodID" [id]="methodID + '-label'" [ngClass]="{ 'fw-bold': selectedPaymentMethod == methodID, 'text-body-secondary': selectedPaymentMethod != null && selectedPaymentMethod != methodID }">
+                        <fa-icon [icon]="getPaymentMethodDetails(methodID).icon" class="ms-2 me-3" a11yRole="presentation"></fa-icon> {{ getPaymentMethodDetails(methodID).labelKey | translate }}
                     </label>
                 </div>
             </div>
@@ -30,14 +30,14 @@
             <app-offline-payment-proxy
                 [proxy]="selectedPaymentProxy"
                 [method]="selectedPaymentMethod"
-                [parameters]="activePaymentMethods[selectedPaymentMethod].parameters"
+                [parameters]="activePaymentMethods[selectedPaymentMethod]?.parameters"
                 [overviewForm]="overviewForm"
                 (paymentProvider)="registerCurrentPaymentProvider($event)">
             </app-offline-payment-proxy>
             <app-onsite-payment-proxy
                 [proxy]="selectedPaymentProxy"
                 [method]="selectedPaymentMethod"
-                [parameters]="activePaymentMethods[selectedPaymentMethod].parameters"
+                [parameters]="activePaymentMethods[selectedPaymentMethod]?.parameters"
                 [overviewForm]="overviewForm"
                 (paymentProvider)="registerCurrentPaymentProvider($event)">
             </app-onsite-payment-proxy>
@@ -46,7 +46,7 @@
                 [reservation]="reservationInfo"
                 [proxy]="selectedPaymentProxy"
                 [method]="selectedPaymentMethod"
-                [parameters]="activePaymentMethods[selectedPaymentMethod].parameters"
+                [parameters]="activePaymentMethods[selectedPaymentMethod]?.parameters"
                 (paymentProvider)="registerCurrentPaymentProvider($event)">
             </app-stripe-payment-proxy>
             <app-paypal-payment-proxy
@@ -66,9 +66,10 @@
               (paymentProvider)="registerCurrentPaymentProvider($event)">
             </app-saferpay-payment-proxy>
             <app-custom-offline-payment-proxy
-              [proxy]="selectedPaymentProxy"
-              [method]="selectedPaymentMethod"
-              (paymentProvider)="registerCurrentPaymentProvider($event)">
+                [proxy]="selectedPaymentProxy"
+                [method]="selectedPaymentMethod"
+                [availableMethods]="customOfflinePaymentMethods"
+                (paymentProvider)="registerCurrentPaymentProvider($event)">
             </app-custom-offline-payment-proxy>
         </div>
 

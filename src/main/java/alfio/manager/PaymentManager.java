@@ -313,5 +313,9 @@ public class PaymentManager {
         public PaymentMethod getPaymentMethod() {
             return paymentMethod;
         }
+
+        public String getPaymentMethodId() {
+            return paymentMethod.getPaymentMethodId();
+        }
     }
 }

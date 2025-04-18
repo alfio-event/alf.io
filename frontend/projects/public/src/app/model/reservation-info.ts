@@ -1,5 +1,5 @@
 import {AdditionalField, Ticket} from './ticket';
-import {PaymentMethod, PaymentProxy, PaymentProxyWithParameters} from './event';
+import {PaymentProxy, PaymentProxyWithParameters, type PaymentMethod} from './event';
 import {TicketAccessType} from './ticket-category';
 
 export class ReservationInfo {
@@ -40,7 +40,7 @@ export class ReservationInfo {
     containsCategoriesLinkedToGroups: boolean;
     //
 
-    activePaymentMethods: {[key in PaymentMethod]?: PaymentProxyWithParameters};
+    activePaymentMethods: {[key in PaymentMethod['paymentMethodId']]: PaymentProxyWithParameters} = {};
     subscriptionInfos?: Array<ReservationSubscriptionInfo>;
     metadata: ReservationMetadata;
     additionalServiceWithData?: Array<AdditionalServiceWithData>;
