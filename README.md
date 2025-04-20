@@ -8,8 +8,7 @@ The open source ticket reservation system.
 [![Build Status](https://github.com/alfio-event/alf.io/workflows/build/badge.svg)](https://github.com/alfio-event/alf.io/actions)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=alfio-event_alf.io&metric=security_rating)](https://sonarcloud.io/summary/overall?id=alfio-event_alf.io)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=alfio-event_alf.io&metric=reliability_rating)](https://sonarcloud.io/summary/overall?id=alfio-event_alf.io)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=alfio-event_alf.io&metric=coverage)](https://sonarcloud.io/summary/overall?id=alfio-event_alf.io)
-
+[![codecov](https://codecov.io/gh/alfio-event/alf.io/graph/badge.svg?token=scWGkoUzoX)](https://codecov.io/gh/alfio-event/alf.io)
 [![Financial Contributors on Open Collective](https://opencollective.com/alfio/all/badge.svg?label=financial+contributors)](https://opencollective.com/alfio)
 [![Docker Hub Pulls](https://img.shields.io/docker/pulls/alfio/alf.io.svg)](https://hub.docker.com/r/alfio/alf.io/tags)
 [![Open Source Helpers](https://www.codetriage.com/alfio-event/alf.io/badges/users.svg)](https://www.codetriage.com/alfio-event/alf.io)

@@ -307,7 +307,7 @@ compileJava {
 compileJava.dependsOn(processResources)
 
 //propagate the system properties to the tests
-tasks.named('test') {
+tasks.withType(Test).configureEach {
     useJUnitPlatform()
     systemProperties = System.properties
     systemProperties.remove("java.endorsed.dirs")
@@ -315,6 +315,10 @@ tasks.named('test') {
         events "failed"
         exceptionFormat "full"
         info.events = ["failed"]
+    }
+    reports {
+        junitXml.required = true  // Enable JUnit XML report
+        html.required = true      // Enable HTML report (optional)
     }
 }
 
@@ -356,15 +360,9 @@ jacocoTestReport {
     sourceDirectories.from(project.files(sourceSets.main.allSource.srcDirs))
     classDirectories.from(project.files(sourceSets.main.output))
     reports {
-        xml {
-            enabled(true)
-        }
-        csv {
-            enabled(false)
-        }
-        html {
-            enabled(true)
-        }
+        xml.required = true
+        html.required = true
+        csv.required = true
     }
 }
 

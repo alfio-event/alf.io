@@ -199,15 +199,17 @@
 </div>
 <div class="row" ng-if="ticketValidityType == 'CUSTOM'">
     <div class="col-xs-12 col-md-6">
-        <div class="form-group" bs-form-error="ticketCategory.customValidityStartFromString">
+        <div class="form-group" bs-form-error="ticketCategory.ticketValidityStart">
             <label for="{{buildPrefix($index, 'customValidityStartToString')}}">from</label>
             <input ng-model="ticketCategory.customValidityStartToString" placeholder="{{eventStartDate}}" single-date no-init-date="true" start-model="ticketCategory.ticketValidityStart" id="{{buildPrefix($index, 'customValidityStartToString')}}" class="form-control">
+            <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.ticketValidityStart" data-show-existing-errors="showExistingErrors"></field-error>
         </div>
     </div>
     <div class="col-xs-12 col-md-6">
-        <div class="form-group" bs-form-error="ticketCategory.customValidityEndToString">
+        <div class="form-group" bs-form-error="ticketCategory.ticketValidityEnd">
             <label for="{{buildPrefix($index, 'customValidityEndToString')}}">to</label>
             <input ng-model="ticketCategory.customValidityEndToString" placeholder="{{eventEndDate}}" single-date no-init-date="true" start-model="ticketCategory.ticketValidityEnd" id="{{buildPrefix($index, 'customValidityEndToString')}}" class="form-control">
+            <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.ticketValidityEnd" data-show-existing-errors="showExistingErrors"></field-error>
         </div>
     </div>
 </div>
@@ -231,12 +233,14 @@
         <div class="form-group" bs-form-error="ticketCategory.validCheckInFromString">
             <label for="{{buildPrefix($index, 'validCheckInFromString')}}">from</label>
             <input ng-model="ticketCategory.validCheckInFromString" display-on-top="true" single-date no-init-date="true" start-model="ticketCategory.validCheckInFrom" id="{{buildPrefix($index, 'validCheckInFromString')}}" class="form-control">
+            <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.validCheckInFrom" data-show-existing-errors="showExistingErrors"></field-error>
         </div>
     </div>
     <div class="col-xs-12 col-md-6">
         <div class="form-group" bs-form-error="ticketCategory.validCheckInToString">
             <label for="{{buildPrefix($index, 'validCheckInToString')}}">to</label>
             <input ng-model="ticketCategory.validCheckInToString" display-on-top="true" placeholder="{{eventEndDate}}" single-date no-init-date="true" start-model="ticketCategory.validCheckInTo" id="{{buildPrefix($index, 'validCheckInToString')}}" class="form-control">
+            <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.validCheckInTo" data-show-existing-errors="showExistingErrors"></field-error>
         </div>
     </div>
 </div>

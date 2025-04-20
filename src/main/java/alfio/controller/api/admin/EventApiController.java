@@ -214,7 +214,7 @@ public class EventApiController {
                 return ResponseEntity.ok(out);
             }).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
-    
+
     @DeleteMapping("/events/{eventId}")
     public void deleteEvent(@PathVariable int eventId, Principal principal) {
         accessService.checkEventOwnership(principal, eventId);
@@ -314,16 +314,20 @@ public class EventApiController {
     @PostMapping("/events/{eventId}/categories/{categoryId}/update")
     public ValidationResult updateExistingCategory(@PathVariable int eventId, @PathVariable int categoryId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
         accessService.checkCategoryOwnership(principal, eventId, categoryId);
-        Assert.isTrue(categoryId == category.getId().intValue(), "categoryId must be equal to category.getId()");
-        return validateCategory(category, errors, getDescriptionLength()).ifSuccess(() -> eventManager.updateCategory(categoryId, eventId, category, principal.getName()));
+        Event event = eventManager.getSingleEventById(eventId, principal.getName());
+        Assert.isTrue(Objects.equals(categoryId, category.getId()), "categoryId must be equal to category.getId()");
+        return validateCategory(category, "", event.getBegin().toLocalDateTime(), event.getEnd().toLocalDateTime(), errors, getDescriptionLength())
+            .ifSuccess(() -> eventManager.updateCategory(categoryId, eventId, category, principal.getName()));
     }
 
     @PostMapping("/events/{eventId}/categories/new")
     public ValidationResult createCategory(@PathVariable int eventId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
         accessService.checkEventOwnership(principal, eventId);
-        return validateCategory(category, errors, getDescriptionLength()).ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
+        Event event = eventManager.getSingleEventById(eventId, principal.getName());
+        return validateCategory(category, "", event.getBegin().toLocalDateTime(), event.getEnd().toLocalDateTime(), errors, getDescriptionLength())
+            .ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
     }
-    
+
     @PutMapping("/events/reallocate")
     public String reallocateTickets(@RequestBody TicketAllocationModification form, Principal principal) {
         var event = accessService.checkCategoryOwnership(principal, form.getEventId(), Set.of(form.getSrcCategoryId(), form.getTargetCategoryId()));
@@ -357,7 +361,7 @@ public class EventApiController {
 
     private static final String PAYMENT_METHOD = "Payment Method";
     private static final String EXTERNAL_REFERENCE = "External Reference";
-    static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Country Code", "Payment ID", PAYMENT_METHOD, EXTERNAL_REFERENCE);
+    static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Country Code", "Promo Code","Payment ID", PAYMENT_METHOD, EXTERNAL_REFERENCE);
     private static final List<SerializablePair<String, String>> FIXED_PAIRS = FIXED_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList());
     private static final String FISCAL_CODE = "Fiscal Code";
     private static final String REFERENCE_TYPE = "Reference Type";
@@ -429,6 +433,7 @@ public class EventApiController {
             if(fields.contains("Confirmation")) {line.add(reservation.getConfirmationTimestamp().withZoneSameInstant(eventZoneId).toString());}
             if(fields.contains("Billing Address")) {line.add(reservation.getBillingAddress());}
             if(fields.contains("Country Code")) {line.add(reservation.getVatCountryCode());}
+            if(fields.contains("Promo Code")) {line.add(trs.getPromoCode());}
             boolean paymentIdRequested = fields.contains("Payment ID");
             boolean paymentGatewayRequested = fields.contains(PAYMENT_METHOD);
             if((paymentIdRequested || paymentGatewayRequested)) {

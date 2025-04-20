@@ -62,7 +62,7 @@ class CheckInManagerTest {
         when(event.getOrganizationId()).thenReturn(ORG_ID);
         when(organizationRepository.findOrganizationForUser(USERNAME, ORG_ID)).thenReturn(Optional.of(organization));
         when(organization.getId()).thenReturn(ORG_ID);
-        when(eventRepository.retrieveCheckInStatisticsForEvent(EVENT_ID)).thenReturn(new CheckInStatistics(0, 0, new Date()));
+        when(eventRepository.retrieveCheckInStatisticsForEvent(eq(EVENT_ID), isNull())).thenReturn(new CheckInStatistics(0, 0, new Date()));
         checkInManager = new CheckInManager(null, eventRepository, null, null, null, null,
             null, configurationManager, organizationRepository, null, null, null, null, null, TestUtil.clockProvider(), null);
     }
@@ -71,18 +71,18 @@ class CheckInManagerTest {
     void getStatistics() {
         when(configurationManager.getFor(eq(CHECK_IN_STATS), any(ConfigurationLevel.class)))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(CHECK_IN_STATS, new ConfigurationKeyValuePathLevel(null, "true", null)));
-        CheckInStatistics statistics = checkInManager.getStatistics(EVENT_NAME, USERNAME);
+        CheckInStatistics statistics = checkInManager.getStatistics(EVENT_NAME, null, USERNAME);
         assertNotNull(statistics);
-        verify(eventRepository).retrieveCheckInStatisticsForEvent(EVENT_ID);
+        verify(eventRepository).retrieveCheckInStatisticsForEvent(eq(EVENT_ID), isNull());
     }
 
     @Test
     void getStatisticsDisabled() {
         when(configurationManager.getFor(eq(CHECK_IN_STATS), any(ConfigurationLevel.class)))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(CHECK_IN_STATS, new ConfigurationKeyValuePathLevel(null, "false", null)));
-        CheckInStatistics statistics = checkInManager.getStatistics(EVENT_NAME, USERNAME);
+        CheckInStatistics statistics = checkInManager.getStatistics(EVENT_NAME, null, USERNAME);
         assertNull(statistics);
-        verify(eventRepository, never()).retrieveCheckInStatisticsForEvent(EVENT_ID);
+        verify(eventRepository, never()).retrieveCheckInStatisticsForEvent(eq(EVENT_ID), isNull());
     }
 
 

@@ -16,6 +16,8 @@
         <hr ng-if="$ctrl.panelModeEnabled" />
         <div class="alert alert-danger" ng-if="$ctrl.ticketCategory.error" ng-switch="$ctrl.ticketCategory.error">
             <i class="fa fa-exclamation"></i>
+            <span ng-switch-when="error.validity.date.overflow" class="ml-1">Please check ticket validity dates (from/to)</span>
+            <span ng-switch-when="error.checkin.date.overflow" class="ml-1">Please check ticket check-in dates (from/to)</span>
             <span ng-switch-when="error.date.overflow" class="ml-1">Expiration Date cannot be after Event's End Date</span>
             <span ng-switch-when="error.date" class="ml-1">Wrong Validity Range</span>
         </div>
