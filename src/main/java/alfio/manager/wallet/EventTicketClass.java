@@ -20,15 +20,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
-@Builder
 @Getter
 public class EventTicketClass implements WalletEntity {
 
@@ -55,6 +52,24 @@ public class EventTicketClass implements WalletEntity {
     private ZonedDateTime start;
 
     private ZonedDateTime end;
+
+    public EventTicketClass() {
+    }
+
+    public EventTicketClass(String id, String eventName, String eventOrGroupingId, String description, String venue, LatitudeLongitudePoint location, String ticketType, String logoUri, ZonedDateTime start, ZonedDateTime end) {
+        this.id = id;
+        this.eventName = eventName;
+        this.eventOrGroupingId = eventOrGroupingId;
+        this.description = description;
+        this.venue = venue;
+        this.location = location;
+        this.ticketType = ticketType;
+        this.logoUri = logoUri;
+        this.start = start;
+        this.end = end;
+    }
+
+
 
     public String build(ObjectMapper mapper) {
         ObjectNode object = mapper.createObjectNode();
