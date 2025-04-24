@@ -216,6 +216,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         return StringUtils.isNotBlank(imageUrl) || StringUtils.isNotBlank(fileBlobId);
     }
 
+    @Override
     public boolean getFileBlobIdIsPresent() {
         return StringUtils.isNotBlank(fileBlobId);
     }
@@ -249,6 +250,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         return mustUseFirstAndLastName();
     }
 
+    @Override
     public boolean mustUseFirstAndLastName() {
         return mustUseFirstAndLastName(this);
     }
