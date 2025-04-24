@@ -16,9 +16,7 @@
  */
 package alfio.manager.i18n;
 
-import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
-import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
