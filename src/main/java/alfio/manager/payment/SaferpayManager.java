@@ -35,7 +35,6 @@ import alfio.repository.TransactionRepository;
 import alfio.util.ClockProvider;
 import alfio.util.HttpUtils;
 import alfio.util.MonetaryUtil;
-import alfio.util.oauth2.AccessTokenResponseDetails;
 import com.google.gson.JsonParser;
 import lombok.AllArgsConstructor;
 import lombok.experimental.Delegate;

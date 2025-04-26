@@ -48,7 +48,6 @@ import java.util.stream.Stream;
 import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
 import static alfio.model.system.ConfigurationKeys.WAITING_QUEUE_RESERVATION_TIMEOUT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @DisplayName("Waiting List Manager")

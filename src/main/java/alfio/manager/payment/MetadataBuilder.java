@@ -16,7 +16,6 @@
  */
 package alfio.manager.payment;
 
-import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;

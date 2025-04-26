@@ -31,7 +31,6 @@ import alfio.repository.TransactionRepository;
 import alfio.repository.user.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;

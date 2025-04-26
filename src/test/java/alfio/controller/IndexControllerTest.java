@@ -41,7 +41,6 @@ import java.util.stream.Collectors;
 import static alfio.test.util.TestUtil.FIXED_TIME_CLOCK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 class IndexControllerTest {

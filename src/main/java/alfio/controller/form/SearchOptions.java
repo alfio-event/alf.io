@@ -17,7 +17,6 @@
 package alfio.controller.form;
 
 import lombok.Data;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;

@@ -34,7 +34,6 @@ import java.util.List;
 import static alfio.test.util.TestUtil.clockProvider;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.*;
 
 @DisplayName("EventManager: handle Ticket modifications")

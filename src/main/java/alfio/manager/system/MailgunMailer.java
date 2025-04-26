@@ -17,10 +17,8 @@
 package alfio.manager.system;
 
 import alfio.model.Configurable;
-import alfio.model.system.ConfigurationKeys;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.HttpUtils;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;

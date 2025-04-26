@@ -17,7 +17,6 @@
 package alfio.util;
 
 import lombok.AllArgsConstructor;
-import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;

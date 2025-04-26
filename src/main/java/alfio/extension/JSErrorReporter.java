@@ -17,7 +17,6 @@
 
 package alfio.extension;
 
-import lombok.extern.log4j.Log4j2;
 import org.mozilla.javascript.ErrorReporter;
 import org.mozilla.javascript.EvaluatorException;
 import org.slf4j.Logger;

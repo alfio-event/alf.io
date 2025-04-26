@@ -19,7 +19,6 @@ package alfio.util;
 import alfio.controller.api.support.TicketHelper;
 import alfio.model.subscription.SubscriptionDescriptor;
 import com.samskivert.mustache.Mustache;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;

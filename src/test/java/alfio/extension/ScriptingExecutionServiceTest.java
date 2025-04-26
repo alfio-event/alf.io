@@ -36,7 +36,6 @@ import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.*;
 
 public class ScriptingExecutionServiceTest {

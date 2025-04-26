@@ -59,7 +59,6 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static alfio.controller.Constants.*;
-import static alfio.controller.Constants.CONTENT;
 import static alfio.model.system.ConfigurationKeys.BASE_CUSTOM_CSS;
 import static alfio.util.HttpUtils.APPLICATION_JSON;
 import static java.util.Objects.requireNonNull;

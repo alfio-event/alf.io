@@ -22,7 +22,6 @@ import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.Getter;
 
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Objects;
 

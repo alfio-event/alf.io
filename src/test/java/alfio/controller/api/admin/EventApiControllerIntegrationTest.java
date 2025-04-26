@@ -24,7 +24,6 @@ import alfio.manager.AdminReservationRequestManager;
 import alfio.manager.EventManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
-import alfio.model.PromoCodeDiscount;
 import alfio.model.TicketCategory;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.AdminReservationModification;
@@ -60,7 +59,6 @@ import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static alfio.controller.api.admin.EventApiController.FIXED_FIELDS;
 import static alfio.test.toolkit.PromoCodeDiscountIntegrationTestingToolkit.TEST_PROMO_CODE;

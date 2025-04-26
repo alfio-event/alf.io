@@ -18,7 +18,6 @@ package alfio.controller.api;
 
 import alfio.controller.api.v2.user.support.ReservationAccessDenied;
 import alfio.manager.support.AccessDeniedException;
-import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

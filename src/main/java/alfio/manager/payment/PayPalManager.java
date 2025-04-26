@@ -41,7 +41,6 @@ import com.paypal.http.exceptions.HttpException;
 import com.paypal.orders.*;
 import com.paypal.payments.CapturesRefundRequest;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
