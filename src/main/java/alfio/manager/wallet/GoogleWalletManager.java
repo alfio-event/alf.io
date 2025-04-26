@@ -186,27 +186,27 @@ public class GoogleWalletManager {
         }
 
         var host = URI.create(baseUrl).getHost().replace(".", "-");
-        var eventTicketClass = EventTicketClass.builder()
-            .id(formatEventTicketClassId(event, issuerId, category, host))
-            .eventOrGroupingId(Integer.toString(event.getId()))
-            .logoUri(baseUrl + "/file/" + event.getFileBlobId())
-            .eventName(event.getDisplayName())
-            .description(eventDescription)
-            .venue(event.getLocation())
-            .location(latitudeLongitudePoint)
-            .ticketType(category.getName())
-            .start(ticketValidityStart)
-            .end(ticketValidityEnd)
-            .build();
+        var eventTicketClass = new EventTicketClass(
+            formatEventTicketClassId(event, issuerId, category, host),
+            event.getDisplayName(),
+            Integer.toString(event.getId()),
+            eventDescription,
+            event.getLocation(),
+            latitudeLongitudePoint,
+            category.getName(),
+            baseUrl + "/file/" + event.getFileBlobId(),
+            ticketValidityStart,
+            ticketValidityEnd
+        );
 
         String walletTicketId = formatEventTicketObjectId(ticket, event, issuerId, host);
-        var eventTicketObject = EventTicketObject.builder()
-            .id(walletTicketId)
-            .classId(eventTicketClass.getId())
-            .ticketHolderName(ticket.getFullName())
-            .ticketNumber(ticket.getUuid())
-            .barcode(ticket.ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive()))
-            .build();
+        var eventTicketObject = new EventTicketObject(
+            walletTicketId,
+            eventTicketClass.getId(),
+            ticket.getFullName(),
+            ticket.getUuid(),
+            ticket.ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive())
+        );
 
         GoogleCredentials credentials = retrieveCredentials(serviceAccountKey);
 

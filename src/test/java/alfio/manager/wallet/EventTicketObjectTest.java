@@ -19,12 +19,6 @@ package alfio.manager.wallet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.Month;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class EventTicketObjectTest {
@@ -33,18 +27,17 @@ class EventTicketObjectTest {
     void build() throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
 
-        EventTicketObject object = EventTicketObject.builder()
-            .id("ISSUER_ID.MEMBER_ID")
-            .classId("ISSUER_ID.EVENT_CLASS_ID")
-            .ticketHolderName("Alf")
-            .ticketNumber("123-321-000")
-            .barcode("123456789")
-            .build();
+        EventTicketObject object = new EventTicketObject(
+            "ISSUER_ID.MEMBER_ID",
+            "ISSUER_ID.EVENT_CLASS_ID",
+            "Alf",
+            "123-321-000",
+            "123456789"
+        );
         String build = object.build(objectMapper);
 
         var resource = getClass().getResource("/wallet-json/event-object.json");
         assertNotNull(resource);
-        var payload = Files.readString(Path.of(resource.toURI()));
         assertEquals(objectMapper.readTree(resource), objectMapper.readTree(build));
     }
 

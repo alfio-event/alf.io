@@ -43,7 +43,6 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static alfio.util.Wrappers.optionally;
 
@@ -89,7 +88,7 @@ public class AttendeeApiController {
         String username = principal.getName();
         return ResponseEntity.ok(requests.stream()
             .map(request -> attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, request.leadStatus, username, operator, request.timestamp))
-            .collect(Collectors.toList()));
+            .toList());
     }
 
     @GetMapping("/{eventKey}/sponsor-scan/mine")

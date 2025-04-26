@@ -19,15 +19,8 @@ package alfio.manager.wallet;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
-import org.springframework.core.io.ByteArrayResource;
 
-import java.net.URI;
-import java.time.format.DateTimeFormatter;
-
-@Builder
 @Getter
 public class EventTicketObject implements WalletEntity {
 
@@ -42,6 +35,17 @@ public class EventTicketObject implements WalletEntity {
     private String ticketNumber;
 
     private String barcode;
+
+    public EventTicketObject() {
+    }
+
+    public EventTicketObject(String id, String classId, String ticketHolderName, String ticketNumber, String barcode) {
+        this.id = id;
+        this.classId = classId;
+        this.ticketHolderName = ticketHolderName;
+        this.ticketNumber = ticketNumber;
+        this.barcode = barcode;
+    }
 
     public String build(ObjectMapper mapper) {
         ObjectNode object = mapper.createObjectNode();

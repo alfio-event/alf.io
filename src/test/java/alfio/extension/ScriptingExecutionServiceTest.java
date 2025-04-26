@@ -17,7 +17,6 @@
 package alfio.extension;
 
 import alfio.extension.exception.*;
-import alfio.manager.system.AdminJobManager;
 import alfio.repository.system.AdminJobQueueRepository;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
