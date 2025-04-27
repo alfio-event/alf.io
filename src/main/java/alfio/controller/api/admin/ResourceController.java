@@ -53,7 +53,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @RestController
@@ -87,7 +86,7 @@ public class ResourceController {
 
     @GetMapping("/overridable-template")
     public List<TemplateResource> getOverridableTemplates() {
-        return Stream.of(TemplateResource.values()).filter(TemplateResource::overridable).collect(Collectors.toList());
+        return Stream.of(TemplateResource.values()).filter(TemplateResource::overridable).toList();
     }
 
     @GetMapping("/overridable-template/{name}/{locale}")

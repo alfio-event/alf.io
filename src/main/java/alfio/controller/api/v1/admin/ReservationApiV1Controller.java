@@ -110,9 +110,9 @@ public class ReservationApiV1Controller {
                         tfc.getAttributes(),
                         additional,
                         AttendeeResources.fromTicket(ticket, purchaseContext, conf));
-                }).collect(toList());
+                }).toList();
                 return new AttendeesByCategory(categoryId, ticketsForCategory.size(), attendeesData, List.of());
-            }).collect(toList());
+            }).toList();
         } else {
             var subscriptionDetails = ticketReservationManager.findSubscriptionDetails(reservationId).orElseThrow();
             var subscription = subscriptionDetails.getSubscription();
