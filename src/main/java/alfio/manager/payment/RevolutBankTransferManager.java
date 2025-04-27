@@ -77,7 +77,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
         .build();
 
     @Override
-    public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
+    public Set<? extends PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
         return bankTransferManager.getSupportedPaymentMethods(paymentContext, transactionRequest);
     }
 
@@ -88,7 +88,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context, TransactionRequest transactionRequest) {
-        return paymentMethod == PaymentMethod.BANK_TRANSFER && isActive(context);
+        return paymentMethod == StaticPaymentMethods.BANK_TRANSFER && isActive(context);
     }
 
     @Override

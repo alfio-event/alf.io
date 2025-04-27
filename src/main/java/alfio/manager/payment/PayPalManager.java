@@ -309,8 +309,8 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     }
 
     @Override
-    public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
-        return EnumSet.of(PaymentMethod.PAYPAL);
+    public Set<? extends PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
+        return EnumSet.of(StaticPaymentMethods.PAYPAL);
     }
 
     @Override
@@ -320,7 +320,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context, TransactionRequest transactionRequest) {
-        return paymentMethod == PaymentMethod.PAYPAL && isActive(context);
+        return paymentMethod == StaticPaymentMethods.PAYPAL && isActive(context);
     }
 
     @Override
@@ -330,7 +330,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
 
     @Override
     public PaymentMethod getPaymentMethodForTransaction(alfio.model.transaction.Transaction transaction) {
-        return PaymentMethod.PAYPAL;
+        return StaticPaymentMethods.PAYPAL;
     }
 
     @Override

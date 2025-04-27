@@ -1851,7 +1851,8 @@ public class TicketReservationManager {
                 var totalPrice = totalReservationCostWithVAT(reservation).getLeft();
                 var paymentToken = paymentWebhookResult.getPaymentToken();
                 var paymentSpecification = new PaymentSpecification(reservation, totalPrice, purchaseContext, paymentToken,
-                    orderSummaryForReservation(reservation, purchaseContext), true, hasPrivacyPolicy(purchaseContext));
+                    paymentProvider.getPaymentMethodForTransaction(transaction), orderSummaryForReservation(reservation, purchaseContext),
+                    true, hasPrivacyPolicy(purchaseContext));
                 transitionToComplete(paymentSpecification, paymentToken.getPaymentProvider(), null);
                 break;
             }
@@ -1947,7 +1948,7 @@ public class TicketReservationManager {
         "reservation", reservation,
             RESERVATION_ID, shortReservationID,
         "eventName", purchaseContext.getDisplayName(),
-        "provider", requireNonNullElse(paymentMethod, PaymentMethod.NONE).name(),
+        "provider", requireNonNullElse(paymentMethod, StaticPaymentMethods.NONE).name(),
         "reason", paymentWebhookResult.getReason(),
         "reservationUrl", reservationUrl(reservation, purchaseContext));
 
@@ -1977,7 +1978,7 @@ public class TicketReservationManager {
         var messageSource = messageSourceManager.getMessageSourceFor(purchaseContext);
         var provider = (ServerInitiatedTransaction) optionalProvider.get();
         var paymentSpecification = new PaymentSpecification(reservation,
-            totalReservationCostWithVAT(reservation).getLeft(), purchaseContext, null,
+            totalReservationCostWithVAT(reservation).getLeft(), purchaseContext, null, paymentMethod,
             orderSummaryForReservation(reservation, purchaseContext), false, false);
         if(!acquireGroupMembers(reservationId, purchaseContext)) {
             groupManager.deleteWhitelistedTicketsForReservation(reservationId);
@@ -2050,7 +2051,7 @@ public class TicketReservationManager {
         var categoriesInReservation = ticketRepository.getCategoriesIdToPayInReservation(reservationId);
         var blacklistedPaymentMethods = configurationManager.getBlacklistedMethodsForReservation(purchaseContext, categoriesInReservation);
         var transactionRequest = new TransactionRequest(totalPrice, ticketReservationRepository.getBillingDetailsForReservation(reservationId));
-        var availableMethods = paymentManager.getPaymentMethods(purchaseContext, transactionRequest).stream().filter(pm -> pm.getStatus() == PaymentMethodStatus.ACTIVE && pm.getPaymentMethod() != PaymentMethod.NONE).collect(toList());
+        var availableMethods = paymentManager.getPaymentMethods(purchaseContext, transactionRequest).stream().filter(pm -> pm.getStatus() == PaymentMethodStatus.ACTIVE && pm.getPaymentMethod() != StaticPaymentMethods.NONE).collect(toList());
         if(availableMethods.isEmpty()  || availableMethods.stream().allMatch(pm -> blacklistedPaymentMethods.contains(pm.getPaymentMethod()))) {
             log.error("Cannot proceed with reservation. No payment methods available {} or all blacklisted {}", availableMethods, blacklistedPaymentMethods);
             return false;

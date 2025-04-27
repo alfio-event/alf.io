@@ -21,7 +21,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ConfigurationManager.MaybeConfiguration;
 import alfio.model.Event;
 import alfio.model.transaction.PaymentContext;
-import alfio.model.transaction.PaymentMethod;
+import alfio.model.transaction.StaticPaymentMethods;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -48,8 +48,8 @@ class OnSiteManagerTest {
         when(configuration.getValueAsBooleanOrDefault()).thenReturn(true);
         var onSiteManager = new OnSiteManager(configurationManager, null);
         when(event.isOnline()).thenReturn(true);
-        assertFalse(onSiteManager.accept(PaymentMethod.ON_SITE, new PaymentContext(event), null));
+        assertFalse(onSiteManager.accept(StaticPaymentMethods.ON_SITE, new PaymentContext(event), null));
         when(event.isOnline()).thenReturn(false);
-        assertTrue(onSiteManager.accept(PaymentMethod.ON_SITE, new PaymentContext(event), null));
+        assertTrue(onSiteManager.accept(StaticPaymentMethods.ON_SITE, new PaymentContext(event), null));
     }
 }

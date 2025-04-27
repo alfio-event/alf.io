@@ -55,8 +55,8 @@ public class BankTransferManager implements PaymentProvider {
     private final ClockProvider clockProvider;
 
     @Override
-    public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
-        return EnumSet.of(PaymentMethod.BANK_TRANSFER);
+    public Set<? extends PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
+        return EnumSet.of(StaticPaymentMethods.BANK_TRANSFER);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class BankTransferManager implements PaymentProvider {
     }
 
     boolean bankTransferEnabledForMethod(PaymentMethod paymentMethod, PaymentContext paymentContext, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> options) {
-        if(paymentMethod != PaymentMethod.BANK_TRANSFER) {
+        if(paymentMethod != StaticPaymentMethods.BANK_TRANSFER) {
             return false;
         }
         return bankTransferActive(paymentContext, options);
@@ -178,7 +178,7 @@ public class BankTransferManager implements PaymentProvider {
 
     @Override
     public PaymentMethod getPaymentMethodForTransaction(Transaction transaction) {
-        return PaymentMethod.BANK_TRANSFER;
+        return StaticPaymentMethods.BANK_TRANSFER;
     }
 
     @Override
