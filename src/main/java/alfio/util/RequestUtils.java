@@ -18,8 +18,6 @@ package alfio.util;
 
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
-import lombok.experimental.UtilityClass;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.IteratorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -22,7 +22,6 @@ import alfio.controller.api.support.TicketHelper;
 import alfio.manager.EventNameManager;
 import alfio.util.MustacheCustomTag;
 import alfio.util.Wrappers;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joda.money.CurrencyUnit;
 import org.slf4j.Logger;

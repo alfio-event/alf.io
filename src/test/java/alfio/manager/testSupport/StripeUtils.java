@@ -24,7 +24,6 @@ import alfio.model.system.ConfigurationPathLevel;
 import java.util.Map;
 
 import static alfio.model.system.ConfigurationKeys.*;
-import static alfio.model.system.ConfigurationKeys.STRIPE_CONNECTED_ID;
 
 public abstract class StripeUtils {
 

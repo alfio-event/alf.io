@@ -19,7 +19,6 @@ package alfio.controller.api.admin;
 import alfio.manager.AccessService;
 import alfio.manager.support.CustomMessageManager;
 import alfio.model.modification.MessageModification;
-import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

@@ -82,7 +82,7 @@ public class UsersApiController {
 
     @GetMapping("/roles")
     public Collection<RoleDescriptor> getAllRoles(Principal principal) {
-        return userManager.getAvailableRoles(principal.getName()).stream().map(RoleDescriptor::new).collect(Collectors.toList());
+        return userManager.getAvailableRoles(principal.getName()).stream().map(RoleDescriptor::new).toList();
     }
 
     /**
@@ -314,7 +314,7 @@ public class UsersApiController {
             return role.getDescription();
         }
 
-        public List<String> getTarget() { return role.getTarget().stream().map(RoleTarget::name).collect(Collectors.toList()); }
+        public List<String> getTarget() { return role.getTarget().stream().map(RoleTarget::name).toList(); }
     }
 
     private static final class PasswordModification {

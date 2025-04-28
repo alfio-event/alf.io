@@ -20,7 +20,6 @@ import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.VatDetail;
-import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
 import ch.digitalfondue.vatchecker.EUVatCheckResponse;
 import ch.digitalfondue.vatchecker.EUVatChecker;
@@ -30,7 +29,6 @@ import org.junit.jupiter.api.Test;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import static alfio.manager.testSupport.MaybeConfigurationBuilder.existing;
 import static alfio.manager.testSupport.MaybeConfigurationBuilder.missing;

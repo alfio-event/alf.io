@@ -20,7 +20,6 @@ import alfio.model.support.Array;
 import alfio.util.MonetaryUtil;
 import alfio.util.checkin.NameNormalizer;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import org.apache.commons.codec.digest.HmacAlgorithms;

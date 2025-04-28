@@ -17,7 +17,6 @@
 package alfio.test.util;
 
 import alfio.util.ClockProvider;
-import lombok.experimental.UtilityClass;
 
 import java.time.Clock;
 import java.time.LocalDateTime;

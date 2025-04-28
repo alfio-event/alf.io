@@ -20,7 +20,6 @@ import alfio.manager.payment.MollieWebhookPaymentManager;
 import alfio.manager.payment.StripeWebhookPaymentManager;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
-import alfio.model.transaction.webhook.MollieWebhookPayload;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

@@ -46,7 +46,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
-import static alfio.model.system.ConfigurationKeys.DISPLAY_EXPIRED_CATEGORIES;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 

@@ -16,8 +16,6 @@
  */
 package alfio.controller.api.v2.model;
 
-import alfio.controller.support.FormattedEventDates;
-import alfio.controller.support.Formatters;
 import alfio.model.checkin.EventWithCheckInInfo;
 import alfio.model.metadata.JoinLink;
 import lombok.AllArgsConstructor;
@@ -26,7 +24,6 @@ import org.springframework.context.MessageSource;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.Map;
 
 import static alfio.controller.support.Formatters.getFormattedDate;
