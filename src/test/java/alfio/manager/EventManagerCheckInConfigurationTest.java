@@ -29,7 +29,6 @@ import java.time.ZoneId;
 import java.util.Optional;
 
 import static alfio.model.system.ConfigurationKeys.CHECK_IN_COLOR_CONFIGURATION;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @DisplayName("EventManager: handle category check-in configuration")

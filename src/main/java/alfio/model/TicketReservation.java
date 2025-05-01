@@ -21,7 +21,6 @@ import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
-import lombok.With;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;

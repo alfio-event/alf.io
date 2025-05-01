@@ -32,7 +32,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin/api/{eventName}/poll")
@@ -49,7 +48,7 @@ public class PollAdminApiController {
             return ResponseEntity.badRequest().build();
         }
         accessService.checkEventOwnership(principal, eventName);
-        return ResponseEntity.ok(pollManager.getAllForEvent(eventName).stream().map(PollModification::from).collect(Collectors.toList()));
+        return ResponseEntity.ok(pollManager.getAllForEvent(eventName).stream().map(PollModification::from).toList());
     }
 
     @GetMapping("/{pollId}")

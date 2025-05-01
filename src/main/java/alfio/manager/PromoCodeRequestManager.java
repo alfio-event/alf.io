@@ -51,8 +51,6 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import static alfio.model.PromoCodeDiscount.categoriesOrNull;
-
 @Component
 @AllArgsConstructor
 public class PromoCodeRequestManager {

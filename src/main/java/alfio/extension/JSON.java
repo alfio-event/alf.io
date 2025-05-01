@@ -18,8 +18,6 @@ package alfio.extension;
 
 import alfio.util.Json;
 import com.google.gson.reflect.TypeToken;
-import lombok.experimental.UtilityClass;
-import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

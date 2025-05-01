@@ -21,6 +21,8 @@ import alfio.model.*;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.*;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -29,6 +31,8 @@ import java.util.*;
 
 @QueryRepository
 public interface EventRepository {
+
+    String STATISTICS_QUERY = "select count(*) as total_attendees, COALESCE(SUM(CASE WHEN status = 'CHECKED_IN' THEN 1 ELSE 0 END), 0) as checked_in, CURRENT_TIMESTAMP as last_update from ticket where event_id = :eventId and status in("+TicketRepository.CONFIRMED+")";
 
     @Query("select * from event where id = :eventId")
     Event findById(@Bind("eventId") int eventId);
@@ -201,8 +205,25 @@ public interface EventRepository {
     @Query("select coalesce(sum(final_price_cts),0) from tickets_reservation where event_id_fk = :eventId and status = 'COMPLETE'")
     long getGrossIncome(@Bind("eventId") int eventId);
 
-    @Query("select count(*) as total_attendees, COALESCE(SUM(CASE WHEN status = 'CHECKED_IN' THEN 1 ELSE 0 END), 0) as checked_in, CURRENT_TIMESTAMP as last_update from ticket where event_id = :eventId and status in("+TicketRepository.CONFIRMED+")")
+    @Query(STATISTICS_QUERY)
     CheckInStatistics retrieveCheckInStatisticsForEvent(@Bind("eventId") int eventId);
+
+    default CheckInStatistics retrieveCheckInStatisticsForEvent(int eventId, List<Integer> categories) {
+        var sqlParameterSource = new MapSqlParameterSource("eventId", eventId);
+        var query = STATISTICS_QUERY;
+        if (categories != null && !categories.isEmpty()) {
+            query += " and category_id in (:categories)";
+            sqlParameterSource.addValue("categories", categories);
+        }
+        return getJdbcTemplate().query(query, sqlParameterSource, rs -> {
+            if (rs.next()) {
+                return new CheckInStatistics(rs.getInt(1), rs.getInt(2), rs.getTimestamp(3));
+            }
+            return null;
+        });
+    }
+
+    NamedParameterJdbcTemplate getJdbcTemplate();
 
     @Query("select id, short_name from event where id in (:eventIds)")
     List<EventIdShortName> getEventNamesByIds(@Bind("eventIds") List<Integer> eventIds);

@@ -19,12 +19,9 @@ package alfio.manager.wallet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Month;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -35,21 +32,23 @@ class EventTicketClassTest {
     void build() throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
 
-        EventTicketClass object = EventTicketClass.builder()
-            .id("ISSUER_ID.EVENT_CLASS_ID")
-            .eventOrGroupingId("1")
-            .eventName("Devoxx Belgium 2022")
-            .ticketType("Speaker")
-            .logoUri("https://reg.devoxx.be/file/c73315d4890c5fade112165c40338b72271e43939eed4e1e57a4e4891ee19cc8")
-            .venue("Antwerp Kinepolis Belgium")
-            .start(ZonedDateTime.of(2022, Month.OCTOBER.getValue(), 10, 8, 0, 0, 0, ZoneId.of("UTC")))
-            .end(ZonedDateTime.of(2022, Month.OCTOBER.getValue(), 14, 14, 0, 0, 0, ZoneId.of("UTC")))
-            .build();
+        EventTicketClass object = new EventTicketClass(
+            "ISSUER_ID.EVENT_CLASS_ID",
+            "Devoxx Belgium 2022",
+            "1",
+            null,
+            "Antwerp Kinepolis Belgium",
+            null,
+            "Speaker",
+            "https://reg.devoxx.be/file/c73315d4890c5fade112165c40338b72271e43939eed4e1e57a4e4891ee19cc8",
+            ZonedDateTime.of(2022, Month.OCTOBER.getValue(), 10, 8, 0, 0, 0, ZoneId.of("UTC")),
+            ZonedDateTime.of(2022, Month.OCTOBER.getValue(), 14, 14, 0, 0, 0, ZoneId.of("UTC"))
+        );
         String build = object.build(objectMapper);
 
         var resource = getClass().getResource("/wallet-json/event-class.json");
         assertNotNull(resource);
-        var payload = Files.readString(Path.of(resource.toURI()));
+
         assertEquals(objectMapper.readTree(resource), objectMapper.readTree(build));
     }
 

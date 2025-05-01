@@ -17,7 +17,6 @@
 package alfio.extension;
 
 import alfio.extension.exception.*;
-import alfio.manager.system.AdminJobManager;
 import alfio.repository.system.AdminJobQueueRepository;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
@@ -37,7 +36,6 @@ import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.*;
 
 public class ScriptingExecutionServiceTest {

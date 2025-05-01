@@ -19,7 +19,6 @@ package alfio.controller.api.v1.admin;
 import alfio.manager.AccessService;
 import alfio.manager.PurchaseContextManager;
 import alfio.manager.system.ConfigurationManager;
-import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.PurchaseContext;
 import alfio.model.modification.ConfigurationModification;
@@ -47,16 +46,13 @@ public class ConfigurationApiV1Controller {
     private final ConfigurationManager configurationManager;
     private final AccessService accessService;
     private final PurchaseContextManager purchaseContextManager;
-    private final UserManager userManager;
 
     public ConfigurationApiV1Controller(ConfigurationManager configurationManager,
                                         PurchaseContextManager purchaseContextManager,
-                                        UserManager userManager,
                                         AccessService accessService) {
         this.configurationManager = configurationManager;
         this.accessService = accessService;
         this.purchaseContextManager = purchaseContextManager;
-        this.userManager = userManager;
     }
 
     @PutMapping("/organization/{organizationId}")

@@ -17,7 +17,6 @@
 package alfio.extension;
 
 import alfio.util.HttpUtils;
-import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

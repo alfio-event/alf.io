@@ -31,7 +31,6 @@ import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.test.util.TestUtil;
 import com.stripe.model.Charge;
-import com.stripe.model.ChargeCollection;
 import com.stripe.model.PaymentIntent;
 import com.stripe.net.RequestOptions;
 import org.apache.commons.lang3.StringUtils;
@@ -47,7 +46,6 @@ import java.util.*;
 import static alfio.manager.testSupport.StripeUtils.completeStripeConfiguration;
 import static alfio.model.system.ConfigurationKeys.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class StripeWebhookPaymentManagerTest {

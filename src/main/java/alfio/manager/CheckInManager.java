@@ -563,11 +563,11 @@ public class CheckInManager {
         return List.of();
     }
 
-    public CheckInStatistics getStatistics(String eventName, String username) {
+    public CheckInStatistics getStatistics(String eventName, List<Integer> categories, String username) {
         return eventRepository.findOptionalByShortName(eventName)
             .filter(this::areStatsEnabled)
             .filter(EventManager.checkOwnership(username, organizationRepository))
-            .map(event -> eventRepository.retrieveCheckInStatisticsForEvent(event.getId()))
+            .map(event -> eventRepository.retrieveCheckInStatisticsForEvent(event.getId(), categories))
             .orElse(null);
     }
 

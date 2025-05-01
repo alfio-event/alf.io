@@ -18,7 +18,6 @@ package alfio.manager.payment;
 
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TransactionRepository;
-import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

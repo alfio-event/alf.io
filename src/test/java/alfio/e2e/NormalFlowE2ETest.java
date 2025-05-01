@@ -18,7 +18,6 @@ package alfio.e2e;
 
 import alfio.config.Initializer;
 import alfio.test.util.TestUtil;
-import alfio.util.ActiveTravisProfileResolver;
 import alfio.util.ClockProvider;
 import alfio.util.HttpUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -72,7 +71,7 @@ import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElemen
  *
  */
 @ContextConfiguration(classes = { NormalFlowE2ETest.E2EConfiguration.class })
-@ActiveProfiles(value = {Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST}, resolver = ActiveTravisProfileResolver.class)
+@ActiveProfiles(value = {Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @SpringBootTest
 class NormalFlowE2ETest {
 

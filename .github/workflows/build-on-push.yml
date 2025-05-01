@@ -29,13 +29,23 @@ jobs:
                   distribution: temurin
             - name: Build with Gradle
               run: ./gradlew build distribution jacocoTestReport -Dpgsql.version=${{ matrix.postgresql }}
-            -   name: 'Upload Build'
-                if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '10'}}
-                uses: actions/upload-artifact@v4
-                with:
-                    name: dist
-                    path: build
-                    retention-days: 5
+            - name: Upload coverage to Codecov
+              if: ${{ matrix.postgresql == '16'}}
+              uses: codecov/codecov-action@v5
+              with:
+                token: ${{ secrets.CODECOV_TOKEN }}
+            - name: Upload test results to Codecov
+              if: ${{ !cancelled() && matrix.postgresql == '16'}}
+              uses: codecov/test-results-action@v1
+              with:
+                  token: ${{ secrets.CODECOV_TOKEN }}
+            - name: 'Upload Build'
+              if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '10'}}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: dist
+                  path: build
+                  retention-days: 5
     push_image_dev:
         runs-on: ubuntu-latest
         if: ${{ github.repository == 'alfio-event/alf.io' && github.event_name == 'push' }}

@@ -38,7 +38,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static alfio.util.MiscUtils.removeTabsAndNewlines;
-import static java.util.stream.Collectors.toList;
 
 @RestController
 @RequestMapping("/admin/api/{purchaseContextType}/{publicIdentifier}/additional-field")

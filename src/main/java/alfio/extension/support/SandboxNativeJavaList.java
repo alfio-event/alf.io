@@ -18,7 +18,6 @@ package alfio.extension.support;
 
 import alfio.extension.exception.OutOfBoundariesException;
 import org.mozilla.javascript.NativeJavaList;
-import org.mozilla.javascript.NativeJavaMap;
 import org.mozilla.javascript.Scriptable;
 
 public class SandboxNativeJavaList extends NativeJavaList {

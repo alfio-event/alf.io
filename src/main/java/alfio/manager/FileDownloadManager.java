@@ -17,10 +17,8 @@
 package alfio.manager;
 
 import alfio.model.modification.UploadBase64FileModification;
-import com.beust.jcommander.Strings;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

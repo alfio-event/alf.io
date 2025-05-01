@@ -32,7 +32,6 @@ import static alfio.manager.testSupport.MaybeConfigurationBuilder.missing;
 import static alfio.model.system.ConfigurationKeys.MAIL_REPLY_TO;
 import static alfio.model.system.ConfigurationKeys.MAIL_SET_ORG_REPLY_TO;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 class BaseMailerTest {

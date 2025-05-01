@@ -31,7 +31,6 @@ import java.text.Collator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v2/")
@@ -80,7 +79,7 @@ public class TranslationsApiController {
         var collator = Collator.getInstance(Locale.FRENCH); //<- gives the better sorting experience...
         return countries.stream().map(p-> new LocalizedCountry(p.getKey(), p.getValue()))
             .sorted((lc1, lc2) -> collator.compare(lc1.name(), lc2.name()))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     @GetMapping("/public/i18n/languages")
@@ -88,6 +87,6 @@ public class TranslationsApiController {
         return i18nManager.getAvailableLanguages()
             .stream()
             .map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage()))
-            .collect(Collectors.toList());
+            .toList();
     }
 }

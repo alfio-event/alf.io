@@ -185,9 +185,11 @@ public class CheckInApiController {
     }
 
     @GetMapping("/check-in/event/{eventName}/statistics")
-    public CheckInStatistics getStatistics(@PathVariable String eventName, Principal principal) {
+    public CheckInStatistics getStatistics(@PathVariable String eventName,
+                                           @RequestParam(name = "categoryId", required = false) List<Integer> categories,
+                                           Principal principal) {
         accessService.checkEventMembership(principal, eventName, AccessService.CHECKIN_ROLES);
-        return checkInManager.getStatistics(eventName, principal.getName());
+        return checkInManager.getStatistics(eventName, categories, principal.getName());
     }
     
     @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}/confirm-on-site-payment")

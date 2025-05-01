@@ -44,8 +44,6 @@ import static alfio.model.Audit.EntityType.RESERVATION;
 import static alfio.model.Audit.EventType.EXTERNAL_CREDIT_NOTE_NUMBER;
 import static alfio.model.Audit.EventType.EXTERNAL_INVOICE_NUMBER;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class BillingDocumentManagerTest {
