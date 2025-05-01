@@ -53,6 +53,7 @@ apply plugin: 'project-report'
 // MJML email templates translations to HTML
 node {
     download = true
+    version = "22.15.0"
 }
 
 //as pointed out by @facundofarias, we should validate minimum javac version
