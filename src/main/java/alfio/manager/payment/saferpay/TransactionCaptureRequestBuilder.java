@@ -18,7 +18,6 @@ package alfio.manager.payment.saferpay;
 
 import com.google.gson.stream.JsonWriter;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -37,9 +36,12 @@ public class TransactionCaptureRequestBuilder {
         return this;
     }
     // @formatter:off
-    @SneakyThrows
     public String build() {
-        return buildRequest(customerId, requestId, retryIndicator, token);
+        try {
+            return buildRequest(customerId, requestId, retryIndicator, token);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     static String buildRequest(String customerId, String requestId, int retryIndicator, String token)throws IOException {

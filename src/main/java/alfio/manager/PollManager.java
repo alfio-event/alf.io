@@ -137,8 +137,8 @@ public class PollManager {
                 var pollId = form.getId();
                 var existingPollWithOptions = getSingleForEvent(pollId, event).orElseThrow();
                 var existingPoll = existingPollWithOptions.getPoll();
-                var tags = existingPoll.getAllowedTags();
-                if(form.isAccessRestricted() == existingPoll.getAllowedTags().isEmpty()) {
+                var tags = existingPoll.allowedTags();
+                if(form.isAccessRestricted() == existingPoll.allowedTags().isEmpty()) {
                     tags = form.isAccessRestricted() ? List.of(UUID.randomUUID().toString()) : List.of();
                 }
                 Validate.isTrue(pollRepository.update(form.getTitle(), form.getDescription(), tags, form.getOrder(), pollId, event.getId()) == 1);
@@ -167,14 +167,14 @@ public class PollManager {
     public Optional<List<PollParticipant>> searchTicketsToAllow(EventAndOrganizationId event, Long pollId, String filter) {
         Validate.isTrue(StringUtils.isNotBlank(filter));
         return pollRepository.findSingleForEvent(event.getId(), pollId)
-            .map(p -> ticketSearchRepository.filterConfirmedTicketsInEventForPoll(event.getId(), 20, "%"+filter+"%", p.getAllowedTags()));
+            .map(p -> ticketSearchRepository.filterConfirmedTicketsInEventForPoll(event.getId(), 20, "%"+filter+"%", p.allowedTags()));
     }
 
     public boolean allowTicketsToVote(EventAndOrganizationId event, List<Integer> ids, long pollId) {
         Validate.isTrue(CollectionUtils.isNotEmpty(ids));
         var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
-        Validate.isTrue(CollectionUtils.isNotEmpty(poll.getAllowedTags()));
-        var tag = poll.getAllowedTags().get(0);
+        Validate.isTrue(CollectionUtils.isNotEmpty(poll.allowedTags()));
+        var tag = poll.allowedTags().get(0);
         var result = ticketRepository.tagTickets(ids, event.getId(), tag);
         Validate.isTrue(ids.size() == result, "Unable to tag tickets");
         var auditingResults = auditingRepository.registerTicketTag(ids, List.of(Map.of("tag", tag)));
@@ -184,36 +184,36 @@ public class PollManager {
 
     public List<PollParticipant> removeParticipants(EventAndOrganizationId event, List<Integer> ticketIds, long pollId) {
         var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
-        Validate.isTrue(CollectionUtils.isNotEmpty(poll.getAllowedTags()));
-        var tag = poll.getAllowedTags().get(0);
+        Validate.isTrue(CollectionUtils.isNotEmpty(poll.allowedTags()));
+        var tag = poll.allowedTags().get(0);
         var result = ticketRepository.untagTickets(ticketIds, event.getId(), tag);
         Validate.isTrue(result == 1, "Error while removing tag");
         var auditingResults = auditingRepository.registerTicketUntag(ticketIds, List.of(Map.of("tag", tag)));
         Validate.isTrue(auditingResults == ticketIds.size(), "Error while writing auditing");
-        return ticketRepository.getTicketsForEventByTags(event.getId(), poll.getAllowedTags());
+        return ticketRepository.getTicketsForEventByTags(event.getId(), poll.allowedTags());
     }
 
     public Optional<PollWithOptions> removeOption(EventAndOrganizationId event, Long pollId, Long optionId) {
         var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
         Validate.isTrue(pollRepository.deleteOption(pollId, optionId) == 1, "Error while deleting option");
-        return getSingleForEvent(poll.getId(), event);
+        return getSingleForEvent(poll.id(), event);
     }
 
     public List<PollParticipant> fetchAllowedTickets(EventAndOrganizationId event, long pollId) {
         var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
-        return ticketRepository.getTicketsForEventByTags(event.getId(), poll.getAllowedTags());
+        return ticketRepository.getTicketsForEventByTags(event.getId(), poll.allowedTags());
     }
 
     public Optional<PollStatistics> getStatisticsFor(EventAndOrganizationId event, long pollId) {
         return pollRepository.findSingleForEvent(event.getId(), pollId)
             .map(p -> {
                 int allowedParticipants;
-                if(p.getAllowedTags().isEmpty()) {
+                if(p.allowedTags().isEmpty()) {
                     allowedParticipants = eventRepository.findStatisticsFor(event.getId()).getCheckedInTickets();
                 } else {
-                    allowedParticipants = ticketRepository.countTicketsMatchingTagsAndStatus(event.getId(), p.getAllowedTags(), List.of(Ticket.TicketStatus.CHECKED_IN.name()));
+                    allowedParticipants = ticketRepository.countTicketsMatchingTagsAndStatus(event.getId(), p.allowedTags(), List.of(Ticket.TicketStatus.CHECKED_IN.name()));
                 }
-                var statistics = pollRepository.getStatisticsFor(p.getId(), event.getId());
+                var statistics = pollRepository.getStatisticsFor(p.id(), event.getId());
                 return new PollStatistics(statistics.stream().mapToInt(PollOptionStatistics::getVotes).sum(), allowedParticipants, statistics);
             });
     }

@@ -19,10 +19,10 @@ package alfio.manager.payment.saferpay;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.model.transaction.PaymentMethod;
 import com.google.gson.stream.JsonWriter;
-import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Set;
 
@@ -94,7 +94,7 @@ public class PaymentPageInitializeRequestBuilder {
         return this;
     }
 
-    @SneakyThrows
+
     public String build() {
         var out = new StringWriter();
         var requestHeaderBuilder = new RequestHeaderBuilder(customerId, requestId, retryIndicator);
@@ -118,18 +118,24 @@ public class PaymentPageInitializeRequestBuilder {
                     .name("NotifyUrl").value(notifyURL) //
                 .endObject()) //
             .endObject();
+            return out.toString();
             // @formatter:on
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        return out.toString();
     }
 
-    @SneakyThrows
+
     private JsonWriter addPaymentMethods(JsonWriter writer) {
-        var array = writer.name("PaymentMethods").beginArray();
-        for (String method : SUPPORTED_METHODS) {
-            array.value(method);
+        try {
+            var array = writer.name("PaymentMethods").beginArray();
+            for (String method : SUPPORTED_METHODS) {
+                array.value(method);
+            }
+            return array.endArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        return array.endArray();
     }
 
     private String expandUriTemplate(String template, String reservationId) {

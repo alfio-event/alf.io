@@ -19,14 +19,12 @@ package alfio.model;
 import alfio.util.LocaleUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
-import lombok.ToString;
 
 import java.time.ZonedDateTime;
 import java.util.Locale;
 import java.util.Optional;
 
 @Getter
-@ToString
 public class WaitingQueueSubscription {
 
     public enum Status {
@@ -82,5 +80,23 @@ public class WaitingQueueSubscription {
 
     public boolean isPreSales() {
         return Optional.ofNullable(subscriptionType).map(s -> s == Type.PRE_SALES).orElse(false);
+    }
+
+    @Override
+    public String toString() {
+        return "WaitingQueueSubscription(" +
+            "id=" + id +
+            ", creation=" + creation +
+            ", eventId=" + eventId +
+            ", status=" + status +
+            ", fullName=" + fullName +
+            ", firstName=" + firstName +
+            ", lastName=" + lastName +
+            ", emailAddress=" + emailAddress +
+            ", reservationId=" + reservationId +
+            ", userLanguage=" + userLanguage +
+            ", selectedCategoryId=" + selectedCategoryId +
+            ", subscriptionType=" + subscriptionType +
+            ')';
     }
 }
