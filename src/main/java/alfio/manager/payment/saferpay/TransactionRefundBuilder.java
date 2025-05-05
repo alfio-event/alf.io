@@ -18,8 +18,8 @@ package alfio.manager.payment.saferpay;
 
 import com.google.gson.stream.JsonWriter;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 
+import java.io.IOException;
 import java.io.StringWriter;
 
 @RequiredArgsConstructor
@@ -36,7 +36,7 @@ public class TransactionRefundBuilder {
     }
 
     // @formatter:off
-    @SneakyThrows
+
     public String build(String amountToRefund, String currencyCode) {
         var out = new StringWriter();
         var requestHeaderBuilder = new RequestHeaderBuilder(customerId, requestId, retryIndicator);
@@ -52,6 +52,8 @@ public class TransactionRefundBuilder {
                     .name("CaptureId").value(captureId)
                 .endObject()
             .endObject().flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         return out.toString();
     }

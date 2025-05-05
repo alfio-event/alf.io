@@ -17,7 +17,8 @@
 package alfio.manager.payment.saferpay;
 
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
+
+import java.io.IOException;
 
 @RequiredArgsConstructor
 public class TransactionInquireRequestBuilder {
@@ -33,8 +34,11 @@ public class TransactionInquireRequestBuilder {
     }
 
     // @formatter:off
-    @SneakyThrows
     public String build() {
-        return TransactionCaptureRequestBuilder.buildRequest(customerId, requestId, retryIndicator, transactionId);
+        try {
+            return TransactionCaptureRequestBuilder.buildRequest(customerId, requestId, retryIndicator, transactionId);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
