@@ -121,7 +121,7 @@ public class PaymentPageInitializeRequestBuilder {
             return out.toString();
             // @formatter:on
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 
@@ -134,7 +134,7 @@ public class PaymentPageInitializeRequestBuilder {
             }
             return array.endArray();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 

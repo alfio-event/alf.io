@@ -40,7 +40,7 @@ public class TransactionCaptureRequestBuilder {
         try {
             return buildRequest(customerId, requestId, retryIndicator, token);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 

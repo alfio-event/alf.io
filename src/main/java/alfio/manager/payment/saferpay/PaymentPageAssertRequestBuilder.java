@@ -46,7 +46,7 @@ public class PaymentPageAssertRequestBuilder {
             .endObject().flush();
             return out.toString();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
 
     }

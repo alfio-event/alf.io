@@ -684,7 +684,7 @@ public class EventApiController {
                 zipOS.putNextEntry(entry);
                 StreamUtils.copy(pdf.get(), zipOS);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new IllegalStateException(e);
             }
         }
     }

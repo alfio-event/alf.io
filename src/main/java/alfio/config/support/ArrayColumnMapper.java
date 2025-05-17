@@ -102,7 +102,7 @@ public class ArrayColumnMapper extends ColumnMapper {
                     var array = processParameterContext.getConnection().createArrayOf(def.type(), ((List<?>) arg).toArray());
                     ps.addValue(processParameterContext.getParameterName(), array);
                 } catch (SQLException e) {
-                    throw new RuntimeException(e);
+                    throw new IllegalStateException(e);
                 }
             }
         }

@@ -38,7 +38,7 @@ public class TransactionInquireRequestBuilder {
         try {
             return TransactionCaptureRequestBuilder.buildRequest(customerId, requestId, retryIndicator, transactionId);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 }
