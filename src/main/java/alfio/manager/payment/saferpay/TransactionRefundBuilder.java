@@ -37,7 +37,7 @@ public class TransactionRefundBuilder {
 
     // @formatter:off
 
-    public String build(String amountToRefund, String currencyCode) {
+    public String build(String amountToRefund, String currencyCode)throws IOException {
         var out = new StringWriter();
         var requestHeaderBuilder = new RequestHeaderBuilder(customerId, requestId, retryIndicator);
         try (var writer = new JsonWriter(out)) {
@@ -52,8 +52,6 @@ public class TransactionRefundBuilder {
                     .name("CaptureId").value(captureId)
                 .endObject()
             .endObject().flush();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
         }
         return out.toString();
     }

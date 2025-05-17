@@ -124,16 +124,12 @@ public class PaymentPageInitializeRequestBuilder {
     }
 
 
-    private JsonWriter addPaymentMethods(JsonWriter writer) {
-        try {
-            var array = writer.name("PaymentMethods").beginArray();
-            for (String method : SUPPORTED_METHODS) {
-                array.value(method);
-            }
-            return array.endArray();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
+    private JsonWriter addPaymentMethods(JsonWriter writer) throws IOException {
+        var array = writer.name("PaymentMethods").beginArray();
+        for (String method : SUPPORTED_METHODS) {
+            array.value(method);
         }
+        return array.endArray();
     }
 
     private String expandUriTemplate(String template, String reservationId) {

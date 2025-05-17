@@ -247,11 +247,11 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
     //@Override
     public boolean refund(Transaction transaction, PurchaseContext purchaseContext, Integer amount) {
         var configuration = loadConfiguration(purchaseContext);
-        var requestBody = new TransactionRefundBuilder(transaction.getPaymentId(), 0)
-            .addAuthentication(configuration.get(SAFERPAY_CUSTOMER_ID).getRequiredValue(), transaction.getReservationId())
-            .build(Integer.toString(amount), transaction.getCurrency());
-        var request = buildRequest(configuration, "/Payment/v1/Transaction/Refund", requestBody);
         try {
+            var requestBody = new TransactionRefundBuilder(transaction.getPaymentId(), 0)
+                .addAuthentication(configuration.get(SAFERPAY_CUSTOMER_ID).getRequiredValue(), transaction.getReservationId())
+                .build(Integer.toString(amount), transaction.getCurrency());
+            var request = buildRequest(configuration, "/Payment/v1/Transaction/Refund", requestBody);
             var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if(!HttpUtils.callSuccessful(response)) {
                 LOGGER.warn("Cannot refund transaction. Status {}, body {}", response.statusCode(), response.body());
