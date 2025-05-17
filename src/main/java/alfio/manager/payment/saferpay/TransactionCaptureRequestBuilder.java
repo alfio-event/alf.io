@@ -36,12 +36,8 @@ public class TransactionCaptureRequestBuilder {
         return this;
     }
     // @formatter:off
-    public String build() {
-        try {
-            return buildRequest(customerId, requestId, retryIndicator, token);
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
+    public String build()throws IOException {
+        return buildRequest(customerId, requestId, retryIndicator, token);
     }
 
     static String buildRequest(String customerId, String requestId, int retryIndicator, String token)throws IOException {

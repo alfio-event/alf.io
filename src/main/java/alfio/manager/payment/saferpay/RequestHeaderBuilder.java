@@ -29,18 +29,14 @@ class RequestHeaderBuilder {
     private final Integer retryIndicator;
 
 
-    JsonWriter appendTo(JsonWriter writer) {
-        try {
-            writer.name("RequestHeader").beginObject() //
-                .name("SpecVersion").value(SPEC_VERSION) //
-                .name("CustomerId").value(customerId) //
-                .name("RequestId").value(requestId);
-            if (retryIndicator != null) {
-                writer.name("RetryIndicator").value(retryIndicator);
-            }
-            return writer.endObject();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
+    JsonWriter appendTo(JsonWriter writer) throws IOException {
+        writer.name("RequestHeader").beginObject() //
+            .name("SpecVersion").value(SPEC_VERSION) //
+            .name("CustomerId").value(customerId) //
+            .name("RequestId").value(requestId);
+        if (retryIndicator != null) {
+            writer.name("RetryIndicator").value(retryIndicator);
         }
+        return writer.endObject();
     }
 }

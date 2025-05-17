@@ -95,7 +95,7 @@ public class PaymentPageInitializeRequestBuilder {
     }
 
 
-    public String build() {
+    public String build() throws IOException {
         var out = new StringWriter();
         var requestHeaderBuilder = new RequestHeaderBuilder(customerId, requestId, retryIndicator);
         try (var writer = new JsonWriter(out)) {
@@ -120,8 +120,6 @@ public class PaymentPageInitializeRequestBuilder {
             .endObject();
             return out.toString();
             // @formatter:on
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
         }
     }
 

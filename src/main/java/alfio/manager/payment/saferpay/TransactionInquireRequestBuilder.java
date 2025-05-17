@@ -34,11 +34,7 @@ public class TransactionInquireRequestBuilder {
     }
 
     // @formatter:off
-    public String build() {
-        try {
-            return TransactionCaptureRequestBuilder.buildRequest(customerId, requestId, retryIndicator, transactionId);
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
+    public String build() throws IOException {
+        return TransactionCaptureRequestBuilder.buildRequest(customerId, requestId, retryIndicator, transactionId);
     }
 }
