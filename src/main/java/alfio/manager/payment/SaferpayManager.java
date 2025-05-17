@@ -138,13 +138,14 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
 
         var description = purchaseContext.ofType(PurchaseContext.PurchaseContextType.event) ? "ticket(s) for event" : "x subscription";
         var paymentDescription = String.format("%s - %d %s %s", configurationManager.getShortReservationID(purchaseContext, reservation), items, description, purchaseContext.getDisplayName());
-        var requestBody = new PaymentPageInitializeRequestBuilder(configuration.get(BASE_URL).getRequiredValue(), spec)
-            .addAuthentication(configuration.get(SAFERPAY_CUSTOMER_ID).getRequiredValue(), reservationId, configuration.get(SAFERPAY_TERMINAL_ID).getRequiredValue())
-            .addOrderInformation(reservationId, Integer.toString(spec.getPriceWithVAT()), spec.getCurrencyCode(), paymentDescription, retryCount)
-            .build();
-        var request = buildRequest(configuration, "/Payment/v1/PaymentPage/Initialize", requestBody);
+
 
         try {
+            var requestBody = new PaymentPageInitializeRequestBuilder(configuration.get(BASE_URL).getRequiredValue(), spec)
+                .addAuthentication(configuration.get(SAFERPAY_CUSTOMER_ID).getRequiredValue(), reservationId, configuration.get(SAFERPAY_TERMINAL_ID).getRequiredValue())
+                .addOrderInformation(reservationId, Integer.toString(spec.getPriceWithVAT()), spec.getCurrencyCode(), paymentDescription, retryCount)
+                .build();
+            var request = buildRequest(configuration, "/Payment/v1/PaymentPage/Initialize", requestBody);
             var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if(!HttpUtils.callSuccessful(response)) {
                 LOGGER.warn("Create session failed with status {}, body {}", response.statusCode(), response.body());
@@ -216,12 +217,13 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
     @Override
     public Optional<PaymentInformation> getInfo(Transaction transaction, PurchaseContext purchaseContext) {
         var configuration = loadConfiguration(purchaseContext);
-        var requestBody = new TransactionInquireRequestBuilder(transaction.getTransactionId(), 0)
-            .addAuthentication(configuration.get(SAFERPAY_CUSTOMER_ID).getRequiredValue(), transaction.getReservationId())
-            .build();
-        var request = buildRequest(configuration, "/Payment/v1/Transaction/Inquire", requestBody);
+
 
         try {
+            var requestBody = new TransactionInquireRequestBuilder(transaction.getTransactionId(), 0)
+                .addAuthentication(configuration.get(SAFERPAY_CUSTOMER_ID).getRequiredValue(), transaction.getReservationId())
+                .build();
+            var request = buildRequest(configuration, "/Payment/v1/Transaction/Inquire", requestBody);
             var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if(!HttpUtils.callSuccessful(response)) {
                 LOGGER.warn("Cannot retrieve transaction info. Status {}, body {}", response.statusCode(), response.body());
@@ -245,11 +247,11 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
     //@Override
     public boolean refund(Transaction transaction, PurchaseContext purchaseContext, Integer amount) {
         var configuration = loadConfiguration(purchaseContext);
-        var requestBody = new TransactionRefundBuilder(transaction.getPaymentId(), 0)
-            .addAuthentication(configuration.get(SAFERPAY_CUSTOMER_ID).getRequiredValue(), transaction.getReservationId())
-            .build(Integer.toString(amount), transaction.getCurrency());
-        var request = buildRequest(configuration, "/Payment/v1/Transaction/Refund", requestBody);
         try {
+            var requestBody = new TransactionRefundBuilder(transaction.getPaymentId(), 0)
+                .addAuthentication(configuration.get(SAFERPAY_CUSTOMER_ID).getRequiredValue(), transaction.getReservationId())
+                .build(Integer.toString(amount), transaction.getCurrency());
+            var request = buildRequest(configuration, "/Payment/v1/Transaction/Refund", requestBody);
             var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if(!HttpUtils.callSuccessful(response)) {
                 LOGGER.warn("Cannot refund transaction. Status {}, body {}", response.statusCode(), response.body());
@@ -276,11 +278,12 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
                                                 String token,
                                                 String reservationId,
                                                 int retryCount) {
-        var requestBody = new PaymentPageAssertRequestBuilder(token, retryCount)
-            .addAuthentication(configuration.get(SAFERPAY_CUSTOMER_ID).getRequiredValue(), reservationId)
-            .build();
-        var request = buildRequest(configuration, "/Payment/v1/PaymentPage/Assert", requestBody);
+
         try {
+            var requestBody = new PaymentPageAssertRequestBuilder(token, retryCount)
+                .addAuthentication(configuration.get(SAFERPAY_CUSTOMER_ID).getRequiredValue(), reservationId)
+                .build();
+            var request = buildRequest(configuration, "/Payment/v1/PaymentPage/Assert", requestBody);
             var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (HttpUtils.callSuccessful(response)) {
                 var responseBody = JsonParser.parseString(response.body()).getAsJsonObject();
@@ -321,12 +324,11 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
                                              String token,
                                              String requestId,
                                              int retryCount) {
-        var requestBody = new TransactionCaptureRequestBuilder(transactionId, retryCount)
-            .addAuthentication(configuration.get(SAFERPAY_CUSTOMER_ID).getRequiredValue(), requestId)
-            .build();
-        var request = buildRequest(configuration, "/Payment/v1/Transaction/Capture", requestBody);
-
         try {
+            var requestBody = new TransactionCaptureRequestBuilder(transactionId, retryCount)
+                .addAuthentication(configuration.get(SAFERPAY_CUSTOMER_ID).getRequiredValue(), requestId)
+                .build();
+            var request = buildRequest(configuration, "/Payment/v1/Transaction/Capture", requestBody);
             var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (HttpUtils.callSuccessful(response)) {
                 var responseBody = JsonParser.parseString(response.body()).getAsJsonObject();

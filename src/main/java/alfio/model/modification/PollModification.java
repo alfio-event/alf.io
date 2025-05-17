@@ -69,23 +69,23 @@ public class PollModification {
     }
 
     public static PollModification from(Poll poll) {
-        return new PollModification(poll.getId(),
-            poll.getTitle(),
-            poll.getDescription(),
-            poll.getOrder(),
+        return new PollModification(poll.id(),
+            poll.title(),
+            poll.description(),
+            poll.order(),
             List.of(),
-            !poll.getAllowedTags().isEmpty(),
-            poll.getStatus());
+            !poll.allowedTags().isEmpty(),
+            poll.status());
     }
 
     public static PollModification from(PollWithOptions pollWithOptions) {
         var poll = pollWithOptions.getPoll();
-        return new PollModification(poll.getId(),
-            poll.getTitle(),
-            poll.getDescription(),
-            poll.getOrder(),
+        return new PollModification(poll.id(),
+            poll.title(),
+            poll.description(),
+            poll.order(),
             pollWithOptions.getOptions().stream().map(PollOptionModification::from).collect(Collectors.toList()),
-            !poll.getAllowedTags().isEmpty(),
-            poll.getStatus());
+            !poll.allowedTags().isEmpty(),
+            poll.status());
     }
 }

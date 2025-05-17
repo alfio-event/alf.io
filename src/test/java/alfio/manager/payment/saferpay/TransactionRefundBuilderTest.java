@@ -19,12 +19,14 @@ package alfio.manager.payment.saferpay;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TransactionRefundBuilderTest {
 
     @Test
-    void build() {
+    void build() throws IOException {
         var json = new TransactionRefundBuilder("captureId", 1)
             .addAuthentication("customerId", "requestId")
             .build("100", "CHF");

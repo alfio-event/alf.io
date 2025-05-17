@@ -17,13 +17,11 @@
 package alfio.manager.support;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
+import java.util.Objects;
 import java.util.Optional;
 
-@EqualsAndHashCode
-@ToString
+
 public final class PaymentResult {
 
     public enum Type { SUCCESSFUL, INITIALIZED, PENDING, REDIRECT, FAILED }
@@ -77,6 +75,29 @@ public final class PaymentResult {
 
     public String getRedirectUrl() {
         return redirectUrl;
+    }
+
+
+    @Override
+    public String toString() {
+        return "PaymentResult(" +
+            "type=" + type +
+            ", gatewayId=" + gatewayId +
+            ", errorCode=" + errorCode +
+            ", redirectUrl=" + redirectUrl +
+            ')';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        PaymentResult that = (PaymentResult) o;
+        return type == that.type && Objects.equals(gatewayId, that.gatewayId) && Objects.equals(errorCode, that.errorCode) && Objects.equals(redirectUrl, that.redirectUrl);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, gatewayId, errorCode, redirectUrl);
     }
 
     private PaymentResult setRedirectUrl( String redirectUrl ) {
