@@ -91,6 +91,13 @@ public final class Validator {
 
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "websiteUrl", "error.websiteurl");
 
+        validateUrl(ev.getWebsiteUrl(), errors, "websiteUrl", "error.websiteurl");
+        validateUrl(ev.getTermsAndConditionsUrl(), errors, "websiteUrl", "error.restrictedValue");
+
+        if (StringUtils.isNotBlank(ev.getPrivacyPolicyUrl())) {
+            validateUrl(ev.getPrivacyPolicyUrl(), errors, "privacyPolicyUrl", "error.restrictedValue");
+        }
+
         if(allowsInPersonAccess(event, ev) && isLocationMissing(ev)) {
             errors.rejectValue("locationDescriptor", "error.coordinates");
         }
@@ -112,6 +119,12 @@ public final class Validator {
         }
 
         return evaluateValidationResult(errors);
+    }
+
+    static void validateUrl(String value, Errors errors, String propertyKey, String errorCode) {
+        if (!(StringUtils.startsWith(value, "http://") || StringUtils.startsWith(value, "https://"))) {
+            errors.rejectValue(propertyKey, errorCode);
+        }
     }
 
     private static boolean isLocationMissing(EventModification em) {

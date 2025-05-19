@@ -347,6 +347,32 @@ class ValidatorTest {
         assertEquals(Validator.RangeValidationResultType.valueOf(expectedResult), Validator.checkDateRange(safeParse(initialDate), safeParse(finalDate), parsedEventBegin, parsedEventEnd, Boolean.parseBoolean(strict)));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "ftp://my-server",
+        "chrome-extension://blabla"
+    })
+    void urlValidationFailed(String url) {
+        var errorMap = new HashMap<String, String>();
+        var errors = new MapBindingResult(errorMap, "test");
+        Validator.validateUrl(url, errors, "propertyKey", "errorCode");
+        assertTrue(errors.hasErrors());
+        assertNotNull(errors.getFieldError("propertyKey"));
+        assertEquals("errorCode", Objects.requireNonNull(errors.getFieldError("propertyKey")).getCode());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "http://my-server",
+        "https://my-server"
+    })
+    void urlValidationSuccessful(String url) {
+        var errorMap = new HashMap<String, String>();
+        var errors = new MapBindingResult(errorMap, "test");
+        Validator.validateUrl(url, errors, "propertyKey", "errorCode");
+        assertFalse(errors.hasErrors());
+    }
+
     private static Supplier<DateTimeModification> safeParse(String dateTime) {
         return () -> {
             if (StringUtils.isEmpty(dateTime)) {
