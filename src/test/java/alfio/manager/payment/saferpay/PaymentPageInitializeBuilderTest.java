@@ -27,6 +27,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.IOException;
+
 import static alfio.manager.payment.saferpay.PaymentPageInitializeRequestBuilder.SUPPORTED_METHODS;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
@@ -49,7 +51,7 @@ class PaymentPageInitializeBuilderTest {
     }
 
     @Test
-    void buildInitializeRequest() {
+    void buildInitializeRequest() throws IOException {
         var prb = new PaymentPageInitializeRequestBuilder("http://localhost", paymentSpecification)
             .addAuthentication("customerId", "requestId", "terminalId")
             .addOrderInformation("orderId", "1", "CHF", "description", 1)

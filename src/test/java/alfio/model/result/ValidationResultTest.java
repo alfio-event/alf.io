@@ -14,24 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.manager.payment.saferpay;
+package alfio.model.result;
 
-import com.google.gson.JsonParser;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-class PaymentPageAssertRequestBuilderTest {
+class ValidationResultTest {
 
     @Test
-    void buildRequest() throws IOException {
-        String json = new PaymentPageAssertRequestBuilder("token", 1)
-            .addAuthentication("customerId", "requestId")
-            .build();
-
-        var parsedJson = JsonParser.parseString(json).getAsJsonObject();
-        assertEquals("token", parsedJson.get("Token").getAsString());
+    void checkErrorDescriptorToString() {
+        Assertions.assertEquals("ValidationResult.ErrorDescriptor(fieldName=fieldName, message=message, code=code, arguments=[a, b])", new ValidationResult.ErrorDescriptor("fieldName", "message", "code", new Object[]{"a", "b"}).toString());
     }
 }
