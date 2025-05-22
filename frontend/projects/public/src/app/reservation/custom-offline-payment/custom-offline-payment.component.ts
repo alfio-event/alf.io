@@ -9,7 +9,7 @@ import {AnalyticsService} from '../../shared/analytics.service';
 import {PurchaseContext} from '../../model/purchase-context';
 import {PurchaseContextService, PurchaseContextType} from '../../shared/purchase-context.service';
 import {pollReservationStatus} from '../../shared/util';
-import {CustomOfflinePayment} from '../../model/event';
+import {CustomOfflinePayment, CustomOfflinePaymentLocalization} from '../../model/event';
 
 @Component({
   selector: 'app-custom-offline-payment',
@@ -76,6 +76,23 @@ export class CustomOfflinePaymentComponent implements OnInit {
     return this.reservationFinalized
       && this.purchaseContext.invoicingConfiguration.userCanDownloadReceiptOrInvoice
       && this.reservationInfo.invoiceNumber !== null;
+  }
+
+  get translatedLocalization(): CustomOfflinePaymentLocalization | null {
+    if(!this.customPaymentMethodDetails) {
+        return null;
+    }
+
+    const currentLang = this.i18nService.getCurrentLang();
+    const localizationKeys = Object.keys(this.customPaymentMethodDetails.localizations);
+    let translatedLocalization = this.customPaymentMethodDetails?.localizations["en"]
+        || this.customPaymentMethodDetails?.localizations[localizationKeys[0]];
+
+    if(localizationKeys.includes(currentLang)) {
+        translatedLocalization = this.customPaymentMethodDetails.localizations[currentLang];
+    }
+
+    return translatedLocalization;
   }
 
 }

@@ -5,6 +5,7 @@ import {UntypedFormGroup} from '@angular/forms';
 import { CustomOfflinePaymentProvider } from './custom-offline-payment-provider';
 import { CustomOfflinePayment, type PaymentMethodId } from '../../model/event';
 import {PaymentProxy} from '../../model/event';
+import { I18nService } from 'projects/public/src/app/shared/i18n.service';
 
 @Component({
   selector: 'app-custom-offline-payment-proxy',
@@ -30,7 +31,7 @@ export class CustomOfflinePaymentProxyComponent implements OnChanges {
   @Output()
   paymentProvider: EventEmitter<PaymentProvider> = new EventEmitter<PaymentProvider>();
 
-  constructor() { }
+  constructor(private i18nService: I18nService) { }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.matchProxyAndMethod && changes['method']) {
@@ -48,14 +49,21 @@ export class CustomOfflinePaymentProxyComponent implements OnChanges {
   }
 
   get selectedPaymentMethodDescription(): string {
+    const currentLang = this.i18nService.getCurrentLang();
     const maybeMethod = this.availableMethods?.find(pm => pm.paymentMethodId === this.method)
     if(!maybeMethod) {
         return "";
     }
 
-    // FIXME: Use localizations instead of hardcoding 'en'.
     const method = maybeMethod!;
-    return method.localizations.en.paymentDescription
+
+    let translatedDescription = method.localizations['en']?.paymentDescription
+        || method.localizations[0].paymentDescription;
+    if (Object.keys(method.localizations).includes(currentLang)) {
+        translatedDescription = method.localizations[currentLang].paymentDescription;
+    }
+
+    return translatedDescription;
   }
 
 }
