@@ -94,15 +94,43 @@ export class PaymentProxyWithParameters {
 
 export type EventFormat = 'IN_PERSON' | 'ONLINE' | 'HYBRID';
 
-export type PaymentMethod = 'CREDIT_CARD' | 'PAYPAL' | 'IDEAL' | 'BANK_TRANSFER' | 'ON_SITE'
-                            | 'APPLE_PAY' | 'BANCONTACT' | 'ING_HOME_PAY' | 'BELFIUS' | 'PRZELEWY_24' | 'KBC' | 'NONE';
-export type PaymentProxy = 'STRIPE' | 'ON_SITE' | 'OFFLINE' | 'PAYPAL' | 'MOLLIE' | 'SAFERPAY';
+export interface PaymentMethod {
+    paymentMethodId: string
+    paymentMethodName: string
+}
+
+/**
+ * Used to identify and describe an organizer-created
+ * offline payment method.
+ */
+export interface CustomOfflinePayment extends PaymentMethod {
+    localizations: {
+        [lang: string]: CustomOfflinePaymentLocalization;
+    }
+};
+
+/**
+ * Defines a single language localization for a payment method
+ */
+export type CustomOfflinePaymentLocalization = {
+    paymentName: string;
+    paymentDescription: string;
+    paymentInstructions: string;
+};
+
+export type PaymentMethodId = string;
+
+export type StaticPaymentMethodNames =
+    'CREDIT_CARD' | 'PAYPAL' | 'IDEAL' | 'BANK_TRANSFER' | 'ON_SITE'
+                            | 'APPLE_PAY' | 'BANCONTACT' | 'ING_HOME_PAY' | 'BELFIUS' | 'PRZELEWY_24' | 'KBC' | 'ETRANSFER' | 'NONE';
+
+export type PaymentProxy = 'STRIPE' | 'ON_SITE' | 'OFFLINE' | 'PAYPAL' | 'MOLLIE' | 'SAFERPAY' | 'CUSTOM_OFFLINE';
 export interface PaymentMethodDetails {
     labelKey: string;
     icon: [IconPrefix, IconName];
 }
 
-export const paymentMethodDetails: {[key in PaymentMethod]: PaymentMethodDetails} = {
+export const staticPaymentMethodDetails: {[key in StaticPaymentMethodNames]: PaymentMethodDetails} = {
     'CREDIT_CARD': {
         labelKey: 'reservation-page.credit-card',
         icon: ['fas', 'credit-card']
@@ -146,6 +174,10 @@ export const paymentMethodDetails: {[key in PaymentMethod]: PaymentMethodDetails
     'KBC': {
         labelKey: 'reservation-page.payment-method.kbc',
         icon: ['fas', 'money-check-alt']
+    },
+    'ETRANSFER': {
+        labelKey: 'reservation-page.payment-method.etransfer',
+        icon: ['fas', 'exchange-alt']
     },
     'NONE': {
         labelKey: null,
