@@ -12,6 +12,7 @@ import {UntypedFormGroup} from '@angular/forms';
 import {ReservationInfo} from '../../model/reservation-info';
 import {PurchaseContext} from '../../model/purchase-context';
 import {ReservationService} from '../../shared/reservation.service';
+import {I18nService} from 'projects/public/src/app/shared/i18n.service';
 
 @Component({
     selector: 'app-payment-method-selector',
@@ -31,7 +32,7 @@ export class PaymentMethodSelectorComponent implements OnInit {
 
     customOfflinePaymentMethods: CustomOfflinePayment[] = [];
 
-    constructor(private reservationService: ReservationService){}
+    constructor(private reservationService: ReservationService, private i8lnService: I18nService){}
 
     ngOnInit(): void {
         this.overviewForm.get('selectedPaymentMethod').valueChanges.subscribe(v => {
@@ -73,6 +74,8 @@ export class PaymentMethodSelectorComponent implements OnInit {
     }
 
     getPaymentMethodDetails(paymentMethodId: PaymentMethodId): PaymentMethodDetails  {
+        const currentLang = this.i8lnService.getCurrentLang();
+
         if(Object.keys(staticPaymentMethodDetails).includes(paymentMethodId)) {
             const staticMethodId = paymentMethodId as StaticPaymentMethodNames;
             return staticPaymentMethodDetails[staticMethodId];
@@ -82,8 +85,15 @@ export class PaymentMethodSelectorComponent implements OnInit {
         if(maybeCustomMethod) {
             const method = maybeCustomMethod!;
             method.paymentMethodName
+
+            const localizationKeys = Object.keys(method.localizations);
+            let translatedPaymentName = method.localizations["en"]?.paymentName || method.localizations[localizationKeys[0]].paymentName;
+            if(Object.keys(method.localizations).includes(currentLang)) {
+                translatedPaymentName = method.localizations[currentLang].paymentName;
+            }
+
             return {
-                labelKey: method.localizations.en.paymentName,
+                labelKey: translatedPaymentName,
                 icon: ['fas', 'exchange-alt']
             };
         }

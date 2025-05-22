@@ -1,5 +1,5 @@
 import { html, LitElement, type TemplateResult } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { dialog, row } from "../styles";
 import type { SlDialog } from "@shoelace-style/shoelace";
 
@@ -27,6 +27,13 @@ export class ConfirmationDialog extends LitElement {
     @property({attribute: "confirm-variant", type: String})
     confirmVariant?: string;
 
+    /**
+     * Used to pass data to the callback method (such as an ID).
+     * Useful for identifying what object or operation this dialog pertains to.
+     */
+    @state()
+    dialogPayload?: unknown = null;
+
     @query("sl-dialog")
     dialog?: SlDialog;
 
@@ -46,10 +53,13 @@ export class ConfirmationDialog extends LitElement {
 
     protected handleConfirmPressed() {
         this.closeDialog();
-        this.dispatchEvent(new CustomEvent("confirmActionButtonPressed"));
+        this.dispatchEvent(new CustomEvent("confirmActionButtonPressed", {detail: this.dialogPayload}));
     }
 
-    openDialog() {
+    openDialog(payload?: unknown) {
+        if(payload) {
+            this.dialogPayload = payload;
+        }
         this.dialog?.show();
     }
 
