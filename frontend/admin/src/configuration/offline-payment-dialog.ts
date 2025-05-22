@@ -1,9 +1,17 @@
 import type { SlDialog } from "@shoelace-style/shoelace";
 import { TanStackFormController } from "@tanstack/lit-form";
-import { html, LitElement, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { html, LitElement, type TemplateResult } from "lit";
+import {Task} from '@lit/task';
+import { repeat } from "lit/directives/repeat.js";
 import { dialog, form, row } from "../styles";
 import { classMap } from "lit/directives/class-map.js";
+import { type SlSelect } from '@shoelace-style/shoelace';
+import { LocalizationService } from "../service/localization";
+
+type LocalizationFormFields = CustomOfflinePaymentLocalization & {
+    localizationKey: string;
+};
 
 /**
  * Defines offline payment method form to be filled out
@@ -24,26 +32,56 @@ export class OfflinePaymentDialog extends LitElement {
     editObject?: CustomOfflinePayment;
 
     /**
+     * Identifies the localization we are currently editing
+     * in the UI.
+     */
+    @state()
+    localizationKey?: string;
+
+    @state()
+    availableLanguages: {locale: string, value: number, language: string, displayLanguage: string}[] = [];
+
+    @state()
+    editingExistingLocalization: boolean = false;
+
+    /**
      * The current payment methods known by the system.
-     * Used for name colision client-side validation.
+     * Used for name collision client-side validation.
      */
     @property({type: Array})
     currentMethods: CustomOfflinePayment[] = [];
 
 
+    /**
+     * Allows component to access Alf.io supported languages
+     * for populating language dropdown.
+     */
+    localizationService?: LocalizationService = new LocalizationService();
+
     #form = new TanStackFormController(this, {
         defaultValues: {
+            localizationKey: "",
             paymentName: "",
             paymentDescription: "",
             paymentInstructions: ""
-        } as CustomOfflinePaymentLocalization
+        } as LocalizationFormFields
+    });
+
+    private _updateLanguagesTask = new Task(this, {
+        task: async () => {
+            let response = await this.localizationService?.getEventsSupportedLanguages();
+            if(!response) { throw new Error("Failed to get languages"); }
+
+            return response
+        },
+        args: () => []
     });
 
     protected render(): TemplateResult {
         return html`
             <div>
                 <sl-dialog
-                    label="New Payment Method"
+                    label="${this.editObject ? "Update" : "Create"} Payment Method"
                     id="offlinePaymentDialog"
                     style="--width: 50vw; --sl-font-size-large: 1.5rem;"
                     class="dialog"
@@ -65,6 +103,52 @@ export class OfflinePaymentDialog extends LitElement {
                 }
             }
         >
+            ${this.#form.field(
+                {
+                    name: `localizationKey`,
+                    validators: {
+                        onChange: ({ value }: {value: string}) => {
+                            return !value ? 'Language selection is required.' : undefined;
+                        }
+                    },
+                },
+                (field) => {
+                    return html`
+                    <sl-select
+                        label="Translation"
+                        class="${classMap({ error: this._hasError(field.state.meta) })}"
+                        required
+                        ?disabled=${this.editingExistingLocalization}
+                        .value=${field.state.value}
+                        @sl-blur=${() => field.handleBlur()}
+                        @sl-change=${(event: Event) => {
+                            if (event.currentTarget) {
+                                const newValue = (event.currentTarget as SlSelect).value as string;
+                                field.handleChange(newValue);
+                            }
+                        }}>
+                        ${this._updateLanguagesTask.render({
+                            pending: () => html`<sl-option value="" disabled>Loading available languages...</sl-option>`,
+                            complete: (languages) => {
+                                if(this.editObject && !this.editingExistingLocalization) {
+                                    const existingLocalizations = Object.keys(this.editObject.localizations);
+                                    languages = languages.filter(item => !existingLocalizations.includes(item.locale));
+                                }
+
+                                return html`
+                                    ${repeat(languages, (language) => language.value, (language) => {
+                                        return html`
+                                        <sl-option value="${language.locale}">${language.displayLanguage}</sl-option>
+                                        `;
+                                    })}
+                                `
+                            },
+                            error: (_e) => html`<sl-option value="" disabled>Failed to load available languages...</sl-option>`
+                        })}
+                    </sl-select>
+                    `;
+                }
+            )}
             ${this.#form.field(
                 {
                     name: `paymentName`,
@@ -186,23 +270,40 @@ export class OfflinePaymentDialog extends LitElement {
         `;
     }
 
-    async openDialog(editObject?: CustomOfflinePayment) {
+    async openDialog(editObject?: CustomOfflinePayment, localizationKey?: string) {
         this.editObject = editObject;
+        this.localizationKey = localizationKey;
+
+        if(editObject && localizationKey) {
+            this.editingExistingLocalization = true;
+        } else {
+            this.editingExistingLocalization = false;
+        }
+
+        const curLocaleKey = this.localizationKey ?? '';
 
         if(this.dialog) {
-            // TODO: Support multiple localizations instead of defaulting to 'en'
             this.#form.api.update({
-                defaultValues: this._buildInitialFormValues().localizations.en,
+                defaultValues: this._buildInitialFormValues(curLocaleKey),
                 onSubmit: async ({value}) => {
+                    let existingLocalizations = this.editObject ? {...this.editObject.localizations} : {};
+                    const newPaymentObj = {
+                        paymentMethodId: this.editObject?.paymentMethodId ?? null,
+                        localizations: {
+                            ...existingLocalizations,
+                        }
+                    };
+
+                    newPaymentObj.localizations[value.localizationKey] = {
+                        paymentName: value.paymentName,
+                        paymentDescription: value.paymentDescription,
+                        paymentInstructions: value.paymentInstructions
+                    };
+
                     this.dispatchEvent(
                         new CustomEvent("offlinePaymentDialogSave", {
                             detail: {
-                                newPayment: {
-                                    paymentMethodId: this.editObject?.paymentMethodId ?? null,
-                                    localizations: {
-                                        en: value
-                                    }
-                                },
+                                newPayment: newPaymentObj,
                                 oldPayment: this.editObject
                             }
                         })
@@ -226,38 +327,29 @@ export class OfflinePaymentDialog extends LitElement {
     }
 
     async closeDialog() {
-        await this.dialog?.hide();
         this.#form.api.reset();
+        await this.dialog?.hide();
     }
 
     private _hasError(meta: any) {
         return (meta.isTouched && meta.errors.length > 0);
     }
 
-    // TODO: Support multiple localizations instead of defaulting to 'en'
-    private _buildInitialFormValues() : CustomOfflinePayment {
-        if(this.editObject) {
+    private _buildInitialFormValues(localizationKey?: string) : LocalizationFormFields {
+        if(this.editObject && localizationKey) {
             return {
-                paymentMethodId: this.editObject.paymentMethodId,
-                localizations: {
-                    en: {
-                        paymentName: this.editObject.localizations.en.paymentName,
-                        paymentDescription: this.editObject.localizations.en.paymentDescription,
-                        paymentInstructions: this.editObject.localizations.en.paymentInstructions
-                    }
-                }
+                localizationKey: localizationKey,
+                paymentName: this.editObject.localizations[localizationKey].paymentName,
+                paymentDescription: this.editObject.localizations[localizationKey].paymentDescription,
+                paymentInstructions: this.editObject.localizations[localizationKey].paymentInstructions
             };
         }
 
         return {
-            paymentMethodId: null,
-            localizations: {
-                en: {
-                    paymentName: "",
-                    paymentDescription: "",
-                    paymentInstructions: "",
-                }
-            }
+            localizationKey: "",
+            paymentName: "",
+            paymentDescription: "",
+            paymentInstructions: "",
         }
     }
 }
