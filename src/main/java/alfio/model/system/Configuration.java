@@ -21,7 +21,6 @@ import alfio.model.subscription.SubscriptionDescriptor;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -75,10 +74,9 @@ public class Configuration implements Comparable<Configuration> {
         if (obj == this) {
             return true;
         }
-        if (!(obj instanceof  Configuration)) {
+        if (!(obj instanceof Configuration o)) {
             return false;
         }
-        Configuration o = (Configuration) obj;
         return new EqualsBuilder().append(configurationKey, o.configurationKey).append(configurationPathLevel, configurationPathLevel).isEquals();
     }
 
@@ -87,96 +85,49 @@ public class Configuration implements Comparable<Configuration> {
         return new HashCodeBuilder().append(configurationKey).append(configurationPathLevel).toHashCode();
     }
 
-    @FunctionalInterface
-    public interface ConfigurationPath {
+    public sealed interface ConfigurationPath permits
+        SystemConfigurationPath,
+        OrganizationConfigurationPath,
+        EventConfigurationPath,
+        SubscriptionDescriptorConfigurationPath,
+        TicketCategoryConfigurationPath {
         ConfigurationPathLevel pathLevel();
     }
 
-    @EqualsAndHashCode
-    public static class SystemConfigurationPath implements  ConfigurationPath {
+    public record SystemConfigurationPath() implements ConfigurationPath {
         @Override
         public ConfigurationPathLevel pathLevel() {
             return ConfigurationPathLevel.SYSTEM;
         }
-
     }
 
-    @EqualsAndHashCode
-    @Getter
-    public static class OrganizationConfigurationPath implements ConfigurationPath {
-
-        private final int id;
-
-        private OrganizationConfigurationPath(int id) {
-            this.id = id;
-        }
-
+    public record OrganizationConfigurationPath(int id) implements ConfigurationPath {
         @Override
         public ConfigurationPathLevel pathLevel() {
             return ConfigurationPathLevel.ORGANIZATION;
         }
-
     }
 
-    @EqualsAndHashCode
-    @Getter
-    public static class EventConfigurationPath implements ConfigurationPath {
-
-        private final int organizationId;
-        private final int id;
-
-        private EventConfigurationPath(int organizationId, int id) {
-            this.organizationId = organizationId;
-            this.id = id;
-        }
-
-
+    public record EventConfigurationPath(int organizationId, int id) implements ConfigurationPath {
         @Override
         public ConfigurationPathLevel pathLevel() {
-            return ConfigurationPathLevel.PURCHASE_CONTEXT;
-        }
-
+                return ConfigurationPathLevel.PURCHASE_CONTEXT;
+            }
     }
 
-    @EqualsAndHashCode
-    @Getter
-    public static class SubscriptionDescriptorConfigurationPath implements ConfigurationPath {
-
-        private final int organizationId;
-        private final UUID id;
-
-        private SubscriptionDescriptorConfigurationPath(int organizationId, UUID id) {
-            this.organizationId = organizationId;
-            this.id = id;
-        }
-
-
+    public record SubscriptionDescriptorConfigurationPath(int organizationId, UUID id) implements ConfigurationPath {
         @Override
         public ConfigurationPathLevel pathLevel() {
-            return ConfigurationPathLevel.PURCHASE_CONTEXT;
-        }
-
+                return ConfigurationPathLevel.PURCHASE_CONTEXT;
+            }
     }
 
-    @EqualsAndHashCode
-    @Getter
-    public static class TicketCategoryConfigurationPath implements ConfigurationPath {
 
-        private final int organizationId;
-        private final int eventId;
-        private final int id;
-
-        private TicketCategoryConfigurationPath(int organizationId, int eventId, int id) {
-            this.organizationId = organizationId;
-            this.eventId = eventId;
-            this.id = id;
-        }
-
+    public record TicketCategoryConfigurationPath(int organizationId, int eventId, int id) implements ConfigurationPath {
         @Override
         public ConfigurationPathLevel pathLevel() {
-            return ConfigurationPathLevel.TICKET_CATEGORY;
-        }
-
+                return ConfigurationPathLevel.TICKET_CATEGORY;
+            }
     }
 
     public static ConfigurationPath system() {
@@ -193,17 +144,7 @@ public class Configuration implements Comparable<Configuration> {
 
 
     //
-    @Getter
-    @EqualsAndHashCode
-    public static class ConfigurationPathKey {
-        private final ConfigurationPath path;
-        private final ConfigurationKeys key;
-
-        private ConfigurationPathKey(ConfigurationPath path, ConfigurationKeys key) {
-            this.path = path;
-            this.key = key;
-        }
-    }
+    public record ConfigurationPathKey(ConfigurationPath path, ConfigurationKeys key) {}
     //
 
     private static ConfigurationPathKey getOrganizationConfiguration(int organizationId, ConfigurationKeys configurationKey) {

@@ -86,7 +86,7 @@ public class TranslationsApiController {
     public List<Language> getSupportedLanguages() {
         return i18nManager.getAvailableLanguages()
             .stream()
-            .map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage()))
+            .map(cl -> new Language(cl.locale().getLanguage(), cl.getDisplayLanguage()))
             .toList();
     }
 }

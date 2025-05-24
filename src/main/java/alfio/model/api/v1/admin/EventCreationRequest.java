@@ -71,7 +71,7 @@ public class EventCreationRequest{
         int locales = description.stream()
             .map(x -> ContentLanguage.ALL_LANGUAGES.stream().filter(l-> l.getLanguage().equals(x.getLang())).findFirst())
             .flatMap(Optional::stream)
-            .mapToInt(ContentLanguage::getValue).reduce(0,(x,y) -> x | y);
+            .mapToInt(ContentLanguage::value).reduce(0,(x, y) -> x | y);
 
         return new EventModification(
             null,
@@ -129,7 +129,7 @@ public class EventCreationRequest{
             locales = description.stream()
                 .map(x -> ContentLanguage.ALL_LANGUAGES.stream().filter(l -> l.getLanguage().equals(x.getLang())).findFirst())
                 .flatMap(Optional::stream)
-                .mapToInt(ContentLanguage::getValue).reduce(0, (x, y) -> x | y);
+                .mapToInt(ContentLanguage::value).reduce(0, (x, y) -> x | y);
         }
 
 

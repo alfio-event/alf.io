@@ -541,11 +541,11 @@ public enum TemplateResource {
                                                                       String eventPageUrl,
                                                                       String promoCodeLabel) {
         Map<String, Object> model = new HashMap<>();
-        model.put("code", m.getCode());
+        model.put("code", m.code());
         model.put(EVENT, event);
         model.put(ORGANIZATION, organization);
         model.put("eventPage", eventPageUrl);
-        model.put("assignee", m.getAssignee());
+        model.put("assignee", m.assignee());
         model.put("promoCodeDescription", promoCodeLabel);
         return model;
     }

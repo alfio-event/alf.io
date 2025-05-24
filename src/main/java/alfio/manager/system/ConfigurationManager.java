@@ -95,23 +95,23 @@ public class ConfigurationManager {
                 return selectPath(configList);
             case ORGANIZATION: {
                 OrganizationConfigurationPath o = (OrganizationConfigurationPath) path;
-                configList.addAll(configurationRepository.findByOrganizationAndKey(o.getId(), key.getValue()));
+                configList.addAll(configurationRepository.findByOrganizationAndKey(o.id(), key.getValue()));
                 return selectPath(configList);
             }
             case PURCHASE_CONTEXT: {
                 if (path instanceof EventConfigurationPath o) {
-                    configList.addAll(configurationRepository.findByEventAndKey(o.getOrganizationId(),
-                        o.getId(), keyAsString));
+                    configList.addAll(configurationRepository.findByEventAndKey(o.organizationId(),
+                        o.id(), keyAsString));
                 } else {
                     SubscriptionDescriptorConfigurationPath o = (SubscriptionDescriptorConfigurationPath) path;
-                    configList.addAll(configurationRepository.findBySubscriptionDescriptorAndKey(o.getOrganizationId(), o.getId(), keyAsString));
+                    configList.addAll(configurationRepository.findBySubscriptionDescriptorAndKey(o.organizationId(), o.id(), keyAsString));
                 }
                 return selectPath(configList);
             }
             case TICKET_CATEGORY: {
                 TicketCategoryConfigurationPath o = (TicketCategoryConfigurationPath) path;
-                configList.addAll(configurationRepository.findByTicketCategoryAndKey(o.getOrganizationId(),
-                    o.getEventId(), o.getId(), keyAsString));
+                configList.addAll(configurationRepository.findByTicketCategoryAndKey(o.organizationId(),
+                    o.eventId(), o.id(), keyAsString));
                 return selectPath(configList);
             }
             default:
@@ -132,21 +132,21 @@ public class ConfigurationManager {
     // begin SYSTEM related configuration methods
 
     public void saveConfig(ConfigurationPathKey pathKey, String value) {
-        ConfigurationPath path = pathKey.getPath();
+        ConfigurationPath path = pathKey.path();
         switch (path.pathLevel()) {
             case SYSTEM:
-                saveSystemConfiguration(pathKey.getKey(), value);
+                saveSystemConfiguration(pathKey.key(), value);
                 break;
             case ORGANIZATION:
                 OrganizationConfigurationPath orgPath = (OrganizationConfigurationPath) path;
-                saveOrganizationConfiguration(orgPath.getId(), pathKey.getKey().name(), value);
+                saveOrganizationConfiguration(orgPath.id(), pathKey.key().name(), value);
                 break;
             case PURCHASE_CONTEXT:
                 if (path instanceof EventConfigurationPath eventPath) {
-                    saveEventConfiguration(eventPath.getId(), eventPath.getOrganizationId(), pathKey.getKey().name(), value);
+                    saveEventConfiguration(eventPath.id(), eventPath.organizationId(), pathKey.key().name(), value);
                 } else {
                     var subscriptionDescriptorPath = (SubscriptionDescriptorConfigurationPath) path;
-                    saveSubscriptionDescriptorConfiguration(subscriptionDescriptorPath.getId(), subscriptionDescriptorPath.getOrganizationId(), pathKey.getKey().name(), value);
+                    saveSubscriptionDescriptorConfiguration(subscriptionDescriptorPath.id(), subscriptionDescriptorPath.organizationId(), pathKey.key().name(), value);
                 }
                 break;
             default:

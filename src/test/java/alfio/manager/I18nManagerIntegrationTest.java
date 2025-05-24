@@ -86,7 +86,7 @@ class I18nManagerIntegrationTest extends BaseIntegrationTest {
 
     private String formatDateWith(ContentLanguage cl) {
         var messageSource = messageSourceManager.getRootMessageSource();
-        String pattern = messageSource.getMessage("datetime.pattern", null, cl.getLocale());
-        return DateTimeFormatter.ofPattern(pattern, cl.getLocale()).format(DATE);
+        String pattern = messageSource.getMessage("datetime.pattern", null, cl.locale());
+        return DateTimeFormatter.ofPattern(pattern, cl.locale()).format(DATE);
     }
 }

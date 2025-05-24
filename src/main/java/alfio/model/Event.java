@@ -149,7 +149,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
 
     static Map<String, String> buildTitle(String displayName, int locales) {
         return ContentLanguage.findAllFor(locales).stream()
-            .collect(Collectors.toMap(cl -> cl.getLocale().getLanguage(), cl -> displayName));
+            .collect(Collectors.toMap(cl -> cl.locale().getLanguage(), cl -> displayName));
     }
 
     public BigDecimal getRegularPrice() {

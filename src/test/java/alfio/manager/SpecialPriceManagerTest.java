@@ -202,7 +202,7 @@ public class SpecialPriceManagerTest {
         List<SendCodeModification> sendCodeModifications = specialPriceManager.linkAssigneeToCode(modifications, "test", 0, "username");
         Assertions.assertFalse(sendCodeModifications.isEmpty());
         Assertions.assertEquals(2, sendCodeModifications.size());
-        sendCodeModifications.forEach(m -> Assertions.assertEquals("A " + m.getCode(), m.getAssignee()));
+        sendCodeModifications.forEach(m -> Assertions.assertEquals("A " + m.code(), m.assignee()));
     }
 
     private static final List<SendCodeModification> CODES_REQUESTED = asList(new SendCodeModification("123", "A 123", "123@123", "it"), new SendCodeModification("456", "A 456", "456@456", "en"));

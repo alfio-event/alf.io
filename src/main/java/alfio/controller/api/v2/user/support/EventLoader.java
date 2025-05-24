@@ -112,7 +112,7 @@ public class EventLoader {
 
                 var offlinePaymentConfiguration = new OfflinePaymentConfiguration(configurationsValues.get(SHOW_ONLY_BASIC_INSTRUCTIONS).getValueAsBooleanOrDefault());
 
-                return new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions,
+                return new EventWithAdditionalInfo(event, locationDescriptor.mapUrl(), organization, descriptions,
                     bankAccount, bankAccountOwner,
                     formattedDates.beginDate, formattedDates.beginTime,
                     formattedDates.endDate, formattedDates.endTime,

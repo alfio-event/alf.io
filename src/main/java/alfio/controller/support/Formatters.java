@@ -58,8 +58,8 @@ public class Formatters {
                                     boolean notifyError) {
         String pattern = null;
         try {
-            pattern = messageSource.getMessage(code, null, cl.getLocale());
-            storeFunction.accept(cl.getLanguage(), DateTimeFormatter.ofPattern(pattern, cl.getLocale()).format(date));
+            pattern = messageSource.getMessage(code, null, cl.locale());
+            storeFunction.accept(cl.getLanguage(), DateTimeFormatter.ofPattern(pattern, cl.locale()).format(date));
         } catch (RuntimeException e) {
             String message = "cannot parse pattern "+code+" ("+pattern+") for language "+ cl.getLanguage();
             if(notifyError) {

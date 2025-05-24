@@ -21,8 +21,6 @@ import alfio.model.Event.EventFormat;
 import alfio.model.system.ConfigurationKeys;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringSubstitutor;
@@ -31,15 +29,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 
-@Getter
-@EqualsAndHashCode
-public class LocationDescriptor {
+public record LocationDescriptor(String timeZone, String latitude, String longitude, String mapUrl) {
 
-
-    private final String timeZone;
-    private final String latitude;
-    private final String longitude;
-    private final String mapUrl;
 
     @JsonCreator
     public LocationDescriptor(@JsonProperty("timeZone") String timeZone,
@@ -57,7 +48,7 @@ public class LocationDescriptor {
     }
 
     public static LocationDescriptor fromGeoData(EventFormat format, Pair<String, String> coordinates, TimeZone timeZone, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> geoConf) {
-        if(format == EventFormat.ONLINE) {
+        if (format == EventFormat.ONLINE) {
             return new LocationDescriptor(timeZone.getID(), null, null, null);
         }
         String lat = coordinates.getLeft();
@@ -80,7 +71,7 @@ public class LocationDescriptor {
 
     // for backward compatibility reason, the logic is not straightforward
     public static ConfigurationKeys.GeoInfoProvider getProvider(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> geoConf) {
-        if((!geoConf.containsKey(ConfigurationKeys.MAPS_PROVIDER) || geoConf.get(ConfigurationKeys.MAPS_PROVIDER).isEmpty()) &&
+        if ((!geoConf.containsKey(ConfigurationKeys.MAPS_PROVIDER) || geoConf.get(ConfigurationKeys.MAPS_PROVIDER).isEmpty()) &&
             (geoConf.containsKey(ConfigurationKeys.MAPS_CLIENT_API_KEY) && geoConf.get(ConfigurationKeys.MAPS_CLIENT_API_KEY).isPresent())) {
             return ConfigurationKeys.GeoInfoProvider.GOOGLE;
         } else if (geoConf.containsKey(ConfigurationKeys.MAPS_PROVIDER) && geoConf.get(ConfigurationKeys.MAPS_PROVIDER).isPresent()) {
@@ -101,7 +92,7 @@ public class LocationDescriptor {
     }
 
     private static void fillParams(ConfigurationKeys.GeoInfoProvider provider, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> geoConf, Map<String, String> params) {
-        if(ConfigurationKeys.GeoInfoProvider.GOOGLE == provider) {
+        if (ConfigurationKeys.GeoInfoProvider.GOOGLE == provider) {
             geoConf.get(ConfigurationKeys.MAPS_CLIENT_API_KEY).getValue().ifPresent(key -> params.put("key", key));
         } else if (ConfigurationKeys.GeoInfoProvider.HERE == provider) {
             geoConf.get(ConfigurationKeys.MAPS_HERE_API_KEY).getValue().ifPresent(key -> params.put("key", key));
