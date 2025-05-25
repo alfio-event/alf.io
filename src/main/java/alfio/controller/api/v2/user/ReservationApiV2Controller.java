@@ -716,8 +716,8 @@ public class ReservationApiV2Controller {
 
         Map<String, String> res = new HashMap<>();
         for (ContentLanguage cl : purchaseContext.getContentLanguages()) {
-            var formatter = messageSource.getMessage(formattingCode, null, cl.getLocale());
-            res.put(cl.getLocale().getLanguage(), DateTimeFormatter.ofPattern(formatter, cl.getLocale()).format(date));
+            var formatter = messageSource.getMessage(formattingCode, null, cl.locale());
+            res.put(cl.locale().getLanguage(), DateTimeFormatter.ofPattern(formatter, cl.locale()).format(date));
         }
         return res;
     }

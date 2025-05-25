@@ -131,7 +131,7 @@ public class EventApiV2Controller {
                 return new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getTitle(), e.getFormat(), e.getLocation(),
                     e.getTimeZone(), DatesWithTimeZoneOffset.fromEvent(e), e.getSameDay(), formattedDates.beginDate, formattedDates.beginTime,
                     formattedDates.endDate, formattedDates.endTime,
-                    e.getContentLanguages().stream().map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage())).collect(toList()));
+                    e.getContentLanguages().stream().map(cl -> new Language(cl.locale().getLanguage(), cl.getDisplayLanguage())).collect(toList()));
             })
             .collect(Collectors.toList());
         return new ResponseEntity<>(events, getCorsHeaders(), HttpStatus.OK);
@@ -369,7 +369,7 @@ public class EventApiV2Controller {
         }
 
         for (ContentLanguage cl : event.getContentLanguages()) {
-            res.put(cl.getLocale().getLanguage(), messageSource.getMessage(code, new Object[]{amount}, cl.getLocale()));
+            res.put(cl.locale().getLanguage(), messageSource.getMessage(code, new Object[]{amount}, cl.locale()));
         }
         return res;
     }

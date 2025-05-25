@@ -302,9 +302,9 @@ public class EventManager {
             Validate.isTrue(original.getAllowedPaymentProxies().stream().allMatch(p -> p != PaymentProxy.ON_SITE), ERROR_ONLINE_ON_SITE_NOT_COMPATIBLE);
         }
 
-        String timeZone = ObjectUtils.firstNonNull(em.getZoneId(), em.getGeolocation() != null ? em.getGeolocation().getTimeZone() : null);
-        String latitude = ObjectUtils.firstNonNull(em.getLatitude(), em.getGeolocation() != null ? em.getGeolocation().getLatitude() : null);
-        String longitude = ObjectUtils.firstNonNull(em.getLongitude(), em.getGeolocation() != null ?  em.getGeolocation().getLongitude(): null);
+        String timeZone = ObjectUtils.firstNonNull(em.getZoneId(), em.getGeolocation() != null ? em.getGeolocation().timeZone() : null);
+        String latitude = ObjectUtils.firstNonNull(em.getLatitude(), em.getGeolocation() != null ? em.getGeolocation().latitude() : null);
+        String longitude = ObjectUtils.firstNonNull(em.getLongitude(), em.getGeolocation() != null ?  em.getGeolocation().longitude(): null);
 
         final ZoneId zoneId = ZoneId.of(timeZone);
         final ZonedDateTime begin = em.getBegin().toZonedDateTime(zoneId);

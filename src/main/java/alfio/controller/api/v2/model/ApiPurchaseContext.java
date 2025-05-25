@@ -44,7 +44,7 @@ public interface ApiPurchaseContext {
     default List<Language> getContentLanguages() {
         return purchaseContext().getContentLanguages()
             .stream()
-            .map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage()))
+            .map(cl -> new Language(cl.locale().getLanguage(), cl.getDisplayLanguage()))
             .collect(Collectors.toList());
     }
 

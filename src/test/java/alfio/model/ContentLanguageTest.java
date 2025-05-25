@@ -28,13 +28,13 @@ class ContentLanguageTest {
     @Test
     void validateContentLanguages() {
         var sortedContentLanguages = ContentLanguage.ALL_LANGUAGES.stream()
-            .sorted(Comparator.comparing(ContentLanguage::getValue))
+            .sorted(Comparator.comparing(ContentLanguage::value))
             .collect(Collectors.toList());
 
         for(int i = 1; i < sortedContentLanguages.size(); i++) {
             var current = sortedContentLanguages.get(i);
             var previous = sortedContentLanguages.get(i - 1);
-            assertNotEquals(current.getValue(), previous.getValue(), "error: " + previous.getDisplayLanguage() +" ("+previous.getLanguage()+")"+ " and " + current.getDisplayLanguage() +" ("+current.getLanguage()+ ") have the same value");
+            assertNotEquals(current.value(), previous.value(), "error: " + previous.getDisplayLanguage() +" ("+previous.getLanguage()+")"+ " and " + current.getDisplayLanguage() +" ("+current.getLanguage()+ ") have the same value");
         }
     }
 

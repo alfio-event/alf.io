@@ -158,7 +158,7 @@ public class UserApiV2Controller {
             // "datetime.pattern"
             var messageSource = messageSourceManager.getRootMessageSource();
             var datePatternsMap = ContentLanguage.ALL_LANGUAGES.stream()
-                .map(l -> Map.entry(l.getLocale(), messageSource.getMessage("datetime.pattern", null, l.getLocale())))
+                .map(l -> Map.entry(l.locale(), messageSource.getMessage("datetime.pattern", null, l.locale())))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             var results = reservations.stream()
                 .collect(Collectors.groupingBy(p -> p.getPurchaseContextType().name() + "/" + p.getPurchaseContextPublicIdentifier()))
