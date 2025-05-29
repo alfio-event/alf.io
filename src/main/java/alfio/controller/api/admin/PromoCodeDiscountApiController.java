@@ -24,7 +24,6 @@ import alfio.model.PromoCodeUsageResult;
 import alfio.model.modification.PromoCodeDiscountModification;
 import alfio.model.modification.PromoCodeDiscountWithFormattedTimeAndAmount;
 import alfio.repository.EventRepository;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.web.bind.annotation.*;
@@ -36,13 +35,19 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/admin/api")
-@RequiredArgsConstructor
 public class PromoCodeDiscountApiController {
 
     private final EventRepository eventRepository;
     private final EventManager eventManager;
     private final PromoCodeRequestManager promoCodeRequestManager;
     private final AccessService accessService;
+
+    public PromoCodeDiscountApiController(EventRepository eventRepository, EventManager eventManager, PromoCodeRequestManager promoCodeRequestManager, AccessService accessService) {
+        this.eventRepository = eventRepository;
+        this.eventManager = eventManager;
+        this.promoCodeRequestManager = promoCodeRequestManager;
+        this.accessService = accessService;
+    }
 
     @PostMapping("/promo-code")
     public void addPromoCode(@RequestBody PromoCodeDiscountModification promoCode, Principal principal) {

@@ -47,7 +47,6 @@ import alfio.model.user.User;
 import alfio.repository.*;
 import alfio.repository.user.UserRepository;
 import alfio.util.*;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -95,7 +94,6 @@ import static org.apache.commons.lang3.StringUtils.firstNonBlank;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @Component
-@RequiredArgsConstructor
 public class AdminReservationManager {
 
     private static final ErrorCode ERROR_CANNOT_CANCEL_CHECKED_IN_TICKETS = ErrorCode.custom("remove-reservation.failed", "This reservation contains checked-in tickets. Unable to cancel it.");
@@ -129,6 +127,38 @@ public class AdminReservationManager {
     private final ReservationEmailContentHelper reservationEmailContentHelper;
     private final TransactionRepository transactionRepository;
     private final AccessService accessService;
+
+    public AdminReservationManager(PurchaseContextManager purchaseContextManager, EventManager eventManager, TicketReservationManager ticketReservationManager, TicketCategoryRepository ticketCategoryRepository, TicketRepository ticketRepository, SpecialPriceRepository specialPriceRepository, TicketReservationRepository ticketReservationRepository, EventRepository eventRepository, PlatformTransactionManager transactionManager, SpecialPriceTokenGenerator specialPriceTokenGenerator, PurchaseContextFieldRepository purchaseContextFieldRepository, PaymentManager paymentManager, NotificationManager notificationManager, MessageSourceManager messageSourceManager, TemplateManager templateManager, AdditionalServiceItemRepository additionalServiceItemRepository, AuditingRepository auditingRepository, UserRepository userRepository, ExtensionManager extensionManager, BillingDocumentRepository billingDocumentRepository, FileUploadManager fileUploadManager, PromoCodeDiscountRepository promoCodeDiscountRepository, AdditionalServiceRepository additionalServiceRepository, BillingDocumentManager billingDocumentManager, ClockProvider clockProvider, SubscriptionRepository subscriptionRepository, ReservationEmailContentHelper reservationEmailContentHelper, TransactionRepository transactionRepository, AccessService accessService) {
+        this.purchaseContextManager = purchaseContextManager;
+        this.eventManager = eventManager;
+        this.ticketReservationManager = ticketReservationManager;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.ticketRepository = ticketRepository;
+        this.specialPriceRepository = specialPriceRepository;
+        this.ticketReservationRepository = ticketReservationRepository;
+        this.eventRepository = eventRepository;
+        this.transactionManager = transactionManager;
+        this.specialPriceTokenGenerator = specialPriceTokenGenerator;
+        this.purchaseContextFieldRepository = purchaseContextFieldRepository;
+        this.paymentManager = paymentManager;
+        this.notificationManager = notificationManager;
+        this.messageSourceManager = messageSourceManager;
+        this.templateManager = templateManager;
+        this.additionalServiceItemRepository = additionalServiceItemRepository;
+        this.auditingRepository = auditingRepository;
+        this.userRepository = userRepository;
+        this.extensionManager = extensionManager;
+        this.billingDocumentRepository = billingDocumentRepository;
+        this.fileUploadManager = fileUploadManager;
+        this.promoCodeDiscountRepository = promoCodeDiscountRepository;
+        this.additionalServiceRepository = additionalServiceRepository;
+        this.billingDocumentManager = billingDocumentManager;
+        this.clockProvider = clockProvider;
+        this.subscriptionRepository = subscriptionRepository;
+        this.reservationEmailContentHelper = reservationEmailContentHelper;
+        this.transactionRepository = transactionRepository;
+        this.accessService = accessService;
+    }
 
     //the following methods have an explicit transaction handling, therefore the @Transactional annotation is not helpful here
     Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> confirmReservation(PurchaseContextType purchaseContextType,

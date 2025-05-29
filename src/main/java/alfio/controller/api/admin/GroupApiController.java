@@ -27,7 +27,6 @@ import alfio.model.modification.GroupModification;
 import alfio.model.modification.LinkedGroupModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -40,12 +39,17 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/admin/api/group")
-@RequiredArgsConstructor
 public class GroupApiController {
 
     private final GroupManager groupManager;
     private final EventManager eventManager;
     private final AccessService accessService;
+
+    public GroupApiController(GroupManager groupManager, EventManager eventManager, AccessService accessService) {
+        this.groupManager = groupManager;
+        this.eventManager = eventManager;
+        this.accessService = accessService;
+    }
 
     @ExceptionHandler(DuplicateGroupItemException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)

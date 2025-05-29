@@ -24,7 +24,6 @@ import alfio.model.EmailMessage;
 import alfio.model.LightweightMailMessage;
 import alfio.model.PurchaseContext;
 import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -37,7 +36,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
 @RestController
 @RequestMapping("/admin/api/{purchaseContextType}/{publicIdentifier}/email")
 public class EmailMessageApiController {
@@ -45,6 +43,12 @@ public class EmailMessageApiController {
     private final NotificationManager notificationManager;
     private final PurchaseContextManager purchaseContextManager;
     private final AccessService accessService;
+
+    public EmailMessageApiController(NotificationManager notificationManager, PurchaseContextManager purchaseContextManager, AccessService accessService) {
+        this.notificationManager = notificationManager;
+        this.purchaseContextManager = purchaseContextManager;
+        this.accessService = accessService;
+    }
 
     @GetMapping()
     public PageAndContent<List<LightweightEmailMessage>> loadEmailMessages(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
