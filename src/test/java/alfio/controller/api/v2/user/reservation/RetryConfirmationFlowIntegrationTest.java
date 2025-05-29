@@ -19,25 +19,12 @@ package alfio.controller.api.v2.user.reservation;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.controller.IndexController;
 import alfio.controller.api.ControllerConfiguration;
-import alfio.controller.api.admin.AdditionalServiceApiController;
-import alfio.controller.api.admin.CheckInApiController;
-import alfio.controller.api.admin.EventApiController;
-import alfio.controller.api.admin.UsersApiController;
-import alfio.controller.api.v1.AttendeeApiController;
-import alfio.controller.api.v2.InfoApiController;
-import alfio.controller.api.v2.TranslationsApiController;
 import alfio.controller.api.v2.model.ReservationInfo;
-import alfio.controller.api.v2.user.EventApiV2Controller;
-import alfio.controller.api.v2.user.ReservationApiV2Controller;
-import alfio.controller.api.v2.user.TicketApiV2Controller;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.payment.api.stripe.StripePaymentWebhookController;
 import alfio.extension.Extension;
-import alfio.extension.ExtensionService;
-import alfio.manager.*;
 import alfio.manager.support.extension.ExtensionEvent;
 import alfio.manager.system.AdminJobExecutor;
 import alfio.manager.system.AdminJobManager;
@@ -54,14 +41,9 @@ import alfio.model.modification.TicketCategoryModification;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
-import alfio.repository.*;
-import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.AdminJobQueueRepository;
-import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
-import alfio.repository.user.UserRepository;
 import alfio.test.util.AlfioIntegrationTest;
-import alfio.util.ClockProvider;
 import com.stripe.net.Webhook;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -69,7 +51,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -101,98 +82,16 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
 
     private static final String TICKET_METADATA = "ticketMetadata";
     private static final String INVOICE_NUMBER_GENERATOR = "invoiceNumberGenerator";
-    private final OrganizationRepository organizationRepository;
-    private final UserManager userManager;
-    private final AdminJobQueueRepository adminJobQueueRepository;
-    private final AdminJobManagerInvoker adminJobManagerInvoker;
-    private final StripePaymentWebhookController stripePaymentWebhookController;
-
     @Autowired
-    public RetryConfirmationFlowIntegrationTest(ConfigurationRepository configurationRepository,
-                                                EventManager eventManager,
-                                                EventRepository eventRepository,
-                                                EventStatisticsManager eventStatisticsManager,
-                                                TicketCategoryRepository ticketCategoryRepository,
-                                                TicketReservationRepository ticketReservationRepository,
-                                                EventApiController eventApiController,
-                                                TicketRepository ticketRepository,
-                                                PurchaseContextFieldRepository purchaseContextFieldRepository,
-                                                AdditionalServiceApiController additionalServiceApiController,
-                                                SpecialPriceTokenGenerator specialPriceTokenGenerator,
-                                                SpecialPriceRepository specialPriceRepository,
-                                                CheckInApiController checkInApiController,
-                                                AttendeeApiController attendeeApiController,
-                                                UsersApiController usersApiController,
-                                                ScanAuditRepository scanAuditRepository,
-                                                AuditingRepository auditingRepository,
-                                                AdminReservationManager adminReservationManager,
-                                                TicketReservationManager ticketReservationManager,
-                                                InfoApiController infoApiController,
-                                                TranslationsApiController translationsApiController,
-                                                EventApiV2Controller eventApiV2Controller,
-                                                ReservationApiV2Controller reservationApiV2Controller,
-                                                TicketApiV2Controller ticketApiV2Controller,
-                                                IndexController indexController,
-                                                NamedParameterJdbcTemplate jdbcTemplate,
-                                                ExtensionLogRepository extensionLogRepository,
-                                                ExtensionService extensionService,
-                                                PollRepository pollRepository,
-                                                ClockProvider clockProvider,
-                                                NotificationManager notificationManager,
-                                                UserRepository userRepository,
-                                                OrganizationDeleter organizationDeleter,
-                                                PromoCodeDiscountRepository promoCodeDiscountRepository,
-                                                PromoCodeRequestManager promoCodeRequestManager,
-                                                ExportManager exportManager,
-                                                OrganizationRepository organizationRepository,
-                                                UserManager userManager,
-                                                AdminJobQueueRepository adminJobQueueRepository,
-                                                AdminJobManager adminJobManager,
-                                                StripePaymentWebhookController stripePaymentWebhookController,
-                                                PurchaseContextFieldManager purchaseContextFieldManager) {
-        super(configurationRepository,
-            eventManager,
-            eventRepository,
-            eventStatisticsManager,
-            ticketCategoryRepository,
-            ticketReservationRepository,
-            eventApiController,
-            ticketRepository,
-            purchaseContextFieldRepository,
-            additionalServiceApiController,
-            specialPriceTokenGenerator,
-            specialPriceRepository,
-            checkInApiController,
-            attendeeApiController,
-            usersApiController,
-            scanAuditRepository,
-            auditingRepository,
-            adminReservationManager,
-            ticketReservationManager,
-            infoApiController,
-            translationsApiController,
-            eventApiV2Controller,
-            reservationApiV2Controller,
-            ticketApiV2Controller,
-            indexController,
-            jdbcTemplate,
-            extensionLogRepository,
-            extensionService,
-            pollRepository,
-            clockProvider,
-            notificationManager,
-            userRepository,
-            organizationDeleter,
-            promoCodeDiscountRepository,
-            promoCodeRequestManager,
-            exportManager,
-            purchaseContextFieldManager);
-        this.organizationRepository = organizationRepository;
-        this.userManager = userManager;
-        this.adminJobQueueRepository = adminJobQueueRepository;
-        this.adminJobManagerInvoker = new AdminJobManagerInvoker(adminJobManager);
-        this.stripePaymentWebhookController = stripePaymentWebhookController;
-    }
+    private OrganizationRepository organizationRepository;
+    @Autowired
+    private UserManager userManager;
+    @Autowired
+    private AdminJobQueueRepository adminJobQueueRepository;
+    @Autowired
+    private AdminJobManager adminJobManager;
+    @Autowired
+    private StripePaymentWebhookController stripePaymentWebhookController;
 
     @BeforeEach
     void setUp() {
@@ -263,7 +162,7 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
         } else {
             insertOrUpdateExtension("/retry-reservation/success-ticket-metadata.js", TICKET_METADATA, true);
         }
-        adminJobManagerInvoker.invokeProcessPendingReservationsRetry(now);
+        new AdminJobManagerInvoker(adminJobManager).invokeProcessPendingReservationsRetry(now);
         checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.COMPLETE, context);
         reservation = ticketReservationRepository.findReservationById(reservationId);
         assertEquals("ABCD", reservation.getInvoiceNumber());
