@@ -22,7 +22,6 @@ import alfio.manager.payment.PayPalManager;
 import alfio.model.PurchaseContext;
 import alfio.model.TicketReservation;
 import alfio.model.transaction.token.PayPalToken;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,12 +34,17 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Controller
 @RequestMapping("/{purchaseContextType}/{purchaseContextIdentifier}/reservation/{reservationId}/payment/paypal")
-@RequiredArgsConstructor
 public class PayPalCallbackController {
 
     private final PurchaseContextManager purchaseContextManager;
     private final TicketReservationManager ticketReservationManager;
     private final PayPalManager payPalManager;
+
+    public PayPalCallbackController(PurchaseContextManager purchaseContextManager, TicketReservationManager ticketReservationManager, PayPalManager payPalManager) {
+        this.purchaseContextManager = purchaseContextManager;
+        this.ticketReservationManager = ticketReservationManager;
+        this.payPalManager = payPalManager;
+    }
 
     @GetMapping("/confirm")
     public String payPalSuccess(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,

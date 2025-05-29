@@ -20,7 +20,6 @@ import alfio.util.Json;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -133,13 +132,20 @@ public class FieldConfigurationDescriptionAndValue {
             || !purchaseContextFieldConfiguration.getDisabledValues().contains(value);
     }
 
-    @RequiredArgsConstructor
+
     @Getter
     public static class TicketFieldValue {
         private final int fieldIndex;
         private final int fieldCounter;
         private final String fieldValue;
         private final Boolean editable;
+
+        public TicketFieldValue(int fieldIndex, int fieldCounter, String fieldValue, Boolean editable) {
+            this.fieldIndex = fieldIndex;
+            this.fieldCounter = fieldCounter;
+            this.fieldValue = fieldValue;
+            this.editable = editable;
+        }
     }
 
     public static boolean isBeforeStandardFields(PurchaseContextFieldConfiguration purchaseContextFieldConfiguration) {

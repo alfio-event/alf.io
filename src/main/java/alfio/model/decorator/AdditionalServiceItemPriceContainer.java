@@ -18,14 +18,11 @@ package alfio.model.decorator;
 
 import alfio.model.*;
 import alfio.util.MonetaryUtil;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 
 import java.math.BigDecimal;
 import java.util.Optional;
 
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class AdditionalServiceItemPriceContainer implements SummaryPriceContainer {
     @Delegate(excludes = PriceContainer.class)
     private final AdditionalServiceItem additionalServiceItem;
@@ -34,6 +31,15 @@ public class AdditionalServiceItemPriceContainer implements SummaryPriceContaine
     private final PromoCodeDiscount discount;
     private final VatStatus eventVatStatus;
     private final BigDecimal eventVatPercentage;
+
+    private AdditionalServiceItemPriceContainer(AdditionalServiceItem additionalServiceItem, AdditionalService additionalService, String currencyCode, PromoCodeDiscount discount, VatStatus eventVatStatus, BigDecimal eventVatPercentage) {
+        this.additionalServiceItem = additionalServiceItem;
+        this.additionalService = additionalService;
+        this.currencyCode = currencyCode;
+        this.discount = discount;
+        this.eventVatStatus = eventVatStatus;
+        this.eventVatPercentage = eventVatPercentage;
+    }
 
     @Override
     public int getSrcPriceCts() {

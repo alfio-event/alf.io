@@ -18,14 +18,18 @@ package alfio.model.subscription;
 
 import alfio.model.TicketReservationWithEventIdentifier;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
-@RequiredArgsConstructor
 @Getter
 public class SubscriptionWithUsageDetails {
     private final Subscription subscription;
     private final UsageDetails usageDetails;
     private final List<TicketReservationWithEventIdentifier> reservations;
+
+    public SubscriptionWithUsageDetails(Subscription subscription, UsageDetails usageDetails, List<TicketReservationWithEventIdentifier> reservations) {
+        this.subscription = subscription;
+        this.usageDetails = usageDetails;
+        this.reservations = reservations;
+    }
 }

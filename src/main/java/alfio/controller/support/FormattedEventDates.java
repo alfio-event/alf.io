@@ -16,14 +16,18 @@
  */
 package alfio.controller.support;
 
-import lombok.RequiredArgsConstructor;
-
 import java.util.Map;
 
-@RequiredArgsConstructor
 public class FormattedEventDates {
     public final Map<String, String> beginDate;
     public final Map<String, String> beginTime;
     public final Map<String, String> endDate;
     public final Map<String, String> endTime;
+
+    public FormattedEventDates(Map<String, String> beginDate, Map<String, String> beginTime, Map<String, String> endDate, Map<String, String> endTime) {
+        this.beginDate = beginDate;
+        this.beginTime = beginTime;
+        this.endDate = endDate;
+        this.endTime = endTime;
+    }
 }

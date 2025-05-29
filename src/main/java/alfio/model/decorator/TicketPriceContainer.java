@@ -19,15 +19,13 @@ package alfio.model.decorator;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.SummaryPriceContainer;
 import alfio.model.Ticket;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.ObjectUtils;
 
 import java.math.BigDecimal;
 import java.util.Optional;
 
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+
 public class TicketPriceContainer implements SummaryPriceContainer {
 
     @Delegate(excludes = OverridePriceContainer.class)
@@ -35,6 +33,13 @@ public class TicketPriceContainer implements SummaryPriceContainer {
     private final PromoCodeDiscount promoCodeDiscount;
     private final BigDecimal vatPercentage;
     private final VatStatus vatStatus;
+
+    private TicketPriceContainer(Ticket ticket, PromoCodeDiscount promoCodeDiscount, BigDecimal vatPercentage, VatStatus vatStatus) {
+        this.ticket = ticket;
+        this.promoCodeDiscount = promoCodeDiscount;
+        this.vatPercentage = vatPercentage;
+        this.vatStatus = vatStatus;
+    }
 
     @Override
     public Optional<PromoCodeDiscount> getDiscount() {

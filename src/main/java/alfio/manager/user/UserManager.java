@@ -30,7 +30,6 @@ import alfio.repository.user.join.UserOrganizationRepository;
 import alfio.util.PasswordGenerator;
 import alfio.util.RequestUtils;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -56,7 +55,6 @@ import static java.util.stream.Collectors.toList;
 
 @Component
 @Transactional
-@RequiredArgsConstructor
 public class UserManager {
 
     public static final String ADMIN_USERNAME = "admin";
@@ -70,6 +68,17 @@ public class UserManager {
     private final InvoiceSequencesRepository invoiceSequencesRepository;
     private final FindByIndexNameSessionRepository<?> sessionsByPrincipalFinder;
     private final AccessService accessService;
+
+    public UserManager(AuthorityRepository authorityRepository, OrganizationRepository organizationRepository, UserOrganizationRepository userOrganizationRepository, UserRepository userRepository, PasswordEncoder passwordEncoder, InvoiceSequencesRepository invoiceSequencesRepository, FindByIndexNameSessionRepository<?> sessionsByPrincipalFinder, AccessService accessService) {
+        this.authorityRepository = authorityRepository;
+        this.organizationRepository = organizationRepository;
+        this.userOrganizationRepository = userOrganizationRepository;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.invoiceSequencesRepository = invoiceSequencesRepository;
+        this.sessionsByPrincipalFinder = sessionsByPrincipalFinder;
+        this.accessService = accessService;
+    }
 
 
     private List<Authority> getUserAuthorities(User user) {
