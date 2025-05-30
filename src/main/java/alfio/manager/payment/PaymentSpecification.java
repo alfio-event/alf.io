@@ -18,6 +18,7 @@ package alfio.manager.payment;
 
 import alfio.model.*;
 import alfio.model.transaction.PaymentContext;
+import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentToken;
 import alfio.util.LocaleUtil;
 import lombok.Getter;
@@ -28,6 +29,7 @@ import java.util.Locale;
 public class PaymentSpecification {
     private final String reservationId;
     private final PaymentToken gatewayToken;
+    private final PaymentMethod selectedPaymentMethod;
     private final int priceWithVAT;
     private final PurchaseContext purchaseContext;
     private final String email;
@@ -46,6 +48,7 @@ public class PaymentSpecification {
 
     public PaymentSpecification( String reservationId,
                                  PaymentToken gatewayToken,
+                                 PaymentMethod selectedPaymentMethod,
                                  int priceWithVAT,
                                  PurchaseContext purchaseContext,
                                  String email,
@@ -63,6 +66,7 @@ public class PaymentSpecification {
                                  boolean privacyAccepted) {
         this.reservationId = reservationId;
         this.gatewayToken = gatewayToken;
+        this.selectedPaymentMethod = selectedPaymentMethod;
         this.priceWithVAT = priceWithVAT;
         this.purchaseContext = purchaseContext;
         this.email = email;
@@ -84,18 +88,19 @@ public class PaymentSpecification {
                                             TotalPrice totalPrice,
                                             PurchaseContext purchaseContext,
                                             PaymentToken gatewayToken,
+                                            PaymentMethod selectedPaymentMethod,
                                             OrderSummary orderSummary,
                                             boolean tcAccepted,
                                             boolean privacyAccepted) {
-        this(reservation.getId(), gatewayToken, totalPrice.getPriceWithVAT(),
+        this(reservation.getId(), gatewayToken, selectedPaymentMethod, totalPrice.getPriceWithVAT(),
                 purchaseContext, reservation.getEmail(), new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), true),
             reservation.getBillingAddress(), reservation.getCustomerReference(), LocaleUtil.forLanguageTag(reservation.getUserLanguage()), reservation.isInvoiceRequested(),
             !reservation.isDirectAssignmentRequested(), orderSummary, reservation.getVatCountryCode(),
             reservation.getVatNr(), reservation.getVatStatus(), tcAccepted, privacyAccepted);
     }
 
-    PaymentSpecification(String reservationId, PaymentToken gatewayToken, int priceWithVAT, PurchaseContext purchaseContext, String email, CustomerName customerName ) {
-        this(reservationId, gatewayToken, priceWithVAT, purchaseContext, email, customerName, null, null, null, false, false, null, null, null, null, false, false);
+    PaymentSpecification(String reservationId, PaymentToken gatewayToken, PaymentMethod selectedPaymentMethod, int priceWithVAT, PurchaseContext purchaseContext, String email, CustomerName customerName ) {
+        this(reservationId, gatewayToken, selectedPaymentMethod, priceWithVAT, purchaseContext, email, customerName, null, null, null, false, false, null, null, null, null, false, false);
     }
 
     public String getCurrencyCode() {

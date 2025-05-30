@@ -161,7 +161,7 @@ public class ReservationFinalizer {
         var costResult = reservationCostCalculator.totalReservationCostWithVAT(reservation);
         var totalPrice = costResult.getLeft();
         var orderSummary = orderSummaryGenerator.orderSummaryForReservation(reservation, purchaseContext);
-        var paymentSpecification = new PaymentSpecification(reservation, totalPrice, purchaseContext, null, orderSummary, retryFinalizeReservation.isTcAccepted(), retryFinalizeReservation.isPrivacyPolicyAccepted());
+        var paymentSpecification = new PaymentSpecification(reservation, totalPrice, purchaseContext, null, null, orderSummary, retryFinalizeReservation.isTcAccepted(), retryFinalizeReservation.isPrivacyPolicyAccepted());
         transactionTemplate.executeWithoutResult(ctx -> processFinalizeReservation(new FinalizeReservation(paymentSpecification, retryFinalizeReservation.getPaymentProxy(), retryFinalizeReservation.isSendReservationConfirmationEmail(), retryFinalizeReservation.isSendTickets(), retryFinalizeReservation.getUsername(), retryFinalizeReservation.getOriginalStatus()), ctx, false));
     }
 
@@ -248,7 +248,7 @@ public class ReservationFinalizer {
         ticketReservationRepository.setMetadata(reservationId, metadata.withFinalized(true));
         Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
         List<Ticket> tickets = null;
-        if(paymentProxy != PaymentProxy.OFFLINE) {
+        if(paymentProxy != PaymentProxy.OFFLINE && paymentProxy != PaymentProxy.CUSTOM_OFFLINE) {
             ticketReservationRepository.updateReservationStatus(reservationId, COMPLETE.name());
             tickets = acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getPurchaseContext(), finalizeReservation.isSendTickets());
             extensionManager.handleReservationConfirmation(reservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), spec.getPurchaseContext());
@@ -435,7 +435,8 @@ public class ReservationFinalizer {
         if (!metadata.isReadyForConfirmation()) {
             throw new IncompatibleStateException("Reservation is not ready to be confirmed");
         }
-        Validate.isTrue(ticketReservation.getPaymentMethod() == PaymentProxy.OFFLINE, "invalid payment method");
+        Validate.isTrue(ticketReservation.getPaymentMethod() == PaymentProxy.OFFLINE
+            || ticketReservation.getPaymentMethod() == PaymentProxy.CUSTOM_OFFLINE, "invalid payment method");
         Validate.isTrue(ticketReservation.isPendingOfflinePayment(), "invalid status");
 
 

@@ -27,7 +27,6 @@ import alfio.model.TicketCategory;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.api.v1.admin.subscription.SubscriptionConfiguration;
 import alfio.model.subscription.UsageDetails;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -78,7 +77,7 @@ public class ReservationInfo {
     private final boolean containsCategoriesLinkedToGroups;
     //
 
-    private final Map<PaymentMethod, PaymentProxyWithParameters> activePaymentMethods;
+    private final Map<String, PaymentProxyWithParameters> activePaymentMethods;
 
     private final List<SubscriptionInfo> subscriptionInfos;
 

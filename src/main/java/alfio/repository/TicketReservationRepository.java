@@ -67,6 +67,9 @@ public interface TicketReservationRepository {
     @Query("select user_id_fk user_id, organization_id_fk organization_id from tickets_reservation where id = :reservationId and user_id_fk is not null")
     Optional<UserIdAndOrganizationId> getReservationOwnerAndOrganizationId(@Bind("reservationId") String reservationId);
 
+    @Query("select organization_id_fk organization_id from tickets_reservation where id = :reservationId")
+    int getEventOrganizationIDForReservation(@Bind("reservationId") String reservationId);
+
     @Query("select * from tickets_reservation tr join ba_user u on u.id = tr.user_id_fk where u.username = :username")
     List<TicketReservation> loadByOwner(@Bind("username") String username);
 
@@ -107,7 +110,7 @@ public interface TicketReservationRepository {
     @Query("update tickets_reservation set full_name = :fullName where id = :reservationId")
     int updateAssignee(@Bind("reservationId") String reservationId, @Bind("fullName") String fullName);
 
-    @Query("select count(id) from tickets_reservation where status in('OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT') and event_id_fk = :eventId")
+    @Query("select count(id) from tickets_reservation where status in('OFFLINE_PAYMENT', 'CUSTOM_OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT') and event_id_fk = :eventId")
     Integer findAllReservationsWaitingForPaymentCountInEventId(@Bind("eventId") int eventId);
 
     @Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and offline_payment_reminder_sent = false for update skip locked")
