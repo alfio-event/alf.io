@@ -42,7 +42,6 @@ import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
 import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.servlet.http.HttpSession;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -69,7 +68,6 @@ import static alfio.model.system.ConfigurationPathLevel.*;
 import static java.util.stream.Collectors.toList;
 
 @Transactional
-@RequiredArgsConstructor
 public class ConfigurationManager {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigurationManager.class);
@@ -84,6 +82,15 @@ public class ConfigurationManager {
     private final Environment environment;
     private final Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, MaybeConfiguration>> oneMinuteCache;
     private final SecureRandom secureRandom = new SecureRandom();
+
+    public ConfigurationManager(ConfigurationRepository configurationRepository, UserManager userManager, EventRepository eventRepository, ExternalConfiguration externalConfiguration, Environment environment, Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, MaybeConfiguration>> oneMinuteCache) {
+        this.configurationRepository = configurationRepository;
+        this.userManager = userManager;
+        this.eventRepository = eventRepository;
+        this.externalConfiguration = externalConfiguration;
+        this.environment = environment;
+        this.oneMinuteCache = oneMinuteCache;
+    }
 
     //TODO: refactor, not the most beautiful code, find a better solution...
     private Optional<Configuration> findByConfigurationPathAndKey(ConfigurationPath path, ConfigurationKeys key) {

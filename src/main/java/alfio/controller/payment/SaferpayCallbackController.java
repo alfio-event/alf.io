@@ -20,18 +20,21 @@ import alfio.manager.PurchaseContextManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.payment.saferpay.PaymentPageInitializeRequestBuilder;
 import alfio.model.PurchaseContext;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Controller
-@RequiredArgsConstructor
 public class SaferpayCallbackController {
 
     private final TicketReservationManager ticketReservationManager;
     private final PurchaseContextManager purchaseContextManager;
+
+    public SaferpayCallbackController(TicketReservationManager ticketReservationManager, PurchaseContextManager purchaseContextManager) {
+        this.ticketReservationManager = ticketReservationManager;
+        this.purchaseContextManager = purchaseContextManager;
+    }
 
     @GetMapping(PaymentPageInitializeRequestBuilder.CANCEL_URL_TEMPLATE)
     public String saferpayCancel(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,

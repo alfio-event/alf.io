@@ -17,18 +17,23 @@
 package alfio.model.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 
 import java.util.List;
 
-@RequiredArgsConstructor
+
 public class UserWithOrganizations {
     @Delegate
     @JsonIgnore
     private final User user;
     private final List<Organization> memberOf;
     private final List<Role> roles;
+
+    public UserWithOrganizations(User user, List<Organization> memberOf, List<Role> roles) {
+        this.user = user;
+        this.memberOf = memberOf;
+        this.roles = roles;
+    }
 
     public List<Organization> getMemberOf() {
         return memberOf;

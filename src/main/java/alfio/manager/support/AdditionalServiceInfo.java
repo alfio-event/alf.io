@@ -18,14 +18,18 @@ package alfio.manager.support;
 
 import alfio.model.AdditionalServiceFieldValue;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
 @Getter
-@RequiredArgsConstructor
 public class AdditionalServiceInfo {
     private final String name;
     private final int count;
     private final List<AdditionalServiceFieldValue> fields;
+
+    public AdditionalServiceInfo(String name, int count, List<AdditionalServiceFieldValue> fields) {
+        this.name = name;
+        this.count = count;
+        this.fields = fields;
+    }
 }

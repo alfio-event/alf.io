@@ -21,13 +21,10 @@ import alfio.model.Event;
 import alfio.model.PriceContainer;
 import alfio.model.PromoCodeDiscount;
 import alfio.util.MonetaryUtil;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.Optional;
 
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class AdditionalServicePriceContainer implements PriceContainer {
 
     private final BigDecimal customAmount;
@@ -36,6 +33,15 @@ public class AdditionalServicePriceContainer implements PriceContainer {
     private final String currencyCode;
     private final BigDecimal vatPercentage;
     private final VatStatus vatStatus;
+
+    private AdditionalServicePriceContainer(BigDecimal customAmount, AdditionalService additionalService, PromoCodeDiscount promoCodeDiscount, String currencyCode, BigDecimal vatPercentage, VatStatus vatStatus) {
+        this.customAmount = customAmount;
+        this.additionalService = additionalService;
+        this.promoCodeDiscount = promoCodeDiscount;
+        this.currencyCode = currencyCode;
+        this.vatPercentage = vatPercentage;
+        this.vatStatus = vatStatus;
+    }
 
     @Override
     public int getSrcPriceCts() {

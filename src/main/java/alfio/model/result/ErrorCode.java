@@ -18,7 +18,6 @@ package alfio.model.result;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 import java.util.function.Supplier;
 
@@ -35,7 +34,7 @@ public interface ErrorCode {
     String getDescription();
     Object[] getArguments();
 
-    @RequiredArgsConstructor
+
     @Getter
     enum CategoryError implements ErrorCode {
         NOT_FOUND("not_found", "Category not found"),
@@ -47,6 +46,11 @@ public interface ErrorCode {
         private final String code;
         private final String description;
 
+        CategoryError(String code, String description) {
+            this.code = code;
+            this.description = description;
+        }
+
 
         @Override
         public String toString() {
@@ -59,7 +63,7 @@ public interface ErrorCode {
         }
     }
 
-    @RequiredArgsConstructor
+
     @Getter
     enum EventError implements ErrorCode {
         NOT_FOUND("not_found", "No event has been found"),
@@ -68,6 +72,11 @@ public interface ErrorCode {
         private final String code;
         private final String description;
 
+        EventError(String code, String description) {
+            this.code = code;
+            this.description = description;
+        }
+
 
         @Override
         public String toString() {
@@ -80,7 +89,7 @@ public interface ErrorCode {
         }
     }
 
-    @RequiredArgsConstructor
+
     @Getter
     enum ReservationError implements ErrorCode {
         NOT_FOUND("not_found", "No reservation has been found"),
@@ -89,6 +98,11 @@ public interface ErrorCode {
 
         private final String code;
         private final String description;
+
+        ReservationError(String code, String description) {
+            this.code = code;
+            this.description = description;
+        }
 
 
         @Override

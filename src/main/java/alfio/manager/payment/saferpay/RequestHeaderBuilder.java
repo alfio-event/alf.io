@@ -17,16 +17,20 @@
 package alfio.manager.payment.saferpay;
 
 import com.google.gson.stream.JsonWriter;
-import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
 
-@RequiredArgsConstructor
 class RequestHeaderBuilder {
     private static final String SPEC_VERSION = "1.18";
     private final String customerId;
     private final String requestId;
     private final Integer retryIndicator;
+
+    RequestHeaderBuilder(String customerId, String requestId, Integer retryIndicator) {
+        this.customerId = customerId;
+        this.requestId = requestId;
+        this.retryIndicator = retryIndicator;
+    }
 
 
     JsonWriter appendTo(JsonWriter writer) throws IOException {

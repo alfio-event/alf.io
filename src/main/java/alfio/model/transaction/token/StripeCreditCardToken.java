@@ -19,12 +19,14 @@ package alfio.model.transaction.token;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.PaymentToken;
-import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 public class StripeCreditCardToken implements PaymentToken {
 
     private final String token;
+
+    public StripeCreditCardToken(String token) {
+        this.token = token;
+    }
 
     @Override
     public String getToken() {

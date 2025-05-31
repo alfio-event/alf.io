@@ -22,7 +22,6 @@ import alfio.model.decorator.SubscriptionPriceContainer;
 import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.subscription.Subscription;
 import alfio.util.MonetaryUtil;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
@@ -33,7 +32,6 @@ import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
 
-@RequiredArgsConstructor
 public class ReservationPriceCalculator implements PriceContainer {
     final TicketReservation reservation;
     final PromoCodeDiscount discount;
@@ -43,6 +41,17 @@ public class ReservationPriceCalculator implements PriceContainer {
     final PurchaseContext purchaseContext;
     private final List<Subscription> subscriptions;
     private final Optional<Subscription> appliedSubscription;
+
+    public ReservationPriceCalculator(TicketReservation reservation, PromoCodeDiscount discount, List<Ticket> tickets, List<AdditionalServiceItem> additionalServiceItems, List<AdditionalService> additionalServices, PurchaseContext purchaseContext, List<Subscription> subscriptions, Optional<Subscription> appliedSubscription) {
+        this.reservation = reservation;
+        this.discount = discount;
+        this.tickets = tickets;
+        this.additionalServiceItems = additionalServiceItems;
+        this.additionalServices = additionalServices;
+        this.purchaseContext = purchaseContext;
+        this.subscriptions = subscriptions;
+        this.appliedSubscription = appliedSubscription;
+    }
 
     @Override
     public int getSrcPriceCts() {

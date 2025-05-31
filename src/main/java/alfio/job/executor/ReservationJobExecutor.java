@@ -19,7 +19,6 @@ package alfio.job.executor;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.system.AdminJobExecutor;
 import alfio.model.system.AdminJobSchedule;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.EnumSet;
@@ -28,10 +27,13 @@ import java.util.Set;
 import static alfio.manager.system.AdminJobExecutor.JobName.*;
 
 @Component
-@RequiredArgsConstructor
 public class ReservationJobExecutor implements AdminJobExecutor {
 
     private final TicketReservationManager ticketReservationManager;
+
+    public ReservationJobExecutor(TicketReservationManager ticketReservationManager) {
+        this.ticketReservationManager = ticketReservationManager;
+    }
 
     @Override
     public Set<JobName> getJobNames() {

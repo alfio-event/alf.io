@@ -19,23 +19,10 @@ package alfio.controller.api.v2.user.reservation;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.controller.IndexController;
 import alfio.controller.api.ControllerConfiguration;
-import alfio.controller.api.admin.AdditionalServiceApiController;
-import alfio.controller.api.admin.CheckInApiController;
-import alfio.controller.api.admin.EventApiController;
-import alfio.controller.api.admin.UsersApiController;
-import alfio.controller.api.v1.AttendeeApiController;
-import alfio.controller.api.v2.InfoApiController;
-import alfio.controller.api.v2.TranslationsApiController;
 import alfio.controller.api.v2.model.ReservationInfo;
-import alfio.controller.api.v2.user.EventApiV2Controller;
-import alfio.controller.api.v2.user.ReservationApiV2Controller;
-import alfio.controller.api.v2.user.TicketApiV2Controller;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.payment.api.stripe.StripePaymentWebhookController;
-import alfio.extension.ExtensionService;
-import alfio.manager.*;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
@@ -46,13 +33,8 @@ import alfio.model.modification.TicketCategoryModification;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
-import alfio.repository.*;
-import alfio.repository.audit.ScanAuditRepository;
-import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
-import alfio.repository.user.UserRepository;
 import alfio.test.util.AlfioIntegrationTest;
-import alfio.util.ClockProvider;
 import com.stripe.net.Webhook;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +42,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -91,92 +72,12 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
 
     public static final String WEBHOOK_SECRET = "WEBHOOK_SECRET";
     private static final String PAYLOAD_FILENAME = "payloadFilename";
-    private final OrganizationRepository organizationRepository;
-    private final UserManager userManager;
-    private final StripePaymentWebhookController stripePaymentWebhookController;
-
     @Autowired
-    public StripeReservationFlowIntegrationTest(OrganizationRepository organizationRepository,
-                                                EventManager eventManager,
-                                                EventRepository eventRepository,
-                                                UserManager userManager,
-                                                ClockProvider clockProvider,
-                                                ConfigurationRepository configurationRepository,
-                                                EventStatisticsManager eventStatisticsManager,
-                                                TicketCategoryRepository ticketCategoryRepository,
-                                                TicketReservationRepository ticketReservationRepository,
-                                                EventApiController eventApiController,
-                                                TicketRepository ticketRepository,
-                                                PurchaseContextFieldRepository purchaseContextFieldRepository,
-                                                AdditionalServiceApiController additionalServiceApiController,
-                                                SpecialPriceTokenGenerator specialPriceTokenGenerator,
-                                                SpecialPriceRepository specialPriceRepository,
-                                                CheckInApiController checkInApiController,
-                                                AttendeeApiController attendeeApiController,
-                                                UsersApiController usersApiController,
-                                                ScanAuditRepository scanAuditRepository,
-                                                AuditingRepository auditingRepository,
-                                                AdminReservationManager adminReservationManager,
-                                                TicketReservationManager ticketReservationManager,
-                                                InfoApiController infoApiController,
-                                                TranslationsApiController translationsApiController,
-                                                EventApiV2Controller eventApiV2Controller,
-                                                ReservationApiV2Controller reservationApiV2Controller,
-                                                TicketApiV2Controller ticketApiV2Controller,
-                                                IndexController indexController,
-                                                NamedParameterJdbcTemplate jdbcTemplate,
-                                                ExtensionLogRepository extensionLogRepository,
-                                                ExtensionService extensionService,
-                                                PollRepository pollRepository,
-                                                NotificationManager notificationManager,
-                                                UserRepository userRepository,
-                                                OrganizationDeleter organizationDeleter,
-                                                PromoCodeDiscountRepository promoCodeDiscountRepository,
-                                                PromoCodeRequestManager promoCodeRequestManager,
-                                                StripePaymentWebhookController stripePaymentWebhookController,
-                                                ExportManager exportManager,
-                                                PurchaseContextFieldManager purchaseContextFieldManager) {
-        super(configurationRepository,
-            eventManager,
-            eventRepository,
-            eventStatisticsManager,
-            ticketCategoryRepository,
-            ticketReservationRepository,
-            eventApiController,
-            ticketRepository,
-            purchaseContextFieldRepository,
-            additionalServiceApiController,
-            specialPriceTokenGenerator,
-            specialPriceRepository,
-            checkInApiController,
-            attendeeApiController,
-            usersApiController,
-            scanAuditRepository,
-            auditingRepository,
-            adminReservationManager,
-            ticketReservationManager,
-            infoApiController,
-            translationsApiController,
-            eventApiV2Controller,
-            reservationApiV2Controller,
-            ticketApiV2Controller,
-            indexController,
-            jdbcTemplate,
-            extensionLogRepository,
-            extensionService,
-            pollRepository,
-            clockProvider,
-            notificationManager,
-            userRepository,
-            organizationDeleter,
-            promoCodeDiscountRepository,
-            promoCodeRequestManager,
-            exportManager,
-            purchaseContextFieldManager);
-        this.organizationRepository = organizationRepository;
-        this.userManager = userManager;
-        this.stripePaymentWebhookController = stripePaymentWebhookController;
-    }
+    private OrganizationRepository organizationRepository;
+    @Autowired
+    private UserManager userManager;
+    @Autowired
+    private StripePaymentWebhookController stripePaymentWebhookController;
 
     @BeforeEach
     void init() {
