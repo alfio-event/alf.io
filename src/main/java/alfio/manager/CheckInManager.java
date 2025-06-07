@@ -32,7 +32,6 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.*;
 import com.google.gson.reflect.TypeToken;
-import lombok.AllArgsConstructor;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -72,7 +71,6 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 @Component
 @Transactional
-@AllArgsConstructor
 public class CheckInManager {
 
     private static final Logger log = LoggerFactory.getLogger(CheckInManager.class);
@@ -94,6 +92,25 @@ public class CheckInManager {
     private final PollRepository pollRepository;
     private final ClockProvider clockProvider;
     private final AccessService accessService;
+
+    public CheckInManager(TicketRepository ticketRepository, EventRepository eventRepository, TicketReservationRepository ticketReservationRepository, PurchaseContextFieldRepository purchaseContextFieldRepository, TicketCategoryRepository ticketCategoryRepository, ScanAuditRepository scanAuditRepository, AuditingRepository auditingRepository, ConfigurationManager configurationManager, OrganizationRepository organizationRepository, UserRepository userRepository, TicketReservationManager ticketReservationManager, ExtensionManager extensionManager, AdditionalServiceItemRepository additionalServiceItemRepository, PollRepository pollRepository, ClockProvider clockProvider, AccessService accessService) {
+        this.ticketRepository = ticketRepository;
+        this.eventRepository = eventRepository;
+        this.ticketReservationRepository = ticketReservationRepository;
+        this.purchaseContextFieldRepository = purchaseContextFieldRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.scanAuditRepository = scanAuditRepository;
+        this.auditingRepository = auditingRepository;
+        this.configurationManager = configurationManager;
+        this.organizationRepository = organizationRepository;
+        this.userRepository = userRepository;
+        this.ticketReservationManager = ticketReservationManager;
+        this.extensionManager = extensionManager;
+        this.additionalServiceItemRepository = additionalServiceItemRepository;
+        this.pollRepository = pollRepository;
+        this.clockProvider = clockProvider;
+        this.accessService = accessService;
+    }
 
 
     private void checkIn(String uuid, Event event) {

@@ -28,7 +28,6 @@ import ch.digitalfondue.vatchecker.EUVatCheckResponse;
 import ch.digitalfondue.vatchecker.EUVatChecker;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -44,7 +43,6 @@ import static alfio.model.Audit.EventType.*;
 import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
-@AllArgsConstructor
 public class EuVatChecker {
 
     private final ConfigurationManager configurationManager;
@@ -55,6 +53,12 @@ public class EuVatChecker {
     private static final Cache<Pair<String, String>, EUVatCheckResponse> validationCache = Caffeine.newBuilder()
         .expireAfterWrite(Duration.ofMinutes(15))
         .build();
+
+    public EuVatChecker(ConfigurationManager configurationManager, AuditingRepository auditingRepository, ExtensionManager extensionManager) {
+        this.configurationManager = configurationManager;
+        this.auditingRepository = auditingRepository;
+        this.extensionManager = extensionManager;
+    }
 
     public boolean isReverseChargeEnabledFor(PurchaseContext configurable) {
         return reverseChargeEnabled(configurationManager, configurable);

@@ -18,13 +18,17 @@ package alfio.model.transaction.webhook;
 
 import alfio.model.transaction.TransactionWebhookPayload;
 import com.stripe.model.Charge;
-import lombok.AllArgsConstructor;
 
-@AllArgsConstructor
+
 public class StripeChargeTransactionWebhookPayload implements TransactionWebhookPayload {
 
     private final String type;
     private final Charge payload;
+
+    public StripeChargeTransactionWebhookPayload(String type, Charge payload) {
+        this.type = type;
+        this.payload = payload;
+    }
 
     @Override
     public Charge getPayload() {

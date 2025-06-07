@@ -17,7 +17,6 @@
 package alfio.manager.system;
 
 import alfio.model.system.ConfigurationPathLevel;
-import lombok.AllArgsConstructor;
 
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -41,9 +40,8 @@ class ConfigurationLevels {
         }
     }
 
-    @AllArgsConstructor
-    static class OrganizationLevel implements ConfigurationLevel {
-        final int organizationId;
+
+    record OrganizationLevel(int organizationId) implements ConfigurationLevel {
 
         @Override
         public ConfigurationPathLevel getPathLevel() {
@@ -56,15 +54,13 @@ class ConfigurationLevels {
         }
     }
 
-    @AllArgsConstructor
-    static class EventLevel implements ConfigurationLevel {
-        final int organizationId;
-        final int eventId;
+
+    record EventLevel(int organizationId, int eventId) implements ConfigurationLevel {
 
         @Override
         public ConfigurationPathLevel getPathLevel() {
-            return PURCHASE_CONTEXT;
-        }
+                return PURCHASE_CONTEXT;
+            }
 
         @Override
         public OptionalInt getOrganizationId() {
@@ -77,14 +73,8 @@ class ConfigurationLevels {
         }
     }
 
-    static class SubscriptionDescriptorLevel implements ConfigurationLevel {
-        final int organizationId;
-        final UUID subscriptionDescriptorId;
-
-        SubscriptionDescriptorLevel(int organizationId, UUID subscriptionDescriptorId) {
-            this.organizationId = organizationId;
-            this.subscriptionDescriptorId = subscriptionDescriptorId;
-        }
+    record SubscriptionDescriptorLevel(int organizationId,
+                                       UUID subscriptionDescriptorId) implements ConfigurationLevel {
 
         @Override
         public ConfigurationPathLevel getPathLevel() {
@@ -102,11 +92,8 @@ class ConfigurationLevels {
         }
     }
 
-    @AllArgsConstructor
-    static class CategoryLevel implements ConfigurationLevel {
-        final int organizationId;
-        final int eventId;
-        final int categoryId;
+
+    record CategoryLevel(int organizationId, int eventId, int categoryId) implements ConfigurationLevel {
 
         @Override
         public ConfigurationPathLevel getPathLevel() {

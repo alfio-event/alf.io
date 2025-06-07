@@ -23,7 +23,6 @@ import alfio.model.TicketReservation;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TicketSearchRepository;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
@@ -32,21 +31,23 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
 @Component
 @Transactional(readOnly = true)
-@AllArgsConstructor
 public class PurchaseContextSearchManager {
 
     private static final int PAGE_SIZE = 50;
     private static final List<String> SUPPORTED_PAYMENT_METHODS = EnumSet.complementOf(EnumSet.of(PaymentProxy.NONE, PaymentProxy.ADMIN))
         .stream()
         .map(PaymentProxy::name)
-        .collect(Collectors.toUnmodifiableList());
+        .toList();
     private final TicketSearchRepository ticketSearchRepository;
+
+    public PurchaseContextSearchManager(TicketSearchRepository ticketSearchRepository) {
+        this.ticketSearchRepository = ticketSearchRepository;
+    }
 
     public Pair<List<TicketReservation>, Integer> findAllReservationsFor(PurchaseContext purchaseContext, Integer page, String search, List<TicketReservation.TicketReservationStatus> status) {
         int offset = page == null ? 0 : page * PAGE_SIZE;

@@ -28,7 +28,6 @@ import alfio.model.subscription.SubscriptionDescriptor.SubscriptionValidityType;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.ObjectUtils;
@@ -765,20 +764,40 @@ public enum TemplateResource {
         return new ImageData(null, null, null);
     }
 
-    @Getter
-    @AllArgsConstructor
     public static class ImageData {
         private final String eventImage;
         private final Integer imageWidth;
         private final Integer imageHeight;
+
+        public ImageData(String eventImage, Integer imageWidth, Integer imageHeight) {
+            this.eventImage = eventImage;
+            this.imageWidth = imageWidth;
+            this.imageHeight = imageHeight;
+        }
+
+        public String getEventImage() {
+            return eventImage;
+        }
+
+        public Integer getImageWidth() {
+            return imageWidth;
+        }
+
+        public Integer getImageHeight() {
+            return imageHeight;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class TicketReservationWithZonedExpiringDate {
         @Delegate
         private final TicketReservationInfo reservation;
         private final Event event;
+
+        public TicketReservationWithZonedExpiringDate(TicketReservationInfo reservation, Event event) {
+            this.reservation = reservation;
+            this.event = event;
+        }
 
         public ZonedDateTime getZonedExpiration() {
             return reservation.getValidity().toInstant().atZone(event.getZoneId());

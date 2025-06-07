@@ -48,7 +48,6 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.repository.*;
 import alfio.util.*;
-import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -85,7 +84,6 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
 @RestController
-@AllArgsConstructor
 @RequestMapping("/api/v2/public/")
 public class ReservationApiV2Controller {
 
@@ -114,6 +112,33 @@ public class ReservationApiV2Controller {
     private final AdditionalServiceManager additionalServiceManager;
     private final AdditionalServiceHelper additionalServiceHelper;
     private final PurchaseContextFieldManager purchaseContextFieldManager;
+
+    public ReservationApiV2Controller(EventRepository eventRepository, TicketReservationManager ticketReservationManager, TicketReservationRepository ticketReservationRepository, PurchaseContextFieldRepository purchaseContextFieldRepository, MessageSourceManager messageSourceManager, ConfigurationManager configurationManager, PaymentManager paymentManager, FileUploadManager fileUploadManager, TemplateManager templateManager, ExtensionManager extensionManager, TicketHelper ticketHelper, EuVatChecker vatChecker, RecaptchaService recaptchaService, BookingInfoTicketLoader bookingInfoTicketLoader, BillingDocumentManager billingDocumentManager, PurchaseContextManager purchaseContextManager, SubscriptionRepository subscriptionRepository, TicketRepository ticketRepository, PublicUserManager publicUserManager, ReverseChargeManager reverseChargeManager, TicketCategoryRepository ticketCategoryRepository, AdditionalServiceManager additionalServiceManager, AdditionalServiceHelper additionalServiceHelper, PurchaseContextFieldManager purchaseContextFieldManager) {
+        this.eventRepository = eventRepository;
+        this.ticketReservationManager = ticketReservationManager;
+        this.ticketReservationRepository = ticketReservationRepository;
+        this.purchaseContextFieldRepository = purchaseContextFieldRepository;
+        this.messageSourceManager = messageSourceManager;
+        this.configurationManager = configurationManager;
+        this.paymentManager = paymentManager;
+        this.fileUploadManager = fileUploadManager;
+        this.templateManager = templateManager;
+        this.extensionManager = extensionManager;
+        this.ticketHelper = ticketHelper;
+        this.vatChecker = vatChecker;
+        this.recaptchaService = recaptchaService;
+        this.bookingInfoTicketLoader = bookingInfoTicketLoader;
+        this.billingDocumentManager = billingDocumentManager;
+        this.purchaseContextManager = purchaseContextManager;
+        this.subscriptionRepository = subscriptionRepository;
+        this.ticketRepository = ticketRepository;
+        this.publicUserManager = publicUserManager;
+        this.reverseChargeManager = reverseChargeManager;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.additionalServiceManager = additionalServiceManager;
+        this.additionalServiceHelper = additionalServiceHelper;
+        this.purchaseContextFieldManager = purchaseContextFieldManager;
+    }
 
     /**
      * Note: now it will return for any states of the reservation.

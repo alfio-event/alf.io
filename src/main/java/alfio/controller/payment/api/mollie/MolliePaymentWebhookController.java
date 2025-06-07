@@ -20,7 +20,6 @@ import alfio.manager.PurchaseContextManager;
 import alfio.manager.TicketReservationManager;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentProxy;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,10 +34,14 @@ import java.util.Optional;
 import static alfio.manager.payment.MollieWebhookPaymentManager.*;
 
 @RestController
-@AllArgsConstructor
 public class MolliePaymentWebhookController {
     private final TicketReservationManager ticketReservationManager;
     private final PurchaseContextManager purchaseContextManager;
+
+    public MolliePaymentWebhookController(TicketReservationManager ticketReservationManager, PurchaseContextManager purchaseContextManager) {
+        this.ticketReservationManager = ticketReservationManager;
+        this.purchaseContextManager = purchaseContextManager;
+    }
 
     @PostMapping(WEBHOOK_URL_TEMPLATE)
     public ResponseEntity<String> receivePaymentConfirmation(HttpServletRequest request,

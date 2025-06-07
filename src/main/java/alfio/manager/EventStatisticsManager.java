@@ -25,7 +25,6 @@ import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +43,6 @@ import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
 
 @Component
-@AllArgsConstructor
 @Transactional(readOnly = true)
 public class EventStatisticsManager {
 
@@ -59,6 +57,20 @@ public class EventStatisticsManager {
     private final UserManager userManager;
     private final SubscriptionRepository subscriptionRepository;
     private final ExtensionManager extensionManager;
+
+    public EventStatisticsManager(EventRepository eventRepository, EventDescriptionRepository eventDescriptionRepository, TicketSearchRepository ticketSearchRepository, TicketCategoryRepository ticketCategoryRepository, TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository, TicketReservationRepository ticketReservationRepository, SpecialPriceRepository specialPriceRepository, ConfigurationManager configurationManager, UserManager userManager, SubscriptionRepository subscriptionRepository, ExtensionManager extensionManager) {
+        this.eventRepository = eventRepository;
+        this.eventDescriptionRepository = eventDescriptionRepository;
+        this.ticketSearchRepository = ticketSearchRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
+        this.ticketReservationRepository = ticketReservationRepository;
+        this.specialPriceRepository = specialPriceRepository;
+        this.configurationManager = configurationManager;
+        this.userManager = userManager;
+        this.subscriptionRepository = subscriptionRepository;
+        this.extensionManager = extensionManager;
+    }
 
     private List<Event> getAllEvents(String username) {
         List<Integer> orgIds = userManager.findUserOrganizations(username).stream().map(Organization::getId).collect(toList());

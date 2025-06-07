@@ -23,7 +23,6 @@ import alfio.manager.PurchaseContextManager;
 import alfio.model.EmailMessage;
 import alfio.model.LightweightMailMessage;
 import alfio.model.PurchaseContext;
-import lombok.AllArgsConstructor;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -75,12 +74,18 @@ public class EmailMessageApiController {
         return notificationManager.loadSingleMessageForPurchaseContext(purchaseContext, messageId).map(m -> new LightweightEmailMessage(m, purchaseContext.getZoneId(), false)).orElseThrow(IllegalArgumentException::new);
     }
 
-    @AllArgsConstructor
+
     private static final class LightweightEmailMessage {
         @Delegate(excludes = LightweightExclusions.class)
         private final EmailMessage src;
         private final ZoneId eventZoneId;
         private final boolean list;
+
+        private LightweightEmailMessage(EmailMessage src, ZoneId eventZoneId, boolean list) {
+            this.src = src;
+            this.eventZoneId = eventZoneId;
+            this.list = list;
+        }
 
         public String getAttachments() {
             return null;

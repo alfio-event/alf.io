@@ -41,7 +41,6 @@ import com.stripe.model.Charge;
 import com.stripe.model.Refund;
 import com.stripe.net.RequestOptions;
 import com.stripe.net.Webhook;
-import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -53,7 +52,6 @@ import java.util.function.UnaryOperator;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
-@AllArgsConstructor
 class BaseStripeManager {
 
     static final String STRIPE_MANAGER_TYPE_KEY = "stripeManagerType";
@@ -75,6 +73,13 @@ class BaseStripeManager {
 
     static {
         Stripe.setAppInfo("Alf.io", "2.x", "https://alf.io");
+    }
+
+    BaseStripeManager(ConfigurationManager configurationManager, ConfigurationRepository configurationRepository, TicketRepository ticketRepository, Environment environment) {
+        this.configurationManager = configurationManager;
+        this.configurationRepository = configurationRepository;
+        this.ticketRepository = ticketRepository;
+        this.environment = environment;
     }
 
     String getSecretKey(Configurable configurable) {

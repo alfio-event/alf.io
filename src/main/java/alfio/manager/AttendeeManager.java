@@ -32,7 +32,6 @@ import alfio.repository.TicketRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
-import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -44,7 +43,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
-@AllArgsConstructor
 public class AttendeeManager {
 
     public static final String DEFAULT_OPERATOR_ID = "__DEFAULT__";
@@ -56,6 +54,17 @@ public class AttendeeManager {
     private final PurchaseContextFieldManager purchaseContextFieldManager;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final ClockProvider clockProvider;
+
+    public AttendeeManager(SponsorScanRepository sponsorScanRepository, EventRepository eventRepository, TicketRepository ticketRepository, UserRepository userRepository, UserManager userManager, PurchaseContextFieldManager purchaseContextFieldManager, AdditionalServiceItemRepository additionalServiceItemRepository, ClockProvider clockProvider) {
+        this.sponsorScanRepository = sponsorScanRepository;
+        this.eventRepository = eventRepository;
+        this.ticketRepository = ticketRepository;
+        this.userRepository = userRepository;
+        this.userManager = userManager;
+        this.purchaseContextFieldManager = purchaseContextFieldManager;
+        this.additionalServiceItemRepository = additionalServiceItemRepository;
+        this.clockProvider = clockProvider;
+    }
 
     public TicketAndCheckInResult registerSponsorScan(String eventShortName,
                                                       String ticketUid,

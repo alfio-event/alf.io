@@ -45,7 +45,6 @@ import alfio.model.user.Organization;
 import alfio.repository.ExtensionRepository;
 import alfio.util.Json;
 import alfio.util.Validator;
-import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -71,7 +70,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @RestController
 @RequestMapping("/api/v1/admin/event")
-@AllArgsConstructor
 public class EventApiV1Controller {
 
     private static final Logger log = LoggerFactory.getLogger(EventApiV1Controller.class);
@@ -88,6 +86,22 @@ public class EventApiV1Controller {
     private final AdminJobManager adminJobManager;
     private final CheckInManager checkInManager;
     private final AccessService accessService;
+
+    public EventApiV1Controller(EventManager eventManager, EventNameManager eventNameManager, FileUploadManager fileUploadManager, FileDownloadManager fileDownloadManager, UserManager userManager, EventStatisticsManager eventStatisticsManager, GroupManager groupManager, ExtensionService extensionService, ExtensionRepository extensionRepository, ConfigurationManager configurationManager, AdminJobManager adminJobManager, CheckInManager checkInManager, AccessService accessService) {
+        this.eventManager = eventManager;
+        this.eventNameManager = eventNameManager;
+        this.fileUploadManager = fileUploadManager;
+        this.fileDownloadManager = fileDownloadManager;
+        this.userManager = userManager;
+        this.eventStatisticsManager = eventStatisticsManager;
+        this.groupManager = groupManager;
+        this.extensionService = extensionService;
+        this.extensionRepository = extensionRepository;
+        this.configurationManager = configurationManager;
+        this.adminJobManager = adminJobManager;
+        this.checkInManager = checkInManager;
+        this.accessService = accessService;
+    }
 
     @PostMapping("/create")
     @Transactional

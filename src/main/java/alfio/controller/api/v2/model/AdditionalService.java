@@ -16,12 +16,11 @@
  */
 package alfio.controller.api.v2.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.Map;
 
-@AllArgsConstructor
+
 @Getter
 public class AdditionalService {
 
@@ -52,4 +51,26 @@ public class AdditionalService {
 
     private final Map<String, String> title;
     private final Map<String, String> description;
+
+    public AdditionalService(int id, alfio.model.AdditionalService.AdditionalServiceType type, alfio.model.AdditionalService.SupplementPolicy supplementPolicy, boolean fixPrice, int availableQuantity, int maxQtyPerOrder, boolean free, String formattedFinalPrice, boolean hasDiscount, String formattedDiscountedPrice, boolean vatApplies, boolean vatIncluded, String vatPercentage, boolean expired, boolean saleInFuture, Map<String, String> formattedInception, Map<String, String> formattedExpiration, Map<String, String> title, Map<String, String> description) {
+        this.id = id;
+        this.type = type;
+        this.supplementPolicy = supplementPolicy;
+        this.fixPrice = fixPrice;
+        this.availableQuantity = availableQuantity;
+        this.maxQtyPerOrder = maxQtyPerOrder;
+        this.free = free;
+        this.formattedFinalPrice = formattedFinalPrice;
+        this.hasDiscount = hasDiscount;
+        this.formattedDiscountedPrice = formattedDiscountedPrice;
+        this.vatApplies = vatApplies;
+        this.vatIncluded = vatIncluded;
+        this.vatPercentage = vatPercentage;
+        this.expired = expired;
+        this.saleInFuture = saleInFuture;
+        this.formattedInception = formattedInception;
+        this.formattedExpiration = formattedExpiration;
+        this.title = title;
+        this.description = description;
+    }
 }

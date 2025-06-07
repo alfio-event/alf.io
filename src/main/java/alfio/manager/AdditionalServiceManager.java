@@ -27,7 +27,6 @@ import alfio.model.modification.EventModification;
 import alfio.repository.*;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
-import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.iterators.LoopingIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -54,7 +53,6 @@ import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.groupingBy;
 
 @Component
-@AllArgsConstructor
 @Transactional
 public class AdditionalServiceManager {
 
@@ -66,6 +64,16 @@ public class AdditionalServiceManager {
     private final TicketRepository ticketRepository;
     private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final ReservationCostCalculator reservationCostCalculator;
+
+    public AdditionalServiceManager(AdditionalServiceRepository additionalServiceRepository, AdditionalServiceTextRepository additionalServiceTextRepository, AdditionalServiceItemRepository additionalServiceItemRepository, NamedParameterJdbcTemplate jdbcTemplate, TicketRepository ticketRepository, PurchaseContextFieldRepository purchaseContextFieldRepository, ReservationCostCalculator reservationCostCalculator) {
+        this.additionalServiceRepository = additionalServiceRepository;
+        this.additionalServiceTextRepository = additionalServiceTextRepository;
+        this.additionalServiceItemRepository = additionalServiceItemRepository;
+        this.jdbcTemplate = jdbcTemplate;
+        this.ticketRepository = ticketRepository;
+        this.purchaseContextFieldRepository = purchaseContextFieldRepository;
+        this.reservationCostCalculator = reservationCostCalculator;
+    }
 
 
     public List<AdditionalService> loadAllForEvent(int eventId) {

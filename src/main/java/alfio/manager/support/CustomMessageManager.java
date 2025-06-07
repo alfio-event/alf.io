@@ -32,7 +32,6 @@ import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.util.*;
 import alfio.util.checkin.TicketCheckInUtil;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.ExtendedModelMap;
@@ -47,7 +46,6 @@ import static alfio.manager.system.Mailer.AttachmentIdentifier.CALENDAR_ICS;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Component
-@AllArgsConstructor
 public class CustomMessageManager {
 
     private final TemplateManager templateManager;
@@ -61,6 +59,19 @@ public class CustomMessageManager {
     private final MessageSourceManager messageSourceManager;
     private final ExtensionManager extensionManager;
     private final EventRepository eventRepository;
+
+    public CustomMessageManager(TemplateManager templateManager, EventManager eventManager, TicketRepository ticketRepository, TicketReservationManager ticketReservationManager, NotificationManager notificationManager, TicketCategoryRepository ticketCategoryRepository, ConfigurationManager configurationManager, MessageSourceManager messageSourceManager, ExtensionManager extensionManager, EventRepository eventRepository) {
+        this.templateManager = templateManager;
+        this.eventManager = eventManager;
+        this.ticketRepository = ticketRepository;
+        this.ticketReservationManager = ticketReservationManager;
+        this.notificationManager = notificationManager;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.configurationManager = configurationManager;
+        this.messageSourceManager = messageSourceManager;
+        this.extensionManager = extensionManager;
+        this.eventRepository = eventRepository;
+    }
 
     public Map<String, Object> generatePreview(String eventName, Optional<Integer> categoryId, List<MessageModification> input, String username) {
         Map<String, Object> result = new HashMap<>();

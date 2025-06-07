@@ -19,13 +19,16 @@ package alfio.model.transaction.token;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.PaymentToken;
-import lombok.AllArgsConstructor;
 
-@AllArgsConstructor
 public class MollieToken implements PaymentToken {
 
     private final String paymentId;
     private final PaymentMethod paymentMethod;
+
+    public MollieToken(String paymentId, PaymentMethod paymentMethod) {
+        this.paymentId = paymentId;
+        this.paymentMethod = paymentMethod;
+    }
 
     @Override
     public String getToken() {

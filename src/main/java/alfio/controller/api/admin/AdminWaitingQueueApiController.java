@@ -27,7 +27,6 @@ import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
 import alfio.util.ExportUtils;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +43,6 @@ import static java.util.Collections.singletonList;
 
 @RestController
 @RequestMapping("/admin/api/event/{eventName}/waiting-queue")
-@AllArgsConstructor
 public class AdminWaitingQueueApiController {
 
     private final WaitingQueueManager waitingQueueManager;
@@ -54,6 +52,16 @@ public class AdminWaitingQueueApiController {
     private final EventStatisticsManager eventStatisticsManager;
     private final ClockProvider clockProvider;
     private final AccessService accessService;
+
+    public AdminWaitingQueueApiController(WaitingQueueManager waitingQueueManager, EventManager eventManager, TicketReservationManager ticketReservationManager, ConfigurationManager configurationManager, EventStatisticsManager eventStatisticsManager, ClockProvider clockProvider, AccessService accessService) {
+        this.waitingQueueManager = waitingQueueManager;
+        this.eventManager = eventManager;
+        this.ticketReservationManager = ticketReservationManager;
+        this.configurationManager = configurationManager;
+        this.eventStatisticsManager = eventStatisticsManager;
+        this.clockProvider = clockProvider;
+        this.accessService = accessService;
+    }
 
     @GetMapping("/status")
     public Map<String, Boolean> getStatusForEvent(@PathVariable String eventName, Principal principal) {

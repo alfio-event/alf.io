@@ -31,7 +31,6 @@ import alfio.model.user.PublicUserProfile;
 import alfio.model.user.User;
 import alfio.repository.PurchaseContextFieldRepository;
 import alfio.repository.user.UserRepository;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.security.core.Authentication;
@@ -49,12 +48,18 @@ import static java.util.stream.Collectors.toMap;
 
 @Component
 @Transactional
-@AllArgsConstructor
 public class PublicUserManager {
     private final UserRepository userRepository;
     private final ExtensionManager extensionManager;
     private final UserManager userManager;
     private final PurchaseContextFieldRepository purchaseContextFieldRepository;
+
+    public PublicUserManager(UserRepository userRepository, ExtensionManager extensionManager, UserManager userManager, PurchaseContextFieldRepository purchaseContextFieldRepository) {
+        this.userRepository = userRepository;
+        this.extensionManager = extensionManager;
+        this.userManager = userManager;
+        this.purchaseContextFieldRepository = purchaseContextFieldRepository;
+    }
 
     public boolean deleteUserProfile(OAuth2AuthenticationToken authentication) {
         return userManager.findOptionalEnabledUserByUsername(authentication.getName())

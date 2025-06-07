@@ -29,7 +29,6 @@ import alfio.model.ExtensionSupport;
 import alfio.model.ExtensionSupport.ExtensionMetadataValue;
 import alfio.model.ExtensionSupport.ExtensionParameterMetadataAndValue;
 import alfio.model.user.Organization;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -50,7 +49,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
-@AllArgsConstructor
 @RequestMapping("/admin/api/extensions")
 public class ExtensionApiController {
 
@@ -70,6 +68,13 @@ public class ExtensionApiController {
     private final UserManager userManager;
     private final EventManager eventManager;
     private final AccessService accessService;
+
+    public ExtensionApiController(ExtensionService extensionService, UserManager userManager, EventManager eventManager, AccessService accessService) {
+        this.extensionService = extensionService;
+        this.userManager = userManager;
+        this.eventManager = eventManager;
+        this.accessService = accessService;
+    }
 
 
     @GetMapping("")

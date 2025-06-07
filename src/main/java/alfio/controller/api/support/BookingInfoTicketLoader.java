@@ -29,7 +29,6 @@ import alfio.repository.AdditionalServiceItemRepository;
 import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
 import alfio.util.Validator;
-import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -39,7 +38,6 @@ import java.util.stream.Stream;
 import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
-@AllArgsConstructor
 public class BookingInfoTicketLoader {
 
     private final EventManager eventManager;
@@ -49,6 +47,16 @@ public class BookingInfoTicketLoader {
     private final TicketReservationManager ticketReservationManager;
     private final MessageSourceManager messageSourceManager;
     private final ClockProvider clockProvider;
+
+    public BookingInfoTicketLoader(EventManager eventManager, ConfigurationManager configurationManager, PurchaseContextFieldManager purchaseContextFieldManager, AdditionalServiceItemRepository additionalServiceItemRepository, TicketReservationManager ticketReservationManager, MessageSourceManager messageSourceManager, ClockProvider clockProvider) {
+        this.eventManager = eventManager;
+        this.configurationManager = configurationManager;
+        this.purchaseContextFieldManager = purchaseContextFieldManager;
+        this.additionalServiceItemRepository = additionalServiceItemRepository;
+        this.ticketReservationManager = ticketReservationManager;
+        this.messageSourceManager = messageSourceManager;
+        this.clockProvider = clockProvider;
+    }
 
 
     public BookingInfoTicket toBookingInfoTicket(Ticket ticket, Event event, Set<PurchaseContextFieldConfiguration.Context> contexts) {

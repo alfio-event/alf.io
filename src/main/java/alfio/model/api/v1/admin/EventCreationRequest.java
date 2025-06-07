@@ -26,7 +26,6 @@ import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -44,7 +43,6 @@ import static java.util.Collections.emptyList;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 
 @Getter
-@AllArgsConstructor
 public class EventCreationRequest{
     private String title;
     private String slug;
@@ -195,47 +193,79 @@ public class EventCreationRequest{
 
 
     @Getter
-    @AllArgsConstructor
     public static class LocationRequest {
-        private String fullAddress;
-        private CoordinateRequest coordinate;
+        private final String fullAddress;
+        private final CoordinateRequest coordinate;
+
+        public LocationRequest(String fullAddress, CoordinateRequest coordinate) {
+            this.fullAddress = fullAddress;
+            this.coordinate = coordinate;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class TicketRequest {
-        private Boolean freeOfCharge;
-        private Integer max;
-        private String currency;
-        private BigDecimal taxPercentage;
-        private Boolean taxIncludedInPrice;
-        private List<PaymentProxy> paymentMethods;
-        private List<CategoryRequest> categories;
-        private List<PromoCodeRequest> promoCodes;
+        private final Boolean freeOfCharge;
+        private final Integer max;
+        private final String currency;
+        private final BigDecimal taxPercentage;
+        private final Boolean taxIncludedInPrice;
+        private final List<PaymentProxy> paymentMethods;
+        private final List<CategoryRequest> categories;
+        private final List<PromoCodeRequest> promoCodes;
+
+        public TicketRequest(Boolean freeOfCharge, Integer max, String currency, BigDecimal taxPercentage, Boolean taxIncludedInPrice, List<PaymentProxy> paymentMethods, List<CategoryRequest> categories, List<PromoCodeRequest> promoCodes) {
+            this.freeOfCharge = freeOfCharge;
+            this.max = max;
+            this.currency = currency;
+            this.taxPercentage = taxPercentage;
+            this.taxIncludedInPrice = taxIncludedInPrice;
+            this.paymentMethods = paymentMethods;
+            this.categories = categories;
+            this.promoCodes = promoCodes;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class CoordinateRequest {
-        private String latitude;
-        private String longitude;
+        private final String latitude;
+        private final String longitude;
+
+        public CoordinateRequest(String latitude, String longitude) {
+            this.latitude = latitude;
+            this.longitude = longitude;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class CategoryRequest {
-        private Integer id;
-        private String name;
-        private List<DescriptionRequest> description;
-        private Integer maxTickets;
-        private boolean accessRestricted;
-        private BigDecimal price;
-        private LocalDateTime startSellingDate;
-        private LocalDateTime endSellingDate;
-        private String accessCode;
-        private CustomTicketValidityRequest customValidity;
-        private GroupLinkRequest groupLink;
-        private TicketCategory.TicketAccessType ticketAccessType;
+        private final Integer id;
+        private final String name;
+        private final List<DescriptionRequest> description;
+        private final Integer maxTickets;
+        private final boolean accessRestricted;
+        private final BigDecimal price;
+        private final LocalDateTime startSellingDate;
+        private final LocalDateTime endSellingDate;
+        private final String accessCode;
+        private final CustomTicketValidityRequest customValidity;
+        private final GroupLinkRequest groupLink;
+        private final TicketCategory.TicketAccessType ticketAccessType;
+
+        public CategoryRequest(Integer id, String name, List<DescriptionRequest> description, Integer maxTickets, boolean accessRestricted, BigDecimal price, LocalDateTime startSellingDate, LocalDateTime endSellingDate, String accessCode, CustomTicketValidityRequest customValidity, GroupLinkRequest groupLink, TicketCategory.TicketAccessType ticketAccessType) {
+            this.id = id;
+            this.name = name;
+            this.description = description;
+            this.maxTickets = maxTickets;
+            this.accessRestricted = accessRestricted;
+            this.price = price;
+            this.startSellingDate = startSellingDate;
+            this.endSellingDate = endSellingDate;
+            this.accessCode = accessCode;
+            this.customValidity = customValidity;
+            this.groupLink = groupLink;
+            this.ticketAccessType = ticketAccessType;
+        }
 
         TicketCategoryModification toNewTicketCategoryModification(int ordinal) {
             return toExistingTicketCategoryModification(null, ordinal);
@@ -272,39 +302,63 @@ public class EventCreationRequest{
     }
 
     @Getter
-    @AllArgsConstructor
     public static class CustomTicketValidityRequest {
-        private LocalDateTime checkInFrom;
-        private LocalDateTime checkInTo;
-        private LocalDateTime validityStart;
-        private LocalDateTime validityEnd;
+        private final LocalDateTime checkInFrom;
+        private final LocalDateTime checkInTo;
+        private final LocalDateTime validityStart;
+        private final LocalDateTime validityEnd;
+
+        public CustomTicketValidityRequest(LocalDateTime checkInFrom, LocalDateTime checkInTo, LocalDateTime validityStart, LocalDateTime validityEnd) {
+            this.checkInFrom = checkInFrom;
+            this.checkInTo = checkInTo;
+            this.validityStart = validityStart;
+            this.validityEnd = validityEnd;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class PromoCodeRequest {
-        private String name;
-        private LocalDateTime validFrom;
-        private LocalDateTime validTo;
-        private PromoCodeDiscount.DiscountType discountType;
-        private int discount;
+        private final String name;
+        private final LocalDateTime validFrom;
+        private final LocalDateTime validTo;
+        private final PromoCodeDiscount.DiscountType discountType;
+        private final int discount;
+
+        public PromoCodeRequest(String name, LocalDateTime validFrom, LocalDateTime validTo, PromoCodeDiscount.DiscountType discountType, int discount) {
+            this.name = name;
+            this.validFrom = validFrom;
+            this.validTo = validTo;
+            this.discountType = discountType;
+            this.discount = discount;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class ExtensionSetting {
-        private String extensionId;
-        private String key;
-        private String value;
+        private final String extensionId;
+        private final String key;
+        private final String value;
+
+        public ExtensionSetting(String extensionId, String key, String value) {
+            this.extensionId = extensionId;
+            this.key = key;
+            this.value = value;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class GroupLinkRequest {
-        private Integer groupId;
-        private LinkedGroup.Type type;
-        private LinkedGroup.MatchType matchType;
-        private Integer maxAllocation;
+        private final Integer groupId;
+        private final LinkedGroup.Type type;
+        private final LinkedGroup.MatchType matchType;
+        private final Integer maxAllocation;
+
+        public GroupLinkRequest(Integer groupId, LinkedGroup.Type type, LinkedGroup.MatchType matchType, Integer maxAllocation) {
+            this.groupId = groupId;
+            this.type = type;
+            this.matchType = matchType;
+            this.maxAllocation = maxAllocation;
+        }
     }
 
     public static <T> List<T> orEmpty(List<T> input) {

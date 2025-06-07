@@ -17,7 +17,6 @@
 package alfio.manager;
 
 import alfio.model.modification.UploadBase64FileModification;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -83,11 +82,16 @@ public class FileDownloadManager {
     }
 
     @Getter
-    @AllArgsConstructor
     public static class DownloadedFile {
-        private byte[] file;
-        private String name;
-        private String type;
+        private final byte[] file;
+        private final String name;
+        private final String type;
+
+        public DownloadedFile(byte[] file, String name, String type) {
+            this.file = file;
+            this.name = name;
+            this.type = type;
+        }
 
         public UploadBase64FileModification toUploadBase64FileModification() {
             UploadBase64FileModification uf = new UploadBase64FileModification();

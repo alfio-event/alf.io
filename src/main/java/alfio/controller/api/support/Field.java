@@ -16,12 +16,21 @@
  */
 package alfio.controller.api.support;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
-@AllArgsConstructor
-@Getter
 public class Field {
     private final int fieldIndex;
     private final String fieldValue;
+
+    public Field(int fieldIndex, String fieldValue) {
+        this.fieldIndex = fieldIndex;
+        this.fieldValue = fieldValue;
+    }
+
+    public int getFieldIndex() {
+        return fieldIndex;
+    }
+
+    public String getFieldValue() {
+        return fieldValue;
+    }
 }

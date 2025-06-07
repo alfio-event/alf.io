@@ -29,7 +29,6 @@ import alfio.model.api.v1.admin.subscription.SubscriptionConfiguration;
 import alfio.model.subscription.UsageDetails;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.List;
@@ -37,7 +36,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-@AllArgsConstructor
 @Getter
 public class ReservationInfo {
     private final String id;
@@ -86,13 +84,49 @@ public class ReservationInfo {
 
     private final List<AdditionalServiceWithData> additionalServiceWithData;
 
+    public ReservationInfo(String id, String shortId, String firstName, String lastName, String email, long validity, List<TicketsByTicketCategory> ticketsByCategory, ReservationInfoOrderSummary orderSummary, TicketReservationStatus status, boolean validatedBookingInformation, Map<String, String> formattedExpirationDate, String invoiceNumber, boolean invoiceRequested, boolean invoiceOrReceiptDocumentPresent, boolean paid, boolean tokenAcquired, PaymentProxy paymentProxy, Boolean addCompanyBillingDetails, String customerReference, Boolean skipVatNr, String billingAddress, BillingDetails billingDetails, boolean containsCategoriesLinkedToGroups, Map<PaymentMethod, PaymentProxyWithParameters> activePaymentMethods, List<SubscriptionInfo> subscriptionInfos, ReservationMetadata metadata, List<AdditionalServiceWithData> additionalServiceWithData) {
+        this.id = id;
+        this.shortId = shortId;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.validity = validity;
+        this.ticketsByCategory = ticketsByCategory;
+        this.orderSummary = orderSummary;
+        this.status = status;
+        this.validatedBookingInformation = validatedBookingInformation;
+        this.formattedExpirationDate = formattedExpirationDate;
+        this.invoiceNumber = invoiceNumber;
+        this.invoiceRequested = invoiceRequested;
+        this.invoiceOrReceiptDocumentPresent = invoiceOrReceiptDocumentPresent;
+        this.paid = paid;
+        this.tokenAcquired = tokenAcquired;
+        this.paymentProxy = paymentProxy;
+        this.addCompanyBillingDetails = addCompanyBillingDetails;
+        this.customerReference = customerReference;
+        this.skipVatNr = skipVatNr;
+        this.billingAddress = billingAddress;
+        this.billingDetails = billingDetails;
+        this.containsCategoriesLinkedToGroups = containsCategoriesLinkedToGroups;
+        this.activePaymentMethods = activePaymentMethods;
+        this.subscriptionInfos = subscriptionInfos;
+        this.metadata = metadata;
+        this.additionalServiceWithData = additionalServiceWithData;
+    }
 
-    @AllArgsConstructor
+
+
     @Getter
     public static class TicketsByTicketCategory {
         private final String name;
         private final TicketCategory.TicketAccessType ticketAccessType;
         private final List<BookingInfoTicket> tickets;
+
+        public TicketsByTicketCategory(String name, TicketCategory.TicketAccessType ticketAccessType, List<BookingInfoTicket> tickets) {
+            this.name = name;
+            this.ticketAccessType = ticketAccessType;
+            this.tickets = tickets;
+        }
     }
 
 
@@ -125,7 +159,7 @@ public class ReservationInfo {
         }
     }
 
-    @AllArgsConstructor
+
     @Getter
     public static class ReservationInfoOrderSummaryRow {
         private final String name;
@@ -134,6 +168,15 @@ public class ReservationInfo {
         private final String subTotal;
         private final SummaryType type;
         private final String taxPercentage;
+
+        public ReservationInfoOrderSummaryRow(String name, int amount, String price, String subTotal, SummaryType type, String taxPercentage) {
+            this.name = name;
+            this.amount = amount;
+            this.price = price;
+            this.subTotal = subTotal;
+            this.type = type;
+            this.taxPercentage = taxPercentage;
+        }
     }
 
     @Getter
@@ -163,12 +206,18 @@ public class ReservationInfo {
         }
     }
 
-    @AllArgsConstructor
+
     @Getter
     public static class SubscriptionOwner {
         private final String firstName;
         private final String lastName;
         private final String email;
+
+        public SubscriptionOwner(String firstName, String lastName, String email) {
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.email = email;
+        }
     }
 
 }

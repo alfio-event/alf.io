@@ -20,7 +20,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.HttpUtils;
 import alfio.util.Json;
-import lombok.AllArgsConstructor;
+
 import lombok.Data;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
@@ -32,11 +32,15 @@ import java.net.http.HttpResponse;
 import java.util.Map;
 
 @Component
-@AllArgsConstructor
 public class RecaptchaService {
 
     private final HttpClient client;
     private final ConfigurationManager configurationManager;
+
+    public RecaptchaService(HttpClient client, ConfigurationManager configurationManager) {
+        this.client = client;
+        this.configurationManager = configurationManager;
+    }
 
 
     public boolean checkRecaptcha(String recaptchaResponse, HttpServletRequest req) {

@@ -26,7 +26,6 @@ import alfio.model.result.Result;
 import alfio.repository.*;
 import alfio.util.Json;
 import alfio.util.PinGenerator;
-import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -43,7 +42,6 @@ import java.util.stream.IntStream;
 import static java.util.Objects.requireNonNullElse;
 
 @Component
-@AllArgsConstructor
 @Transactional
 public class PollManager {
     private final PollRepository pollRepository;
@@ -53,11 +51,22 @@ public class PollManager {
     private final TicketSearchRepository ticketSearchRepository;
     private final AuditingRepository auditingRepository;
 
+    public PollManager(PollRepository pollRepository, EventRepository eventRepository, TicketRepository ticketRepository, NamedParameterJdbcTemplate jdbcTemplate, TicketSearchRepository ticketSearchRepository, AuditingRepository auditingRepository) {
+        this.pollRepository = pollRepository;
+        this.eventRepository = eventRepository;
+        this.ticketRepository = ticketRepository;
+        this.jdbcTemplate = jdbcTemplate;
+        this.ticketSearchRepository = ticketSearchRepository;
+        this.auditingRepository = auditingRepository;
+    }
+
+    @Transactional(readOnly = true)
     public Result<List<Poll>> getActiveForEvent(String eventName, String pin) {
         return validatePinAndEvent(pin, eventName)
             .flatMap(eventAndTicket -> Result.success(pollRepository.findActiveForEvent(eventAndTicket.getLeft().getId())));
     }
 
+    @Transactional(readOnly = true)
     public Result<PollWithOptions> getSingleActiveForEvent(String eventName, Long id, String pin) {
         return validatePinAndEvent(pin, eventName)
             .flatMap(eventAndTicket -> {
@@ -87,6 +96,7 @@ public class PollManager {
     }
 
     // admin
+    @Transactional(readOnly = true)
     public List<Poll> getAllForEvent(String eventName) {
         var eventOptional = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName);
         if(eventOptional.isEmpty()) {
@@ -95,11 +105,13 @@ public class PollManager {
         return pollRepository.findAllForEvent(eventOptional.get().getId());
     }
 
+    @Transactional(readOnly = true)
     public Optional<PollWithOptions> getSingleForEvent(Long pollId, String eventName) {
         return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
             .flatMap(event -> getSingleForEvent(pollId, event));
     }
 
+    @Transactional(readOnly = true)
     private Optional<PollWithOptions> getSingleForEvent(Long pollId, EventAndOrganizationId event) {
         return pollRepository.findSingleForEvent(event.getId(), Objects.requireNonNull(pollId))
             .map(poll -> new PollWithOptions(poll, pollRepository.getOptionsForPoll(pollId)));
@@ -164,6 +176,7 @@ public class PollManager {
         return getSingleForEvent(pollId, event);
     }
 
+    @Transactional(readOnly = true)
     public Optional<List<PollParticipant>> searchTicketsToAllow(EventAndOrganizationId event, Long pollId, String filter) {
         Validate.isTrue(StringUtils.isNotBlank(filter));
         return pollRepository.findSingleForEvent(event.getId(), pollId)
@@ -199,11 +212,13 @@ public class PollManager {
         return getSingleForEvent(poll.id(), event);
     }
 
+    @Transactional(readOnly = true)
     public List<PollParticipant> fetchAllowedTickets(EventAndOrganizationId event, long pollId) {
         var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
         return ticketRepository.getTicketsForEventByTags(event.getId(), poll.allowedTags());
     }
 
+    @Transactional(readOnly = true)
     public Optional<PollStatistics> getStatisticsFor(EventAndOrganizationId event, long pollId) {
         return pollRepository.findSingleForEvent(event.getId(), pollId)
             .map(p -> {
