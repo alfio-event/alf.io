@@ -87,6 +87,18 @@ public class EmailMessageApiController {
             this.list = list;
         }
 
+        public EmailMessage getSrc() {
+            return src;
+        }
+
+        public ZoneId getEventZoneId() {
+            return eventZoneId;
+        }
+
+        public boolean isList() {
+            return list;
+        }
+
         public String getAttachments() {
             return null;
         }
