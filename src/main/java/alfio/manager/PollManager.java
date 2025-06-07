@@ -60,13 +60,12 @@ public class PollManager {
         this.auditingRepository = auditingRepository;
     }
 
-    @Transactional(readOnly = true)
     public Result<List<Poll>> getActiveForEvent(String eventName, String pin) {
         return validatePinAndEvent(pin, eventName)
             .flatMap(eventAndTicket -> Result.success(pollRepository.findActiveForEvent(eventAndTicket.getLeft().getId())));
     }
 
-    @Transactional(readOnly = true)
+
     public Result<PollWithOptions> getSingleActiveForEvent(String eventName, Long id, String pin) {
         return validatePinAndEvent(pin, eventName)
             .flatMap(eventAndTicket -> {
