@@ -110,7 +110,7 @@ public class PollManager {
             .flatMap(event -> getSingleForEvent(pollId, event));
     }
 
-    @Transactional(readOnly = true)
+
     private Optional<PollWithOptions> getSingleForEvent(Long pollId, EventAndOrganizationId event) {
         return pollRepository.findSingleForEvent(event.getId(), Objects.requireNonNull(pollId))
             .map(poll -> new PollWithOptions(poll, pollRepository.getOptionsForPoll(pollId)));
