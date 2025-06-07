@@ -91,14 +91,6 @@ public class EmailMessageApiController {
             return src;
         }
 
-        public ZoneId getEventZoneId() {
-            return eventZoneId;
-        }
-
-        public boolean isList() {
-            return list;
-        }
-
         public String getAttachments() {
             return null;
         }

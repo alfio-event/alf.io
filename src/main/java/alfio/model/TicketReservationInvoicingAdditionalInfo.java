@@ -45,7 +45,12 @@ public class TicketReservationInvoicingAdditionalInfo {
     //
     public static class ItalianEInvoicing {
 
-        public ItalianEInvoicing(String fiscalCode, ReferenceType referenceType, String addresseeCode, String pec, boolean splitPayment) {
+        @JsonCreator
+        public ItalianEInvoicing(@JsonProperty("fiscalCode") String fiscalCode,
+                                 @JsonProperty("referenceType") ReferenceType referenceType,
+                                 @JsonProperty("addresseeCode") String addresseeCode,
+                                 @JsonProperty("pec") String pec,
+                                 @JsonProperty("splitPayment") boolean splitPayment) {
             this.fiscalCode = fiscalCode;
             this.referenceType = referenceType;
             this.addresseeCode = addresseeCode;
