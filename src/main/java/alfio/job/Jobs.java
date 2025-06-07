@@ -20,7 +20,6 @@ import alfio.config.Initializer;
 import alfio.manager.*;
 import alfio.manager.system.AdminJobExecutor;
 import alfio.manager.system.AdminJobManager;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -42,7 +41,6 @@ import java.util.Map;
 @Component
 @DependsOn("migrator")
 @Profile("!" + Initializer.PROFILE_DISABLE_JOBS)
-@AllArgsConstructor
 public class Jobs {
 
     private static final Logger log = LoggerFactory.getLogger(Jobs.class);
@@ -59,6 +57,16 @@ public class Jobs {
     private final TicketReservationManager ticketReservationManager;
     private final WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
     private final AdminJobManager adminJobManager;
+
+    public Jobs(AdminReservationRequestManager adminReservationRequestManager, FileUploadManager fileUploadManager, NotificationManager notificationManager, SpecialPriceTokenGenerator specialPriceTokenGenerator, TicketReservationManager ticketReservationManager, WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor, AdminJobManager adminJobManager) {
+        this.adminReservationRequestManager = adminReservationRequestManager;
+        this.fileUploadManager = fileUploadManager;
+        this.notificationManager = notificationManager;
+        this.specialPriceTokenGenerator = specialPriceTokenGenerator;
+        this.ticketReservationManager = ticketReservationManager;
+        this.waitingQueueSubscriptionProcessor = waitingQueueSubscriptionProcessor;
+        this.adminJobManager = adminJobManager;
+    }
 
 
     //cron each minute: "0 0/1 * * * ?"

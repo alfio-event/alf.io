@@ -17,13 +17,12 @@
 package alfio.controller.api.support;
 
 import alfio.model.PurchaseContextFieldConfiguration;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.List;
 import java.util.Map;
 
-@AllArgsConstructor
+
 @Getter
 public class AdditionalField {
     private final String name;
@@ -37,6 +36,20 @@ public class AdditionalField {
     private final List<Field> fields;
     private final boolean beforeStandardFields;
     private final Map<String, Description> description;
+
+    public AdditionalField(String name, String value, String type, boolean required, boolean editable, Integer minLength, Integer maxLength, List<String> restrictedValues, List<Field> fields, boolean beforeStandardFields, Map<String, Description> description) {
+        this.name = name;
+        this.value = value;
+        this.type = type;
+        this.required = required;
+        this.editable = editable;
+        this.minLength = minLength;
+        this.maxLength = maxLength;
+        this.restrictedValues = restrictedValues;
+        this.fields = fields;
+        this.beforeStandardFields = beforeStandardFields;
+        this.description = description;
+    }
 
     public static AdditionalField fromFieldConfiguration(PurchaseContextFieldConfiguration tfc,
                                                          String value,

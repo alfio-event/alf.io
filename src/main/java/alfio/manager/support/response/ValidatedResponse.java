@@ -20,20 +20,21 @@ import alfio.controller.support.CustomBindingResult;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
 import alfio.model.result.WarningMessage;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-@AllArgsConstructor
 public class ValidatedResponse<T> {
     private final ValidationResult validationResult;
     private final T value;
+
+    public ValidatedResponse(ValidationResult validationResult, T value) {
+        this.validationResult = validationResult;
+        this.value = value;
+    }
 
 
     public static <T> ValidatedResponse<T> toResponse(BindingResult bindingResult, T value) {
@@ -44,7 +45,7 @@ public class ValidatedResponse<T> {
             } else {
                 return new ValidationResult.ErrorDescriptor(objectError.getObjectName(), "", objectError.getCode(), objectError.getArguments());
             }
-        }).collect(Collectors.toList());
+        }).toList();
 
         List<WarningMessage> warnings = bindingResult instanceof CustomBindingResult cbr ? cbr.getWarnings() : List.of();
         return new ValidatedResponse<>(ValidationResult.failed(transformed, warnings), value);
@@ -56,7 +57,7 @@ public class ValidatedResponse<T> {
         }
         var transformed = result.getErrors().stream()
             .map(ec -> new ValidationResult.ErrorDescriptor(objectName, "", ec.getCode()))
-            .collect(Collectors.toList());
+            .toList();
 
         return new ValidatedResponse<>(ValidationResult.failed(transformed), null);
     }
@@ -72,7 +73,7 @@ public class ValidatedResponse<T> {
     public List<ErrorDescriptor> getValidationErrors() {
         return validationResult.getValidationErrors().stream()
             .map(ed -> new ErrorDescriptor(ed.getFieldName(), ed.getCode(), fromArray(ed.getArguments())))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public int getErrorCount() {
@@ -81,6 +82,10 @@ public class ValidatedResponse<T> {
 
     public T getValue() {
         return value;
+    }
+
+    public ValidationResult getValidationResult() {
+        return validationResult;
     }
 
     public List<WarningMessage> getWarnings() {
@@ -100,11 +105,29 @@ public class ValidatedResponse<T> {
         }
     }
 
-    @AllArgsConstructor
-    @Getter
+
+
     public static class ErrorDescriptor {
         private final String fieldName;
         private final String code;
         private final Map<String, Object> arguments;
+
+        public ErrorDescriptor(String fieldName, String code, Map<String, Object> arguments) {
+            this.fieldName = fieldName;
+            this.code = code;
+            this.arguments = arguments;
+        }
+
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public Map<String, Object> getArguments() {
+            return arguments;
+        }
     }
 }

@@ -36,7 +36,6 @@ import alfio.util.ClockProvider;
 import alfio.util.HttpUtils;
 import alfio.util.MonetaryUtil;
 import com.google.gson.JsonParser;
-import lombok.AllArgsConstructor;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
@@ -60,7 +59,6 @@ import static java.util.Base64.getEncoder;
 
 @Component
 @Transactional
-@AllArgsConstructor
 public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ PaymentInfo, WebhookHandler {
 
     private static final String LIVE_ENDPOINT = "https://www.saferpay.com/api";
@@ -76,6 +74,15 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
     private final TransactionRepository transactionRepository;
     private final TicketRepository ticketRepository;
     private final ClockProvider clockProvider;
+
+    public SaferpayManager(ConfigurationManager configurationManager, HttpClient httpClient, TicketReservationRepository ticketReservationRepository, TransactionRepository transactionRepository, TicketRepository ticketRepository, ClockProvider clockProvider) {
+        this.configurationManager = configurationManager;
+        this.httpClient = httpClient;
+        this.ticketReservationRepository = ticketReservationRepository;
+        this.transactionRepository = transactionRepository;
+        this.ticketRepository = ticketRepository;
+        this.clockProvider = clockProvider;
+    }
 
     @Override
     public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
@@ -384,7 +391,7 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
         return responseBody.get("RedirectUrl").getAsString();
     }
 
-    @AllArgsConstructor
+
     private static class PaymentStatus {
         static final PaymentStatus EMPTY = new PaymentStatus(null, null, null, null);
 
@@ -393,6 +400,13 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
         private final String transactionId;
         private final String captureId;
         private final ZonedDateTime timestamp;
+
+        private PaymentStatus(PaymentResult paymentResult, String transactionId, String captureId, ZonedDateTime timestamp) {
+            this.paymentResult = paymentResult;
+            this.transactionId = transactionId;
+            this.captureId = captureId;
+            this.timestamp = timestamp;
+        }
 
 
         private boolean isEmpty() {

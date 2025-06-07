@@ -30,7 +30,6 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +56,6 @@ import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MiscUtils.removeTabsAndNewlines;
 
 @Component
-@AllArgsConstructor
 @Transactional
 public class GoogleWalletManager {
 
@@ -74,6 +72,18 @@ public class GoogleWalletManager {
     private final ObjectMapper objectMapper;
     private final Environment environment;
     private final AuditingRepository auditingRepository;
+
+    public GoogleWalletManager(EventRepository eventRepository, ConfigurationManager configurationManager, EventDescriptionRepository eventDescriptionRepository, TicketCategoryRepository ticketCategoryRepository, TicketRepository ticketRepository, HttpClient httpClient, ObjectMapper objectMapper, Environment environment, AuditingRepository auditingRepository) {
+        this.eventRepository = eventRepository;
+        this.configurationManager = configurationManager;
+        this.eventDescriptionRepository = eventDescriptionRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.ticketRepository = ticketRepository;
+        this.httpClient = httpClient;
+        this.objectMapper = objectMapper;
+        this.environment = environment;
+        this.auditingRepository = auditingRepository;
+    }
 
     public Optional<Pair<EventAndOrganizationId, Ticket>> validateTicket(String eventName, String ticketUuid) {
         var eventOptional = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName);

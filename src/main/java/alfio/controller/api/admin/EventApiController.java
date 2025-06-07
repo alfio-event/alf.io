@@ -49,7 +49,6 @@ import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -94,7 +93,6 @@ import static java.util.stream.Collectors.toList;
 
 @RestController
 @RequestMapping("/admin/api")
-@AllArgsConstructor
 public class EventApiController {
 
     private static final Logger log = LoggerFactory.getLogger(EventApiController.class);
@@ -117,6 +115,25 @@ public class EventApiController {
     private final ExtensionManager extensionManager;
     private final ClockProvider clockProvider;
     private final AccessService accessService;
+
+    public EventApiController(EventManager eventManager, EventStatisticsManager eventStatisticsManager, I18nManager i18nManager, TicketReservationManager ticketReservationManager, PurchaseContextFieldRepository purchaseContextFieldRepository, EventDescriptionRepository eventDescriptionRepository, TicketHelper ticketHelper, UserManager userManager, SponsorScanRepository sponsorScanRepository, PaymentManager paymentManager, TemplateManager templateManager, FileUploadManager fileUploadManager, ConfigurationManager configurationManager, ExtensionManager extensionManager, ClockProvider clockProvider, AccessService accessService) {
+        this.eventManager = eventManager;
+        this.eventStatisticsManager = eventStatisticsManager;
+        this.i18nManager = i18nManager;
+        this.ticketReservationManager = ticketReservationManager;
+        this.purchaseContextFieldRepository = purchaseContextFieldRepository;
+        this.eventDescriptionRepository = eventDescriptionRepository;
+        this.ticketHelper = ticketHelper;
+        this.userManager = userManager;
+        this.sponsorScanRepository = sponsorScanRepository;
+        this.paymentManager = paymentManager;
+        this.templateManager = templateManager;
+        this.fileUploadManager = fileUploadManager;
+        this.configurationManager = configurationManager;
+        this.extensionManager = extensionManager;
+        this.clockProvider = clockProvider;
+        this.accessService = accessService;
+    }
 
 
     @ExceptionHandler(DataAccessException.class)
@@ -195,11 +212,8 @@ public class EventApiController {
     }
 
 
-    @AllArgsConstructor
-    @Getter
-    public static class EventAndOrganization {
-        private final EventWithAdditionalInfo event;
-        private final Organization organization;
+
+    public record EventAndOrganization(EventWithAdditionalInfo event, Organization organization) {
     }
 
 
