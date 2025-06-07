@@ -44,21 +44,39 @@ import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 
 @Getter
 public class EventCreationRequest{
-    private String title;
-    private String slug;
-    private List<DescriptionRequest> description;
-    private Event.EventFormat format;
-    private LocationRequest location;
-    private String timezone;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
-    private String websiteUrl;
-    private String termsAndConditionsUrl;
-    private String privacyPolicyUrl;
-    private String imageUrl;
-    private TicketRequest tickets;
-    private List<ExtensionSetting> extensionSettings;
-    private List<AdditionalInfoRequest> additionalInfo;
+    private final String title;
+    private final String slug;
+    private final List<DescriptionRequest> description;
+    private final Event.EventFormat format;
+    private final LocationRequest location;
+    private final String timezone;
+    private final LocalDateTime startDate;
+    private final LocalDateTime endDate;
+    private final String websiteUrl;
+    private final String termsAndConditionsUrl;
+    private final String privacyPolicyUrl;
+    private final String imageUrl;
+    private final TicketRequest tickets;
+    private final List<ExtensionSetting> extensionSettings;
+    private final List<AdditionalInfoRequest> additionalInfo;
+
+    public EventCreationRequest(String title, String slug, List<DescriptionRequest> description, Event.EventFormat format, LocationRequest location, String timezone, LocalDateTime startDate, LocalDateTime endDate, String websiteUrl, String termsAndConditionsUrl, String privacyPolicyUrl, String imageUrl, TicketRequest tickets, List<ExtensionSetting> extensionSettings, List<AdditionalInfoRequest> additionalInfo) {
+        this.title = title;
+        this.slug = slug;
+        this.description = description;
+        this.format = format;
+        this.location = location;
+        this.timezone = timezone;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.websiteUrl = websiteUrl;
+        this.termsAndConditionsUrl = termsAndConditionsUrl;
+        this.privacyPolicyUrl = privacyPolicyUrl;
+        this.imageUrl = imageUrl;
+        this.tickets = tickets;
+        this.extensionSettings = extensionSettings;
+        this.additionalInfo = additionalInfo;
+    }
 
     public EventModification toEventModification(Organization organization, UnaryOperator<String> slugGenerator, String imageRef) {
         String slug = this.slug;
