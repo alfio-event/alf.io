@@ -26,7 +26,6 @@ import org.springframework.validation.FieldError;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ValidatedResponse<T> {
     private final ValidationResult validationResult;
@@ -46,7 +45,7 @@ public class ValidatedResponse<T> {
             } else {
                 return new ValidationResult.ErrorDescriptor(objectError.getObjectName(), "", objectError.getCode(), objectError.getArguments());
             }
-        }).collect(Collectors.toList());
+        }).toList();
 
         List<WarningMessage> warnings = bindingResult instanceof CustomBindingResult cbr ? cbr.getWarnings() : List.of();
         return new ValidatedResponse<>(ValidationResult.failed(transformed, warnings), value);
@@ -58,7 +57,7 @@ public class ValidatedResponse<T> {
         }
         var transformed = result.getErrors().stream()
             .map(ec -> new ValidationResult.ErrorDescriptor(objectName, "", ec.getCode()))
-            .collect(Collectors.toList());
+            .toList();
 
         return new ValidatedResponse<>(ValidationResult.failed(transformed), null);
     }
@@ -74,7 +73,7 @@ public class ValidatedResponse<T> {
     public List<ErrorDescriptor> getValidationErrors() {
         return validationResult.getValidationErrors().stream()
             .map(ed -> new ErrorDescriptor(ed.getFieldName(), ed.getCode(), fromArray(ed.getArguments())))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public int getErrorCount() {

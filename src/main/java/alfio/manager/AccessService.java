@@ -462,13 +462,6 @@ public class AccessService {
         checkOrganizationOwnership(principal, organizationId);
     }
 
-    public void checkAccessToPromoCode(Principal principal, int promoCodeId, PromoCodeDiscountModification payload) {
-        int organizationId = checkAccessToPromoCodeEventOrganization(principal, payload.getEventId(), payload.getOrganizationId());
-        if (!Boolean.TRUE.equals(promoCodeDiscountRepository.checkPromoCodeExists(promoCodeId, organizationId, payload.getEventId()))) {
-            throw new AccessDeniedException();
-        }
-    }
-
     public void checkAccessToPromoCode(Principal principal, int promoCodeId) {
         var promoCode = promoCodeDiscountRepository.findOptionalById(promoCodeId).orElseThrow(AccessDeniedException::new);
         if (promoCode.getEventId() != null) {

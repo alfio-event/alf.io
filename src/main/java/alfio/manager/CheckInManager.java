@@ -437,10 +437,6 @@ public class CheckInManager {
         return configurationManager.areBooleanSettingsEnabledForEvent(ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED);
     }
 
-    public Predicate<EventAndOrganizationId> isOfflineCheckInAndLabelPrintingEnabled() {
-        return isOfflineCheckInEnabled().and(configurationManager.areBooleanSettingsEnabledForEvent(LABEL_PRINTING_ENABLED));
-    }
-
     public Map<String,String> getEncryptedAttendeesInformation(Event ev, Set<String> additionalFields, List<Integer> ids) {
 
         return Optional.ofNullable(ev).filter(isOfflineCheckInEnabled()).map(event -> {

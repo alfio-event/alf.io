@@ -66,13 +66,6 @@ public interface BillingDocumentRepository {
                                         @Bind("generationTimestamp")ZonedDateTime generationTs,
                                         @Bind("organizationId") int organizationId);
 
-    @Query("""
-        select * from billing_document a inner join \
-        (select max(generation_ts) as time,reservation_id_fk from billing_document where status = 'VALID' and type = :type and event_id_fk = :eventId group by reservation_id_fk) b\
-         on a.generation_ts = b.time and a.reservation_id_fk = b.reservation_id_fk\
-        """)
-    List<BillingDocument> findAllOfTypeForEvent(@Bind("type") BillingDocument.Type type, @Bind("eventId") int eventId);
-
     @Query(LOAD_ALL_BY_EVENT_ID + " order by reservation_id_fk, generation_ts")
     List<BillingDocument> findAllForEvent(@Bind("eventId") int eventId);
 

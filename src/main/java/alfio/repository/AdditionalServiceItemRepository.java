@@ -64,9 +64,6 @@ public interface AdditionalServiceItemRepository {
         """)
     boolean hasPaidSupplements(@Bind("eventId") int eventId, @Bind("reservationId") String reservationId);
 
-    @Query("select count(*) from additional_service_item where event_id_fk = :eventId and tickets_reservation_uuid = :reservationId")
-    int countByReservationUuid(@Bind("eventId") int eventId, @Bind("reservationId") String reservationId);
-
     @Query(SELECT_BOOKED_ADDITIONAL_SERVICES + "  group by ads.id, asd.value")
     List<BookedAdditionalService> getAdditionalServicesBookedForReservation(@Bind("reservationId") String reservationId,
                                                                             @Bind("language") String language,
