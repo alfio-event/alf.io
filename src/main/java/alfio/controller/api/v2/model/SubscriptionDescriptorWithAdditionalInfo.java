@@ -69,6 +69,10 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
         this.numAvailable = numAvailable;
     }
 
+    public SubscriptionDescriptor getSubscriptionDescriptor() {
+        return subscriptionDescriptor;
+    }
+
     @Override
     public InvoicingConfiguration getInvoicingConfiguration() {
         return invoicingConfiguration;

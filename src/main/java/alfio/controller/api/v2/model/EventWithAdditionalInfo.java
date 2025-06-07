@@ -99,6 +99,14 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
         this.canApplySubscriptions = canApplySubscriptions;
     }
 
+    public Event getEvent() {
+        return event;
+    }
+
+    public Organization.OrganizationContact getOrganization() {
+        return organization;
+    }
+
     public String getShortName() {
         return event.getShortName();
     }

@@ -16,11 +16,15 @@
  */
 package alfio.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class TicketReservationInvoicingAdditionalInfo {
 
     private final ItalianEInvoicing italianEInvoicing;
 
-    public TicketReservationInvoicingAdditionalInfo(ItalianEInvoicing italianEInvoicing) {
+    @JsonCreator
+    public TicketReservationInvoicingAdditionalInfo(@JsonProperty("italianEInvoicing") ItalianEInvoicing italianEInvoicing) {
         this.italianEInvoicing = italianEInvoicing;
     }
 
