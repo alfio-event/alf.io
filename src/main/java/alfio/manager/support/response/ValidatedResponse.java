@@ -85,6 +85,10 @@ public class ValidatedResponse<T> {
         return value;
     }
 
+    public ValidationResult getValidationResult() {
+        return validationResult;
+    }
+
     public List<WarningMessage> getWarnings() {
         return validationResult.getWarnings();
     }
