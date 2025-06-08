@@ -589,6 +589,12 @@
                         .value();
                 };
 
+                $scope.customOfflinePaymentsSelected = function() {
+                    return $scope.paymentProxies.some(function(p) {
+                        return p.selected && p.proxy.id === 'CUSTOM_OFFLINE';
+                    });
+                };
+
                 UtilsService.getAvailableCurrencies().then(function(result) {
                     $scope.currencies = result.data;
                 });
