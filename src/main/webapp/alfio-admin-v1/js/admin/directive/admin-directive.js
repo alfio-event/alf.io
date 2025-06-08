@@ -1162,7 +1162,10 @@
                             ctrl.event = event.event;
                             ctrl.internal = true;
                             ctrl.freeOfCharge = ctrl.event.free;
-                            ctrl.offlineEnabled = !ctrl.freeOfCharge && ctrl.event.allowedPaymentProxies.includes('OFFLINE');
+                            ctrl.offlineEnabled = !ctrl.freeOfCharge
+                                && ctrl.event.allowedPaymentProxies.some(
+                                    proxy => ['OFFLINE', 'CUSTOM_OFFLINE'].includes(proxy)
+                                );
                             ctrl.owner = ctrl.event.visibleForCurrentUser;
                             ctrl.openDeleteWarning = function() {
                                 EventService.deleteEvent(ctrl.event).then(function(result) {
