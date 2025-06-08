@@ -16,11 +16,14 @@
  */
 package alfio.controller.api.admin;
 
+import java.math.BigDecimal;
 import java.security.Principal;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-
+import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,22 +44,32 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
+import alfio.manager.EventManager;
 import alfio.manager.user.UserManager;
-import alfio.model.modification.OrganizationModification;
+import alfio.model.Event;
+import alfio.model.TicketCategory;
+import alfio.model.metadata.AlfioMetadata;
+import alfio.model.modification.DateTimeModification;
+import alfio.model.modification.TicketCategoryModification;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.model.user.Organization;
-import alfio.model.user.Role;
-import alfio.model.user.User;
+import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
+import alfio.util.ClockProvider;
+import alfio.util.Json;
+
+import static alfio.test.util.IntegrationTestUtil.*;
 
 @AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 public class ConfigurationApiControllerIntegrationTest {
+    private static final String DEFAULT_CATEGORY_NAME = "default";
+
     @Autowired
     private ConfigurationApiController configurationApiController;
     @Autowired
@@ -65,40 +78,41 @@ public class ConfigurationApiControllerIntegrationTest {
     private OrganizationRepository organizationRepository;
     @Autowired
     private UserManager userManager;
+    @Autowired
+    private ClockProvider clockProvider;
+    @Autowired
+    private EventRepository eventRepository;
+    @Autowired
+    private EventManager eventManager;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private Principal mockPrincipal;
     private Organization organization;
+    private Event event;
 
     @BeforeEach
     public void ensureConfiguration() {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
 
-        String organizationName = UUID.randomUUID().toString();
-        String username = UUID.randomUUID().toString();
-
-        var organizationModification = new OrganizationModification(
-            null,
-            organizationName,
-            "email@example.com",
-            "org",
-            null,
-            null
+        List<TicketCategoryModification> categories = Arrays.asList(
+            new TicketCategoryModification(null, DEFAULT_CATEGORY_NAME, TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()).minusDays(1), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()).plusDays(1), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()),
+            new TicketCategoryModification(null, "hidden", TicketCategory.TicketAccessType.INHERIT, 2,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()).minusDays(1), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()).plusDays(1), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.ONE, true, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty())
         );
-        userManager.createOrganization(organizationModification, null);
-        organization = organizationRepository.findByName(organizationName).orElseThrow();
-        userManager.insertUser(
-            organization.getId(),
-            username,
-            "test",
-            "test",
-            "test@example.com",
-            Role.OWNER,
-            User.Type.INTERNAL,
-            null
-        );
+        Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        event = eventAndUser.getLeft();
 
-        this.mockPrincipal = Mockito.mock(Principal.class);
-        Mockito.when(mockPrincipal.getName()).thenReturn(username);
+        organization = organizationRepository.getById(event.getOrganizationId());
+
+        var username = eventAndUser.getRight();
+        mockPrincipal = Mockito.mock(Principal.class);
+        Mockito.when(mockPrincipal.getName()).thenReturn(owner(username));
     }
 
     @Test
@@ -350,5 +364,96 @@ public class ConfigurationApiControllerIntegrationTest {
         );
 
         assertEquals(0, orgMethods.size());
+    }
+
+    @Test
+    void canGetAllowedPaymentMethodsForEvent() throws JsonProcessingException {
+        final var EXISTING_METHOD_ID = "15146df3-2436-4d2e-90b9-0d6cb273e291";
+        final var EXISTING_CONFIG = "[{\"paymentMethodId\":\"15146df3-2436-4d2e-90b9-0d6cb273e291\",\"localizations\":{\"en\":{\"paymentName\":\"Interac E-Transfer\",\"paymentDescription\":\"Instant Canadian bank transfer\",\"paymentInstructions\":\"### Send the full invoiced amount to `payments@org.com`.\"},\"fr\":{\"paymentName\":\"Virement Interac\",\"paymentDescription\":\"Virement bancaire instantané au Canada\",\"paymentInstructions\":\"Envoyez le montant total facturé à payments@example.com\"}}}]";
+
+        configurationRepository.insertOrganizationLevel(
+            organization.getId(),
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
+            EXISTING_CONFIG,
+            null
+        );
+
+        configurationRepository.insertEventLevel(
+            organization.getId(),
+            event.getId(),
+            ConfigurationKeys.SELECTED_CUSTOM_PAYMENTS.name(),
+            objectMapper.writeValueAsString(List.of(EXISTING_METHOD_ID)),
+            ""
+        );
+
+        var response = configurationApiController.getAllowedPaymentMethodsForEvent(
+            event.getId(),
+            mockPrincipal
+        );
+
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        var returnedAllowedPaymentMethods = response.getBody();
+        assertEquals(1, returnedAllowedPaymentMethods.size());
+
+        var allowedPaymentMethod = returnedAllowedPaymentMethods.get(0);
+        assertEquals(EXISTING_METHOD_ID, allowedPaymentMethod.getPaymentMethodId());
+    }
+
+    @Test
+    void canSetAllowedPaymentMethodsForEvent() throws JsonProcessingException {
+        final var EXISTING_METHOD_ID = "15146df3-2436-4d2e-90b9-0d6cb273e291";
+        final var EXISTING_CONFIG = "[{\"paymentMethodId\":\"15146df3-2436-4d2e-90b9-0d6cb273e291\",\"localizations\":{\"en\":{\"paymentName\":\"Interac E-Transfer\",\"paymentDescription\":\"Instant Canadian bank transfer\",\"paymentInstructions\":\"### Send the full invoiced amount to `payments@org.com`.\"},\"fr\":{\"paymentName\":\"Virement Interac\",\"paymentDescription\":\"Virement bancaire instantané au Canada\",\"paymentInstructions\":\"Envoyez le montant total facturé à payments@example.com\"}}}]";
+
+        configurationRepository.insertOrganizationLevel(
+            organization.getId(),
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
+            EXISTING_CONFIG,
+            null
+        );
+
+        var response = configurationApiController.setEventAllowedPaymentMethods(
+            event.getId(),
+            List.of(EXISTING_METHOD_ID),
+            mockPrincipal
+        );
+
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        var eventSelectedPaymentMethods = configurationRepository.findByKeyAtEventLevel(
+            event.getId(),
+            organization.getId(),
+            ConfigurationKeys.SELECTED_CUSTOM_PAYMENTS.name()
+        );
+
+        assertTrue(eventSelectedPaymentMethods.isPresent());
+
+        var parsedSelectedMethods = Json.fromJson(
+            eventSelectedPaymentMethods.get().getValue(),
+            new TypeReference<List<String>>() {}
+        );
+
+        assertEquals(1, parsedSelectedMethods.size());
+        assertEquals(EXISTING_METHOD_ID, parsedSelectedMethods.get(0));
+    }
+
+    @Test
+    void cannotSetAllowedPaymentMethodsToNonExisting() throws JsonProcessingException {
+        final var EXISTING_CONFIG = "[{\"paymentMethodId\":\"15146df3-2436-4d2e-90b9-0d6cb273e291\",\"localizations\":{\"en\":{\"paymentName\":\"Interac E-Transfer\",\"paymentDescription\":\"Instant Canadian bank transfer\",\"paymentInstructions\":\"### Send the full invoiced amount to `payments@org.com`.\"},\"fr\":{\"paymentName\":\"Virement Interac\",\"paymentDescription\":\"Virement bancaire instantané au Canada\",\"paymentInstructions\":\"Envoyez le montant total facturé à payments@example.com\"}}}]";
+
+        configurationRepository.insertOrganizationLevel(
+            organization.getId(),
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
+            EXISTING_CONFIG,
+            null
+        );
+
+        var response = configurationApiController.setEventAllowedPaymentMethods(
+            event.getId(),
+            List.of("edc42b77-8696-4357-9164-0f09eb055855"), // Does not exist in ORG
+            mockPrincipal
+        );
+
+        assertTrue(response.getStatusCode().is4xxClientError());
     }
 }

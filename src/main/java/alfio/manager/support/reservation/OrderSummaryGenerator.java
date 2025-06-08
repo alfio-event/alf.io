@@ -108,7 +108,8 @@ public class OrderSummaryGenerator {
             free,
             formatCents(reservationCost.getPriceWithVAT(), currencyCode),
             formatCents(reservationCost.getVAT(), currencyCode),
-            reservation.getStatus() == TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT,
+            reservation.getStatus() == TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT
+                || reservation.getStatus() == TicketReservation.TicketReservationStatus.CUSTOM_OFFLINE_PAYMENT,
             reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT,
             isCashPayment(reservation),
             Optional.ofNullable(context.getVat()).map(p -> MonetaryUtil.formatCents(MonetaryUtil.unitToCents(p, currencyCode), currencyCode)).orElse(null),

@@ -256,7 +256,14 @@ public class PaymentManager {
 
     public Optional<PaymentResult> getTransactionStatus(TicketReservation reservation, PaymentMethod paymentMethod) {
         return transactionRepository.loadOptionalByReservationId(reservation.getId())
-            .filter(transaction -> transaction.getPaymentProxy().getPaymentMethod() == paymentMethod)
+            .filter(transaction -> {
+                var metadata = transaction.getMetadata();
+                if (metadata.containsKey("selectedPaymentMethod")) {
+                    return metadata.get("selectedPaymentMethod").equals(paymentMethod.getPaymentMethodId());
+                }
+
+                return transaction.getPaymentProxy().getPaymentMethod() == paymentMethod;
+            })
             .map(transaction ->
                 switch (transaction.getStatus()) {
                     case COMPLETE -> PaymentResult.successful(transaction.getPaymentId());

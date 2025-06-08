@@ -65,6 +65,14 @@
         <field-error data-form-obj="editEvent" data-field-obj="editEvent.allowedPaymentProxies"></field-error>
     </div>
 
+    <div data-ng-if="customOfflinePaymentsSelected()">
+        <label>Custom Payment Methods</label>
+        <offline-payment-event-selector
+            ng-attr-organization="{{obj.organizationId}}"
+            ng-attr-event="{{obj.id}}"
+        ></offline-payment-event-selector>
+    </div>
+
     <div ng-if="!obj.freeOfCharge && subscriptionDescriptors.length > 0">
         <div class="page-header">
             <h3>Subscriptions</h3>

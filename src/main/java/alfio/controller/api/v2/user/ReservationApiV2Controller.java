@@ -38,6 +38,7 @@ import alfio.manager.payment.StripeCreditCardManager;
 import alfio.manager.support.AdditionalServiceHelper;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.response.ValidatedResponse;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.PublicUserManager;
 import alfio.model.*;
@@ -334,6 +335,14 @@ public class ReservationApiV2Controller {
             if(isCaptchaInvalid(reservationCost.getPriceWithVAT(), paymentForm.getPaymentProxy(), paymentForm.getCaptcha(), request, event)) {
                 log.debug("captcha validation failed.");
                 bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
+            }
+
+            if(
+                paymentForm.getPaymentProxy() == PaymentProxy.CUSTOM_OFFLINE
+                && event.event().isPresent()
+                && !isCustomPaymentMethodValidForEvent(event.event().get(), paymentForm.getSelectedPaymentMethod())
+            ) {
+                bindingResult.reject(ErrorsCode.STEP_2_MISSING_PAYMENT_METHOD);
             }
 
             if(!bindingResult.hasErrors()) {
@@ -689,9 +698,8 @@ public class ReservationApiV2Controller {
     @GetMapping("/reservation/{reservationId}/payment/{method}/status")
     public ResponseEntity<ReservationPaymentResult> getTransactionStatus(
                                                               @PathVariable String reservationId,
-                                                              @PathVariable("method") String paymentMethodStr) {
+                                                              @PathVariable("method") PaymentMethod paymentMethod) {
 
-        var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
 
         if(paymentMethod == null) {
             return ResponseEntity.badRequest().build();
@@ -729,25 +737,34 @@ public class ReservationApiV2Controller {
     }
 
     @GetMapping("/reservation/{reservationId}/get-applicable-custom-payment-method-details")
-    public ResponseEntity<?> getApplicableCustomPaymentMethodDetails(@PathVariable String reservationId) throws JsonMappingException, JsonProcessingException {
-        var orgId = ticketReservationRepository.getEventOrganizationIDForReservation(reservationId);
+    public ResponseEntity<List<UserDefinedOfflinePaymentMethod>> getApplicableCustomPaymentMethodDetails(@PathVariable String reservationId) throws JsonMappingException, JsonProcessingException {
+        var event = eventRepository.findByReservationId(reservationId);
+        var orgId = event.getOrganizationId();
         var config = configurationRepository
             .findByKeyAtOrganizationLevel(orgId, ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.getValue())
+            .map(cf -> cf.getValue())
             .orElse(null);
 
-        if(config == null) {
-            return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Tried to get custom payment details for reservation {}, but no matching payment method is in the db.");
+        List<UserDefinedOfflinePaymentMethod> paymentMethods = List.of();
+        if(config != null) {
+            paymentMethods = objectMapper.readValue(
+                config,
+                new TypeReference<List<UserDefinedOfflinePaymentMethod>>(){}
+            );
         }
 
-        var paymentMethods = objectMapper.readValue(
-            config.getValue(),
-            new TypeReference<List<UserDefinedOfflinePaymentMethod>>(){}
-        );
+        var allowedMethodIDsForEvent = configurationManager
+            .getFor(ConfigurationKeys.SELECTED_CUSTOM_PAYMENTS, ConfigurationLevel.event(event))
+            .getValue()
+            .map(v -> Json.fromJson(v, new TypeReference<List<String>>() {}))
+            .orElse(new ArrayList<String>());
 
-        // FIXME: This should filter methods enabled for the event in question
-        paymentMethods
+        var allowedPaymentMethods = paymentMethods
+            .stream()
+            .filter(pm -> allowedMethodIDsForEvent.contains(pm.getPaymentMethodId()))
+            .toList();
+
+        allowedPaymentMethods
             .forEach(paymentMethod ->
             paymentMethod
                 .getLocalizations()
@@ -762,20 +779,19 @@ public class ReservationApiV2Controller {
                 })
         );
 
-        return ResponseEntity.ok(paymentMethods);
+        return ResponseEntity.ok(allowedPaymentMethods);
     }
 
     @GetMapping("/reservation/{reservationId}/get-selected-custom-payment-method-details")
-    public ResponseEntity<?> getSelectedCustomPaymentMethodDetails(@PathVariable String reservationId) throws JsonMappingException, JsonProcessingException {
-        var orgId = ticketReservationRepository.getEventOrganizationIDForReservation(reservationId);
+    public ResponseEntity<UserDefinedOfflinePaymentMethod> getSelectedCustomPaymentMethodDetails(@PathVariable String reservationId) throws JsonMappingException, JsonProcessingException {
+        var event = eventRepository.findByReservationId(reservationId);
+        var orgId = event.getOrganizationId();
         var config = configurationRepository
-            .findByKeyAtOrganizationLevel(orgId, "CUSTOM_OFFLINE_PAYMENTS")
+            .findByKeyAtOrganizationLevel(orgId, ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name())
             .orElse(null);
 
         if(config == null) {
-            return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Tried to get custom payment details for reservation {}, but no matching payment method is in the db.");
+            throw new ReservationPaymentMethodDoesNotExistException();
         }
 
         var paymentMethods = objectMapper.readValue(
@@ -783,7 +799,11 @@ public class ReservationApiV2Controller {
             new TypeReference<List<UserDefinedOfflinePaymentMethod>>(){}
         );
 
-        var transaction = transactionRepository.loadByReservationId(reservationId);
+        var maybeTransaction = transactionRepository.loadOptionalByReservationId(reservationId);
+        if(maybeTransaction.isEmpty()) {
+            throw new NoCustomPaymentTransactionForReservationException();
+        }
+        var transaction = maybeTransaction.get();
         var paymentMethodId = transaction.getMetadata().get("selectedPaymentMethod");
         UserDefinedOfflinePaymentMethod respPaymentMethod = paymentMethods
             .stream()
@@ -806,6 +826,12 @@ public class ReservationApiV2Controller {
         return ResponseEntity.ok(respPaymentMethod);
     }
 
+    @ResponseStatus(value=HttpStatus.BAD_REQUEST, reason="Tried to get custom payment details for reservation, but no matching payment method is in the db.")
+    public class ReservationPaymentMethodDoesNotExistException extends RuntimeException {}
+
+    @ResponseStatus(value=HttpStatus.BAD_REQUEST, reason="There is no transaction associated with the passed reservation.")
+    public class NoCustomPaymentTransactionForReservationException extends RuntimeException {}
+
     private Map<String, String> formatDateForLocales(PurchaseContext purchaseContext, ZonedDateTime date, String formattingCode) {
 
         var messageSource = messageSourceManager.getMessageSourceFor(purchaseContext);
@@ -822,5 +848,15 @@ public class ReservationApiV2Controller {
         return (cost == 0 || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
             && configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(configurable.getConfigurationLevel())
             && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
+    }
+
+    private boolean isCustomPaymentMethodValidForEvent(Event event, PaymentMethod paymentMethod) {
+        var eventSelectedMethodIds = configurationManager
+            .getFor(ConfigurationKeys.SELECTED_CUSTOM_PAYMENTS, ConfigurationLevel.event(event))
+            .getValue()
+            .map(v -> Json.fromJson(v, new TypeReference<List<String>>() {}))
+            .orElse(new ArrayList<String>());
+
+        return eventSelectedMethodIds.stream().anyMatch(id -> id.equals(paymentMethod.getPaymentMethodId()));
     }
 }

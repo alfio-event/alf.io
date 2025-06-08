@@ -34,7 +34,9 @@ import alfio.model.user.Organization;
 import alfio.util.ClockProvider;
 import alfio.util.Json;
 import alfio.util.RequestUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
@@ -67,6 +69,7 @@ public class ConfigurationApiController {
     private final ClockProvider clockProvider;
     private final UserManager userManager;
     private final AccessService accessService;
+    private final ObjectMapper objectMapper;
 
     @GetMapping(value = "/load")
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadConfiguration(Principal principal) {
@@ -429,6 +432,77 @@ public class ConfigurationApiController {
         configurationManager.saveConfig(Configuration.from(organizationId, ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS), serialized);
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @GetMapping("/event/{eventId}/payment-method")
+    public ResponseEntity<List<UserDefinedOfflinePaymentMethod>> getAllowedPaymentMethodsForEvent(
+        @PathVariable Integer eventId,
+        Principal principal
+    ) {
+        var eventAndOrgId = accessService.checkEventOwnership(principal, eventId);
+
+        var orgPaymentMethods = configurationManager
+            .getFor(CUSTOM_OFFLINE_PAYMENTS, ConfigurationLevel.organization(eventAndOrgId.getOrganizationId()))
+            .getValue()
+            .map(v -> Json.fromJson(v, new TypeReference<List<UserDefinedOfflinePaymentMethod>>() {}))
+            .orElse(new ArrayList<UserDefinedOfflinePaymentMethod>());
+
+        var eventSelectedMethodIds = configurationManager
+            .getFor(SELECTED_CUSTOM_PAYMENTS, ConfigurationLevel.event(eventAndOrgId))
+            .getValue()
+            .map(v -> Json.fromJson(v, new TypeReference<List<String>>() {}))
+            .orElse(new ArrayList<String>());
+
+        var eventSelectedMethods = orgPaymentMethods
+            .stream()
+            .filter(pm -> eventSelectedMethodIds.contains(pm.getPaymentMethodId()))
+            .toList();
+
+        return ResponseEntity.ok(eventSelectedMethods);
+
+    }
+
+
+    @PostMapping(value = "/event/{eventId}/payment-method")
+    public ResponseEntity<?> setEventAllowedPaymentMethods(
+        @PathVariable Integer eventId,
+        @RequestBody List<String> paymentMethodIds,
+        Principal principal
+    ) throws JsonProcessingException {
+        var eventAndOrgId = accessService.checkEventOwnership(principal, eventId);
+        var orgPaymentMethods = configurationManager
+            .getFor(CUSTOM_OFFLINE_PAYMENTS, ConfigurationLevel.organization(eventAndOrgId.getOrganizationId()))
+            .getValue()
+            .map(v -> Json.fromJson(v, new TypeReference<List<UserDefinedOfflinePaymentMethod>>() {}))
+            .orElse(new ArrayList<UserDefinedOfflinePaymentMethod>());
+
+        var passedNotInOrg = paymentMethodIds
+            .stream()
+            .filter(id -> orgPaymentMethods.stream().noneMatch(pm -> pm.getPaymentMethodId().equals(id)))
+            .toList();
+
+        if(passedNotInOrg.size() > 0) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                "Passed payment method ID(s) " + String.join(",", passedNotInOrg) + " do not exist in organization."
+            );
+        }
+
+        var serializedSelectedMethods = objectMapper.writeValueAsString(paymentMethodIds);
+
+        var newMod = new ConfigurationModification(
+            null,
+            ConfigurationKeys.SELECTED_CUSTOM_PAYMENTS.name(),
+            serializedSelectedMethods
+        );
+
+        configurationManager.saveAllEventConfiguration(
+            eventId,
+            eventAndOrgId.getOrganizationId(),
+            List.of(newMod),
+            principal.getName()
+        );
+
+        return ResponseEntity.ok(true);
     }
 
     @Data

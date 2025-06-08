@@ -27,4 +27,19 @@ export class CustomPaymentMethodsService {
         );
         return result;
     }
+
+    async setPaymentMethodsForEvent(eventId: number, paymentMethodIds: string[]) {
+        const result = await postJson(
+            `/admin/api/configuration/event/${eventId}/payment-method`,
+            paymentMethodIds
+        );
+        return result;
+    }
+
+    async getAllowedPaymentMethodsForEvent(eventId: number) {
+        const result = await fetchJson<CustomOfflinePayment[]>(
+            `/admin/api/configuration/event/${eventId}/payment-method`
+        );
+        return result;
+    }
 }
