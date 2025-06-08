@@ -29,6 +29,7 @@ import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationCodeForm;
 import alfio.controller.support.CustomBindingResult;
+import alfio.controller.support.Formatters;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
@@ -37,6 +38,7 @@ import alfio.manager.payment.StripeCreditCardManager;
 import alfio.manager.support.AdditionalServiceHelper;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.response.ValidatedResponse;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.PublicUserManager;
 import alfio.model.*;
@@ -47,7 +49,12 @@ import alfio.model.subscription.UsageDetails;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.repository.*;
+import alfio.repository.system.ConfigurationRepository;
 import alfio.util.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -64,6 +71,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -96,6 +105,8 @@ public class ReservationApiV2Controller {
     private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final MessageSourceManager messageSourceManager;
     private final ConfigurationManager configurationManager;
+    private final ConfigurationRepository configurationRepository;
+    private final ObjectMapper objectMapper;
     private final PaymentManager paymentManager;
     private final FileUploadManager fileUploadManager;
     private final TemplateManager templateManager;
@@ -108,6 +119,7 @@ public class ReservationApiV2Controller {
     private final PurchaseContextManager purchaseContextManager;
     private final SubscriptionRepository subscriptionRepository;
     private final TicketRepository ticketRepository;
+    private final TransactionRepository transactionRepository;
     private final PublicUserManager publicUserManager;
     private final ReverseChargeManager reverseChargeManager;
     private final TicketCategoryRepository ticketCategoryRepository;
@@ -248,7 +260,7 @@ public class ReservationApiV2Controller {
         return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    private Map<PaymentMethod, PaymentProxyWithParameters> getActivePaymentMethods(PurchaseContext purchaseContext,
+    private Map<String, PaymentProxyWithParameters> getActivePaymentMethods(PurchaseContext purchaseContext,
                                                                                    Collection<Integer> categoryIds,
                                                                                    OrderSummary orderSummary,
                                                                                    String reservationId) {
@@ -258,7 +270,15 @@ public class ReservationApiV2Controller {
                 .stream()
                 .filter(p -> !blacklistedMethodsForReservation.contains(p.getPaymentMethod()))
                 .filter(p -> TicketReservationManager.isValidPaymentMethod(p, purchaseContext, configurationManager))
-                .collect(toMap(PaymentManager.PaymentMethodDTO::getPaymentMethod, pm -> new PaymentProxyWithParameters(pm.getPaymentProxy(), paymentManager.loadModelOptionsFor(List.of(pm.getPaymentProxy()), purchaseContext))));
+                .collect(
+                    toMap(
+                        PaymentManager.PaymentMethodDTO::getPaymentMethodId,
+                        pm -> new PaymentProxyWithParameters(
+                            pm.getPaymentProxy(),
+                            paymentManager.loadModelOptionsFor(List.of(pm.getPaymentProxy()), purchaseContext)
+                        )
+                    )
+                );
         } else {
             return Map.of();
         }
@@ -317,6 +337,14 @@ public class ReservationApiV2Controller {
                 bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
             }
 
+            if(
+                paymentForm.getPaymentProxy() == PaymentProxy.CUSTOM_OFFLINE
+                && event.event().isPresent()
+                && !isCustomPaymentMethodValidForEvent(event.event().get(), paymentForm.getSelectedPaymentMethod())
+            ) {
+                bindingResult.reject(ErrorsCode.STEP_2_MISSING_PAYMENT_METHOD);
+            }
+
             if(!bindingResult.hasErrors()) {
                 extensionManager.handleReservationValidation(event, reservation, paymentForm, bindingResult);
             }
@@ -334,9 +362,9 @@ public class ReservationApiV2Controller {
                 paymentToken = paymentManager.buildPaymentToken(paymentForm.getGatewayToken(), paymentForm.getPaymentProxy(),
                     new PaymentContext(event, reservationId));
             }
-            PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, reservationCost.getPriceWithVAT(),
-                event, reservation.getEmail(), customerName, reservation.getBillingAddress(), reservation.getCustomerReference(),
-                locale, reservation.isInvoiceRequested(), !reservation.isDirectAssignmentRequested(),
+            PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, paymentForm.getSelectedPaymentMethod(),
+                reservationCost.getPriceWithVAT(), event, reservation.getEmail(), customerName, reservation.getBillingAddress(),
+                reservation.getCustomerReference(), locale, reservation.isInvoiceRequested(), !reservation.isDirectAssignmentRequested(),
                 orderSummary, reservation.getVatCountryCode(), reservation.getVatNr(), reservation.getVatStatus(),
                 Boolean.TRUE.equals(paymentForm.getTermAndConditionsAccepted()), Boolean.TRUE.equals(paymentForm.getPrivacyPolicyAccepted()));
 
@@ -670,9 +698,8 @@ public class ReservationApiV2Controller {
     @GetMapping("/reservation/{reservationId}/payment/{method}/status")
     public ResponseEntity<ReservationPaymentResult> getTransactionStatus(
                                                               @PathVariable String reservationId,
-                                                              @PathVariable("method") String paymentMethodStr) {
+                                                              @PathVariable("method") PaymentMethod paymentMethod) {
 
-        var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
 
         if(paymentMethod == null) {
             return ResponseEntity.badRequest().build();
@@ -709,6 +736,101 @@ public class ReservationApiV2Controller {
         return ResponseEntity.ok(res);
     }
 
+    @GetMapping("/reservation/{reservationId}/get-applicable-custom-payment-method-details")
+    public ResponseEntity<List<UserDefinedOfflinePaymentMethod>> getApplicableCustomPaymentMethodDetails(@PathVariable String reservationId) throws JsonMappingException, JsonProcessingException {
+        var event = eventRepository.findByReservationId(reservationId);
+        var orgId = event.getOrganizationId();
+        var config = configurationRepository
+            .findByKeyAtOrganizationLevel(orgId, ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.getValue())
+            .map(cf -> cf.getValue())
+            .orElse(null);
+
+        List<UserDefinedOfflinePaymentMethod> paymentMethods = List.of();
+        if(config != null) {
+            paymentMethods = objectMapper.readValue(
+                config,
+                new TypeReference<List<UserDefinedOfflinePaymentMethod>>(){}
+            );
+        }
+
+        var allowedMethodIDsForEvent = configurationManager
+            .getFor(ConfigurationKeys.SELECTED_CUSTOM_PAYMENTS, ConfigurationLevel.event(event))
+            .getValue()
+            .map(v -> Json.fromJson(v, new TypeReference<List<String>>() {}))
+            .orElse(new ArrayList<String>());
+
+        var allowedPaymentMethods = paymentMethods
+            .stream()
+            .filter(pm -> allowedMethodIDsForEvent.contains(pm.getPaymentMethodId()))
+            .toList();
+
+        allowedPaymentMethods
+            .forEach(paymentMethod ->
+            paymentMethod
+                .getLocalizations()
+                .forEach((key, locale) -> {
+                    Map<String, String> localeTexts = new HashMap<>();
+                    localeTexts.put("instructions", locale.getPaymentInstructions());
+                    localeTexts.put("description", locale.getPaymentDescription());
+                    localeTexts = Formatters.applyCommonMark(localeTexts);
+
+                    locale.setPaymentInstructions(localeTexts.get("instructions"));
+                    locale.setPaymentDescription(localeTexts.get("description"));
+                })
+        );
+
+        return ResponseEntity.ok(allowedPaymentMethods);
+    }
+
+    @GetMapping("/reservation/{reservationId}/get-selected-custom-payment-method-details")
+    public ResponseEntity<UserDefinedOfflinePaymentMethod> getSelectedCustomPaymentMethodDetails(@PathVariable String reservationId) throws JsonMappingException, JsonProcessingException {
+        var event = eventRepository.findByReservationId(reservationId);
+        var orgId = event.getOrganizationId();
+        var config = configurationRepository
+            .findByKeyAtOrganizationLevel(orgId, ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name())
+            .orElse(null);
+
+        if(config == null) {
+            throw new ReservationPaymentMethodDoesNotExistException();
+        }
+
+        var paymentMethods = objectMapper.readValue(
+            config.getValue(),
+            new TypeReference<List<UserDefinedOfflinePaymentMethod>>(){}
+        );
+
+        var maybeTransaction = transactionRepository.loadOptionalByReservationId(reservationId);
+        if(maybeTransaction.isEmpty()) {
+            throw new NoCustomPaymentTransactionForReservationException();
+        }
+        var transaction = maybeTransaction.get();
+        var paymentMethodId = transaction.getMetadata().get("selectedPaymentMethod");
+        UserDefinedOfflinePaymentMethod respPaymentMethod = paymentMethods
+            .stream()
+            .filter(pm -> pm.getPaymentMethodId().equals(paymentMethodId))
+            .findFirst()
+            .orElseThrow();
+
+        respPaymentMethod
+            .getLocalizations()
+            .forEach((key, locale) -> {
+                Map<String, String> localeTexts = new HashMap<>();
+                localeTexts.put("instructions", locale.getPaymentInstructions());
+                localeTexts.put("description", locale.getPaymentDescription());
+                localeTexts = Formatters.applyCommonMark(localeTexts);
+
+                locale.setPaymentInstructions(localeTexts.get("instructions"));
+                locale.setPaymentDescription(localeTexts.get("description"));
+            });
+
+        return ResponseEntity.ok(respPaymentMethod);
+    }
+
+    @ResponseStatus(value=HttpStatus.BAD_REQUEST, reason="Tried to get custom payment details for reservation, but no matching payment method is in the db.")
+    public class ReservationPaymentMethodDoesNotExistException extends RuntimeException {}
+
+    @ResponseStatus(value=HttpStatus.BAD_REQUEST, reason="There is no transaction associated with the passed reservation.")
+    public class NoCustomPaymentTransactionForReservationException extends RuntimeException {}
 
     private Map<String, String> formatDateForLocales(PurchaseContext purchaseContext, ZonedDateTime date, String formattingCode) {
 
@@ -726,5 +848,15 @@ public class ReservationApiV2Controller {
         return (cost == 0 || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
             && configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(configurable.getConfigurationLevel())
             && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
+    }
+
+    private boolean isCustomPaymentMethodValidForEvent(Event event, PaymentMethod paymentMethod) {
+        var eventSelectedMethodIds = configurationManager
+            .getFor(ConfigurationKeys.SELECTED_CUSTOM_PAYMENTS, ConfigurationLevel.event(event))
+            .getValue()
+            .map(v -> Json.fromJson(v, new TypeReference<List<String>>() {}))
+            .orElse(new ArrayList<String>());
+
+        return eventSelectedMethodIds.stream().anyMatch(id -> id.equals(paymentMethod.getPaymentMethodId()));
     }
 }
