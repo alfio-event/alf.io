@@ -161,7 +161,7 @@ public class CustomOfflinePaymentManager implements PaymentProvider {
                 spec.getPriceWithVAT(),
                 spec.getCurrencyCode(),
                 "",
-                PaymentProxy.OFFLINE.name(),
+                PaymentProxy.CUSTOM_OFFLINE.name(),
                 0L,
                 0L,
                 Transaction.Status.PENDING,

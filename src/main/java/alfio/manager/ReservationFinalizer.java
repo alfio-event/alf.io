@@ -442,13 +442,13 @@ public class ReservationFinalizer {
 
         ticketReservationRepository.confirmOfflinePayment(reservationId, COMPLETE.name(), event.now(clockProvider));
 
-        registerAlfioTransaction(event, reservationId, transactionMetadataModification, PaymentProxy.OFFLINE);
+        registerAlfioTransaction(event, reservationId, transactionMetadataModification, ticketReservation.getPaymentMethod());
 
         auditingRepository.insert(reservationId, userRepository.findIdByUserName(username).orElse(null), event.getId(), Audit.EventType.RESERVATION_OFFLINE_PAYMENT_CONFIRMED, new Date(), Audit.EntityType.RESERVATION, ticketReservation.getId());
 
         ticketReservationRepository.setMetadata(reservationId, metadata.withFinalized(true));
         CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event.mustUseFirstAndLastName());
-        acquireItems(PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), customerName,
+        acquireItems(ticketReservation.getPaymentMethod(), reservationId, ticketReservation.getEmail(), customerName,
             ticketReservation.getUserLanguage(), ticketReservation.getBillingAddress(),
             ticketReservation.getCustomerReference(), event, true);
 
@@ -480,11 +480,11 @@ public class ReservationFinalizer {
         if(transactionOptional.isEmpty()) {
             transactionRepository.insert(transactionId, null, reservationId, transactionTimestamp,
                 priceWithVAT, event.getCurrency(), "Offline payment confirmed for "+reservationId, paymentProxy.getKey(),
-                platformFee, 0L, Transaction.Status.COMPLETE, buildTransactionMetadata(transactionMetadataModification));
-        } else if(paymentProxy == PaymentProxy.OFFLINE) {
+                platformFee, 0L, Transaction.Status.COMPLETE, buildTransactionMetadata(transactionMetadataModification, null));
+        } else if(paymentProxy == PaymentProxy.OFFLINE || paymentProxy == PaymentProxy.CUSTOM_OFFLINE) {
             var transaction = transactionOptional.get();
             transactionRepository.update(transaction.getId(), transactionId, null, transactionTimestamp,
-                platformFee, 0L, Transaction.Status.COMPLETE, buildTransactionMetadata(transactionMetadataModification));
+                platformFee, 0L, Transaction.Status.COMPLETE, buildTransactionMetadata(transactionMetadataModification, transaction.getMetadata()));
         } else if(log.isWarnEnabled()) {
             log.warn("ON-Site check-in: ignoring transaction registration for reservationId {}", removeTabsAndNewlines(reservationId));
         }
@@ -497,11 +497,16 @@ public class ReservationFinalizer {
         return event.now(clockProvider);
     }
 
-    private Map<String, String> buildTransactionMetadata(TransactionMetadataModification transactionMetadataModification) {
-        if (transactionMetadataModification != null && StringUtils.isNotBlank(transactionMetadataModification.getNotes())) {
-            return Map.of(Transaction.NOTES_KEY, transactionMetadataModification.getNotes());
+    private Map<String, String> buildTransactionMetadata(TransactionMetadataModification transactionMetadataModification, Map<String, String> existingMetadata) {
+        if(existingMetadata == null) {
+            existingMetadata = Map.of();
         }
-        return Map.of();
+
+        if (transactionMetadataModification != null && StringUtils.isNotBlank(transactionMetadataModification.getNotes())) {
+            existingMetadata.put(Transaction.NOTES_KEY, transactionMetadataModification.getNotes());
+        }
+
+        return existingMetadata;
     }
 
     private Optional<TicketReservation> findById(String reservationId) {

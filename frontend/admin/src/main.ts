@@ -27,6 +27,7 @@ import '@shoelace-style/shoelace/dist/components/option/option';
 import '@shoelace-style/shoelace/dist/components/qr-code/qr-code.js';
 import '@shoelace-style/shoelace/dist/components/details/details.js';
 import '@shoelace-style/shoelace/dist/components/tooltip/tooltip.js';
+import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
 
 
 
@@ -46,3 +47,4 @@ export { FeedbackVisualizer } from './feedback-visualizer/feedback-visualizer';
 export { OfflinePaymentConfigBlock } from './configuration/offline-payment-config-block';
 export { OfflinePaymentDialog } from './configuration/offline-payment-dialog';
 export { ConfirmationDialog } from './configuration/confirmation-dialog';
+export { OfflinePaymentEventSelector } from './event/offline-payment-event-selector/offline-payment-event-selector';
