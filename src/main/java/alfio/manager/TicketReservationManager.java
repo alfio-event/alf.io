@@ -22,6 +22,7 @@ import alfio.manager.PaymentManager.PaymentMethodDTO.PaymentMethodStatus;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.BankTransferManager;
 import alfio.manager.payment.PaymentSpecification;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
 import alfio.manager.support.*;
 import alfio.manager.support.reservation.*;
 import alfio.manager.system.ConfigurationLevel;
@@ -86,6 +87,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 import org.springframework.validation.BindingResult;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.math.BigDecimal;
 import java.security.Principal;
@@ -174,6 +177,7 @@ public class TicketReservationManager {
     private final ReservationAuditingHelper auditingHelper;
     private final ReservationFinalizer reservationFinalizer;
     private final AdditionalServiceManager additionalServiceManager;
+    private final CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     public TicketReservationManager(EventRepository eventRepository,
                                     OrganizationRepository organizationRepository,
@@ -209,7 +213,8 @@ public class TicketReservationManager {
                                     ReservationCostCalculator reservationCostCalculator,
                                     ReservationEmailContentHelper reservationHelper,
                                     ReservationFinalizer reservationFinalizer,
-                                    OrderSummaryGenerator orderSummaryGenerator) {
+                                    OrderSummaryGenerator orderSummaryGenerator,
+                                    CustomOfflineConfigurationManager customOfflineConfigurationManager) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -251,6 +256,7 @@ public class TicketReservationManager {
         this.reservationHelper = reservationHelper;
         this.auditingHelper = new ReservationAuditingHelper(auditingRepository);
         this.reservationFinalizer = reservationFinalizer;
+        this.customOfflineConfigurationManager = customOfflineConfigurationManager;
     }
 
     private String createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor,
@@ -925,13 +931,29 @@ public class TicketReservationManager {
      *
      * @param paymentMethodDTO
      * @param purchaseContext
-     * @param configurationManager
      * @return
      */
-    public static boolean isValidPaymentMethod(PaymentManager.PaymentMethodDTO paymentMethodDTO, PurchaseContext purchaseContext, ConfigurationManager configurationManager) {
+    public boolean isValidPaymentMethod(PaymentManager.PaymentMethodDTO paymentMethodDTO, PurchaseContext purchaseContext) {
+        var ifCustomOfflineIsApplicableForEvent = true;
+        if (paymentMethodDTO.getPaymentProxy() == PaymentProxy.CUSTOM_OFFLINE && purchaseContext.event().isPresent()) {
+            var event = purchaseContext.event().get();
+            try {
+                ifCustomOfflineIsApplicableForEvent = customOfflineConfigurationManager
+                    .getAllowedCustomOfflinePaymentMethodsForEvent(event)
+                    .stream()
+                    .anyMatch(pm -> pm.getPaymentMethodId().equals(paymentMethodDTO.getPaymentMethodId()));
+            } catch (JsonProcessingException ex) {
+                log.warn("JSON parsing exception while validating payment method {}", ex);
+            }
+        }
+
         return paymentMethodDTO.isActive()
             && purchaseContext.getAllowedPaymentProxies().contains(paymentMethodDTO.getPaymentProxy())
-            && (!paymentMethodDTO.getPaymentProxy().equals(PaymentProxy.OFFLINE) || hasValidOfflinePaymentWaitingPeriod(new PaymentContext(purchaseContext), configurationManager));
+            && (
+                !paymentMethodDTO.getPaymentProxy().equals(PaymentProxy.OFFLINE)
+                || hasValidOfflinePaymentWaitingPeriod(new PaymentContext(purchaseContext), configurationManager)
+            )
+            && ifCustomOfflineIsApplicableForEvent;
     }
 
     private void reTransitionToPending(String reservationId, boolean deleteTransactions) {
@@ -1851,7 +1873,8 @@ public class TicketReservationManager {
                 var totalPrice = totalReservationCostWithVAT(reservation).getLeft();
                 var paymentToken = paymentWebhookResult.getPaymentToken();
                 var paymentSpecification = new PaymentSpecification(reservation, totalPrice, purchaseContext, paymentToken,
-                    orderSummaryForReservation(reservation, purchaseContext), true, hasPrivacyPolicy(purchaseContext));
+                    paymentProvider.getPaymentMethodForTransaction(transaction), orderSummaryForReservation(reservation, purchaseContext),
+                    true, hasPrivacyPolicy(purchaseContext));
                 transitionToComplete(paymentSpecification, paymentToken.getPaymentProvider(), null);
                 break;
             }
@@ -1947,7 +1970,7 @@ public class TicketReservationManager {
         "reservation", reservation,
             RESERVATION_ID, shortReservationID,
         "eventName", purchaseContext.getDisplayName(),
-        "provider", requireNonNullElse(paymentMethod, PaymentMethod.NONE).name(),
+        "provider", requireNonNullElse(paymentMethod, StaticPaymentMethods.NONE).name(),
         "reason", paymentWebhookResult.getReason(),
         "reservationUrl", reservationUrl(reservation, purchaseContext));
 
@@ -1977,7 +2000,7 @@ public class TicketReservationManager {
         var messageSource = messageSourceManager.getMessageSourceFor(purchaseContext);
         var provider = (ServerInitiatedTransaction) optionalProvider.get();
         var paymentSpecification = new PaymentSpecification(reservation,
-            totalReservationCostWithVAT(reservation).getLeft(), purchaseContext, null,
+            totalReservationCostWithVAT(reservation).getLeft(), purchaseContext, null, paymentMethod,
             orderSummaryForReservation(reservation, purchaseContext), false, false);
         if(!acquireGroupMembers(reservationId, purchaseContext)) {
             groupManager.deleteWhitelistedTicketsForReservation(reservationId);
@@ -2050,7 +2073,7 @@ public class TicketReservationManager {
         var categoriesInReservation = ticketRepository.getCategoriesIdToPayInReservation(reservationId);
         var blacklistedPaymentMethods = configurationManager.getBlacklistedMethodsForReservation(purchaseContext, categoriesInReservation);
         var transactionRequest = new TransactionRequest(totalPrice, ticketReservationRepository.getBillingDetailsForReservation(reservationId));
-        var availableMethods = paymentManager.getPaymentMethods(purchaseContext, transactionRequest).stream().filter(pm -> pm.getStatus() == PaymentMethodStatus.ACTIVE && pm.getPaymentMethod() != PaymentMethod.NONE).collect(toList());
+        var availableMethods = paymentManager.getPaymentMethods(purchaseContext, transactionRequest).stream().filter(pm -> pm.getStatus() == PaymentMethodStatus.ACTIVE && pm.getPaymentMethod() != StaticPaymentMethods.NONE).collect(toList());
         if(availableMethods.isEmpty()  || availableMethods.stream().allMatch(pm -> blacklistedPaymentMethods.contains(pm.getPaymentMethod()))) {
             log.error("Cannot proceed with reservation. No payment methods available {} or all blacklisted {}", availableMethods, blacklistedPaymentMethods);
             return false;

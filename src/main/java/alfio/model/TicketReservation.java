@@ -36,6 +36,10 @@ public class TicketReservation implements PriceContainer {
         IN_PAYMENT,
         EXTERNAL_PROCESSING_PAYMENT,
         WAITING_EXTERNAL_CONFIRMATION,
+        /**
+         * Used for organization defined offline payment methods
+         */
+        CUSTOM_OFFLINE_PAYMENT,
         OFFLINE_PAYMENT,
         DEFERRED_OFFLINE_PAYMENT,
         /**
@@ -217,6 +221,7 @@ public class TicketReservation implements PriceContainer {
 
     public boolean isPendingOfflinePayment() {
         return status == TicketReservationStatus.OFFLINE_PAYMENT
+            || status == TicketReservationStatus.CUSTOM_OFFLINE_PAYMENT
             || status == TicketReservationStatus.DEFERRED_OFFLINE_PAYMENT;
     }
 

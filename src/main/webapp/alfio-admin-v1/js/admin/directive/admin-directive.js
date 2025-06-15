@@ -589,6 +589,12 @@
                         .value();
                 };
 
+                $scope.customOfflinePaymentsSelected = function() {
+                    return $scope.paymentProxies.some(function(p) {
+                        return p.selected && p.proxy.id === 'CUSTOM_OFFLINE';
+                    });
+                };
+
                 UtilsService.getAvailableCurrencies().then(function(result) {
                     $scope.currencies = result.data;
                 });
@@ -1156,7 +1162,10 @@
                             ctrl.event = event.event;
                             ctrl.internal = true;
                             ctrl.freeOfCharge = ctrl.event.free;
-                            ctrl.offlineEnabled = !ctrl.freeOfCharge && ctrl.event.allowedPaymentProxies.includes('OFFLINE');
+                            ctrl.offlineEnabled = !ctrl.freeOfCharge
+                                && ctrl.event.allowedPaymentProxies.some(
+                                    proxy => ['OFFLINE', 'CUSTOM_OFFLINE'].includes(proxy)
+                                );
                             ctrl.owner = ctrl.event.visibleForCurrentUser;
                             ctrl.openDeleteWarning = function() {
                                 EventService.deleteEvent(ctrl.event).then(function(result) {
