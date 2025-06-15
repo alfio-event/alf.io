@@ -34,7 +34,7 @@ export class CustomOfflinePaymentProxyComponent implements OnChanges {
   constructor(private i18nService: I18nService) { }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.matchProxyAndMethod && changes['method']) {
+    if (this.matchProxyAndMethod && (changes['method'] || changes['availableMethods'])) {
       this.paymentProvider.emit(new CustomOfflinePaymentProvider());
     }
   }

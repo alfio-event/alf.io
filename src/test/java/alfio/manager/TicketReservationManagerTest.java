@@ -21,6 +21,7 @@ import alfio.manager.PaymentManager.PaymentMethodDTO;
 import alfio.manager.PaymentManager.PaymentMethodDTO.PaymentMethodStatus;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.*;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
 import alfio.manager.support.*;
 import alfio.manager.support.reservation.OrderSummaryGenerator;
 import alfio.manager.support.reservation.ReservationCostCalculator;
@@ -41,6 +42,7 @@ import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.StaticPaymentMethods;
 import alfio.model.transaction.Transaction;
+import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.model.transaction.capabilities.ServerInitiatedTransaction;
 import alfio.model.transaction.capabilities.WebhookHandler;
 import alfio.model.transaction.token.StripeCreditCardToken;
@@ -67,6 +69,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.PlatformTransactionManager;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 import java.time.*;
 import java.time.temporal.ChronoUnit;
@@ -136,6 +141,7 @@ class TicketReservationManagerTest {
     private AuditingRepository auditingRepository;
     private TotalPrice totalPrice;
     private PurchaseContextManager purchaseContextManager;
+    private CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     private final Set<ConfigurationKeys> BANKING_KEY = Set.of(INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER);
     private final Map<ConfigurationKeys, MaybeConfiguration> BANKING_INFO = Map.of(
@@ -219,6 +225,8 @@ class TicketReservationManagerTest {
         purchaseContextManager = mock(PurchaseContextManager.class);
         when(purchaseContextManager.findByReservationId(anyString())).thenReturn(Optional.of(event));
 
+        customOfflineConfigurationManager = mock(CustomOfflineConfigurationManager.class);
+
         billingDocumentManager = mock(BillingDocumentManager.class);
         applicationEventPublisher = mock(ApplicationEventPublisher.class);
         reservationHelper = mock(ReservationEmailContentHelper.class);
@@ -265,7 +273,8 @@ class TicketReservationManagerTest {
             reservationCostCalculator,
             reservationHelper,
             reservationFinalizer,
-            osm);
+            osm,
+            customOfflineConfigurationManager);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
@@ -1369,6 +1378,66 @@ class TicketReservationManagerTest {
         when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(List.of(StaticPaymentMethods.CREDIT_CARD));
         when(paymentManager.getPaymentMethods(eq(event), any())).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, pp.getPaymentMethod(), PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
         Assertions.assertTrue(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
+    }
+
+    @Test
+    void testIsValidPaymentMethodCustomOfflineAcceptsValidMethod() throws JsonMappingException, JsonProcessingException {
+        var customPaymentMethod = new UserDefinedOfflinePaymentMethod(
+            "abe32b76-9b9e-4f4b-b058-38c797fe80ff",
+            Map.of("en", new UserDefinedOfflinePaymentMethod.Localization(
+                "Cash App",
+                "Cash App English Description",
+                "Cash App English Instructions"
+            ))
+        );
+
+        var paymentMethodDTO = new PaymentMethodDTO(
+            PaymentProxy.CUSTOM_OFFLINE,
+            customPaymentMethod,
+            PaymentMethodStatus.ACTIVE
+        );
+
+        when(customOfflineConfigurationManager.getAllowedCustomOfflinePaymentMethodsForEvent(any()))
+            .thenReturn(List.of(customPaymentMethod));
+
+        when(event.getAllowedPaymentProxies()).thenReturn(List.of(PaymentProxy.CUSTOM_OFFLINE, PaymentProxy.STRIPE));
+
+        var result = trm.isValidPaymentMethod(paymentMethodDTO, event);
+        Assertions.assertTrue(result);
+    }
+
+    @Test
+    void testIsValidPaymentMethodCustomOfflineRejectsInvalidMethod() throws JsonMappingException, JsonProcessingException {
+        var allowedPaymentMethod = new UserDefinedOfflinePaymentMethod(
+            "abe32b76-9b9e-4f4b-b058-38c797fe80ff",
+            Map.of("en", new UserDefinedOfflinePaymentMethod.Localization(
+                "Cash App",
+                "Cash App English Description",
+                "Cash App English Instructions"
+            ))
+        );
+        var unallowedPaymentMethod = new UserDefinedOfflinePaymentMethod(
+            "23886154-9ece-4fe7-b3f6-fb36f9055a53",
+            Map.of("en", new UserDefinedOfflinePaymentMethod.Localization(
+                "Interac E-Transfer",
+                "Interac E-Transfer English Description",
+                "Interac E-Transfer English Instructions"
+            ))
+        );
+
+        var paymentMethodDTO = new PaymentMethodDTO(
+            PaymentProxy.CUSTOM_OFFLINE,
+            unallowedPaymentMethod,
+            PaymentMethodStatus.ACTIVE
+        );
+
+        when(customOfflineConfigurationManager.getAllowedCustomOfflinePaymentMethodsForEvent(any()))
+            .thenReturn(List.of(allowedPaymentMethod));
+
+        when(event.getAllowedPaymentProxies()).thenReturn(List.of(PaymentProxy.CUSTOM_OFFLINE, PaymentProxy.STRIPE));
+
+        var result = trm.isValidPaymentMethod(paymentMethodDTO, event);
+        Assertions.assertFalse(result);
     }
 
     @Nested

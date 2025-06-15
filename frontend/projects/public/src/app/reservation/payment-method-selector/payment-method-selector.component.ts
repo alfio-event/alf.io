@@ -54,12 +54,7 @@ export class PaymentMethodSelectorComponent implements OnInit {
     }
 
     get sortedAvailablePaymentMethodIDs(): PaymentMethodId[] {
-        return Object.keys(this.activePaymentMethods)
-            .filter(pm => {
-                return Object.keys(staticPaymentMethodDetails).includes(pm)
-                || this.customOfflinePaymentMethods.some(custom => custom.paymentMethodId === pm)
-            })
-            .sort();
+        return Object.keys(this.activePaymentMethods).sort();
     }
 
     get activePaymentsCount(): number {

@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -51,10 +52,15 @@ import alfio.controller.api.v2.user.ReservationApiV2Controller;
 import alfio.controller.api.v2.user.ReservationApiV2Controller.ReservationPaymentMethodDoesNotExistException;
 import alfio.controller.form.PaymentForm;
 import alfio.manager.EventManager;
+import alfio.manager.TicketReservationManager;
+import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.user.UserManager;
+import alfio.model.CustomerName;
 import alfio.model.Event;
+import alfio.model.PriceContainer;
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
+import alfio.model.TotalPrice;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -102,6 +108,8 @@ public class ReservationApiV2ControllerIntegrationTest {
     private TicketRepository ticketRepository;
     @Autowired
     private TicketCategoryRepository ticketCategoryRepository;
+    @Autowired
+    private TicketReservationManager ticketReservationManager;
 
     private Principal mockPrincipal;
     private Organization organization;
@@ -286,7 +294,7 @@ public class ReservationApiV2ControllerIntegrationTest {
     }
 
     @Test
-    void cannotGetSelectedCustomPaymentMethodDetailsForOrgWithNoCustomMethods() {
+    void cannotGetSelectedCustomPaymentMethodDetailsForOrgWithNoCustomMethods() throws JsonProcessingException {
         configurationRepository.deleteOrganizationLevelByKey(
             ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
             organization.getId()
@@ -304,6 +312,48 @@ public class ReservationApiV2ControllerIntegrationTest {
             null,
             null,
             event.getOrganizationId(),
+            null
+        );
+
+        TotalPrice totalPrice = new TotalPrice(1130, 130, 0, 0, "USD");
+        PaymentSpecification specification = new PaymentSpecification(
+            reservationId,
+            null,
+            paymentMethods.get(0),
+            totalPrice.getPriceWithVAT(),
+            event,
+            "email@example.com",
+            new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
+            "billing address",
+            null,
+            Locale.ENGLISH,
+            true,
+            false,
+            null,
+            "IT",
+            "123456",
+            PriceContainer.VatStatus.INCLUDED,
+            true,
+            false
+        );
+
+        var paymentResult = ticketReservationManager.performPayment(
+            specification,
+            totalPrice,
+            PaymentProxy.CUSTOM_OFFLINE,
+            paymentMethods.get(0),
+            null
+        );
+        assertTrue(paymentResult.isSuccessful());
+
+        var modifiedOrgMethods = List.of(paymentMethods.get(1));
+        ObjectMapper objectMapper = new ObjectMapper();
+        var organizationMethodsJson = objectMapper.writeValueAsString(modifiedOrgMethods);
+
+        configurationRepository.insertOrganizationLevel(
+            organization.getId(),
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
+            organizationMethodsJson,
             null
         );
 
