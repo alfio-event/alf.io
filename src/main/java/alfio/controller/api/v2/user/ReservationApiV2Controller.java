@@ -35,6 +35,7 @@ import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.payment.StripeCreditCardManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
 import alfio.manager.support.AdditionalServiceHelper;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.response.ValidatedResponse;
@@ -49,12 +50,10 @@ import alfio.model.subscription.UsageDetails;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.repository.*;
-import alfio.repository.system.ConfigurationRepository;
 import alfio.util.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -105,8 +104,6 @@ public class ReservationApiV2Controller {
     private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final MessageSourceManager messageSourceManager;
     private final ConfigurationManager configurationManager;
-    private final ConfigurationRepository configurationRepository;
-    private final ObjectMapper objectMapper;
     private final PaymentManager paymentManager;
     private final FileUploadManager fileUploadManager;
     private final TemplateManager templateManager;
@@ -126,6 +123,7 @@ public class ReservationApiV2Controller {
     private final AdditionalServiceManager additionalServiceManager;
     private final AdditionalServiceHelper additionalServiceHelper;
     private final PurchaseContextFieldManager purchaseContextFieldManager;
+    private final CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -269,7 +267,7 @@ public class ReservationApiV2Controller {
             return paymentManager.getPaymentMethods(purchaseContext, new TransactionRequest(orderSummary.getOriginalTotalPrice(), ticketReservationRepository.getBillingDetailsForReservation(reservationId)))
                 .stream()
                 .filter(p -> !blacklistedMethodsForReservation.contains(p.getPaymentMethod()))
-                .filter(p -> TicketReservationManager.isValidPaymentMethod(p, purchaseContext, configurationManager))
+                .filter(p -> ticketReservationManager.isValidPaymentMethod(p, purchaseContext))
                 .collect(
                     toMap(
                         PaymentManager.PaymentMethodDTO::getPaymentMethodId,
@@ -739,30 +737,7 @@ public class ReservationApiV2Controller {
     @GetMapping("/reservation/{reservationId}/get-applicable-custom-payment-method-details")
     public ResponseEntity<List<UserDefinedOfflinePaymentMethod>> getApplicableCustomPaymentMethodDetails(@PathVariable String reservationId) throws JsonMappingException, JsonProcessingException {
         var event = eventRepository.findByReservationId(reservationId);
-        var orgId = event.getOrganizationId();
-        var config = configurationRepository
-            .findByKeyAtOrganizationLevel(orgId, ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.getValue())
-            .map(cf -> cf.getValue())
-            .orElse(null);
-
-        List<UserDefinedOfflinePaymentMethod> paymentMethods = List.of();
-        if(config != null) {
-            paymentMethods = objectMapper.readValue(
-                config,
-                new TypeReference<List<UserDefinedOfflinePaymentMethod>>(){}
-            );
-        }
-
-        var allowedMethodIDsForEvent = configurationManager
-            .getFor(ConfigurationKeys.SELECTED_CUSTOM_PAYMENTS, ConfigurationLevel.event(event))
-            .getValue()
-            .map(v -> Json.fromJson(v, new TypeReference<List<String>>() {}))
-            .orElse(new ArrayList<String>());
-
-        var allowedPaymentMethods = paymentMethods
-            .stream()
-            .filter(pm -> allowedMethodIDsForEvent.contains(pm.getPaymentMethodId()))
-            .toList();
+        var allowedPaymentMethods = customOfflineConfigurationManager.getAllowedCustomOfflinePaymentMethodsForEvent(event);
 
         allowedPaymentMethods
             .forEach(paymentMethod ->
@@ -785,18 +760,8 @@ public class ReservationApiV2Controller {
     @GetMapping("/reservation/{reservationId}/get-selected-custom-payment-method-details")
     public ResponseEntity<UserDefinedOfflinePaymentMethod> getSelectedCustomPaymentMethodDetails(@PathVariable String reservationId) throws JsonMappingException, JsonProcessingException {
         var event = eventRepository.findByReservationId(reservationId);
-        var orgId = event.getOrganizationId();
-        var config = configurationRepository
-            .findByKeyAtOrganizationLevel(orgId, ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name())
-            .orElse(null);
-
-        if(config == null) {
-            throw new ReservationPaymentMethodDoesNotExistException();
-        }
-
-        var paymentMethods = objectMapper.readValue(
-            config.getValue(),
-            new TypeReference<List<UserDefinedOfflinePaymentMethod>>(){}
+        var paymentMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(
+            event.getOrganizationId()
         );
 
         var maybeTransaction = transactionRepository.loadOptionalByReservationId(reservationId);
@@ -809,7 +774,7 @@ public class ReservationApiV2Controller {
             .stream()
             .filter(pm -> pm.getPaymentMethodId().equals(paymentMethodId))
             .findFirst()
-            .orElseThrow();
+            .orElseThrow(() -> new ReservationPaymentMethodDoesNotExistException());
 
         respPaymentMethod
             .getLocalizations()
