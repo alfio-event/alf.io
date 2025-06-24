@@ -691,7 +691,7 @@ class TicketReservationManagerTest {
         List<String> reservationIds = singletonList("reservation-id");
         when(ticketReservationRepository.findExpiredReservationForUpdate(now)).thenReturn(reservationIds);
         trm.cleanupExpiredReservations(now);
-        verify(applicationEventPublisher).publishEvent(new CleanupReservations(null, reservationIds, true));
+        verify(applicationEventPublisher).publishEvent(new CleanupReservations(null, reservationIds, true, false));
         verify(ticketReservationRepository).findExpiredReservationForUpdate(now);
         verify(ticketReservationRepository).remove(reservationIds);
         verify(waitingQueueManager).cleanExpiredReservations(reservationIds);
@@ -1416,7 +1416,7 @@ class TicketReservationManagerTest {
                 .thenReturn(PaymentWebhookResult.successful(new StripeCreditCardToken("")));
             when(reservationCostCalculator.totalReservationCostWithVAT(pendingReservationMock)).thenReturn(Pair.of(new TotalPrice(0, 0, 0, 0, "CHF"), Optional.empty()));
             trm.cleanupExpiredReservations(now);
-            verify(applicationEventPublisher).publishEvent(new CleanupReservations(null, expiredReservationIds, true));
+            verify(applicationEventPublisher).publishEvent(new CleanupReservations(null, expiredReservationIds, true, false));
             verify(ticketReservationRepository).findExpiredReservationForUpdate(now);
             verify(ticketReservationRepository).remove(expiredReservationIds);
             verify(waitingQueueManager).cleanExpiredReservations(expiredReservationIds);
@@ -1444,7 +1444,7 @@ class TicketReservationManagerTest {
                 .thenReturn(1);
             trm.cleanupExpiredReservations(now);
             verify(ticketReservationRepository).findExpiredReservationForUpdate(now);
-            verify(applicationEventPublisher).publishEvent(new CleanupReservations(null, reservationIds, true));
+            verify(applicationEventPublisher).publishEvent(new CleanupReservations(null, reservationIds, true, false));
             verify(ticketReservationRepository).remove(reservationIds);
             verify(waitingQueueManager).cleanExpiredReservations(reservationIds);
             verify(transactionRepository).deleteForReservationsWithStatus(List.of(PENDING_RESERVATION_ID), Transaction.Status.PENDING);
