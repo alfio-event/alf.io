@@ -263,8 +263,11 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
         return findDescriptionsForLocale(eventId, locale.getLanguage()).stream().collect(Collectors.toMap(PurchaseContextFieldDescription::getFieldConfigurationId, Function.identity()));
     }
 
-    default Map<String, String> findAllValuesForTicketId(int ticketId) {
-        return findNameAndValue(ticketId).stream().filter(t -> t.getName() != null && t.getValue() != null).collect(Collectors.toMap(FieldNameAndValue::getName, FieldNameAndValue::getValue));
+    default Map<String, List<String>> findAllValuesForTicketId(int ticketId) {
+        return findNameAndValue(ticketId)
+            .stream()
+            .filter(t -> t.getName() != null && t.getValue() != null)
+            .collect(Collectors.groupingBy(FieldNameAndValue::getName, Collectors.mapping(FieldNameAndValue::getValue, Collectors.toList())));
     }
 
     // required for deleting a field

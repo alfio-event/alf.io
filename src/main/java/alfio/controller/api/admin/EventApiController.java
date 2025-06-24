@@ -452,13 +452,13 @@ public class EventApiController {
             }
 
             //obviously not optimized
-            Map<String, String> additionalValues = purchaseContextFieldRepository.findAllValuesForTicketId(t.getId());
+            Map<String, List<String>> additionalValues = purchaseContextFieldRepository.findAllValuesForTicketId(t.getId());
 
             Predicate<String> contains = FIXED_FIELDS::contains;
 
             fields.stream().filter(contains.negate()).filter(f -> f.startsWith(CUSTOM_FIELDS_PREFIX)).forEachOrdered(field -> {
                 String customFieldName = field.substring(CUSTOM_FIELDS_PREFIX.length());
-                line.add(additionalValues.getOrDefault(customFieldName, "").replace("\"", ""));
+                line.add(String.join("; ", additionalValues.getOrDefault(customFieldName, List.of())).replace("\"", ""));
             });
 
             return line.toArray(new String[0]);
@@ -490,26 +490,27 @@ public class EventApiController {
                 .map(v -> Pair.of(v, purchaseContextFieldRepository.findAllValuesForTicketId(v.getTicket().getId()))))
             .map(p -> {
                 DetailedScanData data = p.getLeft();
-                Map<String, String> descriptions = p.getRight();
-                return Pair.of(data, fields.stream().map(x -> descriptions.getOrDefault(x.getName(), "")).collect(toList()));
+                Map<String, List<String>> descriptions = p.getRight();
+                return Pair.of(data, fields.stream()
+                    .map(x -> String.join("; ", descriptions.getOrDefault(x.getName(), List.of()))).collect(toList()));
             }).map(p -> {
-            List<String> line = new ArrayList<>();
-            Ticket ticket = p.getLeft().getTicket();
-            SponsorScan sponsorScan = p.getLeft().getSponsorScan();
-            User user = userManager.findUser(sponsorScan.getUserId(), principal);
-            line.add(user.getUsername());
-            line.add(user.getDescription());
-            line.add(sponsorScan.getTimestamp().toString());
-            line.add(ticket.getFullName());
-            line.add(ticket.getEmail());
+                List<String> line = new ArrayList<>();
+                Ticket ticket = p.getLeft().getTicket();
+                SponsorScan sponsorScan = p.getLeft().getSponsorScan();
+                User user = userManager.findUser(sponsorScan.getUserId(), principal);
+                line.add(user.getUsername());
+                line.add(user.getDescription());
+                line.add(sponsorScan.getTimestamp().toString());
+                line.add(ticket.getFullName());
+                line.add(ticket.getEmail());
 
-            line.addAll(p.getRight());
+                line.addAll(p.getRight());
 
-            line.add(sponsorScan.getNotes());
-            line.add(sponsorScan.getLeadStatus().name());
-            line.add(sponsorScan.getOperator());
-            return line.toArray(new String[0]);
-        });
+                line.add(sponsorScan.getNotes());
+                line.add(sponsorScan.getLeadStatus().name());
+                line.add(sponsorScan.getOperator());
+                return line.toArray(new String[0]);
+            });
 
         if ("excel".equals(format)) {
             exportSponsorScanExcel(event.getShortName(), header, sponsorScans, response);
