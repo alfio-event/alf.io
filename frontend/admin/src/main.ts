@@ -47,4 +47,6 @@ export { FeedbackVisualizer } from './feedback-visualizer/feedback-visualizer';
 export { OfflinePaymentConfigBlock } from './configuration/offline-payment-config-block';
 export { OfflinePaymentDialog } from './configuration/offline-payment-dialog';
 export { ConfirmationDialog } from './configuration/confirmation-dialog';
-export { OfflinePaymentEventSelector } from './event/offline-payment-event-selector/offline-payment-event-selector';
+export { CustomOfflinePaymentEventSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-event-selector';
+export { CustomOfflinePaymentSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-selector';
+export { CustomOfflinePaymentBlacklistSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-blacklist-selector';

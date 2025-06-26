@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,6 +79,7 @@ import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
 import static alfio.test.util.IntegrationTestUtil.*;
+import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -110,6 +112,8 @@ public class ReservationApiV2ControllerIntegrationTest {
     private TicketCategoryRepository ticketCategoryRepository;
     @Autowired
     private TicketReservationManager ticketReservationManager;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private Principal mockPrincipal;
     private Organization organization;
@@ -131,7 +135,17 @@ public class ReservationApiV2ControllerIntegrationTest {
                 new DateTimeModification(LocalDate.now(clockProvider.getClock()).plusDays(1), LocalTime.now(clockProvider.getClock())),
                 DESCRIPTION, BigDecimal.ONE, true, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty())
         );
-        Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Pair<Event, String> eventAndUser = initEvent(
+            categories,
+            organizationRepository,
+            userManager,
+            eventManager,
+            eventRepository,
+            null,
+            Event.EventFormat.ONLINE,
+            PriceContainer.VatStatus.INCLUDED,
+            List.of(PaymentProxy.CUSTOM_OFFLINE)
+        );
         event = eventAndUser.getLeft();
 
         organization = organizationRepository.getById(event.getOrganizationId());
@@ -361,5 +375,55 @@ public class ReservationApiV2ControllerIntegrationTest {
             ReservationPaymentMethodDoesNotExistException.class,
             () -> reservationApiV2Controller.getSelectedCustomPaymentMethodDetails(reservationId)
         );
+    }
+
+    @Test
+    void testActivePaymentMethodsBlacklistMethodsCorrect() throws JsonProcessingException {
+        var reservationId = UUID.randomUUID().toString();
+        ticketReservationRepository.createNewReservation(
+            reservationId,
+            ZonedDateTime.now(event.getZoneId()),
+            DateUtils.addMinutes(new Date(), 1),
+            null,
+            "en",
+            event.getId(),
+            null,
+            null,
+            null,
+            event.getOrganizationId(),
+            null
+        );
+        var firstCategory = CollectionUtils.get(ticketCategoryRepository.findByEventIdAsMap(event.getId()), 0);
+        var tickets = ticketRepository.findFreeByEventId(event.getId());
+        var firstTicket = tickets.get(0);
+        int ticketId = firstTicket.getId();
+        ticketRepository.reserveTickets(
+            reservationId,
+            List.of(ticketId),
+            firstCategory.getValue(),
+            "en",
+            event.getVatStatus(),
+            i -> null
+        );
+
+        configurationRepository.insertTicketCategoryLevel(
+            organization.getId(),
+            event.getId(),
+            firstCategory.getValue().getId(),
+            ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS.name(),
+            objectMapper.writeValueAsString(paymentMethods.stream().map(pm -> pm.getPaymentMethodId()).collect(toList())),
+            ""
+        );
+
+        var response = reservationApiV2Controller.getReservationInfo(reservationId, mockPrincipal);
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        var info = response.getBody();
+
+        var paymentMethodIds = info
+            .getActivePaymentMethods()
+            .keySet();
+
+        assertEquals(0, paymentMethodIds.size());
     }
 }

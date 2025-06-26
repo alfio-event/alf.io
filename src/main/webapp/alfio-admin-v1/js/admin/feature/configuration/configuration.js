@@ -719,6 +719,13 @@
             categoryConf.loading = true;
             var onSaveComplete = categoryConf.onSave ? categoryConf.onSave : load;
 
+            const updatePaymentMethodCategoryBlacklistEvent = new CustomEvent("update-payment-method-category-blacklist", {
+                detail: {"event": categoryConf.event, "category": categoryConf.category},
+                bubbles: true,
+                composed: true
+            });
+            window.dispatchEvent(updatePaymentMethodCategoryBlacklistEvent);
+
             ConfigurationService.updateCategoryConfig(categoryConf.category.id, categoryConf.event.id, categoryConf.settings).then(function() {
                 if(categoryConf.group) {
                     GroupService.linkTo(categoryConf.group).then(function() {
@@ -819,14 +826,22 @@
     function paymentMethodBlacklist() {
         return {
             scope: {
-                currentSelection: '='
+                currentSelection: '=',
+                organization: '=',
+                event: '=',
+                category: '='
             },
             bindToController: true,
             controllerAs: '$ctrl',
             controller: ['PAYMENT_PROXY_DESCRIPTIONS', function (paymentMethods) {
                 var ctrl = this;
                 ctrl.isOptionSelected = function(key) {
-                    return ctrl.currentSelection != null && ctrl.currentSelection.indexOf(key) > -1;
+                    if(ctrl.currentSelection == null) {
+                        return false;
+                    }
+
+                    const optionsArr = ctrl.currentSelection.split(",");
+                    return optionsArr.includes(key)
                 };
                 ctrl.toggleSelected = function(key) {
                     if(ctrl.isOptionSelected(key)) {
