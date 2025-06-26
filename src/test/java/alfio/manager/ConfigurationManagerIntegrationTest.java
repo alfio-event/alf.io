@@ -33,6 +33,7 @@ import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
+import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
@@ -47,6 +48,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.testcontainers.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -56,6 +59,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
+import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -400,5 +404,46 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         deniedMethods = configurationManager.getBlacklistedMethodsForReservation(event, categories.stream().map(TicketCategory::getId).collect(Collectors.toList()));
         assertNotNull(deniedMethods);
         assertTrue(deniedMethods.isEmpty());
+    }
+
+    @Test
+    void testCustomOfflinePaymentMethodsReturnedInBlacklist() throws JsonProcessingException {
+        var objectMapper = new ObjectMapper();
+        var paymentMethods = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant bank transfer from any Canadian account.",
+                        "Send the payment to `payments@example.com`."
+                    )
+                )
+            )
+        );
+        configurationRepository.insertOrganizationLevel(
+            event.getOrganizationId(),
+            CUSTOM_OFFLINE_PAYMENTS.name(),
+            objectMapper.writeValueAsString(paymentMethods),
+            ""
+        );
+
+        var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+        configurationRepository.insertTicketCategoryLevel(
+            event.getOrganizationId(),
+            event.getId(),
+            categories.get(0).getId(),
+            ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS.name(),
+            objectMapper.writeValueAsString(paymentMethods.stream().map(UserDefinedOfflinePaymentMethod::getPaymentMethodId).collect(toList())),
+            ""
+        );
+
+        var deniedMethods = configurationManager.getBlacklistedMethodsForReservation(
+            event,
+            List.of(categories.get(0).getId())
+        );
+
+        assertNotNull(deniedMethods);
+        assertTrue(deniedMethods.stream().anyMatch(pm -> pm.getPaymentMethodId().equals(paymentMethods.get(0).getPaymentMethodId())));
     }
 }

@@ -29,6 +29,8 @@ import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
+import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.repository.EventDeleterRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.PromoCodeDiscountRepository;
@@ -52,6 +54,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -59,6 +65,7 @@ import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static alfio.controller.api.admin.EventApiController.FIXED_FIELDS;
 import static alfio.test.toolkit.PromoCodeDiscountIntegrationTestingToolkit.TEST_PROMO_CODE;
@@ -105,6 +112,8 @@ class EventApiControllerIntegrationTest {
     private TicketReservationRepository ticketReservationRepository;
     @Autowired
     private PromoCodeDiscountIntegrationTestingToolkit promoCodeDiscountIntegrationTestingToolkit;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private Event event;
     private static final String TEST_ATTENDEE_EXTERNAL_REFERENCE = "123";
@@ -194,6 +203,138 @@ class EventApiControllerIntegrationTest {
         String returnedCsvContent = mockResponse.getContentAsString().trim().replace("\uFEFF", ""); // remove BOM
         assertTrue(returnedCsvContent.startsWith(getExpectedHeaderCsvLine() + "\n" + expectedTestAttendeeCsvLine));
         assertTrue(returnedCsvContent.endsWith("\"Billing Address\",,"+TEST_PROMO_CODE+",,," + TEST_ATTENDEE_EXTERNAL_REFERENCE));
+    }
+
+    @Test
+    void testCanGetBlacklistedCustomPaymentMethods() throws JsonProcessingException {
+        var eventAndUser = createEvent(Event.EventFormat.ONLINE);
+        event = eventAndUser.getKey();
+        var principal = Mockito.mock(Authentication.class);
+        when(principal.getName()).thenReturn(owner(eventAndUser.getValue()));
+        var organizationId = organizationRepository.findAllForUser(eventAndUser.getRight()).get(0).getId();
+        var ticketCategoryList = this.ticketCategoryRepository.findAllTicketCategories(event.getId());
+
+        assertEquals(1, ticketCategoryList.size());
+
+        var ticketCategory = ticketCategoryList.get(0);
+
+        var paymentMethods = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant bank transfer from any Canadian account.",
+                        "Send the payment to `payments@example.com`."
+                    )
+                )
+            ),
+            new UserDefinedOfflinePaymentMethod(
+                "ec6c5268-4122-4b27-98ee-fa070df11c5b",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Venmo",
+                        "Instant money transfers via the Venmo app.",
+                        "Send the payment to user `exampleco` on Venmo."
+                    )
+                )
+            )
+        );
+
+        var organizationMethodsJson = objectMapper.writeValueAsString(paymentMethods);
+        configurationRepository.insertOrganizationLevel(
+            organizationId,
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
+            organizationMethodsJson,
+            null
+        );
+
+        configurationRepository.insertTicketCategoryLevel(
+            organizationId,
+            event.getId(),
+            ticketCategory.getId(),
+            ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS.name(),
+            objectMapper.writeValueAsString(List.of(paymentMethods.get(0).getPaymentMethodId())),
+            ""
+        );
+
+        var response = eventApiController.getBlacklistedCustomPaymentMethods(
+            event.getId(),
+            ticketCategory.getId(),
+            principal
+        );
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+        var blacklistedMethodIds = response.getBody();
+
+        assertEquals(1, blacklistedMethodIds.size());
+        assertTrue(blacklistedMethodIds.stream().allMatch(blItem ->
+            paymentMethods.stream().anyMatch(pmItem -> blItem.equals(pmItem.getPaymentMethodId())))
+        );
+    }
+
+    @Test
+    void testCanSetBlacklistedCustomPaymentMethods() throws JsonProcessingException {
+        var eventAndUser = createEvent(Event.EventFormat.ONLINE);
+        event = eventAndUser.getKey();
+        var principal = Mockito.mock(Authentication.class);
+        when(principal.getName()).thenReturn(owner(eventAndUser.getValue()));
+        var organizationId = organizationRepository.findAllForUser(eventAndUser.getRight()).get(0).getId();
+        var ticketCategoryList = this.ticketCategoryRepository.findAllTicketCategories(event.getId());
+
+        assertEquals(1, ticketCategoryList.size());
+
+        var ticketCategory = ticketCategoryList.get(0);
+
+        var paymentMethods = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant bank transfer from any Canadian account.",
+                        "Send the payment to `payments@example.com`."
+                    )
+                )
+            ),
+            new UserDefinedOfflinePaymentMethod(
+                "ec6c5268-4122-4b27-98ee-fa070df11c5b",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Venmo",
+                        "Instant money transfers via the Venmo app.",
+                        "Send the payment to user `exampleco` on Venmo."
+                    )
+                )
+            )
+        );
+
+        eventApiController.setBlacklistedCustomPaymentMethods(
+            event.getId(),
+            ticketCategory.getId(),
+            List.of(paymentMethods.get(0).getPaymentMethodId()),
+            principal
+        );
+
+        var configurationValues = configurationRepository.findByTicketCategoryAndKey(
+            organizationId,
+            event.getId(),
+            ticketCategory.getId(),
+            ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS.name()
+        );
+        assertEquals(1, configurationValues.size());
+
+        var config = configurationValues.get(0);
+
+        var storedBlacklistedPaymentMethodIds = objectMapper.readValue(
+            config.getValue(),
+            new TypeReference<List<String>>() {}
+        );
+
+        assertEquals(1, storedBlacklistedPaymentMethodIds.size());
+
+        assertTrue(storedBlacklistedPaymentMethodIds.stream().allMatch(
+            blItem -> paymentMethods.stream().anyMatch(pmItem -> blItem.equals(pmItem.getPaymentMethodId())))
+        );
     }
 
     private AdminReservationModification getTestAdminReservationModification() {

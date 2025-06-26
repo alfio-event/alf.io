@@ -43,7 +43,11 @@ import alfio.repository.EventDescriptionRepository;
 import alfio.repository.PurchaseContextFieldRepository;
 import alfio.repository.SponsorScanRepository;
 import alfio.util.*;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
@@ -87,6 +91,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static alfio.model.system.ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS;
 import static alfio.util.Validator.*;
 import static alfio.util.Wrappers.optionally;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -117,6 +122,7 @@ public class EventApiController {
     private final ExtensionManager extensionManager;
     private final ClockProvider clockProvider;
     private final AccessService accessService;
+    private final ObjectMapper objectMapper;
 
 
     @ExceptionHandler(DataAccessException.class)
@@ -325,6 +331,52 @@ public class EventApiController {
         Event event = eventManager.getSingleEventById(eventId, principal.getName());
         return validateCategory(category, "", event.getBegin().toLocalDateTime(), event.getEnd().toLocalDateTime(), errors, getDescriptionLength())
             .ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
+    }
+
+    @GetMapping("/events/{eventId}/categories/{categoryId}/blacklisted-custom-payment-methods")
+    public ResponseEntity<List<String>> getBlacklistedCustomPaymentMethods(
+        @PathVariable int eventId,
+        @PathVariable int categoryId,
+        Principal principal
+    ) throws JsonProcessingException {
+        var eventAndOrgIds = accessService.checkCategoryOwnership(principal, eventId, categoryId);
+
+        var maybeBlacklistedPaymentMethodsJson = configurationManager.getFor(
+            BLACKLISTED_CUSTOM_PAYMENTS,
+            ConfigurationLevel.ticketCategory(eventAndOrgIds, categoryId)
+        );
+
+        if (maybeBlacklistedPaymentMethodsJson.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        var blacklistedPaymentMethodsJson = maybeBlacklistedPaymentMethodsJson.getValue().get();
+
+        var blacklistedPaymentMethodIds = objectMapper.readValue(
+            blacklistedPaymentMethodsJson,
+            new TypeReference<List<String>>(){}
+        );
+
+        return ResponseEntity.ok(blacklistedPaymentMethodIds);
+    }
+
+    @PostMapping("/events/{eventId}/categories/{categoryId}/blacklisted-custom-payment-methods")
+    public ResponseEntity<String> setBlacklistedCustomPaymentMethods(
+        @PathVariable int eventId,
+        @PathVariable int categoryId,
+        @RequestBody List<String> paymentMethodIds,
+        Principal principal
+    ) throws JsonProcessingException {
+        accessService.checkCategoryOwnership(principal, eventId, categoryId);
+        var blacklistedMethodsJson = objectMapper.writeValueAsString(paymentMethodIds);
+        configurationManager.saveCategoryConfiguration(
+            categoryId,
+            eventId,
+            List.of(new ConfigurationModification(null, BLACKLISTED_CUSTOM_PAYMENTS.name(), blacklistedMethodsJson)),
+            principal.getName()
+        );
+
+        return ResponseEntity.ok(OK);
     }
 
     @PutMapping("/events/reallocate")

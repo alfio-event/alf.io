@@ -266,7 +266,11 @@ public class ReservationApiV2Controller {
             var blacklistedMethodsForReservation = configurationManager.getBlacklistedMethodsForReservation(purchaseContext, categoryIds);
             return paymentManager.getPaymentMethods(purchaseContext, new TransactionRequest(orderSummary.getOriginalTotalPrice(), ticketReservationRepository.getBillingDetailsForReservation(reservationId)))
                 .stream()
-                .filter(p -> !blacklistedMethodsForReservation.contains(p.getPaymentMethod()))
+                .filter(p ->
+                    !blacklistedMethodsForReservation
+                        .stream()
+                        .anyMatch(p2 -> p2.getPaymentMethodId().equals(p.getPaymentMethod().getPaymentMethodId()))
+                )
                 .filter(p -> ticketReservationManager.isValidPaymentMethod(p, purchaseContext))
                 .collect(
                     toMap(

@@ -408,10 +408,14 @@ export class OverviewComponent implements OnInit {
   }
 
   get paymentMethodDeferred(): boolean {
+    let result = false;
     if (this.reservationInfo.tokenAcquired) {
-      return false;
+      result = false;
+    } else {
+        result = this.selectedPaymentProvider != null && this.selectedPaymentProvider.paymentMethodDeferred;
     }
-    return this.selectedPaymentProvider != null && this.selectedPaymentProvider.paymentMethodDeferred;
+
+    return result;
   }
 
   get appliedSubscription(): boolean {

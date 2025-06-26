@@ -39,6 +39,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.command.CleanupReservations;
 import alfio.model.system.command.FinalizeReservation;
 import alfio.model.transaction.PaymentContext;
+import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.StaticPaymentMethods;
 import alfio.model.transaction.Transaction;
@@ -1438,6 +1439,48 @@ class TicketReservationManagerTest {
 
         var result = trm.isValidPaymentMethod(paymentMethodDTO, event);
         Assertions.assertFalse(result);
+    }
+
+    @Test
+    void testCustomOfflinePaymentMethodProperlyMatchesBlacklistedMethods() throws JsonProcessingException {
+        var allowedPaymentMethod = new UserDefinedOfflinePaymentMethod(
+            "abe32b76-9b9e-4f4b-b058-38c797fe80ff",
+            Map.of("en", new UserDefinedOfflinePaymentMethod.Localization(
+                "Interac E-Transfer",
+                "Interac E-Transfer English Description",
+                "Interac E-Transfer English Instructions"
+            ))
+        );
+
+        when(customOfflineConfigurationManager.getAllowedCustomOfflinePaymentMethodsForEvent(any()))
+            .thenReturn(List.of(allowedPaymentMethod));
+
+        when(event.getAllowedPaymentProxies()).thenReturn(List.of(PaymentProxy.CUSTOM_OFFLINE));
+                when(totalPrice.requiresPayment()).thenReturn(true);
+
+        when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1, 2));
+        when(paymentManager.getPaymentMethods(eq(event), any())).thenReturn(
+            List.of(
+                new PaymentMethodDTO(
+                    PaymentProxy.CUSTOM_OFFLINE,
+                    allowedPaymentMethod,
+                    PaymentMethodStatus.ACTIVE
+                )
+            )
+        );
+        when(configurationManager.getBlacklistedMethodsForReservation(any(), any())).thenReturn(
+            // Re-creating object on purpose
+            List.of(new UserDefinedOfflinePaymentMethod(
+                "abe32b76-9b9e-4f4b-b058-38c797fe80ff",
+                Map.of("en", new UserDefinedOfflinePaymentMethod.Localization(
+                    "Interac E-Transfer",
+                    "Interac E-Transfer English Description",
+                    "Interac E-Transfer English Instructions"
+                ))
+            ))
+        );
+
+        Assertions.assertFalse(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
     }
 
     @Nested
