@@ -253,6 +253,10 @@
                         organizationId
                     }
                 })
+            },
+            getCustomPaymentMethodsForOrganization: function(organizationId) {
+                return $http.get(`/admin/api/configuration/organizations/${organizationId}/payment-method`)
+                    .error(HttpErrorHandler.handle);
             }
         };
         return service;
