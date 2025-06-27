@@ -264,8 +264,36 @@
                 ctrl.paymentInfo = res.data.data;
                 ctrl.displayPotentialMatch = ctrl.paymentInfo.transaction && ctrl.paymentInfo.transaction.potentialMatch;
                 ctrl.loadingPaymentInfo = false;
+                loadReservationSelectedCustomPaymentMethod();
             }, function() {
                 ctrl.loadingPaymentInfo = false;
+            });
+        }
+
+        function loadReservationSelectedCustomPaymentMethod() {
+            ConfigurationService.getCustomPaymentMethodsForOrganization(ctrl.purchaseContext.organizationId).then(function(res){
+                ctrl.organizationCustomPaymentMethods = res.data;
+                ctrl.selectedCustomOfflinePaymentMethod = null;
+
+                const transactionSelectedCustomPaymentMethodId = ctrl.paymentInfo?.transaction?.metadata?.selectedPaymentMethod;
+                ctrl.selectedCustomOfflinePaymentMethod = transactionSelectedCustomPaymentMethodId;
+                if(ctrl.organizationCustomPaymentMethods && transactionSelectedCustomPaymentMethodId) {
+                    const paymentMethodObj = ctrl.organizationCustomPaymentMethods.find(
+                        pm => pm.paymentMethodId === transactionSelectedCustomPaymentMethodId
+                    );
+
+                    if (!paymentMethodObj) {
+                        return;
+                    }
+
+                    const paymentMethodLocalizationKeys = Object.keys(paymentMethodObj);
+                    ctrl.selectedCustomOfflinePaymentMethod = "en" in paymentMethodObj.localizations
+                        ? paymentMethodObj.localizations["en"].paymentName
+                        : paymentMethodObj[paymentMethodLocalizationKeys[0]].paymentName;
+                }
+            }, function() {
+                ctrl.organizationCustomPaymentMethods = null;
+                ctrl.selectedCustomOfflinePaymentMethod = null;
             });
         }
 
