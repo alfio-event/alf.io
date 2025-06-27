@@ -338,6 +338,7 @@ class CustomOfflineReservationFlowIntegrationTest extends BaseReservationFlowTes
         assertFalse(tStatus.getBody().isSuccess());
 
         reservation = reservationApiV2Controller.getReservationInfo(reservationId, context.getPublicUser()).getBody();
+        assertEquals(PaymentProxy.CUSTOM_OFFLINE, reservation.getPaymentProxy());
         assertNotNull(reservation);
         checkOrderSummary(reservation, context);
         cleanupExtensionLog.run();

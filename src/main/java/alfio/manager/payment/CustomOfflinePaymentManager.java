@@ -142,6 +142,7 @@ public class CustomOfflinePaymentManager implements PaymentProvider {
         int updatedReservation = ticketReservationRepository.postponePayment(
                 spec.getReservationId(),
                 CUSTOM_OFFLINE_PAYMENT,
+                this.getPaymentProxy().name(),
                 Date.from(deadline.toInstant()),
                 spec.getEmail(),
                 spec.getCustomerName().getFullName(),

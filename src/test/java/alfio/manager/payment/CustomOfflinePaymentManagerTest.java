@@ -58,7 +58,8 @@ class CustomOfflinePaymentManagerTest {
         when(ticketReservationRepository.postponePayment(
             any(), any(), any(),
             any(), any(), any(),
-            any(), any(), any()
+            any(), any(), any(),
+            any()
         )).thenReturn(EXPECTED_NUM_MODIFIED_RESERVATIONS);
 
         final int EXPECTED_NUM_INSERTED_TRANSACTIONS = 1;
@@ -117,7 +118,7 @@ class CustomOfflinePaymentManagerTest {
             argThat(resId -> resId == paymentSpecification.getReservationId()),
             argThat(resStatus -> resStatus == TicketReservationStatus.CUSTOM_OFFLINE_PAYMENT),
             any(), any(), any(), any(),
-            any(), any(), any()
+            any(), any(), any(), any()
         );
 
         verify(transactionRepository).insert(
