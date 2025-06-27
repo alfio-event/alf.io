@@ -25,10 +25,14 @@ import alfio.manager.support.reservation.NotEnoughTicketsException;
 import alfio.manager.support.reservation.TooManyTicketsForDiscountCodeException;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
+import alfio.model.Event.EventFormat;
+import alfio.model.PriceContainer.VatStatus;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.StaticPaymentMethods;
+import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -45,6 +49,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -102,6 +109,8 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
     private WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
     @Autowired
     private PurchaseContextSearchManager purchaseContextSearchManager;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private NamedParameterJdbcTemplate jdbcTemplate;
@@ -598,6 +607,85 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         assertTrue(result.isSuccessful());
     }
 
+    @Test
+    public void testCanDeleteCustomOfflinePaymentReservation() throws JsonProcessingException {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
+        Event event = initEvent(
+            categories,
+            organizationRepository,
+            userManager,
+            eventManager,
+            eventRepository,
+            null,
+            EventFormat.ONLINE,
+            VatStatus.INCLUDED,
+            Collections.singletonList(PaymentProxy.CUSTOM_OFFLINE)
+        ).getKey();
+
+        var paymentMethods = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant bank transfer from any Canadian account.",
+                        "Send the payment to `payments@example.com`."
+                    )
+                )
+            )
+        );
+        configurationRepository.insertOrganizationLevel(
+            event.getOrganizationId(),
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
+            objectMapper.writeValueAsString(paymentMethods),
+            ""
+        );
+
+        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+
+        TicketReservationModification tr = new TicketReservationModification();
+        tr.setAmount(AVAILABLE_SEATS / 2 + 1);
+        tr.setTicketCategoryId(unbounded.getId());
+
+        TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
+        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
+        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        TotalPrice reservationCost = priceAndDiscount.getLeft();
+        assertTrue(priceAndDiscount.getRight().isEmpty());
+        PaymentSpecification specification = new PaymentSpecification(
+            reservationId,
+            null,
+            paymentMethods.get(0),
+            reservationCost.getPriceWithVAT(),
+            event,
+            "email@example.com",
+            new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
+            "billing address",
+            null,
+            Locale.ENGLISH,
+            true,
+            false,
+            null,
+            "IT",
+            "123456",
+            PriceContainer.VatStatus.INCLUDED,
+            true,
+            false
+        );
+        PaymentResult result = ticketReservationManager.performPayment(
+            specification,
+            reservationCost,
+            PaymentProxy.CUSTOM_OFFLINE,
+            paymentMethods.get(0),
+            null
+        );
+        assertTrue(result.isSuccessful());
+        ticketReservationManager.deleteOfflinePayment(event, reservationId, false, false, false, null);
+    }
 
     @Test
     public void testCleanupExpiredReservations() {

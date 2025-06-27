@@ -802,7 +802,7 @@ public class TicketReservationManager {
 
     public void deleteOfflinePayment(Event event, String reservationId, boolean expired, boolean credit, boolean notify, String username) {
         TicketReservation reservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
-        Validate.isTrue(reservation.getStatus() == OFFLINE_PAYMENT || reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT, "Invalid reservation status");
+        Validate.isTrue(List.of(OFFLINE_PAYMENT, DEFERRED_OFFLINE_PAYMENT, CUSTOM_OFFLINE_PAYMENT).contains(reservation.getStatus()), "Invalid reservation status");
         Validate.isTrue(!(credit && reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT), "Cannot credit deferred payment");
         if(credit) {
             creditReservation(reservation, username, notify);
