@@ -52,6 +52,9 @@ export class CustomOfflinePaymentEventSelector extends LitElement {
 
     handleSelectionChange = (selectedMethods: Array<{ paymentMethod: CustomOfflinePayment; selected: boolean }>) => {
         this.selectedPaymentMethods = selectedMethods;
+        this.dispatchEvent(new CustomEvent("selection-changed", {
+            detail: selectedMethods.filter(pm => pm.selected).map(pm => pm.paymentMethod)
+        }));
     }
 
         handleUpdatePricesModalSubmit = (_event: Event) => {

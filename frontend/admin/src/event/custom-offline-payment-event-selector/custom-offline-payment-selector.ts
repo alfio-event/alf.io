@@ -45,7 +45,6 @@ export class CustomOfflinePaymentSelector extends LitElement {
                                     html`<del>${item.paymentMethod.localizations["en"].paymentName}</del>`
                                     : item.paymentMethod.localizations["en"].paymentName
                                 }
-                                ${console.log("strikethrough ", this.strikeThroughSelected, ", selected: ", item.selected)}
                             </sl-checkbox>
                             <br/>
                         `;
