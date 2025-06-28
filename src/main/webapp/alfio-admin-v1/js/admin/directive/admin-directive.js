@@ -582,17 +582,33 @@
 
                 initPaymentProxies();
 
+                $scope._customOfflinePaymentsSelector = null;
+                $scope.selectedCustomPaymentMethods = [];
+
                 $scope.updatePaymentProxies = function() {
-                    $scope.obj.allowedPaymentProxies = _.chain($scope.paymentProxies)
+                    const nextPaymentProxies = _.chain($scope.paymentProxies)
                         .filter(function(it) { return it.selected; })
                         .map(function(it) { return it.proxy.id; })
+                        .filter(it => !(it === "CUSTOM_OFFLINE" && $scope.selectedCustomPaymentMethods < 1))
                         .value();
+
+                    $scope.obj.allowedPaymentProxies = nextPaymentProxies;
                 };
 
                 $scope.customOfflinePaymentsSelected = function() {
-                    return $scope.paymentProxies.some(function(p) {
+                    const proxies = $scope.paymentProxies.some(function(p) {
                         return p.selected && p.proxy.id === 'CUSTOM_OFFLINE';
                     });
+
+                    if(!$scope._customOfflinePaymentsSelector) {
+                        $scope._customOfflinePaymentsSelector = document.getElementById("edit-prices-custom-offline-event-selector");
+                        $scope._customOfflinePaymentsSelector?.addEventListener("selection-changed", function(event) {
+                            $scope.selectedCustomPaymentMethods = event.detail;
+                            $scope.updatePaymentProxies();
+                        });
+                    }
+
+                    return proxies;
                 };
 
                 UtilsService.getAvailableCurrencies().then(function(result) {
