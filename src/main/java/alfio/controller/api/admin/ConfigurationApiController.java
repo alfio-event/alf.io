@@ -26,11 +26,15 @@ import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import alfio.model.Event;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.model.user.Organization;
+import alfio.repository.EventRepository;
+import alfio.repository.system.ConfigurationRepository;
 import alfio.util.ClockProvider;
 import alfio.util.Json;
 import alfio.util.RequestUtils;
@@ -41,6 +45,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -65,6 +70,8 @@ public class ConfigurationApiController {
     private final ConfigurationManager configurationManager;
     private final BillingDocumentManager billingDocumentManager;
     private final AdminJobManager adminJobManager;
+    private final EventRepository eventRepository;
+    private final ConfigurationRepository configurationRepository;
     private final EventManager eventManager;
     private final ClockProvider clockProvider;
     private final UserManager userManager;
@@ -425,7 +432,33 @@ public class ConfigurationApiController {
             .orElse(new ArrayList<UserDefinedOfflinePaymentMethod>());
 
         if(!paymentMethods.removeIf(pm -> pm.getPaymentMethodId().equals(paymentMethodId))) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Payment method with passed ID does not exist.");
+            return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.TEXT_PLAIN)
+                .body("Payment method requested for deletion does not exist.");
+        }
+
+        List<Integer> orgEventIdsWithCustomPayments = eventRepository
+            .findByOrganizationIds(List.of(organizationId))
+            .stream()
+            .filter(event -> !event.expired() && event.getAllowedPaymentProxies().contains(PaymentProxy.CUSTOM_OFFLINE))
+            .map(Event::getId)
+            .toList();
+
+        if(!orgEventIdsWithCustomPayments.isEmpty()) {
+            var isPaymentMethodActivelyUsed = configurationRepository
+                .findAllByEventsAndKey(ConfigurationKeys.SELECTED_CUSTOM_PAYMENTS.name(), orgEventIdsWithCustomPayments)
+                .stream()
+                .map(config -> Json.fromJson(config.getValue(), new TypeReference<List<String>>() {}))
+                .flatMap(List::stream)
+                .anyMatch(id -> id.equals(paymentMethodId));
+
+            if(isPaymentMethodActivelyUsed) {
+                return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body("You cannot delete a payment method which is currently in use by an active event.");
+            }
         }
 
         var serialized = Json.toJson(paymentMethods);

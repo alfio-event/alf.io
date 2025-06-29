@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -47,11 +50,14 @@ import alfio.controller.api.ControllerConfiguration;
 import alfio.manager.EventManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
+import alfio.model.Event.EventFormat;
+import alfio.model.PriceContainer.VatStatus;
 import alfio.model.TicketCategory;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
@@ -86,6 +92,8 @@ public class ConfigurationApiControllerIntegrationTest {
     private EventManager eventManager;
     @Autowired
     private ObjectMapper objectMapper;
+    @Autowired
+    private NamedParameterJdbcTemplate jdbcTemplate;
 
     private Principal mockPrincipal;
     private Organization organization;
@@ -105,7 +113,17 @@ public class ConfigurationApiControllerIntegrationTest {
                 new DateTimeModification(LocalDate.now(clockProvider.getClock()).plusDays(1), LocalTime.now(clockProvider.getClock())),
                 DESCRIPTION, BigDecimal.ONE, true, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty())
         );
-        Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Pair<Event, String> eventAndUser = initEvent(
+            categories,
+            organizationRepository,
+            userManager,
+            eventManager,
+            eventRepository,
+            null,
+            EventFormat.ONLINE,
+            VatStatus.INCLUDED,
+            List.of(PaymentProxy.CUSTOM_OFFLINE)
+        );
         event = eventAndUser.getLeft();
 
         organization = organizationRepository.getById(event.getOrganizationId());
@@ -364,6 +382,61 @@ public class ConfigurationApiControllerIntegrationTest {
         );
 
         assertEquals(0, orgMethods.size());
+    }
+
+    @Test
+    void cannotDeletePaymentMethodAttachedToActiveEvent() throws JsonProcessingException {
+        var paymentMethods = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant bank transfer from any Canadian account.",
+                        "Send the payment to `payments@example.com`."
+                    )
+                )
+            )
+        );
+        configurationRepository.insertEventLevel(
+            event.getOrganizationId(),
+            event.getId(),
+            ConfigurationKeys.SELECTED_CUSTOM_PAYMENTS.name(),
+            objectMapper.writeValueAsString(List.of(paymentMethods.get(0).getPaymentMethodId())),
+            ""
+        );
+
+        configurationRepository.insertOrganizationLevel(
+            event.getOrganizationId(),
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
+            objectMapper.writeValueAsString(paymentMethods),
+            null
+        );
+
+        var response = configurationApiController.deletePaymentMethod(
+            event.getOrganizationId(),
+            paymentMethods.get(0).getPaymentMethodId(),
+            mockPrincipal
+        );
+
+        assertTrue(response.getStatusCode().is4xxClientError());
+
+        // Test after event has expired, payment method can be deleted.
+        var new_start_ts = ZonedDateTime.now(clockProvider.getClock()).minusDays(1).toOffsetDateTime();
+        var new_end_ts = new_start_ts.plusHours(1);
+        int result = jdbcTemplate.update(
+            "update event set start_ts = :start_ts, end_ts = :end_ts where id = :id",
+            new MapSqlParameterSource("start_ts", new_start_ts).addValue("end_ts", new_end_ts).addValue("id", event.getId())
+        );
+        assertEquals(1, result);
+
+        response = configurationApiController.deletePaymentMethod(
+            event.getOrganizationId(),
+            paymentMethods.get(0).getPaymentMethodId(),
+            mockPrincipal
+        );
+
+        assertTrue(response.getStatusCode().is2xxSuccessful());
     }
 
     @Test
