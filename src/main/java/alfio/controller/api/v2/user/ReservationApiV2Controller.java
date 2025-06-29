@@ -39,7 +39,6 @@ import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
 import alfio.manager.support.AdditionalServiceHelper;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.response.ValidatedResponse;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.PublicUserManager;
 import alfio.model.*;
@@ -52,7 +51,6 @@ import alfio.model.transaction.*;
 import alfio.repository.*;
 import alfio.util.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.MapUtils;
@@ -820,12 +818,9 @@ public class ReservationApiV2Controller {
     }
 
     private boolean isCustomPaymentMethodValidForEvent(Event event, PaymentMethod paymentMethod) {
-        var eventSelectedMethodIds = configurationManager
-            .getFor(ConfigurationKeys.SELECTED_CUSTOM_PAYMENTS, ConfigurationLevel.event(event))
-            .getValue()
-            .map(v -> Json.fromJson(v, new TypeReference<List<String>>() {}))
-            .orElse(new ArrayList<String>());
-
-        return eventSelectedMethodIds.stream().anyMatch(id -> id.equals(paymentMethod.getPaymentMethodId()));
+        var eventSelectedMethods = customOfflineConfigurationManager.getAllowedCustomOfflinePaymentMethodsForEvent(event);
+        return eventSelectedMethods
+            .stream()
+            .anyMatch(pm -> pm.getPaymentMethodId().equals(paymentMethod.getPaymentMethodId()));
     }
 }

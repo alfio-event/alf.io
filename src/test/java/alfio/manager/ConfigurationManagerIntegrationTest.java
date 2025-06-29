@@ -19,6 +19,8 @@ package alfio.manager;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
@@ -48,8 +50,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.testcontainers.shaded.com.fasterxml.jackson.core.JsonProcessingException;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -59,7 +59,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
-import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -90,6 +89,9 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private TicketCategoryRepository ticketCategoryRepository;
+
+    @Autowired
+    private CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     @BeforeEach
     public void prepareEnv() {
@@ -407,8 +409,7 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void testCustomOfflinePaymentMethodsReturnedInBlacklist() throws JsonProcessingException {
-        var objectMapper = new ObjectMapper();
+    void testCustomOfflinePaymentMethodsReturnedInBlacklist() throws CustomOfflinePaymentMethodAlreadyExistsException {
         var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
@@ -421,21 +422,15 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
                 )
             )
         );
-        configurationRepository.insertOrganizationLevel(
-            event.getOrganizationId(),
-            CUSTOM_OFFLINE_PAYMENTS.name(),
-            objectMapper.writeValueAsString(paymentMethods),
-            ""
-        );
+        for (var pm : paymentMethods) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(event.getOrganizationId(), pm);
+        }
 
         var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
-        configurationRepository.insertTicketCategoryLevel(
-            event.getOrganizationId(),
-            event.getId(),
-            categories.get(0).getId(),
-            ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS.name(),
-            objectMapper.writeValueAsString(paymentMethods.stream().map(UserDefinedOfflinePaymentMethod::getPaymentMethodId).collect(toList())),
-            ""
+        customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
+            event,
+            categories.get(0),
+            paymentMethods
         );
 
         var deniedMethods = configurationManager.getBlacklistedMethodsForReservation(

@@ -37,6 +37,9 @@ import alfio.controller.form.ReservationForm;
 import alfio.controller.payment.api.stripe.StripePaymentWebhookController;
 import alfio.extension.ExtensionService;
 import alfio.manager.*;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.support.extension.ExtensionEvent;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
@@ -46,7 +49,6 @@ import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
@@ -69,7 +71,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.context.request.ServletWebRequest;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
@@ -171,6 +172,8 @@ class CustomOfflineReservationFlowIntegrationTest extends BaseReservationFlowTes
     protected ObjectMapper objectMapper;
     @Autowired
     protected OrganizationRepository organizationRepository;
+    @Autowired
+    protected CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     private List<UserDefinedOfflinePaymentMethod> paymentMethods = List.of(
         new UserDefinedOfflinePaymentMethod(
@@ -198,7 +201,7 @@ class CustomOfflineReservationFlowIntegrationTest extends BaseReservationFlowTes
     );
     private PaymentMethod testingPaymentMethod;
 
-    private ReservationFlowContext createContext() throws JsonProcessingException {
+    private ReservationFlowContext createContext() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
         List<TicketCategoryModification> categories = Arrays.asList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(clockProvider.getClock()).minusDays(1), LocalTime.now(clockProvider.getClock())),
@@ -214,18 +217,13 @@ class CustomOfflineReservationFlowIntegrationTest extends BaseReservationFlowTes
         var event = eventAndUser.getLeft();
         var orgId = event.getOrganizationId();
 
-        configurationRepository.insertOrganizationLevel(
-            orgId,
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
-            objectMapper.writeValueAsString(paymentMethods),
-            ""
-        );
-        configurationRepository.insertEventLevel(
-            orgId,
-            event.getId(),
-            ConfigurationKeys.SELECTED_CUSTOM_PAYMENTS.name(),
-            objectMapper.writeValueAsString(List.of(paymentMethods.get(1).getPaymentMethodId())),
-            ""
+        for(var pm : paymentMethods) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(orgId, pm);
+        }
+
+        customOfflineConfigurationManager.setAllowedCustomOfflinePaymentMethodsForEvent(
+            event,
+            List.of(paymentMethods.get(1).getPaymentMethodId())
         );
 
         return new ReservationFlowContext(eventAndUser.getLeft(), owner(eventAndUser.getRight()), null, null, null, null, true, false, Map.of(), true);
@@ -237,7 +235,8 @@ class CustomOfflineReservationFlowIntegrationTest extends BaseReservationFlowTes
         super.testBasicFlow(() -> {
             try {
                 return createContext();
-            } catch (JsonProcessingException e) {
+            } catch (CustomOfflinePaymentMethodAlreadyExistsException |
+                     CustomOfflinePaymentMethodDoesNotExistException e) {
                 return null;
             }
         });
