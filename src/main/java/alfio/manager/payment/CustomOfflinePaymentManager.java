@@ -18,59 +18,47 @@ package alfio.manager.payment;
 
 import java.time.ZonedDateTime;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
 import alfio.manager.support.PaymentResult;
-import alfio.manager.system.ConfigurationLevel;
-import alfio.manager.system.ConfigurationManager;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProvider;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.Transaction;
 import alfio.model.transaction.TransactionRequest;
-import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
-import alfio.repository.system.ConfigurationRepository;
 import alfio.util.ClockProvider;
-import alfio.util.Json;
-
 import org.apache.commons.lang3.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-
-import com.fasterxml.jackson.core.type.TypeReference;
 
 import static alfio.manager.TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID;
 import static alfio.model.TicketReservation.TicketReservationStatus.CUSTOM_OFFLINE_PAYMENT;
 
 @Component
 public class CustomOfflinePaymentManager implements PaymentProvider {
+
     private final ClockProvider clockProvider;
-    private final ConfigurationRepository configurationRepository;
     private final TicketReservationRepository ticketReservationRepository;
     private final TransactionRepository transactionRepository;
-    private final ConfigurationManager configurationManager;
-    private static final Logger log = LoggerFactory.getLogger(CustomOfflinePaymentManager.class);
+    private final CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     public CustomOfflinePaymentManager(
-            ClockProvider clockProvider,
-            ConfigurationRepository configurationRepository,
-            TicketReservationRepository ticketReservationRepository,
-            TransactionRepository transactionRepository,
-            ConfigurationManager configurationManager) {
+        ClockProvider clockProvider,
+        TicketReservationRepository ticketReservationRepository,
+        TransactionRepository transactionRepository,
+        CustomOfflineConfigurationManager customOfflineConfigurationManager
+    ) {
         this.clockProvider = clockProvider;
-        this.configurationRepository = configurationRepository;
         this.ticketReservationRepository = ticketReservationRepository;
         this.transactionRepository = transactionRepository;
-        this.configurationManager = configurationManager;
+        this.customOfflineConfigurationManager = customOfflineConfigurationManager;
     }
 
     @Override
@@ -86,20 +74,10 @@ public class CustomOfflinePaymentManager implements PaymentProvider {
 
         var orgId = maybeOrgId.getAsInt();
 
-        var maybeConfig = configurationRepository
-            .findByKeyAtOrganizationLevel(orgId, ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.getValue());
-
-        if(!maybeConfig.isPresent()) {
-            return Set.of();
-        }
-
-        var paymentMethods = configurationManager
-            .getFor(ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS, ConfigurationLevel.organization(orgId))
-            .getValue()
-            .map(v -> Json.fromJson(v, new TypeReference<Set<UserDefinedOfflinePaymentMethod>>() {}))
-            .orElse(new HashSet<UserDefinedOfflinePaymentMethod>());
-
-        return paymentMethods;
+        return customOfflineConfigurationManager
+            .getOrganizationCustomOfflinePaymentMethods(orgId)
+            .stream()
+            .collect(Collectors.toSet());
     }
 
     @Override

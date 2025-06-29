@@ -20,6 +20,8 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.manager.payment.PaymentSpecification;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.reservation.NotEnoughTicketsException;
 import alfio.manager.support.reservation.TooManyTicketsForDiscountCodeException;
@@ -29,7 +31,6 @@ import alfio.model.Event.EventFormat;
 import alfio.model.PriceContainer.VatStatus;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.StaticPaymentMethods;
 import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
@@ -49,9 +50,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -110,7 +108,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private PurchaseContextSearchManager purchaseContextSearchManager;
     @Autowired
-    private ObjectMapper objectMapper;
+    private CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     @Autowired
     private NamedParameterJdbcTemplate jdbcTemplate;
@@ -608,7 +606,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testCanDeleteCustomOfflinePaymentReservation() throws JsonProcessingException {
+    public void testCanDeleteCustomOfflinePaymentReservation() throws CustomOfflinePaymentMethodAlreadyExistsException {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -638,12 +636,10 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
                 )
             )
         );
-        configurationRepository.insertOrganizationLevel(
-            event.getOrganizationId(),
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
-            objectMapper.writeValueAsString(paymentMethods),
-            ""
-        );
+
+        for(var pm : paymentMethods) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(event.getOrganizationId(), pm);
+        }
 
         TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
 

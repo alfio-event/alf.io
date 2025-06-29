@@ -20,8 +20,11 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
+import alfio.controller.api.admin.EventApiController.PassedIdDoesNotExistException;
 import alfio.manager.AdminReservationRequestManager;
 import alfio.manager.EventManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
@@ -29,14 +32,11 @@ import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.repository.EventDeleterRepository;
 import alfio.repository.EventRepository;
-import alfio.repository.PromoCodeDiscountRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
-import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.toolkit.PromoCodeDiscountIntegrationTestingToolkit;
@@ -53,10 +53,6 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -107,13 +103,9 @@ class EventApiControllerIntegrationTest {
     @Autowired
     private TicketRepository ticketRepository;
     @Autowired
-    private PromoCodeDiscountRepository promoCodeDiscountRepository;
-    @Autowired
-    private TicketReservationRepository ticketReservationRepository;
-    @Autowired
     private PromoCodeDiscountIntegrationTestingToolkit promoCodeDiscountIntegrationTestingToolkit;
     @Autowired
-    private ObjectMapper objectMapper;
+    private CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     private Event event;
     private static final String TEST_ATTENDEE_EXTERNAL_REFERENCE = "123";
@@ -206,7 +198,7 @@ class EventApiControllerIntegrationTest {
     }
 
     @Test
-    void testCanGetBlacklistedCustomPaymentMethods() throws JsonProcessingException {
+    void testCanGetBlacklistedCustomPaymentMethods() throws CustomOfflinePaymentMethodAlreadyExistsException, PassedIdDoesNotExistException {
         var eventAndUser = createEvent(Event.EventFormat.ONLINE);
         event = eventAndUser.getKey();
         var principal = Mockito.mock(Authentication.class);
@@ -241,21 +233,13 @@ class EventApiControllerIntegrationTest {
             )
         );
 
-        var organizationMethodsJson = objectMapper.writeValueAsString(paymentMethods);
-        configurationRepository.insertOrganizationLevel(
-            organizationId,
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
-            organizationMethodsJson,
-            null
-        );
-
-        configurationRepository.insertTicketCategoryLevel(
-            organizationId,
-            event.getId(),
-            ticketCategory.getId(),
-            ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS.name(),
-            objectMapper.writeValueAsString(List.of(paymentMethods.get(0).getPaymentMethodId())),
-            ""
+        for(var pm : paymentMethods) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organizationId, pm);
+        }
+        customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
+            event,
+            ticketCategory,
+            List.of(paymentMethods.get(0))
         );
 
         var response = eventApiController.getBlacklistedCustomPaymentMethods(
@@ -263,7 +247,7 @@ class EventApiControllerIntegrationTest {
             ticketCategory.getId(),
             principal
         );
-        assertTrue(response.getStatusCode().is2xxSuccessful());
+
         var blacklistedMethodIds = response.getBody();
 
         assertEquals(1, blacklistedMethodIds.size());
@@ -273,12 +257,11 @@ class EventApiControllerIntegrationTest {
     }
 
     @Test
-    void testCanSetBlacklistedCustomPaymentMethods() throws JsonProcessingException {
+    void testCanSetBlacklistedCustomPaymentMethods() throws PassedIdDoesNotExistException, CustomOfflinePaymentMethodAlreadyExistsException {
         var eventAndUser = createEvent(Event.EventFormat.ONLINE);
         event = eventAndUser.getKey();
         var principal = Mockito.mock(Authentication.class);
         when(principal.getName()).thenReturn(owner(eventAndUser.getValue()));
-        var organizationId = organizationRepository.findAllForUser(eventAndUser.getRight()).get(0).getId();
         var ticketCategoryList = this.ticketCategoryRepository.findAllTicketCategories(event.getId());
 
         assertEquals(1, ticketCategoryList.size());
@@ -308,6 +291,10 @@ class EventApiControllerIntegrationTest {
             )
         );
 
+        for(var pm : paymentMethods) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(event.getOrganizationId(), pm);
+        }
+
         eventApiController.setBlacklistedCustomPaymentMethods(
             event.getId(),
             ticketCategory.getId(),
@@ -315,25 +302,14 @@ class EventApiControllerIntegrationTest {
             principal
         );
 
-        var configurationValues = configurationRepository.findByTicketCategoryAndKey(
-            organizationId,
-            event.getId(),
-            ticketCategory.getId(),
-            ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS.name()
+        var storedBlacklistedPaymentMethods = customOfflineConfigurationManager.getBlacklistedPaymentMethodsByTicketCategory(
+            event,
+            ticketCategory
         );
-        assertEquals(1, configurationValues.size());
+        assertEquals(1, storedBlacklistedPaymentMethods.size());
 
-        var config = configurationValues.get(0);
-
-        var storedBlacklistedPaymentMethodIds = objectMapper.readValue(
-            config.getValue(),
-            new TypeReference<List<String>>() {}
-        );
-
-        assertEquals(1, storedBlacklistedPaymentMethodIds.size());
-
-        assertTrue(storedBlacklistedPaymentMethodIds.stream().allMatch(
-            blItem -> paymentMethods.stream().anyMatch(pmItem -> blItem.equals(pmItem.getPaymentMethodId())))
+        assertTrue(storedBlacklistedPaymentMethods.stream().allMatch(
+            blItem -> paymentMethods.stream().anyMatch(pmItem -> blItem.getPaymentMethodId().equals(pmItem.getPaymentMethodId())))
         );
     }
 

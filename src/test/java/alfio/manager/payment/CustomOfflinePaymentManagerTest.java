@@ -16,15 +16,14 @@
  */
 package alfio.manager.payment;
 
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
 import alfio.manager.support.PaymentResult;
-import alfio.manager.system.ConfigurationManager;
 import alfio.model.CustomerName;
 import alfio.model.Event;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.transaction.*;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
-import alfio.repository.system.ConfigurationRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,19 +38,16 @@ import static org.mockito.Mockito.*;
 import static alfio.test.util.TestUtil.clockProvider;
 
 class CustomOfflinePaymentManagerTest {
-
-    private ConfigurationRepository configurationRepository;
-    private ConfigurationManager configurationManager;
     private CustomOfflinePaymentManager customOfflinePaymentManager;
     private Event event;
     private TicketReservationRepository ticketReservationRepository;
     private TransactionRepository transactionRepository;
     private UserDefinedOfflinePaymentMethod paymentMethod;
+    private CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     @BeforeEach
     void init() {
-        configurationRepository = mock(ConfigurationRepository.class);
-        configurationManager = mock(ConfigurationManager.class);
+        customOfflineConfigurationManager = mock(CustomOfflineConfigurationManager.class);
 
         final int EXPECTED_NUM_MODIFIED_RESERVATIONS = 1;
         ticketReservationRepository = spy(TicketReservationRepository.class);
@@ -88,10 +84,9 @@ class CustomOfflinePaymentManagerTest {
         );
         customOfflinePaymentManager = new CustomOfflinePaymentManager(
             clockProvider(),
-            configurationRepository,
             ticketReservationRepository,
             transactionRepository,
-            configurationManager
+            customOfflineConfigurationManager
         );
     }
 

@@ -88,8 +88,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 import org.springframework.validation.BindingResult;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.Clock;
@@ -937,14 +935,10 @@ public class TicketReservationManager {
         var ifCustomOfflineIsApplicableForEvent = true;
         if (paymentMethodDTO.getPaymentProxy() == PaymentProxy.CUSTOM_OFFLINE && purchaseContext.event().isPresent()) {
             var event = purchaseContext.event().get();
-            try {
-                ifCustomOfflineIsApplicableForEvent = customOfflineConfigurationManager
-                    .getAllowedCustomOfflinePaymentMethodsForEvent(event)
-                    .stream()
-                    .anyMatch(pm -> pm.getPaymentMethodId().equals(paymentMethodDTO.getPaymentMethodId()));
-            } catch (JsonProcessingException ex) {
-                log.warn("JSON parsing exception while validating payment method {}", ex);
-            }
+            ifCustomOfflineIsApplicableForEvent = customOfflineConfigurationManager
+                .getAllowedCustomOfflinePaymentMethodsForEvent(event)
+                .stream()
+                .anyMatch(pm -> pm.getPaymentMethodId().equals(paymentMethodDTO.getPaymentMethodId()));
         }
 
         return paymentMethodDTO.isActive()

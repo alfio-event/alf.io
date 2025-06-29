@@ -30,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,16 +39,14 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
 import alfio.manager.EventManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.Event.EventFormat;
@@ -56,7 +55,6 @@ import alfio.model.TicketCategory;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.model.user.Organization;
@@ -66,7 +64,6 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
-import alfio.util.Json;
 
 import static alfio.test.util.IntegrationTestUtil.*;
 
@@ -91,9 +88,9 @@ public class ConfigurationApiControllerIntegrationTest {
     @Autowired
     private EventManager eventManager;
     @Autowired
-    private ObjectMapper objectMapper;
-    @Autowired
     private NamedParameterJdbcTemplate jdbcTemplate;
+    @Autowired
+    private CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     private Principal mockPrincipal;
     private Organization organization;
@@ -134,7 +131,7 @@ public class ConfigurationApiControllerIntegrationTest {
     }
 
     @Test
-    void canCreateCustomOfflinePaymentMethod() throws JsonMappingException, JsonProcessingException {
+    void canCreateCustomOfflinePaymentMethod() {
         final var PAYMENT_NAME = "Interac E-Transfer";
         final var PAYMENT_DESCRIPTION = "Instant Canadian bank transfer";
         final var PAYMENT_INSTRUCTIONS = "### Send the full invoiced amount to `payments@org.com`.";
@@ -154,24 +151,9 @@ public class ConfigurationApiControllerIntegrationTest {
             paymentMethod,
             this.mockPrincipal
         );
-
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        var maybeSaved = configurationRepository.findByKeyAtOrganizationLevel(
-            organization.getId(),
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name()
-        );
-
-        assertTrue(maybeSaved.isPresent());
-
-        var saved = maybeSaved.get();
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        var orgMethods = objectMapper.readValue(
-            saved.getValue(),
-            new TypeReference<List<UserDefinedOfflinePaymentMethod>>() {}
-        );
-
+        var orgMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(organization.getId());
         assertEquals(1, orgMethods.size());
 
         var retrieved = orgMethods.get(0);
@@ -184,17 +166,29 @@ public class ConfigurationApiControllerIntegrationTest {
     }
 
     @Test
-    void cannotCreatePaymentMethodWithExistingId() {
-        final var EXISTING_CONFIG = "[{\"paymentMethodId\":\"15146df3-2436-4d2e-90b9-0d6cb273e291\",\"localizations\":{\"en\":{\"paymentName\":\"Interac E-Transfer\",\"paymentDescription\":\"Instant Canadian bank transfer\",\"paymentInstructions\":\"### Send the full invoiced amount to `payments@org.com`.\"},\"fr\":{\"paymentName\":\"Virement Interac\",\"paymentDescription\":\"Virement bancaire instantané au Canada\",\"paymentInstructions\":\"Envoyez le montant total facturé à payments@example.com\"}}}]";
+    void cannotCreatePaymentMethodWithExistingId() throws CustomOfflinePaymentMethodAlreadyExistsException {
+        final var PAYMENT_METHODS = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant Canadian bank transfer",
+                        "### Send the full invoiced amount to `payments@org.com`."
+                    ),
+                    "fr", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Virement Interac",
+                        "Virement bancaire instantané au Canada",
+                        "Envoyez le montant total facturé à payments@example.com"
+                    )
+                )
+            )
+        );
         final var LOCALE = "en";
 
-        var insertResult = configurationRepository.insertOrganizationLevel(
-            organization.getId(),
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
-            EXISTING_CONFIG,
-            null
-        );
-        assertEquals(1, insertResult);
+        for(var pm : PAYMENT_METHODS) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organization.getId(), pm);
+        }
 
         var paymentMethod = new UserDefinedOfflinePaymentMethod(
             "15146df3-2436-4d2e-90b9-0d6cb273e291",
@@ -215,7 +209,7 @@ public class ConfigurationApiControllerIntegrationTest {
     }
 
     @Test
-    void canGetExistingPaymentMethod() throws JsonMappingException, JsonProcessingException {
+    void canGetExistingPaymentMethod() throws CustomOfflinePaymentMethodAlreadyExistsException {
         List<UserDefinedOfflinePaymentMethod> paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
@@ -239,37 +233,20 @@ public class ConfigurationApiControllerIntegrationTest {
             )
         );
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        var jsonPayload = objectMapper.writeValueAsString(paymentMethods);
-
-        configurationRepository.insertOrganizationLevel(
-            organization.getId(),
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
-            jsonPayload,
-            null
-        );
+        for(var pm : paymentMethods) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(
+                organization.getId(),
+                pm
+            );
+        }
 
         var response = configurationApiController.getPaymentMethodsForOrganization(
             organization.getId(),
             mockPrincipal
         );
-
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        var maybeSaved = configurationRepository.findByKeyAtOrganizationLevel(
-            organization.getId(),
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name()
-        );
-
-        assertTrue(maybeSaved.isPresent());
-
-        var saved = maybeSaved.get();
-
-        var orgMethods = objectMapper.readValue(
-            saved.getValue(),
-            new TypeReference<List<UserDefinedOfflinePaymentMethod>>() {}
-        );
-
+        var orgMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(organization.getId());
         assertEquals(paymentMethods.size(), orgMethods.size());
 
         var mismatches = paymentMethods
@@ -285,22 +262,34 @@ public class ConfigurationApiControllerIntegrationTest {
     }
 
     @Test
-    void canUpdateExistingPaymentMethod() throws JsonMappingException, JsonProcessingException {
+    void canUpdateExistingPaymentMethod() throws CustomOfflinePaymentMethodAlreadyExistsException {
         final var NEW_PAYMENT_NAME = "Updated Name";
         final var NEW_PAYMENT_DESCRIPTION = "Test Description";
         final var NEW_PAYMENT_INSTRUCTIONS = "Test Instructions";
         final var LOCALE = "en";
 
         final var EXISTING_METHOD_ID = "15146df3-2436-4d2e-90b9-0d6cb273e291";
-        final var EXISTING_CONFIG = "[{\"paymentMethodId\":\"15146df3-2436-4d2e-90b9-0d6cb273e291\",\"localizations\":{\"en\":{\"paymentName\":\"Interac E-Transfer\",\"paymentDescription\":\"Instant Canadian bank transfer\",\"paymentInstructions\":\"### Send the full invoiced amount to `payments@org.com`.\"},\"fr\":{\"paymentName\":\"Virement Interac\",\"paymentDescription\":\"Virement bancaire instantané au Canada\",\"paymentInstructions\":\"Envoyez le montant total facturé à payments@example.com\"}}}]";
-
-        var insertResult = configurationRepository.insertOrganizationLevel(
-            organization.getId(),
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
-            EXISTING_CONFIG,
-            null
+        final var PAYMENT_METHODS = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant Canadian bank transfer",
+                        "### Send the full invoiced amount to `payments@org.com`."
+                    ),
+                    "fr", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Virement Interac",
+                        "Virement bancaire instantané au Canada",
+                        "Envoyez le montant total facturé à payments@example.com"
+                    )
+                )
+            )
         );
-        assertEquals(1, insertResult);
+
+        for(var pm : PAYMENT_METHODS) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organization.getId(), pm);
+        }
 
         var paymentMethod = new UserDefinedOfflinePaymentMethod(
             EXISTING_METHOD_ID,
@@ -320,21 +309,7 @@ public class ConfigurationApiControllerIntegrationTest {
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        var maybeSaved = configurationRepository.findByKeyAtOrganizationLevel(
-            organization.getId(),
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name()
-        );
-
-        assertTrue(maybeSaved.isPresent());
-
-        var saved = maybeSaved.get();
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        var orgMethods = objectMapper.readValue(
-            saved.getValue(),
-            new TypeReference<List<UserDefinedOfflinePaymentMethod>>() {}
-        );
-
+        var orgMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(organization.getId());
         assertEquals(1, orgMethods.size());
 
         var retrieved = orgMethods.get(0);
@@ -347,45 +322,43 @@ public class ConfigurationApiControllerIntegrationTest {
     }
 
     @Test
-    void canDeleteExistingPaymentMethod() throws JsonMappingException, JsonProcessingException {
+    void canDeleteExistingPaymentMethod() throws CustomOfflinePaymentMethodAlreadyExistsException {
         final var EXISTING_METHOD_ID = "15146df3-2436-4d2e-90b9-0d6cb273e291";
-        final var EXISTING_CONFIG = "[{\"paymentMethodId\":\"15146df3-2436-4d2e-90b9-0d6cb273e291\",\"localizations\":{\"en\":{\"paymentName\":\"Interac E-Transfer\",\"paymentDescription\":\"Instant Canadian bank transfer\",\"paymentInstructions\":\"### Send the full invoiced amount to `payments@org.com`.\"},\"fr\":{\"paymentName\":\"Virement Interac\",\"paymentDescription\":\"Virement bancaire instantané au Canada\",\"paymentInstructions\":\"Envoyez le montant total facturé à payments@example.com\"}}}]";
-
-        configurationRepository.insertOrganizationLevel(
-            organization.getId(),
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
-            EXISTING_CONFIG,
-            null
+        final var PAYMENT_METHODS = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant Canadian bank transfer",
+                        "### Send the full invoiced amount to `payments@org.com`."
+                    ),
+                    "fr", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Virement Interac",
+                        "Virement bancaire instantané au Canada",
+                        "Envoyez le montant total facturé à payments@example.com"
+                    )
+                )
+            )
         );
+
+        for(var pm : PAYMENT_METHODS) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organization.getId(), pm);
+        }
 
         var response = configurationApiController.deletePaymentMethod(
             organization.getId(),
             EXISTING_METHOD_ID,
             mockPrincipal
         );
-
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        var maybeSaved = configurationRepository.findByKeyAtOrganizationLevel(
-            organization.getId(),
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name()
-        );
-
-        assertTrue(maybeSaved.isPresent());
-
-        var saved = maybeSaved.get();
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        var orgMethods = objectMapper.readValue(
-            saved.getValue(),
-            new TypeReference<List<UserDefinedOfflinePaymentMethod>>() {}
-        );
-
+        var orgMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(organization.getId());
         assertEquals(0, orgMethods.size());
     }
 
     @Test
-    void cannotDeletePaymentMethodAttachedToActiveEvent() throws JsonProcessingException {
+    void cannotDeletePaymentMethodAttachedToActiveEvent() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
         var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
@@ -398,19 +371,14 @@ public class ConfigurationApiControllerIntegrationTest {
                 )
             )
         );
-        configurationRepository.insertEventLevel(
-            event.getOrganizationId(),
-            event.getId(),
-            ConfigurationKeys.SELECTED_CUSTOM_PAYMENTS.name(),
-            objectMapper.writeValueAsString(List.of(paymentMethods.get(0).getPaymentMethodId())),
-            ""
-        );
 
-        configurationRepository.insertOrganizationLevel(
-            event.getOrganizationId(),
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
-            objectMapper.writeValueAsString(paymentMethods),
-            null
+        for(var pm : paymentMethods) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(event.getOrganizationId(), pm);
+        }
+
+        customOfflineConfigurationManager.setAllowedCustomOfflinePaymentMethodsForEvent(
+            event,
+            List.of(paymentMethods.get(0).getPaymentMethodId())
         );
 
         var response = configurationApiController.deletePaymentMethod(
@@ -418,7 +386,6 @@ public class ConfigurationApiControllerIntegrationTest {
             paymentMethods.get(0).getPaymentMethodId(),
             mockPrincipal
         );
-
         assertTrue(response.getStatusCode().is4xxClientError());
 
         // Test after event has expired, payment method can be deleted.
@@ -436,34 +403,51 @@ public class ConfigurationApiControllerIntegrationTest {
             mockPrincipal
         );
 
+        assertThrows(CustomOfflinePaymentMethodDoesNotExistException.class, () ->
+            customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethodById(
+                event.getOrganizationId(),
+                paymentMethods.get(0).getPaymentMethodId()
+            ),
+            "Payment method should not exist after being deleted."
+        );
+
         assertTrue(response.getStatusCode().is2xxSuccessful());
     }
 
     @Test
-    void canGetAllowedPaymentMethodsForEvent() throws JsonProcessingException {
+    void canGetAllowedPaymentMethodsForEvent() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
         final var EXISTING_METHOD_ID = "15146df3-2436-4d2e-90b9-0d6cb273e291";
-        final var EXISTING_CONFIG = "[{\"paymentMethodId\":\"15146df3-2436-4d2e-90b9-0d6cb273e291\",\"localizations\":{\"en\":{\"paymentName\":\"Interac E-Transfer\",\"paymentDescription\":\"Instant Canadian bank transfer\",\"paymentInstructions\":\"### Send the full invoiced amount to `payments@org.com`.\"},\"fr\":{\"paymentName\":\"Virement Interac\",\"paymentDescription\":\"Virement bancaire instantané au Canada\",\"paymentInstructions\":\"Envoyez le montant total facturé à payments@example.com\"}}}]";
-
-        configurationRepository.insertOrganizationLevel(
-            organization.getId(),
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
-            EXISTING_CONFIG,
-            null
+        final var PAYMENT_METHODS = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant Canadian bank transfer",
+                        "### Send the full invoiced amount to `payments@org.com`."
+                    ),
+                    "fr", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Virement Interac",
+                        "Virement bancaire instantané au Canada",
+                        "Envoyez le montant total facturé à payments@example.com"
+                    )
+                )
+            )
         );
 
-        configurationRepository.insertEventLevel(
-            organization.getId(),
-            event.getId(),
-            ConfigurationKeys.SELECTED_CUSTOM_PAYMENTS.name(),
-            objectMapper.writeValueAsString(List.of(EXISTING_METHOD_ID)),
-            ""
+        for(var pm : PAYMENT_METHODS) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organization.getId(), pm);
+        }
+
+        customOfflineConfigurationManager.setAllowedCustomOfflinePaymentMethodsForEvent(
+            event,
+            List.of(EXISTING_METHOD_ID)
         );
 
         var response = configurationApiController.getAllowedPaymentMethodsForEvent(
             event.getId(),
             mockPrincipal
         );
-
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
         var returnedAllowedPaymentMethods = response.getBody();
@@ -474,52 +458,71 @@ public class ConfigurationApiControllerIntegrationTest {
     }
 
     @Test
-    void canSetAllowedPaymentMethodsForEvent() throws JsonProcessingException {
+    void canSetAllowedPaymentMethodsForEvent() throws CustomOfflinePaymentMethodAlreadyExistsException {
         final var EXISTING_METHOD_ID = "15146df3-2436-4d2e-90b9-0d6cb273e291";
-        final var EXISTING_CONFIG = "[{\"paymentMethodId\":\"15146df3-2436-4d2e-90b9-0d6cb273e291\",\"localizations\":{\"en\":{\"paymentName\":\"Interac E-Transfer\",\"paymentDescription\":\"Instant Canadian bank transfer\",\"paymentInstructions\":\"### Send the full invoiced amount to `payments@org.com`.\"},\"fr\":{\"paymentName\":\"Virement Interac\",\"paymentDescription\":\"Virement bancaire instantané au Canada\",\"paymentInstructions\":\"Envoyez le montant total facturé à payments@example.com\"}}}]";
-
-        configurationRepository.insertOrganizationLevel(
-            organization.getId(),
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
-            EXISTING_CONFIG,
-            null
+        final var PAYMENT_METHODS = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant Canadian bank transfer",
+                        "### Send the full invoiced amount to `payments@org.com`."
+                    ),
+                    "fr", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Virement Interac",
+                        "Virement bancaire instantané au Canada",
+                        "Envoyez le montant total facturé à payments@example.com"
+                    )
+                )
+            )
         );
+
+        for(var pm : PAYMENT_METHODS) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organization.getId(), pm);
+        }
 
         var response = configurationApiController.setEventAllowedPaymentMethods(
             event.getId(),
             List.of(EXISTING_METHOD_ID),
             mockPrincipal
         );
-
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        var eventSelectedPaymentMethods = configurationRepository.findByKeyAtEventLevel(
-            event.getId(),
-            organization.getId(),
-            ConfigurationKeys.SELECTED_CUSTOM_PAYMENTS.name()
+        var eventSelectedPaymentMethods = customOfflineConfigurationManager.getAllowedCustomOfflinePaymentMethodsForEvent(
+            event
         );
 
-        assertTrue(eventSelectedPaymentMethods.isPresent());
-
-        var parsedSelectedMethods = Json.fromJson(
-            eventSelectedPaymentMethods.get().getValue(),
-            new TypeReference<List<String>>() {}
-        );
-
-        assertEquals(1, parsedSelectedMethods.size());
-        assertEquals(EXISTING_METHOD_ID, parsedSelectedMethods.get(0));
+        assertEquals(1, eventSelectedPaymentMethods.size());
+        assertEquals(EXISTING_METHOD_ID, eventSelectedPaymentMethods.get(0).getPaymentMethodId());
     }
 
     @Test
-    void cannotSetAllowedPaymentMethodsToNonExisting() throws JsonProcessingException {
-        final var EXISTING_CONFIG = "[{\"paymentMethodId\":\"15146df3-2436-4d2e-90b9-0d6cb273e291\",\"localizations\":{\"en\":{\"paymentName\":\"Interac E-Transfer\",\"paymentDescription\":\"Instant Canadian bank transfer\",\"paymentInstructions\":\"### Send the full invoiced amount to `payments@org.com`.\"},\"fr\":{\"paymentName\":\"Virement Interac\",\"paymentDescription\":\"Virement bancaire instantané au Canada\",\"paymentInstructions\":\"Envoyez le montant total facturé à payments@example.com\"}}}]";
-
-        configurationRepository.insertOrganizationLevel(
-            organization.getId(),
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
-            EXISTING_CONFIG,
-            null
+    void cannotSetAllowedPaymentMethodsToNonExisting() throws CustomOfflinePaymentMethodAlreadyExistsException {
+        final var PAYMENT_METHODS = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant Canadian bank transfer",
+                        "### Send the full invoiced amount to `payments@org.com`."
+                    ),
+                    "fr", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Virement Interac",
+                        "Virement bancaire instantané au Canada",
+                        "Envoyez le montant total facturé à payments@example.com"
+                    )
+                )
+            )
         );
+
+        for (var pm : PAYMENT_METHODS) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(
+                organization.getId(),
+                pm
+            );
+        }
 
         var response = configurationApiController.setEventAllowedPaymentMethods(
             event.getId(),
