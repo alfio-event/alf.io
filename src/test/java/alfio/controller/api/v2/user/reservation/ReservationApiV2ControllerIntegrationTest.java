@@ -43,8 +43,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.validation.BeanPropertyBindingResult;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
@@ -55,6 +53,9 @@ import alfio.controller.form.PaymentForm;
 import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.payment.PaymentSpecification;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.user.UserManager;
 import alfio.model.CustomerName;
 import alfio.model.Event;
@@ -65,7 +66,6 @@ import alfio.model.TotalPrice;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.model.user.Organization;
@@ -79,7 +79,6 @@ import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
 import static alfio.test.util.IntegrationTestUtil.*;
-import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -113,7 +112,7 @@ public class ReservationApiV2ControllerIntegrationTest {
     @Autowired
     private TicketReservationManager ticketReservationManager;
     @Autowired
-    private ObjectMapper objectMapper;
+    private CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     private Principal mockPrincipal;
     private Organization organization;
@@ -122,7 +121,7 @@ public class ReservationApiV2ControllerIntegrationTest {
 
 
     @BeforeEach
-    public void ensureConfiguration() throws JsonProcessingException {
+    public void ensureConfiguration() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
 
         List<TicketCategoryModification> categories = Arrays.asList(
@@ -177,27 +176,18 @@ public class ReservationApiV2ControllerIntegrationTest {
             )
         );
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        var organizationMethodsJson = objectMapper.writeValueAsString(paymentMethods);
-
-        configurationRepository.insertOrganizationLevel(
-            organization.getId(),
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
-            organizationMethodsJson,
-            null
-        );
+        for(var pm : paymentMethods) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organization.getId(), pm);
+        }
 
         List<String> eventSelectedMethodIds = paymentMethods
             .stream()
             .map(UserDefinedOfflinePaymentMethod::getPaymentMethodId)
             .collect(Collectors.toList());
 
-        configurationRepository.insertEventLevel(
-            organization.getId(),
-            event.getId(),
-            ConfigurationKeys.SELECTED_CUSTOM_PAYMENTS.name(),
-            objectMapper.writeValueAsString(eventSelectedMethodIds),
-            ""
+        customOfflineConfigurationManager.setAllowedCustomOfflinePaymentMethodsForEvent(
+            event,
+            eventSelectedMethodIds
         );
     }
 
@@ -308,11 +298,13 @@ public class ReservationApiV2ControllerIntegrationTest {
     }
 
     @Test
-    void cannotGetSelectedCustomPaymentMethodDetailsForOrgWithNoCustomMethods() throws JsonProcessingException {
-        configurationRepository.deleteOrganizationLevelByKey(
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
+    void cannotGetSelectedCustomPaymentMethodDetailsForOrgWithNoCustomMethods() throws CustomOfflinePaymentMethodDoesNotExistException, CustomOfflinePaymentMethodAlreadyExistsException {
+        var orgPaymentMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(
             organization.getId()
         );
+        for (var pm : orgPaymentMethods) {
+            customOfflineConfigurationManager.deleteOrganizationCustomOfflinePaymentMethod(organization.getId(), pm);
+        }
 
         var reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(
@@ -360,15 +352,9 @@ public class ReservationApiV2ControllerIntegrationTest {
         );
         assertTrue(paymentResult.isSuccessful());
 
-        var modifiedOrgMethods = List.of(paymentMethods.get(1));
-        ObjectMapper objectMapper = new ObjectMapper();
-        var organizationMethodsJson = objectMapper.writeValueAsString(modifiedOrgMethods);
-
-        configurationRepository.insertOrganizationLevel(
+        customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(
             organization.getId(),
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
-            organizationMethodsJson,
-            null
+            paymentMethods.get(1)
         );
 
         assertThrows(
@@ -378,7 +364,7 @@ public class ReservationApiV2ControllerIntegrationTest {
     }
 
     @Test
-    void testActivePaymentMethodsBlacklistMethodsCorrect() throws JsonProcessingException {
+    void testActivePaymentMethodsBlacklistMethodsCorrect() {
         var reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(
             reservationId,
@@ -406,13 +392,10 @@ public class ReservationApiV2ControllerIntegrationTest {
             i -> null
         );
 
-        configurationRepository.insertTicketCategoryLevel(
-            organization.getId(),
-            event.getId(),
-            firstCategory.getValue().getId(),
-            ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS.name(),
-            objectMapper.writeValueAsString(paymentMethods.stream().map(pm -> pm.getPaymentMethodId()).collect(toList())),
-            ""
+        customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
+            event,
+            firstCategory.getValue(),
+            paymentMethods
         );
 
         var response = reservationApiV2Controller.getReservationInfo(reservationId, mockPrincipal);

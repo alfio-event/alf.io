@@ -32,15 +32,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
 import alfio.manager.system.ConfigurationLevel;
-import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.modification.OrganizationModification;
@@ -66,8 +64,6 @@ public class CustomOfflinePaymentManagerIntegrationTest {
     @Autowired
     private ConfigurationRepository configurationRepository;
     @Autowired
-    private ConfigurationManager configurationManager;
-    @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
     private TicketReservationRepository ticketReservationRepository;
@@ -75,13 +71,15 @@ public class CustomOfflinePaymentManagerIntegrationTest {
     private TransactionRepository transactionRepository;
     @Autowired
     private UserManager userManager;
+    @Autowired
+    private CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     private Principal mockPrincipal;
     private Organization organization;
     private List<UserDefinedOfflinePaymentMethod> paymentMethods;
 
     @BeforeEach
-    public void ensureConfiguration() throws JsonProcessingException {
+    public void ensureConfiguration() throws CustomOfflinePaymentMethodAlreadyExistsException {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
 
         String organizationName = UUID.randomUUID().toString();
@@ -134,25 +132,18 @@ public class CustomOfflinePaymentManagerIntegrationTest {
             )
         );
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        var jsonPayload = objectMapper.writeValueAsString(paymentMethods);
-
-        configurationRepository.insertOrganizationLevel(
-            organization.getId(),
-            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
-            jsonPayload,
-            null
-        );
+        for(var pm : paymentMethods) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organization.getId(), pm);
+        }
     }
 
     @Test
     void supportedPaymentMethodsReturnsExpected() {
         CustomOfflinePaymentManager paymentManager = new CustomOfflinePaymentManager(
             clockProvider(),
-            configurationRepository,
             ticketReservationRepository,
             transactionRepository,
-            configurationManager
+            customOfflineConfigurationManager
         );
 
         var event = Mockito.mock(Event.class);
@@ -185,10 +176,9 @@ public class CustomOfflinePaymentManagerIntegrationTest {
     void supportedPaymentMethodsNoOrgReturnsEmpty() {
         CustomOfflinePaymentManager paymentManager = new CustomOfflinePaymentManager(
             clockProvider(),
-            configurationRepository,
             ticketReservationRepository,
             transactionRepository,
-            configurationManager
+            customOfflineConfigurationManager
         );
 
         var event = Mockito.mock(Event.class);
@@ -214,10 +204,9 @@ public class CustomOfflinePaymentManagerIntegrationTest {
 
         CustomOfflinePaymentManager paymentManager = new CustomOfflinePaymentManager(
             clockProvider(),
-            configurationRepository,
             ticketReservationRepository,
             transactionRepository,
-            configurationManager
+            customOfflineConfigurationManager
         );
 
         var event = Mockito.mock(Event.class);

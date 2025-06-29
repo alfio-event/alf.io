@@ -24,6 +24,7 @@ import alfio.controller.support.TemplateProcessor;
 import alfio.extension.exception.AlfioScriptingException;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
 import alfio.manager.support.extension.ExtensionCapability;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
@@ -42,12 +43,10 @@ import alfio.model.user.User;
 import alfio.repository.EventDescriptionRepository;
 import alfio.repository.PurchaseContextFieldRepository;
 import alfio.repository.SponsorScanRepository;
+import alfio.repository.TicketCategoryRepository;
 import alfio.util.*;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.MappingIterator;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
@@ -91,7 +90,6 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static alfio.model.system.ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS;
 import static alfio.util.Validator.*;
 import static alfio.util.Wrappers.optionally;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -110,6 +108,7 @@ public class EventApiController {
     private final EventStatisticsManager eventStatisticsManager;
     private final I18nManager i18nManager;
     private final TicketReservationManager ticketReservationManager;
+    private final TicketCategoryRepository ticketCategoryRepository;
     private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketHelper ticketHelper;
@@ -122,7 +121,7 @@ public class EventApiController {
     private final ExtensionManager extensionManager;
     private final ClockProvider clockProvider;
     private final AccessService accessService;
-    private final ObjectMapper objectMapper;
+    private final CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
 
     @ExceptionHandler(DataAccessException.class)
@@ -338,26 +337,25 @@ public class EventApiController {
         @PathVariable int eventId,
         @PathVariable int categoryId,
         Principal principal
-    ) throws JsonProcessingException {
-        var eventAndOrgIds = accessService.checkCategoryOwnership(principal, eventId, categoryId);
+    ) throws PassedIdDoesNotExistException {
+        accessService.checkCategoryOwnership(principal, eventId, categoryId);
 
-        var maybeBlacklistedPaymentMethodsJson = configurationManager.getFor(
-            BLACKLISTED_CUSTOM_PAYMENTS,
-            ConfigurationLevel.ticketCategory(eventAndOrgIds, categoryId)
-        );
-
-        if (maybeBlacklistedPaymentMethodsJson.isEmpty()) {
-            return ResponseEntity.ok(List.of());
+        var event = eventManager.getSingleEventById(eventId, principal.getName());
+        if(event == null) {
+            throw new PassedIdDoesNotExistException("Event matching passed ID does not exist.");
         }
 
-        var blacklistedPaymentMethodsJson = maybeBlacklistedPaymentMethodsJson.getValue().get();
+        var category = ticketCategoryRepository.getById(categoryId);
+        if(category == null) {
+            throw new PassedIdDoesNotExistException("Category matching passed ID does not exist.");
+        }
 
-        var blacklistedPaymentMethodIds = objectMapper.readValue(
-            blacklistedPaymentMethodsJson,
-            new TypeReference<List<String>>(){}
+        var blacklistedPaymentMethods = customOfflineConfigurationManager.getBlacklistedPaymentMethodsByTicketCategory(
+            event,
+            category
         );
 
-        return ResponseEntity.ok(blacklistedPaymentMethodIds);
+        return ResponseEntity.ok(blacklistedPaymentMethods.stream().map(pm -> pm.getPaymentMethodId()).toList());
     }
 
     @PostMapping("/events/{eventId}/categories/{categoryId}/blacklisted-custom-payment-methods")
@@ -366,14 +364,31 @@ public class EventApiController {
         @PathVariable int categoryId,
         @RequestBody List<String> paymentMethodIds,
         Principal principal
-    ) throws JsonProcessingException {
+    ) throws PassedIdDoesNotExistException {
         accessService.checkCategoryOwnership(principal, eventId, categoryId);
-        var blacklistedMethodsJson = objectMapper.writeValueAsString(paymentMethodIds);
-        configurationManager.saveCategoryConfiguration(
-            categoryId,
-            eventId,
-            List.of(new ConfigurationModification(null, BLACKLISTED_CUSTOM_PAYMENTS.name(), blacklistedMethodsJson)),
-            principal.getName()
+
+        var event = eventManager.getSingleEventById(eventId, principal.getName());
+        if(event == null) {
+            throw new PassedIdDoesNotExistException("Event corresponding to passed ID does not exist.");
+        }
+
+        var category = ticketCategoryRepository.getById(categoryId);
+        if(category == null) {
+            throw new PassedIdDoesNotExistException("Ticket category corresponding to passed ID does not exist.");
+        }
+
+        var paymentMethodsToBlacklist = customOfflineConfigurationManager
+            .getOrganizationCustomOfflinePaymentMethods(event.getOrganizationId())
+            .stream()
+            .filter(pm ->
+                paymentMethodIds.stream().anyMatch(id -> id.equals(pm.getPaymentMethodId()))
+            )
+            .collect(Collectors.toList());
+
+        customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
+            event,
+            category,
+            paymentMethodsToBlacklist
         );
 
         return ResponseEntity.ok(OK);
@@ -953,4 +968,13 @@ public class EventApiController {
             .anyMatch(ga -> ga.getAuthority().equals("ROLE_" + AuthenticationConstants.SPONSOR));
     }
 
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public class PassedIdDoesNotExistException extends Exception {
+        public PassedIdDoesNotExistException() {
+            super();
+        }
+        public PassedIdDoesNotExistException(String message) {
+            super(message);
+        }
+    }
 }
