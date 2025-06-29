@@ -198,9 +198,10 @@ export class OfflinePaymentConfigBlock extends LitElement {
             );
             await this.updateConfigFromServer();
         } else {
+            const errorMsg = (await submitResult?.text());
             dispatchFeedback({
                 type: "danger",
-                message: "Failed to delete offline payment method."
+                message: errorMsg || "Failed to delete offline payment method."
             }, this);
         }
     }
