@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -36,6 +39,7 @@ import alfio.config.Initializer;
 import alfio.controller.form.PaymentForm;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.StaticPaymentMethods;
+import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.test.util.AlfioIntegrationTest;
 
 /**
@@ -72,5 +76,39 @@ public class PaymentMethodDeserializationIntegrationTest {
         assertNotNull(paymentMethod);
         assertTrue(paymentMethod instanceof StaticPaymentMethods);
         assertEquals(StaticPaymentMethods.CREDIT_CARD, paymentMethod);
+    }
+
+    @Test
+    public void testDeletedUserDefinedPaymentMethodsDeserialization() throws JsonProcessingException {
+        String json = """
+            [
+                {
+                    "paymentMethodId": "90561fe0-b514-462d-a966-8248b86c1c70",
+                    "localizations": {
+                        "en": {
+                            "paymentName": "Interac E-Transfer",
+                            "paymentDescription": "Interac Description",
+                            "paymentInstructions": "Interac Instructions"
+                        }
+                    },
+                    "deleted": true
+                }
+            ]
+
+                """;
+
+        var paymentMethods = objectMapper.readValue(json, new TypeReference<List<UserDefinedOfflinePaymentMethod>>() {});
+        assertEquals(1, paymentMethods.size());
+
+        var paymentMethod = paymentMethods.get(0);
+        assertEquals(paymentMethod.getPaymentMethodId(), "90561fe0-b514-462d-a966-8248b86c1c70");
+        assertEquals(1, paymentMethod.getLocalizations().size());
+        assertTrue(paymentMethod.getLocalizations().containsKey("en"));
+
+        var localization = paymentMethod.getLocaleByKey("en");
+        assertEquals("Interac Description", localization.getPaymentDescription());
+        assertEquals("Interac Instructions", localization.getPaymentInstructions());
+
+        assertTrue(paymentMethod.isDeleted());
     }
 }
