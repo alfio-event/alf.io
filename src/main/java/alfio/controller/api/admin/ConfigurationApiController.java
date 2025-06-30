@@ -21,6 +21,9 @@ import alfio.job.executor.AssignTicketToSubscriberJobExecutor;
 import alfio.manager.AccessService;
 import alfio.manager.BillingDocumentManager;
 import alfio.manager.EventManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.system.AdminJobExecutor;
 import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationLevel;
@@ -29,7 +32,9 @@ import alfio.manager.user.UserManager;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.model.user.Organization;
+import alfio.repository.EventRepository;
 import alfio.util.ClockProvider;
 import alfio.util.Json;
 import alfio.util.RequestUtils;
@@ -38,8 +43,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.security.Principal;
 import java.time.Instant;
@@ -60,10 +68,12 @@ public class ConfigurationApiController {
     private final ConfigurationManager configurationManager;
     private final BillingDocumentManager billingDocumentManager;
     private final AdminJobManager adminJobManager;
+    private final EventRepository eventRepository;
     private final EventManager eventManager;
     private final ClockProvider clockProvider;
     private final UserManager userManager;
     private final AccessService accessService;
+    private final CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     @GetMapping(value = "/load")
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadConfiguration(Principal principal) {
@@ -321,6 +331,158 @@ public class ConfigurationApiController {
             .getValue()
             .map(v -> Json.fromJson(v, new TypeReference<Map<String, Map<String, String>>>() {}))
             .orElse(Map.of());
+    }
+
+    @PostMapping("/organizations/{organizationId}/payment-method")
+    public ResponseEntity<String> createPaymentMethod(
+        @PathVariable int organizationId,
+        @RequestBody UserDefinedOfflinePaymentMethod paymentMethod,
+        Principal principal
+    ) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
+
+        try {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organizationId, paymentMethod);
+        } catch(CustomOfflinePaymentMethodAlreadyExistsException ex) {
+            return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body("A payment method with the passed ID already exists");
+        }
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @GetMapping("/organizations/{organizationId}/payment-method")
+    public ResponseEntity<List<UserDefinedOfflinePaymentMethod>> getPaymentMethodsForOrganization(
+        @PathVariable int organizationId,
+        @RequestParam(required = false, defaultValue = "false") Boolean includeDeleted,
+        Principal principal
+    ) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
+
+        List<UserDefinedOfflinePaymentMethod> paymentMethods;
+        if(includeDeleted) {
+            paymentMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethodsIncludingDeleted(
+                organizationId
+            );
+        } else {
+            paymentMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(organizationId);
+        }
+
+        return ResponseEntity.ok(paymentMethods);
+    }
+
+    @PutMapping("/organizations/{organizationId}/payment-method/{paymentMethodId}")
+    public ResponseEntity<String> updatePaymentMethod(
+        @PathVariable int organizationId,
+        @PathVariable String paymentMethodId,
+        @RequestBody UserDefinedOfflinePaymentMethod paymentMethod,
+        Principal principal
+    ) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
+
+        try {
+            customOfflineConfigurationManager.updateOrganizationCustomOfflinePaymentMethod(organizationId, paymentMethod);
+        } catch(CustomOfflinePaymentMethodDoesNotExistException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Payment method with passed ID does not exist.");
+        }
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @DeleteMapping("/organizations/{organizationId}/payment-method/{paymentMethodId}")
+    public ResponseEntity<String> deletePaymentMethod(
+        @PathVariable int organizationId,
+        @PathVariable String paymentMethodId,
+        Principal principal
+    ) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
+
+        UserDefinedOfflinePaymentMethod existingPaymentMethod;
+        try {
+            existingPaymentMethod = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethodById(
+                organizationId,
+                paymentMethodId
+            );
+        } catch (CustomOfflinePaymentMethodDoesNotExistException e) {
+            return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.TEXT_PLAIN)
+                .body("Payment method with passed ID does not exist.");
+        }
+
+        var isPaymentMethodActivelyUsed = customOfflineConfigurationManager
+            .isPaymentMethodCurrentlyUsedInActiveEvent(organizationId, existingPaymentMethod);
+
+        if(isPaymentMethodActivelyUsed) {
+            return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.TEXT_PLAIN)
+                .body("You cannot delete a payment method which is currently in use by an active event.");
+        }
+
+        try {
+            customOfflineConfigurationManager.deleteOrganizationCustomOfflinePaymentMethod(
+                organizationId,
+                existingPaymentMethod
+            );
+        } catch (CustomOfflinePaymentMethodDoesNotExistException e) {
+            return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.TEXT_PLAIN)
+                .body("Payment method with passed ID does not exist.");
+        }
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @GetMapping("/event/{eventId}/payment-method")
+    public ResponseEntity<List<UserDefinedOfflinePaymentMethod>> getAllowedPaymentMethodsForEvent(
+        @PathVariable Integer eventId,
+        Principal principal
+    ) {
+        var eventAndOrgId = accessService.checkEventOwnership(principal, eventId);
+
+        var event = eventRepository.findById(eventAndOrgId.getId());
+        if(event == null) {
+            return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(null);
+        }
+
+        var eventSelectedMethods = customOfflineConfigurationManager.getAllowedCustomOfflinePaymentMethodsForEvent(event);
+        return ResponseEntity.ok(eventSelectedMethods);
+    }
+
+    @PostMapping(value = "/event/{eventId}/payment-method")
+    public ResponseEntity<?> setEventAllowedPaymentMethods(
+        @PathVariable Integer eventId,
+        @RequestBody List<String> paymentMethodIds,
+        Principal principal
+    ) {
+        var eventAndOrgId = accessService.checkEventOwnership(principal, eventId);
+
+        var event = eventRepository.findById(eventAndOrgId.getId());
+        if(event == null) {
+            return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.TEXT_PLAIN)
+                .body("Event matching passed ID does not exist.");
+        }
+
+        try {
+            customOfflineConfigurationManager.setAllowedCustomOfflinePaymentMethodsForEvent(
+                event,
+                paymentMethodIds
+            );
+        } catch (CustomOfflinePaymentMethodDoesNotExistException e) {
+            return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.TEXT_PLAIN)
+                .body(e.getMessage());
+        }
+
+        return ResponseEntity.ok(true);
     }
 
     @Data
