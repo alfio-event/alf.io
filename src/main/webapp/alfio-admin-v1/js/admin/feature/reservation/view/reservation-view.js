@@ -271,7 +271,9 @@
         }
 
         function loadReservationSelectedCustomPaymentMethod() {
-            ConfigurationService.getCustomPaymentMethodsForOrganization(ctrl.purchaseContext.organizationId).then(function(res){
+            ConfigurationService.getCustomPaymentMethodsForOrganizationIncludingDeleted(
+                ctrl.purchaseContext.organizationId
+            ).then(function(res){
                 ctrl.organizationCustomPaymentMethods = res.data;
                 ctrl.selectedCustomOfflinePaymentMethod = null;
 

@@ -62,7 +62,13 @@ public class PaymentMethodDeserializer extends JsonDeserializer<PaymentMethod> {
                 new TypeReference<Map<String, UserDefinedOfflinePaymentMethod.Localization>>() {}
             );
 
-            return new UserDefinedOfflinePaymentMethod(paymentMethodId, localizations);
+            var paymentMethod = new UserDefinedOfflinePaymentMethod(paymentMethodId, localizations);
+
+            JsonNode deletedNode = node.get("deleted");
+            var deleted = deletedNode != null ? node.get("deleted").asBoolean(false) : false;
+            if(deleted) paymentMethod.setDeleted();
+
+            return paymentMethod;
         }
 
         return null;

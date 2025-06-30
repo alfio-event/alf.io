@@ -53,8 +53,17 @@ public class CustomOfflineConfigurationManager {
 
 
     public List<UserDefinedOfflinePaymentMethod> getOrganizationCustomOfflinePaymentMethods(int orgId) {
-        var paymentMethods = configurationRepository
-            .findByKeyAtOrganizationLevel(orgId, ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.getValue())
+        return this.getOrganizationCustomOfflinePaymentMethodsIncludingDeleted(orgId)
+            .stream()
+            .filter(pm -> !pm.isDeleted())
+            .collect(Collectors.toList());
+    }
+
+    public List<UserDefinedOfflinePaymentMethod> getOrganizationCustomOfflinePaymentMethodsIncludingDeleted(int orgId) {
+        var paymentMethodRaws = configurationRepository
+            .findByKeyAtOrganizationLevel(orgId, ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.getValue());
+
+        var paymentMethods = paymentMethodRaws
             .map(cf -> cf.getValue())
             .map(v -> Json.fromJson(v, new TypeReference<List<UserDefinedOfflinePaymentMethod>>() {}))
             .orElse(new ArrayList<>());
@@ -77,11 +86,7 @@ public class CustomOfflineConfigurationManager {
         int orgId,
         UserDefinedOfflinePaymentMethod paymentMethod
     ) throws CustomOfflinePaymentMethodAlreadyExistsException {
-        var paymentMethods = configurationManager
-            .getFor(ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS, ConfigurationLevel.organization(orgId))
-            .getValue()
-            .map(v -> Json.fromJson(v, new TypeReference<List<UserDefinedOfflinePaymentMethod>>() {}))
-            .orElse(new ArrayList<UserDefinedOfflinePaymentMethod>());
+        var paymentMethods = this.getOrganizationCustomOfflinePaymentMethodsIncludingDeleted(orgId);
 
         var methodIdExists = paymentMethods
             .stream()
@@ -101,7 +106,7 @@ public class CustomOfflineConfigurationManager {
         int orgId,
         UserDefinedOfflinePaymentMethod paymentMethod
     ) throws CustomOfflinePaymentMethodDoesNotExistException {
-        var paymentMethods = this.getOrganizationCustomOfflinePaymentMethods(orgId);
+        var paymentMethods = this.getOrganizationCustomOfflinePaymentMethodsIncludingDeleted(orgId);
 
         var paymentMethodInDb = paymentMethods
             .stream()
@@ -128,9 +133,16 @@ public class CustomOfflineConfigurationManager {
     ) throws CustomOfflinePaymentMethodDoesNotExistException {
         var paymentMethods = this.getOrganizationCustomOfflinePaymentMethods(orgId);
 
-        if(!paymentMethods.removeIf(pm -> pm.getPaymentMethodId().equals(paymentMethod.getPaymentMethodId()))) {
-            throw new CustomOfflinePaymentMethodDoesNotExistException();
+        if(paymentMethods.stream().noneMatch(pm -> pm.getPaymentMethodId().equals(paymentMethod.getPaymentMethodId()))) {
+            throw new CustomOfflinePaymentMethodDoesNotExistException(
+                "Passed payment method '"+paymentMethod.getPaymentMethodId()+"' does not exist in organization '"+orgId+"'"
+            );
         }
+
+        paymentMethods
+            .stream()
+            .filter(pm -> pm.getPaymentMethodId().equals(paymentMethod.getPaymentMethodId()))
+            .forEach(UserDefinedOfflinePaymentMethod::setDeleted);
 
         this.saveAndOverwriteOrganizationCustomOfflinePaymentMethods(orgId, paymentMethods);
     }

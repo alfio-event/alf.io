@@ -257,6 +257,10 @@
             getCustomPaymentMethodsForOrganization: function(organizationId) {
                 return $http.get(`/admin/api/configuration/organizations/${organizationId}/payment-method`)
                     .error(HttpErrorHandler.handle);
+            },
+            getCustomPaymentMethodsForOrganizationIncludingDeleted: function(organizationId) {
+                return $http.get(`/admin/api/configuration/organizations/${organizationId}/payment-method?includeDeleted=true`)
+                    .error(HttpErrorHandler.handle);
             }
         };
         return service;
