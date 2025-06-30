@@ -24,6 +24,8 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -242,6 +244,7 @@ public class ConfigurationApiControllerIntegrationTest {
 
         var response = configurationApiController.getPaymentMethodsForOrganization(
             organization.getId(),
+            false,
             mockPrincipal
         );
         assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -259,6 +262,72 @@ public class ConfigurationApiControllerIntegrationTest {
             .count();
 
         assertEquals(0, mismatches, "Input payment method list and db posted list do not match.");
+    }
+
+    @Test
+    void canGetActiveAndDeletedPaymentMethods() throws CustomOfflinePaymentMethodAlreadyExistsException {
+        var paymentMethods = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant bank transfer from any Canadian account.",
+                        "Send the payment to `payments@example.com`."
+                    )
+                )
+            ),
+            new UserDefinedOfflinePaymentMethod(
+                "ec6c5268-4122-4b27-98ee-fa070df11c5b",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Venmo",
+                        "Instant money transfers via the Venmo app.",
+                        "Send the payment to user `exampleco` on Venmo."
+                    )
+                )
+            )
+        );
+        paymentMethods.get(0).setDeleted();
+
+        for(var pm : paymentMethods) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(
+                organization.getId(),
+                pm
+            );
+        }
+
+        var nonDeletedPaymentMethodsResp = configurationApiController.getPaymentMethodsForOrganization(
+            organization.getId(),
+            false,
+            mockPrincipal
+        );
+        assertTrue(nonDeletedPaymentMethodsResp.getStatusCode().is2xxSuccessful());
+
+        var nonDeletedPaymentMethods = nonDeletedPaymentMethodsResp.getBody();
+        assertEquals(1, nonDeletedPaymentMethods.size());
+        assertEquals("ec6c5268-4122-4b27-98ee-fa070df11c5b", nonDeletedPaymentMethods.get(0).getPaymentMethodId());
+
+        var allOrgMethodsResp = configurationApiController.getPaymentMethodsForOrganization(
+            organization.getId(),
+            true,
+            mockPrincipal
+        );
+        assertTrue(allOrgMethodsResp.getStatusCode().is2xxSuccessful());
+
+        var allOrgMethods = allOrgMethodsResp.getBody();
+        assertEquals(2, allOrgMethods.size());
+
+        var deletedPaymentMethods = allOrgMethods
+            .stream()
+            .filter(pm ->
+                nonDeletedPaymentMethods
+                    .stream()
+                    .noneMatch(nonDeletePm -> nonDeletePm.getPaymentMethodId().equals(pm.getPaymentMethodId()))
+            )
+            .collect(Collectors.toList());
+        assertEquals(1, deletedPaymentMethods.size());
+        assertEquals("15146df3-2436-4d2e-90b9-0d6cb273e291", deletedPaymentMethods.get(0).getPaymentMethodId());
     }
 
     @Test

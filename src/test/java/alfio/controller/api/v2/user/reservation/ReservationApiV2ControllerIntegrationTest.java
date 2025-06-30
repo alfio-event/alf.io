@@ -352,9 +352,14 @@ public class ReservationApiV2ControllerIntegrationTest {
         );
         assertTrue(paymentResult.isSuccessful());
 
+        var reinsertedPaymentMethod = new UserDefinedOfflinePaymentMethod(
+            UUID.randomUUID().toString(),
+            paymentMethods.get(1).getLocalizations()
+        );
+
         customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(
             organization.getId(),
-            paymentMethods.get(1)
+            reinsertedPaymentMethod
         );
 
         assertThrows(

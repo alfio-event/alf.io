@@ -355,11 +355,20 @@ public class ConfigurationApiController {
     @GetMapping("/organizations/{organizationId}/payment-method")
     public ResponseEntity<List<UserDefinedOfflinePaymentMethod>> getPaymentMethodsForOrganization(
         @PathVariable int organizationId,
+        @RequestParam(required = false, defaultValue = "false") Boolean includeDeleted,
         Principal principal
     ) {
         accessService.checkOrganizationOwnership(principal, organizationId);
 
-        var paymentMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(organizationId);
+        List<UserDefinedOfflinePaymentMethod> paymentMethods;
+        if(includeDeleted) {
+            paymentMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethodsIncludingDeleted(
+                organizationId
+            );
+        } else {
+            paymentMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(organizationId);
+        }
+
         return ResponseEntity.ok(paymentMethods);
     }
 

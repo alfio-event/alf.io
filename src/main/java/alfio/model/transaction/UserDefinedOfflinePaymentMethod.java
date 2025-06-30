@@ -37,6 +37,12 @@ public class UserDefinedOfflinePaymentMethod implements UserDefinedPaymentMethod
     @Getter
     private Map<String, Localization> localizations;
 
+    /**
+     * Used for soft-deleting custom payment methods for the sake of
+     * historical record presevation.
+     */
+    private boolean deleted;
+
     @JsonCreator
     public UserDefinedOfflinePaymentMethod(
         @JsonProperty("paymentMethodId") String paymentMethodId,
@@ -63,6 +69,14 @@ public class UserDefinedOfflinePaymentMethod implements UserDefinedPaymentMethod
 
     public Localization getLocaleByKey(String key) {
         return localizations.get(key);
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted() {
+        deleted = true;
     }
 
     @Getter
