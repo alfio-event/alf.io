@@ -49,6 +49,7 @@ import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
+import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.system.ConfigurationRepository;
@@ -71,6 +72,8 @@ public class CustomOfflinePaymentManagerIntegrationTest {
     private TransactionRepository transactionRepository;
     @Autowired
     private UserManager userManager;
+    @Autowired
+    private EventRepository eventRepository;
     @Autowired
     private CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
@@ -143,6 +146,7 @@ public class CustomOfflinePaymentManagerIntegrationTest {
             clockProvider(),
             ticketReservationRepository,
             transactionRepository,
+            eventRepository,
             customOfflineConfigurationManager
         );
 
@@ -178,6 +182,7 @@ public class CustomOfflinePaymentManagerIntegrationTest {
             clockProvider(),
             ticketReservationRepository,
             transactionRepository,
+            eventRepository,
             customOfflineConfigurationManager
         );
 
@@ -206,6 +211,7 @@ public class CustomOfflinePaymentManagerIntegrationTest {
             clockProvider(),
             ticketReservationRepository,
             transactionRepository,
+            eventRepository,
             customOfflineConfigurationManager
         );
 
