@@ -17,11 +17,13 @@
 package alfio.manager.payment;
 
 import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.support.PaymentResult;
 import alfio.model.CustomerName;
 import alfio.model.Event;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.transaction.*;
+import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
 
@@ -30,10 +32,14 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 import static alfio.test.util.TestUtil.clockProvider;
 
@@ -42,11 +48,12 @@ class CustomOfflinePaymentManagerTest {
     private Event event;
     private TicketReservationRepository ticketReservationRepository;
     private TransactionRepository transactionRepository;
+    private EventRepository eventRepository;
     private UserDefinedOfflinePaymentMethod paymentMethod;
     private CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     @BeforeEach
-    void init() {
+    void init() throws CustomOfflinePaymentMethodDoesNotExistException {
         customOfflineConfigurationManager = mock(CustomOfflineConfigurationManager.class);
 
         final int EXPECTED_NUM_MODIFIED_RESERVATIONS = 1;
@@ -67,14 +74,16 @@ class CustomOfflinePaymentManagerTest {
             any(), any()
         )).thenReturn(EXPECTED_NUM_INSERTED_TRANSACTIONS);
 
+        eventRepository = mock(EventRepository.class);
 
         event = mock(Event.class);
         when(event.event()).thenReturn(Optional.of(event));
         var eventEnd = ZonedDateTime.now(clockProvider().getClock()).plusDays(7);
         when(event.getEnd()).thenReturn(eventEnd);
+        when(event.getOrganizationId()).thenReturn(1);
 
         paymentMethod = new UserDefinedOfflinePaymentMethod(
-            null,
+            "c20c5b0b-43bb-4a12-869c-f04ef2a27a79",
             Map.of("en", new UserDefinedOfflinePaymentMethod.Localization(
                     "Interac E-Transfer",
                     "Instant money transfer from any Canadian bank account",
@@ -82,10 +91,19 @@ class CustomOfflinePaymentManagerTest {
                 )
             )
         );
+
+        when(
+            customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethodById(anyInt(), anyString())
+        ).thenCallRealMethod();
+        when(
+            customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(eq(1))
+        ).thenReturn(List.of(paymentMethod));
+
         customOfflinePaymentManager = new CustomOfflinePaymentManager(
             clockProvider(),
             ticketReservationRepository,
             transactionRepository,
+            eventRepository,
             customOfflineConfigurationManager
         );
     }
@@ -128,4 +146,60 @@ class CustomOfflinePaymentManagerTest {
             )
         );
     }
+
+    @Test
+    void acceptPassesForEventOrgCustomMethods() {
+        boolean result;
+        var paymentContext = new PaymentContext(event);
+
+        result = customOfflinePaymentManager.accept(paymentMethod, paymentContext, TransactionRequest.empty());
+        assertTrue(result);
+
+        result = customOfflinePaymentManager.accept(StaticPaymentMethods.PAYPAL, paymentContext, TransactionRequest.empty());
+        assertFalse(result);
+    }
+
+    @Test
+    void acceptTransactionPassesForCustomProxy() {
+        var transaction = mock(Transaction.class);
+
+        when(transaction.getPaymentProxy()).thenReturn(PaymentProxy.CUSTOM_OFFLINE);
+        assertTrue(customOfflinePaymentManager.accept(transaction));
+
+        when(transaction.getPaymentProxy()).thenReturn(PaymentProxy.ON_SITE);
+        assertFalse(customOfflinePaymentManager.accept(transaction));
+    }
+
+    @Test
+    void canGetTransactionCustomPaymentMethod() {
+        var transaction = mock(Transaction.class);
+        when(transaction.getMetadata()).thenReturn(
+            new HashMap<String, String>()
+        );
+        assertEquals(null, customOfflinePaymentManager.getPaymentMethodForTransaction(transaction));
+
+        when(transaction.getMetadata()).thenReturn(
+            Map.of("selectedPaymentMethod", "c20c5b0b-43bb-4a12-869c-f04ef2a27a79")
+        );
+        when(eventRepository.findByReservationId(eq("02ef8df8-efe9-4fa5-9434-2ba0656a01be"))).thenReturn(event);
+
+        // No event associated with returned reservationId
+        when(transaction.getReservationId()).thenReturn("a623f091-6c8b-4061-86dd-319e593aa920");
+        assertEquals(null, customOfflinePaymentManager.getPaymentMethodForTransaction(transaction));
+
+        when(transaction.getReservationId()).thenReturn("02ef8df8-efe9-4fa5-9434-2ba0656a01be");
+        var result = customOfflinePaymentManager.getPaymentMethodForTransaction(transaction);
+        assertNotEquals(null, result);
+        assertEquals(paymentMethod.getPaymentMethodId(), result.getPaymentMethodId());
+    }
+
+    @Test
+    void verifyIsActiveWorksForValidContextAndEvent() {
+        var paymentContext = new PaymentContext();
+        assertFalse(customOfflinePaymentManager.isActive(paymentContext));
+
+        paymentContext = new PaymentContext(event);
+        assertTrue(customOfflinePaymentManager.isActive(paymentContext));
+    }
+
 }

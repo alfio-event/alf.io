@@ -302,9 +302,6 @@ public class ReservationApiV2ControllerIntegrationTest {
         var orgPaymentMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(
             organization.getId()
         );
-        for (var pm : orgPaymentMethods) {
-            customOfflineConfigurationManager.deleteOrganizationCustomOfflinePaymentMethod(organization.getId(), pm);
-        }
 
         var reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(
@@ -351,6 +348,10 @@ public class ReservationApiV2ControllerIntegrationTest {
             null
         );
         assertTrue(paymentResult.isSuccessful());
+
+        for (var pm : orgPaymentMethods) {
+            customOfflineConfigurationManager.deleteOrganizationCustomOfflinePaymentMethod(organization.getId(), pm);
+        }
 
         var reinsertedPaymentMethod = new UserDefinedOfflinePaymentMethod(
             UUID.randomUUID().toString(),
