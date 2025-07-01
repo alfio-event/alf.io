@@ -187,8 +187,17 @@ class CustomOfflinePaymentManagerTest {
         when(transaction.getReservationId()).thenReturn("a623f091-6c8b-4061-86dd-319e593aa920");
         assertEquals(null, customOfflinePaymentManager.getPaymentMethodForTransaction(transaction));
 
-        when(transaction.getReservationId()).thenReturn("02ef8df8-efe9-4fa5-9434-2ba0656a01be");
+        when(
+            customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(eq(1))
+        ).thenReturn(List.of());
         var result = customOfflinePaymentManager.getPaymentMethodForTransaction(transaction);
+        assertEquals(null, result);
+
+        when(
+            customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(eq(1))
+        ).thenReturn(List.of(paymentMethod));
+        when(transaction.getReservationId()).thenReturn("02ef8df8-efe9-4fa5-9434-2ba0656a01be");
+        result = customOfflinePaymentManager.getPaymentMethodForTransaction(transaction);
         assertNotEquals(null, result);
         assertEquals(paymentMethod.getPaymentMethodId(), result.getPaymentMethodId());
     }

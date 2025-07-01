@@ -391,6 +391,31 @@ public class ConfigurationApiControllerIntegrationTest {
     }
 
     @Test
+    void updateExistingPaymentMethodBadRequestWhenNotExists() {
+        final var PAYMENT_METHODS = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant Canadian bank transfer",
+                        "### Send the full invoiced amount to `payments@org.com`."
+                    )
+                )
+            )
+        );
+
+        var response = configurationApiController.updatePaymentMethod(
+            organization.getId(),
+            PAYMENT_METHODS.get(0).getPaymentMethodId(),
+            PAYMENT_METHODS.get(0),
+            mockPrincipal
+        );
+
+        assert(response.getStatusCode().is4xxClientError());
+    }
+
+    @Test
     void canDeleteExistingPaymentMethod() throws CustomOfflinePaymentMethodAlreadyExistsException {
         final var EXISTING_METHOD_ID = "15146df3-2436-4d2e-90b9-0d6cb273e291";
         final var PAYMENT_METHODS = List.of(
@@ -424,6 +449,17 @@ public class ConfigurationApiControllerIntegrationTest {
 
         var orgMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(organization.getId());
         assertEquals(0, orgMethods.size());
+    }
+
+    @Test
+    void cannotDeletePaymentMethodWhichNotExists() {
+        var response = configurationApiController.deletePaymentMethod(
+            organization.getId(),
+            "15146df3-2436-4d2e-90b9-0d6cb273e291",
+            mockPrincipal
+        );
+
+        assert(response.getStatusCode().is4xxClientError());
     }
 
     @Test
