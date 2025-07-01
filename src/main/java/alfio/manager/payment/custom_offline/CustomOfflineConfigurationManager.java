@@ -300,7 +300,7 @@ public class CustomOfflineConfigurationManager {
         );
     }
 
-    public class CustomOfflinePaymentMethodAlreadyExistsException extends Exception {
+    public static class CustomOfflinePaymentMethodAlreadyExistsException extends Exception {
         public CustomOfflinePaymentMethodAlreadyExistsException() {
             super();
         }
@@ -308,7 +308,7 @@ public class CustomOfflineConfigurationManager {
             super(message);
         }
     }
-    public class CustomOfflinePaymentMethodDoesNotExistException extends Exception {
+    public static class CustomOfflinePaymentMethodDoesNotExistException extends Exception {
         public CustomOfflinePaymentMethodDoesNotExistException() {
             super();
         }
