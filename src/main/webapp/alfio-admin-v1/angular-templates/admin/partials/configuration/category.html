@@ -76,7 +76,12 @@
         <div data-ng-if="categoryConf.payment">
             <div data-ng-repeat="setting in categoryConf.payment.settings">
                 <div ng-if="setting.key === 'PAYMENT_METHODS_BLACKLIST'">
-                    <payment-method-blacklist current-selection="setting.value"></payment-method-blacklist>
+                    <payment-method-blacklist
+                        organization="categoryConf.event.organizationId"
+                        event="categoryConf.event.id"
+                        category="categoryConf.category.id"
+                        current-selection="setting.value"
+                    ></payment-method-blacklist>
                 </div>
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="categoryConf.delete(config)" ng-if="setting.key !== 'PAYMENT_METHODS_BLACKLIST'"  ></setting>
             </div>

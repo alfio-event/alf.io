@@ -31,8 +31,8 @@ import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.StaticPaymentMethods;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.AlfioIntegrationTest;
 import com.stripe.net.Webhook;
@@ -122,16 +122,16 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
         paymentForm.setPrivacyPolicyAccepted(true);
         paymentForm.setTermAndConditionsAccepted(true);
         paymentForm.setPaymentProxy(PaymentProxy.STRIPE);
-        paymentForm.setSelectedPaymentMethod(PaymentMethod.CREDIT_CARD);
+        paymentForm.setSelectedPaymentMethod(StaticPaymentMethods.CREDIT_CARD);
 
-        var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, PaymentMethod.CREDIT_CARD.name());
+        var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.CREDIT_CARD);
         assertEquals(HttpStatus.NOT_FOUND, tStatus.getStatusCode());
 
         // init payment
-        var initPaymentRes = reservationApiV2Controller.initTransaction(reservationId, PaymentMethod.CREDIT_CARD.name(), new LinkedMultiValueMap<>());
+        var initPaymentRes = reservationApiV2Controller.initTransaction(reservationId, StaticPaymentMethods.CREDIT_CARD.name(), new LinkedMultiValueMap<>());
         assertEquals(HttpStatus.OK, initPaymentRes.getStatusCode());
 
-        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, PaymentMethod.CREDIT_CARD.name());
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.CREDIT_CARD);
         assertEquals(HttpStatus.OK, tStatus.getStatusCode());
 
         var resInfoResponse = reservationApiV2Controller.getReservationInfo(reservationId, null);
@@ -151,7 +151,7 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
 
         checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.COMPLETE, context);
 
-        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, PaymentMethod.CREDIT_CARD.name());
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.CREDIT_CARD);
         assertEquals(HttpStatus.OK, tStatus.getStatusCode());
         assertNotNull(tStatus.getBody());
         assertTrue(tStatus.getBody().isSuccess());
@@ -168,7 +168,7 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
         assertEventLogged(extLogs, TICKET_ASSIGNED_GENERATE_METADATA);
         assertEventLogged(extLogs, TICKET_MAIL_CUSTOM_TEXT);
 
-        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, PaymentMethod.CREDIT_CARD.name());
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.CREDIT_CARD);
         assertEquals(HttpStatus.OK, tStatus.getStatusCode());
         assertNotNull(tStatus.getBody());
         assertTrue(tStatus.getBody().isSuccess());

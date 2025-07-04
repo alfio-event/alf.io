@@ -40,6 +40,8 @@ import alfio.repository.EventRepository;
 import alfio.repository.PromoCodeDiscountRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.test.toolkit.PromoCodeDiscountIntegrationTestingToolkit;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.mockito.Mockito;
@@ -66,7 +68,8 @@ public class TestConfiguration {
                                               UserManager userManager,
                                               EventRepository eventRepository,
                                               ExternalConfiguration externalConfiguration,
-                                              Environment environment) {
+                                              Environment environment,
+                                              ObjectMapper objectMapper) {
         Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration>> cache = Caffeine.newBuilder()
             .expireAfterWrite(Duration.ZERO)
             .build();
@@ -75,7 +78,8 @@ public class TestConfiguration {
             eventRepository,
             externalConfiguration,
             environment,
-            cache);
+            cache,
+            objectMapper);
     }
 
     @Bean

@@ -24,6 +24,7 @@ import alfio.controller.support.TemplateProcessor;
 import alfio.extension.exception.AlfioScriptingException;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
 import alfio.manager.support.extension.ExtensionCapability;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
@@ -42,7 +43,9 @@ import alfio.model.user.User;
 import alfio.repository.EventDescriptionRepository;
 import alfio.repository.PurchaseContextFieldRepository;
 import alfio.repository.SponsorScanRepository;
+import alfio.repository.TicketCategoryRepository;
 import alfio.util.*;
+
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
@@ -60,6 +63,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.util.Assert;
@@ -105,6 +109,7 @@ public class EventApiController {
     private final EventStatisticsManager eventStatisticsManager;
     private final I18nManager i18nManager;
     private final TicketReservationManager ticketReservationManager;
+    private final TicketCategoryRepository ticketCategoryRepository;
     private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketHelper ticketHelper;
@@ -117,6 +122,7 @@ public class EventApiController {
     private final ExtensionManager extensionManager;
     private final ClockProvider clockProvider;
     private final AccessService accessService;
+    private final CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
 
     @ExceptionHandler(DataAccessException.class)
@@ -325,6 +331,68 @@ public class EventApiController {
         Event event = eventManager.getSingleEventById(eventId, principal.getName());
         return validateCategory(category, "", event.getBegin().toLocalDateTime(), event.getEnd().toLocalDateTime(), errors, getDescriptionLength())
             .ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
+    }
+
+    @GetMapping("/events/{eventId}/categories/{categoryId}/blacklisted-custom-payment-methods")
+    public ResponseEntity<List<String>> getBlacklistedCustomPaymentMethods(
+        @PathVariable int eventId,
+        @PathVariable int categoryId,
+        Principal principal
+    ) throws PassedIdDoesNotExistException {
+        accessService.checkCategoryOwnership(principal, eventId, categoryId);
+
+        var event = eventManager.getSingleEventById(eventId, principal.getName());
+        if(event == null) {
+            throw new PassedIdDoesNotExistException("Event matching passed ID does not exist.");
+        }
+
+        var category = ticketCategoryRepository.getById(categoryId);
+        if(category == null) {
+            throw new PassedIdDoesNotExistException("Category matching passed ID does not exist.");
+        }
+
+        var blacklistedPaymentMethods = customOfflineConfigurationManager.getBlacklistedPaymentMethodsByTicketCategory(
+            event,
+            category
+        );
+
+        return ResponseEntity.ok(blacklistedPaymentMethods.stream().map(pm -> pm.getPaymentMethodId()).toList());
+    }
+
+    @PostMapping("/events/{eventId}/categories/{categoryId}/blacklisted-custom-payment-methods")
+    public ResponseEntity<String> setBlacklistedCustomPaymentMethods(
+        @PathVariable int eventId,
+        @PathVariable int categoryId,
+        @RequestBody List<String> paymentMethodIds,
+        Principal principal
+    ) throws PassedIdDoesNotExistException {
+        accessService.checkCategoryOwnership(principal, eventId, categoryId);
+
+        var event = eventManager.getSingleEventById(eventId, principal.getName());
+        if(event == null) {
+            throw new PassedIdDoesNotExistException("Event corresponding to passed ID does not exist.");
+        }
+
+        var category = ticketCategoryRepository.getById(categoryId);
+        if(category == null) {
+            throw new PassedIdDoesNotExistException("Ticket category corresponding to passed ID does not exist.");
+        }
+
+        var paymentMethodsToBlacklist = customOfflineConfigurationManager
+            .getOrganizationCustomOfflinePaymentMethods(event.getOrganizationId())
+            .stream()
+            .filter(pm ->
+                paymentMethodIds.stream().anyMatch(id -> id.equals(pm.getPaymentMethodId()))
+            )
+            .toList();
+
+        customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
+            event,
+            category,
+            paymentMethodsToBlacklist
+        );
+
+        return ResponseEntity.ok(OK);
     }
 
     @PutMapping("/events/reallocate")
@@ -900,4 +968,13 @@ public class EventApiController {
             .anyMatch(ga -> ga.getAuthority().equals("ROLE_" + AuthenticationConstants.SPONSOR));
     }
 
+    @ExceptionHandler({
+        PassedIdDoesNotExistException.class
+    })
+    public ResponseEntity<String> handleResponseException(PassedIdDoesNotExistException ex) {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .contentType(MediaType.TEXT_PLAIN)
+            .body(ex.getMessage());
+    }
 }

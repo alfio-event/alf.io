@@ -34,15 +34,21 @@ import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.system.ConfigurationKeys.SettingCategory;
 import alfio.model.system.ConfigurationPathLevel;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
+import alfio.util.Json;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.servlet.http.HttpSession;
-import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -62,7 +68,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.model.system.ConfigurationPathLevel.*;
 import static java.util.stream.Collectors.toList;
@@ -81,15 +86,17 @@ public class ConfigurationManager {
     private final ExternalConfiguration externalConfiguration;
     private final Environment environment;
     private final Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, MaybeConfiguration>> oneMinuteCache;
+    private final ObjectMapper objectMapper;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public ConfigurationManager(ConfigurationRepository configurationRepository, UserManager userManager, EventRepository eventRepository, ExternalConfiguration externalConfiguration, Environment environment, Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, MaybeConfiguration>> oneMinuteCache) {
+    public ConfigurationManager(ConfigurationRepository configurationRepository, UserManager userManager, EventRepository eventRepository, ExternalConfiguration externalConfiguration, Environment environment, Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, MaybeConfiguration>> oneMinuteCache, ObjectMapper objectMapper) {
         this.configurationRepository = configurationRepository;
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.externalConfiguration = externalConfiguration;
         this.environment = environment;
         this.oneMinuteCache = oneMinuteCache;
+        this.objectMapper = objectMapper;
     }
 
     //TODO: refactor, not the most beautiful code, find a better solution...
@@ -641,19 +648,60 @@ public class ConfigurationManager {
 
     public List<PaymentMethod> getBlacklistedMethodsForReservation(PurchaseContext p, Collection<Integer> categoryIds) {
         return p.event().map(e -> {
-            if(categoryIds.size() > 1) {
-                Map<Integer, String> blacklistForCategories = configurationRepository.getAllCategoriesAndValueWith(e.getOrganizationId(), e.getId(), PAYMENT_METHODS_BLACKLIST);
-                return categoryIds.stream()
-                    .filter(blacklistForCategories::containsKey)
-                    .flatMap(id -> Arrays.stream(blacklistForCategories.get(id).split(",")))
+            if(!categoryIds.isEmpty()) {
+                Map<Integer, String> staticPaymentMethodBlacklistForCategories = configurationRepository.getAllCategoriesAndValueWith(e.getOrganizationId(), e.getId(), PAYMENT_METHODS_BLACKLIST);
+                final var paymentMethodBlacklist = categoryIds.stream()
+                    .filter(staticPaymentMethodBlacklistForCategories::containsKey)
+                    .flatMap(id -> Arrays.stream(staticPaymentMethodBlacklistForCategories.get(id).split(",")))
                     .filter(StringUtils::isNotBlank)
                     .map(name -> PaymentProxy.valueOf(name).getPaymentMethod())
                     .collect(toList());
-            } else if (!categoryIds.isEmpty()) {
-                    return configurationRepository.findByKeyAtCategoryLevel(e.getId(), e.getOrganizationId(), IterableUtils.get(categoryIds, 0), PAYMENT_METHODS_BLACKLIST.name())
-                        .filter(v -> StringUtils.isNotBlank(v.getValue()))
-                        .map(v -> Arrays.stream(v.getValue().split(",")).map(name -> PaymentProxy.valueOf(name).getPaymentMethod()).collect(toList()))
-                        .orElse(List.of());
+
+                Map<Integer, String> customPaymentMethodBlacklistForCategories =
+                    configurationRepository.getAllCategoriesAndValueWith(
+                        e.getOrganizationId(),
+                        e.getId(),
+                        BLACKLISTED_CUSTOM_PAYMENTS
+                    );
+
+                var orgCustomPaymentMethodsConfigJson = configurationRepository
+                    .findByKeyAtOrganizationLevel(e.getOrganizationId(), ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.getValue())
+                    .map(Configuration::getValue)
+                    .orElse(null);
+
+                List<UserDefinedOfflinePaymentMethod> orgCustomPaymentMethods = List.of();
+                if(orgCustomPaymentMethodsConfigJson != null) {
+                    try {
+                        orgCustomPaymentMethods = objectMapper.readValue(
+                            orgCustomPaymentMethodsConfigJson,
+                            new TypeReference<List<UserDefinedOfflinePaymentMethod>>(){}
+                        );
+                    } catch (JsonProcessingException e1) {
+                        log.warn(
+                            "Failed to read org:{} custom payment methods config while getting blacklisted methods.",
+                            e.getOrganizationId()
+                        );
+                    }
+                }
+
+
+                if(!orgCustomPaymentMethods.isEmpty()) {
+                    Map<String, PaymentMethod> paymentMethodMap = orgCustomPaymentMethods.stream()
+                        .collect(Collectors.toMap(PaymentMethod::getPaymentMethodId, method -> method));
+
+                    paymentMethodBlacklist.addAll(
+                        categoryIds.stream()
+                            .filter(customPaymentMethodBlacklistForCategories::containsKey)
+                            .map(customPaymentMethodBlacklistForCategories::get)
+                            .map(blacklistJson -> Json.fromJson(blacklistJson, new TypeReference<List<String>>() {}))
+                            .flatMap(List::stream)
+                            .distinct()
+                            .map(paymentMethodMap::get)
+                            .toList()
+                    );
+                }
+
+                return paymentMethodBlacklist;
             } else {
                 return List.<PaymentMethod>of();
             }
