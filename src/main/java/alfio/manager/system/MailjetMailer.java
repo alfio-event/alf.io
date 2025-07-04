@@ -65,11 +65,11 @@ class MailjetMailer extends BaseMailer  {
         List<Map<String, String>> recipients = new ArrayList<>();
         recipients.add(Collections.singletonMap("Email", to));
         if(cc != null && !cc.isEmpty()) {
-            recipients.addAll(cc.stream().map(email -> Collections.singletonMap("Email", email)).collect(Collectors.toList()));
+            recipients.addAll(cc.stream().map(email -> Collections.singletonMap("Email", email)).toList());
         }
 
         mailPayload.put("FromEmail", fromEmail);
-        mailPayload.put("FromName", fromName);
+        mailPayload.put("FromName", fromName.replace("\"", ""));
         mailPayload.put("Subject", subject);
         mailPayload.put("Text-part", text);
         html.ifPresent(h -> mailPayload.put("Html-part", h));
