@@ -21,11 +21,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
@@ -42,33 +40,36 @@ import alfio.util.Json;
 
 @Component
 public class CustomOfflineConfigurationManager {
-    @Autowired
-    ConfigurationManager configurationManager;
-    @Autowired
-    ConfigurationRepository configurationRepository;
-    @Autowired
-    EventRepository eventRepository;
-    @Autowired
-    ObjectMapper objectMapper;
+    private final ConfigurationManager configurationManager;
+    private final ConfigurationRepository configurationRepository;
+    private final EventRepository eventRepository;
+
+    public CustomOfflineConfigurationManager(
+        ConfigurationManager configurationManager,
+        ConfigurationRepository configurationRepository,
+        EventRepository eventRepository
+    ) {
+        this.configurationManager = configurationManager;
+        this.configurationRepository = configurationRepository;
+        this.eventRepository = eventRepository;
+    }
 
 
     public List<UserDefinedOfflinePaymentMethod> getOrganizationCustomOfflinePaymentMethods(int orgId) {
         return this.getOrganizationCustomOfflinePaymentMethodsIncludingDeleted(orgId)
             .stream()
             .filter(pm -> !pm.isDeleted())
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public List<UserDefinedOfflinePaymentMethod> getOrganizationCustomOfflinePaymentMethodsIncludingDeleted(int orgId) {
         var paymentMethodRaws = configurationRepository
             .findByKeyAtOrganizationLevel(orgId, ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.getValue());
 
-        var paymentMethods = paymentMethodRaws
+        return paymentMethodRaws
             .map(cf -> cf.getValue())
             .map(v -> Json.fromJson(v, new TypeReference<List<UserDefinedOfflinePaymentMethod>>() {}))
             .orElse(new ArrayList<>());
-
-        return paymentMethods;
     }
 
     public UserDefinedOfflinePaymentMethod getOrganizationCustomOfflinePaymentMethodById(
@@ -90,9 +91,7 @@ public class CustomOfflineConfigurationManager {
 
         var methodIdExists = paymentMethods
             .stream()
-            .filter(pm -> pm.getPaymentMethodId().equals(paymentMethod.getPaymentMethodId()))
-            .findAny()
-            .isPresent();
+            .anyMatch(pm -> pm.getPaymentMethodId().equals(paymentMethod.getPaymentMethodId()));
 
         if(methodIdExists) {
             throw new CustomOfflinePaymentMethodAlreadyExistsException();
@@ -156,12 +155,10 @@ public class CustomOfflineConfigurationManager {
             .map(v -> Json.fromJson(v, new TypeReference<List<String>>() {}))
             .orElse(new ArrayList<>());
 
-        var allowedPaymentMethods = paymentMethods
+        return paymentMethods
             .stream()
             .filter(pm -> allowedMethodIDsForEvent.contains(pm.getPaymentMethodId()))
             .toList();
-
-        return allowedPaymentMethods;
     }
 
     public void setAllowedCustomOfflinePaymentMethodsForEvent(
@@ -179,7 +176,7 @@ public class CustomOfflineConfigurationManager {
             )
             .toList();
 
-        if(passedNotInOrgIds.size() > 0) {
+        if(!passedNotInOrgIds.isEmpty()) {
             throw new CustomOfflinePaymentMethodDoesNotExistException(
                 "Passed payment method ID(s) " + String.join(",", passedNotInOrgIds) + " do not exist in organization."
             );
@@ -227,14 +224,12 @@ public class CustomOfflineConfigurationManager {
         var blacklistedPaymentMethodsJson = maybeBlacklistedPaymentMethodsJson.getValue().get();
         var blacklistedPaymentMethodIds = Json.fromJson(blacklistedPaymentMethodsJson, new TypeReference<List<String>>(){});
 
-        var blacklistedPaymentMethods = this.getOrganizationCustomOfflinePaymentMethods(event.getOrganizationId())
+        return this.getOrganizationCustomOfflinePaymentMethods(event.getOrganizationId())
             .stream()
             .filter(pmItem ->
                 blacklistedPaymentMethodIds.stream().anyMatch(blItem -> blItem.equals(pmItem.getPaymentMethodId()))
             )
-            .collect(Collectors.toList());
-
-        return blacklistedPaymentMethods;
+            .toList();
     }
 
     public void setBlacklistedPaymentMethodsByTicketCategory(
@@ -314,6 +309,9 @@ public class CustomOfflineConfigurationManager {
         }
         public CustomOfflinePaymentMethodDoesNotExistException(String message) {
             super(message);
+        }
+        public CustomOfflinePaymentMethodDoesNotExistException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 }

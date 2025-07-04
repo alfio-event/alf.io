@@ -20,7 +20,6 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
-import alfio.controller.api.admin.EventApiController.PassedIdDoesNotExistException;
 import alfio.manager.AdminReservationRequestManager;
 import alfio.manager.EventManager;
 import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;

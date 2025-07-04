@@ -96,7 +96,7 @@ class CustomOfflinePaymentManagerTest {
             customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethodById(anyInt(), anyString())
         ).thenCallRealMethod();
         when(
-            customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(eq(1))
+            customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(1)
         ).thenReturn(List.of(paymentMethod));
 
         customOfflinePaymentManager = new CustomOfflinePaymentManager(
@@ -181,20 +181,20 @@ class CustomOfflinePaymentManagerTest {
         when(transaction.getMetadata()).thenReturn(
             Map.of("selectedPaymentMethod", "c20c5b0b-43bb-4a12-869c-f04ef2a27a79")
         );
-        when(eventRepository.findByReservationId(eq("02ef8df8-efe9-4fa5-9434-2ba0656a01be"))).thenReturn(event);
+        when(eventRepository.findByReservationId("02ef8df8-efe9-4fa5-9434-2ba0656a01be")).thenReturn(event);
 
         // No event associated with returned reservationId
         when(transaction.getReservationId()).thenReturn("a623f091-6c8b-4061-86dd-319e593aa920");
         assertEquals(null, customOfflinePaymentManager.getPaymentMethodForTransaction(transaction));
 
         when(
-            customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(eq(1))
+            customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(1)
         ).thenReturn(List.of());
         var result = customOfflinePaymentManager.getPaymentMethodForTransaction(transaction);
         assertEquals(null, result);
 
         when(
-            customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(eq(1))
+            customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(1)
         ).thenReturn(List.of(paymentMethod));
         when(transaction.getReservationId()).thenReturn("02ef8df8-efe9-4fa5-9434-2ba0656a01be");
         result = customOfflinePaymentManager.getPaymentMethodForTransaction(transaction);

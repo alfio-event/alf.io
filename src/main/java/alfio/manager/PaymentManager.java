@@ -127,13 +127,12 @@ public class PaymentManager {
         String blacklist = configurationManager.getFor(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST, context.getConfigurationLevel()).getValueOrDefault("");
         var blacklistItems = List.of(blacklist.split(","));
         var proxies = Optional.ofNullable(context.getPurchaseContext()).map(PurchaseContext::getAllowedPaymentProxies).orElseGet(PaymentProxy::availableProxies);
-        List<PaymentMethodDTO> methods = proxies.stream()
+
+        return proxies.stream()
             .filter(p -> blacklistItems.stream().noneMatch(blItem -> p.getKey().equals(blItem)))
             .map(proxy -> Pair.of(proxy, paymentMethodsByProxy(context, transactionRequest, proxy)))
             .flatMap(pair -> pair.getRight().stream().map(pm -> new PaymentMethodDTO(pair.getLeft(), pm, PaymentMethodDTO.PaymentMethodStatus.ACTIVE)))
             .collect(Collectors.toList());
-
-        return methods;
     }
 
     private Set<PaymentMethod> paymentMethodsByProxy(PaymentContext context, TransactionRequest transactionRequest, PaymentProxy proxy) {
@@ -261,8 +260,8 @@ public class PaymentManager {
         return transactionRepository.loadOptionalByReservationId(reservation.getId())
             .filter(transaction -> {
                 var metadata = transaction.getMetadata();
-                if (metadata.containsKey("selectedPaymentMethod")) {
-                    return metadata.get("selectedPaymentMethod").equals(paymentMethod.getPaymentMethodId());
+                if (metadata.containsKey(Transaction.SELECTED_PAYMENT_METHOD_KEY)) {
+                    return metadata.get(Transaction.SELECTED_PAYMENT_METHOD_KEY).equals(paymentMethod.getPaymentMethodId());
                 }
 
                 return transaction.getPaymentProxy().getPaymentMethod() == paymentMethod;
