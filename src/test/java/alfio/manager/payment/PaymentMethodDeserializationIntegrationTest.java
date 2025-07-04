@@ -52,13 +52,13 @@ import alfio.test.util.AlfioIntegrationTest;
 @AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-public class PaymentMethodDeserializationIntegrationTest {
+class PaymentMethodDeserializationIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
 
     @Test
-    public void testStaticPaymentMethodDeserialization() throws JsonMappingException, JsonProcessingException {
+    void testStaticPaymentMethodDeserialization() throws JsonProcessingException {
         String json = """
             {
                 "termAndConditionsAccepted": true,
@@ -79,7 +79,7 @@ public class PaymentMethodDeserializationIntegrationTest {
     }
 
     @Test
-    public void testDeletedUserDefinedPaymentMethodsDeserialization() throws JsonProcessingException {
+    void testDeletedUserDefinedPaymentMethodsDeserialization() throws JsonProcessingException {
         String json = """
             [
                 {
@@ -101,7 +101,7 @@ public class PaymentMethodDeserializationIntegrationTest {
         assertEquals(1, paymentMethods.size());
 
         var paymentMethod = paymentMethods.get(0);
-        assertEquals(paymentMethod.getPaymentMethodId(), "90561fe0-b514-462d-a966-8248b86c1c70");
+        assertEquals("90561fe0-b514-462d-a966-8248b86c1c70", paymentMethod.getPaymentMethodId());
         assertEquals(1, paymentMethod.getLocalizations().size());
         assertTrue(paymentMethod.getLocalizations().containsKey("en"));
 

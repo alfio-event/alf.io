@@ -72,7 +72,7 @@ import static alfio.test.util.IntegrationTestUtil.*;
 @AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-public class ConfigurationApiControllerIntegrationTest {
+class ConfigurationApiControllerIntegrationTest {
     private static final String DEFAULT_CATEGORY_NAME = "default";
 
     @Autowired
@@ -99,7 +99,7 @@ public class ConfigurationApiControllerIntegrationTest {
     private Event event;
 
     @BeforeEach
-    public void ensureConfiguration() {
+    void ensureConfiguration() {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
 
         List<TicketCategoryModification> categories = Arrays.asList(
@@ -161,15 +161,15 @@ public class ConfigurationApiControllerIntegrationTest {
         var retrieved = orgMethods.get(0);
         assertTrue(retrieved.getLocalizations().containsKey(LOCALE));
 
-        var retrieved_en_locale = retrieved.getLocaleByKey(LOCALE);
-        assertEquals(PAYMENT_NAME, retrieved_en_locale.getPaymentName());
-        assertEquals(PAYMENT_DESCRIPTION, retrieved_en_locale.getPaymentDescription());
-        assertEquals(PAYMENT_INSTRUCTIONS, retrieved_en_locale.getPaymentInstructions());
+        var retrievedENLocale = retrieved.getLocaleByKey(LOCALE);
+        assertEquals(PAYMENT_NAME, retrievedENLocale.getPaymentName());
+        assertEquals(PAYMENT_DESCRIPTION, retrievedENLocale.getPaymentDescription());
+        assertEquals(PAYMENT_INSTRUCTIONS, retrievedENLocale.getPaymentInstructions());
     }
 
     @Test
     void cannotCreatePaymentMethodWithExistingId() throws CustomOfflinePaymentMethodAlreadyExistsException {
-        final var PAYMENT_METHODS = List.of(
+        final var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
                 Map.of(
@@ -188,7 +188,7 @@ public class ConfigurationApiControllerIntegrationTest {
         );
         final var LOCALE = "en";
 
-        for(var pm : PAYMENT_METHODS) {
+        for(var pm : paymentMethods) {
             customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organization.getId(), pm);
         }
 
@@ -331,14 +331,14 @@ public class ConfigurationApiControllerIntegrationTest {
     }
 
     @Test
-    void canUpdateExistingPaymentMethod() throws CustomOfflinePaymentMethodAlreadyExistsException {
+    void canUpdateExistingPaymentMethod() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
         final var NEW_PAYMENT_NAME = "Updated Name";
         final var NEW_PAYMENT_DESCRIPTION = "Test Description";
         final var NEW_PAYMENT_INSTRUCTIONS = "Test Instructions";
         final var LOCALE = "en";
 
         final var EXISTING_METHOD_ID = "15146df3-2436-4d2e-90b9-0d6cb273e291";
-        final var PAYMENT_METHODS = List.of(
+        final var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
                 Map.of(
@@ -356,7 +356,7 @@ public class ConfigurationApiControllerIntegrationTest {
             )
         );
 
-        for(var pm : PAYMENT_METHODS) {
+        for(var pm : paymentMethods) {
             customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organization.getId(), pm);
         }
 
@@ -384,15 +384,15 @@ public class ConfigurationApiControllerIntegrationTest {
         var retrieved = orgMethods.get(0);
         assertTrue(retrieved.getLocalizations().containsKey(LOCALE));
 
-        var retrieved_en_locale = retrieved.getLocaleByKey(LOCALE);
-        assertEquals(NEW_PAYMENT_NAME, retrieved_en_locale.getPaymentName());
-        assertEquals(NEW_PAYMENT_DESCRIPTION, retrieved_en_locale.getPaymentDescription());
-        assertEquals(NEW_PAYMENT_INSTRUCTIONS, retrieved_en_locale.getPaymentInstructions());
+        var retrievedENLocale = retrieved.getLocaleByKey(LOCALE);
+        assertEquals(NEW_PAYMENT_NAME, retrievedENLocale.getPaymentName());
+        assertEquals(NEW_PAYMENT_DESCRIPTION, retrievedENLocale.getPaymentDescription());
+        assertEquals(NEW_PAYMENT_INSTRUCTIONS, retrievedENLocale.getPaymentInstructions());
     }
 
     @Test
     void updateExistingPaymentMethodBadRequestWhenNotExists() {
-        final var PAYMENT_METHODS = List.of(
+        final var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
                 Map.of(
@@ -405,20 +405,21 @@ public class ConfigurationApiControllerIntegrationTest {
             )
         );
 
-        var response = configurationApiController.updatePaymentMethod(
-            organization.getId(),
-            PAYMENT_METHODS.get(0).getPaymentMethodId(),
-            PAYMENT_METHODS.get(0),
-            mockPrincipal
+        assertThrows(
+            CustomOfflinePaymentMethodDoesNotExistException.class,
+            () -> configurationApiController.updatePaymentMethod(
+                organization.getId(),
+                paymentMethods.get(0).getPaymentMethodId(),
+                paymentMethods.get(0),
+                mockPrincipal
+            )
         );
-
-        assert(response.getStatusCode().is4xxClientError());
     }
 
     @Test
-    void canDeleteExistingPaymentMethod() throws CustomOfflinePaymentMethodAlreadyExistsException {
+    void canDeleteExistingPaymentMethod() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
         final var EXISTING_METHOD_ID = "15146df3-2436-4d2e-90b9-0d6cb273e291";
-        final var PAYMENT_METHODS = List.of(
+        final var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
                 Map.of(
@@ -436,7 +437,7 @@ public class ConfigurationApiControllerIntegrationTest {
             )
         );
 
-        for(var pm : PAYMENT_METHODS) {
+        for(var pm : paymentMethods) {
             customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organization.getId(), pm);
         }
 
@@ -453,13 +454,14 @@ public class ConfigurationApiControllerIntegrationTest {
 
     @Test
     void cannotDeletePaymentMethodWhichNotExists() {
-        var response = configurationApiController.deletePaymentMethod(
-            organization.getId(),
-            "15146df3-2436-4d2e-90b9-0d6cb273e291",
-            mockPrincipal
+        assertThrows(
+            CustomOfflinePaymentMethodDoesNotExistException.class,
+            () -> configurationApiController.deletePaymentMethod(
+                organization.getId(),
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                mockPrincipal
+            )
         );
-
-        assert(response.getStatusCode().is4xxClientError());
     }
 
     @Test
@@ -494,11 +496,11 @@ public class ConfigurationApiControllerIntegrationTest {
         assertTrue(response.getStatusCode().is4xxClientError());
 
         // Test after event has expired, payment method can be deleted.
-        var new_start_ts = ZonedDateTime.now(clockProvider.getClock()).minusDays(1).toOffsetDateTime();
-        var new_end_ts = new_start_ts.plusHours(1);
+        var newStartTs = ZonedDateTime.now(clockProvider.getClock()).minusDays(1).toOffsetDateTime();
+        var newEndTs = newStartTs.plusHours(1);
         int result = jdbcTemplate.update(
             "update event set start_ts = :start_ts, end_ts = :end_ts where id = :id",
-            new MapSqlParameterSource("start_ts", new_start_ts).addValue("end_ts", new_end_ts).addValue("id", event.getId())
+            new MapSqlParameterSource("start_ts", newStartTs).addValue("end_ts", newEndTs).addValue("id", event.getId())
         );
         assertEquals(1, result);
 
@@ -520,9 +522,9 @@ public class ConfigurationApiControllerIntegrationTest {
     }
 
     @Test
-    void canGetAllowedPaymentMethodsForEvent() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
+    void canGetAllowedPaymentMethodsForEvent() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException, PassedIdDoesNotExistException {
         final var EXISTING_METHOD_ID = "15146df3-2436-4d2e-90b9-0d6cb273e291";
-        final var PAYMENT_METHODS = List.of(
+        final var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
                 Map.of(
@@ -540,7 +542,7 @@ public class ConfigurationApiControllerIntegrationTest {
             )
         );
 
-        for(var pm : PAYMENT_METHODS) {
+        for(var pm : paymentMethods) {
             customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organization.getId(), pm);
         }
 
@@ -563,9 +565,9 @@ public class ConfigurationApiControllerIntegrationTest {
     }
 
     @Test
-    void canSetAllowedPaymentMethodsForEvent() throws CustomOfflinePaymentMethodAlreadyExistsException {
+    void canSetAllowedPaymentMethodsForEvent() throws CustomOfflinePaymentMethodAlreadyExistsException, PassedIdDoesNotExistException, CustomOfflinePaymentMethodDoesNotExistException {
         final var EXISTING_METHOD_ID = "15146df3-2436-4d2e-90b9-0d6cb273e291";
-        final var PAYMENT_METHODS = List.of(
+        final var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
                 Map.of(
@@ -583,7 +585,7 @@ public class ConfigurationApiControllerIntegrationTest {
             )
         );
 
-        for(var pm : PAYMENT_METHODS) {
+        for(var pm : paymentMethods) {
             customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organization.getId(), pm);
         }
 
@@ -604,7 +606,7 @@ public class ConfigurationApiControllerIntegrationTest {
 
     @Test
     void cannotSetAllowedPaymentMethodsToNonExisting() throws CustomOfflinePaymentMethodAlreadyExistsException {
-        final var PAYMENT_METHODS = List.of(
+        final var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
                 Map.of(
@@ -622,19 +624,20 @@ public class ConfigurationApiControllerIntegrationTest {
             )
         );
 
-        for (var pm : PAYMENT_METHODS) {
+        for (var pm : paymentMethods) {
             customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(
                 organization.getId(),
                 pm
             );
         }
 
-        var response = configurationApiController.setEventAllowedPaymentMethods(
-            event.getId(),
-            List.of("edc42b77-8696-4357-9164-0f09eb055855"), // Does not exist in ORG
-            mockPrincipal
+        assertThrows(
+            CustomOfflinePaymentMethodDoesNotExistException.class,
+            () -> configurationApiController.setEventAllowedPaymentMethods(
+                event.getId(),
+                List.of("edc42b77-8696-4357-9164-0f09eb055855"), // Does not exist in ORG
+                mockPrincipal
+            )
         );
-
-        assertTrue(response.getStatusCode().is4xxClientError());
     }
 }

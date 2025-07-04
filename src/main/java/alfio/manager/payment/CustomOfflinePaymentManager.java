@@ -117,15 +117,16 @@ public class CustomOfflinePaymentManager implements PaymentProvider {
     public PaymentMethod getPaymentMethodForTransaction(Transaction transaction) {
         var transMetadata = transaction.getMetadata();
 
-        if(!transMetadata.containsKey("selectedPaymentMethod")) {
+        if(!transMetadata.containsKey(Transaction.SELECTED_PAYMENT_METHOD_KEY)) {
             log.warn(
-                "Transaction '{}' using 'CUSTOM_OFFLINE' has no selectedPaymentMethod metadata field. This should not happen.",
-                transaction.getId()
+                "Transaction '{}' using 'CUSTOM_OFFLINE' has no {} metadata field. This should not happen.",
+                transaction.getId(),
+                Transaction.SELECTED_PAYMENT_METHOD_KEY
             );
             return null;
         }
 
-        var paymentMethodId = transMetadata.get("selectedPaymentMethod");
+        var paymentMethodId = transMetadata.get(Transaction.SELECTED_PAYMENT_METHOD_KEY);
 
         var reservationId = transaction.getReservationId();
         var event = eventRepository.findByReservationId(reservationId);
@@ -195,7 +196,7 @@ public class CustomOfflinePaymentManager implements PaymentProvider {
                 0L,
                 0L,
                 Transaction.Status.PENDING,
-                Map.of("selectedPaymentMethod", spec.getSelectedPaymentMethod().getPaymentMethodId()));
+                Map.of(Transaction.SELECTED_PAYMENT_METHOD_KEY, spec.getSelectedPaymentMethod().getPaymentMethodId()));
 
         // RETURN RESULT
         return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);

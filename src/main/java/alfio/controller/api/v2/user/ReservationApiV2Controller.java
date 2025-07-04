@@ -50,8 +50,6 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.repository.*;
 import alfio.util.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -265,9 +263,9 @@ public class ReservationApiV2Controller {
             return paymentManager.getPaymentMethods(purchaseContext, new TransactionRequest(orderSummary.getOriginalTotalPrice(), ticketReservationRepository.getBillingDetailsForReservation(reservationId)))
                 .stream()
                 .filter(p ->
-                    !blacklistedMethodsForReservation
+                    blacklistedMethodsForReservation
                         .stream()
-                        .anyMatch(p2 -> p2.getPaymentMethodId().equals(p.getPaymentMethod().getPaymentMethodId()))
+                        .noneMatch(p2 -> p2.getPaymentMethodId().equals(p.getPaymentMethod().getPaymentMethodId()))
                 )
                 .filter(p -> ticketReservationManager.isValidPaymentMethod(p, purchaseContext))
                 .collect(
@@ -737,7 +735,7 @@ public class ReservationApiV2Controller {
     }
 
     @GetMapping("/reservation/{reservationId}/get-applicable-custom-payment-method-details")
-    public ResponseEntity<List<UserDefinedOfflinePaymentMethod>> getApplicableCustomPaymentMethodDetails(@PathVariable String reservationId) throws JsonMappingException, JsonProcessingException {
+    public ResponseEntity<List<UserDefinedOfflinePaymentMethod>> getApplicableCustomPaymentMethodDetails(@PathVariable String reservationId) {
         var event = eventRepository.findByReservationId(reservationId);
         var allowedPaymentMethods = customOfflineConfigurationManager.getAllowedCustomOfflinePaymentMethodsForEvent(event);
 
@@ -760,7 +758,7 @@ public class ReservationApiV2Controller {
     }
 
     @GetMapping("/reservation/{reservationId}/get-selected-custom-payment-method-details")
-    public ResponseEntity<UserDefinedOfflinePaymentMethod> getSelectedCustomPaymentMethodDetails(@PathVariable String reservationId) throws JsonMappingException, JsonProcessingException {
+    public ResponseEntity<UserDefinedOfflinePaymentMethod> getSelectedCustomPaymentMethodDetails(@PathVariable String reservationId) {
         var event = eventRepository.findByReservationId(reservationId);
         var paymentMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(
             event.getOrganizationId()
@@ -771,7 +769,7 @@ public class ReservationApiV2Controller {
             throw new NoCustomPaymentTransactionForReservationException();
         }
         var transaction = maybeTransaction.get();
-        var paymentMethodId = transaction.getMetadata().get("selectedPaymentMethod");
+        var paymentMethodId = transaction.getMetadata().get(Transaction.SELECTED_PAYMENT_METHOD_KEY);
         UserDefinedOfflinePaymentMethod respPaymentMethod = paymentMethods
             .stream()
             .filter(pm -> pm.getPaymentMethodId().equals(paymentMethodId))

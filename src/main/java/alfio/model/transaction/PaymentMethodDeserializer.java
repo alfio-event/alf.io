@@ -65,8 +65,9 @@ public class PaymentMethodDeserializer extends JsonDeserializer<PaymentMethod> {
             var paymentMethod = new UserDefinedOfflinePaymentMethod(paymentMethodId, localizations);
 
             JsonNode deletedNode = node.get("deleted");
-            var deleted = deletedNode != null ? node.get("deleted").asBoolean(false) : false;
-            if(deleted) paymentMethod.setDeleted();
+            if(deletedNode != null && deletedNode.asBoolean()) {
+                paymentMethod.setDeleted();
+            }
 
             return paymentMethod;
         }

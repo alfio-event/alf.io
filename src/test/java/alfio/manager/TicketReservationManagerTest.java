@@ -39,7 +39,6 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.command.CleanupReservations;
 import alfio.model.system.command.FinalizeReservation;
 import alfio.model.transaction.PaymentContext;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.StaticPaymentMethods;
 import alfio.model.transaction.Transaction;
@@ -1350,7 +1349,7 @@ class TicketReservationManagerTest {
         when(totalPrice.requiresPayment()).thenReturn(true);
         when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1));
         when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(new ArrayList<>(EnumSet.complementOf(EnumSet.of(StaticPaymentMethods.PAYPAL, StaticPaymentMethods.NONE))));
-        when(paymentManager.getPaymentMethods(eq(event), any())).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, pp.getPaymentMethod(), pp.getPaymentMethod() == StaticPaymentMethods.PAYPAL ? PaymentMethodStatus.ERROR : PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
+        when(paymentManager.getPaymentMethods(eq(event), any())).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, pp.getPaymentMethod(), pp.getPaymentMethod() == StaticPaymentMethods.PAYPAL ? PaymentMethodStatus.ERROR : PaymentMethodStatus.ACTIVE)).toList());
         Assertions.assertFalse(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
     }
 
@@ -1382,7 +1381,7 @@ class TicketReservationManagerTest {
     }
 
     @Test
-    void testIsValidPaymentMethodCustomOfflineAcceptsValidMethod() throws JsonMappingException, JsonProcessingException {
+    void testIsValidPaymentMethodCustomOfflineAcceptsValidMethod() {
         var customPaymentMethod = new UserDefinedOfflinePaymentMethod(
             "abe32b76-9b9e-4f4b-b058-38c797fe80ff",
             Map.of("en", new UserDefinedOfflinePaymentMethod.Localization(
@@ -1408,7 +1407,7 @@ class TicketReservationManagerTest {
     }
 
     @Test
-    void testIsValidPaymentMethodCustomOfflineRejectsInvalidMethod() throws JsonMappingException, JsonProcessingException {
+    void testIsValidPaymentMethodCustomOfflineRejectsInvalidMethod() {
         var allowedPaymentMethod = new UserDefinedOfflinePaymentMethod(
             "abe32b76-9b9e-4f4b-b058-38c797fe80ff",
             Map.of("en", new UserDefinedOfflinePaymentMethod.Localization(

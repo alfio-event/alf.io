@@ -282,6 +282,7 @@ class CustomOfflineReservationFlowIntegrationTest extends BaseReservationFlowTes
         assertTrue(handleRes.getBody().getValue().isFailure());
     }
 
+    @Override
     protected void performAndValidatePayment(ReservationFlowContext context,
                                              String reservationId,
                                              int promoCodeId,

@@ -2066,7 +2066,7 @@ public class TicketReservationManager {
         var categoriesInReservation = ticketRepository.getCategoriesIdToPayInReservation(reservationId);
         var blacklistedPaymentMethods = configurationManager.getBlacklistedMethodsForReservation(purchaseContext, categoriesInReservation);
         var transactionRequest = new TransactionRequest(totalPrice, ticketReservationRepository.getBillingDetailsForReservation(reservationId));
-        var availableMethods = paymentManager.getPaymentMethods(purchaseContext, transactionRequest).stream().filter(pm -> pm.getStatus() == PaymentMethodStatus.ACTIVE && pm.getPaymentMethod() != StaticPaymentMethods.NONE).collect(toList());
+        var availableMethods = paymentManager.getPaymentMethods(purchaseContext, transactionRequest).stream().filter(pm -> pm.getStatus() == PaymentMethodStatus.ACTIVE && pm.getPaymentMethod() != StaticPaymentMethods.NONE).toList();
         var areAllMethodsBlacklisted = availableMethods.stream().allMatch(pm ->
             blacklistedPaymentMethods.stream().anyMatch(blItem -> blItem.getPaymentMethodId().equals(pm.getPaymentMethodId()))
         );

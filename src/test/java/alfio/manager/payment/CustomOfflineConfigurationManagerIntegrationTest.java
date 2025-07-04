@@ -69,7 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-public class CustomOfflineConfigurationManagerIntegrationTest {
+class CustomOfflineConfigurationManagerIntegrationTest {
     private static final String DEFAULT_CATEGORY_NAME = "default";
 
     @Autowired
@@ -96,7 +96,7 @@ public class CustomOfflineConfigurationManagerIntegrationTest {
     private Event event;
 
     @BeforeEach
-    public void ensureConfiguration() {
+    void ensureConfiguration() {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
 
         List<TicketCategoryModification> categories = Arrays.asList(
@@ -130,8 +130,8 @@ public class CustomOfflineConfigurationManagerIntegrationTest {
     }
 
     @Test
-    public void canSetBlacklistedPaymentMethodsWhenKeyAlreadyExists() throws JsonProcessingException {
-        final var PAYMENT_METHODS = List.of(
+    void canSetBlacklistedPaymentMethodsWhenKeyAlreadyExists() throws JsonProcessingException {
+        final var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
                 Map.of(
@@ -154,7 +154,7 @@ public class CustomOfflineConfigurationManagerIntegrationTest {
             )
         );
 
-        String paymentMethodsJson = objectMapper.writeValueAsString(PAYMENT_METHODS);
+        String paymentMethodsJson = objectMapper.writeValueAsString(paymentMethods);
         configurationRepository.insertOrganizationLevel(
             organization.getId(),
             ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
@@ -167,7 +167,7 @@ public class CustomOfflineConfigurationManagerIntegrationTest {
         customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
             event,
             categories.get(0),
-            List.of(PAYMENT_METHODS.get(0))
+            List.of(paymentMethods.get(0))
         );
 
         var blacklistedJson = configurationRepository.findByKeyAtCategoryLevel(
@@ -179,12 +179,12 @@ public class CustomOfflineConfigurationManagerIntegrationTest {
 
         var blacklistedItems = objectMapper.readValue(blacklistedJson, new TypeReference<List<String>>() {});
         assertEquals(1, blacklistedItems.size());
-        assertEquals(PAYMENT_METHODS.get(0).getPaymentMethodId(), blacklistedItems.get(0));
+        assertEquals(paymentMethods.get(0).getPaymentMethodId(), blacklistedItems.get(0));
 
         customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
             event,
             categories.get(0),
-            List.of(PAYMENT_METHODS.get(1))
+            List.of(paymentMethods.get(1))
         );
 
         blacklistedJson = configurationRepository.findByKeyAtCategoryLevel(
@@ -196,12 +196,12 @@ public class CustomOfflineConfigurationManagerIntegrationTest {
 
         blacklistedItems = objectMapper.readValue(blacklistedJson, new TypeReference<List<String>>() {});
         assertEquals(1, blacklistedItems.size());
-        assertEquals(PAYMENT_METHODS.get(1).getPaymentMethodId(), blacklistedItems.get(0));
+        assertEquals(paymentMethods.get(1).getPaymentMethodId(), blacklistedItems.get(0));
     }
 
     @Test
-    public void canSetAllowedEventPaymentMethodsWhenKeyAlreadyExists() throws JsonProcessingException, CustomOfflinePaymentMethodDoesNotExistException {
-        final var PAYMENT_METHODS = List.of(
+    void canSetAllowedEventPaymentMethodsWhenKeyAlreadyExists() throws JsonProcessingException, CustomOfflinePaymentMethodDoesNotExistException {
+        final var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
                 Map.of(
@@ -224,7 +224,7 @@ public class CustomOfflineConfigurationManagerIntegrationTest {
             )
         );
 
-        String paymentMethodsJson = objectMapper.writeValueAsString(PAYMENT_METHODS);
+        String paymentMethodsJson = objectMapper.writeValueAsString(paymentMethods);
         configurationRepository.insertOrganizationLevel(
             organization.getId(),
             ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
@@ -234,7 +234,7 @@ public class CustomOfflineConfigurationManagerIntegrationTest {
 
         customOfflineConfigurationManager.setAllowedCustomOfflinePaymentMethodsForEvent(
             event,
-            List.of(PAYMENT_METHODS.get(0).getPaymentMethodId())
+            List.of(paymentMethods.get(0).getPaymentMethodId())
         );
 
         var allowedMethodsJson = configurationRepository.findByKeyAtEventLevel(
@@ -245,11 +245,11 @@ public class CustomOfflineConfigurationManagerIntegrationTest {
 
         var allowedMethods = objectMapper.readValue(allowedMethodsJson, new TypeReference<List<String>>() {});
         assertEquals(1, allowedMethods.size());
-        assertEquals(PAYMENT_METHODS.get(0).getPaymentMethodId(), allowedMethods.get(0));
+        assertEquals(paymentMethods.get(0).getPaymentMethodId(), allowedMethods.get(0));
 
         customOfflineConfigurationManager.setAllowedCustomOfflinePaymentMethodsForEvent(
             event,
-            List.of(PAYMENT_METHODS.get(1).getPaymentMethodId())
+            List.of(paymentMethods.get(1).getPaymentMethodId())
         );
 
         allowedMethodsJson = configurationRepository.findByKeyAtEventLevel(
@@ -260,6 +260,6 @@ public class CustomOfflineConfigurationManagerIntegrationTest {
 
         allowedMethods = objectMapper.readValue(allowedMethodsJson, new TypeReference<List<String>>() {});
         assertEquals(1, allowedMethods.size());
-        assertEquals(PAYMENT_METHODS.get(1).getPaymentMethodId(), allowedMethods.get(0));
+        assertEquals(paymentMethods.get(1).getPaymentMethodId(), allowedMethods.get(0));
     }
 }

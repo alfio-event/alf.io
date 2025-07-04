@@ -61,7 +61,7 @@ import static alfio.test.util.TestUtil.clockProvider;
 @AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-public class CustomOfflinePaymentManagerIntegrationTest {
+class CustomOfflinePaymentManagerIntegrationTest {
     @Autowired
     private ConfigurationRepository configurationRepository;
     @Autowired
@@ -82,7 +82,7 @@ public class CustomOfflinePaymentManagerIntegrationTest {
     private List<UserDefinedOfflinePaymentMethod> paymentMethods;
 
     @BeforeEach
-    public void ensureConfiguration() throws CustomOfflinePaymentMethodAlreadyExistsException {
+    void ensureConfiguration() throws CustomOfflinePaymentMethodAlreadyExistsException {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
 
         String organizationName = UUID.randomUUID().toString();

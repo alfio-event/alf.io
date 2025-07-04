@@ -63,6 +63,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.util.Assert;
@@ -383,7 +384,7 @@ public class EventApiController {
             .filter(pm ->
                 paymentMethodIds.stream().anyMatch(id -> id.equals(pm.getPaymentMethodId()))
             )
-            .collect(Collectors.toList());
+            .toList();
 
         customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
             event,
@@ -968,13 +969,13 @@ public class EventApiController {
             .anyMatch(ga -> ga.getAuthority().equals("ROLE_" + AuthenticationConstants.SPONSOR));
     }
 
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public class PassedIdDoesNotExistException extends Exception {
-        public PassedIdDoesNotExistException() {
-            super();
-        }
-        public PassedIdDoesNotExistException(String message) {
-            super(message);
-        }
+    @ExceptionHandler({
+        PassedIdDoesNotExistException.class
+    })
+    public ResponseEntity<String> handleResponseException(PassedIdDoesNotExistException ex) {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .contentType(MediaType.TEXT_PLAIN)
+            .body(ex.getMessage());
     }
 }
