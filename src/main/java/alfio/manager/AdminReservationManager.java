@@ -947,11 +947,11 @@ public class AdminReservationManager {
     public void creditReservation(PurchaseContextType purchaseContextType, String publicIdentifier, String reservationId, boolean refund, boolean notify, String username) {
         loadReservation(purchaseContextType, publicIdentifier, reservationId, username)
             .ifSuccess(res -> {
-                var OFFLINE_PAYMENT_ENUM_VALUES = EnumSet.of(
+                var offlinePaymentEnumValues = EnumSet.of(
                     TicketReservationStatus.OFFLINE_PAYMENT,
                     TicketReservationStatus.CUSTOM_OFFLINE_PAYMENT
                 );
-                if (OFFLINE_PAYMENT_ENUM_VALUES.contains(res.getLeft().getStatus())) {
+                if (offlinePaymentEnumValues.contains(res.getLeft().getStatus())) {
                     ticketReservationManager.deleteOfflinePayment(res.getRight().event().orElseThrow(), reservationId, false, true, notify, username);
                 } else {
                     removeReservation(res, refund, notify, username, false, true);

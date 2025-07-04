@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -86,7 +85,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-public class ReservationApiV2ControllerIntegrationTest {
+class ReservationApiV2ControllerIntegrationTest {
     private static final String DEFAULT_CATEGORY_NAME = "default";
 
     @Autowired
@@ -121,7 +120,7 @@ public class ReservationApiV2ControllerIntegrationTest {
 
 
     @BeforeEach
-    public void ensureConfiguration() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
+    void ensureConfiguration() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
 
         List<TicketCategoryModification> categories = Arrays.asList(
@@ -183,7 +182,7 @@ public class ReservationApiV2ControllerIntegrationTest {
         List<String> eventSelectedMethodIds = paymentMethods
             .stream()
             .map(UserDefinedOfflinePaymentMethod::getPaymentMethodId)
-            .collect(Collectors.toList());
+            .toList();
 
         customOfflineConfigurationManager.setAllowedCustomOfflinePaymentMethodsForEvent(
             event,
@@ -192,7 +191,7 @@ public class ReservationApiV2ControllerIntegrationTest {
     }
 
     @Test
-    void canGetApplicablePaymentMethodDetails() throws JsonProcessingException {
+    void canGetApplicablePaymentMethodDetails() {
         var reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(
             reservationId,

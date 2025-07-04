@@ -606,7 +606,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testCanDeleteCustomOfflinePaymentReservation() throws CustomOfflinePaymentMethodAlreadyExistsException {
+    void testCanDeleteCustomOfflinePaymentReservation() throws CustomOfflinePaymentMethodAlreadyExistsException {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
