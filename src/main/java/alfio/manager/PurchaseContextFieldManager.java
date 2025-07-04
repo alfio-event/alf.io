@@ -115,7 +115,7 @@ public class PurchaseContextFieldManager {
 
         long configurationId = purchaseContextFieldRepository.insertConfiguration(eventIdOrNull(purchaseContext), purchaseContext.getOrganizationId(), descriptorIdOrNull(purchaseContext), f.getName(), order, f.getType(), serializedRestrictedValues,
             f.getMaxLength(), f.getMinLength(), f.isRequired(), context, additionalServiceId, generateJsonForList(f.getLinkedCategoriesIds())).getKey();
-        f.getDescription().forEach((locale, value) -> purchaseContextFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value), purchaseContext.getOrganizationId()));
+        f.getDescription().forEach((locale, value) -> purchaseContextFieldRepository.upsertDescription(configurationId, locale, Json.GSON.toJson(value), purchaseContext.getOrganizationId()));
     }
 
     public void updateAdditionalField(long id, EventModification.UpdateAdditionalField f, int organizationId) {
@@ -123,9 +123,7 @@ public class PurchaseContextFieldManager {
         purchaseContextFieldRepository.updateField(id, f.isRequired(), !f.isReadOnly(), serializedRestrictedValues, toSerializedDisabledValues(f), generateJsonForList(f.getLinkedCategoriesIds()));
         f.getDescription().forEach((locale, value) -> {
             String val = Json.GSON.toJson(value.getDescription());
-            if(0 == purchaseContextFieldRepository.updateDescription(id, locale, val)) {
-                purchaseContextFieldRepository.insertDescription(id, locale, val, organizationId);
-            }
+            purchaseContextFieldRepository.upsertDescription(id, locale, val, organizationId);
         });
     }
 
@@ -197,9 +195,7 @@ public class PurchaseContextFieldManager {
     public void updateFieldDescriptions(Map<String, TicketFieldDescriptionModification> descriptions, int organizationId) {
         descriptions.forEach((locale, value) -> {
             String description = Json.GSON.toJson(value.getDescription());
-            if(0 == purchaseContextFieldRepository.updateDescription(value.getTicketFieldConfigurationId(), locale, description)) {
-                purchaseContextFieldRepository.insertDescription(value.getTicketFieldConfigurationId(), locale, description, organizationId);
-            }
+            purchaseContextFieldRepository.upsertDescription(value.getTicketFieldConfigurationId(), locale, description, organizationId);
         });
     }
 

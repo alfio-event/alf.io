@@ -56,8 +56,9 @@ interface FieldRepository {
     @Query("""
         insert into purchase_context_field_description(field_configuration_id_fk, field_locale, description, organization_id_fk)\
          values (:configurationId, :locale, :description, :organizationId)\
+         on conflict(field_configuration_id_fk, field_locale) do update set description = excluded.description\
         """)
-    int insertDescription(@Bind("configurationId") long configurationId,
+    int upsertDescription(@Bind("configurationId") long configurationId,
                           @Bind("locale") String locale,
                           @Bind("description") String description,
                           @Bind("organizationId") int organizationId);
