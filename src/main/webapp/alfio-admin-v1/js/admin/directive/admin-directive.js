@@ -611,6 +611,12 @@
                     return proxies;
                 };
 
+                $scope.$watch('obj.organizationId', function(newVal, oldVal) {
+                    if (newVal !== oldVal) {
+                        $scope._customOfflinePaymentsSelector = null;
+                    }
+                });
+
                 UtilsService.getAvailableCurrencies().then(function(result) {
                     $scope.currencies = result.data;
                 });
