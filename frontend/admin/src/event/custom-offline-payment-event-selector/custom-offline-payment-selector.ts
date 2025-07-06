@@ -7,7 +7,7 @@ import { SlCheckbox } from "@shoelace-style/shoelace";
 export class CustomOfflinePaymentSelector extends LitElement {
     @property({ type: Array })
     paymentMethods: Array<{ paymentMethod: CustomOfflinePayment; selected: boolean }> = [];
-    @property({type: Boolean})
+    @property({ type: Boolean })
     strikeThroughSelected: boolean = false;
 
     updated(changedProperties: Map<string, unknown>) {
@@ -31,6 +31,11 @@ export class CustomOfflinePaymentSelector extends LitElement {
                     this.paymentMethods,
                     (_, index) => index,
                     (item, index) => {
+                        const paymentMethod = item.paymentMethod;
+                        const localizationKeys = Object.keys(paymentMethod.localizations);
+                        const paymentMethodName =
+                            paymentMethod.localizations?.["en"]?.paymentName
+                            ?? paymentMethod.localizations[localizationKeys[0]].paymentName;
                         return html`
                             <sl-checkbox
                                 .checked=${item.selected}
@@ -42,8 +47,8 @@ export class CustomOfflinePaymentSelector extends LitElement {
                                 }}
                             >
                                 ${this.strikeThroughSelected && item.selected ?
-                                    html`<del>${item.paymentMethod.localizations["en"].paymentName}</del>`
-                                    : item.paymentMethod.localizations["en"].paymentName
+                                    html`<del>${paymentMethodName}</del>`
+                                    : paymentMethodName
                                 }
                             </sl-checkbox>
                             <br/>

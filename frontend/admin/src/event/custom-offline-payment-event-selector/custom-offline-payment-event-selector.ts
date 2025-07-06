@@ -57,7 +57,7 @@ export class CustomOfflinePaymentEventSelector extends LitElement {
         }));
     }
 
-        handleUpdatePricesModalSubmit = (_event: Event) => {
+    handleUpdatePricesModalSubmit = (_event: Event) => {
         const eventId = this.event;
 
         const selectedIds = this.selectedPaymentMethods

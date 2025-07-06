@@ -1,9 +1,4 @@
 /**
- * Shared types for admin GUI.
- * NOTE: These types are shared with the public frontend in public/src/app/model/payment.ts
- */
-
-/**
  * Used to identify and describe an organizer-created
  * offline payment method.
  */

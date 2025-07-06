@@ -13,8 +13,7 @@ import {CustomOfflinePayment, CustomOfflinePaymentLocalization} from '../../mode
 
 @Component({
   selector: 'app-custom-offline-payment',
-  templateUrl: './custom-offline-payment.component.html',
-  styleUrls: ['./custom-offline-payment.component.scss']
+  templateUrl: './custom-offline-payment.component.html'
 })
 export class CustomOfflinePaymentComponent implements OnInit {
 

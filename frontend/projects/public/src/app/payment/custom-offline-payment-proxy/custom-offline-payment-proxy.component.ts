@@ -1,10 +1,10 @@
-import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 
-import {PaymentProvider} from '../payment-provider';
-import {UntypedFormGroup} from '@angular/forms';
+import { PaymentProvider } from '../payment-provider';
+import { UntypedFormGroup } from '@angular/forms';
 import { CustomOfflinePaymentProvider } from './custom-offline-payment-provider';
 import { CustomOfflinePayment, type PaymentMethodId } from '../../model/event';
-import {PaymentProxy} from '../../model/event';
+import { PaymentProxy } from '../../model/event';
 import { I18nService } from 'projects/public/src/app/shared/i18n.service';
 
 @Component({

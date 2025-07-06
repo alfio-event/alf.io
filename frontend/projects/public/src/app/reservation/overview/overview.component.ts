@@ -102,7 +102,7 @@ export class OverviewComponent implements OnInit {
 
       this.activePaymentMethods = this.reservationInfo.activePaymentMethods;
       let currentPaymentProxy: PaymentProxy | null = null;
-      let selectedPaymentMethod: string | null = null;
+      let selectedPaymentMethod: PaymentMethodId | null = null;
 
       if (!resInfo.orderSummary.free && this.paymentMethodsCount() === 1) {
         selectedPaymentMethod = this.getSinglePaymentMethod();
