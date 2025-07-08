@@ -16,15 +16,29 @@
  */
 package alfio.controller.api.support;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 import java.util.Map;
 
-@AllArgsConstructor
-@Getter
+
 public class Description {
     private final String label;
     private final String placeholder;
     private final Map<String, String> restrictedValuesDescription;
+
+    public Description(String label, String placeholder, Map<String, String> restrictedValuesDescription) {
+        this.label = label;
+        this.placeholder = placeholder;
+        this.restrictedValuesDescription = restrictedValuesDescription;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public String getPlaceholder() {
+        return placeholder;
+    }
+
+    public Map<String, String> getRestrictedValuesDescription() {
+        return restrictedValuesDescription;
+    }
 }

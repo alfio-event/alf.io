@@ -600,19 +600,19 @@ public class ConfigurationManager {
                 found.addAll(configurationRepository.findByKeysAtSystemLevel(keysAsString));
                 break;
             case ORGANIZATION:
-                found.addAll(configurationRepository.findByOrganizationAndKeys(((OrganizationLevel)configurationLevel).organizationId, keysAsString));
+                found.addAll(configurationRepository.findByOrganizationAndKeys(((OrganizationLevel) configurationLevel).organizationId(), keysAsString));
                 break;
             case PURCHASE_CONTEXT:
                 if (configurationLevel instanceof EventLevel eventLevel) {
-                    found.addAll(configurationRepository.findByEventAndKeys(eventLevel.organizationId, eventLevel.eventId, keysAsString));
+                    found.addAll(configurationRepository.findByEventAndKeys(eventLevel.organizationId(), eventLevel.eventId(), keysAsString));
                 } else {
                     var subscriptionDescriptorLevel = (SubscriptionDescriptorLevel) configurationLevel;
-                    found.addAll(configurationRepository.findBySubscriptionDescriptorAndKeys(subscriptionDescriptorLevel.organizationId, subscriptionDescriptorLevel.subscriptionDescriptorId, keysAsString));
+                    found.addAll(configurationRepository.findBySubscriptionDescriptorAndKeys(subscriptionDescriptorLevel.organizationId(), subscriptionDescriptorLevel.subscriptionDescriptorId(), keysAsString));
                 }
                 break;
             case TICKET_CATEGORY:
                 var categoryLevel = (CategoryLevel) configurationLevel;
-                found.addAll(configurationRepository.findByTicketCategoryAndKeys(categoryLevel.organizationId, categoryLevel.eventId, categoryLevel.categoryId, keysAsString));
+                found.addAll(configurationRepository.findByTicketCategoryAndKeys(categoryLevel.organizationId(), categoryLevel.eventId(), categoryLevel.categoryId(), keysAsString));
                 break;
             default:
                 break;

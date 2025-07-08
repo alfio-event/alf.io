@@ -44,7 +44,7 @@ class ConfigurationLevelTest {
         ConfigurationLevel organization = ConfigurationLevel.organization(666);
         assertTrue(organization instanceof ConfigurationLevels.OrganizationLevel);
         assertEquals(ConfigurationPathLevel.ORGANIZATION, organization.getPathLevel());
-        assertEquals(666, ((ConfigurationLevels.OrganizationLevel) organization).organizationId);
+        assertEquals(666, ((ConfigurationLevels.OrganizationLevel) organization).organizationId());
     }
 
     @Test
@@ -53,8 +53,8 @@ class ConfigurationLevelTest {
         assertTrue(event instanceof ConfigurationLevels.EventLevel);
         assertEquals(ConfigurationPathLevel.PURCHASE_CONTEXT, event.getPathLevel());
         var eventLevel = (ConfigurationLevels.EventLevel) event;
-        assertEquals(666, eventLevel.organizationId);
-        assertEquals(1, eventLevel.eventId);
+        assertEquals(666, eventLevel.organizationId());
+        assertEquals(1, eventLevel.eventId());
     }
 
 
@@ -64,8 +64,8 @@ class ConfigurationLevelTest {
         assertTrue(ticketCategory instanceof ConfigurationLevels.CategoryLevel);
         assertEquals(ConfigurationPathLevel.TICKET_CATEGORY, ticketCategory.getPathLevel());
         var categoryLevel = (ConfigurationLevels.CategoryLevel) ticketCategory;
-        assertEquals(666, categoryLevel.organizationId);
-        assertEquals(1, categoryLevel.eventId);
-        assertEquals(777, categoryLevel.categoryId);
+        assertEquals(666, categoryLevel.organizationId());
+        assertEquals(1, categoryLevel.eventId());
+        assertEquals(777, categoryLevel.categoryId());
     }
 }

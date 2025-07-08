@@ -16,17 +16,35 @@
  */
 package alfio.extension;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 import java.util.List;
 import java.util.Map;
 
-@Getter
-@AllArgsConstructor
 public class SimpleHttpClientCachedResponse {
     private final boolean successful;
     private final int code;
     private final Map<String, List<String>> headers;
     private final String tempFilePath;
+
+    public SimpleHttpClientCachedResponse(boolean successful, int code, Map<String, List<String>> headers, String tempFilePath) {
+        this.successful = successful;
+        this.code = code;
+        this.headers = headers;
+        this.tempFilePath = tempFilePath;
+    }
+
+    public boolean isSuccessful() {
+        return successful;
+    }
+
+    public int getCode() {
+        return code;
+    }
+
+    public Map<String, List<String>> getHeaders() {
+        return headers;
+    }
+
+    public String getTempFilePath() {
+        return tempFilePath;
+    }
 }

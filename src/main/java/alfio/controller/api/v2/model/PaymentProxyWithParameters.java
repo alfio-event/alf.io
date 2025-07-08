@@ -17,14 +17,22 @@
 package alfio.controller.api.v2.model;
 
 import alfio.model.transaction.PaymentProxy;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 import java.util.Map;
 
-@AllArgsConstructor
-@Getter
 public class PaymentProxyWithParameters {
     private final PaymentProxy paymentProxy;
     private final Map<String, ?> parameters;
+
+    public PaymentProxyWithParameters(PaymentProxy paymentProxy, Map<String, ?> parameters) {
+        this.paymentProxy = paymentProxy;
+        this.parameters = parameters;
+    }
+
+    public PaymentProxy getPaymentProxy() {
+        return paymentProxy;
+    }
+
+    public Map<String, ?> getParameters() {
+        return parameters;
+    }
 }

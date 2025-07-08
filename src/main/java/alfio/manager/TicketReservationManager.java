@@ -959,10 +959,6 @@ public class TicketReservationManager {
             });
     }
 
-    public Optional<Triple<Event, TicketReservation, Ticket>> from(String eventName, String reservationId, String ticketIdentifier) {
-        return ticketRepository.findOptionalByUUID(ticketIdentifier).flatMap(ticket -> from(eventName, reservationId, ticket));
-    }
-
     public Optional<Triple<Event, TicketReservation, Ticket>> from(String eventName, String reservationId, UUID publicTicketUUID) {
         return ticketRepository.findOptionalByPublicUUID(publicTicketUUID).flatMap(ticket -> from(eventName, reservationId, ticket));
     }
@@ -1172,12 +1168,6 @@ public class TicketReservationManager {
         return ReservationUtil.reservationUrl(reservation, purchaseContext, configurationManager);
     }
 
-    public String ticketOnlineCheckIn(Event event, String ticketId) {
-        Ticket ticket = ticketRepository.findByUUID(ticketId);
-        
-        return ticketOnlineCheckInUrl(event, ticket, configurationManager.baseUrl(event));
-    }
-
     public int maxAmountOfTicketsForCategory(EventAndOrganizationId eventAndOrganizationId, int ticketCategoryId, String promoCode) {
         // verify if the promo code is present and if it's actually an access code
         if(StringUtils.isNotBlank(promoCode)) {
@@ -1189,10 +1179,6 @@ public class TicketReservationManager {
             }
         }
         return configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.ticketCategory(eventAndOrganizationId, ticketCategoryId)).getValueAsIntOrDefault(5);
-    }
-
-    public Optional<TicketReservation> findByIdForEvent(String reservationId, int eventId) {
-        return ticketReservationRepository.findOptionalReservationByIdAndEventId(reservationId, eventId);
     }
     
     public Optional<TicketReservation> findById(String reservationId) {
@@ -1265,10 +1251,6 @@ public class TicketReservationManager {
 
     public List<Ticket> findTicketsInReservation(String reservationId) {
         return ticketRepository.findTicketsInReservation(reservationId);
-    }
-
-    public Optional<Ticket> findFirstInReservation(String reservationId) {
-        return ticketRepository.findFirstTicketInReservation(reservationId);
     }
 
     public void updateTicketOwner(Ticket ticket,
@@ -1610,14 +1592,6 @@ public class TicketReservationManager {
 
     public Integer getPendingPaymentsCount(int eventId) {
         return ticketReservationRepository.findAllReservationsWaitingForPaymentCountInEventId(eventId);
-    }
-
-    public List<Pair<TicketReservation, BillingDocument>> findAllInvoices(int eventId) {
-        List<BillingDocument> documents = billingDocumentRepository.findAllOfTypeForEvent(BillingDocument.Type.INVOICE, eventId);
-        Map<String, BillingDocument> documentsByReservationId = documents.stream().collect(toMap(BillingDocument::getReservationId, Function.identity()));
-        return ticketReservationRepository.findByIds(documentsByReservationId.keySet()).stream()
-            .map(r -> Pair.of(r, documentsByReservationId.get(r.getId())))
-            .collect(toList());
     }
 
     public Stream<Pair<TicketReservationWithTransaction, List<BillingDocument>>> streamAllDocumentsFor(int eventId) {

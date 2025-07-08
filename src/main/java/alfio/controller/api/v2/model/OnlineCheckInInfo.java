@@ -18,7 +18,6 @@ package alfio.controller.api.v2.model;
 
 import alfio.model.checkin.EventWithCheckInInfo;
 import alfio.model.metadata.JoinLink;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.context.MessageSource;
 
@@ -28,7 +27,7 @@ import java.util.Map;
 
 import static alfio.controller.support.Formatters.getFormattedDate;
 
-@AllArgsConstructor
+
 @Getter
 public class OnlineCheckInInfo implements DateValidity {
 
@@ -39,6 +38,15 @@ public class OnlineCheckInInfo implements DateValidity {
 
     private final String timeZone;
     private final DatesWithTimeZoneOffset datesWithOffset;
+
+    public OnlineCheckInInfo(Map<String, String> formattedBeginDate, Map<String, String> formattedBeginTime, Map<String, String> formattedEndDate, Map<String, String> formattedEndTime, String timeZone, DatesWithTimeZoneOffset datesWithOffset) {
+        this.formattedBeginDate = formattedBeginDate;
+        this.formattedBeginTime = formattedBeginTime;
+        this.formattedEndDate = formattedEndDate;
+        this.formattedEndTime = formattedEndTime;
+        this.timeZone = timeZone;
+        this.datesWithOffset = datesWithOffset;
+    }
 
     public boolean isSameDay() {
         return true;

@@ -17,12 +17,15 @@
 package alfio.manager.support;
 
 import alfio.model.transaction.PaymentToken;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
-@AllArgsConstructor
-@Getter
 public class PaymentWebhookResult {
+
+    public PaymentWebhookResult(Type type, PaymentToken paymentToken, String reason, String redirectUrl) {
+        this.type = type;
+        this.paymentToken = paymentToken;
+        this.reason = reason;
+        this.redirectUrl = redirectUrl;
+    }
 
     public enum Type {
         NOT_RELEVANT,
@@ -38,6 +41,22 @@ public class PaymentWebhookResult {
     private final PaymentToken paymentToken;
     private final String reason;
     private final String redirectUrl;
+
+    public Type getType() {
+        return type;
+    }
+
+    public PaymentToken getPaymentToken() {
+        return paymentToken;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public String getRedirectUrl() {
+        return redirectUrl;
+    }
 
     public boolean isSuccessful() {
         return type == Type.SUCCESSFUL;
