@@ -27,7 +27,7 @@
                 <div class="page-header">
                     <h3>Reservation details
                         <button type="button" ng-click="$ctrl.cancelReservationModal(false)" ng-if="$ctrl.isOwner && $ctrl.reservation.showCreditCancel" class="btn btn-danger pull-right"><i class="fa fa-trash"></i> <span class="hidden-sm hidden-xs">Cancel reservation</span></button>
-                        <button type="button" ng-click="$ctrl.cancelReservationModal(true)" ng-if="$ctrl.isOwner && $ctrl.reservation.showCreditCancel && $ctrl.reservation.status === 'OFFLINE_PAYMENT'" class="btn btn-warning pull-right" style="margin-right:10px;"><i class="fa fa-undo"></i> <span class="hidden-sm hidden-xs">Credit reservation</span></button>
+                        <button type="button" ng-click="$ctrl.cancelReservationModal(true)" ng-if="$ctrl.isOwner && $ctrl.reservation.showCreditCancel && $ctrl.isOfflinePayment()" class="btn btn-warning pull-right" style="margin-right:10px;"><i class="fa fa-undo"></i> <span class="hidden-sm hidden-xs">Credit reservation</span></button>
                     </h3>
                 </div>
 
@@ -51,8 +51,8 @@
                                 <div class="input-group-addon" style="padding: 0; background-color: transparent; border: 0" ng-if="!$ctrl.onUpdate">
                                     <button type="button" ng-if="$ctrl.displayConfirmButton" class="btn btn-sm btn-success pull-right" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px">
                                         <i class="fa fa-check"></i>
-                                        <span data-ng-if="$ctrl.reservation.status !== 'OFFLINE_PAYMENT'">Mark as Completed</span>
-                                        <span data-ng-if="$ctrl.reservation.status === 'OFFLINE_PAYMENT'">Confirm payment received</span>
+                                        <span data-ng-if="!$ctrl.isOfflinePayment()">Mark as Completed</span>
+                                        <span data-ng-if="$ctrl.isOfflinePayment()">Confirm payment received</span>
                                     </button>
                                 </div>
                             </div>
@@ -160,7 +160,8 @@
                             <div class="col-xs-12 col-sm-6">
                                 <dl class="dl-horizontal" ng-if="$ctrl.paymentInfo.transaction && $ctrl.paymentInfo.transaction.complete">
                                     <dt>Payment method</dt>
-                                    <dd><span ng-bind="$ctrl.paymentInfo.paymentMethod">-</span></dd>
+                                    <dd ng-if="!$ctrl.selectedCustomOfflinePaymentMethod"><span ng-bind="$ctrl.paymentInfo.paymentMethod">-</span></dd>
+                                    <dd ng-if="$ctrl.selectedCustomOfflinePaymentMethod"><span>{{$ctrl.selectedCustomOfflinePaymentMethod}} ({{$ctrl.paymentInfo.paymentMethod}})</span></dd>
 
                                     <dt ng-if="$ctrl.paymentInfo.transaction">Payment id</dt>
                                     <dd ng-if="$ctrl.paymentInfo.transaction" ng-bind="$ctrl.paymentInfo.transaction.transactionId"></dd>
@@ -319,7 +320,7 @@
                             </div>
                         </div>
                     </div>
-                    <div ng-if="['PENDING', 'OFFLINE_PAYMENT'].indexOf($ctrl.reservation.status) > -1">
+                    <div ng-if="['PENDING', 'OFFLINE_PAYMENT', 'CUSTOM_OFFLINE_PAYMENT'].indexOf($ctrl.reservation.status) > -1">
 
                         <div class="form-group">
                             <div class="checkbox">
@@ -349,8 +350,11 @@
                             <h3>Order summary</h3>
                         </div>
                         <div class="panel-body">
-                            <p>
+                            <p ng-if="!$ctrl.selectedCustomOfflinePaymentMethod">
                                 Payment method: {{$ctrl.reservationDescriptor.reservation.paymentMethod}}
+                            </p>
+                            <p ng-if="$ctrl.selectedCustomOfflinePaymentMethod">
+                                {{$ctrl.selectedCustomOfflinePaymentMethod}} ({{$ctrl.paymentInfo.paymentMethod}})
                             </p>
                             <table class="table table-striped">
                                 <thead>

@@ -319,7 +319,10 @@
         var getPaymentMethods = function(data) {
             return _.chain(data)
                 .filter(function (p) {
-                    return p.status === 'ACTIVE' && p.paymentProxy !== 'ON_SITE' && p.paymentProxy !== 'OFFLINE';
+                    return p.status === 'ACTIVE'
+                        && p.paymentProxy !== 'ON_SITE'
+                        && p.paymentProxy !== 'OFFLINE'
+                        && p.paymentProxy !== 'CUSTOM_OFFLINE';
                 })
                 .map(function (p) {
                     return {
