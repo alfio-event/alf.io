@@ -2779,6 +2779,318 @@
         }
       }
     },
+    "/admin/api/configuration/organizations/{organizationId}/payment-method/{paymentMethodId}" : {
+      "put" : {
+        "tags" : [ "configuration-api-controller" ],
+        "operationId" : "updatePaymentMethod",
+        "parameters" : [ {
+          "name" : "organizationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "paymentMethodId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserDefinedOfflinePaymentMethod"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "configuration-api-controller" ],
+        "operationId" : "deletePaymentMethod",
+        "parameters" : [ {
+          "name" : "organizationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "paymentMethodId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/configuration/organizations/{organizationId}/payment-method/{paymentMethodId}" : {
+      "put" : {
+        "tags" : [ "configuration-api-controller" ],
+        "operationId" : "updatePaymentMethod",
+        "parameters" : [ {
+          "name" : "organizationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "paymentMethodId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserDefinedOfflinePaymentMethod"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "configuration-api-controller" ],
+        "operationId" : "deletePaymentMethod",
+        "parameters" : [ {
+          "name" : "organizationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "paymentMethodId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/api/configuration/generate-tickets-for-subscriptions" : {
       "put" : {
         "tags" : [ "configuration-api-controller" ],
@@ -10601,6 +10913,333 @@
         }
       }
     },
+    "/admin/api/events/{eventId}/categories/{categoryId}/blacklisted-custom-payment-methods" : {
+      "get" : {
+        "tags" : [ "event-api-controller" ],
+        "operationId" : "getBlacklistedCustomPaymentMethods",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "categoryId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/events/{eventId}/categories/{categoryId}/blacklisted-custom-payment-methods" : {
+      "get" : {
+        "tags" : [ "event-api-controller" ],
+        "operationId" : "getBlacklistedCustomPaymentMethods",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "categoryId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "event-api-controller" ],
+        "operationId" : "setBlacklistedCustomPaymentMethods",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "categoryId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/events/{eventId}/categories/new" : {
+      "post" : {
+        "tags" : [ "event-api-controller" ],
+        "operationId" : "setBlacklistedCustomPaymentMethods",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "categoryId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/api/events/{eventId}/categories/new" : {
       "post" : {
         "tags" : [ "event-api-controller" ],
@@ -10635,66 +11274,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "403" : {
-            "description" : "Forbidden",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
           "400" : {
             "description" : "Bad Request",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ValidationResult"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/admin/api/events/new" : {
-      "post" : {
-        "tags" : [ "event-api-controller" ],
-        "operationId" : "insertEvent",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/EventModification"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -11338,6 +11919,312 @@
         }
       }
     },
+    "/admin/api/configuration/organizations/{organizationId}/payment-method" : {
+      "get" : {
+        "tags" : [ "configuration-api-controller" ],
+        "operationId" : "getPaymentMethodsForOrganization",
+        "parameters" : [ {
+          "name" : "organizationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "includeDeleted",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "boolean",
+            "default" : false
+          }
+        } ],
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/UserDefinedOfflinePaymentMethod"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "configuration-api-controller" ],
+        "operationId" : "createPaymentMethod",
+        "parameters" : [ {
+          "name" : "organizationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserDefinedOfflinePaymentMethod"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/configuration/organizations/{organizationId}/payment-method" : {
+      "get" : {
+        "tags" : [ "configuration-api-controller" ],
+        "operationId" : "getPaymentMethodsForOrganization",
+        "parameters" : [ {
+          "name" : "organizationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "includeDeleted",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "boolean",
+            "default" : false
+          }
+        } ],
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/UserDefinedOfflinePaymentMethod"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "configuration-api-controller" ],
+        "operationId" : "createPaymentMethod",
+        "parameters" : [ {
+          "name" : "organizationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserDefinedOfflinePaymentMethod"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/api/configuration/organizations/{organizationId}/events/{eventId}/update" : {
       "post" : {
         "tags" : [ "configuration-api-controller" ],
@@ -11477,6 +12364,16 @@
               }
             }
           },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
             "content" : {
@@ -11520,10 +12417,10 @@
         }
       }
     },
-    "/admin/api/configuration/event/{eventId}/regenerate-invoices" : {
-      "post" : {
+    "/admin/api/configuration/event/{eventId}/payment-method" : {
+      "get" : {
         "tags" : [ "configuration-api-controller" ],
-        "operationId" : "regenerateInvoices",
+        "operationId" : "getAllowedPaymentMethodsForEvent",
         "parameters" : [ {
           "name" : "eventId",
           "in" : "path",
@@ -11533,23 +12430,19 @@
             "format" : "int32"
           }
         } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "integer",
-                  "format" : "int64"
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
                 }
               }
             }
           },
-          "required" : true
-        },
-        "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -11578,8 +12471,227 @@
               }
             }
           },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/UserDefinedOfflinePaymentMethod"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "configuration-api-controller" ],
+        "operationId" : "setEventAllowedPaymentMethods",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
           "400" : {
             "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/configuration/event/{eventId}/payment-method" : {
+      "get" : {
+        "tags" : [ "configuration-api-controller" ],
+        "operationId" : "getAllowedPaymentMethodsForEvent",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/UserDefinedOfflinePaymentMethod"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "configuration-api-controller" ],
+        "operationId" : "setEventAllowedPaymentMethods",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -13230,7 +14342,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
-            "type" : "string"
+            "$ref" : "#/components/schemas/PaymentMethod"
           }
         } ],
         "responses" : {
@@ -13280,6 +14392,276 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ReservationPaymentResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/public/reservation/{reservationId}/get-selected-custom-payment-method-details" : {
+      "get" : {
+        "tags" : [ "reservation-api-v-2-controller" ],
+        "operationId" : "getSelectedCustomPaymentMethodDetails",
+        "parameters" : [ {
+          "name" : "reservationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/PaymentMethod"
+          }
+        } ],
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserDefinedOfflinePaymentMethod"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/public/reservation/{reservationId}/get-selected-custom-payment-method-details" : {
+      "get" : {
+        "tags" : [ "reservation-api-v-2-controller" ],
+        "operationId" : "getSelectedCustomPaymentMethodDetails",
+        "parameters" : [ {
+          "name" : "reservationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserDefinedOfflinePaymentMethod"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/public/reservation/{reservationId}/get-applicable-custom-payment-method-details" : {
+      "get" : {
+        "tags" : [ "reservation-api-v-2-controller" ],
+        "operationId" : "getApplicableCustomPaymentMethodDetails",
+        "parameters" : [ {
+          "name" : "reservationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/UserDefinedOfflinePaymentMethod"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/public/i18n/languages" : {
+      "get" : {
+        "tags" : [ "reservation-api-v-2-controller" ],
+        "operationId" : "getApplicableCustomPaymentMethodDetails",
+        "parameters" : [ {
+          "name" : "reservationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "500" : {
+            "description" : "Internal Server Error",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/UserDefinedOfflinePaymentMethod"
+                  }
                 }
               }
             }
@@ -18465,7 +19847,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "FINALIZING", "OFFLINE_FINALIZING", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
+              "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "CUSTOM_OFFLINE_PAYMENT", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "FINALIZING", "OFFLINE_FINALIZING", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
             }
           }
         } ],
@@ -18592,7 +19974,7 @@
                   "type" : "array",
                   "items" : {
                     "type" : "string",
-                    "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "FINALIZING", "OFFLINE_FINALIZING", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
+                    "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "CUSTOM_OFFLINE_PAYMENT", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "FINALIZING", "OFFLINE_FINALIZING", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
                   }
                 }
               }
@@ -25767,7 +27149,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "NOT_RECOGNIZED", "INIT_COMPLETED", "SYSTEM_API_KEY", "SHOW_PROJECT_BANNER", "SUPPORTED_LANGUAGES", "BASE_URL", "GLOBAL_PRIVACY_POLICY", "GLOBAL_TERMS", "ANNOUNCEMENT_BANNER_CONTENT", "MAPS_PROVIDER", "MAPS_CLIENT_API_KEY", "MAPS_HERE_APP_ID", "MAPS_HERE_APP_CODE", "MAPS_HERE_API_KEY", "RECAPTCHA_API_KEY", "RECAPTCHA_SECRET", "ENABLE_CAPTCHA_FOR_LOGIN", "CF_TURNSTILE_ENABLED", "CF_TURNSTILE_PRE_CLEARANCE", "CF_TURNSTILE_SITE_KEY", "CF_TURNSTILE_SECRET_KEY", "DISPLAY_STATS_IN_EVENT_DETAIL", "NOTIFY_ORGANIZER_ON_RESERVATION", "DEMO_MODE_ACCOUNT_EXPIRATION_DAYS", "PLATFORM_MODE_ENABLED", "PLATFORM_FEE", "PLATFORM_FIXED_FEE", "PLATFORM_PERCENTAGE_FEE", "PLATFORM_MINIMUM_FEE", "PLATFORM_MAXIMUM_FEE", "PAYMENT_METHODS_BLACKLIST", "STRIPE_CC_ENABLED", "STRIPE_PUBLIC_KEY", "STRIPE_SECRET_KEY", "STRIPE_CONNECT_CLIENT_ID", "STRIPE_CONNECT_CALLBACK", "STRIPE_WEBHOOK_KEY", "STRIPE_WEBHOOK_PAYMENT_KEY", "STRIPE_CONNECTED_ID", "STRIPE_ENABLE_SCA", "SAFERPAY_ENABLED", "SAFERPAY_LIVE_MODE", "SAFERPAY_API_USERNAME", "SAFERPAY_API_PASSWORD", "SAFERPAY_CUSTOMER_ID", "SAFERPAY_TERMINAL_ID", "SPECIAL_PRICE_CODE_LENGTH", "MAX_AMOUNT_OF_TICKETS_BY_RESERVATION", "ASSIGNMENT_REMINDER_START", "ASSIGNMENT_REMINDER_INTERVAL", "OPTIONAL_DATA_REMINDER_ENABLED", "RESERVATION_TIMEOUT", "RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT", "NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS", "DISPLAY_TICKETS_LEFT_INDICATOR", "ENABLE_CAPTCHA_FOR_TICKET_SELECTION", "DISPLAY_EXPIRED_CATEGORIES", "DISPLAY_DISCOUNT_CODE_BOX", "USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL", "ENABLE_CUSTOMER_REFERENCE", "ENABLE_ATTENDEE_AUTOCOMPLETE", "FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION", "SEND_TICKETS_AUTOMATICALLY", "ALLOW_TICKET_DOWNLOAD", "SEND_RESERVATION_EMAIL_IF_NECESSARY", "ENABLE_TICKET_TRANSFER", "ALLOW_FREE_TICKETS_CANCELLATION", "INCLUDE_CHECK_IN_URL_ICAL", "MAILER_TYPE", "MAX_EMAIL_PER_CYCLE", "MAIL_REPLY_TO", "MAIL_SET_ORG_REPLY_TO", "MAIL_SYSTEM_NOTIFICATION_CC", "MAIL_FOOTER", "SMTP_HOST", "SMTP_PORT", "SMTP_PROTOCOL", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_FROM_EMAIL", "SMTP_PROPERTIES", "BANK_TRANSFER_ENABLED", "DEFERRED_BANK_TRANSFER_ENABLED", "SHOW_ONLY_BASIC_INSTRUCTIONS", "DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL", "OFFLINE_PAYMENT_DAYS", "OFFLINE_REMINDER_HOURS", "ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS", "BANK_ACCOUNT_NR", "BANK_ACCOUNT_OWNER", "AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT", "PARTIAL_RESERVATION_ID_LENGTH", "REVOLUT_ENABLED", "REVOLUT_MANUAL_REVIEW", "REVOLUT_LIVE_MODE", "REVOLUT_API_KEY", "MAILGUN_KEY", "MAILGUN_DOMAIN", "MAILGUN_FROM", "MAILGUN_EU", "SENDGRID_API_KEY", "SENDGRID_FROM", "MAILJET_APIKEY_PUBLIC", "MAILJET_APIKEY_PRIVATE", "MAILJET_FROM", "GOOGLE_ANALYTICS_KEY", "GOOGLE_ANALYTICS_ANONYMOUS_MODE", "ENABLE_WAITING_QUEUE", "ENABLE_PRE_REGISTRATION", "ENABLE_WAITING_QUEUE_NOTIFICATION", "WAITING_QUEUE_RESERVATION_TIMEOUT", "STOP_WAITING_QUEUE_SUBSCRIPTIONS", "ENABLE_HTML_EMAILS", "MAIL_ATTEMPTS_COUNT", "PAYPAL_ENABLED", "PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "PAYPAL_LIVE_MODE", "PAYPAL_DEMO_MODE_USERNAME", "PAYPAL_DEMO_MODE_PASSWORD", "MOLLIE_CC_ENABLED", "MOLLIE_API_KEY", "MOLLIE_CONNECT_CLIENT_ID", "MOLLIE_CONNECT_REFRESH_TOKEN", "MOLLIE_CONNECT_CLIENT_SECRET", "MOLLIE_CONNECT_CALLBACK", "MOLLIE_CONNECT_PROFILE_ID", "MOLLIE_CONNECT_LIVE_MODE", "ON_SITE_ENABLED", "SEND_TICKETS_AFTER_IMPORT_ATTENDEE", "CREATE_RESERVATION_FOR_EACH_IMPORTED_ATTENDEE", "VAT_NR", "INVOICE_NUMBER_PATTERN", "INVOICE_ADDRESS", "USE_INVOICE_NUMBER_AS_ID", "VAT_NUMBER_IS_REQUIRED", "GENERATE_ONLY_INVOICE", "REUSE_INVOICE_NUMBER_FOR_CREDIT_NOTE", "ENABLE_ITALY_E_INVOICING", "ITALY_E_INVOICING_SEND_PROFORMA", "ENABLE_EU_VAT_DIRECTIVE", "ENABLE_REVERSE_CHARGE_ONLINE", "ENABLE_REVERSE_CHARGE_IN_PERSON", "ENABLE_VIES_VALIDATION", "APPLY_VAT_FOREIGN_BUSINESS", "COUNTRY_OF_BUSINESS", "EU_COUNTRIES_LIST", "EU_VAT_API_ADDRESS", "APPLY_TAX_TO_CATEGORY", "ENABLE_PASS", "PASSBOOK_TYPE_IDENTIFIER", "PASSBOOK_TEAM_IDENTIFIER", "PASSBOOK_KEYSTORE", "PASSBOOK_KEYSTORE_PASSWORD", "PASSBOOK_PRIVATE_KEY_ALIAS", "ENABLE_WALLET", "WALLET_ISSUER_IDENTIFIER", "WALLET_SERVICE_ACCOUNT_KEY", "WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS", "CHECK_IN_STATS", "ALFIO_PI_INTEGRATION_ENABLED", "OFFLINE_CHECKIN_ENABLED", "LABEL_PRINTING_ENABLED", "LABEL_LAYOUT", "CHECK_IN_COLOR_CONFIGURATION", "SECURITY_CSP_REPORT_ENABLED", "SECURITY_CSP_REPORT_URI", "EMBED_ALLOWED_ORIGINS", "EMBED_POST_MESSAGE_ORIGIN", "TRANSLATION_OVERRIDE", "BASE_CUSTOM_CSS", "EVENT_CUSTOM_CSS", "DESCRIPTION_MAXLENGTH", "OPENID_PUBLIC_ENABLED", "OPENID_CONFIGURATION_JSON", "GENERATE_TICKETS_FOR_SUBSCRIPTIONS" ]
+            "enum" : [ "NOT_RECOGNIZED", "INIT_COMPLETED", "SYSTEM_API_KEY", "SHOW_PROJECT_BANNER", "SUPPORTED_LANGUAGES", "BASE_URL", "GLOBAL_PRIVACY_POLICY", "GLOBAL_TERMS", "ANNOUNCEMENT_BANNER_CONTENT", "MAPS_PROVIDER", "MAPS_CLIENT_API_KEY", "MAPS_HERE_APP_ID", "MAPS_HERE_APP_CODE", "MAPS_HERE_API_KEY", "RECAPTCHA_API_KEY", "RECAPTCHA_SECRET", "ENABLE_CAPTCHA_FOR_LOGIN", "CF_TURNSTILE_ENABLED", "CF_TURNSTILE_PRE_CLEARANCE", "CF_TURNSTILE_SITE_KEY", "CF_TURNSTILE_SECRET_KEY", "DISPLAY_STATS_IN_EVENT_DETAIL", "NOTIFY_ORGANIZER_ON_RESERVATION", "DEMO_MODE_ACCOUNT_EXPIRATION_DAYS", "PLATFORM_MODE_ENABLED", "PLATFORM_FEE", "PLATFORM_FIXED_FEE", "PLATFORM_PERCENTAGE_FEE", "PLATFORM_MINIMUM_FEE", "PLATFORM_MAXIMUM_FEE", "PAYMENT_METHODS_BLACKLIST", "STRIPE_CC_ENABLED", "STRIPE_PUBLIC_KEY", "STRIPE_SECRET_KEY", "STRIPE_CONNECT_CLIENT_ID", "STRIPE_CONNECT_CALLBACK", "STRIPE_WEBHOOK_KEY", "STRIPE_WEBHOOK_PAYMENT_KEY", "STRIPE_CONNECTED_ID", "STRIPE_ENABLE_SCA", "SAFERPAY_ENABLED", "SAFERPAY_LIVE_MODE", "SAFERPAY_API_USERNAME", "SAFERPAY_API_PASSWORD", "SAFERPAY_CUSTOMER_ID", "SAFERPAY_TERMINAL_ID", "SPECIAL_PRICE_CODE_LENGTH", "MAX_AMOUNT_OF_TICKETS_BY_RESERVATION", "ASSIGNMENT_REMINDER_START", "ASSIGNMENT_REMINDER_INTERVAL", "OPTIONAL_DATA_REMINDER_ENABLED", "RESERVATION_TIMEOUT", "RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT", "NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS", "DISPLAY_TICKETS_LEFT_INDICATOR", "ENABLE_CAPTCHA_FOR_TICKET_SELECTION", "DISPLAY_EXPIRED_CATEGORIES", "DISPLAY_DISCOUNT_CODE_BOX", "USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL", "ENABLE_CUSTOMER_REFERENCE", "ENABLE_ATTENDEE_AUTOCOMPLETE", "FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION", "SEND_TICKETS_AUTOMATICALLY", "ALLOW_TICKET_DOWNLOAD", "SEND_RESERVATION_EMAIL_IF_NECESSARY", "ENABLE_TICKET_TRANSFER", "ALLOW_FREE_TICKETS_CANCELLATION", "INCLUDE_CHECK_IN_URL_ICAL", "MAILER_TYPE", "MAX_EMAIL_PER_CYCLE", "MAIL_REPLY_TO", "MAIL_SET_ORG_REPLY_TO", "MAIL_SYSTEM_NOTIFICATION_CC", "MAIL_FOOTER", "SMTP_HOST", "SMTP_PORT", "SMTP_PROTOCOL", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_FROM_EMAIL", "SMTP_PROPERTIES", "BANK_TRANSFER_ENABLED", "DEFERRED_BANK_TRANSFER_ENABLED", "SHOW_ONLY_BASIC_INSTRUCTIONS", "DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL", "OFFLINE_PAYMENT_DAYS", "OFFLINE_REMINDER_HOURS", "CUSTOM_OFFLINE_PAYMENTS", "SELECTED_CUSTOM_PAYMENTS", "BLACKLISTED_CUSTOM_PAYMENTS", "ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS", "BANK_ACCOUNT_NR", "BANK_ACCOUNT_OWNER", "AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT", "PARTIAL_RESERVATION_ID_LENGTH", "REVOLUT_ENABLED", "REVOLUT_MANUAL_REVIEW", "REVOLUT_LIVE_MODE", "REVOLUT_API_KEY", "MAILGUN_KEY", "MAILGUN_DOMAIN", "MAILGUN_FROM", "MAILGUN_EU", "SENDGRID_API_KEY", "SENDGRID_FROM", "MAILJET_APIKEY_PUBLIC", "MAILJET_APIKEY_PRIVATE", "MAILJET_FROM", "GOOGLE_ANALYTICS_KEY", "GOOGLE_ANALYTICS_ANONYMOUS_MODE", "ENABLE_WAITING_QUEUE", "ENABLE_PRE_REGISTRATION", "ENABLE_WAITING_QUEUE_NOTIFICATION", "WAITING_QUEUE_RESERVATION_TIMEOUT", "STOP_WAITING_QUEUE_SUBSCRIPTIONS", "ENABLE_HTML_EMAILS", "MAIL_ATTEMPTS_COUNT", "PAYPAL_ENABLED", "PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "PAYPAL_LIVE_MODE", "PAYPAL_DEMO_MODE_USERNAME", "PAYPAL_DEMO_MODE_PASSWORD", "MOLLIE_CC_ENABLED", "MOLLIE_API_KEY", "MOLLIE_CONNECT_CLIENT_ID", "MOLLIE_CONNECT_REFRESH_TOKEN", "MOLLIE_CONNECT_CLIENT_SECRET", "MOLLIE_CONNECT_CALLBACK", "MOLLIE_CONNECT_PROFILE_ID", "MOLLIE_CONNECT_LIVE_MODE", "ON_SITE_ENABLED", "SEND_TICKETS_AFTER_IMPORT_ATTENDEE", "CREATE_RESERVATION_FOR_EACH_IMPORTED_ATTENDEE", "VAT_NR", "INVOICE_NUMBER_PATTERN", "INVOICE_ADDRESS", "USE_INVOICE_NUMBER_AS_ID", "VAT_NUMBER_IS_REQUIRED", "GENERATE_ONLY_INVOICE", "REUSE_INVOICE_NUMBER_FOR_CREDIT_NOTE", "ENABLE_ITALY_E_INVOICING", "ITALY_E_INVOICING_SEND_PROFORMA", "ENABLE_EU_VAT_DIRECTIVE", "ENABLE_REVERSE_CHARGE_ONLINE", "ENABLE_REVERSE_CHARGE_IN_PERSON", "ENABLE_VIES_VALIDATION", "APPLY_VAT_FOREIGN_BUSINESS", "COUNTRY_OF_BUSINESS", "EU_COUNTRIES_LIST", "EU_VAT_API_ADDRESS", "APPLY_TAX_TO_CATEGORY", "ENABLE_PASS", "PASSBOOK_TYPE_IDENTIFIER", "PASSBOOK_TEAM_IDENTIFIER", "PASSBOOK_KEYSTORE", "PASSBOOK_KEYSTORE_PASSWORD", "PASSBOOK_PRIVATE_KEY_ALIAS", "ENABLE_WALLET", "WALLET_ISSUER_IDENTIFIER", "WALLET_SERVICE_ACCOUNT_KEY", "WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS", "CHECK_IN_STATS", "ALFIO_PI_INTEGRATION_ENABLED", "OFFLINE_CHECKIN_ENABLED", "LABEL_PRINTING_ENABLED", "LABEL_LAYOUT", "CHECK_IN_COLOR_CONFIGURATION", "SECURITY_CSP_REPORT_ENABLED", "SECURITY_CSP_REPORT_URI", "EMBED_ALLOWED_ORIGINS", "EMBED_POST_MESSAGE_ORIGIN", "TRANSLATION_OVERRIDE", "BASE_CUSTOM_CSS", "EVENT_CUSTOM_CSS", "DESCRIPTION_MAXLENGTH", "OPENID_PUBLIC_ENABLED", "OPENID_CONFIGURATION_JSON", "GENERATE_TICKETS_FOR_SUBSCRIPTIONS" ]
           }
         } ],
         "responses" : {
@@ -25908,7 +27290,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "NOT_RECOGNIZED", "INIT_COMPLETED", "SYSTEM_API_KEY", "SHOW_PROJECT_BANNER", "SUPPORTED_LANGUAGES", "BASE_URL", "GLOBAL_PRIVACY_POLICY", "GLOBAL_TERMS", "ANNOUNCEMENT_BANNER_CONTENT", "MAPS_PROVIDER", "MAPS_CLIENT_API_KEY", "MAPS_HERE_APP_ID", "MAPS_HERE_APP_CODE", "MAPS_HERE_API_KEY", "RECAPTCHA_API_KEY", "RECAPTCHA_SECRET", "ENABLE_CAPTCHA_FOR_LOGIN", "CF_TURNSTILE_ENABLED", "CF_TURNSTILE_PRE_CLEARANCE", "CF_TURNSTILE_SITE_KEY", "CF_TURNSTILE_SECRET_KEY", "DISPLAY_STATS_IN_EVENT_DETAIL", "NOTIFY_ORGANIZER_ON_RESERVATION", "DEMO_MODE_ACCOUNT_EXPIRATION_DAYS", "PLATFORM_MODE_ENABLED", "PLATFORM_FEE", "PLATFORM_FIXED_FEE", "PLATFORM_PERCENTAGE_FEE", "PLATFORM_MINIMUM_FEE", "PLATFORM_MAXIMUM_FEE", "PAYMENT_METHODS_BLACKLIST", "STRIPE_CC_ENABLED", "STRIPE_PUBLIC_KEY", "STRIPE_SECRET_KEY", "STRIPE_CONNECT_CLIENT_ID", "STRIPE_CONNECT_CALLBACK", "STRIPE_WEBHOOK_KEY", "STRIPE_WEBHOOK_PAYMENT_KEY", "STRIPE_CONNECTED_ID", "STRIPE_ENABLE_SCA", "SAFERPAY_ENABLED", "SAFERPAY_LIVE_MODE", "SAFERPAY_API_USERNAME", "SAFERPAY_API_PASSWORD", "SAFERPAY_CUSTOMER_ID", "SAFERPAY_TERMINAL_ID", "SPECIAL_PRICE_CODE_LENGTH", "MAX_AMOUNT_OF_TICKETS_BY_RESERVATION", "ASSIGNMENT_REMINDER_START", "ASSIGNMENT_REMINDER_INTERVAL", "OPTIONAL_DATA_REMINDER_ENABLED", "RESERVATION_TIMEOUT", "RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT", "NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS", "DISPLAY_TICKETS_LEFT_INDICATOR", "ENABLE_CAPTCHA_FOR_TICKET_SELECTION", "DISPLAY_EXPIRED_CATEGORIES", "DISPLAY_DISCOUNT_CODE_BOX", "USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL", "ENABLE_CUSTOMER_REFERENCE", "ENABLE_ATTENDEE_AUTOCOMPLETE", "FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION", "SEND_TICKETS_AUTOMATICALLY", "ALLOW_TICKET_DOWNLOAD", "SEND_RESERVATION_EMAIL_IF_NECESSARY", "ENABLE_TICKET_TRANSFER", "ALLOW_FREE_TICKETS_CANCELLATION", "INCLUDE_CHECK_IN_URL_ICAL", "MAILER_TYPE", "MAX_EMAIL_PER_CYCLE", "MAIL_REPLY_TO", "MAIL_SET_ORG_REPLY_TO", "MAIL_SYSTEM_NOTIFICATION_CC", "MAIL_FOOTER", "SMTP_HOST", "SMTP_PORT", "SMTP_PROTOCOL", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_FROM_EMAIL", "SMTP_PROPERTIES", "BANK_TRANSFER_ENABLED", "DEFERRED_BANK_TRANSFER_ENABLED", "SHOW_ONLY_BASIC_INSTRUCTIONS", "DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL", "OFFLINE_PAYMENT_DAYS", "OFFLINE_REMINDER_HOURS", "ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS", "BANK_ACCOUNT_NR", "BANK_ACCOUNT_OWNER", "AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT", "PARTIAL_RESERVATION_ID_LENGTH", "REVOLUT_ENABLED", "REVOLUT_MANUAL_REVIEW", "REVOLUT_LIVE_MODE", "REVOLUT_API_KEY", "MAILGUN_KEY", "MAILGUN_DOMAIN", "MAILGUN_FROM", "MAILGUN_EU", "SENDGRID_API_KEY", "SENDGRID_FROM", "MAILJET_APIKEY_PUBLIC", "MAILJET_APIKEY_PRIVATE", "MAILJET_FROM", "GOOGLE_ANALYTICS_KEY", "GOOGLE_ANALYTICS_ANONYMOUS_MODE", "ENABLE_WAITING_QUEUE", "ENABLE_PRE_REGISTRATION", "ENABLE_WAITING_QUEUE_NOTIFICATION", "WAITING_QUEUE_RESERVATION_TIMEOUT", "STOP_WAITING_QUEUE_SUBSCRIPTIONS", "ENABLE_HTML_EMAILS", "MAIL_ATTEMPTS_COUNT", "PAYPAL_ENABLED", "PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "PAYPAL_LIVE_MODE", "PAYPAL_DEMO_MODE_USERNAME", "PAYPAL_DEMO_MODE_PASSWORD", "MOLLIE_CC_ENABLED", "MOLLIE_API_KEY", "MOLLIE_CONNECT_CLIENT_ID", "MOLLIE_CONNECT_REFRESH_TOKEN", "MOLLIE_CONNECT_CLIENT_SECRET", "MOLLIE_CONNECT_CALLBACK", "MOLLIE_CONNECT_PROFILE_ID", "MOLLIE_CONNECT_LIVE_MODE", "ON_SITE_ENABLED", "SEND_TICKETS_AFTER_IMPORT_ATTENDEE", "CREATE_RESERVATION_FOR_EACH_IMPORTED_ATTENDEE", "VAT_NR", "INVOICE_NUMBER_PATTERN", "INVOICE_ADDRESS", "USE_INVOICE_NUMBER_AS_ID", "VAT_NUMBER_IS_REQUIRED", "GENERATE_ONLY_INVOICE", "REUSE_INVOICE_NUMBER_FOR_CREDIT_NOTE", "ENABLE_ITALY_E_INVOICING", "ITALY_E_INVOICING_SEND_PROFORMA", "ENABLE_EU_VAT_DIRECTIVE", "ENABLE_REVERSE_CHARGE_ONLINE", "ENABLE_REVERSE_CHARGE_IN_PERSON", "ENABLE_VIES_VALIDATION", "APPLY_VAT_FOREIGN_BUSINESS", "COUNTRY_OF_BUSINESS", "EU_COUNTRIES_LIST", "EU_VAT_API_ADDRESS", "APPLY_TAX_TO_CATEGORY", "ENABLE_PASS", "PASSBOOK_TYPE_IDENTIFIER", "PASSBOOK_TEAM_IDENTIFIER", "PASSBOOK_KEYSTORE", "PASSBOOK_KEYSTORE_PASSWORD", "PASSBOOK_PRIVATE_KEY_ALIAS", "ENABLE_WALLET", "WALLET_ISSUER_IDENTIFIER", "WALLET_SERVICE_ACCOUNT_KEY", "WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS", "CHECK_IN_STATS", "ALFIO_PI_INTEGRATION_ENABLED", "OFFLINE_CHECKIN_ENABLED", "LABEL_PRINTING_ENABLED", "LABEL_LAYOUT", "CHECK_IN_COLOR_CONFIGURATION", "SECURITY_CSP_REPORT_ENABLED", "SECURITY_CSP_REPORT_URI", "EMBED_ALLOWED_ORIGINS", "EMBED_POST_MESSAGE_ORIGIN", "TRANSLATION_OVERRIDE", "BASE_CUSTOM_CSS", "EVENT_CUSTOM_CSS", "DESCRIPTION_MAXLENGTH", "OPENID_PUBLIC_ENABLED", "OPENID_CONFIGURATION_JSON", "GENERATE_TICKETS_FOR_SUBSCRIPTIONS" ]
+            "enum" : [ "NOT_RECOGNIZED", "INIT_COMPLETED", "SYSTEM_API_KEY", "SHOW_PROJECT_BANNER", "SUPPORTED_LANGUAGES", "BASE_URL", "GLOBAL_PRIVACY_POLICY", "GLOBAL_TERMS", "ANNOUNCEMENT_BANNER_CONTENT", "MAPS_PROVIDER", "MAPS_CLIENT_API_KEY", "MAPS_HERE_APP_ID", "MAPS_HERE_APP_CODE", "MAPS_HERE_API_KEY", "RECAPTCHA_API_KEY", "RECAPTCHA_SECRET", "ENABLE_CAPTCHA_FOR_LOGIN", "CF_TURNSTILE_ENABLED", "CF_TURNSTILE_PRE_CLEARANCE", "CF_TURNSTILE_SITE_KEY", "CF_TURNSTILE_SECRET_KEY", "DISPLAY_STATS_IN_EVENT_DETAIL", "NOTIFY_ORGANIZER_ON_RESERVATION", "DEMO_MODE_ACCOUNT_EXPIRATION_DAYS", "PLATFORM_MODE_ENABLED", "PLATFORM_FEE", "PLATFORM_FIXED_FEE", "PLATFORM_PERCENTAGE_FEE", "PLATFORM_MINIMUM_FEE", "PLATFORM_MAXIMUM_FEE", "PAYMENT_METHODS_BLACKLIST", "STRIPE_CC_ENABLED", "STRIPE_PUBLIC_KEY", "STRIPE_SECRET_KEY", "STRIPE_CONNECT_CLIENT_ID", "STRIPE_CONNECT_CALLBACK", "STRIPE_WEBHOOK_KEY", "STRIPE_WEBHOOK_PAYMENT_KEY", "STRIPE_CONNECTED_ID", "STRIPE_ENABLE_SCA", "SAFERPAY_ENABLED", "SAFERPAY_LIVE_MODE", "SAFERPAY_API_USERNAME", "SAFERPAY_API_PASSWORD", "SAFERPAY_CUSTOMER_ID", "SAFERPAY_TERMINAL_ID", "SPECIAL_PRICE_CODE_LENGTH", "MAX_AMOUNT_OF_TICKETS_BY_RESERVATION", "ASSIGNMENT_REMINDER_START", "ASSIGNMENT_REMINDER_INTERVAL", "OPTIONAL_DATA_REMINDER_ENABLED", "RESERVATION_TIMEOUT", "RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT", "NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS", "DISPLAY_TICKETS_LEFT_INDICATOR", "ENABLE_CAPTCHA_FOR_TICKET_SELECTION", "DISPLAY_EXPIRED_CATEGORIES", "DISPLAY_DISCOUNT_CODE_BOX", "USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL", "ENABLE_CUSTOMER_REFERENCE", "ENABLE_ATTENDEE_AUTOCOMPLETE", "FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION", "SEND_TICKETS_AUTOMATICALLY", "ALLOW_TICKET_DOWNLOAD", "SEND_RESERVATION_EMAIL_IF_NECESSARY", "ENABLE_TICKET_TRANSFER", "ALLOW_FREE_TICKETS_CANCELLATION", "INCLUDE_CHECK_IN_URL_ICAL", "MAILER_TYPE", "MAX_EMAIL_PER_CYCLE", "MAIL_REPLY_TO", "MAIL_SET_ORG_REPLY_TO", "MAIL_SYSTEM_NOTIFICATION_CC", "MAIL_FOOTER", "SMTP_HOST", "SMTP_PORT", "SMTP_PROTOCOL", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_FROM_EMAIL", "SMTP_PROPERTIES", "BANK_TRANSFER_ENABLED", "DEFERRED_BANK_TRANSFER_ENABLED", "SHOW_ONLY_BASIC_INSTRUCTIONS", "DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL", "OFFLINE_PAYMENT_DAYS", "OFFLINE_REMINDER_HOURS", "CUSTOM_OFFLINE_PAYMENTS", "SELECTED_CUSTOM_PAYMENTS", "BLACKLISTED_CUSTOM_PAYMENTS", "ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS", "BANK_ACCOUNT_NR", "BANK_ACCOUNT_OWNER", "AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT", "PARTIAL_RESERVATION_ID_LENGTH", "REVOLUT_ENABLED", "REVOLUT_MANUAL_REVIEW", "REVOLUT_LIVE_MODE", "REVOLUT_API_KEY", "MAILGUN_KEY", "MAILGUN_DOMAIN", "MAILGUN_FROM", "MAILGUN_EU", "SENDGRID_API_KEY", "SENDGRID_FROM", "MAILJET_APIKEY_PUBLIC", "MAILJET_APIKEY_PRIVATE", "MAILJET_FROM", "GOOGLE_ANALYTICS_KEY", "GOOGLE_ANALYTICS_ANONYMOUS_MODE", "ENABLE_WAITING_QUEUE", "ENABLE_PRE_REGISTRATION", "ENABLE_WAITING_QUEUE_NOTIFICATION", "WAITING_QUEUE_RESERVATION_TIMEOUT", "STOP_WAITING_QUEUE_SUBSCRIPTIONS", "ENABLE_HTML_EMAILS", "MAIL_ATTEMPTS_COUNT", "PAYPAL_ENABLED", "PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "PAYPAL_LIVE_MODE", "PAYPAL_DEMO_MODE_USERNAME", "PAYPAL_DEMO_MODE_PASSWORD", "MOLLIE_CC_ENABLED", "MOLLIE_API_KEY", "MOLLIE_CONNECT_CLIENT_ID", "MOLLIE_CONNECT_REFRESH_TOKEN", "MOLLIE_CONNECT_CLIENT_SECRET", "MOLLIE_CONNECT_CALLBACK", "MOLLIE_CONNECT_PROFILE_ID", "MOLLIE_CONNECT_LIVE_MODE", "ON_SITE_ENABLED", "SEND_TICKETS_AFTER_IMPORT_ATTENDEE", "CREATE_RESERVATION_FOR_EACH_IMPORTED_ATTENDEE", "VAT_NR", "INVOICE_NUMBER_PATTERN", "INVOICE_ADDRESS", "USE_INVOICE_NUMBER_AS_ID", "VAT_NUMBER_IS_REQUIRED", "GENERATE_ONLY_INVOICE", "REUSE_INVOICE_NUMBER_FOR_CREDIT_NOTE", "ENABLE_ITALY_E_INVOICING", "ITALY_E_INVOICING_SEND_PROFORMA", "ENABLE_EU_VAT_DIRECTIVE", "ENABLE_REVERSE_CHARGE_ONLINE", "ENABLE_REVERSE_CHARGE_IN_PERSON", "ENABLE_VIES_VALIDATION", "APPLY_VAT_FOREIGN_BUSINESS", "COUNTRY_OF_BUSINESS", "EU_COUNTRIES_LIST", "EU_VAT_API_ADDRESS", "APPLY_TAX_TO_CATEGORY", "ENABLE_PASS", "PASSBOOK_TYPE_IDENTIFIER", "PASSBOOK_TEAM_IDENTIFIER", "PASSBOOK_KEYSTORE", "PASSBOOK_KEYSTORE_PASSWORD", "PASSBOOK_PRIVATE_KEY_ALIAS", "ENABLE_WALLET", "WALLET_ISSUER_IDENTIFIER", "WALLET_SERVICE_ACCOUNT_KEY", "WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS", "CHECK_IN_STATS", "ALFIO_PI_INTEGRATION_ENABLED", "OFFLINE_CHECKIN_ENABLED", "LABEL_PRINTING_ENABLED", "LABEL_LAYOUT", "CHECK_IN_COLOR_CONFIGURATION", "SECURITY_CSP_REPORT_ENABLED", "SECURITY_CSP_REPORT_URI", "EMBED_ALLOWED_ORIGINS", "EMBED_POST_MESSAGE_ORIGIN", "TRANSLATION_OVERRIDE", "BASE_CUSTOM_CSS", "EVENT_CUSTOM_CSS", "DESCRIPTION_MAXLENGTH", "OPENID_PUBLIC_ENABLED", "OPENID_CONFIGURATION_JSON", "GENERATE_TICKETS_FOR_SUBSCRIPTIONS" ]
           }
         } ],
         "responses" : {
@@ -25991,7 +27373,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "NOT_RECOGNIZED", "INIT_COMPLETED", "SYSTEM_API_KEY", "SHOW_PROJECT_BANNER", "SUPPORTED_LANGUAGES", "BASE_URL", "GLOBAL_PRIVACY_POLICY", "GLOBAL_TERMS", "ANNOUNCEMENT_BANNER_CONTENT", "MAPS_PROVIDER", "MAPS_CLIENT_API_KEY", "MAPS_HERE_APP_ID", "MAPS_HERE_APP_CODE", "MAPS_HERE_API_KEY", "RECAPTCHA_API_KEY", "RECAPTCHA_SECRET", "ENABLE_CAPTCHA_FOR_LOGIN", "CF_TURNSTILE_ENABLED", "CF_TURNSTILE_PRE_CLEARANCE", "CF_TURNSTILE_SITE_KEY", "CF_TURNSTILE_SECRET_KEY", "DISPLAY_STATS_IN_EVENT_DETAIL", "NOTIFY_ORGANIZER_ON_RESERVATION", "DEMO_MODE_ACCOUNT_EXPIRATION_DAYS", "PLATFORM_MODE_ENABLED", "PLATFORM_FEE", "PLATFORM_FIXED_FEE", "PLATFORM_PERCENTAGE_FEE", "PLATFORM_MINIMUM_FEE", "PLATFORM_MAXIMUM_FEE", "PAYMENT_METHODS_BLACKLIST", "STRIPE_CC_ENABLED", "STRIPE_PUBLIC_KEY", "STRIPE_SECRET_KEY", "STRIPE_CONNECT_CLIENT_ID", "STRIPE_CONNECT_CALLBACK", "STRIPE_WEBHOOK_KEY", "STRIPE_WEBHOOK_PAYMENT_KEY", "STRIPE_CONNECTED_ID", "STRIPE_ENABLE_SCA", "SAFERPAY_ENABLED", "SAFERPAY_LIVE_MODE", "SAFERPAY_API_USERNAME", "SAFERPAY_API_PASSWORD", "SAFERPAY_CUSTOMER_ID", "SAFERPAY_TERMINAL_ID", "SPECIAL_PRICE_CODE_LENGTH", "MAX_AMOUNT_OF_TICKETS_BY_RESERVATION", "ASSIGNMENT_REMINDER_START", "ASSIGNMENT_REMINDER_INTERVAL", "OPTIONAL_DATA_REMINDER_ENABLED", "RESERVATION_TIMEOUT", "RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT", "NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS", "DISPLAY_TICKETS_LEFT_INDICATOR", "ENABLE_CAPTCHA_FOR_TICKET_SELECTION", "DISPLAY_EXPIRED_CATEGORIES", "DISPLAY_DISCOUNT_CODE_BOX", "USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL", "ENABLE_CUSTOMER_REFERENCE", "ENABLE_ATTENDEE_AUTOCOMPLETE", "FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION", "SEND_TICKETS_AUTOMATICALLY", "ALLOW_TICKET_DOWNLOAD", "SEND_RESERVATION_EMAIL_IF_NECESSARY", "ENABLE_TICKET_TRANSFER", "ALLOW_FREE_TICKETS_CANCELLATION", "INCLUDE_CHECK_IN_URL_ICAL", "MAILER_TYPE", "MAX_EMAIL_PER_CYCLE", "MAIL_REPLY_TO", "MAIL_SET_ORG_REPLY_TO", "MAIL_SYSTEM_NOTIFICATION_CC", "MAIL_FOOTER", "SMTP_HOST", "SMTP_PORT", "SMTP_PROTOCOL", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_FROM_EMAIL", "SMTP_PROPERTIES", "BANK_TRANSFER_ENABLED", "DEFERRED_BANK_TRANSFER_ENABLED", "SHOW_ONLY_BASIC_INSTRUCTIONS", "DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL", "OFFLINE_PAYMENT_DAYS", "OFFLINE_REMINDER_HOURS", "ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS", "BANK_ACCOUNT_NR", "BANK_ACCOUNT_OWNER", "AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT", "PARTIAL_RESERVATION_ID_LENGTH", "REVOLUT_ENABLED", "REVOLUT_MANUAL_REVIEW", "REVOLUT_LIVE_MODE", "REVOLUT_API_KEY", "MAILGUN_KEY", "MAILGUN_DOMAIN", "MAILGUN_FROM", "MAILGUN_EU", "SENDGRID_API_KEY", "SENDGRID_FROM", "MAILJET_APIKEY_PUBLIC", "MAILJET_APIKEY_PRIVATE", "MAILJET_FROM", "GOOGLE_ANALYTICS_KEY", "GOOGLE_ANALYTICS_ANONYMOUS_MODE", "ENABLE_WAITING_QUEUE", "ENABLE_PRE_REGISTRATION", "ENABLE_WAITING_QUEUE_NOTIFICATION", "WAITING_QUEUE_RESERVATION_TIMEOUT", "STOP_WAITING_QUEUE_SUBSCRIPTIONS", "ENABLE_HTML_EMAILS", "MAIL_ATTEMPTS_COUNT", "PAYPAL_ENABLED", "PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "PAYPAL_LIVE_MODE", "PAYPAL_DEMO_MODE_USERNAME", "PAYPAL_DEMO_MODE_PASSWORD", "MOLLIE_CC_ENABLED", "MOLLIE_API_KEY", "MOLLIE_CONNECT_CLIENT_ID", "MOLLIE_CONNECT_REFRESH_TOKEN", "MOLLIE_CONNECT_CLIENT_SECRET", "MOLLIE_CONNECT_CALLBACK", "MOLLIE_CONNECT_PROFILE_ID", "MOLLIE_CONNECT_LIVE_MODE", "ON_SITE_ENABLED", "SEND_TICKETS_AFTER_IMPORT_ATTENDEE", "CREATE_RESERVATION_FOR_EACH_IMPORTED_ATTENDEE", "VAT_NR", "INVOICE_NUMBER_PATTERN", "INVOICE_ADDRESS", "USE_INVOICE_NUMBER_AS_ID", "VAT_NUMBER_IS_REQUIRED", "GENERATE_ONLY_INVOICE", "REUSE_INVOICE_NUMBER_FOR_CREDIT_NOTE", "ENABLE_ITALY_E_INVOICING", "ITALY_E_INVOICING_SEND_PROFORMA", "ENABLE_EU_VAT_DIRECTIVE", "ENABLE_REVERSE_CHARGE_ONLINE", "ENABLE_REVERSE_CHARGE_IN_PERSON", "ENABLE_VIES_VALIDATION", "APPLY_VAT_FOREIGN_BUSINESS", "COUNTRY_OF_BUSINESS", "EU_COUNTRIES_LIST", "EU_VAT_API_ADDRESS", "APPLY_TAX_TO_CATEGORY", "ENABLE_PASS", "PASSBOOK_TYPE_IDENTIFIER", "PASSBOOK_TEAM_IDENTIFIER", "PASSBOOK_KEYSTORE", "PASSBOOK_KEYSTORE_PASSWORD", "PASSBOOK_PRIVATE_KEY_ALIAS", "ENABLE_WALLET", "WALLET_ISSUER_IDENTIFIER", "WALLET_SERVICE_ACCOUNT_KEY", "WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS", "CHECK_IN_STATS", "ALFIO_PI_INTEGRATION_ENABLED", "OFFLINE_CHECKIN_ENABLED", "LABEL_PRINTING_ENABLED", "LABEL_LAYOUT", "CHECK_IN_COLOR_CONFIGURATION", "SECURITY_CSP_REPORT_ENABLED", "SECURITY_CSP_REPORT_URI", "EMBED_ALLOWED_ORIGINS", "EMBED_POST_MESSAGE_ORIGIN", "TRANSLATION_OVERRIDE", "BASE_CUSTOM_CSS", "EVENT_CUSTOM_CSS", "DESCRIPTION_MAXLENGTH", "OPENID_PUBLIC_ENABLED", "OPENID_CONFIGURATION_JSON", "GENERATE_TICKETS_FOR_SUBSCRIPTIONS" ]
+            "enum" : [ "NOT_RECOGNIZED", "INIT_COMPLETED", "SYSTEM_API_KEY", "SHOW_PROJECT_BANNER", "SUPPORTED_LANGUAGES", "BASE_URL", "GLOBAL_PRIVACY_POLICY", "GLOBAL_TERMS", "ANNOUNCEMENT_BANNER_CONTENT", "MAPS_PROVIDER", "MAPS_CLIENT_API_KEY", "MAPS_HERE_APP_ID", "MAPS_HERE_APP_CODE", "MAPS_HERE_API_KEY", "RECAPTCHA_API_KEY", "RECAPTCHA_SECRET", "ENABLE_CAPTCHA_FOR_LOGIN", "CF_TURNSTILE_ENABLED", "CF_TURNSTILE_PRE_CLEARANCE", "CF_TURNSTILE_SITE_KEY", "CF_TURNSTILE_SECRET_KEY", "DISPLAY_STATS_IN_EVENT_DETAIL", "NOTIFY_ORGANIZER_ON_RESERVATION", "DEMO_MODE_ACCOUNT_EXPIRATION_DAYS", "PLATFORM_MODE_ENABLED", "PLATFORM_FEE", "PLATFORM_FIXED_FEE", "PLATFORM_PERCENTAGE_FEE", "PLATFORM_MINIMUM_FEE", "PLATFORM_MAXIMUM_FEE", "PAYMENT_METHODS_BLACKLIST", "STRIPE_CC_ENABLED", "STRIPE_PUBLIC_KEY", "STRIPE_SECRET_KEY", "STRIPE_CONNECT_CLIENT_ID", "STRIPE_CONNECT_CALLBACK", "STRIPE_WEBHOOK_KEY", "STRIPE_WEBHOOK_PAYMENT_KEY", "STRIPE_CONNECTED_ID", "STRIPE_ENABLE_SCA", "SAFERPAY_ENABLED", "SAFERPAY_LIVE_MODE", "SAFERPAY_API_USERNAME", "SAFERPAY_API_PASSWORD", "SAFERPAY_CUSTOMER_ID", "SAFERPAY_TERMINAL_ID", "SPECIAL_PRICE_CODE_LENGTH", "MAX_AMOUNT_OF_TICKETS_BY_RESERVATION", "ASSIGNMENT_REMINDER_START", "ASSIGNMENT_REMINDER_INTERVAL", "OPTIONAL_DATA_REMINDER_ENABLED", "RESERVATION_TIMEOUT", "RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT", "NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS", "DISPLAY_TICKETS_LEFT_INDICATOR", "ENABLE_CAPTCHA_FOR_TICKET_SELECTION", "DISPLAY_EXPIRED_CATEGORIES", "DISPLAY_DISCOUNT_CODE_BOX", "USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL", "ENABLE_CUSTOMER_REFERENCE", "ENABLE_ATTENDEE_AUTOCOMPLETE", "FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION", "SEND_TICKETS_AUTOMATICALLY", "ALLOW_TICKET_DOWNLOAD", "SEND_RESERVATION_EMAIL_IF_NECESSARY", "ENABLE_TICKET_TRANSFER", "ALLOW_FREE_TICKETS_CANCELLATION", "INCLUDE_CHECK_IN_URL_ICAL", "MAILER_TYPE", "MAX_EMAIL_PER_CYCLE", "MAIL_REPLY_TO", "MAIL_SET_ORG_REPLY_TO", "MAIL_SYSTEM_NOTIFICATION_CC", "MAIL_FOOTER", "SMTP_HOST", "SMTP_PORT", "SMTP_PROTOCOL", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_FROM_EMAIL", "SMTP_PROPERTIES", "BANK_TRANSFER_ENABLED", "DEFERRED_BANK_TRANSFER_ENABLED", "SHOW_ONLY_BASIC_INSTRUCTIONS", "DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL", "OFFLINE_PAYMENT_DAYS", "OFFLINE_REMINDER_HOURS", "CUSTOM_OFFLINE_PAYMENTS", "SELECTED_CUSTOM_PAYMENTS", "BLACKLISTED_CUSTOM_PAYMENTS", "ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS", "BANK_ACCOUNT_NR", "BANK_ACCOUNT_OWNER", "AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT", "PARTIAL_RESERVATION_ID_LENGTH", "REVOLUT_ENABLED", "REVOLUT_MANUAL_REVIEW", "REVOLUT_LIVE_MODE", "REVOLUT_API_KEY", "MAILGUN_KEY", "MAILGUN_DOMAIN", "MAILGUN_FROM", "MAILGUN_EU", "SENDGRID_API_KEY", "SENDGRID_FROM", "MAILJET_APIKEY_PUBLIC", "MAILJET_APIKEY_PRIVATE", "MAILJET_FROM", "GOOGLE_ANALYTICS_KEY", "GOOGLE_ANALYTICS_ANONYMOUS_MODE", "ENABLE_WAITING_QUEUE", "ENABLE_PRE_REGISTRATION", "ENABLE_WAITING_QUEUE_NOTIFICATION", "WAITING_QUEUE_RESERVATION_TIMEOUT", "STOP_WAITING_QUEUE_SUBSCRIPTIONS", "ENABLE_HTML_EMAILS", "MAIL_ATTEMPTS_COUNT", "PAYPAL_ENABLED", "PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "PAYPAL_LIVE_MODE", "PAYPAL_DEMO_MODE_USERNAME", "PAYPAL_DEMO_MODE_PASSWORD", "MOLLIE_CC_ENABLED", "MOLLIE_API_KEY", "MOLLIE_CONNECT_CLIENT_ID", "MOLLIE_CONNECT_REFRESH_TOKEN", "MOLLIE_CONNECT_CLIENT_SECRET", "MOLLIE_CONNECT_CALLBACK", "MOLLIE_CONNECT_PROFILE_ID", "MOLLIE_CONNECT_LIVE_MODE", "ON_SITE_ENABLED", "SEND_TICKETS_AFTER_IMPORT_ATTENDEE", "CREATE_RESERVATION_FOR_EACH_IMPORTED_ATTENDEE", "VAT_NR", "INVOICE_NUMBER_PATTERN", "INVOICE_ADDRESS", "USE_INVOICE_NUMBER_AS_ID", "VAT_NUMBER_IS_REQUIRED", "GENERATE_ONLY_INVOICE", "REUSE_INVOICE_NUMBER_FOR_CREDIT_NOTE", "ENABLE_ITALY_E_INVOICING", "ITALY_E_INVOICING_SEND_PROFORMA", "ENABLE_EU_VAT_DIRECTIVE", "ENABLE_REVERSE_CHARGE_ONLINE", "ENABLE_REVERSE_CHARGE_IN_PERSON", "ENABLE_VIES_VALIDATION", "APPLY_VAT_FOREIGN_BUSINESS", "COUNTRY_OF_BUSINESS", "EU_COUNTRIES_LIST", "EU_VAT_API_ADDRESS", "APPLY_TAX_TO_CATEGORY", "ENABLE_PASS", "PASSBOOK_TYPE_IDENTIFIER", "PASSBOOK_TEAM_IDENTIFIER", "PASSBOOK_KEYSTORE", "PASSBOOK_KEYSTORE_PASSWORD", "PASSBOOK_PRIVATE_KEY_ALIAS", "ENABLE_WALLET", "WALLET_ISSUER_IDENTIFIER", "WALLET_SERVICE_ACCOUNT_KEY", "WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS", "CHECK_IN_STATS", "ALFIO_PI_INTEGRATION_ENABLED", "OFFLINE_CHECKIN_ENABLED", "LABEL_PRINTING_ENABLED", "LABEL_LAYOUT", "CHECK_IN_COLOR_CONFIGURATION", "SECURITY_CSP_REPORT_ENABLED", "SECURITY_CSP_REPORT_URI", "EMBED_ALLOWED_ORIGINS", "EMBED_POST_MESSAGE_ORIGIN", "TRANSLATION_OVERRIDE", "BASE_CUSTOM_CSS", "EVENT_CUSTOM_CSS", "DESCRIPTION_MAXLENGTH", "OPENID_PUBLIC_ENABLED", "OPENID_CONFIGURATION_JSON", "GENERATE_TICKETS_FOR_SUBSCRIPTIONS" ]
           }
         } ],
         "responses" : {
@@ -26308,7 +27690,7 @@
           },
           "paymentProvider" : {
             "type" : "string",
-            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
           }
         }
       },
@@ -26491,6 +27873,14 @@
           },
           "lastName" : {
             "type" : "string"
+          },
+          "validTo" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "validToEpochSecond" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -26498,6 +27888,9 @@
         "type" : "object",
         "properties" : {
           "location" : {
+            "type" : "string"
+          },
+          "description" : {
             "type" : "string"
           },
           "description" : {
@@ -26894,21 +28287,6 @@
           "refundedAmount" : {
             "type" : "string"
           },
-          "singleTicketOrder" : {
-            "type" : "boolean"
-          },
-          "displayVat" : {
-            "type" : "boolean"
-          },
-          "totalNetPrice" : {
-            "type" : "string"
-          },
-          "displaySplitPaymentNote" : {
-            "type" : "boolean"
-          },
-          "priceBeforeTaxes" : {
-            "type" : "string"
-          },
           "vatExempt" : {
             "type" : "boolean"
           },
@@ -26925,6 +28303,21 @@
           },
           "notYetPaid" : {
             "type" : "boolean"
+          },
+          "singleTicketOrder" : {
+            "type" : "boolean"
+          },
+          "displayVat" : {
+            "type" : "boolean"
+          },
+          "totalNetPrice" : {
+            "type" : "string"
+          },
+          "displaySplitPaymentNote" : {
+            "type" : "boolean"
+          },
+          "priceBeforeTaxes" : {
+            "type" : "string"
           }
         }
       },
@@ -26967,14 +28360,14 @@
           "key" : {
             "$ref" : "#/components/schemas/TicketCategory"
           },
+          "left" : {
+            "$ref" : "#/components/schemas/TicketCategory"
+          },
           "right" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/Ticket"
             }
-          },
-          "left" : {
-            "$ref" : "#/components/schemas/TicketCategory"
           }
         }
       },
@@ -27318,7 +28711,7 @@
           },
           "status" : {
             "type" : "string",
-            "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "FINALIZING", "OFFLINE_FINALIZING", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
+            "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "CUSTOM_OFFLINE_PAYMENT", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "FINALIZING", "OFFLINE_FINALIZING", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
           },
           "fullName" : {
             "type" : "string"
@@ -27345,7 +28738,7 @@
           },
           "paymentMethod" : {
             "type" : "string",
-            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
           },
           "reminderSent" : {
             "type" : "boolean"
@@ -27448,13 +28841,13 @@
           "pendingOfflinePayment" : {
             "type" : "boolean"
           },
+          "netPrice" : {
+            "type" : "number"
+          },
           "taxablePrice" : {
             "type" : "number"
           },
           "finalPrice" : {
-            "type" : "number"
-          },
-          "netPrice" : {
             "type" : "number"
           }
         }
@@ -27549,7 +28942,11 @@
           },
           "status" : {
             "type" : "string",
-            "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "FINALIZING", "OFFLINE_FINALIZING", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
+            "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "CUSTOM_OFFLINE_PAYMENT", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "FINALIZING", "OFFLINE_FINALIZING", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
+          },
+          "paymentMethod" : {
+            "type" : "string",
+            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
           },
           "firstName" : {
             "type" : "string"
@@ -28014,6 +29411,37 @@
           }
         }
       },
+      "Localization" : {
+        "type" : "object",
+        "properties" : {
+          "paymentName" : {
+            "type" : "string"
+          },
+          "paymentDescription" : {
+            "type" : "string"
+          },
+          "paymentInstructions" : {
+            "type" : "string"
+          }
+        }
+      },
+      "UserDefinedOfflinePaymentMethod" : {
+        "type" : "object",
+        "properties" : {
+          "paymentMethodId" : {
+            "type" : "string"
+          },
+          "localizations" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/Localization"
+            }
+          },
+          "deleted" : {
+            "type" : "boolean"
+          }
+        }
+      },
       "UpdateProfileForm" : {
         "type" : "object",
         "properties" : {
@@ -28275,11 +29703,10 @@
           },
           "paymentProxy" : {
             "type" : "string",
-            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
           },
           "selectedPaymentMethod" : {
-            "type" : "string",
-            "enum" : [ "CREDIT_CARD", "PAYPAL", "IDEAL", "BANK_TRANSFER", "ON_SITE", "NONE", "APPLE_PAY", "BANCONTACT", "ING_HOME_PAY", "BELFIUS", "KBC", "PRZELEWY_24", "ALIPAY", "POSTFINANCE", "TWINT" ]
+            "$ref" : "#/components/schemas/PaymentMethod"
           },
           "termAndConditionsAccepted" : {
             "type" : "boolean"
@@ -28291,6 +29718,14 @@
             "type" : "string"
           },
           "captcha" : {
+            "type" : "string"
+          }
+        }
+      },
+      "PaymentMethod" : {
+        "type" : "object",
+        "properties" : {
+          "paymentMethodId" : {
             "type" : "string"
           }
         }
@@ -28481,15 +29916,14 @@
             "type" : "boolean"
           },
           "paymentMethod" : {
-            "type" : "string",
-            "enum" : [ "CREDIT_CARD", "PAYPAL", "IDEAL", "BANK_TRANSFER", "ON_SITE", "NONE", "APPLE_PAY", "BANCONTACT", "ING_HOME_PAY", "BELFIUS", "KBC", "PRZELEWY_24", "ALIPAY", "POSTFINANCE", "TWINT" ]
+            "$ref" : "#/components/schemas/PaymentMethod"
           },
           "token" : {
             "type" : "string"
           },
           "paymentProvider" : {
             "type" : "string",
-            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
           }
         }
       },
@@ -28999,7 +30433,7 @@
             "writeOnly" : true,
             "items" : {
               "type" : "string",
-              "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+              "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
             }
           },
           "additionalInfo" : {
@@ -29512,7 +30946,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+              "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
             }
           },
           "categories" : {
@@ -29597,6 +31031,12 @@
             "type" : "string"
           },
           "userLanguage" : {
+            "type" : "string"
+          },
+          "uuid" : {
+            "type" : "string"
+          },
+          "ticketsReservationId" : {
             "type" : "string"
           },
           "formattedFinalPrice" : {
@@ -30058,7 +31498,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+              "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
             }
           },
           "timeZone" : {
@@ -30352,11 +31792,11 @@
           "key" : {
             "type" : "boolean"
           },
-          "right" : {
-            "type" : "string"
-          },
           "left" : {
             "type" : "boolean"
+          },
+          "right" : {
+            "type" : "string"
           }
         }
       },
@@ -30503,7 +31943,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+              "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
             }
           },
           "ticketCategories" : {
@@ -30695,11 +32135,11 @@
       "TripleBooleanStringString" : {
         "type" : "object",
         "properties" : {
-          "right" : {
-            "type" : "string"
-          },
           "left" : {
             "type" : "boolean"
+          },
+          "right" : {
+            "type" : "string"
           },
           "middle" : {
             "type" : "string"
@@ -30886,6 +32326,12 @@
           "userLanguage" : {
             "type" : "string"
           },
+          "uuid" : {
+            "type" : "string"
+          },
+          "ticketsReservationId" : {
+            "type" : "string"
+          },
           "vatStatus" : {
             "type" : "string",
             "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
@@ -31062,7 +32508,7 @@
           },
           "status" : {
             "type" : "string",
-            "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "FINALIZING", "OFFLINE_FINALIZING", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
+            "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "CUSTOM_OFFLINE_PAYMENT", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "FINALIZING", "OFFLINE_FINALIZING", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
           },
           "formattedExpiresOn" : {
             "type" : "object",
@@ -31705,7 +33151,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+              "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
             }
           },
           "timeZone" : {
@@ -31730,7 +33176,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+              "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
             }
           },
           "publicIdentifier" : {
@@ -31860,6 +33306,9 @@
               "type" : "string"
             }
           },
+          "vat" : {
+            "type" : "string"
+          },
           "usageType" : {
             "type" : "string",
             "enum" : [ "ONCE_PER_EVENT", "UNLIMITED" ]
@@ -31901,8 +33350,14 @@
           "formattedPrice" : {
             "type" : "string"
           },
-          "currencyDescriptor" : {
-            "$ref" : "#/components/schemas/CurrencyDescriptor"
+          "canApplySubscriptions" : {
+            "type" : "boolean"
+          },
+          "assignmentConfiguration" : {
+            "$ref" : "#/components/schemas/AssignmentConfiguration"
+          },
+          "offlinePaymentConfiguration" : {
+            "$ref" : "#/components/schemas/OfflinePaymentConfiguration"
           },
           "contentLanguages" : {
             "type" : "array",
@@ -32072,7 +33527,7 @@
         "properties" : {
           "paymentProxy" : {
             "type" : "string",
-            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
           },
           "parameters" : {
             "type" : "object",
@@ -32115,7 +33570,7 @@
           },
           "status" : {
             "type" : "string",
-            "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "FINALIZING", "OFFLINE_FINALIZING", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
+            "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "CUSTOM_OFFLINE_PAYMENT", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "FINALIZING", "OFFLINE_FINALIZING", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
           },
           "validatedBookingInformation" : {
             "type" : "boolean"
@@ -32143,7 +33598,7 @@
           },
           "paymentProxy" : {
             "type" : "string",
-            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
           },
           "addCompanyBillingDetails" : {
             "type" : "boolean"
@@ -32292,13 +33747,13 @@
               "$ref" : "#/components/schemas/AdditionalField"
             }
           },
-          "fieldConfigurationBeforeStandard" : {
+          "fieldConfigurationAfterStandard" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/AdditionalField"
             }
           },
-          "fieldConfigurationAfterStandard" : {
+          "fieldConfigurationBeforeStandard" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/AdditionalField"
@@ -32366,7 +33821,7 @@
         "properties" : {
           "status" : {
             "type" : "string",
-            "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "FINALIZING", "OFFLINE_FINALIZING", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
+            "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "CUSTOM_OFFLINE_PAYMENT", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "FINALIZING", "OFFLINE_FINALIZING", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
           },
           "validatedBookingInformation" : {
             "type" : "boolean"
@@ -32513,7 +33968,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+              "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
             }
           },
           "timeZone" : {
@@ -32554,6 +34009,12 @@
               "type" : "string"
             }
           },
+          "title" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          },
           "fileBlobIdIsPresent" : {
             "type" : "boolean"
           },
@@ -32583,7 +34044,7 @@
           },
           "firstPaymentMethod" : {
             "type" : "string",
-            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
           },
           "useFirstAndLastName" : {
             "type" : "boolean"
@@ -33201,7 +34662,7 @@
           },
           "status" : {
             "type" : "string",
-            "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "FINALIZING", "OFFLINE_FINALIZING", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
+            "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "CUSTOM_OFFLINE_PAYMENT", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "FINALIZING", "OFFLINE_FINALIZING", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
           },
           "user" : {
             "$ref" : "#/components/schemas/ReservationUser"
@@ -33320,7 +34781,7 @@
           },
           "configurationKey" : {
             "type" : "string",
-            "enum" : [ "NOT_RECOGNIZED", "INIT_COMPLETED", "SYSTEM_API_KEY", "SHOW_PROJECT_BANNER", "SUPPORTED_LANGUAGES", "BASE_URL", "GLOBAL_PRIVACY_POLICY", "GLOBAL_TERMS", "ANNOUNCEMENT_BANNER_CONTENT", "MAPS_PROVIDER", "MAPS_CLIENT_API_KEY", "MAPS_HERE_APP_ID", "MAPS_HERE_APP_CODE", "MAPS_HERE_API_KEY", "RECAPTCHA_API_KEY", "RECAPTCHA_SECRET", "ENABLE_CAPTCHA_FOR_LOGIN", "CF_TURNSTILE_ENABLED", "CF_TURNSTILE_PRE_CLEARANCE", "CF_TURNSTILE_SITE_KEY", "CF_TURNSTILE_SECRET_KEY", "DISPLAY_STATS_IN_EVENT_DETAIL", "NOTIFY_ORGANIZER_ON_RESERVATION", "DEMO_MODE_ACCOUNT_EXPIRATION_DAYS", "PLATFORM_MODE_ENABLED", "PLATFORM_FEE", "PLATFORM_FIXED_FEE", "PLATFORM_PERCENTAGE_FEE", "PLATFORM_MINIMUM_FEE", "PLATFORM_MAXIMUM_FEE", "PAYMENT_METHODS_BLACKLIST", "STRIPE_CC_ENABLED", "STRIPE_PUBLIC_KEY", "STRIPE_SECRET_KEY", "STRIPE_CONNECT_CLIENT_ID", "STRIPE_CONNECT_CALLBACK", "STRIPE_WEBHOOK_KEY", "STRIPE_WEBHOOK_PAYMENT_KEY", "STRIPE_CONNECTED_ID", "STRIPE_ENABLE_SCA", "SAFERPAY_ENABLED", "SAFERPAY_LIVE_MODE", "SAFERPAY_API_USERNAME", "SAFERPAY_API_PASSWORD", "SAFERPAY_CUSTOMER_ID", "SAFERPAY_TERMINAL_ID", "SPECIAL_PRICE_CODE_LENGTH", "MAX_AMOUNT_OF_TICKETS_BY_RESERVATION", "ASSIGNMENT_REMINDER_START", "ASSIGNMENT_REMINDER_INTERVAL", "OPTIONAL_DATA_REMINDER_ENABLED", "RESERVATION_TIMEOUT", "RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT", "NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS", "DISPLAY_TICKETS_LEFT_INDICATOR", "ENABLE_CAPTCHA_FOR_TICKET_SELECTION", "DISPLAY_EXPIRED_CATEGORIES", "DISPLAY_DISCOUNT_CODE_BOX", "USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL", "ENABLE_CUSTOMER_REFERENCE", "ENABLE_ATTENDEE_AUTOCOMPLETE", "FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION", "SEND_TICKETS_AUTOMATICALLY", "ALLOW_TICKET_DOWNLOAD", "SEND_RESERVATION_EMAIL_IF_NECESSARY", "ENABLE_TICKET_TRANSFER", "ALLOW_FREE_TICKETS_CANCELLATION", "INCLUDE_CHECK_IN_URL_ICAL", "MAILER_TYPE", "MAX_EMAIL_PER_CYCLE", "MAIL_REPLY_TO", "MAIL_SET_ORG_REPLY_TO", "MAIL_SYSTEM_NOTIFICATION_CC", "MAIL_FOOTER", "SMTP_HOST", "SMTP_PORT", "SMTP_PROTOCOL", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_FROM_EMAIL", "SMTP_PROPERTIES", "BANK_TRANSFER_ENABLED", "DEFERRED_BANK_TRANSFER_ENABLED", "SHOW_ONLY_BASIC_INSTRUCTIONS", "DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL", "OFFLINE_PAYMENT_DAYS", "OFFLINE_REMINDER_HOURS", "ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS", "BANK_ACCOUNT_NR", "BANK_ACCOUNT_OWNER", "AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT", "PARTIAL_RESERVATION_ID_LENGTH", "REVOLUT_ENABLED", "REVOLUT_MANUAL_REVIEW", "REVOLUT_LIVE_MODE", "REVOLUT_API_KEY", "MAILGUN_KEY", "MAILGUN_DOMAIN", "MAILGUN_FROM", "MAILGUN_EU", "SENDGRID_API_KEY", "SENDGRID_FROM", "MAILJET_APIKEY_PUBLIC", "MAILJET_APIKEY_PRIVATE", "MAILJET_FROM", "GOOGLE_ANALYTICS_KEY", "GOOGLE_ANALYTICS_ANONYMOUS_MODE", "ENABLE_WAITING_QUEUE", "ENABLE_PRE_REGISTRATION", "ENABLE_WAITING_QUEUE_NOTIFICATION", "WAITING_QUEUE_RESERVATION_TIMEOUT", "STOP_WAITING_QUEUE_SUBSCRIPTIONS", "ENABLE_HTML_EMAILS", "MAIL_ATTEMPTS_COUNT", "PAYPAL_ENABLED", "PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "PAYPAL_LIVE_MODE", "PAYPAL_DEMO_MODE_USERNAME", "PAYPAL_DEMO_MODE_PASSWORD", "MOLLIE_CC_ENABLED", "MOLLIE_API_KEY", "MOLLIE_CONNECT_CLIENT_ID", "MOLLIE_CONNECT_REFRESH_TOKEN", "MOLLIE_CONNECT_CLIENT_SECRET", "MOLLIE_CONNECT_CALLBACK", "MOLLIE_CONNECT_PROFILE_ID", "MOLLIE_CONNECT_LIVE_MODE", "ON_SITE_ENABLED", "SEND_TICKETS_AFTER_IMPORT_ATTENDEE", "CREATE_RESERVATION_FOR_EACH_IMPORTED_ATTENDEE", "VAT_NR", "INVOICE_NUMBER_PATTERN", "INVOICE_ADDRESS", "USE_INVOICE_NUMBER_AS_ID", "VAT_NUMBER_IS_REQUIRED", "GENERATE_ONLY_INVOICE", "REUSE_INVOICE_NUMBER_FOR_CREDIT_NOTE", "ENABLE_ITALY_E_INVOICING", "ITALY_E_INVOICING_SEND_PROFORMA", "ENABLE_EU_VAT_DIRECTIVE", "ENABLE_REVERSE_CHARGE_ONLINE", "ENABLE_REVERSE_CHARGE_IN_PERSON", "ENABLE_VIES_VALIDATION", "APPLY_VAT_FOREIGN_BUSINESS", "COUNTRY_OF_BUSINESS", "EU_COUNTRIES_LIST", "EU_VAT_API_ADDRESS", "APPLY_TAX_TO_CATEGORY", "ENABLE_PASS", "PASSBOOK_TYPE_IDENTIFIER", "PASSBOOK_TEAM_IDENTIFIER", "PASSBOOK_KEYSTORE", "PASSBOOK_KEYSTORE_PASSWORD", "PASSBOOK_PRIVATE_KEY_ALIAS", "ENABLE_WALLET", "WALLET_ISSUER_IDENTIFIER", "WALLET_SERVICE_ACCOUNT_KEY", "WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS", "CHECK_IN_STATS", "ALFIO_PI_INTEGRATION_ENABLED", "OFFLINE_CHECKIN_ENABLED", "LABEL_PRINTING_ENABLED", "LABEL_LAYOUT", "CHECK_IN_COLOR_CONFIGURATION", "SECURITY_CSP_REPORT_ENABLED", "SECURITY_CSP_REPORT_URI", "EMBED_ALLOWED_ORIGINS", "EMBED_POST_MESSAGE_ORIGIN", "TRANSLATION_OVERRIDE", "BASE_CUSTOM_CSS", "EVENT_CUSTOM_CSS", "DESCRIPTION_MAXLENGTH", "OPENID_PUBLIC_ENABLED", "OPENID_CONFIGURATION_JSON", "GENERATE_TICKETS_FOR_SUBSCRIPTIONS" ]
+            "enum" : [ "NOT_RECOGNIZED", "INIT_COMPLETED", "SYSTEM_API_KEY", "SHOW_PROJECT_BANNER", "SUPPORTED_LANGUAGES", "BASE_URL", "GLOBAL_PRIVACY_POLICY", "GLOBAL_TERMS", "ANNOUNCEMENT_BANNER_CONTENT", "MAPS_PROVIDER", "MAPS_CLIENT_API_KEY", "MAPS_HERE_APP_ID", "MAPS_HERE_APP_CODE", "MAPS_HERE_API_KEY", "RECAPTCHA_API_KEY", "RECAPTCHA_SECRET", "ENABLE_CAPTCHA_FOR_LOGIN", "CF_TURNSTILE_ENABLED", "CF_TURNSTILE_PRE_CLEARANCE", "CF_TURNSTILE_SITE_KEY", "CF_TURNSTILE_SECRET_KEY", "DISPLAY_STATS_IN_EVENT_DETAIL", "NOTIFY_ORGANIZER_ON_RESERVATION", "DEMO_MODE_ACCOUNT_EXPIRATION_DAYS", "PLATFORM_MODE_ENABLED", "PLATFORM_FEE", "PLATFORM_FIXED_FEE", "PLATFORM_PERCENTAGE_FEE", "PLATFORM_MINIMUM_FEE", "PLATFORM_MAXIMUM_FEE", "PAYMENT_METHODS_BLACKLIST", "STRIPE_CC_ENABLED", "STRIPE_PUBLIC_KEY", "STRIPE_SECRET_KEY", "STRIPE_CONNECT_CLIENT_ID", "STRIPE_CONNECT_CALLBACK", "STRIPE_WEBHOOK_KEY", "STRIPE_WEBHOOK_PAYMENT_KEY", "STRIPE_CONNECTED_ID", "STRIPE_ENABLE_SCA", "SAFERPAY_ENABLED", "SAFERPAY_LIVE_MODE", "SAFERPAY_API_USERNAME", "SAFERPAY_API_PASSWORD", "SAFERPAY_CUSTOMER_ID", "SAFERPAY_TERMINAL_ID", "SPECIAL_PRICE_CODE_LENGTH", "MAX_AMOUNT_OF_TICKETS_BY_RESERVATION", "ASSIGNMENT_REMINDER_START", "ASSIGNMENT_REMINDER_INTERVAL", "OPTIONAL_DATA_REMINDER_ENABLED", "RESERVATION_TIMEOUT", "RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT", "NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS", "DISPLAY_TICKETS_LEFT_INDICATOR", "ENABLE_CAPTCHA_FOR_TICKET_SELECTION", "DISPLAY_EXPIRED_CATEGORIES", "DISPLAY_DISCOUNT_CODE_BOX", "USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL", "ENABLE_CUSTOMER_REFERENCE", "ENABLE_ATTENDEE_AUTOCOMPLETE", "FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION", "SEND_TICKETS_AUTOMATICALLY", "ALLOW_TICKET_DOWNLOAD", "SEND_RESERVATION_EMAIL_IF_NECESSARY", "ENABLE_TICKET_TRANSFER", "ALLOW_FREE_TICKETS_CANCELLATION", "INCLUDE_CHECK_IN_URL_ICAL", "MAILER_TYPE", "MAX_EMAIL_PER_CYCLE", "MAIL_REPLY_TO", "MAIL_SET_ORG_REPLY_TO", "MAIL_SYSTEM_NOTIFICATION_CC", "MAIL_FOOTER", "SMTP_HOST", "SMTP_PORT", "SMTP_PROTOCOL", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_FROM_EMAIL", "SMTP_PROPERTIES", "BANK_TRANSFER_ENABLED", "DEFERRED_BANK_TRANSFER_ENABLED", "SHOW_ONLY_BASIC_INSTRUCTIONS", "DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL", "OFFLINE_PAYMENT_DAYS", "OFFLINE_REMINDER_HOURS", "CUSTOM_OFFLINE_PAYMENTS", "SELECTED_CUSTOM_PAYMENTS", "BLACKLISTED_CUSTOM_PAYMENTS", "ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS", "BANK_ACCOUNT_NR", "BANK_ACCOUNT_OWNER", "AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT", "PARTIAL_RESERVATION_ID_LENGTH", "REVOLUT_ENABLED", "REVOLUT_MANUAL_REVIEW", "REVOLUT_LIVE_MODE", "REVOLUT_API_KEY", "MAILGUN_KEY", "MAILGUN_DOMAIN", "MAILGUN_FROM", "MAILGUN_EU", "SENDGRID_API_KEY", "SENDGRID_FROM", "MAILJET_APIKEY_PUBLIC", "MAILJET_APIKEY_PRIVATE", "MAILJET_FROM", "GOOGLE_ANALYTICS_KEY", "GOOGLE_ANALYTICS_ANONYMOUS_MODE", "ENABLE_WAITING_QUEUE", "ENABLE_PRE_REGISTRATION", "ENABLE_WAITING_QUEUE_NOTIFICATION", "WAITING_QUEUE_RESERVATION_TIMEOUT", "STOP_WAITING_QUEUE_SUBSCRIPTIONS", "ENABLE_HTML_EMAILS", "MAIL_ATTEMPTS_COUNT", "PAYPAL_ENABLED", "PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "PAYPAL_LIVE_MODE", "PAYPAL_DEMO_MODE_USERNAME", "PAYPAL_DEMO_MODE_PASSWORD", "MOLLIE_CC_ENABLED", "MOLLIE_API_KEY", "MOLLIE_CONNECT_CLIENT_ID", "MOLLIE_CONNECT_REFRESH_TOKEN", "MOLLIE_CONNECT_CLIENT_SECRET", "MOLLIE_CONNECT_CALLBACK", "MOLLIE_CONNECT_PROFILE_ID", "MOLLIE_CONNECT_LIVE_MODE", "ON_SITE_ENABLED", "SEND_TICKETS_AFTER_IMPORT_ATTENDEE", "CREATE_RESERVATION_FOR_EACH_IMPORTED_ATTENDEE", "VAT_NR", "INVOICE_NUMBER_PATTERN", "INVOICE_ADDRESS", "USE_INVOICE_NUMBER_AS_ID", "VAT_NUMBER_IS_REQUIRED", "GENERATE_ONLY_INVOICE", "REUSE_INVOICE_NUMBER_FOR_CREDIT_NOTE", "ENABLE_ITALY_E_INVOICING", "ITALY_E_INVOICING_SEND_PROFORMA", "ENABLE_EU_VAT_DIRECTIVE", "ENABLE_REVERSE_CHARGE_ONLINE", "ENABLE_REVERSE_CHARGE_IN_PERSON", "ENABLE_VIES_VALIDATION", "APPLY_VAT_FOREIGN_BUSINESS", "COUNTRY_OF_BUSINESS", "EU_COUNTRIES_LIST", "EU_VAT_API_ADDRESS", "APPLY_TAX_TO_CATEGORY", "ENABLE_PASS", "PASSBOOK_TYPE_IDENTIFIER", "PASSBOOK_TEAM_IDENTIFIER", "PASSBOOK_KEYSTORE", "PASSBOOK_KEYSTORE_PASSWORD", "PASSBOOK_PRIVATE_KEY_ALIAS", "ENABLE_WALLET", "WALLET_ISSUER_IDENTIFIER", "WALLET_SERVICE_ACCOUNT_KEY", "WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS", "CHECK_IN_STATS", "ALFIO_PI_INTEGRATION_ENABLED", "OFFLINE_CHECKIN_ENABLED", "LABEL_PRINTING_ENABLED", "LABEL_LAYOUT", "CHECK_IN_COLOR_CONFIGURATION", "SECURITY_CSP_REPORT_ENABLED", "SECURITY_CSP_REPORT_URI", "EMBED_ALLOWED_ORIGINS", "EMBED_POST_MESSAGE_ORIGIN", "TRANSLATION_OVERRIDE", "BASE_CUSTOM_CSS", "EVENT_CUSTOM_CSS", "DESCRIPTION_MAXLENGTH", "OPENID_PUBLIC_ENABLED", "OPENID_CONFIGURATION_JSON", "GENERATE_TICKETS_FOR_SUBSCRIPTIONS" ]
           },
           "basic" : {
             "type" : "boolean"
@@ -34273,6 +35734,12 @@
           "userLanguage" : {
             "type" : "string"
           },
+          "uuid" : {
+            "type" : "string"
+          },
+          "ticketsReservationId" : {
+            "type" : "string"
+          },
           "vatStatus" : {
             "type" : "string",
             "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
@@ -34316,13 +35783,10 @@
             "type" : "boolean"
           },
           "transaction" : {
-            "$ref" : "#/components/schemas/Transaction_AdminPublicApi"
+            "$ref" : "#/components/schemas/Transaction"
           },
           "finalPrice" : {
             "type" : "number"
-          },
-          "paid" : {
-            "type" : "boolean"
           },
           "lockedAssignment" : {
             "type" : "boolean"
@@ -34387,7 +35851,7 @@
           },
           "paymentProxy" : {
             "type" : "string",
-            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
           },
           "platformFee" : {
             "type" : "integer",
@@ -34766,6 +36230,15 @@
             "type" : "string",
             "enum" : [ "WAITING", "RETRY", "IN_PROCESS", "SENT", "ERROR" ]
           },
+          "recipient" : {
+            "type" : "string"
+          },
+          "cc" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
           "organizationId" : {
             "type" : "integer",
             "format" : "int32"
@@ -34777,15 +36250,6 @@
           "eventId" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "recipient" : {
-            "type" : "string"
-          },
-          "cc" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
           },
           "requestTimestamp" : {
             "type" : "string",
@@ -34865,14 +36329,8 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "editable" : {
-            "type" : "boolean"
-          },
-          "disabledValues" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
+          "inputType" : {
+            "type" : "string"
           },
           "order" : {
             "type" : "integer",
@@ -34886,13 +36344,6 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "required" : {
-            "type" : "boolean"
-          },
-          "additionalServiceId" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "restrictedValues" : {
             "type" : "array",
             "items" : {
@@ -34902,6 +36353,13 @@
           "checkboxField" : {
             "type" : "boolean"
           },
+          "required" : {
+            "type" : "boolean"
+          },
+          "additionalServiceId" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "minLength" : {
             "type" : "integer",
             "format" : "int32"
@@ -34909,6 +36367,28 @@
           "maxLength" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "categoryIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int32"
+            }
+          },
+          "dateOfBirth" : {
+            "type" : "boolean"
+          },
+          "countryField" : {
+            "type" : "boolean"
+          },
+          "editable" : {
+            "type" : "boolean"
+          },
+          "disabledValues" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           },
           "inputField" : {
             "type" : "boolean"
@@ -34929,22 +36409,6 @@
             "type" : "boolean"
           },
           "textField" : {
-            "type" : "boolean"
-          },
-          "inputType" : {
-            "type" : "string"
-          },
-          "categoryIds" : {
-            "type" : "array",
-            "items" : {
-              "type" : "integer",
-              "format" : "int32"
-            }
-          },
-          "dateOfBirth" : {
-            "type" : "boolean"
-          },
-          "countryField" : {
             "type" : "boolean"
           }
         }
@@ -35022,7 +36486,16 @@
             "type" : "integer",
             "format" : "int32"
           },
+          "inputType" : {
+            "type" : "string"
+          },
           "checkboxField" : {
+            "type" : "boolean"
+          },
+          "dateOfBirth" : {
+            "type" : "boolean"
+          },
+          "countryField" : {
             "type" : "boolean"
           },
           "inputField" : {
@@ -35044,15 +36517,6 @@
             "type" : "boolean"
           },
           "textField" : {
-            "type" : "boolean"
-          },
-          "inputType" : {
-            "type" : "string"
-          },
-          "dateOfBirth" : {
-            "type" : "boolean"
-          },
-          "countryField" : {
             "type" : "boolean"
           }
         }
@@ -35257,6 +36721,14 @@
           },
           "lastName" : {
             "type" : "string"
+          },
+          "validTo" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "validToEpochSecond" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -35458,7 +36930,7 @@
         "properties" : {
           "paymentMethod" : {
             "type" : "string",
-            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
           },
           "transaction" : {
             "$ref" : "#/components/schemas/Transaction"
@@ -35811,11 +37283,10 @@
         "properties" : {
           "paymentProxy" : {
             "type" : "string",
-            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
           },
           "paymentMethod" : {
-            "type" : "string",
-            "enum" : [ "CREDIT_CARD", "PAYPAL", "IDEAL", "BANK_TRANSFER", "ON_SITE", "NONE", "APPLE_PAY", "BANCONTACT", "ING_HOME_PAY", "BELFIUS", "KBC", "PRZELEWY_24", "ALIPAY", "POSTFINANCE", "TWINT" ]
+            "$ref" : "#/components/schemas/PaymentMethod"
           },
           "status" : {
             "type" : "string",
@@ -35823,6 +37294,9 @@
           },
           "active" : {
             "type" : "boolean"
+          },
+          "paymentMethodId" : {
+            "type" : "string"
           },
           "onlyForCurrency" : {
             "uniqueItems" : true,
@@ -35911,6 +37385,8 @@
           },
           "promoCode" : {
             "type" : "string"
+          "promoCode" : {
+            "type" : "string"
           },
           "discountType" : {
             "type" : "string",
@@ -35928,6 +37404,9 @@
             "type" : "integer",
             "format" : "int32"
           },
+          "fixedAmount" : {
+            "type" : "boolean"
+          },
           "formattedDiscountAmount" : {
             "type" : "string"
           },
@@ -35940,15 +37419,6 @@
           "dynamic" : {
             "type" : "boolean"
           },
-          "currentlyValid" : {
-            "type" : "boolean"
-          },
-          "formattedStart" : {
-            "type" : "string"
-          },
-          "formattedEnd" : {
-            "type" : "string"
-          },
           "utcStart" : {
             "type" : "string",
             "format" : "date-time"
@@ -35960,6 +37430,18 @@
           "maxUsage" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "currentlyValid" : {
+            "type" : "boolean"
+          },
+          "emailReference" : {
+            "type" : "string"
+          },
+          "formattedStart" : {
+            "type" : "string"
+          },
+          "formattedEnd" : {
+            "type" : "string"
           }
         }
       },
@@ -36246,9 +37728,6 @@
             "type" : "string",
             "enum" : [ "DRAFT", "PUBLIC", "DISABLED" ]
           },
-          "shortName" : {
-            "type" : "string"
-          },
           "organizationId" : {
             "type" : "integer",
             "format" : "int32"
@@ -36257,7 +37736,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+              "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY", "CUSTOM_OFFLINE" ]
             }
           },
           "availableSeats" : {
@@ -36290,16 +37769,17 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "formattedEnd" : {
-            "type" : "string"
-          },
           "pendingTickets" : {
             "type" : "integer",
             "format" : "int32"
           },
           "releasedTickets" : {
+          "releasedTickets" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "formattedEnd" : {
+            "type" : "string"
           },
           "formattedBegin" : {
             "type" : "string"
@@ -36308,6 +37788,9 @@
             "type" : "boolean"
           },
           "displayStatistics" : {
+            "type" : "boolean"
+          },
+          "warningNeeded" : {
             "type" : "boolean"
           },
           "warningNeeded" : {
@@ -36663,10 +38146,10 @@
           "key" : {
             "type" : "string"
           },
-          "right" : {
+          "left" : {
             "type" : "string"
           },
-          "left" : {
+          "right" : {
             "type" : "string"
           }
         }
@@ -36871,10 +38354,10 @@
           "key" : {
             "type" : "string"
           },
-          "right" : {
+          "left" : {
             "type" : "string"
           },
-          "left" : {
+          "right" : {
             "type" : "string"
           }
         }
