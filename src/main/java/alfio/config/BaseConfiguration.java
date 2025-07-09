@@ -42,8 +42,7 @@ public class BaseConfiguration {
                                               UserManager userManager,
                                               EventRepository eventRepository,
                                               ExternalConfiguration externalConfiguration,
-                                              Environment environment,
-                                              ObjectMapper objectMapper) {
+                                              Environment environment) {
         Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration>> cache = Caffeine.newBuilder()
             .expireAfterWrite(Duration.ofMinutes(1))
             .build();
@@ -52,8 +51,7 @@ public class BaseConfiguration {
             eventRepository,
             externalConfiguration,
             environment,
-            cache,
-            objectMapper);
+            cache);
     }
 
     @Bean

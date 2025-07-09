@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.eclipse.jetty.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -49,6 +48,7 @@ import alfio.manager.EventManager;
 import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
 import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
 import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodIllegalDeletionStateException;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.Event.EventFormat;
@@ -133,7 +133,7 @@ class ConfigurationApiControllerIntegrationTest {
     }
 
     @Test
-    void canCreateCustomOfflinePaymentMethod() {
+    void canCreateCustomOfflinePaymentMethod() throws CustomOfflinePaymentMethodAlreadyExistsException {
         final var PAYMENT_NAME = "Interac E-Transfer";
         final var PAYMENT_DESCRIPTION = "Instant Canadian bank transfer";
         final var PAYMENT_INSTRUCTIONS = "### Send the full invoiced amount to `payments@org.com`.";
@@ -201,13 +201,16 @@ class ConfigurationApiControllerIntegrationTest {
             ))
         );
 
-        var response = configurationApiController.createPaymentMethod(
-            organization.getId(),
-            paymentMethod,
-            this.mockPrincipal
+        assertThrows(
+            CustomOfflinePaymentMethodAlreadyExistsException.class,
+            () -> {
+                configurationApiController.createPaymentMethod(
+                    organization.getId(),
+                    paymentMethod,
+                    this.mockPrincipal
+                );
+            }
         );
-
-        assertEquals(HttpStatus.BAD_REQUEST_400, response.getStatusCode().value());
     }
 
     @Test
@@ -417,7 +420,7 @@ class ConfigurationApiControllerIntegrationTest {
     }
 
     @Test
-    void canDeleteExistingPaymentMethod() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
+    void canDeleteExistingPaymentMethod() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException, CustomOfflinePaymentMethodIllegalDeletionStateException {
         final var EXISTING_METHOD_ID = "15146df3-2436-4d2e-90b9-0d6cb273e291";
         final var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
@@ -465,7 +468,7 @@ class ConfigurationApiControllerIntegrationTest {
     }
 
     @Test
-    void cannotDeletePaymentMethodAttachedToActiveEvent() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
+    void cannotDeletePaymentMethodAttachedToActiveEvent() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException, CustomOfflinePaymentMethodIllegalDeletionStateException {
         var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
@@ -488,12 +491,16 @@ class ConfigurationApiControllerIntegrationTest {
             List.of(paymentMethods.get(0).getPaymentMethodId())
         );
 
-        var response = configurationApiController.deletePaymentMethod(
-            event.getOrganizationId(),
-            paymentMethods.get(0).getPaymentMethodId(),
-            mockPrincipal
+        assertThrows(
+            CustomOfflinePaymentMethodIllegalDeletionStateException.class,
+            () -> {
+                configurationApiController.deletePaymentMethod(
+                    event.getOrganizationId(),
+                    paymentMethods.get(0).getPaymentMethodId(),
+                    mockPrincipal
+                );
+            }
         );
-        assertTrue(response.getStatusCode().is4xxClientError());
 
         // Test after event has expired, payment method can be deleted.
         var newStartTs = ZonedDateTime.now(clockProvider.getClock()).minusDays(1).toOffsetDateTime();
@@ -504,11 +511,12 @@ class ConfigurationApiControllerIntegrationTest {
         );
         assertEquals(1, result);
 
-        response = configurationApiController.deletePaymentMethod(
+        var response = configurationApiController.deletePaymentMethod(
             event.getOrganizationId(),
             paymentMethods.get(0).getPaymentMethodId(),
             mockPrincipal
         );
+        assertTrue(response.getStatusCode().is2xxSuccessful());
 
         assertThrows(CustomOfflinePaymentMethodDoesNotExistException.class, () ->
             customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethodById(

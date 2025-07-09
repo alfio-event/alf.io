@@ -25,6 +25,7 @@ import alfio.extension.exception.AlfioScriptingException;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.support.extension.ExtensionCapability;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
@@ -365,7 +366,7 @@ public class EventApiController {
         @PathVariable int categoryId,
         @RequestBody List<String> paymentMethodIds,
         Principal principal
-    ) throws PassedIdDoesNotExistException {
+    ) throws PassedIdDoesNotExistException, CustomOfflinePaymentMethodDoesNotExistException {
         accessService.checkCategoryOwnership(principal, eventId, categoryId);
 
         var event = eventManager.getSingleEventById(eventId, principal.getName());
@@ -386,11 +387,18 @@ public class EventApiController {
             )
             .toList();
 
-        customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
-            event,
-            category,
-            paymentMethodsToBlacklist
-        );
+        try {
+            customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
+                event,
+                category,
+                paymentMethodsToBlacklist
+            );
+        } catch (CustomOfflinePaymentMethodDoesNotExistException e) {
+            throw new CustomOfflinePaymentMethodDoesNotExistException(
+                "One or more of the passed payment method IDs do not exist in the organization",
+                e
+            );
+        }
 
         return ResponseEntity.ok(OK);
     }

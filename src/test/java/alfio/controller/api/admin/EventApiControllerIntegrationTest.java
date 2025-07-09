@@ -24,6 +24,7 @@ import alfio.manager.AdminReservationRequestManager;
 import alfio.manager.EventManager;
 import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
 import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
@@ -197,7 +198,7 @@ class EventApiControllerIntegrationTest {
     }
 
     @Test
-    void testCanGetBlacklistedCustomPaymentMethods() throws CustomOfflinePaymentMethodAlreadyExistsException, PassedIdDoesNotExistException {
+    void testCanGetBlacklistedCustomPaymentMethods() throws CustomOfflinePaymentMethodAlreadyExistsException, PassedIdDoesNotExistException, CustomOfflinePaymentMethodDoesNotExistException {
         var eventAndUser = createEvent(Event.EventFormat.ONLINE);
         event = eventAndUser.getKey();
         var principal = Mockito.mock(Authentication.class);
@@ -256,7 +257,7 @@ class EventApiControllerIntegrationTest {
     }
 
     @Test
-    void testCanSetBlacklistedCustomPaymentMethods() throws PassedIdDoesNotExistException, CustomOfflinePaymentMethodAlreadyExistsException {
+    void testCanSetBlacklistedCustomPaymentMethods() throws PassedIdDoesNotExistException, CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
         var eventAndUser = createEvent(Event.EventFormat.ONLINE);
         event = eventAndUser.getKey();
         var principal = Mockito.mock(Authentication.class);

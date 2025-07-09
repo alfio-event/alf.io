@@ -41,13 +41,12 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.validation.BeanPropertyBindingResult;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
+import alfio.controller.api.admin.PassedIdDoesNotExistException;
 import alfio.controller.api.v2.user.ReservationApiV2Controller;
-import alfio.controller.api.v2.user.ReservationApiV2Controller.ReservationPaymentMethodDoesNotExistException;
 import alfio.controller.form.PaymentForm;
 import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
@@ -191,7 +190,7 @@ class ReservationApiV2ControllerIntegrationTest {
     }
 
     @Test
-    void canGetApplicablePaymentMethodDetails() {
+    void canGetApplicablePaymentMethodDetails() throws PassedIdDoesNotExistException {
         var reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(
             reservationId,
@@ -208,7 +207,8 @@ class ReservationApiV2ControllerIntegrationTest {
         );
 
         var response = reservationApiV2Controller.getApplicableCustomPaymentMethodDetails(
-            reservationId
+            reservationId,
+            mockPrincipal
         );
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
@@ -228,7 +228,7 @@ class ReservationApiV2ControllerIntegrationTest {
     }
 
     @Test
-    void canGetSelectedCustomPaymentMethodDetailsForReservation() throws JsonProcessingException {
+    void canGetSelectedCustomPaymentMethodDetailsForReservation() throws PassedIdDoesNotExistException, CustomOfflinePaymentMethodDoesNotExistException {
         var reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(
             reservationId,
@@ -290,7 +290,7 @@ class ReservationApiV2ControllerIntegrationTest {
         assertTrue(confirmOverviewRes.getStatusCode().is2xxSuccessful());
 
         var selected = reservationApiV2Controller
-            .getSelectedCustomPaymentMethodDetails(reservationId)
+            .getSelectedCustomPaymentMethodDetails(reservationId, mockPrincipal)
             .getBody();
 
         assertEquals(paymentMethods.get(0).getPaymentMethodId(), selected.getPaymentMethodId());
@@ -363,13 +363,13 @@ class ReservationApiV2ControllerIntegrationTest {
         );
 
         assertThrows(
-            ReservationPaymentMethodDoesNotExistException.class,
-            () -> reservationApiV2Controller.getSelectedCustomPaymentMethodDetails(reservationId)
+            CustomOfflinePaymentMethodDoesNotExistException.class,
+            () -> reservationApiV2Controller.getSelectedCustomPaymentMethodDetails(reservationId, mockPrincipal)
         );
     }
 
     @Test
-    void testActivePaymentMethodsBlacklistMethodsCorrect() {
+    void testActivePaymentMethodsBlacklistMethodsCorrect() throws CustomOfflinePaymentMethodDoesNotExistException {
         var reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(
             reservationId,
