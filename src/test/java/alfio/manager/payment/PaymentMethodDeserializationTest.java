@@ -22,25 +22,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import alfio.TestConfiguration;
-import alfio.config.DataSourceConfiguration;
-import alfio.config.Initializer;
 import alfio.controller.form.PaymentForm;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.StaticPaymentMethods;
 import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
-import alfio.test.util.AlfioIntegrationTest;
 
 /**
  * Tests the custom deserialization logic for payment method deserialization.
@@ -49,13 +41,15 @@ import alfio.test.util.AlfioIntegrationTest;
  * These tests ensure the correct output PaymentMethod type is deserialized from
  * received API JSON.
  */
-@AlfioIntegrationTest
-@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
-@ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-class PaymentMethodDeserializationIntegrationTest {
 
-    @Autowired
-    private ObjectMapper objectMapper;
+class PaymentMethodDeserializationTest {
+
+    ObjectMapper objectMapper;
+
+    @BeforeEach
+    void init() {
+        objectMapper = new ObjectMapper();
+    }
 
     @Test
     void testStaticPaymentMethodDeserialization() throws JsonProcessingException {

@@ -141,8 +141,8 @@ class CustomOfflinePaymentManagerTest {
             any(String.class), any(String.class), any(Long.class), any(Long.class),
             argThat(transStatus -> transStatus == Transaction.Status.PENDING),
             argThat(map ->
-                map.containsKey("selectedPaymentMethod")
-                && map.get("selectedPaymentMethod") == paymentMethod.getPaymentMethodId()
+                map.containsKey(Transaction.SELECTED_PAYMENT_METHOD_KEY)
+                && map.get(Transaction.SELECTED_PAYMENT_METHOD_KEY) == paymentMethod.getPaymentMethodId()
             )
         );
     }
@@ -179,7 +179,7 @@ class CustomOfflinePaymentManagerTest {
         assertEquals(null, customOfflinePaymentManager.getPaymentMethodForTransaction(transaction));
 
         when(transaction.getMetadata()).thenReturn(
-            Map.of("selectedPaymentMethod", "c20c5b0b-43bb-4a12-869c-f04ef2a27a79")
+            Map.of(Transaction.SELECTED_PAYMENT_METHOD_KEY, "c20c5b0b-43bb-4a12-869c-f04ef2a27a79")
         );
         when(eventRepository.findByReservationId("02ef8df8-efe9-4fa5-9434-2ba0656a01be")).thenReturn(event);
 

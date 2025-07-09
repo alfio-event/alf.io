@@ -21,6 +21,7 @@ import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
 import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
@@ -409,7 +410,7 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void testCustomOfflinePaymentMethodsReturnedInBlacklist() throws CustomOfflinePaymentMethodAlreadyExistsException {
+    void testCustomOfflinePaymentMethodsReturnedInBlacklist() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
         var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",

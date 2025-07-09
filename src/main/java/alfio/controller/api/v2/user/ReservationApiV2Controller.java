@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2.user;
 
+import alfio.controller.api.admin.PassedIdDoesNotExistException;
 import alfio.controller.api.support.AdditionalServiceWithData;
 import alfio.controller.api.support.BookingInfoTicketLoader;
 import alfio.controller.api.support.TicketHelper;
@@ -36,6 +37,7 @@ import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.payment.StripeCreditCardManager;
 import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.support.AdditionalServiceHelper;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.response.ValidatedResponse;
@@ -60,6 +62,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -735,7 +738,13 @@ public class ReservationApiV2Controller {
     }
 
     @GetMapping("/reservation/{reservationId}/get-applicable-custom-payment-method-details")
-    public ResponseEntity<List<UserDefinedOfflinePaymentMethod>> getApplicableCustomPaymentMethodDetails(@PathVariable String reservationId) {
+    public ResponseEntity<List<UserDefinedOfflinePaymentMethod>> getApplicableCustomPaymentMethodDetails(@PathVariable String reservationId, Principal principal) throws PassedIdDoesNotExistException {
+        var reservation = ticketReservationManager
+            .findById(reservationId)
+            .orElseThrow(() -> new PassedIdDoesNotExistException("Passed reservationId does not exist."));
+
+        validateAccessToReservation(principal, reservation);
+
         var event = eventRepository.findByReservationId(reservationId);
         var allowedPaymentMethods = customOfflineConfigurationManager.getAllowedCustomOfflinePaymentMethodsForEvent(event);
 
@@ -758,7 +767,13 @@ public class ReservationApiV2Controller {
     }
 
     @GetMapping("/reservation/{reservationId}/get-selected-custom-payment-method-details")
-    public ResponseEntity<UserDefinedOfflinePaymentMethod> getSelectedCustomPaymentMethodDetails(@PathVariable String reservationId) {
+    public ResponseEntity<UserDefinedOfflinePaymentMethod> getSelectedCustomPaymentMethodDetails(@PathVariable String reservationId, Principal principal) throws PassedIdDoesNotExistException, CustomOfflinePaymentMethodDoesNotExistException {
+        var reservation = ticketReservationManager
+            .findById(reservationId)
+            .orElseThrow(() -> new PassedIdDoesNotExistException("Passed reservationId does not exist."));
+
+        validateAccessToReservation(principal, reservation);
+
         var event = eventRepository.findByReservationId(reservationId);
         var paymentMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(
             event.getOrganizationId()
@@ -774,7 +789,9 @@ public class ReservationApiV2Controller {
             .stream()
             .filter(pm -> pm.getPaymentMethodId().equals(paymentMethodId))
             .findFirst()
-            .orElseThrow(() -> new ReservationPaymentMethodDoesNotExistException());
+            .orElseThrow(() -> new CustomOfflinePaymentMethodDoesNotExistException(
+                "The payment method associated with your transaction does not exist."
+            ));
 
         respPaymentMethod
             .getLocalizations()
@@ -791,8 +808,16 @@ public class ReservationApiV2Controller {
         return ResponseEntity.ok(respPaymentMethod);
     }
 
-    @ResponseStatus(value=HttpStatus.BAD_REQUEST, reason="Tried to get custom payment details for reservation, but no matching payment method is in the db.")
-    public class ReservationPaymentMethodDoesNotExistException extends RuntimeException {}
+    @ExceptionHandler({
+        PassedIdDoesNotExistException.class,
+        CustomOfflinePaymentMethodDoesNotExistException.class
+    })
+    public ResponseEntity<String> handleResponseException(RuntimeException ex) {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .contentType(MediaType.TEXT_PLAIN)
+            .body(ex.getMessage());
+    }
 
     @ResponseStatus(value=HttpStatus.BAD_REQUEST, reason="There is no transaction associated with the passed reservation.")
     public class NoCustomPaymentTransactionForReservationException extends RuntimeException {}

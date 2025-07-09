@@ -65,6 +65,7 @@ import alfio.util.ClockProvider;
 
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
@@ -130,7 +131,7 @@ class CustomOfflineConfigurationManagerIntegrationTest {
     }
 
     @Test
-    void canSetBlacklistedPaymentMethodsWhenKeyAlreadyExists() throws JsonProcessingException {
+    void canSetBlacklistedPaymentMethodsWhenKeyAlreadyExists() throws JsonProcessingException, CustomOfflinePaymentMethodDoesNotExistException {
         final var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
@@ -200,6 +201,34 @@ class CustomOfflineConfigurationManagerIntegrationTest {
     }
 
     @Test
+    void cannotAddBlacklistedMethodsWhichDoNotExist() {
+        final var paymentMethods = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant Canadian bank transfer",
+                        "### Send the full invoiced amount to `payments@org.com`."
+                    )
+                )
+            )
+        );
+        // Not inserting into DB
+
+        var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+
+        assertThrows(
+            CustomOfflinePaymentMethodDoesNotExistException.class,
+            () -> customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
+                event,
+                categories.get(0),
+                List.of(paymentMethods.get(0))
+            )
+        );
+    }
+
+    @Test
     void canSetAllowedEventPaymentMethodsWhenKeyAlreadyExists() throws JsonProcessingException, CustomOfflinePaymentMethodDoesNotExistException {
         final var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
@@ -261,5 +290,52 @@ class CustomOfflineConfigurationManagerIntegrationTest {
         allowedMethods = objectMapper.readValue(allowedMethodsJson, new TypeReference<List<String>>() {});
         assertEquals(1, allowedMethods.size());
         assertEquals(paymentMethods.get(1).getPaymentMethodId(), allowedMethods.get(0));
+    }
+
+    @Test
+    void cannotUpdateDeletedPaymentMethod() throws JsonProcessingException, CustomOfflinePaymentMethodDoesNotExistException {
+        final var paymentMethods = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant Canadian bank transfer",
+                        "### Send the full invoiced amount to `payments@org.com`."
+                    )
+                )
+            ),
+            new UserDefinedOfflinePaymentMethod(
+                "853fdf8d-9489-46d1-89ce-6266e18fb4db",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Cash App",
+                        "Instant money transfer through the Cash App IOS/Android app",
+                        "### Send the full invoiced amount to user `org1payments`."
+                    )
+                )
+            )
+        );
+        paymentMethods.get(0).setDeleted();
+
+        String paymentMethodsJson = objectMapper.writeValueAsString(paymentMethods);
+        configurationRepository.insertOrganizationLevel(
+            organization.getId(),
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.name(),
+            paymentMethodsJson,
+            ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.getDescription()
+        );
+
+        var updated = paymentMethods.get(0);
+        updated.getLocaleByKey("en").setPaymentName("Interac E-Transfer 2");
+
+        assertThrows(
+            CustomOfflinePaymentMethodDoesNotExistException.class,
+            () -> {
+                customOfflineConfigurationManager.updateOrganizationCustomOfflinePaymentMethod(
+                    organization.getId(), updated
+                );
+            }
+        );
     }
 }

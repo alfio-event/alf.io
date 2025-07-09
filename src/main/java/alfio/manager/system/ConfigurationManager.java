@@ -44,9 +44,7 @@ import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.util.Json;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.BooleanUtils;
@@ -86,17 +84,15 @@ public class ConfigurationManager {
     private final ExternalConfiguration externalConfiguration;
     private final Environment environment;
     private final Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, MaybeConfiguration>> oneMinuteCache;
-    private final ObjectMapper objectMapper;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public ConfigurationManager(ConfigurationRepository configurationRepository, UserManager userManager, EventRepository eventRepository, ExternalConfiguration externalConfiguration, Environment environment, Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, MaybeConfiguration>> oneMinuteCache, ObjectMapper objectMapper) {
+    public ConfigurationManager(ConfigurationRepository configurationRepository, UserManager userManager, EventRepository eventRepository, ExternalConfiguration externalConfiguration, Environment environment, Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, MaybeConfiguration>> oneMinuteCache) {
         this.configurationRepository = configurationRepository;
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.externalConfiguration = externalConfiguration;
         this.environment = environment;
         this.oneMinuteCache = oneMinuteCache;
-        this.objectMapper = objectMapper;
     }
 
     //TODO: refactor, not the most beautiful code, find a better solution...
@@ -671,16 +667,12 @@ public class ConfigurationManager {
 
                 List<UserDefinedOfflinePaymentMethod> orgCustomPaymentMethods = List.of();
                 if(orgCustomPaymentMethodsConfigJson != null) {
-                    try {
-                        orgCustomPaymentMethods = objectMapper.readValue(
-                            orgCustomPaymentMethodsConfigJson,
-                            new TypeReference<List<UserDefinedOfflinePaymentMethod>>(){}
-                        );
-                    } catch (JsonProcessingException e1) {
-                        log.warn(
-                            "Failed to read org:{} custom payment methods config while getting blacklisted methods.",
-                            e.getOrganizationId()
-                        );
+                    orgCustomPaymentMethods = Json.fromJson(
+                        orgCustomPaymentMethodsConfigJson,
+                        new TypeReference<List<UserDefinedOfflinePaymentMethod>>(){}
+                    );
+                    if(orgCustomPaymentMethods == null) {
+                        orgCustomPaymentMethods = List.of();
                     }
                 }
 

@@ -105,19 +105,17 @@ public class CustomOfflineConfigurationManager {
         int orgId,
         UserDefinedOfflinePaymentMethod paymentMethod
     ) throws CustomOfflinePaymentMethodDoesNotExistException {
-        var paymentMethods = this.getOrganizationCustomOfflinePaymentMethodsIncludingDeleted(orgId);
+        var paymentMethodsIncludingDeleted = this.getOrganizationCustomOfflinePaymentMethodsIncludingDeleted(orgId);
 
-        var paymentMethodInDb = paymentMethods
+        paymentMethodsIncludingDeleted
             .stream()
-            .filter(pm -> pm.getPaymentMethodId().equals(paymentMethod.getPaymentMethodId()))
+            .filter(pm -> !pm.isDeleted() && pm.getPaymentMethodId().equals(paymentMethod.getPaymentMethodId()))
             .findAny()
-            .orElse(null);
+            .orElseThrow(() -> new CustomOfflinePaymentMethodDoesNotExistException(
+                "Passed payment method does not exist in the organization"
+            ));
 
-        if (paymentMethodInDb == null) {
-            throw new CustomOfflinePaymentMethodDoesNotExistException();
-        }
-
-        var newPaymentMethods = paymentMethods
+        var newPaymentMethods = paymentMethodsIncludingDeleted
             .stream()
             .filter(pm -> !pm.getPaymentMethodId().equals(paymentMethod.getPaymentMethodId()))
             .collect(Collectors.toList());
@@ -236,7 +234,23 @@ public class CustomOfflineConfigurationManager {
         Event event,
         TicketCategory category,
         List<UserDefinedOfflinePaymentMethod> paymentMethods
-    ) {
+    ) throws CustomOfflinePaymentMethodDoesNotExistException {
+        var orgPaymentMethods = this.getOrganizationCustomOfflinePaymentMethods(event.getOrganizationId());
+
+        var allInputPaymentMethodsExist = paymentMethods
+            .stream()
+            .allMatch(inPm ->
+                orgPaymentMethods
+                    .stream()
+                    .anyMatch(orgPm -> orgPm.getPaymentMethodId().equals(inPm.getPaymentMethodId()))
+            );
+
+        if(!allInputPaymentMethodsExist) {
+            throw new CustomOfflinePaymentMethodDoesNotExistException(
+                "One or more of the passed payment methods do not exist in the organization."
+            );
+        }
+
         var currentBlacklisted = configurationRepository.findByKeyAtCategoryLevel(
             event.getId(),
             event.getOrganizationId(),
@@ -302,6 +316,9 @@ public class CustomOfflineConfigurationManager {
         public CustomOfflinePaymentMethodAlreadyExistsException(String message) {
             super(message);
         }
+        public CustomOfflinePaymentMethodAlreadyExistsException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
     public static class CustomOfflinePaymentMethodDoesNotExistException extends Exception {
         public CustomOfflinePaymentMethodDoesNotExistException() {
@@ -311,6 +328,17 @@ public class CustomOfflineConfigurationManager {
             super(message);
         }
         public CustomOfflinePaymentMethodDoesNotExistException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+    public static class CustomOfflinePaymentMethodIllegalDeletionStateException extends Exception {
+        public CustomOfflinePaymentMethodIllegalDeletionStateException() {
+            super();
+        }
+        public CustomOfflinePaymentMethodIllegalDeletionStateException(String message) {
+            super(message);
+        }
+        public CustomOfflinePaymentMethodIllegalDeletionStateException(String message, Throwable cause) {
             super(message, cause);
         }
     }

@@ -24,6 +24,7 @@ import alfio.manager.EventManager;
 import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
 import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
 import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
+import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodIllegalDeletionStateException;
 import alfio.manager.system.AdminJobExecutor;
 import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationLevel;
@@ -338,15 +339,16 @@ public class ConfigurationApiController {
         @PathVariable int organizationId,
         @RequestBody UserDefinedOfflinePaymentMethod paymentMethod,
         Principal principal
-    ) {
+    ) throws CustomOfflinePaymentMethodAlreadyExistsException {
         accessService.checkOrganizationOwnership(principal, organizationId);
 
         try {
             customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organizationId, paymentMethod);
-        } catch(CustomOfflinePaymentMethodAlreadyExistsException ex) {
-            return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body("A payment method with the passed ID already exists");
+        } catch(CustomOfflinePaymentMethodAlreadyExistsException e) {
+            throw new CustomOfflinePaymentMethodAlreadyExistsException(
+                "A payment method with the passed ID already exists",
+                e
+            );
         }
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
@@ -397,7 +399,7 @@ public class ConfigurationApiController {
         @PathVariable int organizationId,
         @PathVariable String paymentMethodId,
         Principal principal
-    ) throws CustomOfflinePaymentMethodDoesNotExistException {
+    ) throws CustomOfflinePaymentMethodDoesNotExistException, CustomOfflinePaymentMethodIllegalDeletionStateException {
         accessService.checkOrganizationOwnership(principal, organizationId);
 
         UserDefinedOfflinePaymentMethod existingPaymentMethod;
@@ -416,10 +418,9 @@ public class ConfigurationApiController {
             .isPaymentMethodCurrentlyUsedInActiveEvent(organizationId, existingPaymentMethod);
 
         if(isPaymentMethodActivelyUsed) {
-            return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .contentType(MediaType.TEXT_PLAIN)
-                .body("You cannot delete a payment method which is currently in use by an active event.");
+            throw new CustomOfflinePaymentMethodIllegalDeletionStateException(
+                "You cannot delete a payment method which is currently in use by an active event."
+            );
         }
 
         try {
@@ -465,16 +466,25 @@ public class ConfigurationApiController {
             throw new PassedIdDoesNotExistException("Event matching passed ID does not exist.");
         }
 
-        customOfflineConfigurationManager.setAllowedCustomOfflinePaymentMethodsForEvent(
-            event,
-            paymentMethodIds
-        );
+        try {
+            customOfflineConfigurationManager.setAllowedCustomOfflinePaymentMethodsForEvent(
+                event,
+                paymentMethodIds
+            );
+        } catch (CustomOfflinePaymentMethodDoesNotExistException e) {
+            throw new CustomOfflinePaymentMethodDoesNotExistException(
+                "One or more of the passed payment methods IDs do not exist.",
+                e
+            );
+        }
 
         return ResponseEntity.ok(true);
     }
 
     @ExceptionHandler({
+        CustomOfflinePaymentMethodAlreadyExistsException.class,
         CustomOfflinePaymentMethodDoesNotExistException.class,
+        CustomOfflinePaymentMethodIllegalDeletionStateException.class,
         PassedIdDoesNotExistException.class
     })
     public ResponseEntity<String> handleResponseException(RuntimeException ex) {
