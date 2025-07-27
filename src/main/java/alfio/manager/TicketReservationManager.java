@@ -800,7 +800,7 @@ public class TicketReservationManager {
 
     public void deleteOfflinePayment(Event event, String reservationId, boolean expired, boolean credit, boolean notify, String username) {
         TicketReservation reservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
-        Validate.isTrue(List.of(OFFLINE_PAYMENT, DEFERRED_OFFLINE_PAYMENT, CUSTOM_OFFLINE_PAYMENT).contains(reservation.getStatus()), "Invalid reservation status");
+        Validate.isTrue(EnumSet.of(OFFLINE_PAYMENT, DEFERRED_OFFLINE_PAYMENT, CUSTOM_OFFLINE_PAYMENT).contains(reservation.getStatus()), "Invalid reservation status");
         Validate.isTrue(!(credit && reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT), "Cannot credit deferred payment");
         if(credit) {
             creditReservation(reservation, username, notify);
@@ -932,7 +932,7 @@ public class TicketReservationManager {
      * @return
      */
     public boolean isValidPaymentMethod(PaymentManager.PaymentMethodDTO paymentMethodDTO, PurchaseContext purchaseContext) {
-        var ifCustomOfflineIsApplicableForEvent = true;
+        boolean ifCustomOfflineIsApplicableForEvent = true;
         if (paymentMethodDTO.getPaymentProxy() == PaymentProxy.CUSTOM_OFFLINE && purchaseContext.event().isPresent()) {
             var event = purchaseContext.event().get();
             ifCustomOfflineIsApplicableForEvent = customOfflineConfigurationManager

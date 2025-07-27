@@ -657,7 +657,7 @@ public class ConfigurationManager {
                     configurationRepository.getAllCategoriesAndValueWith(
                         e.getOrganizationId(),
                         e.getId(),
-                        BLACKLISTED_CUSTOM_PAYMENTS
+                        DENIED_CUSTOM_PAYMENTS
                     );
 
                 var orgCustomPaymentMethodsConfigJson = configurationRepository

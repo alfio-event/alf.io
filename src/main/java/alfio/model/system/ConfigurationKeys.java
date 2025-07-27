@@ -154,7 +154,7 @@ public enum ConfigurationKeys {
 
     CUSTOM_OFFLINE_PAYMENTS("Defines custom payment methods defined by organizers", true, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(ORGANIZATION)),
     SELECTED_CUSTOM_PAYMENTS("Which custom payment methods are allowed for the event", true, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(PURCHASE_CONTEXT)),
-    BLACKLISTED_CUSTOM_PAYMENTS("Which custom payment methods are blacklisted for the category", true, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(TICKET_CATEGORY)),
+    DENIED_CUSTOM_PAYMENTS("Which custom payment methods are explicitly disallowed for the category", true, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(TICKET_CATEGORY)),
 
     ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS("Enable captcha for offline payments / free of charge tickets (default false)", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.FALSE),
     BANK_ACCOUNT_NR("Bank Account number", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, PURCHASE_CONTEXT)),

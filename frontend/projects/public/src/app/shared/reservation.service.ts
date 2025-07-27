@@ -89,11 +89,11 @@ export class ReservationService {
     }
 
     getApplicableCustomPaymentMethodDetails(reservationId: string) {
-        return this.http.get<CustomOfflinePayment[]>(`/api/v2/public/reservation/${reservationId}/get-applicable-custom-payment-method-details`);
+        return this.http.get<CustomOfflinePayment[]>(`/api/v2/public/reservation/${reservationId}/applicable-custom-payment-method-details`);
     }
 
     getSelectedCustomPaymentMethodDetails(reservationId: string) {
-        return this.http.get<CustomOfflinePayment>(`/api/v2/public/reservation/${reservationId}/get-selected-custom-payment-method-details`);
+        return this.http.get<CustomOfflinePayment>(`/api/v2/public/reservation/${reservationId}/selected-custom-payment-method-details`);
     }
 
 }
