@@ -499,7 +499,7 @@ public class ReservationFinalizer {
 
     private Map<String, String> buildTransactionMetadata(TransactionMetadataModification transactionMetadataModification, Map<String, String> existingMetadata) {
         if(existingMetadata == null) {
-            existingMetadata = Map.of();
+            existingMetadata = new HashMap<>();
         }
 
         if (transactionMetadataModification != null && StringUtils.isNotBlank(transactionMetadataModification.getNotes())) {

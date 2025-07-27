@@ -175,7 +175,7 @@ class CustomOfflineConfigurationManagerIntegrationTest {
             event.getId(),
             event.getOrganizationId(),
             categories.get(0).getId(),
-            ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS.name()
+            ConfigurationKeys.DENIED_CUSTOM_PAYMENTS.name()
         ).get().getValue();
 
         var blacklistedItems = objectMapper.readValue(blacklistedJson, new TypeReference<List<String>>() {});
@@ -192,7 +192,7 @@ class CustomOfflineConfigurationManagerIntegrationTest {
             event.getId(),
             event.getOrganizationId(),
             categories.get(0).getId(),
-            ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS.name()
+            ConfigurationKeys.DENIED_CUSTOM_PAYMENTS.name()
         ).get().getValue();
 
         blacklistedItems = objectMapper.readValue(blacklistedJson, new TypeReference<List<String>>() {});

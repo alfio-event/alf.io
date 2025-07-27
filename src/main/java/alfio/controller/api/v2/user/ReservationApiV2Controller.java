@@ -737,7 +737,7 @@ public class ReservationApiV2Controller {
         return ResponseEntity.ok(res);
     }
 
-    @GetMapping("/reservation/{reservationId}/get-applicable-custom-payment-method-details")
+    @GetMapping("/reservation/{reservationId}/applicable-custom-payment-method-details")
     public ResponseEntity<List<UserDefinedOfflinePaymentMethod>> getApplicableCustomPaymentMethodDetails(@PathVariable String reservationId, Principal principal) throws PassedIdDoesNotExistException {
         var reservation = ticketReservationManager
             .findById(reservationId)
@@ -766,7 +766,7 @@ public class ReservationApiV2Controller {
         return ResponseEntity.ok(allowedPaymentMethods);
     }
 
-    @GetMapping("/reservation/{reservationId}/get-selected-custom-payment-method-details")
+    @GetMapping("/reservation/{reservationId}/selected-custom-payment-method-details")
     public ResponseEntity<UserDefinedOfflinePaymentMethod> getSelectedCustomPaymentMethodDetails(@PathVariable String reservationId, Principal principal) throws PassedIdDoesNotExistException, CustomOfflinePaymentMethodDoesNotExistException {
         var reservation = ticketReservationManager
             .findById(reservationId)

@@ -209,7 +209,7 @@ public class CustomOfflineConfigurationManager {
         alfio.model.TicketCategory category
     ) {
         var maybeBlacklistedPaymentMethodsJson = configurationManager.getFor(
-            ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS,
+            ConfigurationKeys.DENIED_CUSTOM_PAYMENTS,
             ConfigurationLevel.ticketCategory(
                 new EventAndOrganizationId(event.getId(), event.getOrganizationId()), category.getId()
             )
@@ -255,7 +255,7 @@ public class CustomOfflineConfigurationManager {
             event.getId(),
             event.getOrganizationId(),
             category.getId(),
-            ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS.name()
+            ConfigurationKeys.DENIED_CUSTOM_PAYMENTS.name()
         );
 
         if(currentBlacklisted.isPresent() && !currentBlacklisted.get().getValue().isEmpty()) {
@@ -263,7 +263,7 @@ public class CustomOfflineConfigurationManager {
                 event.getId(),
                 event.getOrganizationId(),
                 category.getId(),
-                ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS.name(),
+                ConfigurationKeys.DENIED_CUSTOM_PAYMENTS.name(),
                 Json.toJson(paymentMethods.stream().map(UserDefinedOfflinePaymentMethod::getPaymentMethodId).toList())
             );
         } else {
@@ -271,9 +271,9 @@ public class CustomOfflineConfigurationManager {
                 event.getOrganizationId(),
                 event.getId(),
                 category.getId(),
-                ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS.name(),
+                ConfigurationKeys.DENIED_CUSTOM_PAYMENTS.name(),
                 Json.toJson(paymentMethods.stream().map(UserDefinedOfflinePaymentMethod::getPaymentMethodId).toList()),
-                ConfigurationKeys.BLACKLISTED_CUSTOM_PAYMENTS.getDescription()
+                ConfigurationKeys.DENIED_CUSTOM_PAYMENTS.getDescription()
             );
         }
     }
