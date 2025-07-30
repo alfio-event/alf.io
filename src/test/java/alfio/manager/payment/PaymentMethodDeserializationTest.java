@@ -100,8 +100,8 @@ class PaymentMethodDeserializationTest {
         assertTrue(paymentMethod.getLocalizations().containsKey("en"));
 
         var localization = paymentMethod.getLocaleByKey("en");
-        assertEquals("Interac Description", localization.getPaymentDescription());
-        assertEquals("Interac Instructions", localization.getPaymentInstructions());
+        assertEquals("Interac Description", localization.paymentDescription());
+        assertEquals("Interac Instructions", localization.paymentInstructions());
 
         assertTrue(paymentMethod.isDeleted());
     }

@@ -24,7 +24,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Getter;
-import lombok.Setter;
 
 /**
  * Represents a payment method defined by an organization which
@@ -55,13 +54,13 @@ public class UserDefinedOfflinePaymentMethod implements UserDefinedPaymentMethod
     @Override
     public String name() {
         if(this.localizations.containsKey("en")) {
-            return this.localizations.get("en").getPaymentName();
+            return this.localizations.get("en").paymentName();
         }
 
         return this.localizations
             .values()
             .stream()
-            .map(locale -> locale.getPaymentName())
+            .map(locale -> locale.paymentName())
             .sorted()
             .findFirst()
             .orElseThrow();
@@ -79,13 +78,7 @@ public class UserDefinedOfflinePaymentMethod implements UserDefinedPaymentMethod
         deleted = true;
     }
 
-    @Getter
-    @Setter
-    public static class Localization {
-        private String paymentName;
-        private String paymentDescription;
-        private String paymentInstructions;
-
+    public record Localization(String paymentName, String paymentDescription, String paymentInstructions) {
         @JsonCreator
         public Localization(
             @JsonProperty("paymentName") String paymentName,

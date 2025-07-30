@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.manager.payment.custom_offline;
+package alfio.manager.payment.custom.offline;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -204,33 +204,33 @@ public class CustomOfflineConfigurationManager {
         }
     }
 
-    public List<UserDefinedOfflinePaymentMethod> getBlacklistedPaymentMethodsByTicketCategory(
+    public List<UserDefinedOfflinePaymentMethod> getDeniedPaymentMethodsByTicketCategory(
         Event event,
         alfio.model.TicketCategory category
     ) {
-        var maybeBlacklistedPaymentMethodsJson = configurationManager.getFor(
+        var maybeDeniedPaymentMethodsJson = configurationManager.getFor(
             ConfigurationKeys.DENIED_CUSTOM_PAYMENTS,
             ConfigurationLevel.ticketCategory(
                 new EventAndOrganizationId(event.getId(), event.getOrganizationId()), category.getId()
             )
         );
 
-        if (maybeBlacklistedPaymentMethodsJson.isEmpty()) {
-            return new ArrayList<>();
+        if (maybeDeniedPaymentMethodsJson.isEmpty()) {
+            return List.of();
         }
 
-        var blacklistedPaymentMethodsJson = maybeBlacklistedPaymentMethodsJson.getValue().get();
-        var blacklistedPaymentMethodIds = Json.fromJson(blacklistedPaymentMethodsJson, new TypeReference<List<String>>(){});
+        var deniedPaymentMethodsJson = maybeDeniedPaymentMethodsJson.getValue().get();
+        var deniedPaymentMethodIds = Json.fromJson(deniedPaymentMethodsJson, new TypeReference<List<String>>(){});
 
         return this.getOrganizationCustomOfflinePaymentMethods(event.getOrganizationId())
             .stream()
             .filter(pmItem ->
-                blacklistedPaymentMethodIds.stream().anyMatch(blItem -> blItem.equals(pmItem.getPaymentMethodId()))
+                deniedPaymentMethodIds.stream().anyMatch(blItem -> blItem.equals(pmItem.getPaymentMethodId()))
             )
             .toList();
     }
 
-    public void setBlacklistedPaymentMethodsByTicketCategory(
+    public void setDeniedPaymentMethodsByTicketCategory(
         Event event,
         TicketCategory category,
         List<UserDefinedOfflinePaymentMethod> paymentMethods
@@ -251,14 +251,14 @@ public class CustomOfflineConfigurationManager {
             );
         }
 
-        var currentBlacklisted = configurationRepository.findByKeyAtCategoryLevel(
+        var currentDenied = configurationRepository.findByKeyAtCategoryLevel(
             event.getId(),
             event.getOrganizationId(),
             category.getId(),
             ConfigurationKeys.DENIED_CUSTOM_PAYMENTS.name()
         );
 
-        if(currentBlacklisted.isPresent() && !currentBlacklisted.get().getValue().isEmpty()) {
+        if(currentDenied.isPresent() && !currentDenied.get().getValue().isEmpty()) {
             configurationRepository.updateCategoryLevel(
                 event.getId(),
                 event.getOrganizationId(),

@@ -653,7 +653,7 @@ public class ConfigurationManager {
                     .map(name -> PaymentProxy.valueOf(name).getPaymentMethod())
                     .collect(toList());
 
-                Map<Integer, String> customPaymentMethodBlacklistForCategories =
+                Map<Integer, String> deniedCustomPaymentMethodsForCategories =
                     configurationRepository.getAllCategoriesAndValueWith(
                         e.getOrganizationId(),
                         e.getId(),
@@ -683,9 +683,9 @@ public class ConfigurationManager {
 
                     paymentMethodBlacklist.addAll(
                         categoryIds.stream()
-                            .filter(customPaymentMethodBlacklistForCategories::containsKey)
-                            .map(customPaymentMethodBlacklistForCategories::get)
-                            .map(blacklistJson -> Json.fromJson(blacklistJson, new TypeReference<List<String>>() {}))
+                            .filter(deniedCustomPaymentMethodsForCategories::containsKey)
+                            .map(deniedCustomPaymentMethodsForCategories::get)
+                            .map(deniedListJson -> Json.fromJson(deniedListJson, new TypeReference<List<String>>() {}))
                             .flatMap(List::stream)
                             .distinct()
                             .map(paymentMethodMap::get)
