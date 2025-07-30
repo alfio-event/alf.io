@@ -43,16 +43,16 @@ export class CustomPaymentMethodsService {
         return result;
     }
 
-    async getBlacklistedPaymentMethodsForCategory(eventId: number, categoryId: number) {
+    async getDeniedPaymentMethodsForCategory(eventId: number, categoryId: number) {
         const result = await fetchJson<string[]>(
-            `/admin/api/events/${eventId}/categories/${categoryId}/blacklisted-custom-payment-methods`
+            `/admin/api/events/${eventId}/categories/${categoryId}/denied-custom-payment-methods`
         );
         return result;
     }
 
-    async setBlacklistedPaymentMethodsForCategory(eventId: number, categoryId: number, paymentMethodIds: string[]) {
+    async setDeniedPaymentMethodsForCategory(eventId: number, categoryId: number, paymentMethodIds: string[]) {
         const result = await postJson(
-            `/admin/api/events/${eventId}/categories/${categoryId}/blacklisted-custom-payment-methods`,
+            `/admin/api/events/${eventId}/categories/${categoryId}/denied-custom-payment-methods`,
             paymentMethodIds
         );
         return result;

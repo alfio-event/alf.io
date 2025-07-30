@@ -92,11 +92,11 @@ class PaymentManagerTest {
     }
 
     /**
-     * Regression test to ensure we are filtering blacklisted items
+     * Regression test to ensure we are filtering deny listed items
      * using a full text match, not a partial match (contains).
      */
     @Test
-    void paymentProxyBlacklistMatchesFullText() {
+    void paymentProxyDeniedListMatchesFullText() {
         var orgId = 1;
         var inputCustomPaymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(

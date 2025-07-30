@@ -21,6 +21,7 @@ import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,8 +42,8 @@ import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
 import alfio.manager.EventManager;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.Event.EventFormat;
@@ -131,7 +132,7 @@ class CustomOfflineConfigurationManagerIntegrationTest {
     }
 
     @Test
-    void canSetBlacklistedPaymentMethodsWhenKeyAlreadyExists() throws JsonProcessingException, CustomOfflinePaymentMethodDoesNotExistException {
+    void canSetDeniedPaymentMethodsWhenKeyAlreadyExists() throws JsonProcessingException, CustomOfflinePaymentMethodDoesNotExistException {
         final var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
@@ -165,43 +166,43 @@ class CustomOfflineConfigurationManagerIntegrationTest {
 
         var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
 
-        customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
+        customOfflineConfigurationManager.setDeniedPaymentMethodsByTicketCategory(
             event,
             categories.get(0),
             List.of(paymentMethods.get(0))
         );
 
-        var blacklistedJson = configurationRepository.findByKeyAtCategoryLevel(
+        var deniedJson = configurationRepository.findByKeyAtCategoryLevel(
             event.getId(),
             event.getOrganizationId(),
             categories.get(0).getId(),
             ConfigurationKeys.DENIED_CUSTOM_PAYMENTS.name()
         ).get().getValue();
 
-        var blacklistedItems = objectMapper.readValue(blacklistedJson, new TypeReference<List<String>>() {});
-        assertEquals(1, blacklistedItems.size());
-        assertEquals(paymentMethods.get(0).getPaymentMethodId(), blacklistedItems.get(0));
+        var deniedItems = objectMapper.readValue(deniedJson, new TypeReference<List<String>>() {});
+        assertEquals(1, deniedItems.size());
+        assertEquals(paymentMethods.get(0).getPaymentMethodId(), deniedItems.get(0));
 
-        customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
+        customOfflineConfigurationManager.setDeniedPaymentMethodsByTicketCategory(
             event,
             categories.get(0),
             List.of(paymentMethods.get(1))
         );
 
-        blacklistedJson = configurationRepository.findByKeyAtCategoryLevel(
+        deniedJson = configurationRepository.findByKeyAtCategoryLevel(
             event.getId(),
             event.getOrganizationId(),
             categories.get(0).getId(),
             ConfigurationKeys.DENIED_CUSTOM_PAYMENTS.name()
         ).get().getValue();
 
-        blacklistedItems = objectMapper.readValue(blacklistedJson, new TypeReference<List<String>>() {});
-        assertEquals(1, blacklistedItems.size());
-        assertEquals(paymentMethods.get(1).getPaymentMethodId(), blacklistedItems.get(0));
+        deniedItems = objectMapper.readValue(deniedJson, new TypeReference<List<String>>() {});
+        assertEquals(1, deniedItems.size());
+        assertEquals(paymentMethods.get(1).getPaymentMethodId(), deniedItems.get(0));
     }
 
     @Test
-    void cannotAddBlacklistedMethodsWhichDoNotExist() {
+    void cannotAddDeniedMethodsWhichDoNotExist() {
         final var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
@@ -220,7 +221,7 @@ class CustomOfflineConfigurationManagerIntegrationTest {
 
         assertThrows(
             CustomOfflinePaymentMethodDoesNotExistException.class,
-            () -> customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
+            () -> customOfflineConfigurationManager.setDeniedPaymentMethodsByTicketCategory(
                 event,
                 categories.get(0),
                 List.of(paymentMethods.get(0))
@@ -297,23 +298,23 @@ class CustomOfflineConfigurationManagerIntegrationTest {
         final var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
-                Map.of(
-                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                new HashMap<>() {{
+                    put("en", new UserDefinedOfflinePaymentMethod.Localization(
                         "Interac E-Transfer",
                         "Instant Canadian bank transfer",
                         "### Send the full invoiced amount to `payments@org.com`."
-                    )
-                )
+                    ));
+                }}
             ),
             new UserDefinedOfflinePaymentMethod(
                 "853fdf8d-9489-46d1-89ce-6266e18fb4db",
-                Map.of(
-                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                new HashMap<>() {{
+                    put("en", new UserDefinedOfflinePaymentMethod.Localization(
                         "Cash App",
                         "Instant money transfer through the Cash App IOS/Android app",
                         "### Send the full invoiced amount to user `org1payments`."
-                    )
-                )
+                    ));
+                }}
             )
         );
         paymentMethods.get(0).setDeleted();
@@ -327,7 +328,13 @@ class CustomOfflineConfigurationManagerIntegrationTest {
         );
 
         var updated = paymentMethods.get(0);
-        updated.getLocaleByKey("en").setPaymentName("Interac E-Transfer 2");
+        var originalLocalization = updated.getLocaleByKey("en");
+        var updatedLocalization = new UserDefinedOfflinePaymentMethod.Localization(
+            "Interac E-Transfer 2",
+            originalLocalization.paymentDescription(),
+            originalLocalization.paymentInstructions()
+        );
+        updated.getLocalizations().put("en", updatedLocalization);
 
         assertThrows(
             CustomOfflinePaymentMethodDoesNotExistException.class,

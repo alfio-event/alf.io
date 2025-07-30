@@ -9,7 +9,7 @@
             </del>
         </label>
         <span ng-if="key === 'CUSTOM_OFFLINE' && $ctrl.organization">{{value}}</span>
-        <custom-offline-payment-blacklist-selector
+        <custom-offline-payment-denied-methods-selector
             ng-if="key == 'CUSTOM_OFFLINE' && $ctrl.organization"
             organization="{{$ctrl.organization}}"
             event="{{$ctrl.event}}"

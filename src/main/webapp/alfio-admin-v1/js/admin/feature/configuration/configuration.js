@@ -727,12 +727,12 @@
             categoryConf.loading = true;
             var onSaveComplete = categoryConf.onSave ? categoryConf.onSave : load;
 
-            const updatePaymentMethodCategoryBlacklistEvent = new CustomEvent("update-payment-method-category-blacklist", {
+            const updatePaymentMethodCategoryDeniedListEvent = new CustomEvent("update-payment-method-category-denied-list", {
                 detail: {"event": categoryConf.event, "category": categoryConf.category},
                 bubbles: true,
                 composed: true
             });
-            window.dispatchEvent(updatePaymentMethodCategoryBlacklistEvent);
+            window.dispatchEvent(updatePaymentMethodCategoryDeniedListEvent);
 
             ConfigurationService.updateCategoryConfig(categoryConf.category.id, categoryConf.event.id, categoryConf.settings).then(function() {
                 if(categoryConf.group) {
