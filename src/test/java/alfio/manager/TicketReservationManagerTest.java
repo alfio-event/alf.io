@@ -21,7 +21,7 @@ import alfio.manager.PaymentManager.PaymentMethodDTO;
 import alfio.manager.PaymentManager.PaymentMethodDTO.PaymentMethodStatus;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.*;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager;
 import alfio.manager.support.*;
 import alfio.manager.support.reservation.OrderSummaryGenerator;
 import alfio.manager.support.reservation.ReservationCostCalculator;
@@ -1441,7 +1441,7 @@ class TicketReservationManagerTest {
     }
 
     @Test
-    void testCustomOfflinePaymentMethodProperlyMatchesBlacklistedMethods() throws JsonProcessingException {
+    void testCustomOfflinePaymentMethodProperlyMatchesDeniedMethods() throws JsonProcessingException {
         var allowedPaymentMethod = new UserDefinedOfflinePaymentMethod(
             "abe32b76-9b9e-4f4b-b058-38c797fe80ff",
             Map.of("en", new UserDefinedOfflinePaymentMethod.Localization(

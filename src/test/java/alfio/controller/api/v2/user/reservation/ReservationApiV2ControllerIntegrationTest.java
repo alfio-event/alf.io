@@ -51,9 +51,9 @@ import alfio.controller.form.PaymentForm;
 import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.payment.PaymentSpecification;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.user.UserManager;
 import alfio.model.CustomerName;
 import alfio.model.Event;
@@ -369,7 +369,7 @@ class ReservationApiV2ControllerIntegrationTest {
     }
 
     @Test
-    void testActivePaymentMethodsBlacklistMethodsCorrect() throws CustomOfflinePaymentMethodDoesNotExistException {
+    void testActivePaymentMethodsDeniedMethodsCorrect() throws CustomOfflinePaymentMethodDoesNotExistException {
         var reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(
             reservationId,
@@ -397,7 +397,7 @@ class ReservationApiV2ControllerIntegrationTest {
             i -> null
         );
 
-        customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
+        customOfflineConfigurationManager.setDeniedPaymentMethodsByTicketCategory(
             event,
             firstCategory.getValue(),
             paymentMethods

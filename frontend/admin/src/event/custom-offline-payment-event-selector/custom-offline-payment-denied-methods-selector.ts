@@ -3,8 +3,8 @@ import { customElement, property, state } from "lit/decorators.js";
 import { html, LitElement } from "lit";
 import { Task } from '@lit/task';
 
-@customElement('custom-offline-payment-blacklist-selector')
-export class CustomOfflinePaymentBlacklistSelector extends LitElement {
+@customElement('custom-offline-payment-denied-methods-selector')
+export class CustomOfflinePaymentDeniedMethodsSelector extends LitElement {
     @property({ attribute: "organization", type: Number })
     organization: number = -1;
     @property({ attribute: "event", type: Number })
@@ -22,14 +22,14 @@ export class CustomOfflinePaymentBlacklistSelector extends LitElement {
             if (organization <= 0) return [];
 
             const orgPaymentMethods = await this.paymentMethodService?.getPaymentMethodsForOrganization(organization);
-            const blacklistedPaymentMethods = await this.paymentMethodService?.getBlacklistedPaymentMethodsForCategory(
+            const deniedPaymentMethods = await this.paymentMethodService?.getDeniedPaymentMethodsForCategory(
                 this.event,
                 this.category
             );
 
             return orgPaymentMethods?.map(item => ({
                 paymentMethod: item,
-                selected: blacklistedPaymentMethods?.includes(item.paymentMethodId!)
+                selected: deniedPaymentMethods?.includes(item.paymentMethodId!)
             })) || [];
         },
         args: () => [this.organization]
@@ -37,11 +37,11 @@ export class CustomOfflinePaymentBlacklistSelector extends LitElement {
 
     connectedCallback(): void {
         super.connectedCallback();
-        window.addEventListener("update-payment-method-category-blacklist", this.handleUpdateBlacklistSubmit);
+        window.addEventListener("update-payment-method-category-denied-list", this.handleUpdateDeniedListSubmit);
     }
 
     disconnectedCallback(): void {
-        window.removeEventListener("update-payment-method-category-blacklist", this.handleUpdateBlacklistSubmit);
+        window.removeEventListener("update-payment-method-category-denied-list", this.handleUpdateDeniedListSubmit);
         super.disconnectedCallback();
     }
 
@@ -49,19 +49,19 @@ export class CustomOfflinePaymentBlacklistSelector extends LitElement {
         this.selectedPaymentMethods = selectedMethods;
     }
 
-    handleUpdateBlacklistSubmit = async (_event: Event) => {
-        const paymentMethodBlacklistIds: string[] = this.selectedPaymentMethods
+    handleUpdateDeniedListSubmit = async (_event: Event) => {
+        const deniedPaymentMethodIds: string[] = this.selectedPaymentMethods
             .filter(pm => pm.selected)
             .map(pm => pm.paymentMethod.paymentMethodId)
             .filter((pmid): pmid is string => pmid !== null);
 
-        if(!paymentMethodBlacklistIds)
+        if(!deniedPaymentMethodIds)
             return;
 
-        await this.paymentMethodService?.setBlacklistedPaymentMethodsForCategory(
+        await this.paymentMethodService?.setDeniedPaymentMethodsForCategory(
             this.event,
             this.category,
-            paymentMethodBlacklistIds
+            deniedPaymentMethodIds
         );
     }
 

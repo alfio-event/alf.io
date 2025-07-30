@@ -22,9 +22,9 @@ import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
 import alfio.manager.AdminReservationRequestManager;
 import alfio.manager.EventManager;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
@@ -198,7 +198,7 @@ class EventApiControllerIntegrationTest {
     }
 
     @Test
-    void testCanGetBlacklistedCustomPaymentMethods() throws CustomOfflinePaymentMethodAlreadyExistsException, PassedIdDoesNotExistException, CustomOfflinePaymentMethodDoesNotExistException {
+    void testCanGetDeniedCustomPaymentMethods() throws CustomOfflinePaymentMethodAlreadyExistsException, PassedIdDoesNotExistException, CustomOfflinePaymentMethodDoesNotExistException {
         var eventAndUser = createEvent(Event.EventFormat.ONLINE);
         event = eventAndUser.getKey();
         var principal = Mockito.mock(Authentication.class);
@@ -236,28 +236,28 @@ class EventApiControllerIntegrationTest {
         for(var pm : paymentMethods) {
             customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organizationId, pm);
         }
-        customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
+        customOfflineConfigurationManager.setDeniedPaymentMethodsByTicketCategory(
             event,
             ticketCategory,
             List.of(paymentMethods.get(0))
         );
 
-        var response = eventApiController.getBlacklistedCustomPaymentMethods(
+        var response = eventApiController.getDeniedCustomPaymentMethods(
             event.getId(),
             ticketCategory.getId(),
             principal
         );
 
-        var blacklistedMethodIds = response.getBody();
+        var deniedMethodIds = response.getBody();
 
-        assertEquals(1, blacklistedMethodIds.size());
-        assertTrue(blacklistedMethodIds.stream().allMatch(blItem ->
+        assertEquals(1, deniedMethodIds.size());
+        assertTrue(deniedMethodIds.stream().allMatch(blItem ->
             paymentMethods.stream().anyMatch(pmItem -> blItem.equals(pmItem.getPaymentMethodId())))
         );
     }
 
     @Test
-    void testCanSetBlacklistedCustomPaymentMethods() throws PassedIdDoesNotExistException, CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
+    void testCanSetDeniedCustomPaymentMethods() throws PassedIdDoesNotExistException, CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
         var eventAndUser = createEvent(Event.EventFormat.ONLINE);
         event = eventAndUser.getKey();
         var principal = Mockito.mock(Authentication.class);
@@ -295,20 +295,20 @@ class EventApiControllerIntegrationTest {
             customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(event.getOrganizationId(), pm);
         }
 
-        eventApiController.setBlacklistedCustomPaymentMethods(
+        eventApiController.setDeniedCustomPaymentMethods(
             event.getId(),
             ticketCategory.getId(),
             List.of(paymentMethods.get(0).getPaymentMethodId()),
             principal
         );
 
-        var storedBlacklistedPaymentMethods = customOfflineConfigurationManager.getBlacklistedPaymentMethodsByTicketCategory(
+        var storedDeniedPaymentMethods = customOfflineConfigurationManager.getDeniedPaymentMethodsByTicketCategory(
             event,
             ticketCategory
         );
-        assertEquals(1, storedBlacklistedPaymentMethods.size());
+        assertEquals(1, storedDeniedPaymentMethods.size());
 
-        assertTrue(storedBlacklistedPaymentMethods.stream().allMatch(
+        assertTrue(storedDeniedPaymentMethods.stream().allMatch(
             blItem -> paymentMethods.stream().anyMatch(pmItem -> blItem.getPaymentMethodId().equals(pmItem.getPaymentMethodId())))
         );
     }

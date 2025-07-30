@@ -17,7 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager;
 import alfio.manager.support.reservation.OrderSummaryGenerator;
 import alfio.manager.support.reservation.ReservationCostCalculator;
 import alfio.manager.support.reservation.ReservationEmailContentHelper;

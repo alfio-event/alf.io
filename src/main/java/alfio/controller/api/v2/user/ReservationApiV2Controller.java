@@ -36,8 +36,8 @@ import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.payment.StripeCreditCardManager;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.support.AdditionalServiceHelper;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.response.ValidatedResponse;
@@ -754,12 +754,17 @@ public class ReservationApiV2Controller {
                 .getLocalizations()
                 .forEach((key, locale) -> {
                     Map<String, String> localeTexts = new HashMap<>();
-                    localeTexts.put("instructions", locale.getPaymentInstructions());
-                    localeTexts.put("description", locale.getPaymentDescription());
+                    localeTexts.put("instructions", locale.paymentInstructions());
+                    localeTexts.put("description", locale.paymentDescription());
                     localeTexts = Formatters.applyCommonMark(localeTexts);
 
-                    locale.setPaymentInstructions(localeTexts.get("instructions"));
-                    locale.setPaymentDescription(localeTexts.get("description"));
+                    var updatedLocale = new UserDefinedOfflinePaymentMethod.Localization(
+                        locale.paymentName(),
+                        localeTexts.get("description"),
+                        localeTexts.get("instructions")
+                    );
+
+                    paymentMethod.getLocalizations().put(key, updatedLocale);
                 })
         );
 
@@ -797,12 +802,17 @@ public class ReservationApiV2Controller {
             .getLocalizations()
             .forEach((key, locale) -> {
                 Map<String, String> localeTexts = new HashMap<>();
-                localeTexts.put("instructions", locale.getPaymentInstructions());
-                localeTexts.put("description", locale.getPaymentDescription());
+                localeTexts.put("description", locale.paymentDescription());
+                localeTexts.put("instructions", locale.paymentInstructions());
                 localeTexts = Formatters.applyCommonMark(localeTexts);
 
-                locale.setPaymentInstructions(localeTexts.get("instructions"));
-                locale.setPaymentDescription(localeTexts.get("description"));
+                var updatedLocale = new UserDefinedOfflinePaymentMethod.Localization(
+                    locale.paymentName(),
+                    localeTexts.get("description"),
+                    localeTexts.get("instructions")
+                );
+
+                respPaymentMethod.getLocalizations().put(key, updatedLocale);
             });
 
         return ResponseEntity.ok(respPaymentMethod);

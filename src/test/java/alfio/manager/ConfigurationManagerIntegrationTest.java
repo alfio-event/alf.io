@@ -19,9 +19,9 @@ package alfio.manager;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
@@ -410,7 +410,7 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void testCustomOfflinePaymentMethodsReturnedInBlacklist() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
+    void testCustomOfflinePaymentMethodsReturnedInDeniedList() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
         var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
                 "15146df3-2436-4d2e-90b9-0d6cb273e291",
@@ -428,7 +428,7 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         }
 
         var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
-        customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
+        customOfflineConfigurationManager.setDeniedPaymentMethodsByTicketCategory(
             event,
             categories.get(0),
             paymentMethods

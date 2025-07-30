@@ -45,10 +45,10 @@ import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
 import alfio.manager.EventManager;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodIllegalDeletionStateException;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodIllegalDeletionStateException;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.Event.EventFormat;
@@ -162,9 +162,9 @@ class ConfigurationApiControllerIntegrationTest {
         assertTrue(retrieved.getLocalizations().containsKey(LOCALE));
 
         var retrievedENLocale = retrieved.getLocaleByKey(LOCALE);
-        assertEquals(PAYMENT_NAME, retrievedENLocale.getPaymentName());
-        assertEquals(PAYMENT_DESCRIPTION, retrievedENLocale.getPaymentDescription());
-        assertEquals(PAYMENT_INSTRUCTIONS, retrievedENLocale.getPaymentInstructions());
+        assertEquals(PAYMENT_NAME, retrievedENLocale.paymentName());
+        assertEquals(PAYMENT_DESCRIPTION, retrievedENLocale.paymentDescription());
+        assertEquals(PAYMENT_INSTRUCTIONS, retrievedENLocale.paymentInstructions());
     }
 
     @Test
@@ -388,9 +388,9 @@ class ConfigurationApiControllerIntegrationTest {
         assertTrue(retrieved.getLocalizations().containsKey(LOCALE));
 
         var retrievedENLocale = retrieved.getLocaleByKey(LOCALE);
-        assertEquals(NEW_PAYMENT_NAME, retrievedENLocale.getPaymentName());
-        assertEquals(NEW_PAYMENT_DESCRIPTION, retrievedENLocale.getPaymentDescription());
-        assertEquals(NEW_PAYMENT_INSTRUCTIONS, retrievedENLocale.getPaymentInstructions());
+        assertEquals(NEW_PAYMENT_NAME, retrievedENLocale.paymentName());
+        assertEquals(NEW_PAYMENT_DESCRIPTION, retrievedENLocale.paymentDescription());
+        assertEquals(NEW_PAYMENT_INSTRUCTIONS, retrievedENLocale.paymentInstructions());
     }
 
     @Test

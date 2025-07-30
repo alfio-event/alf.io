@@ -24,8 +24,8 @@ import alfio.controller.support.TemplateProcessor;
 import alfio.extension.exception.AlfioScriptingException;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager;
-import alfio.manager.payment.custom_offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.support.extension.ExtensionCapability;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
@@ -334,8 +334,8 @@ public class EventApiController {
             .ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
     }
 
-    @GetMapping("/events/{eventId}/categories/{categoryId}/blacklisted-custom-payment-methods")
-    public ResponseEntity<List<String>> getBlacklistedCustomPaymentMethods(
+    @GetMapping("/events/{eventId}/categories/{categoryId}/denied-custom-payment-methods")
+    public ResponseEntity<List<String>> getDeniedCustomPaymentMethods(
         @PathVariable int eventId,
         @PathVariable int categoryId,
         Principal principal
@@ -352,16 +352,16 @@ public class EventApiController {
             throw new PassedIdDoesNotExistException("Category matching passed ID does not exist.");
         }
 
-        var blacklistedPaymentMethods = customOfflineConfigurationManager.getBlacklistedPaymentMethodsByTicketCategory(
+        var deniedPaymentMethods = customOfflineConfigurationManager.getDeniedPaymentMethodsByTicketCategory(
             event,
             category
         );
 
-        return ResponseEntity.ok(blacklistedPaymentMethods.stream().map(pm -> pm.getPaymentMethodId()).toList());
+        return ResponseEntity.ok(deniedPaymentMethods.stream().map(pm -> pm.getPaymentMethodId()).toList());
     }
 
-    @PostMapping("/events/{eventId}/categories/{categoryId}/blacklisted-custom-payment-methods")
-    public ResponseEntity<String> setBlacklistedCustomPaymentMethods(
+    @PostMapping("/events/{eventId}/categories/{categoryId}/denied-custom-payment-methods")
+    public ResponseEntity<String> setDeniedCustomPaymentMethods(
         @PathVariable int eventId,
         @PathVariable int categoryId,
         @RequestBody List<String> paymentMethodIds,
@@ -379,7 +379,7 @@ public class EventApiController {
             throw new PassedIdDoesNotExistException("Ticket category corresponding to passed ID does not exist.");
         }
 
-        var paymentMethodsToBlacklist = customOfflineConfigurationManager
+        var paymentMethodsToDeny = customOfflineConfigurationManager
             .getOrganizationCustomOfflinePaymentMethods(event.getOrganizationId())
             .stream()
             .filter(pm ->
@@ -388,10 +388,10 @@ public class EventApiController {
             .toList();
 
         try {
-            customOfflineConfigurationManager.setBlacklistedPaymentMethodsByTicketCategory(
+            customOfflineConfigurationManager.setDeniedPaymentMethodsByTicketCategory(
                 event,
                 category,
-                paymentMethodsToBlacklist
+                paymentMethodsToDeny
             );
         } catch (CustomOfflinePaymentMethodDoesNotExistException e) {
             throw new CustomOfflinePaymentMethodDoesNotExistException(
