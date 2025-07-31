@@ -34,15 +34,19 @@ import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.system.ConfigurationKeys.SettingCategory;
 import alfio.model.system.ConfigurationPathLevel;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
+import alfio.util.Json;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.servlet.http.HttpSession;
-import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -62,7 +66,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.model.system.ConfigurationPathLevel.*;
 import static java.util.stream.Collectors.toList;
@@ -641,19 +644,56 @@ public class ConfigurationManager {
 
     public List<PaymentMethod> getBlacklistedMethodsForReservation(PurchaseContext p, Collection<Integer> categoryIds) {
         return p.event().map(e -> {
-            if(categoryIds.size() > 1) {
-                Map<Integer, String> blacklistForCategories = configurationRepository.getAllCategoriesAndValueWith(e.getOrganizationId(), e.getId(), PAYMENT_METHODS_BLACKLIST);
-                return categoryIds.stream()
-                    .filter(blacklistForCategories::containsKey)
-                    .flatMap(id -> Arrays.stream(blacklistForCategories.get(id).split(",")))
+            if(!categoryIds.isEmpty()) {
+                Map<Integer, String> staticPaymentMethodBlacklistForCategories = configurationRepository.getAllCategoriesAndValueWith(e.getOrganizationId(), e.getId(), PAYMENT_METHODS_BLACKLIST);
+                final var paymentMethodBlacklist = categoryIds.stream()
+                    .filter(staticPaymentMethodBlacklistForCategories::containsKey)
+                    .flatMap(id -> Arrays.stream(staticPaymentMethodBlacklistForCategories.get(id).split(",")))
                     .filter(StringUtils::isNotBlank)
                     .map(name -> PaymentProxy.valueOf(name).getPaymentMethod())
                     .collect(toList());
-            } else if (!categoryIds.isEmpty()) {
-                    return configurationRepository.findByKeyAtCategoryLevel(e.getId(), e.getOrganizationId(), IterableUtils.get(categoryIds, 0), PAYMENT_METHODS_BLACKLIST.name())
-                        .filter(v -> StringUtils.isNotBlank(v.getValue()))
-                        .map(v -> Arrays.stream(v.getValue().split(",")).map(name -> PaymentProxy.valueOf(name).getPaymentMethod()).collect(toList()))
-                        .orElse(List.of());
+
+                Map<Integer, String> deniedCustomPaymentMethodsForCategories =
+                    configurationRepository.getAllCategoriesAndValueWith(
+                        e.getOrganizationId(),
+                        e.getId(),
+                        DENIED_CUSTOM_PAYMENTS
+                    );
+
+                var orgCustomPaymentMethodsConfigJson = configurationRepository
+                    .findByKeyAtOrganizationLevel(e.getOrganizationId(), ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.getValue())
+                    .map(Configuration::getValue)
+                    .orElse(null);
+
+                List<UserDefinedOfflinePaymentMethod> orgCustomPaymentMethods = List.of();
+                if(orgCustomPaymentMethodsConfigJson != null) {
+                    orgCustomPaymentMethods = Json.fromJson(
+                        orgCustomPaymentMethodsConfigJson,
+                        new TypeReference<List<UserDefinedOfflinePaymentMethod>>(){}
+                    );
+                    if(orgCustomPaymentMethods == null) {
+                        orgCustomPaymentMethods = List.of();
+                    }
+                }
+
+
+                if(!orgCustomPaymentMethods.isEmpty()) {
+                    Map<String, PaymentMethod> paymentMethodMap = orgCustomPaymentMethods.stream()
+                        .collect(Collectors.toMap(PaymentMethod::getPaymentMethodId, method -> method));
+
+                    paymentMethodBlacklist.addAll(
+                        categoryIds.stream()
+                            .filter(deniedCustomPaymentMethodsForCategories::containsKey)
+                            .map(deniedCustomPaymentMethodsForCategories::get)
+                            .map(deniedListJson -> Json.fromJson(deniedListJson, new TypeReference<List<String>>() {}))
+                            .flatMap(List::stream)
+                            .distinct()
+                            .map(paymentMethodMap::get)
+                            .toList()
+                    );
+                }
+
+                return paymentMethodBlacklist;
             } else {
                 return List.<PaymentMethod>of();
             }

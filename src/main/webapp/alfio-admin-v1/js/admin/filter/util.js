@@ -8,7 +8,8 @@
         'OFFLINE'  : 'Offline payment (bank transfer, invoice, etc.)',
         'PAYPAL'   : 'PayPal',
         'MOLLIE'   : 'Mollie: Credit cards, iDEAL, Bancontact, ING Home Pay, Belfius, KBC/CBC, Przelewy24',
-        'SAFERPAY' : 'Saferpay By SIX Payments'
+        'SAFERPAY' : 'Saferpay By SIX Payments',
+        'CUSTOM_OFFLINE' : 'Custom Offline Payment Methods'
     });
 
     filters.filter('printSelectedOrganization', function() {

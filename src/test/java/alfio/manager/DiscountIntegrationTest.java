@@ -28,8 +28,8 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.StaticPaymentMethods;
 import alfio.repository.EventRepository;
 import alfio.repository.PromoCodeDiscountRepository;
 import alfio.repository.TicketCategoryRepository;
@@ -166,10 +166,10 @@ class DiscountIntegrationTest extends BaseIntegrationTest {
                         if (reservationId != null) {
                             Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
                             TotalPrice totalPrice = priceAndDiscount.getLeft();
-                            PaymentSpecification specification = new PaymentSpecification(reservationId, null, totalPrice.getPriceWithVAT(),
+                            PaymentSpecification specification = new PaymentSpecification(reservationId, null, null, totalPrice.getPriceWithVAT(),
                                 event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
                                 "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
-                            var paymentResult = ticketReservationManager.performPayment(specification, totalPrice, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
+                            var paymentResult = ticketReservationManager.performPayment(specification, totalPrice, PaymentProxy.OFFLINE, StaticPaymentMethods.BANK_TRANSFER, null);
                             assertTrue(paymentResult.isSuccessful());
                         }
                     } catch (Throwable t) {

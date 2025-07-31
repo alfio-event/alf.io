@@ -55,7 +55,7 @@
         ctrl.displayPaymentInfo = function() {
             return ctrl.reservation != null
                 && !ctrl.displayPotentialMatch
-                && ['PENDING', 'OFFLINE_PAYMENT'].indexOf(ctrl.reservation.status) === -1;
+                && ['PENDING', 'OFFLINE_PAYMENT', 'CUSTOM_OFFLINE_PAYMENT'].indexOf(ctrl.reservation.status) === -1;
         };
 
         ctrl.documentTypeDescription = {
@@ -151,7 +151,7 @@
                     });
             }
 
-            ctrl.displayConfirmButton = ['PENDING', 'OFFLINE_PAYMENT', 'STUCK'].indexOf(ctrl.reservation.status) > -1;
+            ctrl.displayConfirmButton = ['PENDING', 'OFFLINE_PAYMENT', 'CUSTOM_OFFLINE_PAYMENT', 'STUCK'].indexOf(ctrl.reservation.status) > -1;
 
             CountriesService.getCountries().then(function(countries) {
                 ctrl.countries = countries;
@@ -211,6 +211,15 @@
             }
         };
 
+        ctrl.isOfflinePayment = function() {
+            const OFFLINE_STATUSES = [
+                "OFFLINE_PAYMENT",
+                "CUSTOM_OFFLINE_PAYMENT"
+            ];
+
+            return ctrl.reservation && OFFLINE_STATUSES.includes(ctrl.reservation.status);
+        }
+
         ctrl.$onInit = function() {
             EventService.getAllLanguages().then(function(allLangs) {
                ctrl.allLanguages = allLangs.data;
@@ -255,8 +264,38 @@
                 ctrl.paymentInfo = res.data.data;
                 ctrl.displayPotentialMatch = ctrl.paymentInfo.transaction && ctrl.paymentInfo.transaction.potentialMatch;
                 ctrl.loadingPaymentInfo = false;
+                loadReservationSelectedCustomPaymentMethod();
             }, function() {
                 ctrl.loadingPaymentInfo = false;
+            });
+        }
+
+        function loadReservationSelectedCustomPaymentMethod() {
+            ConfigurationService.getCustomPaymentMethodsForOrganizationIncludingDeleted(
+                ctrl.purchaseContext.organizationId
+            ).then(function(res){
+                ctrl.organizationCustomPaymentMethods = res.data;
+                ctrl.selectedCustomOfflinePaymentMethod = null;
+
+                const transactionSelectedCustomPaymentMethodId = ctrl.paymentInfo?.transaction?.metadata?.selectedPaymentMethod;
+                ctrl.selectedCustomOfflinePaymentMethod = transactionSelectedCustomPaymentMethodId;
+                if(ctrl.organizationCustomPaymentMethods && transactionSelectedCustomPaymentMethodId) {
+                    const paymentMethodObj = ctrl.organizationCustomPaymentMethods.find(
+                        pm => pm.paymentMethodId === transactionSelectedCustomPaymentMethodId
+                    );
+
+                    if (!paymentMethodObj) {
+                        return;
+                    }
+
+                    const paymentMethodLocalizationKeys = Object.keys(paymentMethodObj);
+                    ctrl.selectedCustomOfflinePaymentMethod = "en" in paymentMethodObj.localizations
+                        ? paymentMethodObj.localizations["en"].paymentName
+                        : paymentMethodObj[paymentMethodLocalizationKeys[0]].paymentName;
+                }
+            }, function() {
+                ctrl.organizationCustomPaymentMethods = null;
+                ctrl.selectedCustomOfflinePaymentMethod = null;
             });
         }
 
@@ -394,7 +433,7 @@
 
         ctrl.confirm = function() {
             var promise;
-            if(ctrl.reservation.status === 'OFFLINE_PAYMENT') {
+            if(ctrl.isOfflinePayment()) {
                 promise = EventService.registerPayment(ctrl.purchaseContext.publicIdentifier, ctrl.reservation.id);
             } else {
                 promise = AdminReservationService.confirm(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.reservation.id);
