@@ -123,6 +123,9 @@ public interface ConfigurationRepository {
     @Query(EVENT_FIND_BY_KEY)
     Optional<Configuration> findByKeyAtEventLevel(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId, @Bind("key") String key);
 
+    @Query("SELECT id, c_key, c_value, 'PURCHASE_CONTEXT' as configuration_path_level FROM configuration_purchase_context where c_key = :key AND event_id_fk IN(:eventIds)")
+    List<Configuration> findAllByEventsAndKey(@Bind("key") String key, @Bind("eventIds") Collection<Integer> eventIds);
+
     @Query(SUBSCRIPTION_DESCRIPTOR_FIND_BY_KEY)
     Optional<Configuration> findByKeyAtSubscriptionDescriptorLevel(@Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
                                                                    @Bind("organizationId") int organizationId,

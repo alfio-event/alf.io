@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2.user;
 
+import alfio.controller.api.admin.PassedIdDoesNotExistException;
 import alfio.controller.api.support.AdditionalServiceWithData;
 import alfio.controller.api.support.BookingInfoTicketLoader;
 import alfio.controller.api.support.TicketHelper;
@@ -29,11 +30,14 @@ import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationCodeForm;
 import alfio.controller.support.CustomBindingResult;
+import alfio.controller.support.Formatters;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.payment.StripeCreditCardManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.support.AdditionalServiceHelper;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.response.ValidatedResponse;
@@ -58,12 +62,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -108,12 +115,14 @@ public class ReservationApiV2Controller {
     private final PurchaseContextManager purchaseContextManager;
     private final SubscriptionRepository subscriptionRepository;
     private final TicketRepository ticketRepository;
+    private final TransactionRepository transactionRepository;
     private final PublicUserManager publicUserManager;
     private final ReverseChargeManager reverseChargeManager;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final AdditionalServiceManager additionalServiceManager;
     private final AdditionalServiceHelper additionalServiceHelper;
     private final PurchaseContextFieldManager purchaseContextFieldManager;
+    private final CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -248,7 +257,7 @@ public class ReservationApiV2Controller {
         return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    private Map<PaymentMethod, PaymentProxyWithParameters> getActivePaymentMethods(PurchaseContext purchaseContext,
+    private Map<String, PaymentProxyWithParameters> getActivePaymentMethods(PurchaseContext purchaseContext,
                                                                                    Collection<Integer> categoryIds,
                                                                                    OrderSummary orderSummary,
                                                                                    String reservationId) {
@@ -256,9 +265,21 @@ public class ReservationApiV2Controller {
             var blacklistedMethodsForReservation = configurationManager.getBlacklistedMethodsForReservation(purchaseContext, categoryIds);
             return paymentManager.getPaymentMethods(purchaseContext, new TransactionRequest(orderSummary.getOriginalTotalPrice(), ticketReservationRepository.getBillingDetailsForReservation(reservationId)))
                 .stream()
-                .filter(p -> !blacklistedMethodsForReservation.contains(p.getPaymentMethod()))
-                .filter(p -> TicketReservationManager.isValidPaymentMethod(p, purchaseContext, configurationManager))
-                .collect(toMap(PaymentManager.PaymentMethodDTO::getPaymentMethod, pm -> new PaymentProxyWithParameters(pm.getPaymentProxy(), paymentManager.loadModelOptionsFor(List.of(pm.getPaymentProxy()), purchaseContext))));
+                .filter(p ->
+                    blacklistedMethodsForReservation
+                        .stream()
+                        .noneMatch(p2 -> p2.getPaymentMethodId().equals(p.getPaymentMethod().getPaymentMethodId()))
+                )
+                .filter(p -> ticketReservationManager.isValidPaymentMethod(p, purchaseContext))
+                .collect(
+                    toMap(
+                        PaymentManager.PaymentMethodDTO::getPaymentMethodId,
+                        pm -> new PaymentProxyWithParameters(
+                            pm.getPaymentProxy(),
+                            paymentManager.loadModelOptionsFor(List.of(pm.getPaymentProxy()), purchaseContext)
+                        )
+                    )
+                );
         } else {
             return Map.of();
         }
@@ -317,6 +338,14 @@ public class ReservationApiV2Controller {
                 bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
             }
 
+            if(
+                paymentForm.getPaymentProxy() == PaymentProxy.CUSTOM_OFFLINE
+                && event.event().isPresent()
+                && !isCustomPaymentMethodValidForEvent(event.event().get(), paymentForm.getSelectedPaymentMethod())
+            ) {
+                bindingResult.reject(ErrorsCode.STEP_2_MISSING_PAYMENT_METHOD);
+            }
+
             if(!bindingResult.hasErrors()) {
                 extensionManager.handleReservationValidation(event, reservation, paymentForm, bindingResult);
             }
@@ -334,9 +363,9 @@ public class ReservationApiV2Controller {
                 paymentToken = paymentManager.buildPaymentToken(paymentForm.getGatewayToken(), paymentForm.getPaymentProxy(),
                     new PaymentContext(event, reservationId));
             }
-            PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, reservationCost.getPriceWithVAT(),
-                event, reservation.getEmail(), customerName, reservation.getBillingAddress(), reservation.getCustomerReference(),
-                locale, reservation.isInvoiceRequested(), !reservation.isDirectAssignmentRequested(),
+            PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, paymentForm.getSelectedPaymentMethod(),
+                reservationCost.getPriceWithVAT(), event, reservation.getEmail(), customerName, reservation.getBillingAddress(),
+                reservation.getCustomerReference(), locale, reservation.isInvoiceRequested(), !reservation.isDirectAssignmentRequested(),
                 orderSummary, reservation.getVatCountryCode(), reservation.getVatNr(), reservation.getVatStatus(),
                 Boolean.TRUE.equals(paymentForm.getTermAndConditionsAccepted()), Boolean.TRUE.equals(paymentForm.getPrivacyPolicyAccepted()));
 
@@ -670,9 +699,8 @@ public class ReservationApiV2Controller {
     @GetMapping("/reservation/{reservationId}/payment/{method}/status")
     public ResponseEntity<ReservationPaymentResult> getTransactionStatus(
                                                               @PathVariable String reservationId,
-                                                              @PathVariable("method") String paymentMethodStr) {
+                                                              @PathVariable("method") PaymentMethod paymentMethod) {
 
-        var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
 
         if(paymentMethod == null) {
             return ResponseEntity.badRequest().build();
@@ -709,6 +737,100 @@ public class ReservationApiV2Controller {
         return ResponseEntity.ok(res);
     }
 
+    @GetMapping("/reservation/{reservationId}/applicable-custom-payment-method-details")
+    public ResponseEntity<List<UserDefinedOfflinePaymentMethod>> getApplicableCustomPaymentMethodDetails(@PathVariable String reservationId, Principal principal) throws PassedIdDoesNotExistException {
+        var reservation = ticketReservationManager
+            .findById(reservationId)
+            .orElseThrow(() -> new PassedIdDoesNotExistException("Passed reservationId does not exist."));
+
+        validateAccessToReservation(principal, reservation);
+
+        var event = eventRepository.findByReservationId(reservationId);
+        var allowedPaymentMethods = customOfflineConfigurationManager.getAllowedCustomOfflinePaymentMethodsForEvent(event);
+
+        allowedPaymentMethods
+            .forEach(paymentMethod ->
+            paymentMethod
+                .getLocalizations()
+                .forEach((key, locale) -> {
+                    Map<String, String> localeTexts = new HashMap<>();
+                    localeTexts.put("instructions", locale.paymentInstructions());
+                    localeTexts.put("description", locale.paymentDescription());
+                    localeTexts = Formatters.applyCommonMark(localeTexts);
+
+                    var updatedLocale = new UserDefinedOfflinePaymentMethod.Localization(
+                        locale.paymentName(),
+                        localeTexts.get("description"),
+                        localeTexts.get("instructions")
+                    );
+
+                    paymentMethod.getLocalizations().put(key, updatedLocale);
+                })
+        );
+
+        return ResponseEntity.ok(allowedPaymentMethods);
+    }
+
+    @GetMapping("/reservation/{reservationId}/selected-custom-payment-method-details")
+    public ResponseEntity<UserDefinedOfflinePaymentMethod> getSelectedCustomPaymentMethodDetails(@PathVariable String reservationId, Principal principal) throws PassedIdDoesNotExistException, CustomOfflinePaymentMethodDoesNotExistException {
+        var reservation = ticketReservationManager
+            .findById(reservationId)
+            .orElseThrow(() -> new PassedIdDoesNotExistException("Passed reservationId does not exist."));
+
+        validateAccessToReservation(principal, reservation);
+
+        var event = eventRepository.findByReservationId(reservationId);
+        var paymentMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(
+            event.getOrganizationId()
+        );
+
+        var maybeTransaction = transactionRepository.loadOptionalByReservationId(reservationId);
+        if(maybeTransaction.isEmpty()) {
+            throw new NoCustomPaymentTransactionForReservationException();
+        }
+        var transaction = maybeTransaction.get();
+        var paymentMethodId = transaction.getMetadata().get(Transaction.SELECTED_PAYMENT_METHOD_KEY);
+        UserDefinedOfflinePaymentMethod respPaymentMethod = paymentMethods
+            .stream()
+            .filter(pm -> pm.getPaymentMethodId().equals(paymentMethodId))
+            .findFirst()
+            .orElseThrow(() -> new CustomOfflinePaymentMethodDoesNotExistException(
+                "The payment method associated with your transaction does not exist."
+            ));
+
+        respPaymentMethod
+            .getLocalizations()
+            .forEach((key, locale) -> {
+                Map<String, String> localeTexts = new HashMap<>();
+                localeTexts.put("description", locale.paymentDescription());
+                localeTexts.put("instructions", locale.paymentInstructions());
+                localeTexts = Formatters.applyCommonMark(localeTexts);
+
+                var updatedLocale = new UserDefinedOfflinePaymentMethod.Localization(
+                    locale.paymentName(),
+                    localeTexts.get("description"),
+                    localeTexts.get("instructions")
+                );
+
+                respPaymentMethod.getLocalizations().put(key, updatedLocale);
+            });
+
+        return ResponseEntity.ok(respPaymentMethod);
+    }
+
+    @ExceptionHandler({
+        PassedIdDoesNotExistException.class,
+        CustomOfflinePaymentMethodDoesNotExistException.class
+    })
+    public ResponseEntity<String> handleResponseException(RuntimeException ex) {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .contentType(MediaType.TEXT_PLAIN)
+            .body(ex.getMessage());
+    }
+
+    @ResponseStatus(value=HttpStatus.BAD_REQUEST, reason="There is no transaction associated with the passed reservation.")
+    public class NoCustomPaymentTransactionForReservationException extends RuntimeException {}
 
     private Map<String, String> formatDateForLocales(PurchaseContext purchaseContext, ZonedDateTime date, String formattingCode) {
 
@@ -726,5 +848,12 @@ public class ReservationApiV2Controller {
         return (cost == 0 || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
             && configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(configurable.getConfigurationLevel())
             && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
+    }
+
+    private boolean isCustomPaymentMethodValidForEvent(Event event, PaymentMethod paymentMethod) {
+        var eventSelectedMethods = customOfflineConfigurationManager.getAllowedCustomOfflinePaymentMethodsForEvent(event);
+        return eventSelectedMethods
+            .stream()
+            .anyMatch(pm -> pm.getPaymentMethodId().equals(paymentMethod.getPaymentMethodId()));
     }
 }

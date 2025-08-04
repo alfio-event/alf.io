@@ -1,0 +1,47 @@
+<app-reservation>
+
+@if(purchaseContext && reservationInfo){
+    <div class="mb-2 mt-2 center-block">
+        <div class="alert alert-warning mt-2 mb-2 text-center">
+            @if(reservationFinalized){
+                <h2><fa-icon [icon]="['fas', 'exclamation-triangle']" a11yRole="presentation"></fa-icon>{{' '}}<span [innerHTML]="'reservation-page-waiting.title' | translate: {'0': reservationInfo.formattedExpirationDate[translate.currentLang]}"></span></h2>
+            } @else {
+                <h2 translate="reservation-page-complete.reservation.finalization-in-progress"></h2>
+            }
+        </div>
+
+        <div class="page-header">
+            <h2 translate="reservation-page.title"></h2>
+        </div>
+        <app-summary-table [purchaseContext]="purchaseContext" [reservationInfo]="reservationInfo"></app-summary-table>
+
+        @if(reservationFinalized){
+            <ng-container>
+                <h2>{{translatedLocalization?.paymentName}}</h2>
+                <div class="markdown-content" [innerHTML]="translatedLocalization?.paymentDescription"></div>
+                <h4 [innerHTML]="'invoice.payment-instruction'|translate"></h4>
+                <div class="markdown-content" [innerHTML]="translatedLocalization?.paymentInstructions"></div>
+            </ng-container>
+        }
+
+
+        <div class="text-center mt-5">
+            <h4 [innerHTML]="'reservation-page-waiting.questions' | translate: {'0': purchaseContext.organizationEmail, '1': reservationInfo.id}"></h4>
+        </div>
+
+        <div class="text-center text-body-secondary mt-5">{{'reservation-page-complete.order-information' | translate: {'0': reservationId, '1': reservationInfo.firstName + ' ' + reservationInfo.lastName} }}</div>
+        <hr>
+        <div class="row d-flex justify-content-between mobile-add-margin-bottom">
+            @if(invoiceAvailable) {
+                <div class="col-md-5 col-12 order-md-1">
+                    <a [href]="'/api/v2/public/' + purchaseContextType + '/' + publicIdentifier + '/reservation/' + reservationInfo.id + '/invoice'" class="btn btn-success block-button" target="_blank" translate="reservation-page-complete.download-your-invoice"></a>
+                </div>
+            }
+            @if(!purchaseContext.invoicingConfiguration.userCanDownloadReceiptOrInvoice) {
+                <div class="col-md-5 col-12 order-md-1 text-center"><p translate="reservation-page-waiting.invoice-will-be-sent"></p></div>
+            }
+            <div class="col-md-5 col-12 order-md-0"><a [href]="purchaseContext.websiteUrl" class="btn btn-light block-button" translate="to-event-site"></a></div>
+        </div>
+    </div>
+}
+</app-reservation>

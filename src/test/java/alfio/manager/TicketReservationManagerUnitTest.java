@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager;
 import alfio.manager.support.reservation.OrderSummaryGenerator;
 import alfio.manager.support.reservation.ReservationCostCalculator;
 import alfio.manager.support.reservation.ReservationEmailContentHelper;
@@ -166,7 +167,8 @@ class TicketReservationManagerUnitTest {
             reservationCostCalculator,
             mock(ReservationEmailContentHelper.class),
             mock(ReservationFinalizer.class),
-            mock(OrderSummaryGenerator.class));
+            mock(OrderSummaryGenerator.class),
+            mock(CustomOfflineConfigurationManager.class));
     }
 
     @Test

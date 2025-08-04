@@ -19,6 +19,9 @@ package alfio.manager;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
@@ -33,6 +36,7 @@ import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
+import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
@@ -86,6 +90,9 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private TicketCategoryRepository ticketCategoryRepository;
+
+    @Autowired
+    private CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     @BeforeEach
     public void prepareEnv() {
@@ -400,5 +407,39 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         deniedMethods = configurationManager.getBlacklistedMethodsForReservation(event, categories.stream().map(TicketCategory::getId).collect(Collectors.toList()));
         assertNotNull(deniedMethods);
         assertTrue(deniedMethods.isEmpty());
+    }
+
+    @Test
+    void testCustomOfflinePaymentMethodsReturnedInDeniedList() throws CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
+        var paymentMethods = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant bank transfer from any Canadian account.",
+                        "Send the payment to `payments@example.com`."
+                    )
+                )
+            )
+        );
+        for (var pm : paymentMethods) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(event.getOrganizationId(), pm);
+        }
+
+        var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+        customOfflineConfigurationManager.setDeniedPaymentMethodsByTicketCategory(
+            event,
+            categories.get(0),
+            paymentMethods
+        );
+
+        var deniedMethods = configurationManager.getBlacklistedMethodsForReservation(
+            event,
+            List.of(categories.get(0).getId())
+        );
+
+        assertNotNull(deniedMethods);
+        assertTrue(deniedMethods.stream().anyMatch(pm -> pm.getPaymentMethodId().equals(paymentMethods.get(0).getPaymentMethodId())));
     }
 }

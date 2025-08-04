@@ -27,14 +27,15 @@ public enum PaymentProxy {
 
     // TODO: remove this enum and move all his properties to the corresponding PaymentProvider implementations
 
-    STRIPE("stripe.com", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_STRIPE), true, Collections.emptySet(), PaymentMethod.CREDIT_CARD),
-    ON_SITE("on-site payment", true, true, Collections.emptySet(), false, Collections.emptySet(), PaymentMethod.ON_SITE),
-    OFFLINE("offline payment", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_OFFLINE), false, Collections.emptySet(), PaymentMethod.BANK_TRANSFER),
-    NONE("no payment required", false, false, Collections.emptySet(), false, Collections.emptySet(), PaymentMethod.NONE),
-    ADMIN("manual", false, false, Collections.emptySet(), false, Collections.emptySet(), PaymentMethod.NONE),
-    PAYPAL("paypal", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_PAYPAL), true, Collections.emptySet(), PaymentMethod.PAYPAL),
-    MOLLIE("mollie", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_MOLLIE), true, Collections.emptySet(), PaymentMethod.IDEAL),
-    SAFERPAY("saferpay", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_SAFERPAY), false, Collections.emptySet(), PaymentMethod.CREDIT_CARD);
+    STRIPE("stripe.com", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_STRIPE), true, Collections.emptySet(), StaticPaymentMethods.CREDIT_CARD),
+    ON_SITE("on-site payment", true, true, Collections.emptySet(), false, Collections.emptySet(), StaticPaymentMethods.ON_SITE),
+    OFFLINE("offline payment", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_OFFLINE), false, Collections.emptySet(), StaticPaymentMethods.BANK_TRANSFER),
+    NONE("no payment required", false, false, Collections.emptySet(), false, Collections.emptySet(), StaticPaymentMethods.NONE),
+    ADMIN("manual", false, false, Collections.emptySet(), false, Collections.emptySet(), StaticPaymentMethods.NONE),
+    PAYPAL("paypal", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_PAYPAL), true, Collections.emptySet(), StaticPaymentMethods.PAYPAL),
+    MOLLIE("mollie", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_MOLLIE), true, Collections.emptySet(), StaticPaymentMethods.IDEAL),
+    SAFERPAY("saferpay", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_SAFERPAY), false, Collections.emptySet(), StaticPaymentMethods.CREDIT_CARD),
+    CUSTOM_OFFLINE("Custom Offline", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_OFFLINE), false, Collections.emptySet(), StaticPaymentMethods.NONE);
 
     private final String description;
     private final boolean deskPayment;
