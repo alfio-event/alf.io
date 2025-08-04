@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /event/*/reservation/*
+Disallow: /event/*/ticket/*
+Disallow: /subscription/*/reservation/*
+Disallow: /event/*/poll
+Disallow: /event/*/poll/*
+Disallow: /my-orders
+Disallow: /my-profile
