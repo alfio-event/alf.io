@@ -44,9 +44,6 @@ public interface PromoCodeDiscountRepository {
     @Query("select * from promo_code where id = :id")
     Optional<PromoCodeDiscount> findOptionalById(@Bind("id") int id);
 
-    @Query("select exists (select 1 from promo_code where id = :id and organization_id_fk = :orgId and (:eventId is null or event_id_fk = :eventId)")
-    Boolean checkPromoCodeExists(@Bind("id") int id, @Bind("orgId") int organizationId, @Bind("eventId") Integer eventId);
-
     @Query("""
         insert into promo_code(promo_code, event_id_fk, organization_id_fk, valid_from, valid_to, discount_amount, discount_type, categories, max_usage, description, email_reference, code_type, hidden_category_id, currency_code) \
          values (:promoCode, :eventId, :organizationId, :start, :end, :discountAmount, :discountType, :categories, :maxUsage, :description, :emailReference, :codeType, :hiddenCategoryId, :currencyCode)\

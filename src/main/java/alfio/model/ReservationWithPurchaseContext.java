@@ -20,8 +20,9 @@ import alfio.model.support.JSONData;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -123,12 +124,23 @@ public class ReservationWithPurchaseContext implements PriceContainer {
         return centsToUnit(discountCts, currencyCode);
     }
 
-    @AllArgsConstructor
+
     @Getter
     public static class PurchaseContextItem {
         private final String id;
         private final String firstName;
         private final String lastName;
         private final Map<String, String> type;
+
+        @JsonCreator
+        public PurchaseContextItem(@JsonProperty("id") String id,
+                                   @JsonProperty("firstName") String firstName,
+                                   @JsonProperty("lastName") String lastName,
+                                   @JsonProperty("type") Map<String, String> type) {
+            this.id = id;
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.type = type;
+        }
     }
 }

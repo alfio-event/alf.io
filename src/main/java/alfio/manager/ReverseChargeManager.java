@@ -26,7 +26,6 @@ import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.extension.CustomTaxPolicy;
 import alfio.repository.*;
 import alfio.util.MonetaryUtil;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +49,6 @@ import static alfio.util.MonetaryUtil.unitToCents;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
-@AllArgsConstructor
 @Component
 public class ReverseChargeManager {
 
@@ -68,7 +66,20 @@ public class ReverseChargeManager {
     private final SubscriptionRepository subscriptionRepository;
     private final AuditingRepository auditingRepository;
 
-
+    public ReverseChargeManager(PromoCodeDiscountRepository promoCodeDiscountRepository, AdditionalServiceItemRepository additionalServiceItemRepository, AdditionalServiceRepository additionalServiceRepository, TicketCategoryRepository ticketCategoryRepository, NamedParameterJdbcTemplate jdbcTemplate, ConfigurationManager configurationManager, TicketReservationRepository ticketReservationRepository, EuVatChecker vatChecker, TicketReservationManager ticketReservationManager, TicketRepository ticketRepository, SubscriptionRepository subscriptionRepository, AuditingRepository auditingRepository) {
+        this.promoCodeDiscountRepository = promoCodeDiscountRepository;
+        this.additionalServiceItemRepository = additionalServiceItemRepository;
+        this.additionalServiceRepository = additionalServiceRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.jdbcTemplate = jdbcTemplate;
+        this.configurationManager = configurationManager;
+        this.ticketReservationRepository = ticketReservationRepository;
+        this.vatChecker = vatChecker;
+        this.ticketReservationManager = ticketReservationManager;
+        this.ticketRepository = ticketRepository;
+        this.subscriptionRepository = subscriptionRepository;
+        this.auditingRepository = auditingRepository;
+    }
 
 
     public void checkAndApplyVATRules(PurchaseContext purchaseContext,

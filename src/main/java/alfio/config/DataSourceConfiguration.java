@@ -314,12 +314,11 @@ public class DataSourceConfiguration {
     @Profile(Initializer.PROFILE_DEMO)
     DemoModeDataManager demoModeDataManager(UserRepository userRepository,
                                             UserOrganizationRepository userOrganizationRepository,
-                                            OrganizationRepository organizationRepository,
                                             EventDeleterRepository eventDeleterRepository,
                                             EventRepository eventRepository,
                                             ConfigurationManager configurationManager,
                                             OrganizationDeleterRepository organizationDeleterRepository) {
-        return new DemoModeDataManager(userRepository, userOrganizationRepository, organizationRepository,
+        return new DemoModeDataManager(userRepository, userOrganizationRepository,
             eventDeleterRepository, eventRepository, configurationManager, organizationDeleterRepository);
     }
 

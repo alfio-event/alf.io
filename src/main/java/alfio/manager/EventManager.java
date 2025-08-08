@@ -49,7 +49,6 @@ import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import alfio.util.RequestUtils;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
-import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -95,7 +94,6 @@ import static java.util.stream.Collectors.*;
 
 @Component
 @Transactional
-@AllArgsConstructor
 public class EventManager {
 
     private static final Logger log = LoggerFactory.getLogger(EventManager.class);
@@ -125,6 +123,32 @@ public class EventManager {
     private final SubscriptionRepository subscriptionRepository;
     private final AdditionalServiceManager additionalServiceManager;
 
+    public EventManager(UserManager userManager, EventRepository eventRepository, EventDescriptionRepository eventDescriptionRepository, TicketCategoryRepository ticketCategoryRepository, TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository, TicketRepository ticketRepository, SpecialPriceRepository specialPriceRepository, PromoCodeDiscountRepository promoCodeRepository, ConfigurationManager configurationManager, EventDeleterRepository eventDeleterRepository, PurchaseContextFieldManager purchaseContextFieldManager, Flyway flyway, Environment environment, OrganizationRepository organizationRepository, AuditingRepository auditingRepository, ExtensionManager extensionManager, GroupRepository groupRepository, NamedParameterJdbcTemplate jdbcTemplate, ConfigurationRepository configurationRepository, PaymentManager paymentManager, ClockProvider clockProvider, SubscriptionRepository subscriptionRepository, AdditionalServiceManager additionalServiceManager) {
+        this.userManager = userManager;
+        this.eventRepository = eventRepository;
+        this.eventDescriptionRepository = eventDescriptionRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
+        this.ticketRepository = ticketRepository;
+        this.specialPriceRepository = specialPriceRepository;
+        this.promoCodeRepository = promoCodeRepository;
+        this.configurationManager = configurationManager;
+        this.eventDeleterRepository = eventDeleterRepository;
+        this.purchaseContextFieldManager = purchaseContextFieldManager;
+        this.flyway = flyway;
+        this.environment = environment;
+        this.organizationRepository = organizationRepository;
+        this.auditingRepository = auditingRepository;
+        this.extensionManager = extensionManager;
+        this.groupRepository = groupRepository;
+        this.jdbcTemplate = jdbcTemplate;
+        this.configurationRepository = configurationRepository;
+        this.paymentManager = paymentManager;
+        this.clockProvider = clockProvider;
+        this.subscriptionRepository = subscriptionRepository;
+        this.additionalServiceManager = additionalServiceManager;
+    }
+
 
     public Event getSingleEvent(String eventName, String username) {
         return getOptionalByName(eventName, username).orElseThrow(IllegalStateException::new);
@@ -134,10 +158,6 @@ public class EventManager {
         return getOptionalEventAndOrganizationIdByName(eventName, username).orElseThrow(IllegalStateException::new);
     }
 
-    public List<Integer> getEventIdsBySlug(List<String> eventSlugs, int organizationId) {
-        return eventRepository.findIdsByShortNames(eventSlugs, organizationId);
-    }
-
     public Optional<Event> getOptionalByName(String eventName, String username) {
         return eventRepository.findOptionalByShortName(eventName)
             .filter(checkOwnership(username, organizationRepository));
@@ -145,11 +165,6 @@ public class EventManager {
 
     public Optional<EventAndOrganizationId> getOptionalEventAndOrganizationIdByName(String eventName, String username) {
         return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
-            .filter(checkOwnership(username, organizationRepository));
-    }
-
-    public Optional<EventAndOrganizationId> getOptionalEventIdAndOrganizationIdById(int eventId, String username) {
-        return eventRepository.findOptionalEventAndOrganizationIdById(eventId)
             .filter(checkOwnership(username, organizationRepository));
     }
 

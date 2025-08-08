@@ -17,10 +17,9 @@
 package alfio.controller.api.v2.model;
 
 import alfio.model.PromoCodeDiscount;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-@AllArgsConstructor
+
 @Getter
 public class EventCode {
 
@@ -28,6 +27,13 @@ public class EventCode {
     private final EventCodeType type;
     private final PromoCodeDiscount.DiscountType discountType;
     private final String discountAmount;
+
+    public EventCode(String code, EventCodeType type, PromoCodeDiscount.DiscountType discountType, String discountAmount) {
+        this.code = code;
+        this.type = type;
+        this.discountType = discountType;
+        this.discountAmount = discountAmount;
+    }
 
     public enum EventCodeType {
         @Deprecated SPECIAL_PRICE, DISCOUNT, ACCESS

@@ -40,7 +40,6 @@ import alfio.util.ImageUtil;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
@@ -69,7 +68,6 @@ import static alfio.util.EventUtil.firstMatchingCallLink;
 import static alfio.util.ExportUtils.markAsNoIndex;
 
 @RestController
-@AllArgsConstructor
 public class TicketApiV2Controller {
 
     private final TicketHelper ticketHelper;
@@ -86,6 +84,23 @@ public class TicketApiV2Controller {
     private final SubscriptionManager subscriptionManager;
     private final ConfigurationManager configurationManager;
     private final AdditionalServiceHelper additionalServiceHelper;
+
+    public TicketApiV2Controller(TicketHelper ticketHelper, TicketReservationManager ticketReservationManager, TicketCategoryRepository ticketCategoryRepository, MessageSourceManager messageSourceManager, ExtensionManager extensionManager, FileUploadManager fileUploadManager, OrganizationRepository organizationRepository, TemplateManager templateManager, NotificationManager notificationManager, BookingInfoTicketLoader bookingInfoTicketLoader, TicketRepository ticketRepository, SubscriptionManager subscriptionManager, ConfigurationManager configurationManager, AdditionalServiceHelper additionalServiceHelper) {
+        this.ticketHelper = ticketHelper;
+        this.ticketReservationManager = ticketReservationManager;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.messageSourceManager = messageSourceManager;
+        this.extensionManager = extensionManager;
+        this.fileUploadManager = fileUploadManager;
+        this.organizationRepository = organizationRepository;
+        this.templateManager = templateManager;
+        this.notificationManager = notificationManager;
+        this.bookingInfoTicketLoader = bookingInfoTicketLoader;
+        this.ticketRepository = ticketRepository;
+        this.subscriptionManager = subscriptionManager;
+        this.configurationManager = configurationManager;
+        this.additionalServiceHelper = additionalServiceHelper;
+    }
 
 
     @GetMapping(value = {

@@ -32,7 +32,6 @@ import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import com.samskivert.mustache.MustacheException;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
@@ -57,7 +56,6 @@ import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/admin/api")
-@AllArgsConstructor
 public class ResourceController {
 
     private static final Logger log = LoggerFactory.getLogger(ResourceController.class);
@@ -72,6 +70,19 @@ public class ResourceController {
     private final ClockProvider clockProvider;
     private final SubscriptionManager subscriptionManager;
     private final AccessService accessService;
+
+    public ResourceController(UploadedResourceManager uploadedResourceManager, EventRepository eventRepository, MessageSourceManager messageSourceManager, TemplateManager templateManager, OrganizationRepository organizationRepository, FileUploadManager fileUploadManager, ExtensionManager extensionManager, ClockProvider clockProvider, SubscriptionManager subscriptionManager, AccessService accessService) {
+        this.uploadedResourceManager = uploadedResourceManager;
+        this.eventRepository = eventRepository;
+        this.messageSourceManager = messageSourceManager;
+        this.templateManager = templateManager;
+        this.organizationRepository = organizationRepository;
+        this.fileUploadManager = fileUploadManager;
+        this.extensionManager = extensionManager;
+        this.clockProvider = clockProvider;
+        this.subscriptionManager = subscriptionManager;
+        this.accessService = accessService;
+    }
 
 
     @ExceptionHandler(Exception.class)

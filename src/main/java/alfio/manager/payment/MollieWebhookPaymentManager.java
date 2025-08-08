@@ -41,7 +41,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -70,7 +69,6 @@ import static alfio.util.MonetaryUtil.formatCents;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Component
-@AllArgsConstructor
 public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHandler, RefundRequest, PaymentInfo {
 
     private static final Logger log = LoggerFactory.getLogger(MollieWebhookPaymentManager.class);
@@ -122,6 +120,17 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
     private final MollieConnectManager mollieConnectManager;
     private final ClockProvider clockProvider;
     private final PurchaseContextManager purchaseContextManager;
+
+    public MollieWebhookPaymentManager(HttpClient client, ConfigurationManager configurationManager, TicketReservationRepository ticketReservationRepository, TicketRepository ticketRepository, TransactionRepository transactionRepository, MollieConnectManager mollieConnectManager, ClockProvider clockProvider, PurchaseContextManager purchaseContextManager) {
+        this.client = client;
+        this.configurationManager = configurationManager;
+        this.ticketReservationRepository = ticketReservationRepository;
+        this.ticketRepository = ticketRepository;
+        this.transactionRepository = transactionRepository;
+        this.mollieConnectManager = mollieConnectManager;
+        this.clockProvider = clockProvider;
+        this.purchaseContextManager = purchaseContextManager;
+    }
 
     private HttpRequest.Builder requestFor(String url, Map<ConfigurationKeys, MaybeConfiguration> configuration, ConfigurationLevel configurationLevel) {
         // check if platform mode is active
@@ -617,9 +626,13 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         private final String currency;
     }
 
-    @AllArgsConstructor
+
     private static class MolliePaymentDetails {
         private final JsonObject body;
+
+        private MolliePaymentDetails(JsonObject body) {
+            this.body = body;
+        }
 
         String getReservationId() {
             return Objects.requireNonNull(body.getAsJsonObject("metadata").get(MetadataBuilder.RESERVATION_ID), "reservation id")

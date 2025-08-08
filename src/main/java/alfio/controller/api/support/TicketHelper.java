@@ -31,7 +31,6 @@ import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import alfio.util.Validator.AdvancedTicketAssignmentValidator;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -50,7 +49,6 @@ import static alfio.model.PurchaseContextFieldConfiguration.Context.ATTENDEE;
 import static java.util.Objects.requireNonNullElse;
 
 @Component
-@AllArgsConstructor
 public class TicketHelper {
 
     private static final Set<TicketReservation.TicketReservationStatus> PENDING_RESERVATION_STATUSES = EnumSet.of(TicketReservation.TicketReservationStatus.PENDING, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
@@ -66,6 +64,20 @@ public class TicketHelper {
     private final GroupManager groupManager;
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
+
+    public TicketHelper(TicketReservationManager ticketReservationManager, OrganizationRepository organizationRepository, TicketRepository ticketRepository, TemplateManager templateManager, PurchaseContextFieldRepository purchaseContextFieldRepository, PurchaseContextFieldManager purchaseContextFieldManager, AdditionalServiceItemRepository additionalServiceItemRepository, EuVatChecker vatChecker, GroupManager groupManager, ConfigurationManager configurationManager, ExtensionManager extensionManager) {
+        this.ticketReservationManager = ticketReservationManager;
+        this.organizationRepository = organizationRepository;
+        this.ticketRepository = ticketRepository;
+        this.templateManager = templateManager;
+        this.purchaseContextFieldRepository = purchaseContextFieldRepository;
+        this.purchaseContextFieldManager = purchaseContextFieldManager;
+        this.additionalServiceItemRepository = additionalServiceItemRepository;
+        this.vatChecker = vatChecker;
+        this.groupManager = groupManager;
+        this.configurationManager = configurationManager;
+        this.extensionManager = extensionManager;
+    }
 
 
     public BiFunction<Ticket, Event, List<FieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction(boolean formatValues) {

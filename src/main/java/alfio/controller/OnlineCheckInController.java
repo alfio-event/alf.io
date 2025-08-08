@@ -19,7 +19,6 @@ package alfio.controller;
 import alfio.manager.CheckInManager;
 import alfio.manager.ExtensionManager;
 import alfio.manager.TicketReservationManager;
-import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,13 +36,18 @@ import static alfio.manager.support.CheckInStatus.SUCCESS;
 import static alfio.util.EventUtil.findMatchingLink;
 
 @Controller
-@AllArgsConstructor
 public class OnlineCheckInController {
 
     private static final Logger log = LoggerFactory.getLogger(OnlineCheckInController.class);
     private final TicketReservationManager ticketReservationManager;
     private final CheckInManager checkInManager;
     private final ExtensionManager extensionManager;
+
+    public OnlineCheckInController(TicketReservationManager ticketReservationManager, CheckInManager checkInManager, ExtensionManager extensionManager) {
+        this.ticketReservationManager = ticketReservationManager;
+        this.checkInManager = checkInManager;
+        this.extensionManager = extensionManager;
+    }
 
     @GetMapping("/event/{shortName}/ticket/{publicUUID}/check-in/{ticketCodeHash}")
     public String performCheckIn(@PathVariable("shortName") String eventShortName,
