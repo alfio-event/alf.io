@@ -22,6 +22,9 @@ import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
 import alfio.manager.AdminReservationRequestManager;
 import alfio.manager.EventManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
@@ -29,12 +32,11 @@ import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
+import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.repository.EventDeleterRepository;
 import alfio.repository.EventRepository;
-import alfio.repository.PromoCodeDiscountRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
-import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.toolkit.PromoCodeDiscountIntegrationTestingToolkit;
@@ -59,6 +61,7 @@ import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static alfio.controller.api.admin.EventApiController.FIXED_FIELDS;
 import static alfio.test.toolkit.PromoCodeDiscountIntegrationTestingToolkit.TEST_PROMO_CODE;
@@ -100,11 +103,9 @@ class EventApiControllerIntegrationTest {
     @Autowired
     private TicketRepository ticketRepository;
     @Autowired
-    private PromoCodeDiscountRepository promoCodeDiscountRepository;
-    @Autowired
-    private TicketReservationRepository ticketReservationRepository;
-    @Autowired
     private PromoCodeDiscountIntegrationTestingToolkit promoCodeDiscountIntegrationTestingToolkit;
+    @Autowired
+    private CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     private Event event;
     private static final String TEST_ATTENDEE_EXTERNAL_REFERENCE = "123";
@@ -194,6 +195,122 @@ class EventApiControllerIntegrationTest {
         String returnedCsvContent = mockResponse.getContentAsString().trim().replace("\uFEFF", ""); // remove BOM
         assertTrue(returnedCsvContent.startsWith(getExpectedHeaderCsvLine() + "\n" + expectedTestAttendeeCsvLine));
         assertTrue(returnedCsvContent.endsWith("\"Billing Address\",,"+TEST_PROMO_CODE+",,," + TEST_ATTENDEE_EXTERNAL_REFERENCE));
+    }
+
+    @Test
+    void testCanGetDeniedCustomPaymentMethods() throws CustomOfflinePaymentMethodAlreadyExistsException, PassedIdDoesNotExistException, CustomOfflinePaymentMethodDoesNotExistException {
+        var eventAndUser = createEvent(Event.EventFormat.ONLINE);
+        event = eventAndUser.getKey();
+        var principal = Mockito.mock(Authentication.class);
+        when(principal.getName()).thenReturn(owner(eventAndUser.getValue()));
+        var organizationId = organizationRepository.findAllForUser(eventAndUser.getRight()).get(0).getId();
+        var ticketCategoryList = this.ticketCategoryRepository.findAllTicketCategories(event.getId());
+
+        assertEquals(1, ticketCategoryList.size());
+
+        var ticketCategory = ticketCategoryList.get(0);
+
+        var paymentMethods = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant bank transfer from any Canadian account.",
+                        "Send the payment to `payments@example.com`."
+                    )
+                )
+            ),
+            new UserDefinedOfflinePaymentMethod(
+                "ec6c5268-4122-4b27-98ee-fa070df11c5b",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Venmo",
+                        "Instant money transfers via the Venmo app.",
+                        "Send the payment to user `exampleco` on Venmo."
+                    )
+                )
+            )
+        );
+
+        for(var pm : paymentMethods) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(organizationId, pm);
+        }
+        customOfflineConfigurationManager.setDeniedPaymentMethodsByTicketCategory(
+            event,
+            ticketCategory,
+            List.of(paymentMethods.get(0))
+        );
+
+        var response = eventApiController.getDeniedCustomPaymentMethods(
+            event.getId(),
+            ticketCategory.getId(),
+            principal
+        );
+
+        var deniedMethodIds = response.getBody();
+
+        assertEquals(1, deniedMethodIds.size());
+        assertTrue(deniedMethodIds.stream().allMatch(blItem ->
+            paymentMethods.stream().anyMatch(pmItem -> blItem.equals(pmItem.getPaymentMethodId())))
+        );
+    }
+
+    @Test
+    void testCanSetDeniedCustomPaymentMethods() throws PassedIdDoesNotExistException, CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
+        var eventAndUser = createEvent(Event.EventFormat.ONLINE);
+        event = eventAndUser.getKey();
+        var principal = Mockito.mock(Authentication.class);
+        when(principal.getName()).thenReturn(owner(eventAndUser.getValue()));
+        var ticketCategoryList = this.ticketCategoryRepository.findAllTicketCategories(event.getId());
+
+        assertEquals(1, ticketCategoryList.size());
+
+        var ticketCategory = ticketCategoryList.get(0);
+
+        var paymentMethods = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant bank transfer from any Canadian account.",
+                        "Send the payment to `payments@example.com`."
+                    )
+                )
+            ),
+            new UserDefinedOfflinePaymentMethod(
+                "ec6c5268-4122-4b27-98ee-fa070df11c5b",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Venmo",
+                        "Instant money transfers via the Venmo app.",
+                        "Send the payment to user `exampleco` on Venmo."
+                    )
+                )
+            )
+        );
+
+        for(var pm : paymentMethods) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(event.getOrganizationId(), pm);
+        }
+
+        eventApiController.setDeniedCustomPaymentMethods(
+            event.getId(),
+            ticketCategory.getId(),
+            List.of(paymentMethods.get(0).getPaymentMethodId()),
+            principal
+        );
+
+        var storedDeniedPaymentMethods = customOfflineConfigurationManager.getDeniedPaymentMethodsByTicketCategory(
+            event,
+            ticketCategory
+        );
+        assertEquals(1, storedDeniedPaymentMethods.size());
+
+        assertTrue(storedDeniedPaymentMethods.stream().allMatch(
+            blItem -> paymentMethods.stream().anyMatch(pmItem -> blItem.getPaymentMethodId().equals(pmItem.getPaymentMethodId())))
+        );
     }
 
     private AdminReservationModification getTestAdminReservationModification() {

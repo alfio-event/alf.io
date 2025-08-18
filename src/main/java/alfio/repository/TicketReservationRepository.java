@@ -93,11 +93,17 @@ public interface TicketReservationRepository {
                                 @Bind("customerReference") String customerReference);
 
     @Query("""
-        update tickets_reservation set validity = :validity, status = :status, payment_method = 'OFFLINE', full_name = :fullName, first_name = :firstName,\
+        update tickets_reservation set validity = :validity, status = :status, payment_method = :paymentProxyName, full_name = :fullName, first_name = :firstName,\
          last_name = :lastName, email_address = :email, billing_address = :billingAddress, customer_reference = :customerReference where id = :reservationId\
         """)
-    int postponePayment(@Bind("reservationId") String reservationId, @Bind("status") TicketReservation.TicketReservationStatus status, @Bind("validity") Date validity, @Bind("email") String email,
-                        @Bind("fullName") String fullName, @Bind("firstName") String firstName, @Bind("lastName") String lastName,
+    int postponePayment(@Bind("reservationId") String reservationId,
+                        @Bind("status") TicketReservation.TicketReservationStatus status,
+                        @Bind("paymentProxyName") String paymentProxyName,
+                        @Bind("validity") Date validity,
+                        @Bind("email") String email,
+                        @Bind("fullName") String fullName,
+                        @Bind("firstName") String firstName,
+                        @Bind("lastName") String lastName,
                         @Bind("billingAddress") String billingAddress,
                         @Bind("customerReference") String customerReference);
 
@@ -107,7 +113,7 @@ public interface TicketReservationRepository {
     @Query("update tickets_reservation set full_name = :fullName where id = :reservationId")
     int updateAssignee(@Bind("reservationId") String reservationId, @Bind("fullName") String fullName);
 
-    @Query("select count(id) from tickets_reservation where status in('OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT') and event_id_fk = :eventId")
+    @Query("select count(id) from tickets_reservation where status in('OFFLINE_PAYMENT', 'CUSTOM_OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT') and event_id_fk = :eventId")
     Integer findAllReservationsWaitingForPaymentCountInEventId(@Bind("eventId") int eventId);
 
     @Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and offline_payment_reminder_sent = false for update skip locked")

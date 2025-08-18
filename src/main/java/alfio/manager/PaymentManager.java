@@ -125,9 +125,11 @@ public class PaymentManager {
 
     private List<PaymentMethodDTO> getPaymentMethods(PaymentContext context, TransactionRequest transactionRequest) {
         String blacklist = configurationManager.getFor(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST, context.getConfigurationLevel()).getValueOrDefault("");
+        var blacklistItems = List.of(blacklist.split(","));
         var proxies = Optional.ofNullable(context.getPurchaseContext()).map(PurchaseContext::getAllowedPaymentProxies).orElseGet(PaymentProxy::availableProxies);
+
         return proxies.stream()
-            .filter(p -> !blacklist.contains(p.getKey()))
+            .filter(p -> blacklistItems.stream().noneMatch(blItem -> p.getKey().equals(blItem)))
             .map(proxy -> Pair.of(proxy, paymentMethodsByProxy(context, transactionRequest, proxy)))
             .flatMap(pair -> pair.getRight().stream().map(pm -> new PaymentMethodDTO(pair.getLeft(), pm, PaymentMethodDTO.PaymentMethodStatus.ACTIVE)))
             .collect(Collectors.toList());
@@ -256,7 +258,14 @@ public class PaymentManager {
 
     public Optional<PaymentResult> getTransactionStatus(TicketReservation reservation, PaymentMethod paymentMethod) {
         return transactionRepository.loadOptionalByReservationId(reservation.getId())
-            .filter(transaction -> transaction.getPaymentProxy().getPaymentMethod() == paymentMethod)
+            .filter(transaction -> {
+                var metadata = transaction.getMetadata();
+                if (metadata.containsKey(Transaction.SELECTED_PAYMENT_METHOD_KEY)) {
+                    return metadata.get(Transaction.SELECTED_PAYMENT_METHOD_KEY).equals(paymentMethod.getPaymentMethodId());
+                }
+
+                return transaction.getPaymentProxy().getPaymentMethod() == paymentMethod;
+            })
             .map(transaction ->
                 switch (transaction.getStatus()) {
                     case COMPLETE -> PaymentResult.successful(transaction.getPaymentId());
@@ -312,6 +321,10 @@ public class PaymentManager {
 
         public PaymentMethod getPaymentMethod() {
             return paymentMethod;
+        }
+
+        public String getPaymentMethodId() {
+            return paymentMethod.getPaymentMethodId();
         }
     }
 }
