@@ -18,7 +18,6 @@ package alfio.model.api.v1.admin;
 
 import alfio.model.modification.AdditionalFieldRequest;
 import alfio.model.modification.EventModification;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -35,17 +34,27 @@ import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
 @Getter
-@AllArgsConstructor
 public class AdditionalInfoRequest {
 
-    private Integer ordinal;
-    private String name;
-    private AdditionalInfoType type;
-    private Boolean required;
-    private List<DescriptionRequest> label;
-    private List<DescriptionRequest> placeholder;
-    private List<RestrictedValueRequest> restrictedValues;
-    private ContentLengthRequest contentLength;
+    private final Integer ordinal;
+    private final String name;
+    private final AdditionalInfoType type;
+    private final Boolean required;
+    private final List<DescriptionRequest> label;
+    private final List<DescriptionRequest> placeholder;
+    private final List<RestrictedValueRequest> restrictedValues;
+    private final ContentLengthRequest contentLength;
+
+    public AdditionalInfoRequest(Integer ordinal, String name, AdditionalInfoType type, Boolean required, List<DescriptionRequest> label, List<DescriptionRequest> placeholder, List<RestrictedValueRequest> restrictedValues, ContentLengthRequest contentLength) {
+        this.ordinal = ordinal;
+        this.name = name;
+        this.type = type;
+        this.required = required;
+        this.label = label;
+        this.placeholder = placeholder;
+        this.restrictedValues = restrictedValues;
+        this.contentLength = contentLength;
+    }
 
     public boolean isValid() {
         return StringUtils.isNotBlank(name)
@@ -101,7 +110,7 @@ public class AdditionalInfoRequest {
             }).collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
     }
 
-    @Getter
+
     public enum AdditionalInfoType {
 
         GENERIC_TEXT("input:text"),
@@ -120,24 +129,35 @@ public class AdditionalInfoRequest {
             this.code = code;
         }
 
+        public String getCode() {
+            return code;
+        }
     }
 
     public static final Set<String> WITH_RESTRICTED_VALUES = Set.of(AdditionalInfoType.LIST_BOX.code, AdditionalInfoType.CHECKBOX.code, AdditionalInfoType.RADIO.code);
 
     @Getter
-    @AllArgsConstructor
     public static class ContentLengthRequest {
-        private Integer min;
-        private Integer max;
+        private final Integer min;
+        private final Integer max;
+
+        public ContentLengthRequest(Integer min, Integer max) {
+            this.min = min;
+            this.max = max;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class RestrictedValueRequest {
 
-        private String value;
-        private Boolean enabled;
-        private List<DescriptionRequest> descriptions;
+        private final String value;
+        private final Boolean enabled;
+        private final List<DescriptionRequest> descriptions;
 
+        public RestrictedValueRequest(String value, Boolean enabled, List<DescriptionRequest> descriptions) {
+            this.value = value;
+            this.enabled = enabled;
+            this.descriptions = descriptions;
+        }
     }
 }

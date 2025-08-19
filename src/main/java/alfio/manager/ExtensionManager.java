@@ -47,7 +47,6 @@ import alfio.repository.*;
 import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
-import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -70,7 +69,6 @@ import static alfio.model.PromoCodeDiscount.DiscountType.PERCENTAGE;
 import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
-@AllArgsConstructor
 public class ExtensionManager {
 
     private static final Logger log = LoggerFactory.getLogger(ExtensionManager.class);
@@ -95,6 +93,16 @@ public class ExtensionManager {
     private final ConfigurationManager configurationManager;
     private final TransactionRepository transactionRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
+
+    public ExtensionManager(ExtensionService extensionService, EventRepository eventRepository, TicketReservationRepository ticketReservationRepository, TicketRepository ticketRepository, ConfigurationManager configurationManager, TransactionRepository transactionRepository, TicketCategoryRepository ticketCategoryRepository) {
+        this.extensionService = extensionService;
+        this.eventRepository = eventRepository;
+        this.ticketReservationRepository = ticketReservationRepository;
+        this.ticketRepository = ticketRepository;
+        this.configurationManager = configurationManager;
+        this.transactionRepository = transactionRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+    }
 
 
     boolean isSupported(ExtensionCapability extensionCapability, PurchaseContext purchaseContext) {

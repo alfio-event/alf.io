@@ -30,7 +30,6 @@ import alfio.repository.WaitingQueueRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -49,7 +48,6 @@ import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.EventUtil.determineAvailableSeats;
 
 @Component
-@AllArgsConstructor
 public class WaitingQueueManager {
 
     private static final Logger log = LoggerFactory.getLogger(WaitingQueueManager.class);
@@ -65,6 +63,21 @@ public class WaitingQueueManager {
     private final EventRepository eventRepository;
     private final ExtensionManager extensionManager;
     private final ClockProvider clockProvider;
+
+    public WaitingQueueManager(WaitingQueueRepository waitingQueueRepository, TicketRepository ticketRepository, TicketCategoryRepository ticketCategoryRepository, ConfigurationManager configurationManager, EventStatisticsManager eventStatisticsManager, NotificationManager notificationManager, TemplateManager templateManager, MessageSourceManager messageSourceManager, OrganizationRepository organizationRepository, EventRepository eventRepository, ExtensionManager extensionManager, ClockProvider clockProvider) {
+        this.waitingQueueRepository = waitingQueueRepository;
+        this.ticketRepository = ticketRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.configurationManager = configurationManager;
+        this.eventStatisticsManager = eventStatisticsManager;
+        this.notificationManager = notificationManager;
+        this.templateManager = templateManager;
+        this.messageSourceManager = messageSourceManager;
+        this.organizationRepository = organizationRepository;
+        this.eventRepository = eventRepository;
+        this.extensionManager = extensionManager;
+        this.clockProvider = clockProvider;
+    }
 
     public boolean subscribe(Event event, CustomerName customerName, String email, Integer selectedCategoryId, Locale userLanguage) {
         try {

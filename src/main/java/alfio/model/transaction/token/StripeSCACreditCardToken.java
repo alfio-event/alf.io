@@ -20,9 +20,8 @@ import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.TransactionInitializationToken;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
 
-@AllArgsConstructor
+
 public class StripeSCACreditCardToken implements TransactionInitializationToken {
 
     @JsonIgnore
@@ -30,6 +29,12 @@ public class StripeSCACreditCardToken implements TransactionInitializationToken 
     @JsonIgnore
     private final String chargeId;
     private final String clientSecret;
+
+    public StripeSCACreditCardToken(String paymentIntentId, String chargeId, String clientSecret) {
+        this.paymentIntentId = paymentIntentId;
+        this.chargeId = chargeId;
+        this.clientSecret = clientSecret;
+    }
 
     @Override
     public String getToken() {

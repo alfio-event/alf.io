@@ -34,7 +34,6 @@ import alfio.util.ClockProvider;
 import alfio.util.MonetaryUtil;
 import alfio.util.ReservationUtil;
 import jakarta.servlet.http.HttpSession;
-import lombok.AllArgsConstructor;
 import org.joda.money.CurrencyUnit;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
@@ -53,17 +52,24 @@ import static java.util.stream.Collectors.toList;
 
 @RestController
 @RequestMapping("/api/v2/public/")
-@AllArgsConstructor
 public class SubscriptionsApiController {
 
     private static final String DATE_FORMAT_KEY = "common.event.date-format";
     private final SubscriptionManager subscriptionManager;
-    private final I18nManager i18nManager;
     private final TicketReservationManager reservationManager;
     private final ConfigurationManager configurationManager;
     private final OrganizationRepository organizationRepository;
     private final MessageSourceManager messageSourceManager;
     private final ClockProvider clockProvider;
+
+    public SubscriptionsApiController(SubscriptionManager subscriptionManager, TicketReservationManager reservationManager, ConfigurationManager configurationManager, OrganizationRepository organizationRepository, MessageSourceManager messageSourceManager, ClockProvider clockProvider) {
+        this.subscriptionManager = subscriptionManager;
+        this.reservationManager = reservationManager;
+        this.configurationManager = configurationManager;
+        this.organizationRepository = organizationRepository;
+        this.messageSourceManager = messageSourceManager;
+        this.clockProvider = clockProvider;
+    }
 
 
     @GetMapping("subscriptions")

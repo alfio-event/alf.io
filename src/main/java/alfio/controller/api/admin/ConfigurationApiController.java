@@ -34,7 +34,6 @@ import alfio.util.ClockProvider;
 import alfio.util.Json;
 import alfio.util.RequestUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpStatus;
@@ -54,7 +53,6 @@ import static java.util.Objects.requireNonNullElse;
 
 @RestController
 @RequestMapping("/admin/api/configuration")
-@AllArgsConstructor
 public class ConfigurationApiController {
 
     private final ConfigurationManager configurationManager;
@@ -64,6 +62,16 @@ public class ConfigurationApiController {
     private final ClockProvider clockProvider;
     private final UserManager userManager;
     private final AccessService accessService;
+
+    public ConfigurationApiController(ConfigurationManager configurationManager, BillingDocumentManager billingDocumentManager, AdminJobManager adminJobManager, EventManager eventManager, ClockProvider clockProvider, UserManager userManager, AccessService accessService) {
+        this.configurationManager = configurationManager;
+        this.billingDocumentManager = billingDocumentManager;
+        this.adminJobManager = adminJobManager;
+        this.eventManager = eventManager;
+        this.clockProvider = clockProvider;
+        this.userManager = userManager;
+        this.accessService = accessService;
+    }
 
     @GetMapping(value = "/load")
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadConfiguration(Principal principal) {

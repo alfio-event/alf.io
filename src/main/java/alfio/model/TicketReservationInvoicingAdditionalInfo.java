@@ -16,14 +16,21 @@
  */
 package alfio.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-@Getter
-@AllArgsConstructor
 public class TicketReservationInvoicingAdditionalInfo {
 
     private final ItalianEInvoicing italianEInvoicing;
+
+    @JsonCreator
+    public TicketReservationInvoicingAdditionalInfo(@JsonProperty("italianEInvoicing") ItalianEInvoicing italianEInvoicing) {
+        this.italianEInvoicing = italianEInvoicing;
+    }
+
+    public ItalianEInvoicing getItalianEInvoicing() {
+        return italianEInvoicing;
+    }
 
     public boolean isEmpty() {
         return italianEInvoicing == null || italianEInvoicing.isEmpty();
@@ -36,9 +43,20 @@ public class TicketReservationInvoicingAdditionalInfo {
     //
     // https://github.com/alfio-event/alf.io/issues/573
     //
-    @Getter
-    @AllArgsConstructor
     public static class ItalianEInvoicing {
+
+        @JsonCreator
+        public ItalianEInvoicing(@JsonProperty("fiscalCode") String fiscalCode,
+                                 @JsonProperty("referenceType") ReferenceType referenceType,
+                                 @JsonProperty("addresseeCode") String addresseeCode,
+                                 @JsonProperty("pec") String pec,
+                                 @JsonProperty("splitPayment") boolean splitPayment) {
+            this.fiscalCode = fiscalCode;
+            this.referenceType = referenceType;
+            this.addresseeCode = addresseeCode;
+            this.pec = pec;
+            this.splitPayment = splitPayment;
+        }
 
         public enum ReferenceType {
             ADDRESSEE_CODE, /* Codice destinatario */
@@ -51,6 +69,26 @@ public class TicketReservationInvoicingAdditionalInfo {
         private final String addresseeCode;
         private final String pec;
         private final boolean splitPayment;
+
+        public String getFiscalCode() {
+            return fiscalCode;
+        }
+
+        public ReferenceType getReferenceType() {
+            return referenceType;
+        }
+
+        public String getAddresseeCode() {
+            return addresseeCode;
+        }
+
+        public String getPec() {
+            return pec;
+        }
+
+        public boolean isSplitPayment() {
+            return splitPayment;
+        }
 
         public String getReferenceTypeAsString() {
             return referenceType == null ? "" : referenceType.toString();

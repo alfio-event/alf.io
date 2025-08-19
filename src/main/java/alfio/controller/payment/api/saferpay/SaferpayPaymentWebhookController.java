@@ -21,7 +21,6 @@ import alfio.manager.TicketReservationManager;
 import alfio.manager.payment.saferpay.PaymentPageInitializeRequestBuilder;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentProxy;
-import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,10 +30,14 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@AllArgsConstructor
 public class SaferpayPaymentWebhookController {
     private final TicketReservationManager ticketReservationManager;
     private final PurchaseContextManager purchaseContextManager;
+
+    public SaferpayPaymentWebhookController(TicketReservationManager ticketReservationManager, PurchaseContextManager purchaseContextManager) {
+        this.ticketReservationManager = ticketReservationManager;
+        this.purchaseContextManager = purchaseContextManager;
+    }
 
     @GetMapping(PaymentPageInitializeRequestBuilder.WEBHOOK_URL_TEMPLATE)
     ResponseEntity<String> handleTransactionNotification(@PathVariable String reservationId) {

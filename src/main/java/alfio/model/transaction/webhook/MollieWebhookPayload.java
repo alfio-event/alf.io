@@ -18,15 +18,20 @@ package alfio.model.transaction.webhook;
 
 import alfio.model.PurchaseContext;
 import alfio.model.transaction.TransactionWebhookPayload;
-import lombok.AllArgsConstructor;
 
-@AllArgsConstructor
 public class MollieWebhookPayload implements TransactionWebhookPayload {
 
     private final String paymentId;
     private final PurchaseContext.PurchaseContextType purchaseContextType;
     private final String purchaseContextIdentifier;
     private final String reservationId;
+
+    public MollieWebhookPayload(String paymentId, PurchaseContext.PurchaseContextType purchaseContextType, String purchaseContextIdentifier, String reservationId) {
+        this.paymentId = paymentId;
+        this.purchaseContextType = purchaseContextType;
+        this.purchaseContextIdentifier = purchaseContextIdentifier;
+        this.reservationId = reservationId;
+    }
 
     @Override
     public String getPayload() {

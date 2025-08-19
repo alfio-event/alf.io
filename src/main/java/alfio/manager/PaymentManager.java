@@ -29,7 +29,6 @@ import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.repository.AuditingRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.user.UserRepository;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -47,7 +46,6 @@ import java.util.stream.Stream;
 import static java.util.Objects.requireNonNullElse;
 
 @Component
-@AllArgsConstructor
 public class PaymentManager {
 
     public static final String PAYMENT_TOKEN = "PAYMENT_TOKEN";
@@ -60,6 +58,15 @@ public class PaymentManager {
     private final ExtensionManager extensionManager;
 
     private final List<PaymentProvider> paymentProviders; // injected by Spring
+
+    public PaymentManager(TransactionRepository transactionRepository, ConfigurationManager configurationManager, AuditingRepository auditingRepository, UserRepository userRepository, ExtensionManager extensionManager, List<PaymentProvider> paymentProviders) {
+        this.transactionRepository = transactionRepository;
+        this.configurationManager = configurationManager;
+        this.auditingRepository = auditingRepository;
+        this.userRepository = userRepository;
+        this.extensionManager = extensionManager;
+        this.paymentProviders = paymentProviders;
+    }
 
     public Optional<PaymentProvider> lookupProviderByTransactionAndCapabilities(Transaction transaction, List<Class<? extends Capability>> capabilities) {
         return paymentProviders.stream()

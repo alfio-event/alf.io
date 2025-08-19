@@ -21,18 +21,21 @@ import alfio.manager.AdminReservationRequestManager;
 import alfio.model.AdminReservationRequestStats;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.result.Result;
-import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 
 @RequestMapping("/admin/api/event/{eventName}/attendees/import")
 @RestController
-@AllArgsConstructor
 public class AttendeeBulkImportApiController {
 
     private final AdminReservationRequestManager requestManager;
     private final AccessService accessService;
+
+    public AttendeeBulkImportApiController(AdminReservationRequestManager requestManager, AccessService accessService) {
+        this.requestManager = requestManager;
+        this.accessService = accessService;
+    }
 
     @PostMapping("")
     public Result<String> createReservations(@PathVariable String eventName,

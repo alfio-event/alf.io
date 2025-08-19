@@ -27,7 +27,6 @@ import alfio.util.ClockProvider;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Component;
@@ -41,7 +40,6 @@ import static alfio.model.system.ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_P
 import static java.util.stream.Collectors.toList;
 
 @Component
-@AllArgsConstructor
 @Transactional
 public class SpecialPriceManager {
 
@@ -54,6 +52,17 @@ public class SpecialPriceManager {
     private final I18nManager i18nManager;
     private final ConfigurationManager configurationManager;
     private final ClockProvider clockProvider;
+
+    public SpecialPriceManager(EventManager eventManager, NotificationManager notificationManager, SpecialPriceRepository specialPriceRepository, TemplateManager templateManager, MessageSourceManager messageSourceManager, I18nManager i18nManager, ConfigurationManager configurationManager, ClockProvider clockProvider) {
+        this.eventManager = eventManager;
+        this.notificationManager = notificationManager;
+        this.specialPriceRepository = specialPriceRepository;
+        this.templateManager = templateManager;
+        this.messageSourceManager = messageSourceManager;
+        this.i18nManager = i18nManager;
+        this.configurationManager = configurationManager;
+        this.clockProvider = clockProvider;
+    }
 
     private List<String> checkCodeAssignment(Set<SendCodeModification> input, int categoryId, EventAndOrganizationId event, String username) {
         final TicketCategory category = checkOwnership(categoryId, event, username);
@@ -85,10 +94,11 @@ public class SpecialPriceManager {
             .collect(toList());
     }
 
+    @Transactional(readOnly = true)
     public List<SpecialPrice> loadSentCodes(String eventName, int categoryId, String username) {
         final EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, username);
         checkOwnership(categoryId, event, username);
-        Predicate<SpecialPrice> p = SpecialPrice::notSent;
+        Predicate<SpecialPrice> p = SpecialPrice::notSent; // TODO: could move this filter in the query
         return specialPriceRepository.findAllByCategoryId(categoryId).stream().filter(p.negate()).collect(toList());
     }
 

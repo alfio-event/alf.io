@@ -68,9 +68,6 @@ public interface TicketCategoryRepository {
     @Query("select * from ticket_category_with_currency where id = :id and " + CHECK_ACTIVE)
     TicketCategory getByIdAndActive(@Bind("id") int id, @Bind("eventId") int eventId);
 
-    @Query("select exists(select id from ticket_category where id = :id and " + CHECK_ACTIVE + ")")
-    Boolean checkCategoryExistsForEvent(@Bind("id") int id, @Bind("eventId") int eventId);
-
     @Query("select count(*) from ticket_category where id in (:ids) and " + CHECK_ACTIVE)
     Integer countCategoriesBelongingToEvent(@Bind("eventId") int eventId, @Bind("ids") Collection<Integer> categoryIds);
 
@@ -178,9 +175,6 @@ public interface TicketCategoryRepository {
 
     @Query(type = QueryType.TEMPLATE, value = "update ticket_category set ordinal = :ordinal where id = :id and event_id = :eventId")
     String updateOrdinal();
-
-    @Query("select ticket_checkin_strategy from ticket_category where id = :id")
-    TicketCategory.TicketCheckInStrategy getCheckInStrategy(@Bind("id") int categoryId);
 
     @Query("select count(*) from ticket_category where id in (:categoryIds) and src_price_cts > 0")
     Integer countPaidCategoriesInReservation(@Bind("categoryIds") Collection<Integer> categoryIds);
