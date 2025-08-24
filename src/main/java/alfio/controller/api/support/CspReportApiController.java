@@ -18,13 +18,12 @@ package alfio.controller.api.support;
 
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
-import lombok.AllArgsConstructor;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,12 +33,15 @@ import static alfio.model.system.ConfigurationKeys.SECURITY_CSP_REPORT_URI;
 
 
 @RestController
-@AllArgsConstructor
 public class CspReportApiController {
 
 
     private static final Logger log = LoggerFactory.getLogger(CspReportApiController.class);
     private final ConfigurationManager configurationManager;
+
+    public CspReportApiController(ConfigurationManager configurationManager) {
+        this.configurationManager = configurationManager;
+    }
 
     @PostMapping("/report-csp-violation")
     public boolean logCspViolation(HttpServletRequest request) throws IOException {
@@ -51,7 +53,7 @@ public class CspReportApiController {
         String uri = conf.get(SECURITY_CSP_REPORT_URI).getValueOrDefault("/report-csp-violation");
 
         if (enabledReport && "/report-csp-violation".equals(uri)) {
-            String report = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+            String report = request.getReader().lines().collect(Collectors.joining(" _ "));
             log.warn("found csp violation: {}", report);
         }
         return true;
