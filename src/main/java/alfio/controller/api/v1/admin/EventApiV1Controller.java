@@ -23,15 +23,14 @@ import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
-import alfio.model.Event;
-import alfio.model.EventWithAdditionalInfo;
-import alfio.model.ExtensionSupport;
+import alfio.model.*;
 import alfio.model.ExtensionSupport.ExtensionMetadataValue;
-import alfio.model.PromoCodeDiscount;
+import alfio.model.api.v1.admin.AttendeesByCategory;
 import alfio.model.api.v1.admin.CheckInLogEntry;
 import alfio.model.api.v1.admin.EventCreationRequest;
 import alfio.model.api.v1.admin.LinkedSubscription;
 import alfio.model.group.Group;
+import alfio.model.modification.AttendeeData;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.LinkedGroupModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -44,7 +43,9 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.ExtensionRepository;
 import alfio.util.Json;
+import alfio.util.JsonViews;
 import alfio.util.Validator;
+import com.fasterxml.jackson.annotation.JsonView;
 import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -60,6 +61,7 @@ import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static alfio.controller.api.admin.EventApiController.validateEvent;
@@ -71,7 +73,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @RestController
 @RequestMapping("/api/v1/admin/event")
-@AllArgsConstructor
 public class EventApiV1Controller {
 
     private static final Logger log = LoggerFactory.getLogger(EventApiV1Controller.class);
@@ -88,12 +89,41 @@ public class EventApiV1Controller {
     private final AdminJobManager adminJobManager;
     private final CheckInManager checkInManager;
     private final AccessService accessService;
+    private final PurchaseContextFieldManager purchaseContextFieldManager;
+
+    public EventApiV1Controller(EventManager eventManager,
+                                EventNameManager eventNameManager,
+                                FileUploadManager fileUploadManager,
+                                FileDownloadManager fileDownloadManager,
+                                UserManager userManager,
+                                EventStatisticsManager eventStatisticsManager,
+                                GroupManager groupManager,
+                                ExtensionService extensionService,
+                                ExtensionRepository extensionRepository,
+                                ConfigurationManager configurationManager,
+                                AdminJobManager adminJobManager,
+                                CheckInManager checkInManager,
+                                AccessService accessService,
+                                PurchaseContextFieldManager purchaseContextFieldManager) {
+        this.eventManager = eventManager;
+        this.eventNameManager = eventNameManager;
+        this.fileUploadManager = fileUploadManager;
+        this.fileDownloadManager = fileDownloadManager;
+        this.userManager = userManager;
+        this.eventStatisticsManager = eventStatisticsManager;
+        this.groupManager = groupManager;
+        this.extensionService = extensionService;
+        this.extensionRepository = extensionRepository;
+        this.configurationManager = configurationManager;
+        this.adminJobManager = adminJobManager;
+        this.checkInManager = checkInManager;
+        this.accessService = accessService;
+        this.purchaseContextFieldManager = purchaseContextFieldManager;
+    }
 
     @PostMapping("/create")
     @Transactional
     public ResponseEntity<String> create(@RequestBody EventCreationRequest request, Principal user) {
-
-
         String imageRef = Optional.ofNullable(request.getImageUrl()).map(this::fetchImage).orElse(null);
         Organization organization = userManager.findUserOrganizations(user.getName()).get(0);
         AtomicReference<Errors> errorsContainer = new AtomicReference<>();
@@ -149,6 +179,7 @@ public class EventApiV1Controller {
     }
 
     @GetMapping("/{slug}/stats")
+    @JsonView(JsonViews.AdminPublicApi.class)
     public ResponseEntity<EventWithAdditionalInfo> stats(@PathVariable String slug, Principal user) {
         accessService.checkEventOwnership(user, slug);
         Result<EventWithAdditionalInfo> result = new Result.Builder<EventWithAdditionalInfo>()
@@ -159,6 +190,28 @@ public class EventApiV1Controller {
         } else {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    @GetMapping("/{slug}/download-attendees")
+    public ResponseEntity<List<AttendeesByCategory>> downloadAttendees(@PathVariable String slug, Principal user) {
+        var eventAndOrganizationId = accessService.checkEventOwnership(user, slug);
+        var ticketCategories = eventManager.loadTicketCategories(eventAndOrganizationId);
+        var ticketsByCategoryId = eventManager.findAllConfirmedTicketsForCSV(slug, user.getName()).stream()
+            .filter(t -> t.getTicket().getCategoryId() != null && t.getTicket().getAssigned())
+            .collect(Collectors.groupingBy(t -> t.getTicket().getCategoryId()));
+        var additionalInfoByTicketId = purchaseContextFieldManager.findAllConfirmedTicketValues(eventAndOrganizationId.getId());
+        return ResponseEntity.ok(ticketCategories.stream().filter(category -> ticketsByCategoryId.containsKey(category.getId()))
+            .map(category -> {
+                var ticketsInCategory = ticketsByCategoryId.get(category.getId());
+                return new AttendeesByCategory(category.getId(), ticketsInCategory.size(), ticketsInCategory.stream()
+                    .map(t -> {
+                        var ticket = t.getTicket();
+                        var additional = additionalInfoByTicketId.get(ticket.getId()).stream()
+                            .collect(Collectors.groupingBy(PurchaseContextFieldValue::getName, Collectors.mapping(PurchaseContextFieldValue::getValue, Collectors.toList())));
+                        return new AttendeeData(ticket.getFirstName(), ticket.getLastName(), ticket.getEmail(), Map.of(), additional);
+                    })
+                    .toList(), List.of());
+            }).toList());
     }
 
     @DeleteMapping("/{slug}")

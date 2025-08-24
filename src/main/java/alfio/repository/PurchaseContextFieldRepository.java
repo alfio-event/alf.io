@@ -143,6 +143,9 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     @Query(FIND_ALL + " where ticket_id_fk in (:ticketIds)")
     List<PurchaseContextFieldValue> findAllValuesByTicketIds(@Bind("ticketIds") Collection<Integer> ticketIds);
 
+    @Query(FIND_ALL + " where ticket_id_fk in (select id from ticket where event_id = :eventId and status = 'ACQUIRED')")
+    List<PurchaseContextFieldValue> findAllValuesForConfirmedTicketsByEventId(@Bind("eventId") int eventId);
+
     @Query(FIND_ALL + " where subscription_id_fk in (:subscriptionIds)")
     List<PurchaseContextFieldValue> findAllValuesBySubscriptionIds(@Bind("subscriptionIds") Collection<UUID> subscriptionIds);
 

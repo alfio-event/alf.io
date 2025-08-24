@@ -48,6 +48,8 @@ public class EventWithAdditionalInfo implements StatisticsContainer, PriceContai
 
     private final Set<ExtensionCapabilitySummary> supportedCapabilities;
 
+    private final List<PurchaseContextFieldConfiguration> additionalFields;
+
     @JsonIgnore
     public Event getEvent() {
         return event;

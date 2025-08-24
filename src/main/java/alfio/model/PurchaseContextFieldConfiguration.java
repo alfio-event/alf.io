@@ -17,7 +17,9 @@
 package alfio.model;
 
 import alfio.util.Json;
+import alfio.util.JsonViews;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
 import org.apache.commons.collections4.CollectionUtils;
@@ -36,7 +38,9 @@ public class PurchaseContextFieldConfiguration {
     }
 
     private final long id;
+    @JsonView(JsonViews.AdminApi.class)
     private final Integer eventId;
+    @JsonView(JsonViews.AdminApi.class)
     private final UUID subscriptionDescriptorId;
     private final String name;
     private final int order;

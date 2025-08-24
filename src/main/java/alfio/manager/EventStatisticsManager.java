@@ -44,7 +44,6 @@ import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
 
 @Component
-@AllArgsConstructor
 @Transactional(readOnly = true)
 public class EventStatisticsManager {
 
@@ -59,6 +58,33 @@ public class EventStatisticsManager {
     private final UserManager userManager;
     private final SubscriptionRepository subscriptionRepository;
     private final ExtensionManager extensionManager;
+    private final PurchaseContextFieldManager purchaseContextFieldManager;
+
+    public EventStatisticsManager(EventRepository eventRepository,
+                                  EventDescriptionRepository eventDescriptionRepository,
+                                  TicketSearchRepository ticketSearchRepository,
+                                  TicketCategoryRepository ticketCategoryRepository,
+                                  TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
+                                  TicketReservationRepository ticketReservationRepository,
+                                  SpecialPriceRepository specialPriceRepository,
+                                  ConfigurationManager configurationManager,
+                                  UserManager userManager,
+                                  SubscriptionRepository subscriptionRepository,
+                                  ExtensionManager extensionManager,
+                                  PurchaseContextFieldManager purchaseContextFieldManager) {
+        this.eventRepository = eventRepository;
+        this.eventDescriptionRepository = eventDescriptionRepository;
+        this.ticketSearchRepository = ticketSearchRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
+        this.ticketReservationRepository = ticketReservationRepository;
+        this.specialPriceRepository = specialPriceRepository;
+        this.configurationManager = configurationManager;
+        this.userManager = userManager;
+        this.subscriptionRepository = subscriptionRepository;
+        this.extensionManager = extensionManager;
+        this.purchaseContextFieldManager = purchaseContextFieldManager;
+    }
 
     private List<Event> getAllEvents(String username) {
         List<Integer> orgIds = userManager.findUserOrganizations(username).stream().map(Organization::getId).collect(toList());
@@ -115,7 +141,7 @@ public class EventStatisticsManager {
 
         List<TicketCategoryWithAdditionalInfo> tWithInfo = ticketCategories.stream()
             .map(t -> new TicketCategoryWithAdditionalInfo(event, t, ticketCategoriesStatistics.get(t.getId()), descriptions.get(t.getId()), specialPrices.get(t.getId()), metadata.get(t.getId())))
-            .collect(Collectors.toList());
+            .toList();
 
         Set<ExtensionCapabilitySummary> supportedCapabilities = extensionManager.getSupportedCapabilities(EnumSet.allOf(ExtensionCapability.class), event);
 
@@ -128,7 +154,8 @@ public class EventStatisticsManager {
             grossIncome,
             eventRepository.getMetadataForEvent(event.getId()),
             subscriptionRepository.findLinkedSubscriptionIds(event.getId(), event.getOrganizationId()),
-            supportedCapabilities
+            supportedCapabilities,
+            purchaseContextFieldManager.findAdditionalFields(event)
         );
     }
 

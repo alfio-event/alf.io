@@ -86,6 +86,12 @@ public class PurchaseContextFieldManager {
             .collect(Collectors.groupingBy(PurchaseContextFieldValue::getTicketId));
     }
 
+    public Map<Integer, List<PurchaseContextFieldValue>> findAllConfirmedTicketValues(int eventId) {
+        return purchaseContextFieldRepository.findAllValuesForConfirmedTicketsByEventId(eventId)
+            .stream()
+            .collect(Collectors.groupingBy(PurchaseContextFieldValue::getTicketId));
+    }
+
     public Map<UUID, List<PurchaseContextFieldValue>> findAllValuesBySubscriptionIds(Collection<UUID> subscriptionIds) {
         return purchaseContextFieldRepository.findAllValuesBySubscriptionIds(subscriptionIds)
             .stream()
