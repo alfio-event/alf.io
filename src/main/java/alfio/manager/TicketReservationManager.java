@@ -486,7 +486,7 @@ public class TicketReservationManager {
                     .map(sp -> {
                         int index = counter.getAndIncrement();
                         return Triple.of(reservedForUpdate.get(index), sp, getAtIndexOrEmpty(attendees, index));
-                    }).collect(Collectors.toList());
+                    }).toList();
                 jdbcTemplate.batchUpdate(ticketRepository.batchReserveTicketsForSpecialPrice(), ticketsAndSpecialPrices.stream().map(
                     triple -> {
                         String metadata = null;
@@ -1036,7 +1036,7 @@ public class TicketReservationManager {
             .toList();
 
         purchaseContextFieldRepository.deleteAllValuesForReservations(toDelete);
-        applicationEventPublisher.publishEvent(new CleanupReservations(null, toDelete, true, false));
+        applicationEventPublisher.publishEvent(new CleanupReservations(null, toDelete, true, false, false));
         waitingQueueManager.cleanExpiredReservations(toDelete);
         transactionRepository.deleteForReservations(toDelete);
         ticketReservationRepository.remove(toDelete);
@@ -1127,7 +1127,7 @@ public class TicketReservationManager {
 
     /**
      * Get the total cost with VAT if it's not included in the ticket price.
-     * 
+     *
      * @param reservationId
      * @return
      */
@@ -1174,7 +1174,7 @@ public class TicketReservationManager {
 
     public String ticketOnlineCheckIn(Event event, String ticketId) {
         Ticket ticket = ticketRepository.findByUUID(ticketId);
-        
+
         return ticketOnlineCheckInUrl(event, ticket, configurationManager.baseUrl(event));
     }
 
@@ -1194,7 +1194,7 @@ public class TicketReservationManager {
     public Optional<TicketReservation> findByIdForEvent(String reservationId, int eventId) {
         return ticketReservationRepository.findOptionalReservationByIdAndEventId(reservationId, eventId);
     }
-    
+
     public Optional<TicketReservation> findById(String reservationId) {
         return ticketReservationRepository.findOptionalReservationById(reservationId);
     }
@@ -1221,7 +1221,7 @@ public class TicketReservationManager {
     private void cancelReservation(TicketReservation reservation, boolean expired, String username) {
         String reservationId = reservation.getId();
         purchaseContextManager.findByReservationId(reservationId).ifPresent(pc -> {
-            cleanupReferencesToReservation(expired, username, reservationId, pc, false);
+            cleanupReferencesToReservation(expired, username, reservationId, pc, false, false);
             removeReservation(pc, reservation, expired, username);
         });
     }
@@ -1231,15 +1231,14 @@ public class TicketReservationManager {
         Event event = eventRepository.findByReservationId(reservationId);
         billingDocumentManager.ensureBillingDocumentIsPresent(event, reservation, username, () -> orderSummaryForReservationId(reservation.getId(), event));
         issueCreditNoteForReservation(event, reservation, username, sendEmail);
-        cleanupReferencesToReservation(false, username, reservationId, event, false);
-        extensionManager.handleReservationsCreditNoteIssuedForEvent(event, Collections.singletonList(reservationId));
+        cleanupReferencesToReservation(false, username, reservationId, event, false, true);
     }
 
-    private void cleanupReferencesToReservation(boolean expired, String username, String reservationId, PurchaseContext purchaseContext, boolean afterTicketReleased) {
+    private void cleanupReferencesToReservation(boolean expired, String username, String reservationId, PurchaseContext purchaseContext, boolean afterTicketReleased, boolean creditNoteIssued) {
         List<String> reservationIdsToRemove = singletonList(reservationId);
         int tfvDeleted = purchaseContextFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
         log.debug("deleted {} field values", tfvDeleted);
-        applicationEventPublisher.publishEvent(new CleanupReservations(purchaseContext, List.of(reservationId), expired, afterTicketReleased));
+        applicationEventPublisher.publishEvent(new CleanupReservations(purchaseContext, List.of(reservationId), expired, afterTicketReleased, creditNoteIssued));
         transactionRepository.deleteForReservations(List.of(reservationId));
         waitingQueueManager.fireReservationExpired(reservationId);
         auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), purchaseContext.event().map(Event::getId).orElse(null), expired ? Audit.EventType.CANCEL_RESERVATION_EXPIRED : Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
@@ -1468,7 +1467,7 @@ public class TicketReservationManager {
                         Validate.isTrue(result == 1);
                         Map<String, Object> model = TemplateResource.prepareModelForReminderTicketAdditionalInfo(organizationRepository.getById(event.getOrganizationId()), event, t, ReservationUtil.ticketUpdateUrl(event, t, configurationManager));
                         Locale locale = Optional.ofNullable(t.getUserLanguage()).map(LocaleUtil::forLanguageTag).orElseGet(() -> findReservationLanguage(t.getTicketsReservationId()));
-                        notificationManager.sendSimpleEmail(event, t.getTicketsReservationId(), t.getEmail(), messageSource.getMessage("reminder.ticket-additional-info.subject", 
+                        notificationManager.sendSimpleEmail(event, t.getTicketsReservationId(), t.getEmail(), messageSource.getMessage("reminder.ticket-additional-info.subject",
                         		new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKET_ADDITIONAL_INFO, model, locale));
                     });
             return null;
@@ -1498,7 +1497,7 @@ public class TicketReservationManager {
                         Map<String, Object> model = reservationHelper.prepareModelForReservationEmail(event, reservation);
                         ticketReservationRepository.updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(clockProvider.withZone(eventZoneId)));
                         Locale locale = findReservationLanguage(reservation.getId());
-                        notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject", 
+                        notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject",
                         		new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKETS_ASSIGNMENT_EMAIL, model, locale));
                     });
                 return null;
@@ -1572,7 +1571,7 @@ public class TicketReservationManager {
         auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_TICKET, new Date(), Audit.EntityType.TICKET, Integer.toString(ticket.getId()));
 
         if(ticketRepository.countTicketsInReservation(reservationId) == 0 && transactionRepository.loadOptionalByReservationId(reservationId).isEmpty()) {
-            cleanupReferencesToReservation(false, null, ticketReservation.getId(), event, true);
+            cleanupReferencesToReservation(false, null, ticketReservation.getId(), event, true, false);
             removeReservation(event, ticketReservation, false, null);
             auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
         }

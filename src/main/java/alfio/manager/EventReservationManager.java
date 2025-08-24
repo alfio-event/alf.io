@@ -87,7 +87,7 @@ public class EventReservationManager {
             for (String reservationId : cleanupReservations.reservationIds()) {
                 cleanupReferences(cleanupReservations.expired(), reservationId, event, cleanupReservations.afterRelease());
             }
-            notifyExtensions(event, cleanupReservations.reservationIds(), cleanupReservations.expired());
+            notifyExtensions(event, cleanupReservations.reservationIds(), cleanupReservations);
         } else {
             Map<Integer, List<ReservationIdAndEventId>> reservationIdsByEvent = ticketReservationRepository
                 .getReservationIdAndEventId(cleanupReservations.reservationIds())
@@ -99,7 +99,7 @@ public class EventReservationManager {
                 for (String reservationId : reservationIds) {
                     cleanupReferences(cleanupReservations.expired(), reservationId, event, cleanupReservations.afterRelease());
                 }
-                notifyExtensions(event, reservationIds, cleanupReservations.expired());
+                notifyExtensions(event, reservationIds, cleanupReservations);
                 billingDocumentRepository.deleteForReservations(reservationIds, eventId);
             });
         }
@@ -124,9 +124,11 @@ public class EventReservationManager {
         Validate.isTrue(afterRelease || updatedTickets  + updatedAS > 0, "no items have been updated");
     }
 
-    private void notifyExtensions(Event event, List<String> reservationIds, boolean expired) {
-        if (expired) {
+    private void notifyExtensions(Event event, List<String> reservationIds, CleanupReservations cleanupReservations) {
+        if (cleanupReservations.expired()) {
             extensionManager.handleReservationsExpired(event, reservationIds);
+        } else if(cleanupReservations.creditNoteIssued()) {
+            extensionManager.handleReservationsCreditNoteIssuedForEvent(event, reservationIds);
         } else {
             extensionManager.handleReservationsCancelled(event, reservationIds);
         }

@@ -24,6 +24,7 @@ public record CleanupReservations(
     PurchaseContext purchaseContext,
     List<String> reservationIds,
     boolean expired,
-    boolean afterRelease
+    boolean afterRelease,
+    boolean creditNoteIssued
 ) {
 }
