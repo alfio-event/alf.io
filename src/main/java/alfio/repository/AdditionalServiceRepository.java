@@ -98,12 +98,6 @@ public interface AdditionalServiceRepository {
                @Bind("minPriceCts") Integer minPriceCts,
                @Bind("maxPriceCts") Integer maxPriceCts);
 
-    @Query("select * from additional_service_with_currency where event_id_fk = :eventId and supplement_policy = :supplementPolicy order by ordinal")
-    List<AdditionalService> findAllInEventWithPolicy(@Bind("eventId") int eventId, @Bind("supplementPolicy") AdditionalService.SupplementPolicy policy);
-
-    @Query("select * from additional_service_with_currency where event_id_fk = :eventId and id in (select additional_service_id_fk from additional_service_item where tickets_reservation_uuid = :reservationId) order by ordinal")
-    List<AdditionalService> loadAllForReservation(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId);
-
     @Query("select count(*) from additional_service where event_id_fk = :eventId and id in(:ids)")
     Integer countAdditionalServicesBelongingToEvent(@Bind("eventId") int eventId, @Bind("ids") Collection<Integer> ids);
 

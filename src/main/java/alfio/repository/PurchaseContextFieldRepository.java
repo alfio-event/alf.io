@@ -92,9 +92,6 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     @Query("delete from purchase_context_field_value where ticket_id_fk in (:ticketIds)")
     int deleteAllValuesForTicketIds(@Bind("ticketIds") List<Integer> ticketIds);
 
-    @Query("delete from purchase_context_field_value where subscription_id_fk = :subscriptionId")
-    int deleteAllValuesForSubscriptionId(@Bind("subscriptionId") UUID subscriptionId);
-
     @Query("""
         delete from purchase_context_field_value fv using ticket t, additional_service_item ai\
          where fv.context = 'ADDITIONAL_SERVICE' and fv.additional_service_item_id_fk = ai.id\
@@ -248,13 +245,6 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
 
     @Query("update purchase_context_field_configuration set field_order = :order where id = :id")
     int updateFieldOrder(@Bind("id") long id, @Bind("order") int order);
-
-    @Query("""
-        select purchase_context_field_configuration.* from purchase_context_field_configuration\
-         inner join event on event.id = event_id_fk\
-         where short_name = :eventShortName order by field_order asc\
-        """)
-    List<PurchaseContextFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventShortName") String eventName);
 
     @Query("select count(*) from purchase_context_field_configuration where event_id_fk = :eventId")
     Integer countAdditionalFieldsForEvent(@Bind("eventId") int eventId);
