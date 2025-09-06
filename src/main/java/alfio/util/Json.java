@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.fatboyindustrial.gsonjavatime.Converters;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -33,14 +34,15 @@ public class Json {
     public static final Gson GSON = Converters.registerAll(new GsonBuilder()).create();
 
 
-    private static final ObjectMapper mapper;
+    public static final ObjectMapper OBJECT_MAPPER;
 
     static {
         ObjectMapper m = new ObjectMapper();
         m.registerModule(new JavaTimeModule());
+        m.registerModule(new ParameterNamesModule());
         m.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         m.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        mapper = m;
+        OBJECT_MAPPER = m;
     }
 
     public String asJsonString(Object o) {
@@ -53,7 +55,7 @@ public class Json {
 
     public static String toJson(Object o) {
         try {
-            return mapper.writeValueAsString(o);
+            return OBJECT_MAPPER.writeValueAsString(o);
         } catch(JsonProcessingException e) {
             throw new IllegalStateException(e);
         }
@@ -61,7 +63,7 @@ public class Json {
 
     public static <T> T fromJson(String value, Class<T> valueType) {
         try {
-            return mapper.readValue(value, valueType);
+            return OBJECT_MAPPER.readValue(value, valueType);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -69,7 +71,7 @@ public class Json {
 
     public static <T> T fromJson(String value, TypeReference<T> reference) {
         try {
-            return mapper.readValue(value, reference);
+            return OBJECT_MAPPER.readValue(value, reference);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
