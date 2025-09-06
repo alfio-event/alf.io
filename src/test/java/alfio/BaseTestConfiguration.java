@@ -23,6 +23,7 @@ import alfio.manager.system.ExternalConfiguration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
+import alfio.util.Json;
 import alfio.util.RefreshableDataSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stripe.Stripe;
@@ -155,6 +156,6 @@ public class BaseTestConfiguration {
 
     @Bean
     public ObjectMapper objectMapper() {
-        return new ObjectMapper();
+        return Json.OBJECT_MAPPER;
     }
 }
