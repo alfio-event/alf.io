@@ -17,19 +17,22 @@
 package alfio.util;
 
 import alfio.model.transaction.token.PayPalToken;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class JsonTest {
 
     @Test
     void checkDeserializationForSingleConstructor() {
-        Json.fromJson("""
+        var res = Json.fromJson("""
         {
             "payerId": "bla",
             "paymentId": "blabla",
             "hmac": "blablabla"
         }
         """, PayPalToken.class);
-
+        Assertions.assertEquals("bla", res.getPayerId());
+        Assertions.assertEquals("blabla", res.getPaymentId());
+        Assertions.assertEquals("blablabla", res.getHmac());
     }
 }
