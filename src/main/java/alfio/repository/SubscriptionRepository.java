@@ -213,13 +213,6 @@ public interface SubscriptionRepository {
     Optional<SubscriptionDescriptorWithStatistics> findOneWithStatistics(@Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
                                                                          @Bind("organizationId") int organizationId);
 
-    @Query("""
-        select exists (select 1 from subscription_event where event_id_fk = :eventId\
-         and subscription_descriptor_id_fk = :subscriptionDescriptorId::uuid and organization_id_fk = :organizationId)\
-        """)
-    boolean isSubscriptionLinkedToEvent(@Bind("eventId") int eventId,
-                                        @Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
-                                        @Bind("organizationId") int organizationId);
 
     @Query(INSERT_SUBSCRIPTION_LINK)
     int linkSubscriptionAndEvent(@Bind("subscriptionId") UUID subscriptionId,
@@ -228,8 +221,6 @@ public interface SubscriptionRepository {
                                  @Bind("organizationId") int organizationId,
                                  @Bind("compatibleCategories") @JSONData List<Integer> compatibleCategories);
 
-    @Query(type = QueryType.TEMPLATE, value = INSERT_SUBSCRIPTION_LINK)
-    String insertSubscriptionEventLink();
 
     @Query(FETCH_SUBSCRIPTION_LINK + " where se.subscription_descriptor_id_fk = :subscriptionId")
     List<EventSubscriptionLink> findLinkedEvents(@Bind("organizationId") int organizationId,
@@ -340,9 +331,6 @@ public interface SubscriptionRepository {
 
     @Query("select exists (select id from subscription_event where event_id_fk  = :eventId)")
     boolean hasLinkedSubscription(@Bind("eventId") int eventId);
-
-    @Query("select exists (select id from subscription_event where subscription_descriptor_id_fk  = :descriptorId::uuid)")
-    boolean hasLinkedEvents(@Bind("descriptorId") UUID subscriptionDescriptorId);
 
     @Query("select * from subscription where id = :id for update")
     Subscription findSubscriptionByIdForUpdate(@Bind("id") UUID id);
