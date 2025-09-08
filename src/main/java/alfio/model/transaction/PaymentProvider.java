@@ -26,7 +26,7 @@ import java.util.UUID;
 
 public interface PaymentProvider {
 
-    Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest);
+    Set<? extends PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest);
 
     PaymentProxy getPaymentProxy();
 

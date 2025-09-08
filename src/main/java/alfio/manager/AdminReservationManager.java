@@ -474,6 +474,7 @@ public class AdminReservationManager {
 
             PaymentSpecification spec = new PaymentSpecification(reservationId,
                 null,
+                null,
                 reservation.getFinalPriceCts(),
                 purchaseContext,
                 reservation.getEmail(),
@@ -946,7 +947,11 @@ public class AdminReservationManager {
     public void creditReservation(PurchaseContextType purchaseContextType, String publicIdentifier, String reservationId, boolean refund, boolean notify, String username) {
         loadReservation(purchaseContextType, publicIdentifier, reservationId, username)
             .ifSuccess(res -> {
-                if (res.getLeft().getStatus() == TicketReservationStatus.OFFLINE_PAYMENT) {
+                var offlinePaymentEnumValues = EnumSet.of(
+                    TicketReservationStatus.OFFLINE_PAYMENT,
+                    TicketReservationStatus.CUSTOM_OFFLINE_PAYMENT
+                );
+                if (offlinePaymentEnumValues.contains(res.getLeft().getStatus())) {
                     ticketReservationManager.deleteOfflinePayment(res.getRight().event().orElseThrow(), reservationId, false, true, notify, username);
                 } else {
                     removeReservation(res, refund, notify, username, false, true);

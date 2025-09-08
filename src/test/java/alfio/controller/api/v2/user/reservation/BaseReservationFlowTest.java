@@ -46,8 +46,8 @@ import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.audit.ScanAudit;
 import alfio.model.modification.*;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.StaticPaymentMethods;
 import alfio.model.user.User;
 import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
@@ -566,7 +566,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
             var activePaymentMethods = reservationInfo.getBody().getActivePaymentMethods();
             assertFalse(activePaymentMethods.isEmpty());
-            assertTrue(activePaymentMethods.containsKey(PaymentMethod.BANK_TRANSFER));
+            assertTrue(activePaymentMethods.containsKey(StaticPaymentMethods.BANK_TRANSFER.getPaymentMethodId()));
 
             configurationRepository.insertTicketCategoryLevel(context.event.getOrganizationId(), context.event.getId(), hiddenCategoryId, ConfigurationKeys.PAYMENT_METHODS_BLACKLIST.name(), PaymentProxy.OFFLINE.name(), "");
 
@@ -639,7 +639,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertNotNull(reservationInfo.getBody());
             assertEquals(reservationId, reservationInfo.getBody().getId());
             assertEquals(1, reservationInfo.getBody().getActivePaymentMethods().size());
-            assertTrue(reservationInfo.getBody().getActivePaymentMethods().containsKey(PaymentMethod.BANK_TRANSFER));
+            assertTrue(reservationInfo.getBody().getActivePaymentMethods().containsKey(StaticPaymentMethods.BANK_TRANSFER.getPaymentMethodId()));
 
             assertEquals(1, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
 
@@ -1537,10 +1537,10 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         paymentForm.setPrivacyPolicyAccepted(true);
         paymentForm.setTermAndConditionsAccepted(true);
         paymentForm.setPaymentProxy(PaymentProxy.OFFLINE);
-        paymentForm.setSelectedPaymentMethod(PaymentMethod.BANK_TRANSFER);
+        paymentForm.setSelectedPaymentMethod(StaticPaymentMethods.BANK_TRANSFER);
 
         // bank transfer does not have a transaction, it's created on confirmOverview call
-        var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
+        var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.BANK_TRANSFER);
         assertEquals(HttpStatus.NOT_FOUND, tStatus.getStatusCode());
         //
         var promoCodeUsage = promoCodeRequestManager.retrieveDetailedUsage(promoCodeId, context.event.getId());
@@ -1553,7 +1553,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
         checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT, context);
 
-        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.BANK_TRANSFER);
         assertEquals(HttpStatus.OK, tStatus.getStatusCode());
         assertNotNull(tStatus.getBody());
         assertFalse(tStatus.getBody().isSuccess());
@@ -1576,7 +1576,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertEventLogged(extLogs, TICKET_ASSIGNED_GENERATE_METADATA, online ? 12 : 10);
         assertEventLogged(extLogs, TICKET_MAIL_CUSTOM_TEXT, online ? 12 : 10);
 
-        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.BANK_TRANSFER);
         assertEquals(HttpStatus.OK, tStatus.getStatusCode());
         assertNotNull(tStatus.getBody());
         assertTrue(tStatus.getBody().isSuccess());
@@ -1718,7 +1718,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         var paymentForm = new PaymentForm();
         paymentForm.setPrivacyPolicyAccepted(true);
         paymentForm.setTermAndConditionsAccepted(true);
-        paymentForm.setSelectedPaymentMethod(PaymentMethod.NONE);
+        paymentForm.setSelectedPaymentMethod(StaticPaymentMethods.NONE);
 
         var propertyBindingResult = new BeanPropertyBindingResult(paymentForm, "paymentForm");
         var handleRes = reservationApiV2Controller.confirmOverview(reservationId, "en", paymentForm, propertyBindingResult, new MockHttpServletRequest(), null);
@@ -1797,7 +1797,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertTrue(requireNonNull(resGoogleCal.getRedirectedUrl()).startsWith("https://www.google.com/calendar/event"));
     }
 
-    private boolean containsOnlineTickets(ReservationFlowContext context, String reservationId) {
+    protected boolean containsOnlineTickets(ReservationFlowContext context, String reservationId) {
         if(context.event.getFormat() == Event.EventFormat.IN_PERSON) {
             return false;
         }

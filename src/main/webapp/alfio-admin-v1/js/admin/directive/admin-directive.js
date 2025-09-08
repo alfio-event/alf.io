@@ -582,12 +582,40 @@
 
                 initPaymentProxies();
 
+                $scope._customOfflinePaymentsSelector = null;
+                $scope.selectedCustomPaymentMethods = [];
+
                 $scope.updatePaymentProxies = function() {
-                    $scope.obj.allowedPaymentProxies = _.chain($scope.paymentProxies)
+                    const nextPaymentProxies = _.chain($scope.paymentProxies)
                         .filter(function(it) { return it.selected; })
                         .map(function(it) { return it.proxy.id; })
+                        .filter(it => !(it === "CUSTOM_OFFLINE" && $scope.selectedCustomPaymentMethods < 1))
                         .value();
+
+                    $scope.obj.allowedPaymentProxies = nextPaymentProxies;
                 };
+
+                $scope.customOfflinePaymentsSelected = function() {
+                    const proxies = $scope.paymentProxies.some(function(p) {
+                        return p.selected && p.proxy.id === 'CUSTOM_OFFLINE';
+                    });
+
+                    if(!$scope._customOfflinePaymentsSelector) {
+                        $scope._customOfflinePaymentsSelector = document.getElementById("edit-prices-custom-offline-event-selector");
+                        $scope._customOfflinePaymentsSelector?.addEventListener("selection-changed", function(event) {
+                            $scope.selectedCustomPaymentMethods = event.detail;
+                            $scope.updatePaymentProxies();
+                        });
+                    }
+
+                    return proxies;
+                };
+
+                $scope.$watch('obj.organizationId', function(newVal, oldVal) {
+                    if (newVal !== oldVal) {
+                        $scope._customOfflinePaymentsSelector = null;
+                    }
+                });
 
                 UtilsService.getAvailableCurrencies().then(function(result) {
                     $scope.currencies = result.data;
@@ -1156,7 +1184,10 @@
                             ctrl.event = event.event;
                             ctrl.internal = true;
                             ctrl.freeOfCharge = ctrl.event.free;
-                            ctrl.offlineEnabled = !ctrl.freeOfCharge && ctrl.event.allowedPaymentProxies.includes('OFFLINE');
+                            ctrl.offlineEnabled = !ctrl.freeOfCharge
+                                && ctrl.event.allowedPaymentProxies.some(
+                                    proxy => ['OFFLINE', 'CUSTOM_OFFLINE'].includes(proxy)
+                                );
                             ctrl.owner = ctrl.event.visibleForCurrentUser;
                             ctrl.openDeleteWarning = function() {
                                 EventService.deleteEvent(ctrl.event).then(function(result) {

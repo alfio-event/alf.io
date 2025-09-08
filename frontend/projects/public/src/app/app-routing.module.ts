@@ -6,6 +6,7 @@ import {BookingComponent} from './reservation/booking/booking.component';
 import {OverviewComponent} from './reservation/overview/overview.component';
 import {SuccessComponent} from './reservation/success/success.component';
 import {OfflinePaymentComponent} from './reservation/offline-payment/offline-payment.component';
+import {CustomOfflinePaymentComponent} from './reservation/custom-offline-payment/custom-offline-payment.component';
 import {ViewTicketComponent} from './view-ticket/view-ticket.component';
 import {ReservationGuard} from './reservation/reservation.guard';
 import {ProcessingPaymentComponent} from './reservation/processing-payment/processing-payment.component';
@@ -61,6 +62,7 @@ const routes: Routes = [
     { path: 'book', component: BookingComponent, canActivate: subscriptionReservationsGuard },
     { path: 'overview', component: OverviewComponent, canActivate: subscriptionReservationsGuard },
     { path: 'waiting-payment', component: OfflinePaymentComponent, canActivate: subscriptionReservationsGuard },
+    { path: 'waiting-custom-payment', component: CustomOfflinePaymentComponent, canActivate: subscriptionReservationsGuard },
     { path: 'deferred-payment', component: DeferredOfflinePaymentComponent, canActivate: subscriptionReservationsGuard },
     { path: 'processing-payment', component: ProcessingPaymentComponent, canActivate: subscriptionReservationsGuard },
     { path: 'success', component: SuccessSubscriptionComponent, canActivate: subscriptionReservationsGuard },
@@ -74,6 +76,7 @@ const routes: Routes = [
     { path: 'overview', component: OverviewComponent, canActivate: eventReservationsGuard },
     { path: 'waitingPayment', redirectTo: 'waiting-payment'},
     { path: 'waiting-payment', component: OfflinePaymentComponent, canActivate: eventReservationsGuard },
+    { path: 'waiting-custom-payment', component: CustomOfflinePaymentComponent, canActivate: eventReservationsGuard },
     { path: 'deferred-payment', component: DeferredOfflinePaymentComponent, canActivate: eventReservationsGuard },
     { path: 'processing-payment', component: ProcessingPaymentComponent, canActivate: eventReservationsGuard },
     { path: 'success', component: SuccessComponent, canActivate: eventReservationsGuard },

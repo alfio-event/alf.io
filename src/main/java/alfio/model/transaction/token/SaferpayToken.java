@@ -19,6 +19,7 @@ package alfio.model.transaction.token;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.PaymentToken;
+import alfio.model.transaction.StaticPaymentMethods;
 
 public class SaferpayToken implements PaymentToken {
 
@@ -35,7 +36,7 @@ public class SaferpayToken implements PaymentToken {
 
     @Override
     public PaymentMethod getPaymentMethod() {
-        return PaymentMethod.CREDIT_CARD;
+        return StaticPaymentMethods.CREDIT_CARD;
     }
 
     @Override

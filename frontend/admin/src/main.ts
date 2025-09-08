@@ -10,6 +10,7 @@ import "@shoelace-style/shoelace/dist/components/format-number/format-number.js"
 import "@shoelace-style/shoelace/dist/components/divider/divider.js";
 import "@shoelace-style/shoelace/dist/components/dialog/dialog.js";
 import "@shoelace-style/shoelace/dist/components/button/button.js";
+import "@shoelace-style/shoelace/dist/components/icon-button/icon-button.js";
 import "@shoelace-style/shoelace/dist/components/tab-group/tab-group.js";
 import "@shoelace-style/shoelace/dist/components/tab/tab.js";
 import "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel.js";
@@ -24,6 +25,9 @@ import '@shoelace-style/shoelace/dist/components/textarea/textarea';
 import '@shoelace-style/shoelace/dist/components/select/select';
 import '@shoelace-style/shoelace/dist/components/option/option';
 import '@shoelace-style/shoelace/dist/components/qr-code/qr-code.js';
+import '@shoelace-style/shoelace/dist/components/details/details.js';
+import '@shoelace-style/shoelace/dist/components/tooltip/tooltip.js';
+import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
 
 
 
@@ -40,3 +44,9 @@ export { AdditionalItemList } from './event/additional-item-list/additional-item
 export { DisplayCommonMarkPreview } from './display-common-mark-preview/display-common-mark-preview';
 export { AdditionalItemEdit } from './event/additional-item-edit/additional-item-edit';
 export { FeedbackVisualizer } from './feedback-visualizer/feedback-visualizer';
+export { OfflinePaymentConfigBlock } from './configuration/offline-payment-config-block';
+export { OfflinePaymentDialog } from './configuration/offline-payment-dialog';
+export { ConfirmationDialog } from './configuration/confirmation-dialog';
+export { CustomOfflinePaymentEventSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-event-selector';
+export { CustomOfflinePaymentSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-selector';
+export { CustomOfflinePaymentDeniedMethodsSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-denied-methods-selector';

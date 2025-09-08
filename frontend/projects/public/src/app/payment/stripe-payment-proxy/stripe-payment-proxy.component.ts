@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges} from '@angular/core';
-import {PaymentMethod, PaymentProxy} from '../../model/event';
+import {PaymentProxy, type PaymentMethodId} from '../../model/event';
 import {ReservationInfo} from '../../model/reservation-info';
 import {TranslateService} from '@ngx-translate/core';
 import {PaymentProvider} from '../payment-provider';
@@ -28,7 +28,7 @@ export class StripePaymentProxyComponent implements OnChanges, OnDestroy {
   reservation: ReservationInfo;
 
   @Input()
-  method: PaymentMethod;
+  method: PaymentMethodId;
 
   @Input()
   proxy: PaymentProxy;
