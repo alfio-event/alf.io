@@ -98,7 +98,7 @@ public interface TicketRepository {
 
     @Query("select count(*) from ticket where status in ('PENDING', 'RELEASED') and category_id = :categoryId and event_id = :eventId")
     Integer countPendingOrReleasedForCategory(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
-    
+
     @Query("select count(*) from ticket where status = 'FREE'  and category_id = :categoryId and event_id = :eventId")
     Integer countFreeTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
@@ -199,7 +199,7 @@ public interface TicketRepository {
 
     @Query("update ticket set status = :status where tickets_reservation_id = :reservationId")
     int updateTicketsStatusWithReservationId(@Bind("reservationId") String reservationId, @Bind("status") String status);
-    
+
     @Query("update ticket set status = :status where uuid = :uuid")
     int updateTicketStatusWithUUID(@Bind("uuid") String uuid, @Bind("status") String status);
 
@@ -271,7 +271,7 @@ public interface TicketRepository {
 
     @Query("select count(*) from ticket where tickets_reservation_id = :reservationId ")
     Integer countTicketsInReservation(@Bind("reservationId") String reservationId);
-    
+
     @Query("select * from ticket where uuid = :uuid")
     Ticket findByUUID(@Bind("uuid") String uuid);
 
@@ -313,7 +313,7 @@ public interface TicketRepository {
 
     @Query("update ticket set ext_reference = :extReference, locked_assignment = :lockedAssignment where id = :id and category_id = :categoryId")
     int updateExternalReferenceAndLocking(@Bind("id") int ticketId, @Bind("categoryId") int categoryId, @Bind("extReference") String extReference, @Bind("lockedAssignment") boolean locked);
-    
+
     @Query("update ticket set user_language = :userLanguage where uuid = :ticketIdentifier")
     int updateOptionalTicketInfo(@Bind("ticketIdentifier") String ticketIdentifier, @Bind("userLanguage") String userLanguage);
 
@@ -563,4 +563,7 @@ public interface TicketRepository {
 
     @Query("select exists ( select id from ticket where uuid = :uuid and event_id = :eventId)")
     boolean isTicketInEvent(@Bind("eventId") int eventId, @Bind("uuid") String uuid);
+
+    @Query("select count(*) from ticket where category_id = :categoryId and lower(email_address) = lower(:emailAddress)")
+    Integer countByEmailAddressAndCategory(@Bind("emailAddress") String emailAddress, @Bind("categoryId") int categoryId);
 }
