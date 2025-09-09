@@ -26,6 +26,7 @@ import alfio.model.modification.AdminReservationModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.subscription.SubscriptionWithUsageDetails;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.Getter;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -33,6 +34,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.beans.ConstructorProperties;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.Collections;
@@ -340,6 +343,7 @@ public class AdminReservationApiController {
         private final List<SerializablePair<TicketCategory, List<Ticket>>> ticketsByCategory;
         private final SubscriptionWithUsageDetails subscriptionDetails;
 
+        @ConstructorProperties({"reservation", "additionalInfo", "orderSummary", "ticketsByCategory", "subscriptionDetails"})
         public TicketReservationDescriptor(TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo, OrderSummary orderSummary, List<SerializablePair<TicketCategory, List<Ticket>>> ticketsByCategory, SubscriptionWithUsageDetails subscriptionDetails) {
             this.reservation = reservation;
             this.additionalInfo = additionalInfo;
@@ -357,6 +361,7 @@ public class AdminReservationApiController {
         private final Boolean notify;
         private final Boolean issueCreditNote;
 
+        @ConstructorProperties({"ticketIds", "refundTo", "notify", "issueCreditNote"})
         public RemoveTicketsModification(List<Integer> ticketIds, Map<Integer, Boolean> refundTo, Boolean notify, Boolean issueCreditNote) {
             this.ticketIds = ticketIds;
             this.refundTo = refundTo;
@@ -378,6 +383,7 @@ public class AdminReservationApiController {
     public static class RefundAmount {
         private final String amount;
 
+        @ConstructorProperties({"amount"})
         public RefundAmount(String amount) {
             this.amount = amount;
         }

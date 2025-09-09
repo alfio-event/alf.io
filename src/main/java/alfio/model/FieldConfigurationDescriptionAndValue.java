@@ -25,6 +25,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 
+import java.beans.ConstructorProperties;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -140,6 +141,7 @@ public class FieldConfigurationDescriptionAndValue {
         private final String fieldValue;
         private final Boolean editable;
 
+        @ConstructorProperties({"fieldIndex", "fieldCounter", "fieldValue", "editable"})
         public TicketFieldValue(int fieldIndex, int fieldCounter, String fieldValue, Boolean editable) {
             this.fieldIndex = fieldIndex;
             this.fieldCounter = fieldCounter;
