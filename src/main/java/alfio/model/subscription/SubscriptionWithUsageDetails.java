@@ -19,6 +19,7 @@ package alfio.model.subscription;
 import alfio.model.TicketReservationWithEventIdentifier;
 import lombok.Getter;
 
+import java.beans.ConstructorProperties;
 import java.util.List;
 
 @Getter
@@ -27,6 +28,7 @@ public class SubscriptionWithUsageDetails {
     private final UsageDetails usageDetails;
     private final List<TicketReservationWithEventIdentifier> reservations;
 
+    @ConstructorProperties({"subscription", "usageDetails", "reservations"})
     public SubscriptionWithUsageDetails(Subscription subscription, UsageDetails usageDetails, List<TicketReservationWithEventIdentifier> reservations) {
         this.subscription = subscription;
         this.usageDetails = usageDetails;

@@ -22,6 +22,7 @@ import alfio.model.PriceContainer;
 import alfio.model.PromoCodeDiscount;
 import alfio.util.MonetaryUtil;
 
+import java.beans.ConstructorProperties;
 import java.math.BigDecimal;
 import java.util.Optional;
 
@@ -34,6 +35,7 @@ public class AdditionalServicePriceContainer implements PriceContainer {
     private final BigDecimal vatPercentage;
     private final VatStatus vatStatus;
 
+    @ConstructorProperties({"customAmount", "additionalService", "promoCodeDiscount", "currencyCode", "vatPercentage", "vatStatus"})
     private AdditionalServicePriceContainer(BigDecimal customAmount, AdditionalService additionalService, PromoCodeDiscount promoCodeDiscount, String currencyCode, BigDecimal vatPercentage, VatStatus vatStatus) {
         this.customAmount = customAmount;
         this.additionalService = additionalService;

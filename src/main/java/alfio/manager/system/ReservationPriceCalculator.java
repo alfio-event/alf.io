@@ -24,6 +24,7 @@ import alfio.model.subscription.Subscription;
 import alfio.util.MonetaryUtil;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.beans.ConstructorProperties;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
@@ -42,6 +43,8 @@ public class ReservationPriceCalculator implements PriceContainer {
     private final List<Subscription> subscriptions;
     private final Optional<Subscription> appliedSubscription;
 
+    @ConstructorProperties({"reservation", "discount", "tickets", "additionalServiceItems",
+        "additionalServices", "purchaseContext", "subscriptions", "appliedSubscription"})
     public ReservationPriceCalculator(TicketReservation reservation, PromoCodeDiscount discount, List<Ticket> tickets, List<AdditionalServiceItem> additionalServiceItems, List<AdditionalService> additionalServices, PurchaseContext purchaseContext, List<Subscription> subscriptions, Optional<Subscription> appliedSubscription) {
         this.reservation = reservation;
         this.discount = discount;

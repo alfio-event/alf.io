@@ -19,6 +19,7 @@ package alfio.manager.support;
 import alfio.model.AdditionalServiceFieldValue;
 import lombok.Getter;
 
+import java.beans.ConstructorProperties;
 import java.util.List;
 
 @Getter
@@ -27,6 +28,7 @@ public class AdditionalServiceInfo {
     private final int count;
     private final List<AdditionalServiceFieldValue> fields;
 
+    @ConstructorProperties({"name", "count", "fields"})
     public AdditionalServiceInfo(String name, int count, List<AdditionalServiceFieldValue> fields) {
         this.name = name;
         this.count = count;

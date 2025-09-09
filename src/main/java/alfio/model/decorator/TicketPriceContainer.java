@@ -22,6 +22,7 @@ import alfio.model.Ticket;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.ObjectUtils;
 
+import java.beans.ConstructorProperties;
 import java.math.BigDecimal;
 import java.util.Optional;
 
@@ -34,6 +35,7 @@ public class TicketPriceContainer implements SummaryPriceContainer {
     private final BigDecimal vatPercentage;
     private final VatStatus vatStatus;
 
+    @ConstructorProperties({"ticket", "promoCodeDiscount", "vatPercentage", "vatStatus"})
     private TicketPriceContainer(Ticket ticket, PromoCodeDiscount promoCodeDiscount, BigDecimal vatPercentage, VatStatus vatStatus) {
         this.ticket = ticket;
         this.promoCodeDiscount = promoCodeDiscount;

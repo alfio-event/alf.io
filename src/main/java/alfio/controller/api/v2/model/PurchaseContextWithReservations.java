@@ -22,6 +22,7 @@ import alfio.util.LocaleUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.Validate;
 
+import java.beans.ConstructorProperties;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -39,6 +40,7 @@ public class PurchaseContextWithReservations {
     private final boolean sameDay;
     private final List<ReservationHeader> reservations;
 
+    @ConstructorProperties({"title", "publicIdentifier", "type", "formattedStartDate", "formattedEndDate", "sameDay", "reservations"})
     public PurchaseContextWithReservations(Map<String, String> title, String publicIdentifier, PurchaseContext.PurchaseContextType type, Map<String, String> formattedStartDate, Map<String, String> formattedEndDate, boolean sameDay, List<ReservationHeader> reservations) {
         this.title = title;
         this.publicIdentifier = publicIdentifier;

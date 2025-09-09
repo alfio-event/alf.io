@@ -21,10 +21,13 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.PaymentToken;
 import alfio.model.transaction.StaticPaymentMethods;
 
+import java.beans.ConstructorProperties;
+
 public class StripeCreditCardToken implements PaymentToken {
 
     private final String token;
 
+    @ConstructorProperties({"token"})
     public StripeCreditCardToken(String token) {
         this.token = token;
     }
