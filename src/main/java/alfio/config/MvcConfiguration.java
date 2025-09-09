@@ -86,8 +86,12 @@ public class MvcConfiguration implements WebMvcConfigurer {
         int cacheMinutes = isLive ? 15 : 0;
 
         var defaultCacheControl = CacheControl.maxAge(Duration.ofDays(isLive ? 10 : 0)).mustRevalidate();
-
         var alfioVersionPath = "/" + alfioVersion;
+        
+        registry
+            .addResourceHandler("/robots.txt")
+            .addResourceLocations("classpath:/public/robots.txt");
+
         registry.addResourceHandler("/resources/font/*", alfioVersionPath + "/resources/font/*")
             .addResourceLocations("classpath:/font/")
             .setCachePeriod(cacheMinutes * 60)

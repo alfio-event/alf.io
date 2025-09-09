@@ -35,6 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -131,7 +132,7 @@ public class GroupManager {
     public Optional<GroupModification> loadComplete(int id) {
         return groupRepository.getOptionalById(id)
             .map(wl -> {
-                List<GroupMemberModification> items = groupRepository.getItems(wl.getId()).stream().map(i -> new GroupMemberModification(i.getId(), i.getValue(), i.getDescription())).collect(Collectors.toList());
+                List<GroupMemberModification> items = groupRepository.getItems(wl.getId()).stream().map(i -> new GroupMemberModification(i.getId(), i.getValue(), i.getDescription())).toList();
                 return new GroupModification(wl.getId(), wl.getName(), wl.getDescription(), wl.getOrganizationId(), items);
             });
     }
@@ -165,7 +166,7 @@ public class GroupManager {
     Result<Integer> insertMembers(int groupId, List<GroupMemberModification> members) {
 
         Map<String, List<GroupMemberModification>> grouped = members.stream().collect(Collectors.groupingBy(GroupMemberModification::getValue));
-        List<String> duplicates = grouped.entrySet().stream().filter(e -> e.getValue().size() > 1).map(Map.Entry::getKey).collect(Collectors.toList());
+        List<String> duplicates = grouped.entrySet().stream().filter(e -> e.getValue().size() > 1).map(Map.Entry::getKey).toList();
 
         return new Result.Builder<Integer>()
             .checkPrecondition(duplicates::isEmpty, ErrorCode.lazy(() -> ErrorCode.custom("value.duplicate", duplicates.stream().limit(10).collect(Collectors.joining(", ")))))
@@ -175,27 +176,22 @@ public class GroupManager {
     @Transactional
     public boolean acquireMemberForTicket(Ticket ticket) {
         List<LinkedGroup> configurations = findLinks(ticket.getEventId(), ticket.getCategoryId());
-        if(CollectionUtils.isEmpty(configurations)) {
+        if (CollectionUtils.isEmpty(configurations)) {
             return true;
         }
         LinkedGroup configuration = configurations.get(0);
-        Optional<GroupMember> optionalItem = getMatchingMember(configuration, ticket.getEmail());
-        if(optionalItem.isEmpty()) {
+        Optional<MatchingMember> optionalItem = getMatchingMember(configuration, ticket.getEmail());
+        if (optionalItem.isEmpty()) {
             return false;
         }
-        GroupMember item = optionalItem.get();
+        MatchingMember matchingMember = optionalItem.get();
+        GroupMember item = matchingMember.member;
         boolean preventDuplication = configuration.getType() == ONCE_PER_VALUE;
         boolean limitAssignments = preventDuplication || configuration.getType() == LIMITED_QUANTITY;
-        if(limitAssignments) {
-            //reload and lock configuration
-            configuration = groupRepository.getConfigurationForUpdate(configuration.getId());
-            int existing = groupRepository.countExistingWhitelistedTickets(item.getId(), configuration.getId());
-            int expected = preventDuplication ? 1 : Optional.ofNullable(configuration.getMaxAllocation()).orElse(0);
-            if(existing >= expected) {
-                return false;
-            }
+        if(limitAssignments && ticketFailsValidation(matchingMember, ticket, configuration.getId())) {
+            return false;
         }
-        groupRepository.insertWhitelistedTicket(item.getId(), configuration.getId(), ticket.getId(), preventDuplication ? Boolean.TRUE : null);
+        groupRepository.insertWhitelistedTicket(item.getId(), configuration.getId(), ticket.getId(), preventDuplication && matchingMember.matchType == MatchType.FULL ? Boolean.TRUE : null);
         Map<String, Object> modifications = new HashMap<>();
         modifications.put("itemId", item.getId());
         modifications.put("configurationId", configuration.getId());
@@ -204,19 +200,43 @@ public class GroupManager {
         return true;
     }
 
-    private Optional<GroupMember> getMatchingMember(LinkedGroup configuration, String email) {
+    private boolean ticketFailsValidation(MatchingMember matchingMember,
+                                          Ticket ticket,
+                                          int configurationId) {
+        //reload and lock configuration
+        LinkedGroup configuration = groupRepository.getConfigurationForUpdate(configurationId);
+        boolean preventDuplication = configuration.getType() == ONCE_PER_VALUE;
+        int expected = preventDuplication ? 1 : Optional.ofNullable(configuration.getMaxAllocation()).orElse(0);
+
+        return switch (matchingMember.matchType) {
+            case FULL -> {
+                int existing = groupRepository.countExistingWhitelistedTickets(matchingMember.member.getId(), configuration.getId());
+                yield existing >= expected;
+            }
+            case PARTIAL -> {
+                int existing = ticketRepository.countByEmailAddressAndCategory(ticket.getEmail(), configuration.getTicketCategoryId());
+                yield existing > expected;
+            }
+        };
+    }
+
+    private Optional<MatchingMember> getMatchingMember(LinkedGroup configuration, String email) {
         String trimmed = StringUtils.trimToEmpty(email);
         Optional<GroupMember> exactMatch = groupRepository.findItemByValueExactMatch(configuration.getGroupId(), trimmed);
         if(exactMatch.isPresent() || configuration.getMatchType() == FULL) {
-            return exactMatch;
+            return exactMatch.map(m -> new MatchingMember(m, MatchType.FULL, null));
         }
         String partial = StringUtils.substringAfterLast(trimmed, "@");
-        return partial.length() > 0 ? groupRepository.findItemEndsWith(configuration.getId(), configuration.getGroupId(), "%@"+partial) : Optional.empty();
+        if (!partial.isEmpty()) {
+            return groupRepository.findItemEndsWith(configuration.getId(), configuration.getGroupId(), "%@"+partial)
+                .map(m -> new MatchingMember(m, MatchType.PARTIAL, partial.toLowerCase()));
+        }
+        return Optional.empty();
     }
 
     @Transactional
     public void deleteWhitelistedTicketsForReservation(String reservationId) {
-        List<Integer> tickets = ticketRepository.findTicketsInReservation(reservationId).stream().map(Ticket::getId).collect(Collectors.toList());
+        List<Integer> tickets = ticketRepository.findTicketsInReservation(reservationId).stream().map(Ticket::getId).toList();
         if(!tickets.isEmpty()) {
             int result = groupRepository.deleteExistingWhitelistedTickets(tickets);
             log.trace("deleted {} whitelisted tickets for reservation {}", result, reservationId);
@@ -239,7 +259,7 @@ public class GroupManager {
         List<GroupMemberModification> notPresent = modification.getItems().stream()
             .filter(i -> i.getId() == null && !existingValues.contains(i.getValue().strip().toLowerCase()))
             .distinct()
-            .collect(Collectors.toList());
+            .toList();
 
         if(!notPresent.isEmpty()) {
             var insertResult = insertMembers(listId, notPresent);
@@ -263,7 +283,7 @@ public class GroupManager {
 
     @Transactional
     public boolean deactivateGroup(int groupId) {
-        List<Integer> members = groupRepository.getItems(groupId).stream().map(GroupMember::getId).collect(Collectors.toList());
+        List<Integer> members = groupRepository.getItems(groupId).stream().map(GroupMember::getId).toList();
         if(!members.isEmpty()) {
             Validate.isTrue(deactivateMembers(members, groupId), "error while disabling group members");
         }
@@ -305,4 +325,7 @@ public class GroupManager {
             super(message);
         }
     }
+
+    enum MatchType { FULL, PARTIAL }
+    record MatchingMember(GroupMember member, MatchType matchType, @Nullable String domainMatch) {}
 }

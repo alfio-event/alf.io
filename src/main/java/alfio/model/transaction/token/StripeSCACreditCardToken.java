@@ -18,6 +18,7 @@ package alfio.model.transaction.token;
 
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.StaticPaymentMethods;
 import alfio.model.transaction.TransactionInitializationToken;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
@@ -47,7 +48,7 @@ public class StripeSCACreditCardToken implements TransactionInitializationToken 
 
     @Override
     public PaymentMethod getPaymentMethod() {
-        return PaymentMethod.CREDIT_CARD;
+        return StaticPaymentMethods.CREDIT_CARD;
     }
 
     @Override

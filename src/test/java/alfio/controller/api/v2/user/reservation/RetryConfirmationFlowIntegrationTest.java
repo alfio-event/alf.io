@@ -39,8 +39,8 @@ import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.StaticPaymentMethods;
 import alfio.repository.system.AdminJobQueueRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.AlfioIntegrationTest;
@@ -148,7 +148,7 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
             assertEquals("ABCD", reservation.getInvoiceNumber());
         }
         // transaction must be present
-        var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, PaymentMethod.CREDIT_CARD.name());
+        var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.CREDIT_CARD);
         assertEquals(HttpStatus.OK, tStatus.getStatusCode());
         assertTrue(requireNonNull(tStatus.getBody()).isSuccess());
         // check that the confirmation has been rescheduled
@@ -185,16 +185,16 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
         paymentForm.setPrivacyPolicyAccepted(true);
         paymentForm.setTermAndConditionsAccepted(true);
         paymentForm.setPaymentProxy(PaymentProxy.STRIPE);
-        paymentForm.setSelectedPaymentMethod(PaymentMethod.CREDIT_CARD);
+        paymentForm.setSelectedPaymentMethod(StaticPaymentMethods.CREDIT_CARD);
 
-        var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, PaymentMethod.CREDIT_CARD.name());
+        var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.CREDIT_CARD);
         assertEquals(HttpStatus.NOT_FOUND, tStatus.getStatusCode());
 
         // init payment
-        var initPaymentRes = reservationApiV2Controller.initTransaction(reservationId, PaymentMethod.CREDIT_CARD.name(), new LinkedMultiValueMap<>());
+        var initPaymentRes = reservationApiV2Controller.initTransaction(reservationId, StaticPaymentMethods.CREDIT_CARD.name(), new LinkedMultiValueMap<>());
         assertEquals(HttpStatus.OK, initPaymentRes.getStatusCode());
 
-        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, PaymentMethod.CREDIT_CARD.name());
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.CREDIT_CARD);
         assertEquals(HttpStatus.OK, tStatus.getStatusCode());
 
         var resInfoResponse = reservationApiV2Controller.getReservationInfo(reservationId, null);
@@ -215,7 +215,7 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
         // status must be FINALIZING
         checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.FINALIZING, context);
 
-        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, PaymentMethod.CREDIT_CARD.name());
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.CREDIT_CARD);
         assertEquals(HttpStatus.OK, tStatus.getStatusCode());
         assertNotNull(tStatus.getBody());
         assertTrue(tStatus.getBody().isSuccess());

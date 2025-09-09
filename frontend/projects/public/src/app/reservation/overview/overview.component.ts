@@ -2,7 +2,7 @@ import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, NavigationExtras, Router} from '@angular/router';
 import {ReservationService} from '../../shared/reservation.service';
 import {UntypedFormBuilder, UntypedFormGroup} from '@angular/forms';
-import {PaymentMethod, PaymentProxy, PaymentProxyWithParameters} from '../../model/event';
+import {CustomOfflinePayment, PaymentProxy, PaymentProxyWithParameters, staticPaymentMethodDetails, type PaymentMethod, type PaymentMethodId} from '../../model/event';
 import {ReservationInfo, SummaryRow} from '../../model/reservation-info';
 import {
     PaymentProvider,
@@ -48,12 +48,13 @@ export class OverviewComponent implements OnInit {
 
   selectedPaymentProvider: PaymentProvider;
 
-  activePaymentMethods: {[key in PaymentMethod]?: PaymentProxyWithParameters};
+  activePaymentMethods: {[key in PaymentMethod["paymentMethodId"]]: PaymentProxyWithParameters} = {};
   displaySubscriptionForm = false;
 
   @ViewChild('subscriptionInput')
   subscriptionInput: ElementRef<HTMLInputElement>;
   subscriptionCodeForm: UntypedFormGroup;
+  customOfflinePaymentMethods: CustomOfflinePayment[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -88,6 +89,10 @@ export class OverviewComponent implements OnInit {
     this.subscriptionCodeForm = this.formBuilder.group({
       subscriptionCode: this.formBuilder.control(null)
     });
+
+    this.reservationService.getApplicableCustomPaymentMethodDetails(this.reservationId).subscribe(methods => {
+        this.customOfflinePaymentMethods = methods;
+    });
   }
 
 
@@ -96,8 +101,8 @@ export class OverviewComponent implements OnInit {
       this.reservationInfo = resInfo;
 
       this.activePaymentMethods = this.reservationInfo.activePaymentMethods;
-      let currentPaymentProxy: PaymentProxy = null;
-      let selectedPaymentMethod: PaymentMethod = null;
+      let currentPaymentProxy: PaymentProxy | null = null;
+      let selectedPaymentMethod: PaymentMethodId | null = null;
 
       if (!resInfo.orderSummary.free && this.paymentMethodsCount() === 1) {
         selectedPaymentMethod = this.getSinglePaymentMethod();
@@ -115,9 +120,11 @@ export class OverviewComponent implements OnInit {
         selectedPaymentMethod = this.getPaymentMethodMatchingProxy(currentPaymentProxy);
 
         // we override and keep only the one selected
-        const paymentProxyAndParam = this.reservationInfo.activePaymentMethods[selectedPaymentMethod];
-        this.activePaymentMethods = {};
-        this.activePaymentMethods[selectedPaymentMethod] = paymentProxyAndParam;
+        if(selectedPaymentMethod) {
+            const paymentProxyAndParam = this.reservationInfo.activePaymentMethods[selectedPaymentMethod];
+            this.activePaymentMethods = {};
+            this.activePaymentMethods[selectedPaymentMethod] = paymentProxyAndParam;
+        }
         //
       } else {
         this.activePaymentMethods = this.reservationInfo.activePaymentMethods;
@@ -139,8 +146,8 @@ export class OverviewComponent implements OnInit {
     return Object.keys(this.activePaymentMethods).length;
   }
 
-  private getPaymentMethodMatchingProxy(paymentProxy: PaymentProxy): PaymentMethod | null {
-    const keys: PaymentMethod[] = Object.keys(this.activePaymentMethods) as PaymentMethod[];
+  private getPaymentMethodMatchingProxy(paymentProxy: PaymentProxy): PaymentMethodId | null {
+    const keys: PaymentMethodId[] = Object.keys(this.activePaymentMethods) as PaymentMethodId[];
     for (const idx in keys) {
       if (this.activePaymentMethods[keys[idx]].paymentProxy === paymentProxy) {
         return keys[idx];
@@ -149,8 +156,8 @@ export class OverviewComponent implements OnInit {
     return null;
   }
 
-  getSinglePaymentMethod(): PaymentMethod {
-    return (Object.keys(this.activePaymentMethods) as PaymentMethod[])[0];
+  getSinglePaymentMethod(): PaymentMethodId {
+    return (Object.keys(this.activePaymentMethods))[0];
   }
 
   back(requestInvoice?: boolean): void {
@@ -187,8 +194,20 @@ export class OverviewComponent implements OnInit {
     this.selectedPaymentProvider.pay().subscribe({
         next: paymentResult => {
             if (paymentResult.success) {
-                this.overviewForm.get('gatewayToken').setValue(paymentResult.gatewayToken);
+                this.overviewForm.get('gatewayToken')?.setValue(paymentResult.gatewayToken);
+                const selectedPaymentMethodId = this.overviewForm.get('selectedPaymentMethod')?.value;
+                if(
+                    selectedPaymentMethodId
+                    && !Object.keys(staticPaymentMethodDetails).includes(selectedPaymentMethodId)
+                ) {
+                    const maybeFoundCustomMethod = this.customOfflinePaymentMethods.find(pm => pm.paymentMethodId === selectedPaymentMethodId);
+                    if(maybeFoundCustomMethod) {
+                        const foundCustomMethod = maybeFoundCustomMethod!;
+                        this.overviewForm.get('selectedPaymentMethod')?.setValue(foundCustomMethod);
+                    }
+                }
                 const overviewFormValue = this.overviewForm.value;
+
                 this.reservationService.confirmOverview(this.reservationId, overviewFormValue, this.translate.currentLang).subscribe(res => {
                     if (res.success) {
                         this.unregisterHook();
@@ -389,10 +408,14 @@ export class OverviewComponent implements OnInit {
   }
 
   get paymentMethodDeferred(): boolean {
+    let result = false;
     if (this.reservationInfo.tokenAcquired) {
-      return false;
+      result = false;
+    } else {
+        result = this.selectedPaymentProvider != null && this.selectedPaymentProvider.paymentMethodDeferred;
     }
-    return this.selectedPaymentProvider != null && this.selectedPaymentProvider.paymentMethodDeferred;
+
+    return result;
   }
 
   get appliedSubscription(): boolean {

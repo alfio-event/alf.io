@@ -1,10 +1,19 @@
 <div>
     <label>Payment methods blacklist</label>
     <div class="checkbox" ng-repeat="(key, value) in $ctrl.paymentMethods">
-        <label>
+        <label ng-if="!(key === 'CUSTOM_OFFLINE' && $ctrl.organization)">
             <input type="checkbox" ng-checked="$ctrl.isOptionSelected(key)" name="key" ng-click="$ctrl.toggleSelected(key)">
-            <del class="text-muted" ng-if="$ctrl.isOptionSelected(key)">{{value}}</del>
             <span ng-if="!$ctrl.isOptionSelected(key)">{{value}}</span>
+            <del class="text-muted" ng-if="$ctrl.isOptionSelected(key)">
+                {{value}}
+            </del>
         </label>
+        <span ng-if="key === 'CUSTOM_OFFLINE' && $ctrl.organization">{{value}}</span>
+        <custom-offline-payment-denied-methods-selector
+            ng-if="key == 'CUSTOM_OFFLINE' && $ctrl.organization"
+            organization="{{$ctrl.organization}}"
+            event="{{$ctrl.event}}"
+            category="{{$ctrl.category}}"
+        />
     </div>
 </div>

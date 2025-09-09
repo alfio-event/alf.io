@@ -43,8 +43,8 @@ public class OnSiteManager implements PaymentProvider {
     private final TransactionRepository transactionRepository;
 
     @Override
-    public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
-        return EnumSet.of(PaymentMethod.ON_SITE);
+    public Set<? extends PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
+        return EnumSet.of(StaticPaymentMethods.ON_SITE);
     }
 
     @Override
@@ -54,7 +54,7 @@ public class OnSiteManager implements PaymentProvider {
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context, TransactionRequest transactionRequest) {
-        return paymentMethod == PaymentMethod.ON_SITE && isActive(context);
+        return paymentMethod == StaticPaymentMethods.ON_SITE && isActive(context);
     }
 
     @Override
@@ -64,7 +64,7 @@ public class OnSiteManager implements PaymentProvider {
 
     @Override
     public PaymentMethod getPaymentMethodForTransaction(Transaction transaction) {
-        return PaymentMethod.ON_SITE;
+        return StaticPaymentMethods.ON_SITE;
     }
 
     @Override

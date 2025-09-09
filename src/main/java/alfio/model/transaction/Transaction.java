@@ -29,6 +29,7 @@ import java.util.Optional;
 public class Transaction {
 
     public static final String NOTES_KEY = "transactionNotes";
+    public static final String SELECTED_PAYMENT_METHOD_KEY = "selectedPaymentMethod";
     public enum Status {
         PENDING,
         OFFLINE_MATCHING_PAYMENT_FOUND,
