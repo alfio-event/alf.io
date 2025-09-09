@@ -22,6 +22,8 @@ import alfio.model.transaction.PaymentToken;
 import alfio.model.transaction.StaticPaymentMethods;
 import lombok.Getter;
 
+import java.beans.ConstructorProperties;
+
 @Getter
 public class PayPalToken implements PaymentToken {
 
@@ -29,6 +31,7 @@ public class PayPalToken implements PaymentToken {
     private final String paymentId;
     private final String hmac;
 
+    @ConstructorProperties({"payerId", "paymentId", "hmac"})
     public PayPalToken(String payerId, String paymentId, String hmac) {
         this.payerId = payerId;
         this.paymentId = paymentId;

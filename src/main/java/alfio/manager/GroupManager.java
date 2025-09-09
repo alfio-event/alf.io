@@ -43,6 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.beans.ConstructorProperties;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -314,6 +315,7 @@ public class GroupManager {
         private final int categoryId;
         private final String value;
 
+        @ConstructorProperties({"categoryId", "value"})
         public WhitelistValidationItem(int categoryId, String value) {
             this.categoryId = categoryId;
             this.value = value;

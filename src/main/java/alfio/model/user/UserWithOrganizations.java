@@ -19,6 +19,7 @@ package alfio.model.user;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.experimental.Delegate;
 
+import java.beans.ConstructorProperties;
 import java.util.List;
 
 
@@ -29,6 +30,7 @@ public class UserWithOrganizations {
     private final List<Organization> memberOf;
     private final List<Role> roles;
 
+    @ConstructorProperties({"user", "memberOf", "roles"})
     public UserWithOrganizations(User user, List<Organization> memberOf, List<Role> roles) {
         this.user = user;
         this.memberOf = memberOf;

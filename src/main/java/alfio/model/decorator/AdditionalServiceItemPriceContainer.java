@@ -20,6 +20,7 @@ import alfio.model.*;
 import alfio.util.MonetaryUtil;
 import lombok.experimental.Delegate;
 
+import java.beans.ConstructorProperties;
 import java.math.BigDecimal;
 import java.util.Optional;
 
@@ -32,6 +33,7 @@ public class AdditionalServiceItemPriceContainer implements SummaryPriceContaine
     private final VatStatus eventVatStatus;
     private final BigDecimal eventVatPercentage;
 
+    @ConstructorProperties({"additionalServiceItem", "additionalService", "currencyCode", "discount", "eventVatStatus", "eventVatPercentage"})
     private AdditionalServiceItemPriceContainer(AdditionalServiceItem additionalServiceItem, AdditionalService additionalService, String currencyCode, PromoCodeDiscount discount, VatStatus eventVatStatus, BigDecimal eventVatPercentage) {
         this.additionalServiceItem = additionalServiceItem;
         this.additionalService = additionalService;

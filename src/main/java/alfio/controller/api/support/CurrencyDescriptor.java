@@ -18,6 +18,8 @@ package alfio.controller.api.support;
 
 import lombok.Getter;
 
+import java.beans.ConstructorProperties;
+
 @Getter
 public class CurrencyDescriptor {
     private final String code;
@@ -25,6 +27,7 @@ public class CurrencyDescriptor {
     private final String symbol;
     private final int fractionDigits;
 
+    @ConstructorProperties({"code", "name", "symbol", "fractionDigits"})
     public CurrencyDescriptor(String code, String name, String symbol, int fractionDigits) {
         this.code = code;
         this.name = name;

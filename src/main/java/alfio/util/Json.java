@@ -39,7 +39,6 @@ public class Json {
     static {
         ObjectMapper m = new ObjectMapper();
         m.registerModule(new JavaTimeModule());
-        m.registerModule(new ParameterNamesModule());
         m.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         m.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         OBJECT_MAPPER = m;

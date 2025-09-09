@@ -21,6 +21,7 @@ import alfio.model.ReservationWithPurchaseContext;
 import alfio.model.TicketReservation;
 import lombok.Getter;
 
+import java.beans.ConstructorProperties;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
@@ -42,6 +43,8 @@ public class ReservationHeader {
     private final PriceContainer.VatStatus vatStatus;
     private final List<ReservationWithPurchaseContext.PurchaseContextItem> items;
 
+    @ConstructorProperties({"id", "status", "formattedExpiresOn", "formattedConfirmedOn", "formattedCreatedOn", "invoiceNumber",
+        "finalPrice", "finalPrice", "currencyCode", "usedVatPercent", "vatStatus", "items"})
     public ReservationHeader(String id, TicketReservation.TicketReservationStatus status, Map<String, String> formattedExpiresOn, Map<String, String> formattedConfirmedOn, Map<String, String> formattedCreatedOn, String invoiceNumber, BigDecimal finalPrice, String currencyCode, BigDecimal usedVatPercent, PriceContainer.VatStatus vatStatus, List<ReservationWithPurchaseContext.PurchaseContextItem> items) {
         this.id = id;
         this.status = status;
