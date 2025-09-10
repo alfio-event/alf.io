@@ -353,27 +353,12 @@ public class AdditionalServiceManager {
         return List.of();
     }
 
-    public int countItemsInReservation(PurchaseContext purchaseContext, String reservationId) {
-        if (purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
-            return additionalServiceItemRepository.countByReservationUuid(((Event) purchaseContext).getId(), reservationId);
-        }
-        return 0;
-    }
-
     Optional<AdditionalServiceText> loadItemTitle(AdditionalServiceItem asi, Locale locale) {
         return additionalServiceTextRepository.findByLocaleAndType(asi.getAdditionalServiceId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE);
     }
 
     boolean hasPaidSupplements(int eventId, String reservationId) {
         return additionalServiceItemRepository.hasPaidSupplements(eventId, reservationId);
-    }
-
-    List<AdditionalService> findAllInEventWithPolicy(int eventId, AdditionalService.SupplementPolicy supplementPolicy) {
-        return additionalServiceRepository.findAllInEventWithPolicy(eventId, supplementPolicy);
-    }
-
-    public List<AdditionalService> loadAllForReservation(String reservationId, int eventId) {
-        return additionalServiceRepository.loadAllForReservation(reservationId, eventId);
     }
 
     public void linkItemsToTickets(String reservationId,

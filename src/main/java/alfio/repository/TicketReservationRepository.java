@@ -67,9 +67,6 @@ public interface TicketReservationRepository {
     @Query("select user_id_fk user_id, organization_id_fk organization_id from tickets_reservation where id = :reservationId and user_id_fk is not null")
     Optional<UserIdAndOrganizationId> getReservationOwnerAndOrganizationId(@Bind("reservationId") String reservationId);
 
-    @Query("select * from tickets_reservation tr join ba_user u on u.id = tr.user_id_fk where u.username = :username")
-    List<TicketReservation> loadByOwner(@Bind("username") String username);
-
     @Query("select user_language from tickets_reservation where id = :reservationId")
     String loadUserLanguage(@Bind("reservationId") String reservationId);
 
@@ -148,9 +145,6 @@ public interface TicketReservationRepository {
 
     @Query("select * from tickets_reservation where id = :id for update")
     TicketReservation findReservationByIdForUpdate(@Bind("id") String id);
-
-    @Query("select * from tickets_reservation where id = :id and event_id_fk = :eventId")
-    Optional<TicketReservation> findOptionalReservationByIdAndEventId(@Bind("id") String reservationId, @Bind("eventId") int eventId);
 
     @Query("select * from tickets_reservation where id = :id")
     Optional<TicketReservation> findOptionalReservationById(@Bind("id") String id);
