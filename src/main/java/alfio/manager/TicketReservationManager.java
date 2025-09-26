@@ -1207,10 +1207,6 @@ public class TicketReservationManager {
         return configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.ticketCategory(eventAndOrganizationId, ticketCategoryId)).getValueAsIntOrDefault(5);
     }
 
-    public Optional<TicketReservation> findByIdForEvent(String reservationId, int eventId) {
-        return ticketReservationRepository.findOptionalReservationByIdAndEventId(reservationId, eventId);
-    }
-
     public Optional<TicketReservation> findById(String reservationId) {
         return ticketReservationRepository.findOptionalReservationById(reservationId);
     }
@@ -1625,14 +1621,6 @@ public class TicketReservationManager {
 
     public Integer getPendingPaymentsCount(int eventId) {
         return ticketReservationRepository.findAllReservationsWaitingForPaymentCountInEventId(eventId);
-    }
-
-    public List<Pair<TicketReservation, BillingDocument>> findAllInvoices(int eventId) {
-        List<BillingDocument> documents = billingDocumentRepository.findAllOfTypeForEvent(BillingDocument.Type.INVOICE, eventId);
-        Map<String, BillingDocument> documentsByReservationId = documents.stream().collect(toMap(BillingDocument::getReservationId, Function.identity()));
-        return ticketReservationRepository.findByIds(documentsByReservationId.keySet()).stream()
-            .map(r -> Pair.of(r, documentsByReservationId.get(r.getId())))
-            .collect(toList());
     }
 
     public Stream<Pair<TicketReservationWithTransaction, List<BillingDocument>>> streamAllDocumentsFor(int eventId) {
