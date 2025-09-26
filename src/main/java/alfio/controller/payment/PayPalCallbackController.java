@@ -22,31 +22,76 @@ import alfio.manager.payment.PayPalManager;
 import alfio.model.PurchaseContext;
 import alfio.model.TicketReservation;
 import alfio.model.transaction.token.PayPalToken;
+import alfio.util.TemplateManager;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Controller
-@RequestMapping("/{purchaseContextType}/{purchaseContextIdentifier}/reservation/{reservationId}/payment/paypal")
 public class PayPalCallbackController {
 
+    private static final String PAYPAL_CALLBACK_BASE_PATH = "/{purchaseContextType}/{purchaseContextIdentifier}/reservation/{reservationId}/payment/paypal";
     private final PurchaseContextManager purchaseContextManager;
     private final TicketReservationManager ticketReservationManager;
     private final PayPalManager payPalManager;
+    private final TemplateManager templateManager;
 
-    public PayPalCallbackController(PurchaseContextManager purchaseContextManager, TicketReservationManager ticketReservationManager, PayPalManager payPalManager) {
+    public PayPalCallbackController(PurchaseContextManager purchaseContextManager,
+                                    TicketReservationManager ticketReservationManager,
+                                    PayPalManager payPalManager,
+                                    TemplateManager templateManager) {
         this.purchaseContextManager = purchaseContextManager;
         this.ticketReservationManager = ticketReservationManager;
         this.payPalManager = payPalManager;
+        this.templateManager = templateManager;
     }
 
-    @GetMapping("/confirm")
+    @GetMapping("/payment/paypal/redirect/{operation}")
+    public void payPalRedirect(@PathVariable String operation,
+                               @RequestParam PurchaseContext.PurchaseContextType purchaseContextType,
+                               @RequestParam("purchaseContextIdentifier") String purchaseContextId,
+                               @RequestParam String reservationId,
+                               @RequestParam(value = "token", required = false) String payPalPaymentId,
+                               @RequestParam(value = "PayerID", required = false) String payPalPayerID,
+                               @RequestParam(value = "hmac") String hmac,
+                               HttpServletResponse response) throws IOException {
+
+        var uriBuilder = UriComponentsBuilder.fromUriString(PAYPAL_CALLBACK_BASE_PATH + "/" + operation)
+            .queryParam("hmac", hmac);
+
+        if (payPalPaymentId != null) {
+            uriBuilder.queryParam("token", payPalPaymentId);
+        }
+
+        if (payPalPayerID != null) {
+            uriBuilder.queryParam("PayerID", payPalPayerID);
+        }
+
+        response.setContentType(MediaType.TEXT_HTML_VALUE);
+        templateManager.renderText(
+            new ClassPathResource("/alfio/templates/openid-redirect.ms"),
+            Map.of("redirectPath", uriBuilder.build(Map.of(
+                "purchaseContextType", purchaseContextType,
+                "purchaseContextIdentifier", purchaseContextId,
+                "reservationId", reservationId
+            ))),
+            response.getWriter()
+        );
+        response.flushBuffer();
+    }
+
+    @GetMapping(PAYPAL_CALLBACK_BASE_PATH + "/confirm")
     public String payPalSuccess(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
                                 @PathVariable("purchaseContextIdentifier") String purchaseContextId,
                                 @PathVariable String reservationId,
@@ -80,7 +125,7 @@ public class PayPalCallbackController {
         }
     }
 
-    @GetMapping("/cancel")
+    @GetMapping(PAYPAL_CALLBACK_BASE_PATH + "/cancel")
     public String payPalCancel(@PathVariable String reservationId,
                                @RequestParam(value = "token", required = false) String payPalPaymentId,
                                @RequestParam String hmac) {

@@ -147,6 +147,10 @@ public class TemplateManager {
         compile(resource, TemplateOutput.HTML).execute(model, out);
     }
 
+    public void renderText(Resource resource, Map<String, Object> model, Writer out) {
+        compile(resource, TemplateOutput.TEXT).execute(model, out);
+    }
+
     private Map<String, Object> modelEnricher(Map<String, Object> model, PurchaseContext purchaseContext, Locale locale) {
         Map<String, Object> toEnrich = new HashMap<>(model);
         if(!toEnrich.containsKey("purchaseContext")) {

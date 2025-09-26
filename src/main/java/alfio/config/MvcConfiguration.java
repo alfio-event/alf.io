@@ -126,7 +126,8 @@ public class MvcConfiguration implements WebMvcConfigurer {
         private final RequestMatcher staticContentToIgnore;
 
         ExcludeSessionRepositoryFilter(String alfioVersion) {
-            var methodMatcher = RequestMatchers.anyOf(antMatcher(HttpMethod.GET),
+            var methodMatcher = RequestMatchers.anyOf(
+                antMatcher(HttpMethod.GET),
                 antMatcher(HttpMethod.HEAD),
                 antMatcher(HttpMethod.TRACE),
                 antMatcher(HttpMethod.OPTIONS)
@@ -137,7 +138,8 @@ public class MvcConfiguration implements WebMvcConfigurer {
                 antMatcher("/" + alfioVersion + "/resources/**"),
                 antMatcher("/frontend-public/**"),
                 antMatcher("/" + alfioVersion + "/frontend-admin/**"),
-                antMatcher("/file/**")
+                antMatcher("/file/**"),
+                antMatcher("/payment/paypal/redirect/*")
             );
             this.staticContentToIgnore = RequestMatchers.allOf(methodMatcher, urlMatcher);
         }
