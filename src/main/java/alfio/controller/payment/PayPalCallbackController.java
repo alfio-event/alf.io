@@ -67,6 +67,13 @@ public class PayPalCallbackController {
                                @RequestParam(value = "hmac") String hmac,
                                HttpServletResponse response) throws IOException {
 
+        var optionalPurchaseContext = retrievePurchaseContext(purchaseContextType, purchaseContextId, reservationId);
+
+        if(optionalPurchaseContext.isEmpty()) {
+            response.sendRedirect("/");
+            return;
+        }
+
         var uriBuilder = UriComponentsBuilder.fromUriString(PAYPAL_CALLBACK_BASE_PATH + "/" + operation)
             .queryParam("hmac", hmac);
 
@@ -99,8 +106,7 @@ public class PayPalCallbackController {
                                 @RequestParam(value = "PayerID", required = false) String payPalPayerID,
                                 @RequestParam(value = "hmac") String hmac) {
 
-        var optionalPurchaseContext = purchaseContextManager.findByReservationId(reservationId)
-            .filter(pc -> pc.getType() == purchaseContextType && pc.getPublicIdentifier().equals(purchaseContextId));
+        var optionalPurchaseContext = retrievePurchaseContext(purchaseContextType, purchaseContextId, reservationId);
         if(optionalPurchaseContext.isEmpty()) {
             return "redirect:/";
         }
@@ -121,16 +127,17 @@ public class PayPalCallbackController {
             payPalManager.saveToken(res.getId(), purchaseContext, token);
             return "redirect:/" + purchaseContext.getType().getUrlComponent() + "/" + purchaseContext.getPublicIdentifier() + "/reservation/" +res.getId() + "/overview";
         } else {
-            return payPalCancel(res.getId(), payPalPaymentId, hmac);
+            return payPalCancel(purchaseContextType, purchaseContextId, res.getId(), payPalPaymentId);
         }
     }
 
     @GetMapping(PAYPAL_CALLBACK_BASE_PATH + "/cancel")
-    public String payPalCancel(@PathVariable String reservationId,
-                               @RequestParam(value = "token", required = false) String payPalPaymentId,
-                               @RequestParam String hmac) {
+    public String payPalCancel(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                               @PathVariable("purchaseContextIdentifier") String purchaseContextId,
+                               @PathVariable String reservationId,
+                               @RequestParam(value = "token", required = false) String payPalPaymentId) {
 
-        var optionalPurchaseContext = purchaseContextManager.findByReservationId(reservationId);
+        var optionalPurchaseContext = retrievePurchaseContext(purchaseContextType, purchaseContextId, reservationId);
         if(optionalPurchaseContext.isEmpty()) {
             return "redirect:/";
         }
@@ -144,5 +151,10 @@ public class PayPalCallbackController {
 
         payPalManager.removeToken(optionalReservation.get(), payPalPaymentId);
         return "redirect:/" + purchaseContext.getType().getUrlComponent() + "/" + purchaseContext.getPublicIdentifier() + "/reservation/" + optionalReservation.get().getId() + "/overview";
+    }
+
+    private Optional<PurchaseContext> retrievePurchaseContext(PurchaseContext.PurchaseContextType purchaseContextType, String purchaseContextId, String reservationId) {
+        return purchaseContextManager.findByReservationId(reservationId)
+            .filter(pc -> pc.getType() == purchaseContextType && pc.getPublicIdentifier().equals(purchaseContextId));
     }
 }
