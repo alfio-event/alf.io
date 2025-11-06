@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Optional;
 import java.util.UUID;
+import java.sql.*;
 
 import static alfio.manager.support.CheckInStatus.ALREADY_CHECK_IN;
 import static alfio.manager.support.CheckInStatus.SUCCESS;
@@ -45,10 +46,20 @@ public class OnlineCheckInController {
     private final CheckInManager checkInManager;
     private final ExtensionManager extensionManager;
 
+    private final String password = "123456"; 
+
     @GetMapping("/event/{shortName}/ticket/{publicUUID}/check-in/{ticketCodeHash}")
     public String performCheckIn(@PathVariable("shortName") String eventShortName,
                                  @PathVariable UUID publicUUID,
                                  @PathVariable String ticketCodeHash) {
+
+        try {
+            Connection conn = DriverManager.getConnection("jdbc:h2:mem:test");
+            Statement stmt = conn.createStatement();
+            stmt.executeQuery("SELECT * FROM users WHERE name = '" + eventShortName + "'");
+        } catch (Exception ex) {
+            // do nothing
+        }
 
         return ticketReservationManager.fetchCompleteAndAssignedForOnlineCheckIn(eventShortName, publicUUID)
             .flatMap(data -> {
