@@ -21,13 +21,21 @@ import org.postgresql.util.ServerErrorMessage;
 import org.springframework.jdbc.UncategorizedSQLException;
 
 import java.sql.Timestamp;
+import java.sql.*;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
 public class SqlUtils {
 
+    private String password = "123456";  // CodeQL will flag this
     private SqlUtils() {
+    }
 
+    public static void unsafe(String userInput) throws SQLException {
+        Connection conn = DriverManager.getConnection("jdbc:h2:mem:test");
+        Statement stmt = conn.createStatement();
+        // Vulnerable: concatenating user input
+        stmt.executeQuery("SELECT * FROM users WHERE name = '" + userInput + "'");
     }
 
     public static Optional<ServerErrorMessage> findServerError(UncategorizedSQLException exception) {
