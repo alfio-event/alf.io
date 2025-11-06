@@ -1,8 +1,5 @@
 name: "E2E Test"
-on:
-    schedule:
-        - cron:  '0 4 * * *'
-    workflow_dispatch:
+on: workflow_dispatch
 
 jobs:
     build:
