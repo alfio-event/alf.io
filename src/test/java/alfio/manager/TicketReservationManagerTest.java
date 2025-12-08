@@ -38,11 +38,7 @@ import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.command.CleanupReservations;
 import alfio.model.system.command.FinalizeReservation;
-import alfio.model.transaction.PaymentContext;
-import alfio.model.transaction.PaymentProxy;
-import alfio.model.transaction.StaticPaymentMethods;
-import alfio.model.transaction.Transaction;
-import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
+import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.ServerInitiatedTransaction;
 import alfio.model.transaction.capabilities.WebhookHandler;
 import alfio.model.transaction.token.StripeCreditCardToken;
@@ -55,7 +51,8 @@ import alfio.repository.user.UserRepository;
 import alfio.test.util.TestUtil;
 import alfio.util.*;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
-import org.apache.commons.lang3.StringUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,9 +66,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.PlatformTransactionManager;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 
 import java.time.*;
 import java.time.temporal.ChronoUnit;
@@ -291,7 +285,7 @@ class TicketReservationManagerTest {
         when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
         when(eventRepository.findAll()).thenReturn(Collections.singletonList(event));
         var baseUrlConf = new MaybeConfiguration(ConfigurationKeys.BASE_URL, new ConfigurationKeyValuePathLevel(null, BASE_URL, null));
-        when(configurationManager.baseUrl(any())).thenReturn(StringUtils.removeEnd(BASE_URL, "/"));
+        when(configurationManager.baseUrl(any())).thenReturn(Strings.CS.removeEnd(BASE_URL, "/"));
         when(configurationManager.getForSystem(ConfigurationKeys.BASE_URL)).thenReturn(baseUrlConf);
         when(configurationManager.getFor(eq(ConfigurationKeys.BASE_URL), any())).thenReturn(baseUrlConf);
         when(configurationManager.hasAllConfigurationsForInvoice(eq(event))).thenReturn(false);
@@ -536,6 +530,15 @@ class TicketReservationManagerTest {
     }
 
     private void initOfflinePaymentTest() {
+        initOfflinePaymentTest(true);
+    }
+
+    private void initOfflinePaymentTest(boolean businessDays) {
+        when(configurationManager.getFor(eq(EnumSet.of(OFFLINE_PAYMENT_DAYS, OFFLINE_PAYMENT_BUSINESS_DAYS)), any()))
+            .thenReturn(Map.of(
+                OFFLINE_PAYMENT_DAYS, new MaybeConfiguration(OFFLINE_PAYMENT_DAYS, new ConfigurationKeyValuePathLevel(OFFLINE_PAYMENT_DAYS.getValue(), String.valueOf(OFFLINE_PAYMENT_DEFAULT_DAYS), null)),
+                OFFLINE_PAYMENT_BUSINESS_DAYS, new MaybeConfiguration(OFFLINE_PAYMENT_BUSINESS_DAYS, new ConfigurationKeyValuePathLevel(OFFLINE_PAYMENT_BUSINESS_DAYS.getValue(), String.valueOf(businessDays), null))
+            ));
         when(configurationManager.getFor(eq(OFFLINE_PAYMENT_DAYS), any()))
             .thenReturn(new MaybeConfiguration(OFFLINE_PAYMENT_DAYS, new ConfigurationKeyValuePathLevel(OFFLINE_PAYMENT_DAYS.getValue(), String.valueOf(OFFLINE_PAYMENT_DEFAULT_DAYS), null)));
         when(event.getZoneId()).thenReturn(ClockProvider.clock().getZone());
@@ -547,6 +550,15 @@ class TicketReservationManagerTest {
         when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(3));
         ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(new PaymentContext(event), configurationManager);
         ZonedDateTime expectedDate = ZonedDateTime.from(WorkingDaysAdjusters.addDays(ZonedDateTime.now(ClockProvider.clock()).truncatedTo(ChronoUnit.HALF_DAYS), OFFLINE_PAYMENT_DEFAULT_DAYS));
+        Assertions.assertEquals(expectedDate, offlinePaymentDeadline);
+    }
+
+    @Test
+    void returnTheExpiredDateAsConfiguredConsideringCalendarDays() {
+        initOfflinePaymentTest(false);
+        when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(3));
+        ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(new PaymentContext(event), configurationManager);
+        ZonedDateTime expectedDate = ZonedDateTime.now(ClockProvider.clock()).truncatedTo(ChronoUnit.HALF_DAYS).plusDays(OFFLINE_PAYMENT_DEFAULT_DAYS);
         Assertions.assertEquals(expectedDate, offlinePaymentDeadline);
     }
 
