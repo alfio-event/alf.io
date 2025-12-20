@@ -16,54 +16,38 @@
  */
 package alfio.manager;
 
-import org.junit.jupiter.api.AfterAll;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
 
 import java.net.http.HttpClient;
 
-public class FileDownloadManagerIntegrationTest {
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
-    private static ClientAndServer mockServer;
+@WireMockTest
+class FileDownloadManagerIntegrationTest {
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
-    @BeforeAll
-    public static void startServer() {
-        mockServer = ClientAndServer.startClientAndServer(4242);
-
-        mockServer
-            .when(HttpRequest.request().withMethod("GET").withPath("/test.txt"))
-            .respond(HttpResponse.response()
-                .withStatusCode(200)
-                .withHeader("Content-Type", "text/plain; charset=utf-8")
-                .withBody("Hello World!"));
-
-        mockServer
-            .when(HttpRequest.request().withMethod("GET").withPath("/404"))
-            .respond(HttpResponse.response().withStatusCode(404));
-    }
-
-    @AfterAll
-    public static void stopServer() {
-        mockServer.stop();
-    }
-
     @Test
-    public void testFileDownloadSuccess() {
-        var file = new FileDownloadManager(httpClient).downloadFile("http://localhost:4242/test.txt");
+    void testFileDownloadSuccess(WireMockRuntimeInfo wmRuntimeInfo) {
+        stubFor(get("/test.txt")
+            .willReturn(ok("Hello World!")
+                .withHeader("Content-Type", "text/plain; charset=utf-8")));
+
+        var file = new FileDownloadManager(httpClient).downloadFile(wmRuntimeInfo.getHttpBaseUrl() + "/test.txt");
         Assertions.assertEquals("text/plain; charset=utf-8", file.getType());
         Assertions.assertEquals("test.txt", file.getName());
         Assertions.assertEquals("Hello World!".length(), file.getFile().length);
     }
 
     @Test
-    public void testFileDownloadNotFound() {
-        var res = new FileDownloadManager(httpClient).downloadFile("http://localhost:4242/404");
+    void testFileDownloadNotFound(WireMockRuntimeInfo wmRuntimeInfo) {
+        stubFor(get("/404")
+            .willReturn(notFound()));
+
+        var res = new FileDownloadManager(httpClient).downloadFile(wmRuntimeInfo.getHttpBaseUrl() + "/404");
         Assertions.assertNull(res);
     }
 }
