@@ -44,6 +44,7 @@ import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 import org.springframework.session.web.http.CookieSerializer;
@@ -95,7 +96,7 @@ public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
             .clientRegistrationRepository(clientRegistrationRepository)
             .userInfoEndpoint(uie -> uie.oidcUserService(oidcUserService(OpenIdConfiguration.from(environment(), configurationManager()))))
             .successHandler(new OpenIdLoginSuccessHandler(templateManager, cookieSerializer))
-        ).addFilterBefore(new PreAuthCookieWriterFilter(cookieSerializer, new AntPathRequestMatcher(ADMIN_LOGIN_REDIRECT_PATH)), OAuth2AuthorizationRequestRedirectFilter.class);
+        ).addFilterBefore(new PreAuthCookieWriterFilter(cookieSerializer, PathPatternRequestMatcher.withDefaults().matcher(ADMIN_LOGIN_REDIRECT_PATH)), OAuth2AuthorizationRequestRedirectFilter.class);
     }
 
     private OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService(OpenIdConfiguration openIdConfiguration) {
