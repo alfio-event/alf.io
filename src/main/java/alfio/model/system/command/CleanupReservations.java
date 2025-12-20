@@ -20,5 +20,11 @@ import alfio.model.PurchaseContext;
 
 import java.util.List;
 
-public record CleanupReservations(PurchaseContext purchaseContext, List<String> reservationIds, boolean expired) {
+public record CleanupReservations(
+    PurchaseContext purchaseContext,
+    List<String> reservationIds,
+    boolean expired,
+    boolean afterRelease,
+    boolean creditNoteIssued
+) {
 }

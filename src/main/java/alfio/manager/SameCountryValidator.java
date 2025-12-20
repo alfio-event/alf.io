@@ -21,14 +21,13 @@ import alfio.model.PurchaseContext;
 import alfio.model.VatDetail;
 import ch.digitalfondue.vatchecker.EUVatCheckResponse;
 import ch.digitalfondue.vatchecker.EUVatChecker;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.function.Predicate;
 
-@RequiredArgsConstructor
+
 public class SameCountryValidator implements Predicate<String> {
 
     private static final Logger log = LoggerFactory.getLogger(SameCountryValidator.class);
@@ -38,6 +37,14 @@ public class SameCountryValidator implements Predicate<String> {
     private final String ticketReservationId;
     private final EuVatChecker checker;
     private final EUVatChecker client = new EUVatChecker();
+
+    public SameCountryValidator(ConfigurationManager configurationManager, ExtensionManager extensionManager, PurchaseContext purchaseContext, String ticketReservationId, EuVatChecker checker) {
+        this.configurationManager = configurationManager;
+        this.extensionManager = extensionManager;
+        this.purchaseContext = purchaseContext;
+        this.ticketReservationId = ticketReservationId;
+        this.checker = checker;
+    }
 
     @Override
     public boolean test(String vatNr) {

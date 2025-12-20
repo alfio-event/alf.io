@@ -25,8 +25,8 @@ import alfio.model.modification.SendCodeModification;
 import alfio.model.subscription.Subscription;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionValidityType;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.StaticPaymentMethods;
 import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -437,7 +437,7 @@ public enum TemplateResource {
             "reservationCancelled", true,
             RESERVATION, reservation,
             EVENT_NAME, event.getDisplayName(),
-            "provider", PaymentMethod.CREDIT_CARD.name(),
+            "provider", StaticPaymentMethods.CREDIT_CARD.name(),
             "reason", "this is the reason from the provider",
             RESERVATION_URL, "http://your-domain.tld/reservation-url/",
             ORGANIZATION, organization
@@ -541,11 +541,11 @@ public enum TemplateResource {
                                                                       String eventPageUrl,
                                                                       String promoCodeLabel) {
         Map<String, Object> model = new HashMap<>();
-        model.put("code", m.getCode());
+        model.put("code", m.code());
         model.put(EVENT, event);
         model.put(ORGANIZATION, organization);
         model.put("eventPage", eventPageUrl);
-        model.put("assignee", m.getAssignee());
+        model.put("assignee", m.assignee());
         model.put("promoCodeDescription", promoCodeLabel);
         return model;
     }

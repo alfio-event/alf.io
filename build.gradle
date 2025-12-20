@@ -16,9 +16,9 @@ buildscript {
     dependencies {
         classpath 'org.postgresql:postgresql:42.5.1'
         // for processing the index.html at build time
-        classpath "ch.digitalfondue.jfiveparse:jfiveparse:1.1.1"
+        classpath "ch.digitalfondue.jfiveparse:jfiveparse:1.1.2"
         // for processing the mjml templates at build time
-        classpath "ch.digitalfondue.mjml4j:mjml4j:1.1.1"
+        classpath "ch.digitalfondue.mjml4j:mjml4j:1.1.3"
     }
 
 
@@ -103,7 +103,6 @@ configurations {
 repositories {
     mavenCentral()
     mavenLocal()
-    maven { url 'https://repo.spring.io/milestone' }
 }
 
 dependencies {
@@ -120,9 +119,9 @@ dependencies {
     implementation "com.samskivert:jmustache:1.16"
     implementation 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
-    implementation 'io.github.openhtmltopdf:openhtmltopdf-core:1.1.22'
-    implementation 'io.github.openhtmltopdf:openhtmltopdf-pdfbox:1.1.22'
-    implementation 'ch.digitalfondue.jfiveparse:jfiveparse:1.1.1'
+    implementation 'io.github.openhtmltopdf:openhtmltopdf-core:1.1.28'
+    implementation 'io.github.openhtmltopdf:openhtmltopdf-pdfbox:1.1.28'
+    implementation 'ch.digitalfondue.jfiveparse:jfiveparse:1.1.2'
     /**/
     implementation 'com.google.zxing:core:3.5.3'
     implementation 'com.google.zxing:javase:3.5.3'

@@ -32,7 +32,6 @@ import static java.util.Optional.ofNullable;
  * <p>
  * Supported:
  * - Openshift : pgsql only
- * - ElephantDB: runs on Openshift and Cloud Foundry
  * - Cloud Foundry: postgres
  * - Heroku
  * - AWS
@@ -45,42 +44,6 @@ public enum PlatformProvider {
         @Override
         public boolean isHosting(Environment env) {
             return env.acceptsProfiles(Profiles.of(Initializer.PROFILE_APP_CDS));
-        }
-    },
-
-    //see
-    // https://developers.openshift.com/external-services/elephantsql.html
-    // http://docs.run.pivotal.io/marketplace/services/elephantsql.html
-    ELEPHANTSQL {
-
-        @Override
-        public String getUrl(Environment env) {
-            if(isCloudFoundry(env)) {
-                return "";
-            }
-            URI uri = resolveURI(env, "ELEPHANTSQL_URI");
-            return "%s://%s:%s%s".formatted("jdbc:postgresql", uri.getHost(), uri.getPort(), uri.getPath());
-        }
-
-        @Override
-        public String getUsername(Environment env) {
-            return isCloudFoundry(env) ? "" : Pattern.compile(":").split(resolveURI(env, "ELEPHANTSQL_URI").getUserInfo())[0];
-        }
-
-
-        @Override
-        public String getPassword(Environment env) {
-            return isCloudFoundry(env) ? "" : Pattern.compile(":").split(resolveURI(env, "ELEPHANTSQL_URI").getUserInfo())[1];
-        }
-
-        @Override
-        public boolean isHosting(Environment env) {
-            return ofNullable(env.getProperty("ELEPHANTSQL_URI")).isPresent() || ofNullable(env.getProperty("VCAP_SERVICES")).filter(s -> s.contains("elephantsql")).isPresent();
-        }
-
-        @Override
-        public int getMaxActive(Environment env) {
-            return ofNullable(env.getProperty("ELEPHANTSQL_MAX_CONNS")).map(Integer::parseInt).orElseGet(() -> super.getMaxActive(env));
         }
     },
 
@@ -118,7 +81,6 @@ public enum PlatformProvider {
     /**
      * Cloud Foundry configuration.
      * see https://docs.cloudfoundry.org/buildpacks/java/spring-service-bindings.html
-     * We assume that either the "MySql" service or "ElephantSql" have already been bound to the application.
      * Anyway, since we use Spring, the Cloud Foundry engine should replace the "DataSource" bean with the right one.
      */
     CLOUD_FOUNDRY {

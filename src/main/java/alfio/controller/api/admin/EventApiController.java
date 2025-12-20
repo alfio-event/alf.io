@@ -24,6 +24,8 @@ import alfio.controller.support.TemplateProcessor;
 import alfio.extension.exception.AlfioScriptingException;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodDoesNotExistException;
 import alfio.manager.support.extension.ExtensionCapability;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
@@ -42,7 +44,9 @@ import alfio.model.user.User;
 import alfio.repository.EventDescriptionRepository;
 import alfio.repository.PurchaseContextFieldRepository;
 import alfio.repository.SponsorScanRepository;
+import alfio.repository.TicketCategoryRepository;
 import alfio.util.*;
+
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
@@ -51,7 +55,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.SneakyThrows;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -61,6 +64,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.util.Assert;
@@ -106,6 +110,7 @@ public class EventApiController {
     private final EventStatisticsManager eventStatisticsManager;
     private final I18nManager i18nManager;
     private final TicketReservationManager ticketReservationManager;
+    private final TicketCategoryRepository ticketCategoryRepository;
     private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketHelper ticketHelper;
@@ -118,6 +123,7 @@ public class EventApiController {
     private final ExtensionManager extensionManager;
     private final ClockProvider clockProvider;
     private final AccessService accessService;
+    private final CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
 
     @ExceptionHandler(DataAccessException.class)
@@ -328,6 +334,75 @@ public class EventApiController {
             .ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
     }
 
+    @GetMapping("/events/{eventId}/categories/{categoryId}/denied-custom-payment-methods")
+    public ResponseEntity<List<String>> getDeniedCustomPaymentMethods(
+        @PathVariable int eventId,
+        @PathVariable int categoryId,
+        Principal principal
+    ) throws PassedIdDoesNotExistException {
+        accessService.checkCategoryOwnership(principal, eventId, categoryId);
+
+        var event = eventManager.getSingleEventById(eventId, principal.getName());
+        if(event == null) {
+            throw new PassedIdDoesNotExistException("Event matching passed ID does not exist.");
+        }
+
+        var category = ticketCategoryRepository.getById(categoryId);
+        if(category == null) {
+            throw new PassedIdDoesNotExistException("Category matching passed ID does not exist.");
+        }
+
+        var deniedPaymentMethods = customOfflineConfigurationManager.getDeniedPaymentMethodsByTicketCategory(
+            event,
+            category
+        );
+
+        return ResponseEntity.ok(deniedPaymentMethods.stream().map(pm -> pm.getPaymentMethodId()).toList());
+    }
+
+    @PostMapping("/events/{eventId}/categories/{categoryId}/denied-custom-payment-methods")
+    public ResponseEntity<String> setDeniedCustomPaymentMethods(
+        @PathVariable int eventId,
+        @PathVariable int categoryId,
+        @RequestBody List<String> paymentMethodIds,
+        Principal principal
+    ) throws PassedIdDoesNotExistException, CustomOfflinePaymentMethodDoesNotExistException {
+        accessService.checkCategoryOwnership(principal, eventId, categoryId);
+
+        var event = eventManager.getSingleEventById(eventId, principal.getName());
+        if(event == null) {
+            throw new PassedIdDoesNotExistException("Event corresponding to passed ID does not exist.");
+        }
+
+        var category = ticketCategoryRepository.getById(categoryId);
+        if(category == null) {
+            throw new PassedIdDoesNotExistException("Ticket category corresponding to passed ID does not exist.");
+        }
+
+        var paymentMethodsToDeny = customOfflineConfigurationManager
+            .getOrganizationCustomOfflinePaymentMethods(event.getOrganizationId())
+            .stream()
+            .filter(pm ->
+                paymentMethodIds.stream().anyMatch(id -> id.equals(pm.getPaymentMethodId()))
+            )
+            .toList();
+
+        try {
+            customOfflineConfigurationManager.setDeniedPaymentMethodsByTicketCategory(
+                event,
+                category,
+                paymentMethodsToDeny
+            );
+        } catch (CustomOfflinePaymentMethodDoesNotExistException e) {
+            throw new CustomOfflinePaymentMethodDoesNotExistException(
+                "One or more of the passed payment method IDs do not exist in the organization",
+                e
+            );
+        }
+
+        return ResponseEntity.ok(OK);
+    }
+
     @PutMapping("/events/reallocate")
     public String reallocateTickets(@RequestBody TicketAllocationModification form, Principal principal) {
         var event = accessService.checkCategoryOwnership(principal, form.getEventId(), Set.of(form.getSrcCategoryId(), form.getTargetCategoryId()));
@@ -453,13 +528,13 @@ public class EventApiController {
             }
 
             //obviously not optimized
-            Map<String, String> additionalValues = purchaseContextFieldRepository.findAllValuesForTicketId(t.getId());
+            Map<String, List<String>> additionalValues = purchaseContextFieldRepository.findAllValuesForTicketId(t.getId());
 
             Predicate<String> contains = FIXED_FIELDS::contains;
 
             fields.stream().filter(contains.negate()).filter(f -> f.startsWith(CUSTOM_FIELDS_PREFIX)).forEachOrdered(field -> {
                 String customFieldName = field.substring(CUSTOM_FIELDS_PREFIX.length());
-                line.add(additionalValues.getOrDefault(customFieldName, "").replace("\"", ""));
+                line.add(String.join("; ", additionalValues.getOrDefault(customFieldName, List.of())).replace("\"", ""));
             });
 
             return line.toArray(new String[0]);
@@ -491,26 +566,27 @@ public class EventApiController {
                 .map(v -> Pair.of(v, purchaseContextFieldRepository.findAllValuesForTicketId(v.getTicket().getId()))))
             .map(p -> {
                 DetailedScanData data = p.getLeft();
-                Map<String, String> descriptions = p.getRight();
-                return Pair.of(data, fields.stream().map(x -> descriptions.getOrDefault(x.getName(), "")).collect(toList()));
+                Map<String, List<String>> descriptions = p.getRight();
+                return Pair.of(data, fields.stream()
+                    .map(x -> String.join("; ", descriptions.getOrDefault(x.getName(), List.of()))).collect(toList()));
             }).map(p -> {
-            List<String> line = new ArrayList<>();
-            Ticket ticket = p.getLeft().getTicket();
-            SponsorScan sponsorScan = p.getLeft().getSponsorScan();
-            User user = userManager.findUser(sponsorScan.getUserId(), principal);
-            line.add(user.getUsername());
-            line.add(user.getDescription());
-            line.add(sponsorScan.getTimestamp().toString());
-            line.add(ticket.getFullName());
-            line.add(ticket.getEmail());
+                List<String> line = new ArrayList<>();
+                Ticket ticket = p.getLeft().getTicket();
+                SponsorScan sponsorScan = p.getLeft().getSponsorScan();
+                User user = userManager.findUser(sponsorScan.getUserId(), principal);
+                line.add(user.getUsername());
+                line.add(user.getDescription());
+                line.add(sponsorScan.getTimestamp().toString());
+                line.add(ticket.getFullName());
+                line.add(ticket.getEmail());
 
-            line.addAll(p.getRight());
+                line.addAll(p.getRight());
 
-            line.add(sponsorScan.getNotes());
-            line.add(sponsorScan.getLeadStatus().name());
-            line.add(sponsorScan.getOperator());
-            return line.toArray(new String[0]);
-        });
+                line.add(sponsorScan.getNotes());
+                line.add(sponsorScan.getLeadStatus().name());
+                line.add(sponsorScan.getOperator());
+                return line.toArray(new String[0]);
+            });
 
         if ("excel".equals(format)) {
             exportSponsorScanExcel(event.getShortName(), header, sponsorScans, response);
@@ -663,7 +739,6 @@ public class EventApiController {
         }
     }
 
-    @SneakyThrows
     private void addPdfToZip(Event event, ZipOutputStream zipOS, TicketReservation reservation, BillingDocument document) {
         Map<String, Object> reservationModel = document.getModel();
         Optional<byte[]> pdf;
@@ -682,8 +757,12 @@ public class EventApiController {
             String fileName = FileUtil.getBillingDocumentFileName(event.getShortName(), reservation.getId(), document);
             var entry = new ZipEntry(fileName);
             entry.setTimeLocal(document.getGenerationTimestamp().withZoneSameInstant(event.getZoneId()).toLocalDateTime());
-            zipOS.putNextEntry(entry);
-            StreamUtils.copy(pdf.get(), zipOS);
+            try {
+                zipOS.putNextEntry(entry);
+                StreamUtils.copy(pdf.get(), zipOS);
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
         }
     }
 
@@ -898,4 +977,13 @@ public class EventApiController {
             .anyMatch(ga -> ga.getAuthority().equals("ROLE_" + AuthenticationConstants.SPONSOR));
     }
 
+    @ExceptionHandler({
+        PassedIdDoesNotExistException.class
+    })
+    public ResponseEntity<String> handleResponseException(PassedIdDoesNotExistException ex) {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .contentType(MediaType.TEXT_PLAIN)
+            .body(ex.getMessage());
+    }
 }

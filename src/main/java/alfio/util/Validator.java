@@ -32,7 +32,6 @@ import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -91,6 +90,13 @@ public final class Validator {
 
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "websiteUrl", "error.websiteurl");
 
+        validateUrl(ev.getWebsiteUrl(), errors, "websiteUrl", "error.websiteurl");
+        validateUrl(ev.getTermsAndConditionsUrl(), errors, "websiteUrl", "error.restrictedValue");
+
+        if (StringUtils.isNotBlank(ev.getPrivacyPolicyUrl())) {
+            validateUrl(ev.getPrivacyPolicyUrl(), errors, "privacyPolicyUrl", "error.restrictedValue");
+        }
+
         if(allowsInPersonAccess(event, ev) && isLocationMissing(ev)) {
             errors.rejectValue("locationDescriptor", "error.coordinates");
         }
@@ -114,10 +120,16 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
+    static void validateUrl(String value, Errors errors, String propertyKey, String errorCode) {
+        if (!(StringUtils.startsWith(value, "http://") || StringUtils.startsWith(value, "https://"))) {
+            errors.rejectValue(propertyKey, errorCode);
+        }
+    }
+
     private static boolean isLocationMissing(EventModification em) {
         LocationDescriptor descriptor = em.getLocationDescriptor();
         return descriptor == null
-            || isAnyBlank(descriptor.getTimeZone());
+            || isAnyBlank(descriptor.timeZone());
     }
 
     public static ValidationResult validateTicketCategories(EventModification ev, Errors errors) {
@@ -730,11 +742,16 @@ public final class Validator {
         return FIELD_NAME_VALIDATOR.matcher(additionalInfoName).matches();
     }
 
-    @RequiredArgsConstructor
+
     public static class AdvancedTicketAssignmentValidator implements Function<AdvancedValidationContext, Result<Void>> {
 
         private final SameCountryValidator vatValidator;
         private final GroupManager.WhitelistValidator whitelistValidator;
+
+        public AdvancedTicketAssignmentValidator(SameCountryValidator vatValidator, GroupManager.WhitelistValidator whitelistValidator) {
+            this.vatValidator = vatValidator;
+            this.whitelistValidator = whitelistValidator;
+        }
 
 
         @Override
@@ -755,13 +772,21 @@ public final class Validator {
         }
     }
 
-    @RequiredArgsConstructor
+
     public static class AdvancedValidationContext {
         private final UpdateTicketOwnerForm updateTicketOwnerForm;
         private final List<PurchaseContextFieldConfiguration> purchaseContextFieldConfigurations;
         private final int categoryId;
         private final String ticketUuid;
         private final String prefix;
+
+        public AdvancedValidationContext(UpdateTicketOwnerForm updateTicketOwnerForm, List<PurchaseContextFieldConfiguration> purchaseContextFieldConfigurations, int categoryId, String ticketUuid, String prefix) {
+            this.updateTicketOwnerForm = updateTicketOwnerForm;
+            this.purchaseContextFieldConfigurations = purchaseContextFieldConfigurations;
+            this.categoryId = categoryId;
+            this.ticketUuid = ticketUuid;
+            this.prefix = prefix;
+        }
     }
 
 }

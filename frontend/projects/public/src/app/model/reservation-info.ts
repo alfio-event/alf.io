@@ -1,5 +1,5 @@
 import {AdditionalField, Ticket} from './ticket';
-import {PaymentMethod, PaymentProxy, PaymentProxyWithParameters} from './event';
+import {PaymentProxy, PaymentProxyWithParameters, type PaymentMethod} from './event';
 import {TicketAccessType} from './ticket-category';
 
 export class ReservationInfo {
@@ -40,7 +40,7 @@ export class ReservationInfo {
     containsCategoriesLinkedToGroups: boolean;
     //
 
-    activePaymentMethods: {[key in PaymentMethod]?: PaymentProxyWithParameters};
+    activePaymentMethods: {[key in PaymentMethod['paymentMethodId']]: PaymentProxyWithParameters} = {};
     subscriptionInfos?: Array<ReservationSubscriptionInfo>;
     metadata: ReservationMetadata;
     additionalServiceWithData?: Array<AdditionalServiceWithData>;
@@ -124,7 +124,7 @@ export class SummaryRow {
 }
 
 export type ReservationStatus = 'PENDING' | 'IN_PAYMENT' | 'EXTERNAL_PROCESSING_PAYMENT' |
-                                'WAITING_EXTERNAL_CONFIRMATION' | 'OFFLINE_PAYMENT' | 'DEFERRED_OFFLINE_PAYMENT' |
+                                'WAITING_EXTERNAL_CONFIRMATION' | 'OFFLINE_PAYMENT' | 'CUSTOM_OFFLINE_PAYMENT' | 'DEFERRED_OFFLINE_PAYMENT' |
                                 'OFFLINE_FINALIZING' | 'FINALIZING' | 'COMPLETE' | 'STUCK' | 'CANCELLED' |
                                 'CREDIT_NOTE_ISSUED' | 'NOT_FOUND';
 

@@ -291,7 +291,7 @@ public class PassKitManager {
             // On retina displays, a point can be two or three pixels, depending on the device model
             int finalWidth = 160 * factor;
             int finalHeight = 50 * factor;
-            var thumbImg = Scalr.resize(ImageIO.read(sourceImage), Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, finalWidth, finalHeight, Scalr.OP_ANTIALIAS);
+            var thumbImg = Scalr.resize(ImageIO.read(sourceImage), Scalr.Method.ULTRA_QUALITY, Scalr.Mode.AUTOMATIC, finalWidth, finalHeight);
             var tmpFile = File.createTempFile("passkit", ""+factor);
             ImageIO.write(thumbImg, "png", tmpFile);
             return tmpFile;

@@ -8,6 +8,7 @@ import {SuccessComponent} from './success/success.component';
 import {OverviewComponent} from './overview/overview.component';
 import {BookingComponent} from './booking/booking.component';
 import {OfflinePaymentComponent} from './offline-payment/offline-payment.component';
+import {CustomOfflinePaymentComponent} from './custom-offline-payment/custom-offline-payment.component';
 import {ProcessingPaymentComponent} from './processing-payment/processing-payment.component';
 import {NotFoundComponent} from './not-found/not-found.component';
 import {ErrorComponent} from './error/error.component';
@@ -48,6 +49,8 @@ function getRouteFromComponent(component: any, type: PurchaseContextType, public
         return [type, publicIdentifier, 'reservation', reservationId, 'success'];
     } else if (component === OfflinePaymentComponent) {
         return [type, publicIdentifier, 'reservation', reservationId, 'waiting-payment'];
+    } else if (component === CustomOfflinePaymentComponent) {
+        return [type, publicIdentifier, 'reservation', reservationId, 'waiting-custom-payment'];
     } else if (component === DeferredOfflinePaymentComponent) {
         return [type, publicIdentifier, 'reservation', reservationId, 'deferred-payment'];
     } else if (component === ProcessingPaymentComponent) {
@@ -70,6 +73,7 @@ function getCorrespondingController(type: PurchaseContextType, status: Reservati
         case 'OFFLINE_PAYMENT':
         case 'OFFLINE_FINALIZING':
           return OfflinePaymentComponent;
+        case 'CUSTOM_OFFLINE_PAYMENT': return CustomOfflinePaymentComponent;
         case 'DEFERRED_OFFLINE_PAYMENT': return DeferredOfflinePaymentComponent;
         case 'EXTERNAL_PROCESSING_PAYMENT':
         case 'WAITING_EXTERNAL_CONFIRMATION': return ProcessingPaymentComponent;

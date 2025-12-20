@@ -98,7 +98,7 @@ public interface TicketRepository {
 
     @Query("select count(*) from ticket where status in ('PENDING', 'RELEASED') and category_id = :categoryId and event_id = :eventId")
     Integer countPendingOrReleasedForCategory(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
-    
+
     @Query("select count(*) from ticket where status = 'FREE'  and category_id = :categoryId and event_id = :eventId")
     Integer countFreeTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
@@ -199,7 +199,7 @@ public interface TicketRepository {
 
     @Query("update ticket set status = :status where tickets_reservation_id = :reservationId")
     int updateTicketsStatusWithReservationId(@Bind("reservationId") String reservationId, @Bind("status") String status);
-    
+
     @Query("update ticket set status = :status where uuid = :uuid")
     int updateTicketStatusWithUUID(@Bind("uuid") String uuid, @Bind("status") String status);
 
@@ -244,10 +244,6 @@ public interface TicketRepository {
     @Query("update ticket set tags = :tags::text[] where id in(:ids)")
     int updateTicketTags(@Bind("ids") List<Integer> ticketIds, @Bind("tags") @Array List<String> tags);
 
-    @Query("update ticket set status = 'RELEASED', "+RESET_TICKET+" where status in ('PENDING', 'OFFLINE_PAYMENT') "
-            + " and tickets_reservation_id in (:reservationIds)")
-    int freeFromReservation(@Bind("reservationIds") List<String> reservationIds);
-
     @Query("update ticket set category_id = null where tickets_reservation_id in (:reservationIds) and status in ('PENDING', 'OFFLINE_PAYMENT') and category_id in (select tc.id from ticket_category tc, ticket t where t.tickets_reservation_id in (:reservationIds) and t.category_id = tc.id and tc.bounded = false)")
     int resetCategoryIdForUnboundedCategories(@Bind("reservationIds") List<String> reservationIds);
 
@@ -271,7 +267,7 @@ public interface TicketRepository {
 
     @Query("select count(*) from ticket where tickets_reservation_id = :reservationId ")
     Integer countTicketsInReservation(@Bind("reservationId") String reservationId);
-    
+
     @Query("select * from ticket where uuid = :uuid")
     Ticket findByUUID(@Bind("uuid") String uuid);
 
@@ -280,9 +276,6 @@ public interface TicketRepository {
 
     @Query("select uuid from ticket where public_uuid = :publicUuid and event_id = :eventId")
     Optional<String> getInternalUuid(@Bind("publicUuid") UUID publicUuid, @Bind("eventId") int eventId);
-
-    @Query("select category_id from ticket where uuid = :uuid")
-    Integer getTicketCategoryByUUID(@Bind("uuid") String uuid);
 
     @Query("select * from ticket where uuid = :uuid")
     Optional<Ticket> findOptionalByUUID(@Bind("uuid") String uuid);
@@ -302,9 +295,6 @@ public interface TicketRepository {
     @Query("update ticket set email_address = :email, full_name = :fullName, first_name = :firstName, last_name = :lastName where id = :id")
     int updateTicketOwnerById(@Bind("id") int id, @Bind("email") String email, @Bind("fullName") String fullName, @Bind("firstName") String firstName, @Bind("lastName") String lastName);
 
-    @Query(type = QueryType.TEMPLATE, value = "update ticket set email_address = :email, full_name = :fullName, first_name = :firstName, last_name = :lastName, metadata = :metadata::jsonb where id = :id")
-    String updateTicketOwnerAndMetadataById();
-
     @Query("update ticket set locked_assignment = :lockedAssignment where id = :id and category_id = :categoryId")
     int toggleTicketLocking(@Bind("id") int ticketId, @Bind("categoryId") int categoryId, @Bind("lockedAssignment") boolean locked);
 
@@ -313,7 +303,7 @@ public interface TicketRepository {
 
     @Query("update ticket set ext_reference = :extReference, locked_assignment = :lockedAssignment where id = :id and category_id = :categoryId")
     int updateExternalReferenceAndLocking(@Bind("id") int ticketId, @Bind("categoryId") int categoryId, @Bind("extReference") String extReference, @Bind("lockedAssignment") boolean locked);
-    
+
     @Query("update ticket set user_language = :userLanguage where uuid = :ticketIdentifier")
     int updateOptionalTicketInfo(@Bind("ticketIdentifier") String ticketIdentifier, @Bind("userLanguage") String userLanguage);
 
@@ -331,9 +321,6 @@ public interface TicketRepository {
 
     @Query("select distinct tickets_reservation_id from ticket where id in (:ids)")
     List<String> findReservationIds(@Bind("ids") List<Integer> ticketIds);
-
-    @Query("select * from ticket where special_price_id_fk = :specialPriceId")
-    Optional<Ticket> findBySpecialPriceId(@Bind("specialPriceId") int specialPriceId);
 
     @Query("update ticket set category_id = :targetCategoryId, src_price_cts = :srcPriceCts where id in (:ticketIds)")
     int moveToAnotherCategory(@Bind("ticketIds") List<Integer> ticketIds, @Bind("targetCategoryId") int targetCategoryId, @Bind("srcPriceCts") int srcPriceCts);
@@ -563,4 +550,7 @@ public interface TicketRepository {
 
     @Query("select exists ( select id from ticket where uuid = :uuid and event_id = :eventId)")
     boolean isTicketInEvent(@Bind("eventId") int eventId, @Bind("uuid") String uuid);
+
+    @Query("select count(*) from ticket where category_id = :categoryId and lower(email_address) = lower(:emailAddress)")
+    Integer countByEmailAddressAndCategory(@Bind("emailAddress") String emailAddress, @Bind("categoryId") int categoryId);
 }

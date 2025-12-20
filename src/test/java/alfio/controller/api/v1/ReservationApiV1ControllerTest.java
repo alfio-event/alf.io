@@ -258,6 +258,7 @@ class ReservationApiV1ControllerTest {
         assertTrue(qrCodeTemplate.matches(resources.ticketQrCode()));
         assertNull(resources.googleWallet());
         assertNull(resources.applePass());
+        assertTrue(resources.ready());
     }
 
     @Test

@@ -47,8 +47,8 @@ import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.audit.ScanAudit;
 import alfio.model.modification.*;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.StaticPaymentMethods;
 import alfio.model.user.User;
 import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
@@ -69,7 +69,6 @@ import com.google.zxing.DecodeHintType;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeReader;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
@@ -78,6 +77,7 @@ import org.junit.jupiter.api.Assertions;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -112,48 +112,85 @@ import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
-@RequiredArgsConstructor
+
 public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
     private static final Logger log = LoggerFactory.getLogger(BaseReservationFlowTest.class);
     public static final String FIELD_2 = "field2";
-    protected final ConfigurationRepository configurationRepository;
-    protected final EventManager eventManager;
-    protected final EventRepository eventRepository;
-    protected final EventStatisticsManager eventStatisticsManager;
-    protected final TicketCategoryRepository ticketCategoryRepository;
-    protected final TicketReservationRepository ticketReservationRepository;
-    protected final EventApiController eventApiController;
-    protected final TicketRepository ticketRepository;
-    protected final PurchaseContextFieldRepository purchaseContextFieldRepository;
-    protected final AdditionalServiceApiController additionalServiceApiController;
-    protected final SpecialPriceTokenGenerator specialPriceTokenGenerator;
-    protected final SpecialPriceRepository specialPriceRepository;
-    protected final CheckInApiController checkInApiController;
-    protected final AttendeeApiController attendeeApiController;
-    protected final UsersApiController usersApiController;
-    protected final ScanAuditRepository scanAuditRepository;
-    protected final AuditingRepository auditingRepository;
-    protected final AdminReservationManager adminReservationManager;
-    protected final TicketReservationManager ticketReservationManager;
-    protected final InfoApiController infoApiController;
-    protected final TranslationsApiController translationsApiController;
-    protected final EventApiV2Controller eventApiV2Controller;
-    protected final ReservationApiV2Controller reservationApiV2Controller;
-    protected final TicketApiV2Controller ticketApiV2Controller;
-    protected final IndexController indexController;
-    protected final NamedParameterJdbcTemplate jdbcTemplate;
-    protected final ExtensionLogRepository extensionLogRepository;
-    protected final ExtensionService extensionService;
-    protected final PollRepository pollRepository;
-    protected final ClockProvider clockProvider;
-    protected final NotificationManager notificationManager;
-    protected final UserRepository userRepository;
-    protected final OrganizationDeleter organizationDeleter;
-    protected final PromoCodeDiscountRepository promoCodeDiscountRepository;
-    protected final PromoCodeRequestManager promoCodeRequestManager;
-    protected final ExportManager exportManager;
-    protected final PurchaseContextFieldManager purchaseContextFieldManager;
+    @Autowired
+    protected ConfigurationRepository configurationRepository;
+    @Autowired
+    protected EventManager eventManager;
+    @Autowired
+    protected EventRepository eventRepository;
+    @Autowired
+    protected EventStatisticsManager eventStatisticsManager;
+    @Autowired
+    protected TicketCategoryRepository ticketCategoryRepository;
+    @Autowired
+    protected TicketReservationRepository ticketReservationRepository;
+    @Autowired
+    protected EventApiController eventApiController;
+    @Autowired
+    protected TicketRepository ticketRepository;
+    @Autowired
+    protected PurchaseContextFieldRepository purchaseContextFieldRepository;
+    @Autowired
+    protected AdditionalServiceApiController additionalServiceApiController;
+    @Autowired
+    protected SpecialPriceTokenGenerator specialPriceTokenGenerator;
+    @Autowired
+    protected SpecialPriceRepository specialPriceRepository;
+    @Autowired
+    protected CheckInApiController checkInApiController;
+    @Autowired
+    protected AttendeeApiController attendeeApiController;
+    @Autowired
+    protected UsersApiController usersApiController;
+    @Autowired
+    protected ScanAuditRepository scanAuditRepository;
+    @Autowired
+    protected AuditingRepository auditingRepository;
+    @Autowired
+    protected AdminReservationManager adminReservationManager;
+    @Autowired
+    protected TicketReservationManager ticketReservationManager;
+    @Autowired
+    protected InfoApiController infoApiController;
+    @Autowired
+    protected TranslationsApiController translationsApiController;
+    @Autowired
+    protected EventApiV2Controller eventApiV2Controller;
+    @Autowired
+    protected ReservationApiV2Controller reservationApiV2Controller;
+    @Autowired
+    protected TicketApiV2Controller ticketApiV2Controller;
+    @Autowired
+    protected IndexController indexController;
+    @Autowired
+    protected NamedParameterJdbcTemplate jdbcTemplate;
+    @Autowired
+    protected ExtensionLogRepository extensionLogRepository;
+    @Autowired
+    protected ExtensionService extensionService;
+    @Autowired
+    protected PollRepository pollRepository;
+    @Autowired
+    protected ClockProvider clockProvider;
+    @Autowired
+    protected NotificationManager notificationManager;
+    @Autowired
+    protected UserRepository userRepository;
+    @Autowired
+    protected OrganizationDeleter organizationDeleter;
+    @Autowired
+    protected PromoCodeDiscountRepository promoCodeDiscountRepository;
+    @Autowired
+    protected PromoCodeRequestManager promoCodeRequestManager;
+    @Autowired
+    protected ExportManager exportManager;
+    @Autowired
+    protected PurchaseContextFieldManager purchaseContextFieldManager;
 
     private Integer additionalServiceId;
 
@@ -532,7 +569,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
             var activePaymentMethods = reservationInfo.getBody().getActivePaymentMethods();
             assertFalse(activePaymentMethods.isEmpty());
-            assertTrue(activePaymentMethods.containsKey(PaymentMethod.BANK_TRANSFER));
+            assertTrue(activePaymentMethods.containsKey(StaticPaymentMethods.BANK_TRANSFER.getPaymentMethodId()));
 
             configurationRepository.insertTicketCategoryLevel(context.event.getOrganizationId(), context.event.getId(), hiddenCategoryId, ConfigurationKeys.PAYMENT_METHODS_BLACKLIST.name(), PaymentProxy.OFFLINE.name(), "");
 
@@ -605,7 +642,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertNotNull(reservationInfo.getBody());
             assertEquals(reservationId, reservationInfo.getBody().getId());
             assertEquals(1, reservationInfo.getBody().getActivePaymentMethods().size());
-            assertTrue(reservationInfo.getBody().getActivePaymentMethods().containsKey(PaymentMethod.BANK_TRANSFER));
+            assertTrue(reservationInfo.getBody().getActivePaymentMethods().containsKey(StaticPaymentMethods.BANK_TRANSFER.getPaymentMethodId()));
 
             assertEquals(1, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
 
@@ -1509,10 +1546,10 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         paymentForm.setPrivacyPolicyAccepted(true);
         paymentForm.setTermAndConditionsAccepted(true);
         paymentForm.setPaymentProxy(PaymentProxy.OFFLINE);
-        paymentForm.setSelectedPaymentMethod(PaymentMethod.BANK_TRANSFER);
+        paymentForm.setSelectedPaymentMethod(StaticPaymentMethods.BANK_TRANSFER);
 
         // bank transfer does not have a transaction, it's created on confirmOverview call
-        var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
+        var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.BANK_TRANSFER);
         assertEquals(HttpStatus.NOT_FOUND, tStatus.getStatusCode());
         //
         var promoCodeUsage = promoCodeRequestManager.retrieveDetailedUsage(promoCodeId, context.event.getId());
@@ -1525,7 +1562,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
         checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT, context);
 
-        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.BANK_TRANSFER);
         assertEquals(HttpStatus.OK, tStatus.getStatusCode());
         assertNotNull(tStatus.getBody());
         assertFalse(tStatus.getBody().isSuccess());
@@ -1548,7 +1585,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertEventLogged(extLogs, TICKET_ASSIGNED_GENERATE_METADATA, online ? 12 : 10);
         assertEventLogged(extLogs, TICKET_MAIL_CUSTOM_TEXT, online ? 12 : 10);
 
-        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.BANK_TRANSFER);
         assertEquals(HttpStatus.OK, tStatus.getStatusCode());
         assertNotNull(tStatus.getBody());
         assertTrue(tStatus.getBody().isSuccess());
@@ -1690,7 +1727,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         var paymentForm = new PaymentForm();
         paymentForm.setPrivacyPolicyAccepted(true);
         paymentForm.setTermAndConditionsAccepted(true);
-        paymentForm.setSelectedPaymentMethod(PaymentMethod.NONE);
+        paymentForm.setSelectedPaymentMethod(StaticPaymentMethods.NONE);
 
         var propertyBindingResult = new BeanPropertyBindingResult(paymentForm, "paymentForm");
         var handleRes = reservationApiV2Controller.confirmOverview(reservationId, "en", paymentForm, propertyBindingResult, new MockHttpServletRequest(), null);
@@ -1769,7 +1806,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertTrue(requireNonNull(resGoogleCal.getRedirectedUrl()).startsWith("https://www.google.com/calendar/event"));
     }
 
-    private boolean containsOnlineTickets(ReservationFlowContext context, String reservationId) {
+    protected boolean containsOnlineTickets(ReservationFlowContext context, String reservationId) {
         if(context.event.getFormat() == Event.EventFormat.IN_PERSON) {
             return false;
         }

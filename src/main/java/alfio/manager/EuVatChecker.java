@@ -32,6 +32,8 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -42,11 +44,14 @@ import java.util.function.BooleanSupplier;
 import static alfio.model.Audit.EntityType.RESERVATION;
 import static alfio.model.Audit.EventType.*;
 import static alfio.model.system.ConfigurationKeys.*;
+import static ch.digitalfondue.vatchecker.EUVatCheckResponse.FaultType.*;
 
 @Component
 @AllArgsConstructor
 public class EuVatChecker {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(EuVatChecker.class);
+    private static final Set<EUVatCheckResponse.FaultType> REMOTE_FAULTS = EnumSet.of(GLOBAL_MAX_CONCURRENT_REQ, TIMEOUT, MS_MAX_CONCURRENT_REQ, SERVICE_UNAVAILABLE, MS_UNAVAILABLE);
     private final ConfigurationManager configurationManager;
     private final AuditingRepository auditingRepository;
     private final EUVatChecker client = new EUVatChecker();
@@ -86,7 +91,7 @@ public class EuVatChecker {
             }
 
 
-            boolean euCountryCode = configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(countryCode);
+            boolean euCountryCode = configurationManager.getForSystem(EU_COUNTRIES_LIST).getRequiredValue().contains(countryCode);
 
             boolean validationEnabled = validationEnabled(configurationManager, configurable);
             if(euCountryCode && validationEnabled) {
@@ -130,8 +135,16 @@ public class EuVatChecker {
     }
 
     private static VatDetail getVatDetail(boolean reverseChargeEnabled, EUVatCheckResponse response, String vatNr, String countryCode, String organizerCountryCode) {
+        checkServerErrors(response, countryCode);
         boolean isValid = response.isValid();
         return new VatDetail(vatNr, countryCode, isValid, response.getName(), response.getAddress(), VatDetail.Type.VIES, isValid && reverseChargeEnabled && !organizerCountryCode.equals(countryCode));
+    }
+
+    private static void checkServerErrors(EUVatCheckResponse response, String countryCode) {
+        if (response.isError() && response.getFault() != null && REMOTE_FAULTS.contains(response.getFault().getFaultType())) {
+            LOGGER.warn("received {} for country {}", response.getFault().getFaultType(), countryCode);
+            throw new IllegalStateException("Unable to validate VAT");
+        }
     }
 
     static String organizerCountry(ConfigurationManager configurationManager, Configurable configurable) {

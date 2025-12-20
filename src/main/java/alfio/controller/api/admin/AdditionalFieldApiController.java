@@ -25,6 +25,8 @@ import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketFieldDescriptionModification;
 import alfio.model.result.ValidationResult;
 import alfio.repository.DynamicFieldTemplateRepository;
+import alfio.util.JsonViews;
+import com.fasterxml.jackson.annotation.JsonView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.validation.Errors;
@@ -41,6 +43,7 @@ import static alfio.util.MiscUtils.removeTabsAndNewlines;
 
 @RestController
 @RequestMapping("/admin/api/{purchaseContextType}/{publicIdentifier}/additional-field")
+@JsonView(JsonViews.AdminApi.class)
 public class AdditionalFieldApiController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AdditionalFieldApiController.class);

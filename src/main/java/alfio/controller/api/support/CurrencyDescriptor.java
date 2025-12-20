@@ -17,13 +17,21 @@
 package alfio.controller.api.support;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
+import java.beans.ConstructorProperties;
+
 @Getter
 public class CurrencyDescriptor {
     private final String code;
     private final String name;
     private final String symbol;
     private final int fractionDigits;
+
+    @ConstructorProperties({"code", "name", "symbol", "fractionDigits"})
+    public CurrencyDescriptor(String code, String name, String symbol, int fractionDigits) {
+        this.code = code;
+        this.name = name;
+        this.symbol = symbol;
+        this.fractionDigits = fractionDigits;
+    }
 }

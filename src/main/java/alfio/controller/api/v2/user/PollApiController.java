@@ -21,7 +21,6 @@ import alfio.manager.PollManager;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.model.poll.Poll;
 import alfio.model.poll.PollWithOptions;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,10 +29,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v2/public/event/{eventName}/poll")
-@RequiredArgsConstructor
 public class PollApiController {
 
     private final PollManager pollManager;
+
+    public PollApiController(PollManager pollManager) {
+        this.pollManager = pollManager;
+    }
 
     @GetMapping("")
     ResponseEntity<ValidatedResponse<List<Poll>>> getAll(@PathVariable String eventName, @RequestParam("pin") String pin) {

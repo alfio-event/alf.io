@@ -19,6 +19,7 @@ package alfio.controller.api;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.util.Json;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Assertions;
@@ -88,7 +89,7 @@ class TestCheckRestApiStability {
         // for generating the result
         if (updateDescriptor) {
             try (var writer = Files.newBufferedWriter(Paths.get(DESCRIPTOR_JSON_PATH), StandardCharsets.UTF_8)) {
-                var formattedDescriptor = new ObjectMapper().readTree(descriptor).toPrettyString();
+                var formattedDescriptor = Json.OBJECT_MAPPER.readTree(descriptor).toPrettyString();
                 writer.write(formattedDescriptor);
             }
         }

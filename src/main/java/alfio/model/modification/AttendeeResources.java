@@ -33,11 +33,12 @@ public record AttendeeResources(
     @JsonInclude(Include.NON_NULL) String ticketPdf,
     @JsonInclude(Include.NON_NULL) String ticketQrCode,
     @JsonInclude(Include.NON_NULL) String googleWallet,
-    @JsonInclude(Include.NON_NULL) String applePass
+    @JsonInclude(Include.NON_NULL) String applePass,
+    @JsonInclude(Include.NON_NULL) Boolean ready
 ) {
 
     public static AttendeeResources empty() {
-        return new AttendeeResources(null, null, null, null);
+        return new AttendeeResources(null, null, null, null, null);
     }
 
     public static AttendeeResources fromTicket(Ticket ticket,
@@ -62,7 +63,8 @@ public record AttendeeResources(
                 expandUriTemplate(ticketPdfUriTemplate, purchaseContext, ticket),
                 expandUriTemplate(qrCodeTemplate, purchaseContext, ticket),
                 generateGoogleWalletUrl(walletUriTemplate, conf, purchaseContext, ticket),
-                generatePasskitUrl(passUriTemplate, conf, purchaseContext, ticket)
+                generatePasskitUrl(passUriTemplate, conf, purchaseContext, ticket),
+                ticket.getAssigned()
         );
     }
 

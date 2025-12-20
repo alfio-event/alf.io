@@ -82,7 +82,7 @@ public class StripeManagerTest {
             }
         };
         StripeCreditCardManager stripeCreditCardManager = new StripeCreditCardManager(transactionRepository, baseStripeManager, TestUtil.clockProvider());
-        PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), 100, event, "", customerName );
+        PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), null, 100, event, "", customerName );
         PaymentResult result = stripeCreditCardManager.doPayment(spec);
         assertEquals(result, PaymentResult.successful(paymentId));
     }
@@ -96,7 +96,7 @@ public class StripeManagerTest {
             }
         };
         StripeCreditCardManager stripeCreditCardManager = new StripeCreditCardManager(transactionRepository, baseStripeManager, TestUtil.clockProvider());
-        PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), 100, event, "", customerName );
+        PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), null, 100, event, "", customerName );
         PaymentResult result = stripeCreditCardManager.doPayment(spec);
         assertEquals(result, PaymentResult.failed("error.STEP2_STRIPE_abort"));
     }
@@ -117,7 +117,7 @@ public class StripeManagerTest {
         when(transactionRepository.insert(anyString(), isNull(), anyString(), any(ZonedDateTime.class), anyInt(), eq("CHF"), anyString(), anyString(), anyLong(), anyLong(), eq(Transaction.Status.COMPLETE), anyMap()))
             .thenThrow(new NullPointerException());
 
-        PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), 100, event, "", customerName );
+        PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), null, 100, event, "", customerName );
         Assertions.assertThrows(IllegalStateException.class, () -> stripeCreditCardManager.doPayment(spec));
     }
 }

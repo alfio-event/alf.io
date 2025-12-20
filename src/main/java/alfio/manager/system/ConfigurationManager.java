@@ -34,16 +34,19 @@ import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.system.ConfigurationKeys.SettingCategory;
 import alfio.model.system.ConfigurationPathLevel;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
+import alfio.util.Json;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.servlet.http.HttpSession;
-import lombok.RequiredArgsConstructor;
-import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -63,13 +66,11 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.model.system.ConfigurationPathLevel.*;
 import static java.util.stream.Collectors.toList;
 
 @Transactional
-@RequiredArgsConstructor
 public class ConfigurationManager {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigurationManager.class);
@@ -85,6 +86,15 @@ public class ConfigurationManager {
     private final Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, MaybeConfiguration>> oneMinuteCache;
     private final SecureRandom secureRandom = new SecureRandom();
 
+    public ConfigurationManager(ConfigurationRepository configurationRepository, UserManager userManager, EventRepository eventRepository, ExternalConfiguration externalConfiguration, Environment environment, Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, MaybeConfiguration>> oneMinuteCache) {
+        this.configurationRepository = configurationRepository;
+        this.userManager = userManager;
+        this.eventRepository = eventRepository;
+        this.externalConfiguration = externalConfiguration;
+        this.environment = environment;
+        this.oneMinuteCache = oneMinuteCache;
+    }
+
     //TODO: refactor, not the most beautiful code, find a better solution...
     private Optional<Configuration> findByConfigurationPathAndKey(ConfigurationPath path, ConfigurationKeys key) {
         var keyAsString = key.getValue();
@@ -95,23 +105,23 @@ public class ConfigurationManager {
                 return selectPath(configList);
             case ORGANIZATION: {
                 OrganizationConfigurationPath o = (OrganizationConfigurationPath) path;
-                configList.addAll(configurationRepository.findByOrganizationAndKey(o.getId(), key.getValue()));
+                configList.addAll(configurationRepository.findByOrganizationAndKey(o.id(), key.getValue()));
                 return selectPath(configList);
             }
             case PURCHASE_CONTEXT: {
                 if (path instanceof EventConfigurationPath o) {
-                    configList.addAll(configurationRepository.findByEventAndKey(o.getOrganizationId(),
-                        o.getId(), keyAsString));
+                    configList.addAll(configurationRepository.findByEventAndKey(o.organizationId(),
+                        o.id(), keyAsString));
                 } else {
                     SubscriptionDescriptorConfigurationPath o = (SubscriptionDescriptorConfigurationPath) path;
-                    configList.addAll(configurationRepository.findBySubscriptionDescriptorAndKey(o.getOrganizationId(), o.getId(), keyAsString));
+                    configList.addAll(configurationRepository.findBySubscriptionDescriptorAndKey(o.organizationId(), o.id(), keyAsString));
                 }
                 return selectPath(configList);
             }
             case TICKET_CATEGORY: {
                 TicketCategoryConfigurationPath o = (TicketCategoryConfigurationPath) path;
-                configList.addAll(configurationRepository.findByTicketCategoryAndKey(o.getOrganizationId(),
-                    o.getEventId(), o.getId(), keyAsString));
+                configList.addAll(configurationRepository.findByTicketCategoryAndKey(o.organizationId(),
+                    o.eventId(), o.id(), keyAsString));
                 return selectPath(configList);
             }
             default:
@@ -132,21 +142,21 @@ public class ConfigurationManager {
     // begin SYSTEM related configuration methods
 
     public void saveConfig(ConfigurationPathKey pathKey, String value) {
-        ConfigurationPath path = pathKey.getPath();
+        ConfigurationPath path = pathKey.path();
         switch (path.pathLevel()) {
             case SYSTEM:
-                saveSystemConfiguration(pathKey.getKey(), value);
+                saveSystemConfiguration(pathKey.key(), value);
                 break;
             case ORGANIZATION:
                 OrganizationConfigurationPath orgPath = (OrganizationConfigurationPath) path;
-                saveOrganizationConfiguration(orgPath.getId(), pathKey.getKey().name(), value);
+                saveOrganizationConfiguration(orgPath.id(), pathKey.key().name(), value);
                 break;
             case PURCHASE_CONTEXT:
                 if (path instanceof EventConfigurationPath eventPath) {
-                    saveEventConfiguration(eventPath.getId(), eventPath.getOrganizationId(), pathKey.getKey().name(), value);
+                    saveEventConfiguration(eventPath.id(), eventPath.organizationId(), pathKey.key().name(), value);
                 } else {
                     var subscriptionDescriptorPath = (SubscriptionDescriptorConfigurationPath) path;
-                    saveSubscriptionDescriptorConfiguration(subscriptionDescriptorPath.getId(), subscriptionDescriptorPath.getOrganizationId(), pathKey.getKey().name(), value);
+                    saveSubscriptionDescriptorConfiguration(subscriptionDescriptorPath.id(), subscriptionDescriptorPath.organizationId(), pathKey.key().name(), value);
                 }
                 break;
             default:
@@ -332,6 +342,10 @@ public class ConfigurationManager {
         }
         var key = safeValueOf(keyAsString);
         return getFirstConfigurationResult(configurationRepository.findByOrganizationAndKey(organizationId, key.name()), keyAsString);
+    }
+
+    public boolean isNotifyOrganizerOnReservationEnabled(Configurable configurable) {
+        return getFor(NOTIFY_ORGANIZER_ON_RESERVATION, configurable.getConfigurationLevel()).getValueAsBooleanOrDefault();
     }
 
     public String getSingleConfigForEvent(int eventId, String keyAsString, String username) {
@@ -630,19 +644,56 @@ public class ConfigurationManager {
 
     public List<PaymentMethod> getBlacklistedMethodsForReservation(PurchaseContext p, Collection<Integer> categoryIds) {
         return p.event().map(e -> {
-            if(categoryIds.size() > 1) {
-                Map<Integer, String> blacklistForCategories = configurationRepository.getAllCategoriesAndValueWith(e.getOrganizationId(), e.getId(), PAYMENT_METHODS_BLACKLIST);
-                return categoryIds.stream()
-                    .filter(blacklistForCategories::containsKey)
-                    .flatMap(id -> Arrays.stream(blacklistForCategories.get(id).split(",")))
+            if(!categoryIds.isEmpty()) {
+                Map<Integer, String> staticPaymentMethodBlacklistForCategories = configurationRepository.getAllCategoriesAndValueWith(e.getOrganizationId(), e.getId(), PAYMENT_METHODS_BLACKLIST);
+                final var paymentMethodBlacklist = categoryIds.stream()
+                    .filter(staticPaymentMethodBlacklistForCategories::containsKey)
+                    .flatMap(id -> Arrays.stream(staticPaymentMethodBlacklistForCategories.get(id).split(",")))
                     .filter(StringUtils::isNotBlank)
                     .map(name -> PaymentProxy.valueOf(name).getPaymentMethod())
                     .collect(toList());
-            } else if (!categoryIds.isEmpty()) {
-                    return configurationRepository.findByKeyAtCategoryLevel(e.getId(), e.getOrganizationId(), IterableUtils.get(categoryIds, 0), PAYMENT_METHODS_BLACKLIST.name())
-                        .filter(v -> StringUtils.isNotBlank(v.getValue()))
-                        .map(v -> Arrays.stream(v.getValue().split(",")).map(name -> PaymentProxy.valueOf(name).getPaymentMethod()).collect(toList()))
-                        .orElse(List.of());
+
+                Map<Integer, String> deniedCustomPaymentMethodsForCategories =
+                    configurationRepository.getAllCategoriesAndValueWith(
+                        e.getOrganizationId(),
+                        e.getId(),
+                        DENIED_CUSTOM_PAYMENTS
+                    );
+
+                var orgCustomPaymentMethodsConfigJson = configurationRepository
+                    .findByKeyAtOrganizationLevel(e.getOrganizationId(), ConfigurationKeys.CUSTOM_OFFLINE_PAYMENTS.getValue())
+                    .map(Configuration::getValue)
+                    .orElse(null);
+
+                List<UserDefinedOfflinePaymentMethod> orgCustomPaymentMethods = List.of();
+                if(orgCustomPaymentMethodsConfigJson != null) {
+                    orgCustomPaymentMethods = Json.fromJson(
+                        orgCustomPaymentMethodsConfigJson,
+                        new TypeReference<List<UserDefinedOfflinePaymentMethod>>(){}
+                    );
+                    if(orgCustomPaymentMethods == null) {
+                        orgCustomPaymentMethods = List.of();
+                    }
+                }
+
+
+                if(!orgCustomPaymentMethods.isEmpty()) {
+                    Map<String, PaymentMethod> paymentMethodMap = orgCustomPaymentMethods.stream()
+                        .collect(Collectors.toMap(PaymentMethod::getPaymentMethodId, method -> method));
+
+                    paymentMethodBlacklist.addAll(
+                        categoryIds.stream()
+                            .filter(deniedCustomPaymentMethodsForCategories::containsKey)
+                            .map(deniedCustomPaymentMethodsForCategories::get)
+                            .map(deniedListJson -> Json.fromJson(deniedListJson, new TypeReference<List<String>>() {}))
+                            .flatMap(List::stream)
+                            .distinct()
+                            .map(paymentMethodMap::get)
+                            .toList()
+                    );
+                }
+
+                return paymentMethodBlacklist;
             } else {
                 return List.<PaymentMethod>of();
             }

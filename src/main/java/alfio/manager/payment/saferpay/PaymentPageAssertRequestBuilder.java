@@ -17,18 +17,22 @@
 package alfio.manager.payment.saferpay;
 
 import com.google.gson.stream.JsonWriter;
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 
+import java.io.IOException;
 import java.io.StringWriter;
 
-@RequiredArgsConstructor
+
 public class PaymentPageAssertRequestBuilder {
     private String customerId;
     private String requestId;
 
     private final String token;
     private final int retryIndicator;
+
+    public PaymentPageAssertRequestBuilder(String token, int retryIndicator) {
+        this.token = token;
+        this.retryIndicator = retryIndicator;
+    }
 
     public PaymentPageAssertRequestBuilder addAuthentication(String customerId, String requestId) {
         this.customerId = customerId;
@@ -37,16 +41,15 @@ public class PaymentPageAssertRequestBuilder {
     }
 
     // @formatter:off
-    @SneakyThrows
-    public String build() {
+    public String build() throws IOException {
         var out = new StringWriter();
         var requestHeaderBuilder = new RequestHeaderBuilder(customerId, requestId, retryIndicator);
         try (var writer = new JsonWriter(out)) {
             requestHeaderBuilder.appendTo(writer.beginObject())
                 .name("Token").value(token)
             .endObject().flush();
+            return out.toString();
         }
-        return out.toString();
     }
 
 }

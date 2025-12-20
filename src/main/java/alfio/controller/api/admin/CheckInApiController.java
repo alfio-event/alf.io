@@ -31,7 +31,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
@@ -52,7 +51,6 @@ import static alfio.util.Wrappers.optionally;
 
 @RestController
 @RequestMapping("/admin/api")
-@RequiredArgsConstructor
 public class CheckInApiController {
 
     private static final Logger log = LoggerFactory.getLogger(CheckInApiController.class);
@@ -61,6 +59,13 @@ public class CheckInApiController {
     private final EventManager eventManager;
     private final ConfigurationManager configurationManager;
     private final AccessService accessService;
+
+    public CheckInApiController(CheckInManager checkInManager, EventManager eventManager, ConfigurationManager configurationManager, AccessService accessService) {
+        this.checkInManager = checkInManager;
+        this.eventManager = eventManager;
+        this.configurationManager = configurationManager;
+        this.accessService = accessService;
+    }
 
     @Data
     public static class TicketCode {

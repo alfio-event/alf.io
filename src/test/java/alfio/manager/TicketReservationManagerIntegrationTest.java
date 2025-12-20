@@ -20,15 +20,20 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.manager.payment.PaymentSpecification;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager.CustomOfflinePaymentMethodAlreadyExistsException;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.reservation.NotEnoughTicketsException;
 import alfio.manager.support.reservation.TooManyTicketsForDiscountCodeException;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
+import alfio.model.Event.EventFormat;
+import alfio.model.PriceContainer.VatStatus;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.StaticPaymentMethods;
+import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -102,6 +107,8 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
     private WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
     @Autowired
     private PurchaseContextSearchManager purchaseContextSearchManager;
+    @Autowired
+    private CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     @Autowired
     private NamedParameterJdbcTemplate jdbcTemplate;
@@ -186,11 +193,11 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
 
         assertEquals(0, ticketReservationManager.getPendingPayments(event.getShortName()).size());
 
-        PaymentSpecification specification = new PaymentSpecification(reservationId, null, totalPrice.getPriceWithVAT(),
+        PaymentSpecification specification = new PaymentSpecification(reservationId, null, StaticPaymentMethods.BANK_TRANSFER, totalPrice.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
 
-        PaymentResult confirm = ticketReservationManager.performPayment(specification, totalPrice, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
+        PaymentResult confirm = ticketReservationManager.performPayment(specification, totalPrice, PaymentProxy.OFFLINE, StaticPaymentMethods.BANK_TRANSFER, null);
         assertTrue(confirm.isSuccessful());
 
         assertEquals(TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT, ticketReservationManager.findById(reservationId).get().getStatus());
@@ -225,11 +232,11 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         TicketReservationWithOptionalCodeModification modForDelete = new TicketReservationWithOptionalCodeModification(trForDelete, Optional.empty());
         String reservationId2 = ticketReservationManager.createTicketReservation(event, Collections.singletonList(modForDelete), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
 
-        PaymentSpecification specification2 = new PaymentSpecification(reservationId2, null, totalPrice.getPriceWithVAT(),
+        PaymentSpecification specification2 = new PaymentSpecification(reservationId2, null, StaticPaymentMethods.BANK_TRANSFER, totalPrice.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
                 "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
 
-        PaymentResult confirm2 = ticketReservationManager.performPayment(specification2, totalPrice, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
+        PaymentResult confirm2 = ticketReservationManager.performPayment(specification2, totalPrice, PaymentProxy.OFFLINE, StaticPaymentMethods.BANK_TRANSFER, null);
         assertTrue(confirm2.isSuccessful());
 
         ticketReservationManager.deleteOfflinePayment(event, reservationId2, false, false, false, null);
@@ -263,11 +270,11 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         TotalPrice totalPrice = priceAndDiscount.getLeft();
         assertTrue(priceAndDiscount.getRight().isEmpty());
 
-        PaymentSpecification specificationDeferred = new PaymentSpecification(reservationId, null, totalPrice.getPriceWithVAT(),
+        PaymentSpecification specificationDeferred = new PaymentSpecification(reservationId, null, StaticPaymentMethods.BANK_TRANSFER, totalPrice.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
 
-        PaymentResult confirm = ticketReservationManager.performPayment(specificationDeferred, totalPrice, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
+        PaymentResult confirm = ticketReservationManager.performPayment(specificationDeferred, totalPrice, PaymentProxy.OFFLINE, StaticPaymentMethods.BANK_TRANSFER, null);
         assertTrue(confirm.isSuccessful());
 
         var status = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId).orElseThrow().getStatus();
@@ -278,11 +285,11 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
 
         reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(modForDeferred), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
 
-        specificationDeferred = new PaymentSpecification(reservationId, null, totalPrice.getPriceWithVAT(),
+        specificationDeferred = new PaymentSpecification(reservationId, null, StaticPaymentMethods.BANK_TRANSFER, totalPrice.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
 
-        confirm = ticketReservationManager.performPayment(specificationDeferred, totalPrice, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
+        confirm = ticketReservationManager.performPayment(specificationDeferred, totalPrice, PaymentProxy.OFFLINE, StaticPaymentMethods.BANK_TRANSFER, null);
         assertTrue(confirm.isSuccessful());
 
         try {
@@ -578,10 +585,10 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         TotalPrice reservationCost = priceAndDiscount.getLeft();
         assertTrue(priceAndDiscount.getRight().isEmpty());
-        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
+        PaymentSpecification specification = new PaymentSpecification(reservationId, null, StaticPaymentMethods.BANK_TRANSFER, reservationCost.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
-        PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
+        PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, PaymentProxy.OFFLINE, StaticPaymentMethods.BANK_TRANSFER, null);
         assertTrue(result.isSuccessful());
         ticketReservationManager.deleteOfflinePayment(event, reservationId, false, false, false, null);
         waitingQueueManager.distributeSeats(event);
@@ -591,13 +598,90 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         reservationCost = priceAndDiscount.getLeft();
         assertTrue(priceAndDiscount.getRight().isEmpty());
-        PaymentSpecification specification2 = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
+        PaymentSpecification specification2 = new PaymentSpecification(reservationId, null, StaticPaymentMethods.BANK_TRANSFER, reservationCost.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
-        result = ticketReservationManager.performPayment(specification2, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
+        result = ticketReservationManager.performPayment(specification2, reservationCost, PaymentProxy.OFFLINE, StaticPaymentMethods.BANK_TRANSFER, null);
         assertTrue(result.isSuccessful());
     }
 
+    @Test
+    void testCanDeleteCustomOfflinePaymentReservation() throws CustomOfflinePaymentMethodAlreadyExistsException {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
+        Event event = initEvent(
+            categories,
+            organizationRepository,
+            userManager,
+            eventManager,
+            eventRepository,
+            null,
+            EventFormat.ONLINE,
+            VatStatus.INCLUDED,
+            Collections.singletonList(PaymentProxy.CUSTOM_OFFLINE)
+        ).getKey();
+
+        var paymentMethods = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant bank transfer from any Canadian account.",
+                        "Send the payment to `payments@example.com`."
+                    )
+                )
+            )
+        );
+
+        for(var pm : paymentMethods) {
+            customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(event.getOrganizationId(), pm);
+        }
+
+        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+
+        TicketReservationModification tr = new TicketReservationModification();
+        tr.setAmount(AVAILABLE_SEATS / 2 + 1);
+        tr.setTicketCategoryId(unbounded.getId());
+
+        TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
+        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
+        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        TotalPrice reservationCost = priceAndDiscount.getLeft();
+        assertTrue(priceAndDiscount.getRight().isEmpty());
+        PaymentSpecification specification = new PaymentSpecification(
+            reservationId,
+            null,
+            paymentMethods.get(0),
+            reservationCost.getPriceWithVAT(),
+            event,
+            "email@example.com",
+            new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
+            "billing address",
+            null,
+            Locale.ENGLISH,
+            true,
+            false,
+            null,
+            "IT",
+            "123456",
+            PriceContainer.VatStatus.INCLUDED,
+            true,
+            false
+        );
+        PaymentResult result = ticketReservationManager.performPayment(
+            specification,
+            reservationCost,
+            PaymentProxy.CUSTOM_OFFLINE,
+            paymentMethods.get(0),
+            null
+        );
+        assertTrue(result.isSuccessful());
+        ticketReservationManager.deleteOfflinePayment(event, reservationId, false, false, false, null);
+    }
 
     @Test
     public void testCleanupExpiredReservations() {
@@ -693,10 +777,10 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         TotalPrice reservationCost = priceAndDiscount.getLeft();
         assertTrue(priceAndDiscount.getRight().isEmpty());
-        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
+        PaymentSpecification specification = new PaymentSpecification(reservationId, null, StaticPaymentMethods.BANK_TRANSFER, reservationCost.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
-        PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
+        PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, PaymentProxy.OFFLINE, StaticPaymentMethods.BANK_TRANSFER, null);
         assertTrue(result.isSuccessful());
 
 

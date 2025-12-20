@@ -103,7 +103,7 @@ public class SubscriptionsApiController {
             Formatters.getFormattedDate(s, s.getOnSaleTo(), DATE_FORMAT_KEY, messageSource),
             Formatters.getFormattedDate(s, s.getValidityFrom(), DATE_FORMAT_KEY, messageSource),
             Formatters.getFormattedDate(s, s.getValidityTo(), DATE_FORMAT_KEY, messageSource),
-            s.getContentLanguages().stream().map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage())).collect(toList())
+            s.getContentLanguages().stream().map(cl -> new Language(cl.locale().getLanguage(), cl.getDisplayLanguage())).collect(toList())
         );
     }
 

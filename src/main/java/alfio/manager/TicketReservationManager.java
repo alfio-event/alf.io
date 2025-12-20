@@ -22,6 +22,7 @@ import alfio.manager.PaymentManager.PaymentMethodDTO.PaymentMethodStatus;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.BankTransferManager;
 import alfio.manager.payment.PaymentSpecification;
+import alfio.manager.payment.custom.offline.CustomOfflineConfigurationManager;
 import alfio.manager.support.*;
 import alfio.manager.support.reservation.*;
 import alfio.manager.system.ConfigurationLevel;
@@ -174,6 +175,7 @@ public class TicketReservationManager {
     private final ReservationAuditingHelper auditingHelper;
     private final ReservationFinalizer reservationFinalizer;
     private final AdditionalServiceManager additionalServiceManager;
+    private final CustomOfflineConfigurationManager customOfflineConfigurationManager;
 
     public TicketReservationManager(EventRepository eventRepository,
                                     OrganizationRepository organizationRepository,
@@ -209,7 +211,8 @@ public class TicketReservationManager {
                                     ReservationCostCalculator reservationCostCalculator,
                                     ReservationEmailContentHelper reservationHelper,
                                     ReservationFinalizer reservationFinalizer,
-                                    OrderSummaryGenerator orderSummaryGenerator) {
+                                    OrderSummaryGenerator orderSummaryGenerator,
+                                    CustomOfflineConfigurationManager customOfflineConfigurationManager) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -251,6 +254,7 @@ public class TicketReservationManager {
         this.reservationHelper = reservationHelper;
         this.auditingHelper = new ReservationAuditingHelper(auditingRepository);
         this.reservationFinalizer = reservationFinalizer;
+        this.customOfflineConfigurationManager = customOfflineConfigurationManager;
     }
 
     private String createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor,
@@ -486,7 +490,7 @@ public class TicketReservationManager {
                     .map(sp -> {
                         int index = counter.getAndIncrement();
                         return Triple.of(reservedForUpdate.get(index), sp, getAtIndexOrEmpty(attendees, index));
-                    }).collect(Collectors.toList());
+                    }).toList();
                 jdbcTemplate.batchUpdate(ticketRepository.batchReserveTicketsForSpecialPrice(), ticketsAndSpecialPrices.stream().map(
                     triple -> {
                         String metadata = null;
@@ -796,7 +800,7 @@ public class TicketReservationManager {
 
     public void deleteOfflinePayment(Event event, String reservationId, boolean expired, boolean credit, boolean notify, String username) {
         TicketReservation reservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
-        Validate.isTrue(reservation.getStatus() == OFFLINE_PAYMENT || reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT, "Invalid reservation status");
+        Validate.isTrue(EnumSet.of(OFFLINE_PAYMENT, DEFERRED_OFFLINE_PAYMENT, CUSTOM_OFFLINE_PAYMENT).contains(reservation.getStatus()), "Invalid reservation status");
         Validate.isTrue(!(credit && reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT), "Cannot credit deferred payment");
         if(credit) {
             creditReservation(reservation, username, notify);
@@ -925,13 +929,25 @@ public class TicketReservationManager {
      *
      * @param paymentMethodDTO
      * @param purchaseContext
-     * @param configurationManager
      * @return
      */
-    public static boolean isValidPaymentMethod(PaymentManager.PaymentMethodDTO paymentMethodDTO, PurchaseContext purchaseContext, ConfigurationManager configurationManager) {
+    public boolean isValidPaymentMethod(PaymentManager.PaymentMethodDTO paymentMethodDTO, PurchaseContext purchaseContext) {
+        boolean ifCustomOfflineIsApplicableForEvent = true;
+        if (paymentMethodDTO.getPaymentProxy() == PaymentProxy.CUSTOM_OFFLINE && purchaseContext.event().isPresent()) {
+            var event = purchaseContext.event().get();
+            ifCustomOfflineIsApplicableForEvent = customOfflineConfigurationManager
+                .getAllowedCustomOfflinePaymentMethodsForEvent(event)
+                .stream()
+                .anyMatch(pm -> pm.getPaymentMethodId().equals(paymentMethodDTO.getPaymentMethodId()));
+        }
+
         return paymentMethodDTO.isActive()
             && purchaseContext.getAllowedPaymentProxies().contains(paymentMethodDTO.getPaymentProxy())
-            && (!paymentMethodDTO.getPaymentProxy().equals(PaymentProxy.OFFLINE) || hasValidOfflinePaymentWaitingPeriod(new PaymentContext(purchaseContext), configurationManager));
+            && (
+                !paymentMethodDTO.getPaymentProxy().equals(PaymentProxy.OFFLINE)
+                || hasValidOfflinePaymentWaitingPeriod(new PaymentContext(purchaseContext), configurationManager)
+            )
+            && ifCustomOfflineIsApplicableForEvent;
     }
 
     private void reTransitionToPending(String reservationId, boolean deleteTransactions) {
@@ -1036,7 +1052,7 @@ public class TicketReservationManager {
             .toList();
 
         purchaseContextFieldRepository.deleteAllValuesForReservations(toDelete);
-        applicationEventPublisher.publishEvent(new CleanupReservations(null, toDelete, true));
+        applicationEventPublisher.publishEvent(new CleanupReservations(null, toDelete, true, false, false));
         waitingQueueManager.cleanExpiredReservations(toDelete);
         transactionRepository.deleteForReservations(toDelete);
         ticketReservationRepository.remove(toDelete);
@@ -1127,7 +1143,7 @@ public class TicketReservationManager {
 
     /**
      * Get the total cost with VAT if it's not included in the ticket price.
-     * 
+     *
      * @param reservationId
      * @return
      */
@@ -1174,7 +1190,7 @@ public class TicketReservationManager {
 
     public String ticketOnlineCheckIn(Event event, String ticketId) {
         Ticket ticket = ticketRepository.findByUUID(ticketId);
-        
+
         return ticketOnlineCheckInUrl(event, ticket, configurationManager.baseUrl(event));
     }
 
@@ -1191,10 +1207,6 @@ public class TicketReservationManager {
         return configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.ticketCategory(eventAndOrganizationId, ticketCategoryId)).getValueAsIntOrDefault(5);
     }
 
-    public Optional<TicketReservation> findByIdForEvent(String reservationId, int eventId) {
-        return ticketReservationRepository.findOptionalReservationByIdAndEventId(reservationId, eventId);
-    }
-    
     public Optional<TicketReservation> findById(String reservationId) {
         return ticketReservationRepository.findOptionalReservationById(reservationId);
     }
@@ -1221,7 +1233,7 @@ public class TicketReservationManager {
     private void cancelReservation(TicketReservation reservation, boolean expired, String username) {
         String reservationId = reservation.getId();
         purchaseContextManager.findByReservationId(reservationId).ifPresent(pc -> {
-            cleanupReferencesToReservation(expired, username, reservationId, pc);
+            cleanupReferencesToReservation(expired, username, reservationId, pc, false, false);
             removeReservation(pc, reservation, expired, username);
         });
     }
@@ -1231,15 +1243,14 @@ public class TicketReservationManager {
         Event event = eventRepository.findByReservationId(reservationId);
         billingDocumentManager.ensureBillingDocumentIsPresent(event, reservation, username, () -> orderSummaryForReservationId(reservation.getId(), event));
         issueCreditNoteForReservation(event, reservation, username, sendEmail);
-        cleanupReferencesToReservation(false, username, reservationId, event);
-        extensionManager.handleReservationsCreditNoteIssuedForEvent(event, Collections.singletonList(reservationId));
+        cleanupReferencesToReservation(false, username, reservationId, event, false, true);
     }
 
-    private void cleanupReferencesToReservation(boolean expired, String username, String reservationId, PurchaseContext purchaseContext) {
+    private void cleanupReferencesToReservation(boolean expired, String username, String reservationId, PurchaseContext purchaseContext, boolean afterTicketReleased, boolean creditNoteIssued) {
         List<String> reservationIdsToRemove = singletonList(reservationId);
         int tfvDeleted = purchaseContextFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
         log.debug("deleted {} field values", tfvDeleted);
-        applicationEventPublisher.publishEvent(new CleanupReservations(purchaseContext, List.of(reservationId), expired));
+        applicationEventPublisher.publishEvent(new CleanupReservations(purchaseContext, List.of(reservationId), expired, afterTicketReleased, creditNoteIssued));
         transactionRepository.deleteForReservations(List.of(reservationId));
         waitingQueueManager.fireReservationExpired(reservationId);
         auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), purchaseContext.event().map(Event::getId).orElse(null), expired ? Audit.EventType.CANCEL_RESERVATION_EXPIRED : Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
@@ -1468,7 +1479,7 @@ public class TicketReservationManager {
                         Validate.isTrue(result == 1);
                         Map<String, Object> model = TemplateResource.prepareModelForReminderTicketAdditionalInfo(organizationRepository.getById(event.getOrganizationId()), event, t, ReservationUtil.ticketUpdateUrl(event, t, configurationManager));
                         Locale locale = Optional.ofNullable(t.getUserLanguage()).map(LocaleUtil::forLanguageTag).orElseGet(() -> findReservationLanguage(t.getTicketsReservationId()));
-                        notificationManager.sendSimpleEmail(event, t.getTicketsReservationId(), t.getEmail(), messageSource.getMessage("reminder.ticket-additional-info.subject", 
+                        notificationManager.sendSimpleEmail(event, t.getTicketsReservationId(), t.getEmail(), messageSource.getMessage("reminder.ticket-additional-info.subject",
                         		new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKET_ADDITIONAL_INFO, model, locale));
                     });
             return null;
@@ -1498,7 +1509,7 @@ public class TicketReservationManager {
                         Map<String, Object> model = reservationHelper.prepareModelForReservationEmail(event, reservation);
                         ticketReservationRepository.updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(clockProvider.withZone(eventZoneId)));
                         Locale locale = findReservationLanguage(reservation.getId());
-                        notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject", 
+                        notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject",
                         		new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKETS_ASSIGNMENT_EMAIL, model, locale));
                     });
                 return null;
@@ -1572,7 +1583,7 @@ public class TicketReservationManager {
         auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_TICKET, new Date(), Audit.EntityType.TICKET, Integer.toString(ticket.getId()));
 
         if(ticketRepository.countTicketsInReservation(reservationId) == 0 && transactionRepository.loadOptionalByReservationId(reservationId).isEmpty()) {
-            cleanupReferencesToReservation(false, null, ticketReservation.getId(), event);
+            cleanupReferencesToReservation(false, null, ticketReservation.getId(), event, true, false);
             removeReservation(event, ticketReservation, false, null);
             auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
         }
@@ -1610,14 +1621,6 @@ public class TicketReservationManager {
 
     public Integer getPendingPaymentsCount(int eventId) {
         return ticketReservationRepository.findAllReservationsWaitingForPaymentCountInEventId(eventId);
-    }
-
-    public List<Pair<TicketReservation, BillingDocument>> findAllInvoices(int eventId) {
-        List<BillingDocument> documents = billingDocumentRepository.findAllOfTypeForEvent(BillingDocument.Type.INVOICE, eventId);
-        Map<String, BillingDocument> documentsByReservationId = documents.stream().collect(toMap(BillingDocument::getReservationId, Function.identity()));
-        return ticketReservationRepository.findByIds(documentsByReservationId.keySet()).stream()
-            .map(r -> Pair.of(r, documentsByReservationId.get(r.getId())))
-            .collect(toList());
     }
 
     public Stream<Pair<TicketReservationWithTransaction, List<BillingDocument>>> streamAllDocumentsFor(int eventId) {
@@ -1851,7 +1854,8 @@ public class TicketReservationManager {
                 var totalPrice = totalReservationCostWithVAT(reservation).getLeft();
                 var paymentToken = paymentWebhookResult.getPaymentToken();
                 var paymentSpecification = new PaymentSpecification(reservation, totalPrice, purchaseContext, paymentToken,
-                    orderSummaryForReservation(reservation, purchaseContext), true, hasPrivacyPolicy(purchaseContext));
+                    paymentProvider.getPaymentMethodForTransaction(transaction), orderSummaryForReservation(reservation, purchaseContext),
+                    true, hasPrivacyPolicy(purchaseContext));
                 transitionToComplete(paymentSpecification, paymentToken.getPaymentProvider(), null);
                 break;
             }
@@ -1947,7 +1951,7 @@ public class TicketReservationManager {
         "reservation", reservation,
             RESERVATION_ID, shortReservationID,
         "eventName", purchaseContext.getDisplayName(),
-        "provider", requireNonNullElse(paymentMethod, PaymentMethod.NONE).name(),
+        "provider", requireNonNullElse(paymentMethod, StaticPaymentMethods.NONE).name(),
         "reason", paymentWebhookResult.getReason(),
         "reservationUrl", reservationUrl(reservation, purchaseContext));
 
@@ -1977,7 +1981,7 @@ public class TicketReservationManager {
         var messageSource = messageSourceManager.getMessageSourceFor(purchaseContext);
         var provider = (ServerInitiatedTransaction) optionalProvider.get();
         var paymentSpecification = new PaymentSpecification(reservation,
-            totalReservationCostWithVAT(reservation).getLeft(), purchaseContext, null,
+            totalReservationCostWithVAT(reservation).getLeft(), purchaseContext, null, paymentMethod,
             orderSummaryForReservation(reservation, purchaseContext), false, false);
         if(!acquireGroupMembers(reservationId, purchaseContext)) {
             groupManager.deleteWhitelistedTicketsForReservation(reservationId);
@@ -2050,8 +2054,11 @@ public class TicketReservationManager {
         var categoriesInReservation = ticketRepository.getCategoriesIdToPayInReservation(reservationId);
         var blacklistedPaymentMethods = configurationManager.getBlacklistedMethodsForReservation(purchaseContext, categoriesInReservation);
         var transactionRequest = new TransactionRequest(totalPrice, ticketReservationRepository.getBillingDetailsForReservation(reservationId));
-        var availableMethods = paymentManager.getPaymentMethods(purchaseContext, transactionRequest).stream().filter(pm -> pm.getStatus() == PaymentMethodStatus.ACTIVE && pm.getPaymentMethod() != PaymentMethod.NONE).collect(toList());
-        if(availableMethods.isEmpty()  || availableMethods.stream().allMatch(pm -> blacklistedPaymentMethods.contains(pm.getPaymentMethod()))) {
+        var availableMethods = paymentManager.getPaymentMethods(purchaseContext, transactionRequest).stream().filter(pm -> pm.getStatus() == PaymentMethodStatus.ACTIVE && pm.getPaymentMethod() != StaticPaymentMethods.NONE).toList();
+        var areAllMethodsBlacklisted = availableMethods.stream().allMatch(pm ->
+            blacklistedPaymentMethods.stream().anyMatch(blItem -> blItem.getPaymentMethodId().equals(pm.getPaymentMethodId()))
+        );
+        if(availableMethods.isEmpty()  || areAllMethodsBlacklisted) {
             log.error("Cannot proceed with reservation. No payment methods available {} or all blacklisted {}", availableMethods, blacklistedPaymentMethods);
             return false;
         }

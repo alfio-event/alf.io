@@ -86,18 +86,23 @@ public class MvcConfiguration implements WebMvcConfigurer {
         int cacheMinutes = isLive ? 15 : 0;
 
         var defaultCacheControl = CacheControl.maxAge(Duration.ofDays(isLive ? 10 : 0)).mustRevalidate();
+        var alfioVersionPath = "/" + alfioVersion;
+        
+        registry
+            .addResourceHandler("/robots.txt")
+            .addResourceLocations("classpath:/public/robots.txt");
 
-        registry.addResourceHandler("/resources/font/*", alfioVersion + "/resources/font/*")
+        registry.addResourceHandler("/resources/font/*", alfioVersionPath + "/resources/font/*")
             .addResourceLocations("classpath:/font/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(defaultCacheControl);
 
-        registry.addResourceHandler( "/resources/images/**", alfioVersion +"/resources/images/**")
+        registry.addResourceHandler("/resources/images/**", alfioVersionPath + "/resources/images/**")
             .addResourceLocations("classpath:/images/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(defaultCacheControl);
 
-        registry.addResourceHandler(alfioVersion + "/resources/**")
+        registry.addResourceHandler(alfioVersionPath + "/resources/**")
             .addResourceLocations("classpath:/alfio-admin-v1/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(defaultCacheControl);
@@ -107,7 +112,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(CacheControl.maxAge(Duration.ofDays(60)));
 
-        registry.addResourceHandler(alfioVersion + "/frontend-admin/**")
+        registry.addResourceHandler(alfioVersionPath + "/frontend-admin/**")
             .addResourceLocations("classpath:/resources/alfio-admin-frontend/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(CacheControl.maxAge(Duration.ofDays(60)));
@@ -121,7 +126,8 @@ public class MvcConfiguration implements WebMvcConfigurer {
         private final RequestMatcher staticContentToIgnore;
 
         ExcludeSessionRepositoryFilter(String alfioVersion) {
-            var methodMatcher = RequestMatchers.anyOf(antMatcher(HttpMethod.GET),
+            var methodMatcher = RequestMatchers.anyOf(
+                antMatcher(HttpMethod.GET),
                 antMatcher(HttpMethod.HEAD),
                 antMatcher(HttpMethod.TRACE),
                 antMatcher(HttpMethod.OPTIONS)
@@ -129,10 +135,11 @@ public class MvcConfiguration implements WebMvcConfigurer {
             var urlMatcher = RequestMatchers.anyOf(
                 antMatcher("/favicon.*"),
                 antMatcher("/resources/**"),
-                antMatcher(alfioVersion + "/resources/**"),
+                antMatcher("/" + alfioVersion + "/resources/**"),
                 antMatcher("/frontend-public/**"),
-                antMatcher(alfioVersion + "/frontend-admin/**"),
-                antMatcher("/file/**")
+                antMatcher("/" + alfioVersion + "/frontend-admin/**"),
+                antMatcher("/file/**"),
+                antMatcher("/payment/paypal/redirect/*")
             );
             this.staticContentToIgnore = RequestMatchers.allOf(methodMatcher, urlMatcher);
         }

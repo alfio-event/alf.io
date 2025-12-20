@@ -125,9 +125,6 @@ public interface EmailMessageRepository {
     @Query("select count(*) from ("+FIND_MAILS_BY_SUBSCRIPTION+") as d_tbl")
     Integer countFindBySubscriptionDescriptorId(@Bind("subscriptionId") UUID subscriptionId, @Bind("search") String search);
 
-    @Query("select * from email_message where id = :id")
-    EmailMessage findById(@Bind("id") int id);
-
     @Query("select "+LIGHTWEIGHT_FIELDS+" from email_message where id = :messageId and event_id = :eventId")
     Optional<LightweightMailMessage> findByEventIdAndMessageId(@Bind("eventId") int eventId, @Bind("messageId") int messageId);
 

@@ -107,10 +107,13 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
         String publicIdentifier = spec.getPurchaseContext().getPublicIdentifier();
 
         String baseUrl = StringUtils.removeEnd(configurationManager.getFor(ConfigurationKeys.BASE_URL, spec.getPurchaseContext().getConfigurationLevel()).getRequiredValue(), "/");
-        String bookUrl = baseUrl + "/" + purchaseContextType + "/" + publicIdentifier + "/reservation/" + spec.getReservationId() + "/payment/paypal/" + URL_PLACEHOLDER;
+        String bookUrl = baseUrl + "/payment/paypal/redirect/" + URL_PLACEHOLDER;
 
         String hmac = computeHMAC(spec.getCustomerName(), spec.getEmail(), spec.getBillingAddress(), spec.getPurchaseContext());
         UriComponentsBuilder bookUrlBuilder = UriComponentsBuilder.fromUriString(bookUrl)
+            .queryParam("purchaseContextType", purchaseContextType)
+            .queryParam("purchaseContextIdentifier", publicIdentifier)
+            .queryParam("reservationId", spec.getReservationId())
             .queryParam("hmac", hmac);
         String finalUrl = bookUrlBuilder.toUriString();
 
@@ -308,8 +311,8 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     }
 
     @Override
-    public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
-        return EnumSet.of(PaymentMethod.PAYPAL);
+    public Set<? extends PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
+        return EnumSet.of(StaticPaymentMethods.PAYPAL);
     }
 
     @Override
@@ -319,7 +322,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context, TransactionRequest transactionRequest) {
-        return paymentMethod == PaymentMethod.PAYPAL && isActive(context);
+        return paymentMethod == StaticPaymentMethods.PAYPAL && isActive(context);
     }
 
     @Override
@@ -329,7 +332,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
 
     @Override
     public PaymentMethod getPaymentMethodForTransaction(alfio.model.transaction.Transaction transaction) {
-        return PaymentMethod.PAYPAL;
+        return StaticPaymentMethods.PAYPAL;
     }
 
     @Override

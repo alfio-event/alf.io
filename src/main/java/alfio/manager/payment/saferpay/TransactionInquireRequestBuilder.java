@@ -16,15 +16,19 @@
  */
 package alfio.manager.payment.saferpay;
 
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
+import java.io.IOException;
 
-@RequiredArgsConstructor
+
 public class TransactionInquireRequestBuilder {
     private final String transactionId;
     private final int retryIndicator;
     private String customerId;
     private String requestId;
+
+    public TransactionInquireRequestBuilder(String transactionId, int retryIndicator) {
+        this.transactionId = transactionId;
+        this.retryIndicator = retryIndicator;
+    }
 
     public TransactionInquireRequestBuilder addAuthentication(String customerId, String requestId) {
         this.customerId = customerId;
@@ -33,8 +37,7 @@ public class TransactionInquireRequestBuilder {
     }
 
     // @formatter:off
-    @SneakyThrows
-    public String build() {
+    public String build() throws IOException {
         return TransactionCaptureRequestBuilder.buildRequest(customerId, requestId, retryIndicator, transactionId);
     }
 }

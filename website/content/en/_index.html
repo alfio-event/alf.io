@@ -80,7 +80,7 @@ linkTitle = "Alf.io"
 					<p></p>
 					<p></p>
 				</li>
-					
+
 			</ul>
 		</div>
         <div class="mt-5 h4 text-center">Do you organize Conferences, trade shows, workshops, meetups? <strong>Here's how alf.io can help you:</strong></div>
@@ -103,7 +103,7 @@ Alf.io is <a href="http://www.gnu.org/copyleft/gpl.html" class="link-success" ta
 
 
 {{% blocks/feature icon="fas fa-shield-alt" title="Secure" %}}
-Alf.io has been built with security in mind. Because you care about your user's data. 
+Alf.io has been built with security in mind. Because you care about your user's data.
 It serves pages using HTTPS protocol and with strict Content [Security Policy](https://www.html5rocks.com/en/tutorials/security/content-security-policy/) rules
 {{% /blocks/feature %}}
 
@@ -132,7 +132,7 @@ Alf.io supports [Stripe](https://stripe.com/) and [Mollie](https://mollie.com) a
 {{< blocks/section color="light" >}}
 
 {{% blocks/feature icon="far fa-lightbulb" title="Flexible" %}}
-You can define free-of-charge as well as paid events. 
+You can define free-of-charge as well as paid events.
 You can allow your users either to pre-pay the ticket by credit cardⁱ or PayPal, post-pay it by bank transfer, or even pay it at the entrance desk.
 
 ⁱ _The event organizer needs a Stripe or Mollie account in order to get paid. No registration is required for the attendees_
@@ -140,7 +140,7 @@ You can allow your users either to pre-pay the ticket by credit cardⁱ or PayPa
 {{% /blocks/feature %}}
 
 {{% blocks/feature icon="fas fa-chart-bar" title="Measurable" %}}
-Simply create a Google Analytics(tm) account and configure your metrics. All the URLs are unique and let you analyze the incoming traffic. 
+Simply create a Google Analytics(tm) account and configure your metrics. All the URLs are unique and let you analyze the incoming traffic.
 Anonymous statistics and IP-Address scrambling are enabled by default, so you are already compliant with EU "cookie law".
 {{% /blocks/feature %}}
 
@@ -161,19 +161,28 @@ Already tested and deployed on:
 
 {{< /blocks/section >}}
 {{< blocks/section color="white" >}}
+
 <div class="d-md-flex justify-content-center w-100">
-    <div class="text-center">
-        <h2>Do you need help?</h2>
-        <div class="mt-4">
-            Having a live service on the Internet is not a trivial task. It's important to keep it secure, healthy and up-to-date constantly.
+    <div>
+        <h2 class="text-center">Looking for a fully managed version of Alf.io?</h2>
+        <div class="row mt-4">
+            <div class="col-md-10 offset-md-1">
+                Swicket is the premium hosted version of Alf.io, designed for event organizers who need:
+                <ul class="mt-2">
+                    <li>Hassle-Free Hosting: No server setup or maintenance.</li>
+                    <li>Advanced Features: CRM integrations, advanced lead capture, badge printing &amp; more.</li>
+                    <li>Dedicated Support: Email, chat, and video call support from the creators of Alf.io.</li>
+                </ul>
+            </div>
         </div>
-        <div class="mt-1">
-            Don't worry, we're here to help!
-        </div>
-        <h2 class="mt-4">try</h2>
-        <div class="mt-2">
+        <h3 class="mt-4 text-center">
+            Built on Alf.io, enhanced for professionals.<br>
+            Focus on your events and let us handle the tech.
+        </h3>
+
+        <div class="mt-2 text-center">
             <a href="https://swicket.io" target="_blank" rel="noopener" class="mt-5">
-                <img class="media-object" style="width: 240px;max-height: 100px;vertical-align: baseline;" src="/img/logos/logo-swicket.svg">
+                <img class="media-object" alt="Swicket logo" style="width: 240px;max-height: 100px;vertical-align: baseline;" src="/img/logos/logo-swicket.svg">
             </a>
         </div>
     </div>
@@ -187,7 +196,7 @@ Already tested and deployed on:
 	<a class="btn btn-outline-success btn-lg mt-4 mb-5" href="usage-form/">Tell us about you!</a>
 	<div id="regions_container" class="d-md-block d-none" style="width:100%">
 		<div id="regions_div" class="w-100">
-			
+
 		</div>
 	</div>
 	<div class="d-block d-md-none">
@@ -312,7 +321,7 @@ Already tested and deployed on:
 			organizersPerRegion.forEach(function(v) {data.push(v)});
 			google.charts.load('current', {'packages':['geochart']});
 			google.charts.setOnLoadCallback(drawRegionsMap(data));
-	
+
 			function drawRegionsMap(stats) {
 				return function() {
 					var data = google.visualization.arrayToDataTable(stats);
@@ -322,7 +331,7 @@ Already tested and deployed on:
 				}
 			}
 		});
-	
+
 		$('#regions_txt').ready(function() {
 			var textEl = $('#regions_txt')
 			var template = '<tr><td>country</td><td class="text-center">organizers</td></tr>';
@@ -332,6 +341,6 @@ Already tested and deployed on:
 				$(t).appendTo(textEl);
 			});
 		});
-	
+
 	})();
 </script>

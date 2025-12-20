@@ -19,7 +19,6 @@ package alfio.controller.api.wallet;
 import alfio.manager.wallet.GoogleWalletManager;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.Ticket;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,10 +31,13 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/wallet/event/{eventName}/v1")
-@RequiredArgsConstructor
 public class GoogleWalletApiController {
 
     private final GoogleWalletManager walletManager;
+
+    public GoogleWalletApiController(GoogleWalletManager walletManager) {
+        this.walletManager = walletManager;
+    }
 
     @GetMapping("/version/passes/{uuid}")
     public void walletPass(@PathVariable String eventName,

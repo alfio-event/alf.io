@@ -16,6 +16,7 @@
  */
 package alfio.manager.wallet;
 
+import alfio.util.Json;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +26,7 @@ class EventTicketObjectTest {
 
     @Test
     void build() throws Exception {
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = Json.OBJECT_MAPPER;
 
         EventTicketObject object = new EventTicketObject(
             "ISSUER_ID.MEMBER_ID",

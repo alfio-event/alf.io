@@ -37,8 +37,8 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.StaticPaymentMethods;
 import alfio.repository.BillingDocumentRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
@@ -300,7 +300,7 @@ class BillingDocumentCreationIntegrationTest extends BaseIntegrationTest {
         paymentForm.setPrivacyPolicyAccepted(true);
         paymentForm.setTermAndConditionsAccepted(true);
         paymentForm.setPaymentProxy(PaymentProxy.OFFLINE);
-        paymentForm.setSelectedPaymentMethod(PaymentMethod.BANK_TRANSFER);
+        paymentForm.setSelectedPaymentMethod(StaticPaymentMethods.BANK_TRANSFER);
 
         var handleRes = reservationApiV2Controller.confirmOverview(reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
             new MockHttpServletRequest(), null);

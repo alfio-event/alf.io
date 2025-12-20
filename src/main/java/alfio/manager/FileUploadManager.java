@@ -41,8 +41,8 @@ import java.util.regex.Pattern;
 @Component
 public class FileUploadManager {
 
-    static final int IMAGE_THUMB_MAX_WIDTH_PX = 300;
-    static final int IMAGE_THUMB_MAX_HEIGHT_PX = 200;
+    static final int IMAGE_THUMB_MAX_WIDTH_PX = 600;
+    static final int IMAGE_THUMB_MAX_HEIGHT_PX = 400;
     private static final Logger log = LoggerFactory.getLogger(FileUploadManager.class);
 
     private static final String FILE_SECTION = "file-upload-manager";
@@ -130,10 +130,10 @@ public class FileUploadManager {
         }
         try {
             BufferedImage image = ImageIO.read(new ByteArrayInputStream(upload.getFile()));
-            // resize only if the image is bigger than target size on either side
+            // resize only if the image is bigger than the target size on either side
             if (image.getWidth() > IMAGE_THUMB_MAX_WIDTH_PX || image.getHeight() > IMAGE_THUMB_MAX_HEIGHT_PX) {
                 UploadBase64FileModification resized = new UploadBase64FileModification();
-                BufferedImage thumbImg = Scalr.resize(image, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, IMAGE_THUMB_MAX_WIDTH_PX, IMAGE_THUMB_MAX_HEIGHT_PX, Scalr.OP_ANTIALIAS);
+                BufferedImage thumbImg = Scalr.resize(image, Scalr.Method.ULTRA_QUALITY, Scalr.Mode.AUTOMATIC, IMAGE_THUMB_MAX_WIDTH_PX, IMAGE_THUMB_MAX_HEIGHT_PX);
                 try (final var baos = new ByteArrayOutputStream()) {
                     ImageIO.write(thumbImg, mimeType.getSubtype(), baos);
                     resized.setFile(baos.toByteArray());

@@ -16,20 +16,28 @@
  */
 package alfio.manager;
 
+import alfio.manager.payment.BankTransferManager;
+import alfio.manager.payment.CustomOfflinePaymentManager;
 import alfio.manager.payment.MollieWebhookPaymentManager;
 import alfio.manager.payment.StripeWebhookPaymentManager;
+import alfio.manager.system.ConfigurationManager;
+import alfio.manager.testSupport.MaybeConfigurationBuilder;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.StaticPaymentMethods;
+import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
+import alfio.model.transaction.webhook.MollieWebhookPayload;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -53,19 +61,96 @@ class PaymentManagerTest {
 
     @Test
     void validSelection() {
-        when(stripe.getSupportedPaymentMethods(any(), any())).thenReturn(EnumSet.of(PaymentMethod.CREDIT_CARD));
-        when(mollie.getSupportedPaymentMethods(any(), any())).thenReturn(EnumSet.of(PaymentMethod.IDEAL));
+        doReturn(
+            EnumSet.of(StaticPaymentMethods.CREDIT_CARD)
+                .stream()
+                .map(paymentMethod -> (PaymentMethod) paymentMethod)
+                .collect(Collectors.toSet())
+        )
+            .when(stripe)
+            .getSupportedPaymentMethods(any(), any());
+
+        doReturn(EnumSet.of(StaticPaymentMethods.IDEAL))
+            .when(mollie)
+            .getSupportedPaymentMethods(any(), any());
         assertTrue(paymentManager.validateSelection(List.of(PaymentProxy.STRIPE, PaymentProxy.MOLLIE), 1).isEmpty());
     }
 
     @Test
     void selectionConflict() {
-        when(stripe.getSupportedPaymentMethods(any(), any())).thenReturn(EnumSet.of(PaymentMethod.CREDIT_CARD));
-        when(mollie.getSupportedPaymentMethods(any(), any())).thenReturn(EnumSet.of(PaymentMethod.CREDIT_CARD, PaymentMethod.IDEAL));
+        doReturn(EnumSet.of(StaticPaymentMethods.CREDIT_CARD))
+            .when(stripe)
+            .getSupportedPaymentMethods(any(), any());
+        doReturn(EnumSet.of(StaticPaymentMethods.CREDIT_CARD, StaticPaymentMethods.IDEAL))
+            .when(mollie)
+            .getSupportedPaymentMethods(any(), any());
         List<Map.Entry<PaymentMethod, Set<PaymentProxy>>> entries = paymentManager.validateSelection(List.of(PaymentProxy.STRIPE, PaymentProxy.MOLLIE), 1);
         assertFalse(entries.isEmpty());
         assertEquals(1, entries.size());
-        assertSame(entries.get(0).getKey(), PaymentMethod.CREDIT_CARD);
-        assertEquals(entries.get(0).getValue(), EnumSet.of(PaymentProxy.STRIPE, PaymentProxy.MOLLIE));
+        assertSame(StaticPaymentMethods.CREDIT_CARD, entries.get(0).getKey());
+        assertEquals(EnumSet.of(PaymentProxy.STRIPE, PaymentProxy.MOLLIE), entries.get(0).getValue());
+    }
+
+    /**
+     * Regression test to ensure we are filtering deny listed items
+     * using a full text match, not a partial match (contains).
+     */
+    @Test
+    void paymentProxyDeniedListMatchesFullText() {
+        var orgId = 1;
+        var inputCustomPaymentMethods = List.of(
+            new UserDefinedOfflinePaymentMethod(
+                "15146df3-2436-4d2e-90b9-0d6cb273e291",
+                Map.of(
+                    "en", new UserDefinedOfflinePaymentMethod.Localization(
+                        "Interac E-Transfer",
+                        "Instant bank transfer from any Canadian account.",
+                        "Send the payment to `payments@example.com`."
+                    )
+                )
+            )
+        );
+
+        var customOffline = mock(CustomOfflinePaymentManager.class);
+        when(customOffline.isActive(any())).thenReturn(true);
+        when(customOffline.getPaymentProxy()).thenCallRealMethod();
+        doReturn(
+            new HashSet<PaymentMethod>(inputCustomPaymentMethods)
+        )
+            .when(customOffline)
+            .getSupportedPaymentMethods(any(), any());
+        var bankTransfer = mock(BankTransferManager.class);
+        when(bankTransfer.isActive(any())).thenReturn(true);
+        when(bankTransfer.getPaymentProxy()).thenCallRealMethod();
+        doReturn(
+            EnumSet.of(StaticPaymentMethods.BANK_TRANSFER)
+                .stream()
+                .map(paymentMethod -> (PaymentMethod) paymentMethod)
+                .collect(Collectors.toSet())
+        )
+            .when(bankTransfer)
+            .getSupportedPaymentMethods(any(), any());
+
+
+        var configurationManager = mock(ConfigurationManager.class);
+        var maybeConfig = MaybeConfigurationBuilder.existing(
+            ConfigurationKeys.PAYMENT_METHODS_BLACKLIST,
+            PaymentProxy.CUSTOM_OFFLINE.name()
+        );
+
+        when(configurationManager.getFor(eq(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST), any())).thenReturn(maybeConfig);
+        var paymentManagerForCustomOffline = new PaymentManager(
+            null,
+            configurationManager,
+            null,
+            null,
+            null,
+            List.of(customOffline, bankTransfer)
+        );
+
+        var paymentMethods = paymentManagerForCustomOffline.getPaymentMethods(orgId);
+
+        assertEquals(1, paymentMethods.size());
+        assertEquals(PaymentProxy.OFFLINE, paymentMethods.get(0).getPaymentProxy());
     }
 }

@@ -777,6 +777,12 @@
                     $scope.additionalServicesToBeCreated = $scope.additionalServicesToBeCreated || [];
 
                     EventService.getEvent(event.shortName).then(function(createdEvent) {
+                        const newEventCreatedEvent = new CustomEvent("new-event-created", {
+                            detail: createdEvent,
+                            bubbles: true,
+                            composed: true
+                        });
+                        window.dispatchEvent(newEventCreatedEvent);
                         $q.all($scope.additionalServicesToBeCreated.map(function(as) {
                             return EventService.createAdditionalService(createdEvent.data.event.id, as);
                         })).then(function(createdAdditionalServices) {
@@ -1312,6 +1318,14 @@
                         }
                         var obj = {'organizationId':organizationId};
                         angular.extend(obj, eventPrices);
+
+                        const updateEventPricesEvent = new CustomEvent("update-event-prices-form-submit", {
+                            detail: {},
+                            bubbles: true,
+                            composed: true
+                        });
+                        window.dispatchEvent(updateEventPricesEvent);
+
                         EventService.updateEventPrices(obj).then(function(result) {
                             validationErrorHandler(result, form, form.editPrices).then(function(result) {
                                 $scope.$close(eventPrices.availableSeats !== seats);

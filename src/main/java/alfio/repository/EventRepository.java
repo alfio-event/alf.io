@@ -37,9 +37,6 @@ public interface EventRepository {
     @Query("select * from event where id = :eventId")
     Event findById(@Bind("eventId") int eventId);
 
-    @Query("select display_name from event where id = :eventId")
-    String getDisplayNameById(@Bind("eventId") int eventId);
-
     @Query("select id, org_id from event where id = :eventId")
     EventAndOrganizationId findEventAndOrganizationIdById(@Bind("eventId") int eventId);
 
@@ -51,9 +48,6 @@ public interface EventRepository {
 
     @Query("select exists(select 1 from event where short_name = :eventName)")
     boolean existsByShortName(@Bind("eventName") String eventName);
-
-    @Query("select id, org_id from event where id = :eventId")
-    Optional<EventAndOrganizationId> findOptionalEventAndOrganizationIdById(@Bind("eventId") int eventId);
     
     @Query("select org_id from event where id = :eventId")
     int findOrganizationIdByEventId(@Bind("eventId") int eventId);
@@ -169,9 +163,6 @@ public interface EventRepository {
     @Query("update event set display_name = short_name where id = :eventId and display_name is null")
     int fillDisplayNameIfRequired(@Bind("eventId") int eventId);
 
-    @Query("select id from event where end_ts > :now")
-    List<Integer> findAllActiveIds(@Bind("now") ZonedDateTime now);
-
     @Query("select * from event where end_ts > :now order by start_ts, end_ts")
     List<Event> findAllActives(@Bind("now") ZonedDateTime now);
 
@@ -249,8 +240,4 @@ public interface EventRepository {
                                            @Bind("organizer") Integer organizer,
                                            @Bind("organizerSlug") String organizerSlug,
                                            @Bind("tags") List<String> tags);
-
-    @Query("select id from event where short_name in (:shortNames) and org_id = :orgId")
-    List<Integer> findIdsByShortNames(@Bind("shortNames") List<String> eventShortNames,
-                                      @Bind("orgId") int organizationId);
 }

@@ -134,10 +134,6 @@ public class EventManager {
         return getOptionalEventAndOrganizationIdByName(eventName, username).orElseThrow(IllegalStateException::new);
     }
 
-    public List<Integer> getEventIdsBySlug(List<String> eventSlugs, int organizationId) {
-        return eventRepository.findIdsByShortNames(eventSlugs, organizationId);
-    }
-
     public Optional<Event> getOptionalByName(String eventName, String username) {
         return eventRepository.findOptionalByShortName(eventName)
             .filter(checkOwnership(username, organizationRepository));
@@ -145,11 +141,6 @@ public class EventManager {
 
     public Optional<EventAndOrganizationId> getOptionalEventAndOrganizationIdByName(String eventName, String username) {
         return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
-            .filter(checkOwnership(username, organizationRepository));
-    }
-
-    public Optional<EventAndOrganizationId> getOptionalEventIdAndOrganizationIdById(int eventId, String username) {
-        return eventRepository.findOptionalEventAndOrganizationIdById(eventId)
             .filter(checkOwnership(username, organizationRepository));
     }
 
@@ -302,9 +293,9 @@ public class EventManager {
             Validate.isTrue(original.getAllowedPaymentProxies().stream().allMatch(p -> p != PaymentProxy.ON_SITE), ERROR_ONLINE_ON_SITE_NOT_COMPATIBLE);
         }
 
-        String timeZone = ObjectUtils.firstNonNull(em.getZoneId(), em.getGeolocation() != null ? em.getGeolocation().getTimeZone() : null);
-        String latitude = ObjectUtils.firstNonNull(em.getLatitude(), em.getGeolocation() != null ? em.getGeolocation().getLatitude() : null);
-        String longitude = ObjectUtils.firstNonNull(em.getLongitude(), em.getGeolocation() != null ?  em.getGeolocation().getLongitude(): null);
+        String timeZone = ObjectUtils.firstNonNull(em.getZoneId(), em.getGeolocation() != null ? em.getGeolocation().timeZone() : null);
+        String latitude = ObjectUtils.firstNonNull(em.getLatitude(), em.getGeolocation() != null ? em.getGeolocation().latitude() : null);
+        String longitude = ObjectUtils.firstNonNull(em.getLongitude(), em.getGeolocation() != null ?  em.getGeolocation().longitude(): null);
 
         final ZoneId zoneId = ZoneId.of(timeZone);
         final ZonedDateTime begin = em.getBegin().toZonedDateTime(zoneId);

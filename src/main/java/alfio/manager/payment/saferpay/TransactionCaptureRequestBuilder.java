@@ -17,13 +17,10 @@
 package alfio.manager.payment.saferpay;
 
 import com.google.gson.stream.JsonWriter;
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.io.StringWriter;
 
-@RequiredArgsConstructor
 public class TransactionCaptureRequestBuilder {
 
     private final String token;
@@ -31,14 +28,18 @@ public class TransactionCaptureRequestBuilder {
     private String customerId;
     private String requestId;
 
+    public TransactionCaptureRequestBuilder(String token, int retryIndicator) {
+        this.token = token;
+        this.retryIndicator = retryIndicator;
+    }
+
     public TransactionCaptureRequestBuilder addAuthentication(String customerId, String requestId) {
         this.customerId = customerId;
         this.requestId = requestId;
         return this;
     }
     // @formatter:off
-    @SneakyThrows
-    public String build() {
+    public String build()throws IOException {
         return buildRequest(customerId, requestId, retryIndicator, token);
     }
 

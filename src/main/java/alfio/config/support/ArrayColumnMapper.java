@@ -20,7 +20,6 @@ import alfio.model.support.Array;
 import ch.digitalfondue.npjt.mapper.ColumnMapper;
 import ch.digitalfondue.npjt.mapper.ColumnMapperFactory;
 import ch.digitalfondue.npjt.mapper.ParameterConverter;
-import lombok.SneakyThrows;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.lang.annotation.Annotation;
@@ -90,7 +89,7 @@ public class ArrayColumnMapper extends ColumnMapper {
             return hasAnnotation(annotations) && List.class.isAssignableFrom(parameterType);
         }
 
-        @SneakyThrows
+
         @Override
         public void processParameter(ProcessParameterContext processParameterContext) {
             var arg = processParameterContext.getArg();
@@ -99,8 +98,12 @@ public class ArrayColumnMapper extends ColumnMapper {
                 ps.addValue(processParameterContext.getParameterName(), null, Types.ARRAY);
             } else {
                 Array def = (Array) Arrays.stream(processParameterContext.getParameterAnnotations()).filter(ArrayColumnMapper::annotationFinder).findFirst().orElseThrow();
-                var array = processParameterContext.getConnection().createArrayOf(def.type(), ((List<?>) arg).toArray());
-                ps.addValue(processParameterContext.getParameterName(), array);
+                try {
+                    var array = processParameterContext.getConnection().createArrayOf(def.type(), ((List<?>) arg).toArray());
+                    ps.addValue(processParameterContext.getParameterName(), array);
+                } catch (SQLException e) {
+                    throw new IllegalStateException(e);
+                }
             }
         }
 

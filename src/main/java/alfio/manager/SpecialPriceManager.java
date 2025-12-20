@@ -45,7 +45,7 @@ import static java.util.stream.Collectors.toList;
 @Transactional
 public class SpecialPriceManager {
 
-    private static final Predicate<SendCodeModification> IS_CODE_PRESENT = v -> Optional.ofNullable(v.getCode()).isPresent();
+    private static final Predicate<SendCodeModification> IS_CODE_PRESENT = v -> Optional.ofNullable(v.code()).isPresent();
     private final EventManager eventManager;
     private final NotificationManager notificationManager;
     private final SpecialPriceRepository specialPriceRepository;
@@ -61,7 +61,7 @@ public class SpecialPriceManager {
             .stream()
             .map(SpecialPrice::getCode).collect(toList());
         Validate.isTrue(input.size() <= availableCodes.size(), "Requested codes: "+input.size()+ ", available: "+availableCodes.size()+".");
-        List<String> requestedCodes = input.stream().filter(IS_CODE_PRESENT).map(SendCodeModification::getCode).collect(toList());
+        List<String> requestedCodes = input.stream().filter(IS_CODE_PRESENT).map(SendCodeModification::code).toList();
         Validate.isTrue(requestedCodes.stream().distinct().count() == requestedCodes.size(), "Cannot assign the same code twice. Please fix the input file.");
         Validate.isTrue(new HashSet<>(availableCodes).containsAll(requestedCodes), "some requested codes don't exist.");
         return availableCodes;
@@ -81,7 +81,7 @@ public class SpecialPriceManager {
         List<String> availableCodes = checkCodeAssignment(set, categoryId, event, username);
         final Iterator<String> codes = availableCodes.iterator();
         return Stream.concat(set.stream().filter(IS_CODE_PRESENT), input.stream().filter(IS_CODE_PRESENT.negate())
-            .map(p -> new SendCodeModification(codes.next(), p.getAssignee(), p.getEmail(), p.getLanguage())))
+            .map(p -> new SendCodeModification(codes.next(), p.assignee(), p.email(), p.language())))
             .collect(toList());
     }
 
@@ -111,16 +111,16 @@ public class SpecialPriceManager {
         ContentLanguage defaultLocale = eventLanguages.contains(ContentLanguage.ENGLISH) ? ContentLanguage.ENGLISH : eventLanguages.get(0);
         set.forEach(m -> {
             var messageSource = messageSourceManager.getMessageSourceFor(event);
-            Locale locale = LocaleUtil.forLanguageTag(Objects.toString(StringUtils.trimToNull(m.getLanguage()), defaultLocale.getLanguage()));
+            Locale locale = LocaleUtil.forLanguageTag(Objects.toString(StringUtils.trimToNull(m.language()), defaultLocale.getLanguage()));
             var usePartnerCode = configurationManager.getFor(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL, event.getConfigurationLevel()).getValueAsBooleanOrDefault();
             var promoCodeDescription = messageSource.getMessage("show-event.promo-code-type."+(usePartnerCode ? "partner" : "promotional"), null, null, locale);
             Map<String, Object> model = TemplateResource.prepareModelForSendReservedCode(organization, event, m, eventManager.getEventUrl(event), promoCodeDescription);
             notificationManager.sendSimpleEmail(event,
                 null,
-                m.getEmail(),
+                m.email(),
                 messageSource.getMessage("email-code.subject", new Object[] {event.getDisplayName(), promoCodeDescription}, locale),
                 () -> templateManager.renderTemplate(event, TemplateResource.SEND_RESERVED_CODE, model, locale));
-            int marked = specialPriceRepository.markAsSent(event.now(clockProvider), m.getAssignee().trim(), m.getEmail().trim(), m.getCode().trim());
+            int marked = specialPriceRepository.markAsSent(event.now(clockProvider), m.assignee().trim(), m.email().trim(), m.code().trim());
             Validate.isTrue(marked == 1, "Expected exactly one row updated, got "+marked);
         });
         return true;

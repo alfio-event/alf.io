@@ -29,7 +29,6 @@ import alfio.repository.WaitingQueueRepository;
 import alfio.util.ClockProvider;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +51,6 @@ import static java.util.stream.Collectors.toList;
 
 @Component
 @Transactional
-@RequiredArgsConstructor
 public class WaitingQueueSubscriptionProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(WaitingQueueSubscriptionProcessor.class);
@@ -67,6 +65,20 @@ public class WaitingQueueSubscriptionProcessor {
     private final TicketRepository ticketRepository;
     private final PlatformTransactionManager transactionManager;
     private final ClockProvider clockProvider;
+
+    public WaitingQueueSubscriptionProcessor(EventManager eventManager, TicketReservationManager ticketReservationManager, ConfigurationManager configurationManager, WaitingQueueManager waitingQueueManager, NotificationManager notificationManager, WaitingQueueRepository waitingQueueRepository, MessageSourceManager messageSourceManager, TemplateManager templateManager, TicketRepository ticketRepository, PlatformTransactionManager transactionManager, ClockProvider clockProvider) {
+        this.eventManager = eventManager;
+        this.ticketReservationManager = ticketReservationManager;
+        this.configurationManager = configurationManager;
+        this.waitingQueueManager = waitingQueueManager;
+        this.notificationManager = notificationManager;
+        this.waitingQueueRepository = waitingQueueRepository;
+        this.messageSourceManager = messageSourceManager;
+        this.templateManager = templateManager;
+        this.ticketRepository = ticketRepository;
+        this.transactionManager = transactionManager;
+        this.clockProvider = clockProvider;
+    }
 
     public void handleWaitingTickets() {
         Map<Boolean, List<Event>> activeEvents = eventManager.getActiveEvents().stream()

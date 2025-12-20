@@ -4,6 +4,9 @@ about: Create a report to help us improve
 
 ---
 
+**Alf.io version you are using**
+you can find the exact version in the bottom left corner of the dashboard 
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 
