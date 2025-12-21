@@ -9,15 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@lit/context": "1.1.4",
-    "@lit/task": "1.0.2",
+    "@lit/context": "1.1.6",
+    "@lit/task": "1.0.3",
     "@shoelace-style/shoelace": "2.20.1",
     "@tanstack/lit-form": "^1.1.0",
-    "lit": "3.2.1"
+    "lit": "3.3.1"
   },
   "devDependencies": {
-    "typescript": "5.4.5",
-    "vite": "5.4.14",
-    "vite-plugin-static-copy": "1.0.4"
+    "typescript": "5.9.3",
+    "vite": "7.3.0",
+    "vite-plugin-static-copy": "3.1.4"
   }
 }
