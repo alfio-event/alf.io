@@ -19,6 +19,8 @@ import {repeat} from "lit/directives/repeat.js";
 import {dialog as dialogStyling, form, pageHeader, retroCompat, row, textColors} from "../../styles.ts";
 import {AlfioEvent, TicketCategory} from "../../model/event.ts";
 import {AdditionalFieldService} from "../../service/additional-field.ts";
+import {AdditionalItem} from "../../model/additional-item.ts";
+import {AdditionalItemService} from "../../service/additional-item.ts";
 
 @customElement('alfio-additional-field-edit')
 export class AdditionalFieldEdit extends LitElement {
@@ -34,6 +36,9 @@ export class AdditionalFieldEdit extends LitElement {
 
     @state()
     displayForm: boolean = false;
+
+    @state()
+    additionalItems: AdditionalItem[] = [];
 
     @state()
     private purchaseContext?: PurchaseContext;
@@ -63,7 +68,7 @@ export class AdditionalFieldEdit extends LitElement {
             disabledValues: undefined,
             categoryIds: undefined,
         } as AdditionalField
-    })
+    });
 
 
     protected render(): TemplateResult {
@@ -75,7 +80,7 @@ export class AdditionalFieldEdit extends LitElement {
                 label=${this.dialogTitle}
                 @sl-request-close=${this.preventAccidentalClose}>
 
-                ${renderIf(() => this.displayForm, () => this.renderForm())}
+                    ${renderIf(() => this.displayForm, () => this.renderForm())}
 
             </sl-dialog>
         `;
@@ -271,11 +276,46 @@ export class AdditionalFieldEdit extends LitElement {
                                 <br />
                             `;
                         })}
+
+                        ${renderIf(() => this.additionalItems.length > 0, () => this.renderAdditionalItemSelector())}
+
                     `;
                 })}
             `;
         }
         return html``;
+    }
+
+    private renderAdditionalItemSelector() {
+        const valueTransformer = (value: string) => {
+            if (value === 'ATTENDEE') {
+                this.#form.api.setFieldValue('additionalServiceId', undefined);
+            }
+            return value;
+        };
+
+        const findTitle = (item: AdditionalItem) => item.title[0].value ?? '';
+        return html`
+            ${this.#form.field({
+                name: 'context'
+            }, (field) => html`
+                    <sl-select label="When to display" required .value=${field.state.value} @sl-change=${(e: InputEvent) => notifyChange(e, field, valueTransformer)} class="block wMarginTop10px">
+                        <sl-option value=${'ATTENDEE'}>Always</sl-option>
+                        <sl-option value=${'ADDITIONAL_SERVICE'}>Only when Additional Item is selected</sl-option>
+                    </sl-select>
+                `)}
+
+            ${renderIf(() => this.#form.api.state.values.context === 'ADDITIONAL_SERVICE', () => html`
+                ${this.#form.field({
+                    name: 'additionalServiceId'
+                }, (field) => html`
+                    <sl-select label="Additional Item" required .value=${field.state.value} @sl-change=${(e: InputEvent) => notifyChange(e, field)} class="block wMarginTop10px">
+                        ${repeat(this.additionalItems, item => html`<sl-option .value=${item.id}>${findTitle(item)} ${item.id}</sl-option>`)}
+                    </sl-select>
+                `)}
+            `)}
+
+        `;
     }
 
     private renderConstraints() {
@@ -313,6 +353,9 @@ export class AdditionalFieldEdit extends LitElement {
                     await this.save(state.value);
                 }
             });
+            if (request.purchaseContext.type === 'event' && !this.editField) {
+                this.additionalItems.push(...await AdditionalItemService.loadAll({eventId: (request.purchaseContext as AlfioEvent).id}));
+            }
             this.displayForm = true;
             await this.dialog.show();
         }
@@ -393,7 +436,7 @@ export class AdditionalFieldEdit extends LitElement {
                 order: value.order,
                 categoryIds: value.categoryIds ?? [],
                 displayAtCheckIn: value.displayAtCheckIn,
-                forAdditionalService: undefined, // TODO
+                forAdditionalService: this.additionalItems.find(item => item.id === value.additionalServiceId),
                 maxLength: value.maxLength,
                 minLength: value.minLength,
                 readOnly: !value.editable,
