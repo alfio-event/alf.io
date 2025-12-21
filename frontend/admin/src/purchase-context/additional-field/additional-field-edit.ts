@@ -1,5 +1,5 @@
 import {customElement, query, state} from "lit/decorators.js";
-import {html, LitElement, nothing, TemplateResult} from "lit";
+import {css, html, LitElement, nothing, TemplateResult} from "lit";
 import {SlDialog, SlRequestCloseEvent} from "@shoelace-style/shoelace";
 import {
     AdditionalField,
@@ -12,11 +12,11 @@ import {
     supportsPlaceholder,
     supportsRestrictedValues
 } from "../../model/additional-field.ts";
-import {PurchaseContext} from "../../model/purchase-context.ts";
+import {ContentLanguage, PurchaseContext} from "../../model/purchase-context.ts";
 import {TanStackFormController} from "@tanstack/lit-form";
 import {notifyChange, renderIf} from "../../service/helpers.ts";
 import {repeat} from "lit/directives/repeat.js";
-import {dialog as dialogStyling, form, pageHeader, row, textColors} from "../../styles.ts";
+import {dialog as dialogStyling, form, pageHeader, retroCompat, row, textColors} from "../../styles.ts";
 import {AlfioEvent, TicketCategory} from "../../model/event.ts";
 import {AdditionalFieldService} from "../../service/additional-field.ts";
 
@@ -27,7 +27,10 @@ export class AdditionalFieldEdit extends LitElement {
     dialog?: SlDialog;
 
     @state()
-    dialogTitle?: string
+    dialogTitle?: string;
+
+    @state()
+    editField: boolean = false;
 
     @state()
     displayForm: boolean = false;
@@ -36,9 +39,13 @@ export class AdditionalFieldEdit extends LitElement {
     private purchaseContext?: PurchaseContext;
 
 
-    static styles = [pageHeader, row, dialogStyling, form, textColors];
+    static readonly styles = [pageHeader, row, dialogStyling, form, textColors, css`
+        .block {
+            display: block;
+        }
+    `, retroCompat];
 
-    #form = new TanStackFormController(this, {
+    readonly #form = new TanStackFormController(this, {
         defaultValues: {
             id: undefined,
             name: '',
@@ -112,9 +119,9 @@ export class AdditionalFieldEdit extends LitElement {
                                 }
                             }
                         }, (field) => html`
-                                             <sl-input placeholder="Name" label="Field Name" required .value=${field.state.value} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
+                                             <sl-input placeholder="Name" label="Field Name" required .value=${field.state.value} @sl-change=${(e: InputEvent) => notifyChange(e, field)} .disabled=${this.editField}></sl-input>
                         `)}
-                                         ${this.#form.field({
+                        ${this.#form.field({
                             name: 'type'
                         }, (field) => html`
                                              <sl-select label="Field Type" required .value=${field.state.value} @sl-change=${(e: InputEvent) => notifyChange(e, field)}>
@@ -128,24 +135,28 @@ export class AdditionalFieldEdit extends LitElement {
                                         ${this.#form.field({
                             name: 'required'
                         }, (field) => html`
-                                            <sl-checkbox .value=${field.state.value} checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}>
+                                            <sl-checkbox .value=${field.state.value} checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)} class="block wMarginTop10px">
                                                 Required
                                             </sl-checkbox>
                                         `)}
                                         ${this.#form.field({
                             name: 'displayAtCheckIn'
                         }, (field) => html`
-                                <sl-checkbox .value=${field.state.value} checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}>
+                                <sl-checkbox .value=${field.state.value} checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)} class="block wMarginTop10px">
                                     Shown at Check-in
-                                    <span slot="help-text">This information will be shown in the check-in app upon successful scan</span>
+                                    <sl-tooltip content="This information will be shown in the check-in app upon successful scan">
+                                        <sl-icon name="info-circle"></sl-icon>
+                                    </sl-tooltip>
                                 </sl-checkbox>
                             `)}
                         ${this.#form.field({
                             name: 'editable'
                         }, (field) => html`
-                            <sl-checkbox .value=${field.state.value} checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}>
+                            <sl-checkbox .value=${field.state.value} checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)} class="block wMarginTop10px">
                                 Editable
-                                <span slot="help-text">Whether Information can be modified after set</span>
+                                <sl-tooltip content="Whether Information can be modified after set">
+                                    <sl-icon name="info-circle"></sl-icon>
+                                </sl-tooltip>
                             </sl-checkbox>
                         `)}
                     </div>
@@ -168,25 +179,29 @@ export class AdditionalFieldEdit extends LitElement {
             <h3>Localized messages</h3>
             <div class="row">
                 ${repeat(contentLanguages, cl => cl.locale, (cl) => {
+                    return this.renderLanguageField(cl);
+                })}
+            </div>
+        `;
+    }
+
+    private renderLanguageField(cl: ContentLanguage) {
+        return html`
+            <div class="col">
+                <div class="border-bottom">
+                    <h4>${cl.displayLanguage}</h4>
+                </div>
+                ${this.#form.field({name: `description.${cl.locale}.description.label`}, (field) => {
                     return html`
-                        <div class="col">
-                            <div class="border-bottom">
-                                <h4>${cl.displayLanguage}</h4>
-                            </div>
-                            ${this.#form.field({name: `description.${cl.locale}.description.label`}, (field) => {
-                                return html`
-                                    <sl-input label="Label" required .value=${field.state.value ?? nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
-                                `
-                            })}
-                            ${renderIf(() => supportsPlaceholder(this.#form.api.state.values.type),
-                                () => html`
+                        <sl-input label="Label" required .value=${field.state.value ?? nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
+                    `
+                })}
+                ${renderIf(() => supportsPlaceholder(this.#form.api.state.values.type),
+                        () => html`
                                     ${this.#form.field({name: `description.${cl.locale}.description.placeholder`}, (field) => html`
                                         <sl-input label="Placeholder" .value=${field.state.value ?? nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
                                     `)}
-                                `)}
-                        </div>
-                    `;
-                })}
+                        `)}
             </div>
         `;
     }
@@ -244,7 +259,7 @@ export class AdditionalFieldEdit extends LitElement {
                     }
 
                     return html`
-                        <sl-checkbox checked=${!field.state.value || field.state.value.length === 0 || nothing} @sl-change=${(e: InputEvent) => selectionChanged(e, undefined)}>
+                        <sl-checkbox checked=${!field.state.value || field.state.value.length === 0 || nothing} @sl-change=${(e: InputEvent) => selectionChanged(e)}>
                             All Ticket categories
                         </sl-checkbox>
                         <br />
@@ -289,7 +304,8 @@ export class AdditionalFieldEdit extends LitElement {
     }): Promise<boolean> {
 
         if (this.dialog != null) {
-            this.dialogTitle = request.field != null ? `Edit ${request.field.name}` : `Add attendee data`;
+            this.dialogTitle = request.field == null ? `Add attendee data` : `Edit ${request.field.name}`;
+            this.editField = request.field != null;
             this.purchaseContext = request.purchaseContext;
             this.#form.api.update({
                 defaultValues: this.buildDefaultValues(request.purchaseContext, request.ordinal, request.field, request.template),
@@ -298,7 +314,7 @@ export class AdditionalFieldEdit extends LitElement {
                 }
             });
             this.displayForm = true;
-            await this.dialog!.show();
+            await this.dialog.show();
         }
         return this.dialog != null;
     }
@@ -356,22 +372,20 @@ export class AdditionalFieldEdit extends LitElement {
 
     private async save(value: AdditionalField) {
         let updateResult: Response;
-        if (value.id != null) {
-            updateResult = await AdditionalFieldService.saveField(this.purchaseContext!, value);
-        } else {
-            const descriptionRequest: {[locale: string]: DescriptionRequest} = {};
+        if (value.id == null) {
+            const descriptionRequest: { [locale: string]: DescriptionRequest } = {};
             const restrictedValues: RestrictedValueRequest[] = [];
             Object.entries(value.description).forEach(([key, value]) => {
-               descriptionRequest[key] = {
-                   label: value.description.label,
-                   placeholder: value.description.placeholder ?? ''
-               }
-               if (value.description.restrictedValues != null) {
-                   restrictedValues.push({
-                       value: value.description.restrictedValues[key],
-                       enabled: true
-                   });
-               }
+                descriptionRequest[key] = {
+                    label: value.description.label,
+                    placeholder: value.description.placeholder ?? ''
+                }
+                if (value.description.restrictedValues != null) {
+                    restrictedValues.push({
+                        value: value.description.restrictedValues[key],
+                        enabled: true
+                    });
+                }
             });
             updateResult = await AdditionalFieldService.createNewField(this.purchaseContext!, {
                 type: value.type,
@@ -388,6 +402,8 @@ export class AdditionalFieldEdit extends LitElement {
                 restrictedValues: restrictedValues,
                 userDefinedOrder: false
             });
+        } else {
+            updateResult = await AdditionalFieldService.saveField(this.purchaseContext!, value);
         }
 
         if (updateResult.ok) {

@@ -50,7 +50,7 @@ export class AdditionalFieldList extends LitElement {
 
     private readonly retrievePageDataTask = new Task<ReadonlyArray<string>, Model>(this,
         async ([publicIdentifier, purchaseContextType, organizationId]) => {
-            const result = await PurchaseContextService.load(publicIdentifier, purchaseContextType as PurchaseContextType, parseInt(organizationId, 10));
+            const result = await PurchaseContextService.load(publicIdentifier, purchaseContextType as PurchaseContextType, Number.parseInt(organizationId, 10));
             const isSubscription = (purchaseContextType as PurchaseContextType) === 'subscription';
             const purchaseContext = isSubscription ? result.subscriptionDescriptor! : result.eventWithOrganization!.event;
             const templates = await AdditionalFieldService.loadTemplates(purchaseContext);
@@ -170,7 +170,7 @@ export class AdditionalFieldList extends LitElement {
                                 </div>
                                 ${this.showStatisticsButton(field, model)}
                                 <div class="button-container">
-                                    <sl-button type="button" variant="default" @click=${() => console.log('todo')}>
+                                    <sl-button type="button" variant="default" @click=${() => this.edit(field, model)}>
                                         <sl-icon name="pencil" slot="prefix"></sl-icon>
                                         Edit
                                     </sl-button>
@@ -326,6 +326,11 @@ export class AdditionalFieldList extends LitElement {
             }
             return false;
         } catch(e) {
+            console.error("Error while deleting field", e);
+            dispatchFeedback({
+                type: 'danger',
+                message: `Cannot delete field ${field.name}`
+            }, this);
             return false;
         }
     }
@@ -347,7 +352,7 @@ export class AdditionalFieldList extends LitElement {
         document.body.appendChild(div);
         await customElements.whenDefined('alfio-additional-field-statistics');
         component.addEventListener('alfio-drawer-closed', async () => {
-            setTimeout(() => document.body.removeChild(div));
+            setTimeout(() => div.remove());
         });
         await component.show({
             purchaseContext: (model.event ?? model.subscriptionDescriptor)!,
@@ -368,7 +373,7 @@ export class AdditionalFieldList extends LitElement {
         await customElements.whenDefined('alfio-additional-field-edit');
         component.addEventListener('alfio-dialog-closed', async (e) => {
             await this.editDialogClosed(e);
-            setTimeout(() => document.body.removeChild(div));
+            setTimeout(() => div.remove());
         });
         const purchaseContext: PurchaseContext = (model.isSubscription ? model.subscriptionDescriptor : model.event)!;
         await component.open({
@@ -387,6 +392,10 @@ export class AdditionalFieldList extends LitElement {
             order: ordinal
         };
         await this.openEditDialog(model, ordinal, undefined, newField);
+    }
+
+    private async edit(additionalField: AdditionalField, model: Model) {
+        await this.openEditDialog(model, additionalField.order, additionalField);
     }
 
     private async newCustom(model: Model, itemsCount: number) {
