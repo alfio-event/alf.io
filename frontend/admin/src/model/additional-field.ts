@@ -26,6 +26,7 @@ export interface RestrictedValueRequest {
 export interface DescriptionRequest {
     label: string;
     placeholder: string;
+    restrictedValues?: {[k: string]: string};
 }
 
 export interface AdditionalFieldCreateRequest {

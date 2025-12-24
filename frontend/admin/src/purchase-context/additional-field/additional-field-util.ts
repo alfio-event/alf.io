@@ -13,6 +13,7 @@ export function renderPreview(fieldContent: LocalizedAdditionalFieldContent, fie
     switch(field.type) {
         case "checkbox":
             return html`
+                <label><strong>${localizedConfiguration.label}</strong></label>
                 ${repeat(Object.entries(localizedConfiguration.restrictedValues ?? {}), ([k]) => k, ([value, label]) => html`
                     <sl-checkbox value=${value}>${label}</sl-checkbox>
                 `)}
@@ -20,7 +21,8 @@ export function renderPreview(fieldContent: LocalizedAdditionalFieldContent, fie
             `;
         case "radio":
             return html`
-                <sl-radio-group label=${localizedConfiguration.label} name=${field.name}>
+                <sl-radio-group name=${field.name}>
+                    <div slot="label"><strong>${localizedConfiguration.label}</strong></div>
                     ${repeat(Object.entries(localizedConfiguration.restrictedValues ?? {}), ([k]) => k, ([value, label]) => html`
                         <sl-radio value=${value}> ${label}</sl-radio>
                     `)}
@@ -28,18 +30,15 @@ export function renderPreview(fieldContent: LocalizedAdditionalFieldContent, fie
             `;
         case "country":
             return html`
-                <label>${localizedConfiguration.label}</label>
-                <sl-select hoist>
+                <sl-select hoist label=${localizedConfiguration.label}>
                     <sl-option value="C1">Country 1</sl-option>
                     <sl-option value="C2">Country 2</sl-option>
                     <sl-option value="C3">Country 3</sl-option>
                 </sl-select>
             `;
         case "select":
-
             return html`
-                <label>${localizedConfiguration.label}</label>
-                <sl-select hoist>
+                <sl-select hoist label=${localizedConfiguration.label}>
                     ${repeat(Object.entries(localizedConfiguration.restrictedValues ?? {}), ([k]) => k, ([value, label]) => html`
                         <sl-option value=${value}>${label}</sl-option>
                     `)}

@@ -6,6 +6,7 @@ import {
     AdditionalFieldTemplate
 } from "../model/additional-field.ts";
 import {callDelete, fetchJson, postJson} from "./helpers.ts";
+import {ValidatedResponse} from "../model/validation.ts";
 
 export class AdditionalFieldService {
 
@@ -35,12 +36,14 @@ export class AdditionalFieldService {
         return fetchJson(`/admin/api/${purchaseContext.type}/${purchaseContext.publicIdentifier}/additional-field/templates`);
     }
 
-    static async createNewField(purchaseContext: PurchaseContext, field: AdditionalFieldCreateRequest): Promise<Response> {
-        return postJson(`/admin/api/${purchaseContext.type}/${purchaseContext.publicIdentifier}/additional-field/new`, field);
+    static async createNewField(purchaseContext: PurchaseContext, field: AdditionalFieldCreateRequest): Promise<ValidatedResponse<AdditionalField>> {
+        const response = await postJson(`/admin/api/${purchaseContext.type}/${purchaseContext.publicIdentifier}/additional-field/new`, field);
+        return response.json();
     }
 
-    static async saveField(purchaseContext: PurchaseContext, field: AdditionalField): Promise<Response> {
+    static async saveField(purchaseContext: PurchaseContext, field: AdditionalField): Promise<ValidatedResponse<AdditionalField>> {
         const url = `/admin/api/${purchaseContext.type}/${purchaseContext.publicIdentifier}/additional-field/${field.id}`;
-        return postJson(url, field);
+        const response = await postJson(url, field);
+        return response.json();
     }
 }
