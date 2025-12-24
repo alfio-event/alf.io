@@ -13,7 +13,7 @@
     "@lit/task": "1.0.3",
     "@shoelace-style/shoelace": "2.20.1",
     "@tanstack/lit-form": "^1.1.0",
-    "lit": "3.3.1"
+    "lit": "3.3.2"
   },
   "devDependencies": {
     "typescript": "5.9.3",
