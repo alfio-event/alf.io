@@ -392,7 +392,7 @@ export class AdditionalFieldEdit extends LitElement {
                 const currentFieldName = this.#form.api.getFieldValue(`name`);
                 const currentFieldNameTouched = this.#form.api.getFieldMeta(`name`)!.isPristine;
                 if (currentFieldNameTouched || currentFieldName?.length === 0) {
-                    this.#form.api.setFieldValue(`name`, value.toLowerCase().replace(/\W/g,"_").substring(0, 64), {dontUpdateMeta: true});
+                    this.#form.api.setFieldValue(`name`, value.toLowerCase().replaceAll(/\W/g,"_").substring(0, 64), {dontUpdateMeta: true});
                 }
             }
             notifyChange(e, field);
@@ -466,7 +466,7 @@ export class AdditionalFieldEdit extends LitElement {
                 const currentFieldName = this.#form.api.getFieldValue(`selectableOptions[${optionIndex}].fieldName`);
                 const currentFieldNameTouched = this.#form.api.getFieldMeta(`selectableOptions[${optionIndex}].fieldName`)!.isPristine;
                 if (currentFieldNameTouched || currentFieldName?.length === 0) {
-                    this.#form.api.setFieldValue(`selectableOptions[${optionIndex}].fieldName`, value.toLowerCase().replace(/\W/g,"_").substring(0, 64), {dontUpdateMeta: true});
+                    this.#form.api.setFieldValue(`selectableOptions[${optionIndex}].fieldName`, value.toLowerCase().replaceAll(/\W/g,"_").substring(0, 64), {dontUpdateMeta: true});
                 }
             }
             notifyChange(e, field);
