@@ -1018,12 +1018,16 @@ public class EventManager {
             log.debug("cannot delete category. Expected result 1, got {}", result);
             throw new IllegalStateException("Cannot delete category");
         }
-        if(category.isBounded()) {
+        if (category.isBounded()) {
             int ticketsCount = category.getMaxTickets();
             var ticketIds = ticketRepository.selectTicketInCategoryForUpdate(eventId, categoryId, ticketsCount, List.of(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
             Validate.isTrue(ticketIds.size() == ticketsCount, "Error while deleting category. Please ensure that there is no pending reservation.");
             ticketRepository.resetTickets(ticketIds);
             Validate.isTrue(ticketsCount == ticketRepository.unbindTicketsFromCategory(eventId, categoryId, ticketIds), "Cannot remove tickets from category.");
+        }
+        if (category.isAccessRestricted()) {
+            int count = specialPriceRepository.cancelExpiredTokens(category.getId());
+            log.debug("Invalidated {} tokens for category {}", count, categoryId);
         }
     }
 

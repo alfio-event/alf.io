@@ -126,7 +126,7 @@ public interface SpecialPriceRepository {
     @Query("update special_price set status = 'CANCELLED' where id in (:ids)")
     int cancelTokens(@Bind("ids") List<Integer> ids);
 
-    @Query("select id, ticket_category_id from special_price where status = 'WAITING' for update skip locked")
+    @Query("select id, ticket_category_id from special_price where status = 'WAITING' and ticket_category_id in (select id from ticket_category where tc_status = 'ACTIVE') for update skip locked")
     List<SpecialPrice.SpecialPriceTicketCategoryId> findWaitingElements();
 
     @Query("select id, ticket_category_id from special_price where status = 'WAITING' and ticket_category_id = :categoryId for update skip locked")
