@@ -89,7 +89,7 @@ public class AdditionalFieldApiController {
                                                @PathVariable long id,
                                                Principal principal) {
         //
-        accessService.checkPurchaseContextOwnership(principal, purchaseContextType, publicIdentifier);
+        accessService.checkAccessToAdditionalField(principal, purchaseContextType, publicIdentifier, id);
         //
         return purchaseContextFieldManager.retrieveStats(id);
     }

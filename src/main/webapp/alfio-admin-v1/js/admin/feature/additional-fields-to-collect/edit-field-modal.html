@@ -13,7 +13,7 @@
             </div>
         </div>
         <div class="form-group" bs-form-error="editFieldForm.name">
-            <label class="col-xs-2 control-label">Name <i class="fa fa-info-circle"></i></label>
+            <label class="col-xs-2 control-label">Name</label>
             <div class="col-xs-10">
                 <input type="text" name="name" ng-model="field.name" class="form-control" required data-ng-if="addNewField">
                 <field-error data-form-obj="editFieldForm" data-field-obj="editFieldForm.name" data-field-label="'Field name'" data-show-existing-errors="showExistingErrors" data-required-pattern="'Letters, numbers, hyphen and underscore. Example of valid name: Additional_info1'"></field-error>
@@ -34,6 +34,16 @@
             <div class="col-xs-2">
                 <div class="checkbox">
                     <label><input type="checkbox" data-ng-model="field.required" name="fieldRequired" id="fieldRequired"></label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-xs-2 control-label" for="displayAtCheckIn" uib-tooltip="When enabled, this information will be visible to the check-in staff.">
+                Show at check-in
+            </label>
+            <div class="col-xs-2">
+                <div class="checkbox">
+                    <label><input type="checkbox" data-ng-model="field.displayAtCheckIn" name="fieldDisplayAtCheckIn" id="displayAtCheckIn"></label>
                 </div>
             </div>
         </div>

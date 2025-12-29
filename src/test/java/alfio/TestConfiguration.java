@@ -28,6 +28,8 @@ import alfio.test.toolkit.PromoCodeDiscountIntegrationTestingToolkit;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.mockito.Mockito;
+import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
+import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -76,5 +78,10 @@ public class TestConfiguration {
     @Bean
     public PromoCodeDiscountIntegrationTestingToolkit promoCodeDiscountIntegrationTestingToolkit(final PromoCodeDiscountRepository promoCodeDiscountRepository, final NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
         return new PromoCodeDiscountIntegrationTestingToolkit(promoCodeDiscountRepository, namedParameterJdbcTemplate);
+    }
+
+    @Bean
+    public ServletWebServerFactory servletWebServerFactory() {
+        return new JettyServletWebServerFactory(0); // random port
     }
 }

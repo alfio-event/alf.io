@@ -171,7 +171,7 @@
             })
             .state('events.single.dataToCollect', {
                 url:'/attendee-data-to-collect',
-                template:'<additional-fields event="$ctrl.loadEvent"></additional-fields>',
+                template:'<alfio-additional-field-list data-public-identifier="{{$ctrl.loadEvent.publicIdentifier}}" data-purchase-context-type="event" data-organization-id="{{$ctrl.loadEvent.organizationId}}"></alfio-additional-field-list>',
                 controller: loadEventCtrl,
                 controllerAs: '$ctrl',
                 resolve: loadEvent

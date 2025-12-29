@@ -79,7 +79,7 @@ class ReservationApiV1ControllerTest {
     private static final String ANONYMOUS_RESERVATION_URL_PREFIX = BASE_URL + "/event";
     private static final String LOGGED_IN_RESERVATION_URL_PREFIX = BASE_URL + "/openid/event/";
     private static final String FIELD_NAME = "field1";
-    private static final AdditionalInfoRequest FIELD1_REQUEST = new AdditionalInfoRequest(null, FIELD_NAME, AdditionalInfoRequest.AdditionalInfoType.GENERIC_TEXT, true, List.of(new DescriptionRequest("en", "bla")), null, null, null);
+    private static final AdditionalInfoRequest FIELD1_REQUEST = new AdditionalInfoRequest(null, FIELD_NAME, AdditionalInfoRequest.AdditionalInfoType.GENERIC_TEXT, true, List.of(new DescriptionRequest("en", "bla")), null, null, null, null);
     private static final List<AdditionalInfoRequest> ADDITIONAL_INFO_REQUESTS = List.of(
         FIELD1_REQUEST
     );

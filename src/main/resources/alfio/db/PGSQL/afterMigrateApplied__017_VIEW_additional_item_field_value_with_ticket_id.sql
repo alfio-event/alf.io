@@ -42,7 +42,8 @@ create view field_value_w_additional as (
            b.field_name as field_name,
            a.field_value as field_value,
            b.field_type as field_type,
-           b.context as context
+           b.context as context,
+           b.display_at_check_in as display_at_check_in
         from purchase_context_field_value a
         join purchase_context_field_configuration b on a.field_configuration_id_fk = b.id
         where (a.ticket_id_fk is not null and a.context = 'ATTENDEE')
@@ -55,7 +56,8 @@ create view field_value_w_additional as (
              tfc.field_name as field_name,
              coalesce(asv.field_value, '') as field_value,
              tfc.field_type as field_type,
-             asv.context as context
+             asv.context as context,
+             tfc.display_at_check_in as display_at_check_in
       from purchase_context_field_value asv
                join additional_service_item item on asv.additional_service_item_id_fk = item.id
                join purchase_context_field_configuration tfc on tfc.id = asv.field_configuration_id_fk
@@ -70,7 +72,8 @@ create view all_ticket_field_values as (
              a.field_name,
              a.field_value,
              null as description,
-             a.context as context
+             a.context as context,
+             a.display_at_check_in
           from field_value_w_additional a
           where a.field_type <> 'select'
       union all
@@ -81,7 +84,8 @@ create view all_ticket_field_values as (
              a.field_name,
              a.field_value,
              c.description,
-             a.context as context
+             a.context as context,
+             a.display_at_check_in
           from field_value_w_additional a
                inner join ticket on a.ticket_id_fk = ticket.id
                left join purchase_context_field_description c on c.field_configuration_id_fk = a.field_configuration_id_fk

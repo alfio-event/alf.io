@@ -18,19 +18,20 @@ package alfio.config.authentication;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-
-import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 @Configuration(proxyBeanMethods = false)
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class PayPalRedirectSessionConfiguration {
     @Bean
     public SecurityFilterChain payPalRedirectSessionFilterChain(HttpSecurity http) throws Exception {
-        AntPathRequestMatcher redirectRequestMatcher = antMatcher("/payment/paypal/redirect/*");
-        return http.securityMatchers(matchers -> matchers.requestMatchers(redirectRequestMatcher))
+        PathPatternRequestMatcher redirectRequestMatcher = PathPatternRequestMatcher.withDefaults().matcher("/payment/paypal/redirect/*");
+        return http.securityMatcher(redirectRequestMatcher)
             .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authorizer -> authorizer.requestMatchers(redirectRequestMatcher).permitAll())
             .build();

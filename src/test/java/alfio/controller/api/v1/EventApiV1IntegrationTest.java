@@ -163,7 +163,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
                 null
             ),
             null,
-            List.of(new AdditionalInfoRequest(0, additionalInfoName, AdditionalInfoRequest.AdditionalInfoType.GENERIC_TEXT, false, List.of(new DescriptionRequest("en", "label")), List.of(new DescriptionRequest("en", "placeholder")), null, null))
+            List.of(new AdditionalInfoRequest(0, additionalInfoName, AdditionalInfoRequest.AdditionalInfoType.GENERIC_TEXT, false, List.of(new DescriptionRequest("en", "label")), List.of(new DescriptionRequest("en", "placeholder")), null, null, null))
         );
     }
 

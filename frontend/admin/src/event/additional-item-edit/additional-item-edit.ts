@@ -10,14 +10,14 @@ import {
     taxTypeDescriptions
 } from "../../model/additional-item.ts";
 import {SlDialog, SlRequestCloseEvent} from "@shoelace-style/shoelace";
-import {AlfioEvent, ContentLanguage} from "../../model/event.ts";
+import {AlfioEvent} from "../../model/event.ts";
 import {repeat} from "lit/directives/repeat.js";
 import {TanStackFormController} from "@tanstack/lit-form";
-import {FormState} from '@tanstack/form-core';
 import {dialog, form, pageHeader, row, textColors} from "../../styles.ts";
 import {extractDateTime, notifyChange, renderIf, toDateTimeModification} from "../../service/helpers.ts";
 import {classMap} from "lit/directives/class-map.js";
 import {AdditionalItemService} from "../../service/additional-item.ts";
+import {ContentLanguage} from "../../model/purchase-context.ts";
 
 @customElement('alfio-additional-item-edit')
 export class AdditionalItemEdit extends LitElement {
@@ -34,17 +34,16 @@ export class AdditionalItemEdit extends LitElement {
 
     displayForm: boolean = false;
 
-    // waiting for https://github.com/TanStack/form/pull/656 to be complete
     private validationErrors?: { [k: string]: string};
 
-    #form: TanStackFormController<FormData> = new TanStackFormController(this, {
+    #form = new TanStackFormController(this, {
         defaultValues: {
             descriptions: [] as DescriptionForm[],
             availabilityAndPrices: {} as AvailabilityAndPricesForm,
-        }
+        } as FormData
     });
 
-    private buildDefaultValues(currentState: FormState<FormData>): FormData {
+    private buildDefaultValues(currentState: { values: FormData }): FormData {
         if (this.editedItem != null) {
             const item = this.editedItem;
             return {
@@ -160,7 +159,7 @@ export class AdditionalItemEdit extends LitElement {
                     ${
                         // title
                         this.#form.field({name: `descriptions[${index}].title`, validators: {
-                            onChange: ({ value }: { value: string }) => {
+                            onChange: ({ value }) => {
                                 return value && value.length < 3
                                     ? 'error.title'
                                     : undefined
@@ -172,7 +171,7 @@ export class AdditionalItemEdit extends LitElement {
                             `
                     })}
                     ${this.#form.field({name: `descriptions[${index}].description`, validators: {
-                                onChange: ({ value }: { value: string }) => {
+                                onChange: ({ value }) => {
                                     return value && value.length < 3
                                         ? 'error.description'
                                         : undefined
@@ -215,7 +214,7 @@ export class AdditionalItemEdit extends LitElement {
             <div class="row">
                 <div class="col">
                     ${this.#form.field({name: `availabilityAndPrices.inception`, validators: {
-                                onChange: ({ value }: { value: string }) => {
+                                onChange: ({ value }) => {
                                     return value && value.length < 3
                                         ? 'Not long enough'
                                         : undefined
@@ -231,7 +230,7 @@ export class AdditionalItemEdit extends LitElement {
                 </div>
                 <div class="col">
                     ${this.#form.field({name: `availabilityAndPrices.expiration`, validators: {
-                                onChange: ({ value }: { value: string }) => {
+                                onChange: ({ value }) => {
                                     return value && value.length < 3
                                         ? 'Not long enough'
                                         : undefined

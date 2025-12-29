@@ -16,13 +16,11 @@
  */
 package alfio.extension;
 
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.model.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,66 +28,52 @@ import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class SimpleHttpClientIntegrationTest {
+@WireMockTest
+class SimpleHttpClientIntegrationTest {
 
-    private static ClientAndServer mockServer;
-
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final HttpClient httpClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
     private final SimpleHttpClient simpleHttpClient = new SimpleHttpClient(httpClient);
 
-    @BeforeAll
-    public static void startServer() {
-        mockServer = ClientAndServer.startClientAndServer(4243);
-    }
-
-    @AfterAll
-    public static void stopServer() {
-        mockServer.stop();
-    }
-
     @Test
-    public void testSimpleGet() throws IOException {
+    void testSimpleGet(WireMockRuntimeInfo wmRuntimeInfo) throws IOException {
+        stubFor(get("/simple-get-1")
+            .willReturn(ok("ok")
+                .withHeader("Content-Type", "text/plain")));
 
-        mockServer
-            .when(HttpRequest.request().withMethod("GET").withPath("/simple-get-1"))
-            .respond(HttpResponse.response("ok").withStatusCode(200).withHeader("Content-Type", "text/plain"));
-
-        var res = simpleHttpClient.get("http://localhost:4243/simple-get-1");
+        var res = simpleHttpClient.get(wmRuntimeInfo.getHttpBaseUrl() + "/simple-get-1");
 
         assertTrue(res.isSuccessful());
         assertEquals("ok", res.getBody());
         assertEquals(200, res.getCode());
 
-        var notFound = simpleHttpClient.get("http://localhost:4243/simple-get-2-failure");
+        var notFound = simpleHttpClient.get(wmRuntimeInfo.getHttpBaseUrl() + "/simple-get-2-failure");
         assertFalse(notFound.isSuccessful());
         assertEquals(404, notFound.getCode());
     }
 
     @Test
-    public void testSimpleGetWithHeaders() throws IOException {
-        mockServer
-            .when(HttpRequest.request().withMethod("GET").withPath("/simple-get-header").withHeader("Custom-Header", "Custom-Value"))
-            .respond(HttpResponse.response("ok").withStatusCode(200).withHeader("Content-Type", "text/plain"));
+    void testSimpleGetWithHeaders(WireMockRuntimeInfo wmRuntimeInfo) throws IOException {
+        stubFor(get("/simple-get-header").withHeader("Custom-Header", equalTo("Custom-Value"))
+            .willReturn(ok("ok").withHeader("Content-Type", "text/plain")));
 
-        var missingHeader = simpleHttpClient.get("http://localhost:4243/simple-get-header", Map.of());
+        var missingHeader = simpleHttpClient.get(wmRuntimeInfo.getHttpBaseUrl() + "/simple-get-header", Map.of());
         assertFalse(missingHeader.isSuccessful());
         Assertions.assertEquals(404, missingHeader.getCode());
 
-
-        var res = simpleHttpClient.get("http://localhost:4243/simple-get-header", Map.of("Custom-Header", "Custom-Value"));
+        var res = simpleHttpClient.get(wmRuntimeInfo.getHttpBaseUrl() + "/simple-get-header", Map.of("Custom-Header", "Custom-Value"));
         assertTrue(res.isSuccessful());
         assertEquals(200, res.getCode());
     }
 
     @Test
-    public void testJsonBody() throws IOException {
-        mockServer
-            .when(HttpRequest.request().withMethod("GET").withPath("/simple-get-json"))
-            .respond(HttpResponse.response("{\"key\": \"value\"}").withStatusCode(200).withHeader("Content-Type", "application/json"));
+    void testJsonBody(WireMockRuntimeInfo wmRuntimeInfo) throws IOException {
+        stubFor(get("/simple-get-json")
+            .willReturn(ok("{\"key\": \"value\"}").withHeader("Content-Type", "application/json")));
 
-        var res = simpleHttpClient.get("http://localhost:4243/simple-get-json");
+        var res = simpleHttpClient.get(wmRuntimeInfo.getHttpBaseUrl() + "/simple-get-json");
 
         var body = res.getJsonBody(Map.class);
         assertNotNull(body);
@@ -104,39 +88,34 @@ public class SimpleHttpClientIntegrationTest {
     }
 
     @Test
-    public void testHead() throws IOException {
-        mockServer
-            .when(HttpRequest.request().withMethod("HEAD").withPath("/simple-head"))
-            .respond(HttpResponse.response().withStatusCode(200));
+    void testHead(WireMockRuntimeInfo wmRuntimeInfo) throws IOException {
+        stubFor(head(urlEqualTo("/simple-head")).willReturn(ok()));
 
-        var res = simpleHttpClient.head("http://localhost:4243/simple-head");
+        var res = simpleHttpClient.head(wmRuntimeInfo.getHttpBaseUrl() + "/simple-head");
         assertTrue(res.isSuccessful());
         Assertions.assertEquals(200, res.getCode());
     }
 
     @Test
-    public void testHeadWithHeaders() throws IOException {
-        mockServer
-            .when(HttpRequest.request().withMethod("HEAD").withPath("/simple-head-header").withHeader("Custom-Header", "Custom-Value"))
-            .respond(HttpResponse.response().withStatusCode(200));
+    void testHeadWithHeaders(WireMockRuntimeInfo wmRuntimeInfo) throws IOException {
+        stubFor(head(urlEqualTo("/simple-head-header")).withHeader("Custom-Header", equalTo("Custom-Value"))
+            .willReturn(ok()));
 
-        var noHeader = simpleHttpClient.head("http://localhost:4243/simple-head-header");
+        var noHeader = simpleHttpClient.head(wmRuntimeInfo.getHttpBaseUrl() + "/simple-head-header");
         assertFalse(noHeader.isSuccessful());
         Assertions.assertEquals(404, noHeader.getCode());
 
-
-        var res = simpleHttpClient.head("http://localhost:4243/simple-head-header", Map.of("Custom-Header", "Custom-Value"));
+        var res = simpleHttpClient.head(wmRuntimeInfo.getHttpBaseUrl() + "/simple-head-header", Map.of("Custom-Header", "Custom-Value"));
         assertTrue(res.isSuccessful());
         Assertions.assertEquals(200, res.getCode());
     }
 
     @Test
-    public void testPost() throws IOException {
-        mockServer
-            .when(HttpRequest.request().withMethod("POST").withPath("/simple-post"))
-            .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
+    void testPost(WireMockRuntimeInfo wmRuntimeInfo) throws IOException {
+        stubFor(post("/simple-post").willReturn(ok("Hello World!")
+                .withHeader("Content-Type", "text/plain")));
 
-        var res = simpleHttpClient.post("http://localhost:4243/simple-post");
+        var res = simpleHttpClient.post(wmRuntimeInfo.getHttpBaseUrl() + "/simple-post");
         assertTrue(res.isSuccessful());
         Assertions.assertEquals(200, res.getCode());
         Assertions.assertEquals("Hello World!", res.getBody());
@@ -146,84 +125,75 @@ public class SimpleHttpClientIntegrationTest {
     }
 
     @Test
-    public void testPostWithHeaders() throws IOException {
-        mockServer
-            .when(HttpRequest.request().withMethod("POST").withPath("/simple-post-header").withHeader("Custom-Header", "Custom-Value"))
-            .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
+    void testPostWithHeaders(WireMockRuntimeInfo wmRuntimeInfo) throws IOException {
+        stubFor(post("/simple-post-header").withHeader("Custom-Header", equalTo("Custom-Value"))
+            .willReturn(ok("Hello World!").withHeader("Content-Type", "text/plain")));
 
-        assertFalse(simpleHttpClient.post("http://localhost:4243/simple-post-header").isSuccessful());
+        assertFalse(simpleHttpClient.post(wmRuntimeInfo.getHttpBaseUrl() + "/simple-post-header").isSuccessful());
 
-        assertTrue(simpleHttpClient.post("http://localhost:4243/simple-post-header", Map.of("Custom-Header", "Custom-Value")).isSuccessful());
+        assertTrue(simpleHttpClient.post(wmRuntimeInfo.getHttpBaseUrl() + "/simple-post-header", Map.of("Custom-Header", "Custom-Value")).isSuccessful());
     }
 
     @Test
-    public void testPostJson() throws IOException {
-        mockServer
-            .when(HttpRequest.request().withMethod("POST").withPath("/simple-post-json").withBody(JsonBody.json("{\"key\": \"value\"}")))
-            .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
+    void testPostJson(WireMockRuntimeInfo wmRuntimeInfo) throws IOException {
+        stubFor(post("/simple-post-json").withRequestBody(equalToJson("{\"key\": \"value\"}"))
+            .willReturn(ok("Hello World!").withHeader("Content-Type", "text/plain")));
 
-        var resNok = simpleHttpClient.post("http://localhost:4243/simple-post-json", Map.of(), Map.of("not", "correct"));
+        var resNok = simpleHttpClient.post(wmRuntimeInfo.getHttpBaseUrl() + "/simple-post-json", Map.of(), Map.of("not", "correct"));
         assertFalse(resNok.isSuccessful());
         Assertions.assertEquals(404, resNok.getCode());
 
-        var res = simpleHttpClient.post("http://localhost:4243/simple-post-json", Map.of(), Map.of("key", "value"));
+        var res = simpleHttpClient.post(wmRuntimeInfo.getHttpBaseUrl() + "/simple-post-json", Map.of(), Map.of("key", "value"));
         assertTrue(res.isSuccessful());
         Assertions.assertEquals(200, res.getCode());
 
-
-        var res2 = simpleHttpClient.postJSON("http://localhost:4243/simple-post-json", Map.of(), Map.of("key", "value"));
+        var res2 = simpleHttpClient.postJSON(wmRuntimeInfo.getHttpBaseUrl() + "/simple-post-json", Map.of(), Map.of("key", "value"));
         assertTrue(res2.isSuccessful());
         Assertions.assertEquals(200, res2.getCode());
     }
 
     @Test
-    public void testPostForm() throws IOException {
-        mockServer
-            .when(HttpRequest.request().withMethod("POST").withPath("/simple-post-form").withBody(
-                ParameterBody.params(
-                    Parameter.param("k1", "v1"),
-                    Parameter.param("k2", "v2")
-                )))
-            .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
+    void testPostForm(WireMockRuntimeInfo wmRuntimeInfo) throws IOException {
+        stubFor(post("/simple-post-form").withRequestBody(containing("k1=v1")).withRequestBody(containing("k2=v2"))
+            .willReturn(ok("Hello World!").withHeader("Content-Type", "text/plain")));
 
-        var res = simpleHttpClient.postForm("http://localhost:4243/simple-post-form", Map.of(), Map.of("k1", "v1", "k2", "v2"));
+        var res = simpleHttpClient.postForm(wmRuntimeInfo.getHttpBaseUrl() + "/simple-post-form", Map.of(), Map.of("k1", "v1", "k2", "v2"));
         assertTrue(res.isSuccessful());
         Assertions.assertEquals(200, res.getCode());
     }
 
     @Test
-    public void testPostFile() throws IOException {
-        mockServer
-            .when(HttpRequest.request().withMethod("POST").withPath("/simple-post-file").withBody(StringBody.subString("content", StandardCharsets.UTF_8)))
-            .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
+    void testPostFile(WireMockRuntimeInfo wmRuntimeInfo) throws IOException {
+        stubFor(post("/simple-post-file").withRequestBody(containing("content"))
+            .willReturn(ok("Hello World!").withHeader("Content-Type", "text/plain")));
 
         File tmp = File.createTempFile("test", "test");
         FileUtils.write(tmp, "content", StandardCharsets.UTF_8.toString());
 
-        var res = simpleHttpClient.postFileAndSaveResponse("http://localhost:4243/simple-post-file", Map.of(), tmp.getAbsolutePath(), tmp.getName(), "text/plain");
+        var res = simpleHttpClient.postFileAndSaveResponse(wmRuntimeInfo.getHttpBaseUrl() + "/simple-post-file", Map.of(), tmp.getAbsolutePath(), tmp.getName(), "text/plain");
         assertTrue(res.isSuccessful());
         Assertions.assertEquals(200, res.getCode());
         assertNotNull(res.getTempFilePath());
         var saved = new File(res.getTempFilePath());
         Assertions.assertEquals("Hello World!", FileUtils.readFileToString(saved, StandardCharsets.UTF_8.toString()));
 
-        tmp.delete();
-        saved.delete();
-
+        assertTrue(tmp.delete());
+        assertTrue(saved.delete());
     }
 
     @Test
-    public void testPostBody() throws IOException {
-        mockServer
-            .when(HttpRequest.request().withMethod("POST").withPath("/simple-post-body").withHeader("Content-Type", "text/plain").withBody(StringBody.exact("content", StandardCharsets.UTF_8)))
-            .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
+    void testPostBody(WireMockRuntimeInfo wmRuntimeInfo) throws IOException {
+        stubFor(post("/simple-post-body")
+            .withHeader("Content-Type", containing("text/plain"))
+            .withRequestBody(equalTo("content"))
+            .willReturn(ok("Hello World!").withHeader("Content-Type", "text/plain")));
 
-        var res = simpleHttpClient.postBodyAndSaveResponse("http://localhost:4243/simple-post-body", Map.of(), "content", "text/plain");
+        var res = simpleHttpClient.postBodyAndSaveResponse(wmRuntimeInfo.getHttpBaseUrl() + "/simple-post-body", Map.of(), "content", "text/plain");
         assertTrue(res.isSuccessful());
         Assertions.assertEquals(200, res.getCode());
         assertNotNull(res.getTempFilePath());
         var saved = new File(res.getTempFilePath());
         Assertions.assertEquals("Hello World!", FileUtils.readFileToString(saved, StandardCharsets.UTF_8.toString()));
-        saved.delete();
+        assertTrue(saved.delete());
     }
 }

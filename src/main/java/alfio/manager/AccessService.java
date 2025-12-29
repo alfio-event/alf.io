@@ -395,6 +395,7 @@ public class AccessService {
         }
         return event;
     }
+
     public void checkSubscriptionDescriptorOwnership(Principal principal, String publicIdentifier) {
         int organizationId = subscriptionRepository.findOrganizationIdForDescriptor(UUID.fromString(publicIdentifier))
             .orElseThrow(AccessDeniedException::new);
@@ -632,6 +633,21 @@ public class AccessService {
         checkEventOwnership(principal, eventId);
         if (!additionalServiceRepository.additionalServiceExistsForEvent(additionalServiceId, eventId)) {
             log.warn("denying access to additional service {}", additionalServiceId);
+            throw new AccessDeniedException();
+        }
+    }
+
+    public void checkAccessToAdditionalField(Principal principal, PurchaseContext.PurchaseContextType purchaseContextType, String publicIdentifier, long id) {
+        checkPurchaseContextOwnership(principal, purchaseContextType, publicIdentifier);
+        int count;
+        if (purchaseContextType == PurchaseContext.PurchaseContextType.event) {
+            int eventId = eventRepository.findOptionalEventAndOrganizationIdByShortName(publicIdentifier)
+                .orElseThrow().getId();
+            count = purchaseContextFieldRepository.countMatchingAdditionalFieldsForPurchaseContext(eventId, null, Set.of(id));
+        } else {
+            count = purchaseContextFieldRepository.countMatchingAdditionalFieldsForPurchaseContext(null, UUID.fromString(publicIdentifier), Set.of(id));
+        }
+        if (count != 1) {
             throw new AccessDeniedException();
         }
     }

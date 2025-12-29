@@ -120,13 +120,13 @@ public class PurchaseContextFieldManager {
         }
 
         long configurationId = purchaseContextFieldRepository.insertConfiguration(eventIdOrNull(purchaseContext), purchaseContext.getOrganizationId(), descriptorIdOrNull(purchaseContext), f.getName(), order, f.getType(), serializedRestrictedValues,
-            f.getMaxLength(), f.getMinLength(), f.isRequired(), context, additionalServiceId, generateJsonForList(f.getLinkedCategoriesIds())).getKey();
+            f.getMaxLength(), f.getMinLength(), f.isRequired(), context, additionalServiceId, generateJsonForList(f.getLinkedCategoriesIds()), f.isDisplayAtCheckIn()).getKey();
         f.getDescription().forEach((locale, value) -> purchaseContextFieldRepository.upsertDescription(configurationId, locale, Json.GSON.toJson(value), purchaseContext.getOrganizationId()));
     }
 
     public void updateAdditionalField(long id, EventModification.UpdateAdditionalField f, int organizationId) {
         String serializedRestrictedValues = toSerializedRestrictedValues(f);
-        purchaseContextFieldRepository.updateField(id, f.isRequired(), !f.isReadOnly(), serializedRestrictedValues, toSerializedDisabledValues(f), generateJsonForList(f.getLinkedCategoriesIds()));
+        purchaseContextFieldRepository.updateField(id, f.isRequired(), !f.isReadOnly(), serializedRestrictedValues, toSerializedDisabledValues(f), generateJsonForList(f.getLinkedCategoriesIds()), f.isDisplayAtCheckIn());
         f.getDescription().forEach((locale, value) -> {
             String val = Json.GSON.toJson(value.getDescription());
             purchaseContextFieldRepository.upsertDescription(id, locale, val, organizationId);

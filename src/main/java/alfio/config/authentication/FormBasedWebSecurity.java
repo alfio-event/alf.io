@@ -37,7 +37,7 @@ import javax.sql.DataSource;
  */
 @Profile("!"+ Initializer.PROFILE_OPENID)
 @Configuration(proxyBeanMethods = false)
-@Order(1)
+@Order(100)
 public class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {
     public FormBasedWebSecurity(Environment environment,
                                 UserManager userManager,

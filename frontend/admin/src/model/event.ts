@@ -1,4 +1,5 @@
 import {Organization} from "./organization.ts";
+import {LocalizedContent, PurchaseContext} from "./purchase-context.ts";
 
 export interface EventWithOrganization {
     event: AlfioEvent;
@@ -10,11 +11,10 @@ export interface DateTimeModification {
     time: string;
 }
 
-export interface AlfioEvent {
+export interface AlfioEvent extends PurchaseContext {
     id:                                number;
     shortName:                         string;
     displayName:                       string;
-    publicIdentifier:                  string;
     ticketCategories:                  TicketCategory[];
     description:                       LocalizedContent;
     title:                             LocalizedContent;
@@ -33,7 +33,6 @@ export interface AlfioEvent {
     online:                            boolean;
     organizationId:                    number;
     regularPrice:                      number;
-    contentLanguages:                  ContentLanguage[];
     termsAndConditionsUrl:             string;
     privacyPolicyUrl:                  string;
     vatIncluded:                       boolean;
@@ -41,23 +40,11 @@ export interface AlfioEvent {
     beginTimeZoneOffset:               number;
     endTimeZoneOffset:                 number;
     isOnline:                          boolean;
-    firstContentLanguage:              ContentLanguage;
     supportsAdditionalItemsQuantity:   boolean;
     supportsAdditionalServicesOrdinal: boolean;
     finalPrice:                        number;
     netPrice:                          number;
     taxablePrice:                      number;
-}
-
-export interface ContentLanguage {
-    locale:          string;
-    value:           number;
-    language:        string;
-    displayLanguage: string;
-}
-
-export interface LocalizedContent {
-    [key: string]: string;
 }
 
 export interface TicketCategory {

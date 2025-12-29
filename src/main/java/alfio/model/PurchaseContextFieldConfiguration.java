@@ -54,6 +54,7 @@ public class PurchaseContextFieldConfiguration {
     private final Integer additionalServiceId;
     private final List<Integer> categoryIds;
     private final List<String> disabledValues;
+    private final boolean displayAtCheckIn;
 
 
     public PurchaseContextFieldConfiguration(@Column("id") int id,
@@ -70,7 +71,8 @@ public class PurchaseContextFieldConfiguration {
                                              @Column("context") Context context,
                                              @Column("additional_service_id") Integer additionalServiceId,
                                              @Column("ticket_category_ids") String ticketCategoryIds,
-                                             @Column("field_disabled_values") String disabledValues) {
+                                             @Column("field_disabled_values") String disabledValues,
+                                             @Column("display_at_check_in") boolean displayAtCheckIn) {
         this.id = id;
         this.eventId = eventId;
         this.subscriptionDescriptorId = subscriptionDescriptorId;
@@ -86,6 +88,7 @@ public class PurchaseContextFieldConfiguration {
         this.context = context;
         this.additionalServiceId = additionalServiceId;
         this.categoryIds = ticketCategoryIds == null ? Collections.emptyList() : Json.GSON.fromJson(ticketCategoryIds, new TypeToken<List<Integer>>(){}.getType());
+        this.displayAtCheckIn = displayAtCheckIn;
     }
 
     public boolean isInputField() {
