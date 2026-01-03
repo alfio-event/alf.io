@@ -122,8 +122,19 @@ public class EventStatisticsManager {
         return getAllEventsWithStatisticsFilteredBy(username, e -> true);
     }
 
+    public List<EventWithAdditionalInfo> getAllEventsWithAdditionalInfo(String username) {
+        List<Integer> organizations = userManager.findUserOrganizations(username).stream().map(Organization::getId).toList();
+        return eventRepository.findByOrganizationIds(organizations).stream()
+            .map(e -> getEventWithAdditionalInfo(username, e))
+            .toList();
+    }
+
     public EventWithAdditionalInfo getEventWithAdditionalInfo(String eventName, String username) {
         Event event = getEventAndCheckOwnership(eventName, username);
+        return getEventWithAdditionalInfo(username, event);
+    }
+
+    private EventWithAdditionalInfo getEventWithAdditionalInfo(String username, Event event) {
         Map<String, String> description = eventDescriptionRepository.findByEventIdAsMap(event.getId());
         boolean owner = userManager.isOwner(userManager.findUserByUsername(username));
         EventStatisticView statistics = owner ? eventRepository.findStatisticsFor(event.getId()) : EventStatisticView.empty(event.getId());

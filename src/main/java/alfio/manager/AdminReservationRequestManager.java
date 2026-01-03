@@ -17,15 +17,18 @@
 package alfio.manager;
 
 import alfio.model.*;
+import alfio.model.api.v1.admin.TicketReservationCreationRequest;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.modification.AdminReservationModification.CustomerData;
 import alfio.model.modification.AdminReservationModification.TransactionDetails;
+import alfio.model.modification.DateTimeModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.user.User;
 import alfio.repository.AdminReservationRequestRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.user.UserRepository;
+import alfio.util.ClockProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -40,6 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -62,14 +66,22 @@ public class AdminReservationRequestManager {
     private final AdminReservationRequestRepository adminReservationRequestRepository;
     private final EventRepository eventRepository;
     private final PlatformTransactionManager transactionManager;
+    private final ClockProvider clockProvider;
 
-    public AdminReservationRequestManager(AdminReservationManager adminReservationManager, EventManager eventManager, UserRepository userRepository, AdminReservationRequestRepository adminReservationRequestRepository, EventRepository eventRepository, PlatformTransactionManager transactionManager) {
+    public AdminReservationRequestManager(AdminReservationManager adminReservationManager,
+                                          EventManager eventManager,
+                                          UserRepository userRepository,
+                                          AdminReservationRequestRepository adminReservationRequestRepository,
+                                          EventRepository eventRepository,
+                                          PlatformTransactionManager transactionManager,
+                                          ClockProvider clockProvider) {
         this.adminReservationManager = adminReservationManager;
         this.eventManager = eventManager;
         this.userRepository = userRepository;
         this.adminReservationRequestRepository = adminReservationRequestRepository;
         this.eventRepository = eventRepository;
         this.transactionManager = transactionManager;
+        this.clockProvider = clockProvider;
     }
 
     public Result<AdminReservationRequestStats> getRequestStatus(String requestId, String eventName, String username) {
@@ -77,6 +89,32 @@ public class AdminReservationRequestManager {
             .flatMap(e -> adminReservationRequestRepository.findStatsByRequestIdAndEventId(requestId, e.getId()))
             .map(Result::success)
             .orElseGet(() -> Result.error(ErrorCode.EventError.ACCESS_DENIED));
+    }
+
+    public Result<String> scheduleReservations(String eventName, String language, List<TicketReservationCreationRequest> reservations, String username) {
+        var expiration = ZonedDateTime.now(clockProvider.getClock()).plusDays(1L);
+        var ticketsInfo = reservations.stream()
+            .flatMap(r -> r.getTickets().stream())
+            .map(ticket -> {
+                var category = new AdminReservationModification.Category(ticket.getTicketCategoryId(), "", null, null);
+                var attendees = ticket.getAttendees().stream()
+                    .map(attendee -> new AdminReservationModification.Attendee(null, attendee.getFirstName(), attendee.getLastName(), attendee.getEmail(), "", false, attendee.getExternalReference(), null, attendee.getAdditional(), attendee.getMetadata()))
+                    .toList();
+                return new AdminReservationModification.TicketsInfo(category, attendees, false, false);
+            }).toList();
+        AdminReservationModification modification = new AdminReservationModification(
+            DateTimeModification.fromZonedDateTime(expiration),
+            new CustomerData("", "", "", null, null, null, null, null, null),
+            ticketsInfo,
+            language,
+            false,
+            false,
+            null,
+            AdminReservationModification.Notification.EMPTY,
+            null,
+            null
+            );
+        return scheduleReservations(eventName, modification, false, username);
     }
 
     public Result<String> scheduleReservations(String eventName,
@@ -99,7 +137,7 @@ public class AdminReservationRequestManager {
             .filter(e -> e.getValue() > 1)
             .map(Map.Entry::getKey)
             .limit(5) // return max 5 codes
-            .collect(Collectors.toList());
+            .toList();
 
         if(!attendeesWithDuplicateReference.isEmpty()) {
             return Result.error(ErrorCode.custom("DUPLICATE_REFERENCE", "The following codes are duplicate:" + attendeesWithDuplicateReference));

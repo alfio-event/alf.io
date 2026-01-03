@@ -30,6 +30,7 @@ import alfio.model.modification.AttendeeResources;
 import alfio.model.result.ErrorCode;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.user.Role;
+import alfio.util.ClockProvider;
 import alfio.util.ReservationUtil;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -59,6 +60,7 @@ public class ReservationApiV1Controller {
     private final AccessService accessService;
     private final PurchaseContextFieldManager purchaseContextFieldManager;
     private final ConfigurationManager configurationManager;
+    private final AdminReservationRequestManager requestManager;
 
     public ReservationApiV1Controller(TicketReservationManager ticketReservationManager,
                                       PurchaseContextManager purchaseContextManager,
@@ -68,7 +70,8 @@ public class ReservationApiV1Controller {
                                       AdditionalServiceManager additionalServiceManager,
                                       AdminReservationManager adminReservationManager,
                                       PurchaseContextFieldManager purchaseContextFieldManager,
-                                      ConfigurationManager configurationManager) {
+                                      ConfigurationManager configurationManager,
+                                      AdminReservationRequestManager requestManager) {
         this.ticketReservationManager = ticketReservationManager;
         this.purchaseContextManager = purchaseContextManager;
         this.promoCodeRequestManager = promoCodeRequestManager;
@@ -78,6 +81,7 @@ public class ReservationApiV1Controller {
         this.adminReservationManager = adminReservationManager;
         this.purchaseContextFieldManager = purchaseContextFieldManager;
         this.configurationManager = configurationManager;
+        this.requestManager = requestManager;
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/reservation/{id}")
@@ -95,7 +99,7 @@ public class ReservationApiV1Controller {
             var conf = configurationManager.getFor(EnumSet.of(ENABLE_WALLET, ENABLE_PASS, BASE_URL), purchaseContext.getConfigurationLevel());
             var tickets = adminReservationManager.findTicketsWithMetadata(reservationId);
             var valuesByTicketId = purchaseContextFieldManager.findAllValuesByTicketIds(tickets.stream().map(t -> t.getTicket().getId())
-                .collect(toList()));
+                .toList());
             var ticketsByCategories = tickets.stream().collect(groupingBy(t -> t.getTicket().getCategoryId()));
             attendeesByCategories = ticketsByCategories.keySet().stream().map(categoryId -> {
                 var ticketsForCategory = ticketsByCategories.get(categoryId);
@@ -107,6 +111,7 @@ public class ReservationApiV1Controller {
                         ticket.getFirstName(),
                         ticket.getLastName(),
                         ticket.getEmail(),
+                        ticket.getExtReference(),
                         tfc.getAttributes(),
                         additional,
                         AttendeeResources.fromTicket(ticket, purchaseContext, conf));
@@ -156,6 +161,30 @@ public class ReservationApiV1Controller {
             return ResponseEntity.badRequest()
                 .body(CreationResponse.error(bindingResult.getAllErrors().stream().map(err -> ErrorCode.custom("invalid."+err.getObjectName(), err.getCode())).collect(toList())));
         }
+    }
+
+    @PostMapping("/event/{slug}/reservation/import")
+    public ResponseEntity<BulkCreationResponse> bulkCreateEventReservation(@PathVariable String slug,
+                                                                           @RequestBody List<TicketReservationCreationRequest> reservations,
+                                                                           @RequestParam String language,
+                                                                           Principal principal) {
+        accessService.checkEventReservationCreationRequest(principal, slug, reservations);
+        var result = requestManager.scheduleReservations(slug, language, reservations, principal.getName());
+        if (result.isSuccess()) {
+            return ResponseEntity.ok(new BulkCreationResponse(result.getData(), null));
+        }
+        return ResponseEntity.badRequest().body(new BulkCreationResponse(null, result.getErrors()));
+    }
+
+    @GetMapping("/event/{slug}/reservation/bulk/{requestId}/status")
+    public ResponseEntity<AdminReservationRequestStats> getRequestStatus(@PathVariable String slug,
+                                                                         @PathVariable String requestId,
+                                                                         Principal principal) {
+        var result = requestManager.getRequestStatus(requestId, slug, principal.getName());
+        if (result.isSuccess()) {
+            return ResponseEntity.ok(result.getData());
+        }
+        return ResponseEntity.badRequest().build();
     }
 
     @PostMapping("/subscription/{id}/reservation")
@@ -285,28 +314,7 @@ public class ReservationApiV1Controller {
         return CreationResponse.success(id, ticketReservationManager.reservationUrlForExternalClients(id, purchaseContext, locale.getLanguage(), user != null, descriptorId));
     }
 
-    public static class CreationResponse {
-        private final String id;
-        private final String href;
-        private final List<ErrorCode> errors;
-
-        private CreationResponse(String id, String href, List<ErrorCode> errors) {
-            this.id = id;
-            this.href = href;
-            this.errors = errors;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public String getHref() {
-            return href;
-        }
-
-        public List<ErrorCode> getErrors() {
-            return errors;
-        }
+    public record CreationResponse(String id, String href, List<ErrorCode> errors) {
 
         public boolean isSuccess() {
             return CollectionUtils.isEmpty(errors) && StringUtils.isNotEmpty(id);
@@ -320,4 +328,6 @@ public class ReservationApiV1Controller {
             return new CreationResponse(null, null, errors);
         }
     }
+
+    public record BulkCreationResponse(String batchId, List<ErrorCode> errors) {}
 }

@@ -37,7 +37,7 @@ public interface ReservationRequest {
         int q = Objects.requireNonNullElse(quantity, 0);
         return Stream.iterate(0, s -> s+1)
             .limit(q)
-            .map(i -> new AttendeeData(null, null, null, getAtIndexOrNull(metadata, i), Map.of()))
+            .map(i -> new AttendeeData(null, null, null, null, getAtIndexOrNull(metadata, i), Map.of()))
             .collect(Collectors.toList());
     }
 }

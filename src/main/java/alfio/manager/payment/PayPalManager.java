@@ -237,7 +237,8 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
                     var order = orderResponse.result();
                     var payments = order.purchaseUnits().stream()
                         .map(PurchaseUnit::payments)
-                        .collect(Collectors.toList());
+                        .filter(Objects::nonNull)
+                        .toList();
 
                     var refund = payments.stream().flatMap(p -> emptyIfNull(p.refunds()).stream())
                         .map(r -> new BigDecimal(r.amount().value()))

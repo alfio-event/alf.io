@@ -35,6 +35,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
 import alfio.util.MiscUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
@@ -257,15 +258,28 @@ public class AccessService {
     public void checkEventReservationCreationRequest(Principal principal,
                                                      String eventShortName,
                                                      ReservationCreate<? extends ReservationRequest> createRequest) {
+        checkEventReservationCreationRequest(principal, eventShortName, List.of(createRequest));
+    }
+
+    public void checkEventReservationCreationRequest(Principal principal,
+                                                     String eventShortName,
+                                                     List<? extends ReservationCreate<? extends ReservationRequest>> createRequests) {
         var eventAndOrganizationId = checkEventOwnership(principal, eventShortName);
-        var categoryIds = createRequest.getTickets().stream().map(ReservationRequest::getTicketCategoryId).collect(Collectors.toSet());
+        var categoryIds = createRequests.stream()
+            .flatMap(createRequest -> createRequest.getTickets().stream())
+            .map(ReservationRequest::getTicketCategoryId)
+            .collect(Collectors.toSet());
         int eventId = eventAndOrganizationId.getId();
         if (categoryIds.size() != ticketCategoryRepository.countCategoriesBelongingToEvent(eventId, categoryIds)) {
             throw new AccessDeniedException();
         }
-        var additionalServicesIds = requireNonNullElse(createRequest.getAdditionalServices(), List.<AdditionalServiceReservationModification>of()).stream()
+
+        var additionalServicesIds = createRequests.stream()
+            .filter(createRequest -> CollectionUtils.isNotEmpty(createRequest.getAdditionalServices()))
+            .flatMap(createRequest -> createRequest.getAdditionalServices().stream())
             .map(AdditionalServiceReservationModification::getAdditionalServiceId)
             .collect(Collectors.toSet());
+
         if (!additionalServicesIds.isEmpty() && additionalServicesIds.size() != additionalServiceRepository.countAdditionalServicesBelongingToEvent(eventId, additionalServicesIds)) {
             throw new AccessDeniedException();
         }

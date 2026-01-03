@@ -30,26 +30,30 @@ public class AttendeeData {
     private final String email;
     private final Map<String, String> metadata;
     private final Map<String, List<String>> additional;
+    private final String externalReference;
     private final AttendeeResources resources;
 
     @JsonCreator
     public AttendeeData(@JsonProperty("firstName") String firstName,
                         @JsonProperty("lastName") String lastName,
                         @JsonProperty("email") String email,
+                        @JsonProperty("externalReference") String externalReference,
                         @JsonProperty("metadata") Map<String, String> metadata,
                         @JsonProperty("additional") Map<String, List<String>> additional) {
-        this(firstName, lastName, email, metadata, additional, AttendeeResources.empty());
+        this(firstName, lastName, email, externalReference, metadata, additional, AttendeeResources.empty());
     }
 
     public AttendeeData(String firstName,
-                         String lastName,
-                         String email,
-                         Map<String, String> metadata,
-                         Map<String, List<String>> additional,
-                         AttendeeResources resources) {
+                        String lastName,
+                        String email,
+                        String externalReference,
+                        Map<String, String> metadata,
+                        Map<String, List<String>> additional,
+                        AttendeeResources resources) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
+        this.externalReference = externalReference;
         this.metadata = metadata;
         this.additional = additional;
         this.resources = resources;
@@ -100,7 +104,11 @@ public class AttendeeData {
         return resources;
     }
 
+    public String getExternalReference() {
+        return externalReference;
+    }
+
     public static AttendeeData empty() {
-        return new AttendeeData(null, null, null, null, null);
+        return new AttendeeData(null, null, null, null, null, null);
     }
 }
