@@ -47,7 +47,7 @@ public class BankTransferManager implements PaymentProvider {
 
     private static final Logger log = LoggerFactory.getLogger(BankTransferManager.class);
     private static final EnumSet<ConfigurationKeys> OPTIONS_TO_LOAD = EnumSet.of(BANK_TRANSFER_ENABLED,
-        DEFERRED_BANK_TRANSFER_ENABLED, OFFLINE_PAYMENT_DAYS, REVOLUT_ENABLED, REVOLUT_API_KEY,
+        DEFERRED_BANK_TRANSFER_ENABLED, OFFLINE_PAYMENT_DAYS, OFFLINE_PAYMENT_BUSINESS_DAYS, REVOLUT_ENABLED, REVOLUT_API_KEY,
         REVOLUT_LIVE_MODE, REVOLUT_MANUAL_REVIEW);
     private final ConfigurationManager configurationManager;
     private final TicketReservationRepository ticketReservationRepository;
@@ -135,15 +135,20 @@ public class BankTransferManager implements PaymentProvider {
 
     public static ZonedDateTime getOfflinePaymentDeadline(PaymentContext context, ConfigurationManager configurationManager) {
         PurchaseContext purchaseContext = context.getPurchaseContext();
+        var configuration = configurationManager.getFor(EnumSet.of(OFFLINE_PAYMENT_DAYS, OFFLINE_PAYMENT_BUSINESS_DAYS), purchaseContext.getConfigurationLevel());
         ZonedDateTime now = purchaseContext.now(ClockProvider.clock());
-        int waitingPeriod = getOfflinePaymentWaitingPeriod(context, configurationManager).orElse( 0 );
+        int waitingPeriod = getOfflinePaymentWaitingPeriod(purchaseContext, configuration.get(OFFLINE_PAYMENT_DAYS).getValueAsIntOrDefault(5)).orElse(0);
         if(waitingPeriod == 0) {
             log.warn("accepting offline payments the same day is a very bad practice and should be avoided. Please set cash payment as payment method next time");
             //if today is the event start date, then we add a couple of hours.
             //TODO Maybe should we avoid this wrong behavior upfront, in the admin area?
             return now.plusHours(2);
         }
-        return ZonedDateTime.from(WorkingDaysAdjusters.addDays(now.truncatedTo(ChronoUnit.HALF_DAYS), waitingPeriod));
+        if (configuration.get(OFFLINE_PAYMENT_BUSINESS_DAYS).getValueAsBooleanOrDefault()) {
+            return ZonedDateTime.from(WorkingDaysAdjusters.addDays(now.truncatedTo(ChronoUnit.HALF_DAYS), waitingPeriod));
+        } else {
+            return now.truncatedTo(ChronoUnit.HALF_DAYS).plusDays(waitingPeriod);
+        }
     }
 
     public static OptionalInt getOfflinePaymentWaitingPeriod(PaymentContext paymentContext, ConfigurationManager configurationManager) {
