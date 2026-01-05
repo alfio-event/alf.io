@@ -16,17 +16,21 @@
  */
 package alfio.manager.support;
 
+import java.util.List;
+
 public class TicketCheckInStatusResult {
     private final String ticketUuid;
     private final String firstName;
     private final String lastName;
     private final CheckInStatus checkInStatus;
+    private final List<String> tags;
 
-    public TicketCheckInStatusResult(String ticketUuid, String firstName, String lastName, CheckInStatus checkInStatus) {
+    public TicketCheckInStatusResult(String ticketUuid, String firstName, String lastName, CheckInStatus checkInStatus, List<String> tags) {
         this.ticketUuid = ticketUuid;
         this.firstName = firstName;
         this.lastName = lastName;
         this.checkInStatus = checkInStatus;
+        this.tags = tags;
     }
 
     public String getTicketUuid() {
@@ -43,5 +47,9 @@ public class TicketCheckInStatusResult {
 
     public CheckInStatus getCheckInStatus() {
         return checkInStatus;
+    }
+
+    public List<String> getTags() {
+        return tags;
     }
 }

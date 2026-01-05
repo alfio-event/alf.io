@@ -25,15 +25,9 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.ExtensionSupport.ExtensionMetadataValue;
-import alfio.model.api.v1.admin.AttendeesByCategory;
-import alfio.model.api.v1.admin.CheckInLogEntry;
-import alfio.model.api.v1.admin.EventCreationRequest;
-import alfio.model.api.v1.admin.LinkedSubscription;
+import alfio.model.api.v1.admin.*;
 import alfio.model.group.Group;
-import alfio.model.modification.AttendeeData;
-import alfio.model.modification.EventModification;
-import alfio.model.modification.LinkedGroupModification;
-import alfio.model.modification.TicketCategoryModification;
+import alfio.model.modification.*;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
@@ -46,7 +40,6 @@ import alfio.util.Json;
 import alfio.util.JsonViews;
 import alfio.util.Validator;
 import com.fasterxml.jackson.annotation.JsonView;
-import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -61,7 +54,6 @@ import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static alfio.controller.api.admin.EventApiController.validateEvent;
@@ -178,6 +170,11 @@ public class EventApiV1Controller {
             .orElse(ErrorCode.EventError.NOT_FOUND);
     }
 
+    @GetMapping("/list")
+    public ResponseEntity<List<EventWithAdditionalInfo>> listEvents(Principal user) {
+        return ResponseEntity.ok(eventStatisticsManager.getAllEventsWithAdditionalInfo(user.getName()));
+    }
+
     @GetMapping("/{slug}/stats")
     @JsonView(JsonViews.AdminPublicApi.class)
     public ResponseEntity<EventWithAdditionalInfo> stats(@PathVariable String slug, Principal user) {
@@ -193,24 +190,33 @@ public class EventApiV1Controller {
     }
 
     @GetMapping("/{slug}/download-attendees")
-    public ResponseEntity<List<AttendeesByCategory>> downloadAttendees(@PathVariable String slug, Principal user) {
-        var eventAndOrganizationId = accessService.checkEventOwnership(user, slug);
-        var ticketCategories = eventManager.loadTicketCategories(eventAndOrganizationId);
+    public ResponseEntity<List<DownloadedAttendeesByCategory>> downloadAttendees(@PathVariable String slug, Principal user) {
+        accessService.checkEventOwnership(user, slug);
+        var event = eventManager.getSingleEvent(slug,user.getName());
+        var ticketCategories = eventManager.loadTicketCategories(event);
         var ticketsByCategoryId = eventManager.findAllConfirmedTicketsForCSV(slug, user.getName()).stream()
             .filter(t -> t.getTicket().getCategoryId() != null && t.getTicket().getAssigned())
             .collect(Collectors.groupingBy(t -> t.getTicket().getCategoryId()));
-        var additionalInfoByTicketId = purchaseContextFieldManager.findAllConfirmedTicketValues(eventAndOrganizationId.getId());
+        var additionalInfoByTicketId = purchaseContextFieldManager.findAllConfirmedTicketValues(event.getId());
         return ResponseEntity.ok(ticketCategories.stream().filter(category -> ticketsByCategoryId.containsKey(category.getId()))
             .map(category -> {
                 var ticketsInCategory = ticketsByCategoryId.get(category.getId());
-                return new AttendeesByCategory(category.getId(), ticketsInCategory.size(), ticketsInCategory.stream()
+                var downloadedAttendeesData = ticketsInCategory.stream()
                     .map(t -> {
                         var ticket = t.getTicket();
-                        var additional = additionalInfoByTicketId.get(ticket.getId()).stream()
+                        var additional = Objects.requireNonNullElse(additionalInfoByTicketId.get(ticket.getId()), List.<PurchaseContextFieldValue>of()).stream()
                             .collect(Collectors.groupingBy(PurchaseContextFieldValue::getName, Collectors.mapping(PurchaseContextFieldValue::getValue, Collectors.toList())));
-                        return new AttendeeData(ticket.getFirstName(), ticket.getLastName(), ticket.getEmail(), Map.of(), additional);
+                        return new DownloadedAttendeeData(ticket.getFirstName(),
+                            ticket.getLastName(),
+                            ticket.getEmail(),
+                            Map.of(),
+                            additional,
+                            ticket.getExtReference(),
+                            ticket.getStatus(),
+                            t.getTicketReservation().getConfirmationTimestamp());
                     })
-                    .toList(), List.of());
+                    .toList();
+                return new DownloadedAttendeesByCategory(category.getId(), downloadedAttendeesData);
             }).toList());
     }
 

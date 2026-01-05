@@ -33,6 +33,7 @@ public class TicketReservationCreationRequest implements ReservationCreate<Atten
     private final String promoCode;
     private final String language;
     private final String subscriptionId;
+    private final String externalReference;
 
     @JsonCreator
     public TicketReservationCreationRequest(@JsonProperty("tickets") List<AttendeesByCategory> tickets,
@@ -41,7 +42,8 @@ public class TicketReservationCreationRequest implements ReservationCreate<Atten
                                             @JsonProperty("user") ReservationUser user,
                                             @JsonProperty("promoCode") String promoCode,
                                             @JsonProperty("language") String language,
-                                            @JsonProperty("subscriptionId") String subscriptionId) {
+                                            @JsonProperty("subscriptionId") String subscriptionId,
+                                            @JsonProperty("externalReference") String externalReference) {
         this.tickets = tickets;
         this.additionalServices = additionalServices;
         this.reservationConfiguration = reservationConfiguration;
@@ -49,6 +51,7 @@ public class TicketReservationCreationRequest implements ReservationCreate<Atten
         this.promoCode = promoCode;
         this.language = language;
         this.subscriptionId = StringUtils.trimToNull(subscriptionId);
+        this.externalReference = externalReference;
     }
 
 
@@ -89,5 +92,9 @@ public class TicketReservationCreationRequest implements ReservationCreate<Atten
 
     public String getSubscriptionId() {
         return subscriptionId;
+    }
+
+    public String getExternalReference() {
+        return externalReference;
     }
 }
