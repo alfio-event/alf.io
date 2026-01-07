@@ -6,7 +6,7 @@
     //
     var FIELD_TYPES = ['input:text', 'input:tel', 'textarea', 'select', 'country', 'input:dateOfBirth'];
     var ERROR_CODES = { DUPLICATE:'duplicate', MAX_LENGTH:'maxlength', MIN_LENGTH:'minlength'};
-    
+
     var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives',
         'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-event-statistic',
         'ui.ace', 'checklist-model', 'group', 'subscriptions', angularDragula(angular)]);
@@ -620,7 +620,7 @@
 
         //----------
 
-        // 
+        //
         $scope.fieldTypes = FIELD_TYPES;
 
         $scope.addNewTicketField = function(event) {
@@ -808,7 +808,8 @@
                                     restrictedValues: af.restrictedValues.map(function(rv) {return {value: rv}}),
                                     description: description,
                                     forAdditionalService: mappedAdditionalServicesId[af.additionalServiceId],
-                                    categoryIds: af.categoryIds.map(function(name) {return createdEvent.data.event.ticketCategories.filter(function(tc) {return tc.name === name})[0].id})
+                                    categoryIds: af.categoryIds.map(function(name) {return createdEvent.data.event.ticketCategories.filter(function(tc) {return tc.name === name})[0].id}),
+                                    displayAtCheckIn: !!af.displayAtCheckIn
                                 };
 
                                 return AdditionalFieldsService.addField('event', event.shortName, newAdditionalField);
@@ -1485,7 +1486,7 @@
             $scope.eventHasBeenActivated = false;
             loadData();
         });
-        
+
         $scope.updateSelectionText = function() {
             $rootScope.$emit('CategoryFilterUpdated', $scope.selection);
         };
@@ -1633,7 +1634,7 @@
                 });
             });
         }
-        
+
         $scope.reloadTickets = reloadTickets;
 
         $scope.showReservationModal = function showReservationModal(event, ticket) {
@@ -2315,7 +2316,7 @@
 
         $rootScope.calcCategoryPricePercent = PriceCalculator.calcCategoryPricePercent;
 
-        $rootScope.calcCategoryPrice = PriceCalculator.calcCategoryPrice; 
+        $rootScope.calcCategoryPrice = PriceCalculator.calcCategoryPrice;
 
         $rootScope.calcPercentage = PriceCalculator.calcPercentage;
 
