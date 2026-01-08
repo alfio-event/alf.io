@@ -41,15 +41,15 @@ import java.util.regex.Pattern;
 @Component
 public class FileUploadManager {
 
-    static final int IMAGE_THUMB_MAX_WIDTH_PX = 600;
-    static final int IMAGE_THUMB_MAX_HEIGHT_PX = 400;
+    static final int IMAGE_THUMB_MAX_WIDTH_PX = 450;
+    static final int IMAGE_THUMB_MAX_HEIGHT_PX = 300;
     private static final Logger log = LoggerFactory.getLogger(FileUploadManager.class);
 
     private static final String FILE_SECTION = "file-upload-manager";
     /**
-     * Maximum allowed file size is 200kb
+     * Maximum allowed file size is 400kb
      */
-    private static final int MAXIMUM_ALLOWED_SIZE = 1024 * 200;
+    private static final int MAXIMUM_ALLOWED_SIZE = 1024 * 400;
     private static final MimeType IMAGE_TYPE = MimeType.valueOf("image/*");
     private final FileUploadRepository repository;
     private final FileBlobCacheManager fileBlobCacheManager;
@@ -102,8 +102,8 @@ public class FileUploadManager {
     @Transactional
     public String insertFile(UploadBase64FileModification file) {
         final var mimeType = MimeTypeUtils.parseMimeType(file.getType());
+        Validate.exclusiveBetween(1, MAXIMUM_ALLOWED_SIZE, file.getFile().length);
         var upload = resizeIfNeeded(file, mimeType);
-        Validate.exclusiveBetween(1, MAXIMUM_ALLOWED_SIZE, upload.getFile().length);
         String digest = DigestUtils.sha256Hex(upload.getFile());
         if (!repository.isPresent(digest)) {
             repository.upload(upload, digest, getAttributes(upload));
