@@ -311,7 +311,7 @@ export class AdditionalFieldEdit extends LitElement {
         return this.#form.field({
             name: 'editable'
         }, (field) => html`
-            <sl-switch .value=${field.state.value} help-text="Attendee can modify after initial submission" checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)} class="block mt-2 mb-2">
+            <sl-switch .value=${field.state.value} help-text="Attendee can modify after initial submission" checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field, _ => (e.currentTarget as HTMLInputElement).checked)} class="block mt-2 mb-2">
                 Editable by attendee
             </sl-switch>
         `);
@@ -331,7 +331,7 @@ export class AdditionalFieldEdit extends LitElement {
         return this.#form.field({
             name: 'required'
         }, (field) => html`
-            <sl-switch size="medium" .value=${field.state.value} checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)} class="block mt-2 mb-2">
+            <sl-switch size="medium" .value=${field.state.value} checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field, _ => (e.currentTarget as HTMLInputElement).checked)} class="block mt-2 mb-2">
                 Required field
             </sl-switch>
         `);
