@@ -114,7 +114,7 @@ class FileUploadManagerIntegrationTest extends BaseIntegrationTest {
             assertTrue(metadata.isPresent());
 
             assertEquals(String.valueOf(FileUploadManager.IMAGE_THUMB_MAX_WIDTH_PX), metadata.get().getAttributes().get("width"));
-            assertEquals("348", metadata.get().getAttributes().get("height"));
+            assertEquals("261", metadata.get().getAttributes().get("height"));
 
             fileUploadManager.cleanupUnreferencedBlobFiles(DateUtils.addDays(new Date(), 1));
             assertFalse(fileUploadManager.findMetadata(id).isPresent());

@@ -102,8 +102,8 @@ public class FileUploadManager {
     @Transactional
     public String insertFile(UploadBase64FileModification file) {
         final var mimeType = MimeTypeUtils.parseMimeType(file.getType());
-        Validate.exclusiveBetween(1, MAXIMUM_ALLOWED_SIZE, file.getFile().length);
         var upload = resizeIfNeeded(file, mimeType);
+        Validate.exclusiveBetween(1, MAXIMUM_ALLOWED_SIZE, upload.getFile().length);
         String digest = DigestUtils.sha256Hex(upload.getFile());
         if (!repository.isPresent(digest)) {
             repository.upload(upload, digest, getAttributes(upload));

@@ -41,9 +41,8 @@ export class AdditionalFieldService {
         return response.json();
     }
 
-    static async saveField(purchaseContext: PurchaseContext, field: AdditionalField): Promise<ValidatedResponse<AdditionalField>> {
+    static async saveField(purchaseContext: PurchaseContext, field: AdditionalField): Promise<Response> {
         const url = `/admin/api/${purchaseContext.type}/${purchaseContext.publicIdentifier}/additional-field/${field.id}`;
-        const response = await postJson(url, field);
-        return response.json();
+        return await postJson(url, field);
     }
 }

@@ -991,26 +991,12 @@
                     var fileType = files[0].type;
                     var fileName = files[0].name;
                     var fileContent = imageBase64.substring(imageBase64.indexOf('base64,') + 7);
-                    const drawImage = (image, maxSize) => {
-                        let width = image.width;
-                        let height = image.height;
-                        // source: https://stackoverflow.com/a/24015367
-                        if (maxSize && width > height) {
-                            if (width > maxSize) {
-                                height *= maxSize / width;
-                                width = maxSize;
-                            }
-                        } else if (maxSize) {
-                            if (height > maxSize) {
-                                width *= maxSize / height;
-                                height = maxSize;
-                            }
-                        }
+                    const drawImage = (image) => {
                         const cnv = document.createElement('canvas');
-                        cnv.width = width;
-                        cnv.height = height;
+                        cnv.width = image.width;
+                        cnv.height = image.height;
                         const canvasCtx = cnv.getContext('2d');
-                        canvasCtx.drawImage(image, 0, 0, width, height);
+                        canvasCtx.drawImage(image, 0, 0, image.width, image.height);
                         return cnv;
                     }
 
@@ -1059,10 +1045,8 @@
                         $window.document.body.appendChild(img);
                         img.src = imageBase64;
                     } else {
-                        img.src = imageBase64;
-                        img.onload = function() {
-                            const canvas = drawImage(img, 450);
-                            const dataUrl = canvas.toDataURL(fileType);
+                        const uploadImage = (imageToUpload) => {
+                            const dataUrl = drawImage(imageToUpload).toDataURL(fileType);
                             const resizedBase64 = dataUrl.substring(dataUrl.indexOf('base64,') + 7);
                             FileUploadService.uploadImageWithResize({file : resizedBase64, type : fileType, name : fileName}).then(res => {
                                 deferred.resolve({
@@ -1072,6 +1056,32 @@
                             }, err => {
                                 deferred.reject(null); // error is already notified by the NotificationService
                             });
+                        };
+                        img.src = imageBase64;
+                        img.onload = function() {
+
+                            const maxSize = 450;
+                            let width = img.width;
+                            let height = img.height;
+                            let resize = false;
+                            // source: https://stackoverflow.com/a/24015367
+                            if (maxSize && width > height && width > maxSize) {
+                                height *= maxSize / width;
+                                width = maxSize;
+                                resize = true;
+                            } else if (maxSize && height > maxSize) {
+                                width *= maxSize / height;
+                                height = maxSize;
+                                resize = true;
+                            }
+
+                            if (resize) {
+                                createImageBitmap(img,{ resizeWidth: width, resizeHeight: height, resizeQuality: 'high' })
+                                    .then(imageBitmap => uploadImage(imageBitmap));
+                            } else {
+                                uploadImage(img);
+                            }
+
 
                         }
                         $window.document.body.appendChild(img);

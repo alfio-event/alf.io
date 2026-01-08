@@ -34,7 +34,6 @@ import {AdditionalItem} from "../../model/additional-item.ts";
 import {AdditionalItemService} from "../../service/additional-item.ts";
 import {renderPreview} from "./additional-field-util.ts";
 import {classMap} from "lit/directives/class-map.js";
-import {ValidatedResponse} from "../../model/validation.ts";
 import {dispatchFeedback} from "../../model/dom-events.ts";
 
 interface SelectableOption {
@@ -322,7 +321,7 @@ export class AdditionalFieldEdit extends LitElement {
         return this.#form.field({
             name: 'displayAtCheckIn'
         }, (field) => html`
-            <sl-switch help-text="Displayed in check-in app upon successful scan" .value=${field.state.value} checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)} class="block mt-2 mb-2">
+            <sl-switch help-text="Displayed in check-in app upon successful scan" checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field, _ => (e.currentTarget as HTMLInputElement).checked)} class="block mt-2 mb-2">
                 Show at check-in
             </sl-switch>
         `);
@@ -815,7 +814,6 @@ export class AdditionalFieldEdit extends LitElement {
 
 
     private async save(additionalFieldForm: AdditionalFieldForm) {
-        let updateResult: ValidatedResponse<AdditionalField>;
         if (additionalFieldForm.id == null) {
             const descriptionRequest: { [locale: string]: DescriptionRequest } = {};
             const selectableOptions: SelectableOption[] = [];
@@ -838,7 +836,7 @@ export class AdditionalFieldEdit extends LitElement {
                     });
                 }
             });
-            updateResult = await AdditionalFieldService.createNewField(this.purchaseContext!, {
+            const updateResult = await AdditionalFieldService.createNewField(this.purchaseContext!, {
                 type: additionalFieldForm.type,
                 name: additionalFieldForm.name,
                 order: additionalFieldForm.order,
@@ -853,34 +851,41 @@ export class AdditionalFieldEdit extends LitElement {
                 restrictedValues: restrictedValues,
                 userDefinedOrder: false
             });
+            if (updateResult.success) {
+                await this.close(true);
+            } else {
+                const nameError = updateResult.validationErrors.find(e => e.fieldName === 'name')?.code;
+
+                if (nameError != null) {
+                    this.#form.api.getFieldMeta('name')?.errors?.push(nameError);
+                }
+
+                let feedback: string;
+                if (nameError === 'duplicate') {
+                    feedback = `Field with internal name ${this.#form.api.getFieldValue('name')} already exists`;
+                } else if (nameError == null) {
+                    feedback = "Error while saving Additional Field";
+                } else {
+                    feedback = "Internal Name is not formatted correctly";
+                }
+
+                dispatchFeedback({
+                    type: "danger",
+                    message: feedback
+                }, this);
+
+            }
         } else {
             const additionalField = this.getAdditionalFieldFromForm(additionalFieldForm);
-            updateResult = await AdditionalFieldService.saveField(this.purchaseContext!, additionalField);
-        }
-
-        if (updateResult.success) {
-            await this.close(true);
-        } else {
-            const nameError = updateResult.validationErrors.find(e => e.fieldName === 'name')?.code;
-
-            if (nameError != null) {
-                this.#form.api.getFieldMeta('name')?.errors?.push(nameError);
-            }
-
-            let feedback: string;
-            if (nameError === 'duplicate') {
-                feedback = `Field with internal name ${this.#form.api.getFieldValue('name')} already exists`;
-            } else if (nameError == null) {
-                feedback = "Error while saving Additional Field";
+            const response = await AdditionalFieldService.saveField(this.purchaseContext!, additionalField);
+            if (response.ok) {
+                await this.close(true);
             } else {
-                feedback = "Internal Name is not formatted correctly";
+                dispatchFeedback({
+                    type: "danger",
+                    message: "Unexpected error. Please retry."
+                }, this);
             }
-
-            dispatchFeedback({
-                type: "danger",
-                message: feedback
-            }, this);
-
         }
     }
 
