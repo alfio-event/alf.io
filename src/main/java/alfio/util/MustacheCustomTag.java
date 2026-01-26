@@ -239,24 +239,28 @@ public class MustacheCustomTag {
 
     private static final List<Extension> COMMONMARK_EXTENSIONS = List.of(TablesExtension.create());
     private static final Parser COMMONMARK_PARSER = Parser.builder().extensions(COMMONMARK_EXTENSIONS).build();
-    private static final HtmlRenderer COMMONMARK_RENDERER = HtmlRenderer.builder().extensions(COMMONMARK_EXTENSIONS).attributeProviderFactory((ctx) -> new TargetBlankProvider()).build();
+    private static final HtmlRenderer COMMONMARK_RENDERER = HtmlRenderer.builder().extensions(COMMONMARK_EXTENSIONS).attributeProviderFactory(ctx -> new TargetBlankProvider()).build();
     private static final TextContentRenderer COMMONMARK_TEXT_RENDERER = TextContentRenderer.builder().extensions(COMMONMARK_EXTENSIONS).build();
     private static final ThreadLocal<String> A11Y_NEW_TAB_LABEL = new ThreadLocal<>();
 
     //Open in a new window if the link contains an absolute url
     private static class TargetBlankProvider implements AttributeProvider {
+
+        private static final Set<String> ALLOWED_SCHEMES = Set.of("http", "https", "mailto", "tel");
+        private static final Set<String> TARGET_BLANK_SCHEMES = Set.of("http", "https");
+
         @Override
         public void setAttributes(Node node, String tagName, Map<String, String> attributes) {
             if (node instanceof Link l) {
                 String destination = StringUtils.trimToEmpty(l.getDestination());
                 var scheme = getScheme(destination);
                 scheme.ifPresent(resolvedScheme -> {
-                    if (!Set.of("http", "https").contains(resolvedScheme)) {
-                        log.info("User tried to set an url with scheme {}, only http/https are accepted, href has been removed", resolvedScheme);
+                    if (!ALLOWED_SCHEMES.contains(resolvedScheme)) {
+                        log.info("User tried to set an url with scheme {}, only http/https/mailto are accepted, href has been removed", resolvedScheme);
                         attributes.remove("href");
                     }
                 });
-                if (UrlUtils.isAbsoluteUrl(destination)) {
+                if (scheme.filter(TARGET_BLANK_SCHEMES::contains).isPresent() && UrlUtils.isAbsoluteUrl(destination)) {
                     // accept only http or https protocols if we have an absolute link, else we override with an empty string
                     attributes.put("target", "_blank");
                     attributes.put("rel", "nofollow noopener noreferrer");
@@ -267,17 +271,17 @@ public class MustacheCustomTag {
                 }
             }
         }
+
+        /**
+         * return a lowercase scheme if present
+         */
+        private static Optional<String> getScheme(String uri) {
+            var s = StringUtils.trimToEmpty(uri).toLowerCase(Locale.ROOT);
+            return s.indexOf(':') >= 0 ? Optional.of(StringUtils.substringBefore(s, ':')) : Optional.empty();
+        }
     }
     public static String renderToHtmlCommonmarkEscaped(String input) {
         return renderToHtmlCommonmarkEscaped(input, null);
-    }
-
-    /**
-     * return lowercase scheme if present
-     */
-    private static Optional<String> getScheme(String uri) {
-        var s = StringUtils.trimToEmpty(uri).toLowerCase(Locale.ROOT);
-        return s.indexOf(':') >= 0 ? Optional.of(StringUtils.substringBefore(s, ':')) : Optional.empty();
     }
 
     public static String renderToHtmlCommonmarkEscaped(String input, String localizedNewWindowLabel) {

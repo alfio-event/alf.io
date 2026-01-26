@@ -19,6 +19,9 @@ package alfio.controller.support;
 import alfio.model.ContentLanguage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSources;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
 import java.time.ZoneId;
@@ -70,5 +73,32 @@ class FormattersTest {
         assertFalse(rendered.isEmpty());
         assertEquals(1, rendered.size());
         assertEquals("<p><a href=\"https://alf.io\" target=\"_blank\" rel=\"nofollow noopener noreferrer\" aria-label=\"link "+message+"\">link</a></p>", rendered.get("en").trim());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"http://localhost:8080", "https://alf.io", "tel:+41991234567", "mailto:hello@example.org"})
+    void supportDifferentProtocols(String link) {
+        var messageSource = new ResourceBundleMessageSource();
+        messageSource.setBasename("alfio.i18n.public");
+        var message = messageSource.getMessage(Formatters.LINK_NEW_TAB_KEY, null, Locale.ENGLISH);
+        var rendered = Formatters.applyCommonMark(Map.of("en", "[link]("+link+")"), messageSource);
+        assertFalse(rendered.isEmpty());
+        assertEquals(1, rendered.size());
+        if (link.startsWith("http")) {
+            assertEquals("<p><a href=\""+link+"\" target=\"_blank\" rel=\"nofollow noopener noreferrer\" aria-label=\"link "+message+"\">link</a></p>", rendered.get("en").trim());
+        } else {
+            assertEquals("<p><a href=\""+link+"\">link</a></p>", rendered.get("en").trim());
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"javascript:alert('pwnd')", "sms:+41993456874"})
+    void unsupportedLinkMustBeCleared(String link) {
+        var messageSource = new ResourceBundleMessageSource();
+        messageSource.setBasename("alfio.i18n.public");
+        var rendered = Formatters.applyCommonMark(Map.of("en", "[link]("+link+")"), messageSource);
+        assertFalse(rendered.isEmpty());
+        assertEquals(1, rendered.size());
+        assertEquals("<p><a>link</a></p>", rendered.get("en").trim());
     }
 }
