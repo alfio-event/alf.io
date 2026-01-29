@@ -166,7 +166,7 @@ public final class EventUtil {
     	 ICalendar ical = new ICalendar();
     	 ical.setProductId("-//Alf.io//Alf.io v2.0//EN");
     	 ical.setMethod(Method.PUBLISH);
-    	 
+
          VEvent vEvent = new VEvent();
          vEvent.setSummary(event.getDisplayName());
          vEvent.setDescription(MustacheCustomTag.renderToTextCommonmark(description));
@@ -180,11 +180,11 @@ public final class EventUtil {
          vEvent.setDateEnd(Date.from(end.toInstant()));
          vEvent.setUrl(event.getWebsiteUrl());
          vEvent.setStatus(Status.confirmed());
-         
+
          if(organization != null) {
         	 vEvent.setOrganizer(new Organizer(organization.getName(), organization.getEmail()));
          }
-         
+
          ical.addEvent(vEvent);
          StringWriter strWriter = new StringWriter();
          try (ICalWriter writer = new ICalWriter(strWriter, ICalVersion.V2_0)) {
@@ -195,7 +195,7 @@ public final class EventUtil {
              return Optional.empty();
          }
     }
-    
+
     public static Optional<byte[]> getIcalForEvent(Event event, TicketCategory ticketCategory, String description) {
     	return getIcalForEvent(event, ticketCategory, description, null);
     }
@@ -210,7 +210,7 @@ public final class EventUtil {
             .queryParam("ctz", event.getTimeZone())
             .queryParam("text", event.getDisplayName())
             .queryParam("location", event.getLocation())
-            .queryParam("details", StringUtils.abbreviate(description, 1024))
+            .queryParam("details", StringUtils.abbreviate(MustacheCustomTag.renderToTextCommonmark(description), 1024))
             .toUriString();
     }
 
