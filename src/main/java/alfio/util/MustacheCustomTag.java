@@ -24,6 +24,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
 import org.commonmark.Extension;
 import org.commonmark.ext.gfm.tables.TablesExtension;
+import org.commonmark.node.Image;
 import org.commonmark.node.Link;
 import org.commonmark.node.Node;
 import org.commonmark.node.Text;
@@ -264,12 +265,25 @@ public class MustacheCustomTag {
                     // accept only http or https protocols if we have an absolute link, else we override with an empty string
                     attributes.put("target", "_blank");
                     attributes.put("rel", "nofollow noopener noreferrer");
-                    var newTabLabel = A11Y_NEW_TAB_LABEL.get();
-                    if (newTabLabel != null) {
-                        attributes.put("aria-label", ((Text)node.getFirstChild()).getLiteral() + " " + newTabLabel);
-                    }
+                    addAriaLabel(node.getFirstChild(), attributes);
                 }
             }
+        }
+
+        private static void addAriaLabel(Node content, Map<String, String> attributes) {
+            var newTabLabel = A11Y_NEW_TAB_LABEL.get();
+            if (newTabLabel == null) {
+                return;
+            }
+            String ariaLabel;
+            if (content instanceof Text text) {
+                ariaLabel = text.getLiteral() + " " + newTabLabel;
+            } else if (content instanceof Image image) {
+                ariaLabel = image.getTitle() + " " + newTabLabel;
+            } else {
+                ariaLabel = newTabLabel;
+            }
+            attributes.put("aria-label", ariaLabel);
         }
 
         /**
