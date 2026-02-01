@@ -74,6 +74,9 @@ export class AdditionalFieldEdit extends LitElement {
     preview?: AdditionalField;
 
     @state()
+    existingFieldName?: string;
+
+    @state()
     unsubscribeFn?: () => void;
 
     static readonly styles = [pageHeader, row, dialogStyling, form, textColors, cardBgColors, textAlign, itemsList, listGroup, css`
@@ -201,7 +204,6 @@ export class AdditionalFieldEdit extends LitElement {
                             <div class="section-subtitle">What kind of data will you collect?</div>
                             ${(this.renderFieldTypeSelector())}
                             ${this.renderConstraints()}
-                            ${this.renderValues()}
                         </section>
                         <sl-divider></sl-divider>
                         <section>
@@ -221,6 +223,7 @@ export class AdditionalFieldEdit extends LitElement {
                             </sl-tab-group>
                         </section>
                         <sl-divider></sl-divider>
+                        ${this.renderValues()}
                         <section>
                             <div class="section-header">Field Reference</div>
                             <div class="section-subtitle">How field will be referenced in export/import Spreadsheets</div>
@@ -386,12 +389,16 @@ export class AdditionalFieldEdit extends LitElement {
     private renderLanguageFields(cl: ContentLanguage, primary: boolean) {
 
         const descriptionChanged = (e: InputEvent, field: any) => {
-            if (primary) {
+            if (primary && !this.editField) {
                 const value = (e.currentTarget as HTMLInputElement).value;
                 const currentFieldName = this.#form.api.getFieldValue(`name`);
-                const currentFieldNameTouched = this.#form.api.getFieldMeta(`name`)!.isPristine;
-                if (currentFieldNameTouched || currentFieldName?.length === 0) {
-                    this.#form.api.setFieldValue(`name`, value.toLowerCase().replaceAll(/\W/g,"_").substring(0, 64), {dontUpdateMeta: true});
+                const currentFieldNameUntouched = this.#form.api.getFieldMeta(`name`)!.isPristine;
+                if (currentFieldNameUntouched || currentFieldName?.length === 0) {
+                    let generatedValue = value.toLowerCase().replaceAll(/\W/g,"_").substring(0, 64);
+                    if (generatedValue.endsWith("_")) {
+                        generatedValue = generatedValue.substring(0, generatedValue.length - 1);
+                    }
+                    this.#form.api.setFieldValue(`name`, generatedValue, {dontUpdateMeta: true});
                 }
             }
             notifyChange(e, field);
@@ -428,28 +435,29 @@ export class AdditionalFieldEdit extends LitElement {
         }
 
         return html`
-            <div class="field-constraints">
-                <div class="section-title">Selectable Options</div>
-                <div class="section-subtitle">Define the options attendees can choose from.</div>
-
-                ${this.#form.field({
-                    name: 'selectableOptions',
-                }, (selectableOptionsField) => {
-                    const contentLanguages = this.purchaseContext?.contentLanguages ?? [];
-                    const selectableOptions = selectableOptionsField.state.value ?? [];
-                    return html`
-                        ${repeat(selectableOptions, (_, index) => index, (_, index) => {
-                            return this.renderSelectableOptionCard(index,
-                                selectableOptions.length - 1,
-                                contentLanguages,
-                                () => selectableOptionsField.removeValue(index),
-                                (newIndex) => selectableOptionsField.moveValue(index, newIndex)
-                            );
-                        })}
-                        <sl-button class="mt-2" variant="success" @click=${() => {selectableOptionsField.pushValue({fieldName: '', description: {}, toBePersisted: true})}}>Add option</sl-button>
-                    `;
-                })}
-            </div>
+            <section>
+                <div class="section-header">Selectable Options</div>
+                <div class="section-subtitle">Define the options attendees can choose from</div>
+                <div class="field-constraints">
+                    ${this.#form.field({
+                        name: 'selectableOptions',
+                    }, (selectableOptionsField) => {
+                        const contentLanguages = this.purchaseContext?.contentLanguages ?? [];
+                        const selectableOptions = selectableOptionsField.state.value ?? [];
+                        return html`
+                            ${repeat(selectableOptions, (_, index) => index, (_, index) => {
+                                return this.renderSelectableOptionCard(index,
+                                    selectableOptions.length - 1,
+                                    contentLanguages,
+                                    () => selectableOptionsField.removeValue(index),
+                                    (newIndex) => selectableOptionsField.moveValue(index, newIndex)
+                                );
+                            })}
+                            <sl-button class="mt-2" variant="success" @click=${() => {selectableOptionsField.pushValue({fieldName: '', description: {}, toBePersisted: true})}}>Add option</sl-button>
+                        `;
+                    })}
+                </div>
+            </section>
         `;
     }
 
@@ -459,7 +467,7 @@ export class AdditionalFieldEdit extends LitElement {
                                        removeField: () => void,
                                        moveField: (newIndex: number) => void) {
         const descriptionChanged = (e: InputEvent, languageIdx: number, field: any) => {
-            if (languageIdx === 0) {
+            if (languageIdx === 0 && !this.editField) {
                 // only process it when it's the first language
                 const value = (e.currentTarget as HTMLInputElement).value;
                 const currentFieldName = this.#form.api.getFieldValue(`selectableOptions[${optionIndex}].fieldName`);
@@ -705,6 +713,7 @@ export class AdditionalFieldEdit extends LitElement {
         if (this.dialog != null) {
             this.dialogTitle = request.field == null ? `Add attendee data field` : `Edit ${request.field.name} field`;
             this.editField = request.field != null;
+            this.existingFieldName = request.field?.name;
             this.purchaseContext = request.purchaseContext;
             this.#form.api.update({
                 defaultValues: this.buildDefaultValues(request.purchaseContext, request.ordinal, request.field, request.template),
@@ -895,12 +904,20 @@ export class AdditionalFieldEdit extends LitElement {
         additionalField.restrictedValues = selectableOptions.map(option => option.fieldName);
         selectableOptions.forEach(option => {
             Object.entries(option.description).forEach(([lang, text]) => {
-                const restrictedValuesField = additionalField.description[lang].description.restrictedValues ?? {};
+                const restrictedValuesField: {[k:string] : string} = {};
+                Object.entries(additionalField.description[lang].description.restrictedValues ?? {})
+                    .filter(([k,_]) => additionalField.restrictedValues?.includes(k) ?? false)
+                    .forEach(([k,v]) => {
+                        restrictedValuesField[k] = v;
+                    });
                 restrictedValuesField[option.fieldName] = text;
                 additionalField.description[lang].description.restrictedValues = restrictedValuesField;
             })
         });
-        return additionalField;
+        return {
+            ...additionalField,
+            name: this.existingFieldName ?? additionalField.name
+        };
     }
 
     connectedCallback() {

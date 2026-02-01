@@ -15,7 +15,7 @@ export function renderPreview(fieldContent: LocalizedAdditionalFieldContent, fie
             return html`
                 <label><strong>${localizedConfiguration.label}</strong></label>
                 ${repeat(Object.entries(localizedConfiguration.restrictedValues ?? {}), ([k]) => k, ([value, label]) => html`
-                    <sl-checkbox value=${value}>${label}</sl-checkbox>
+                    <div><sl-checkbox value=${value}>${label}</sl-checkbox></div>
                 `)}
 
             `;
