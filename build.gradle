@@ -316,7 +316,7 @@ tasks.withType(Test).configureEach {
         events "failed"
         exceptionFormat "full"
         info.events = ["failed"]
-        showStandardStreams = true
+        showStandardStreams = project.hasProperty('verbose')
     }
     reports {
         junitXml.required = true  // Enable JUnit XML report

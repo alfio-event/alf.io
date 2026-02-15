@@ -36,7 +36,7 @@ jobs:
                   username: ${{ secrets.BROWSERSTACK_USERNAME }}
                   access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
             - name: Build with Gradle
-              run: ./gradlew test -Dspring.profiles.active=travis,e2e --tests NormalFlowE2ETest
+              run: ./gradlew test --tests NormalFlowE2ETest -Pverbose
               env:
                   E2E_SERVER_APIKEY: ${{ secrets.E2E_SERVER_APIKEY }}
                   E2E_SERVER_URL: ${{ secrets.E2E_SERVER_URL }}
