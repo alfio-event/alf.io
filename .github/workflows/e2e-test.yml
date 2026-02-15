@@ -41,3 +41,5 @@ jobs:
                   E2E_SERVER_APIKEY: ${{ secrets.E2E_SERVER_APIKEY }}
                   E2E_SERVER_URL: ${{ secrets.E2E_SERVER_URL }}
                   E2E_BROWSER: ${{matrix.browser}}
+                  E2E_CI_RUN: true
+                  ALFIO_RUN_E2E: true

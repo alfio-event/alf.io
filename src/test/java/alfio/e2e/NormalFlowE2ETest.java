@@ -23,6 +23,7 @@ import alfio.util.HttpUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.interactions.Actions;
@@ -36,7 +37,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.core.env.Profiles;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -61,21 +61,25 @@ import static java.util.Objects.requireNonNull;
 import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElementLocated;
 
 /**
- * For testing with browserstack you need to set the following VM run options:
- * -Dspring.profiles.active=e2e,travis
- * -De2e.server.url=https://master.test.alf.io
- * -De2e.server.apikey=
- * -De2e.browser=safari|firefox|chrome
- * -Dbrowserstack.username=
- * -Dbrowserstack.access.key=
+ * For testing with browserstack you need to set the following ENV Variables:
+ * ALFIO_RUN_E2E: true
+ * BROWSERSTACK_USERNAME
+ * BROWSERSTACK_ACCESS_KEY
+ * BROWSERSTACK_PROJECT_NAME
+ * BROWSERSTACK_BUILD_NAME
+ * E2E_SERVER_APIKEY
+ * E2E_SERVER_URL
+ * E2E_BROWSER: chrome
  *
  */
 @ContextConfiguration(classes = { NormalFlowE2ETest.E2EConfiguration.class })
-@ActiveProfiles(value = {Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
+@ActiveProfiles(value = {Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST, "e2e"})
+@EnabledIfEnvironmentVariable(named = "ALFIO_RUN_E2E", matches = "true")
 @SpringBootTest
 class NormalFlowE2ETest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NormalFlowE2ETest.class);
+    private static final boolean CI_RUN = "true".equals(System.getenv("E2E_CI_RUN"));
     private static final String JSON_BODY;
 
     static {
@@ -103,47 +107,43 @@ class NormalFlowE2ETest {
     }
 
     @BeforeEach
-    public void init() throws Exception {
-        if(environment.acceptsProfiles(Profiles.of("e2e"))) {
-            var serverBaseUrl = environment.getRequiredProperty("e2e.server.url");
-            var serverApiKey = environment.getRequiredProperty("e2e.server.apikey");
+    void init() throws Exception {
+        var serverBaseUrl = environment.getRequiredProperty("e2e.server.url");
+        var serverApiKey = environment.getRequiredProperty("e2e.server.apikey");
 
-            slug = UUID.randomUUID().toString();
-            var now = LocalDateTime.now(clockProvider.getClock());
-            var requestBody = JSON_BODY.replace("--CATEGORY_START_SELLING--", now.minusDays(1).toString())
-                .replace("--SLUG--", slug)
-                .replace("--EVENT_START_DATE--", now.plusDays(2).toString())
-                .replace("--EVENT_END_DATE--", now.plusDays(2).plusHours(2).toString());
-            // create temporary event
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(serverBaseUrl + "/api/v1/admin/event/create"))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "ApiKey " + serverApiKey)
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .build();
-            var response = HTTP_CLIENT.send(request, BodyHandlers.ofString());
-            if(!HttpUtils.callSuccessful(response)) {
-                throw new IllegalStateException(response.statusCode() + ": "+response.body());
-            }
-            eventUrl = serverBaseUrl + "/event/"+slug;
+        slug = UUID.randomUUID().toString();
+        var now = LocalDateTime.now(clockProvider.getClock());
+        var requestBody = JSON_BODY.replace("--CATEGORY_START_SELLING--", now.minusDays(1).toString())
+            .replace("--SLUG--", slug)
+            .replace("--EVENT_START_DATE--", now.plusDays(2).toString())
+            .replace("--EVENT_END_DATE--", now.plusDays(2).plusHours(2).toString());
+        // create temporary event
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(serverBaseUrl + "/api/v1/admin/event/create"))
+            .header("Content-Type", "application/json")
+            .header("Authorization", "ApiKey " + serverApiKey)
+            .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+            .build();
+        var response = HTTP_CLIENT.send(request, BodyHandlers.ofString());
+        if(!HttpUtils.callSuccessful(response)) {
+            throw new IllegalStateException(response.statusCode() + ": "+response.body());
         }
+        eventUrl = serverBaseUrl + "/event/"+slug;
     }
 
     @AfterEach
-    public void destroy() throws Exception {
-        if(environment.acceptsProfiles(Profiles.of("e2e"))) {
-            var serverBaseUrl = environment.getRequiredProperty("e2e.server.url");
-            var serverApiKey = environment.getRequiredProperty("e2e.server.apikey");
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(serverBaseUrl + "/api/v1/admin/event/"+slug))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "ApiKey " + serverApiKey)
-                .DELETE()
-                .build();
-            var response = HTTP_CLIENT.send(request, BodyHandlers.ofString());
-            if(!HttpUtils.callSuccessful(response)) {
-                throw new IllegalStateException(response.body());
-            }
+    void destroy() throws Exception {
+        var serverBaseUrl = environment.getRequiredProperty("e2e.server.url");
+        var serverApiKey = environment.getRequiredProperty("e2e.server.apikey");
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(serverBaseUrl + "/api/v1/admin/event/"+slug))
+            .header("Content-Type", "application/json")
+            .header("Authorization", "ApiKey " + serverApiKey)
+            .DELETE()
+            .build();
+        var response = HTTP_CLIENT.send(request, BodyHandlers.ofString());
+        if(!HttpUtils.callSuccessful(response)) {
+            throw new IllegalStateException(response.body());
         }
     }
 
@@ -307,7 +307,7 @@ class NormalFlowE2ETest {
 
         @Bean
         String browserStackUrl(Environment env) {
-            if(env.acceptsProfiles(Profiles.of("e2e")) && env.acceptsProfiles(Profiles.of("travis"))) {
+            if(CI_RUN) {
                 return "https://"
                     + env.getRequiredProperty("browserstack.username")
                     + ":"
@@ -332,19 +332,16 @@ class NormalFlowE2ETest {
 
         @Bean
         List<BrowserWebDriver> webDrivers(Environment env, String browserStackUrl) throws Exception {
-            boolean e2e = env.acceptsProfiles(Profiles.of("e2e"));
-            if(e2e && env.acceptsProfiles(Profiles.of("travis"))) {
+            if(CI_RUN) {
                 var browser = env.getRequiredProperty("e2e.browser");
                 LOGGER.info("e2e profile detected, CI profile detected. Running full suite on BrowserStack");
                 var url = new URL(browserStackUrl);
                 var githubBuildNumber = "-" + env.getProperty("github.run.number", "NA");
                 return List.of(build(browser, url, githubBuildNumber));
-            } else if(e2e) {
+            } else {
                 LOGGER.info("e2e profile detected, outside of CI. Returning local ChromeDriver");
                 return List.of(new BrowserWebDriver(BrowserWebDriver.Browser.CHROME, new ChromeDriver()));
             }
-            LOGGER.info("e2e profile was not detected, test will be skipped");
-            return List.of();
         }
     }
 
