@@ -1549,7 +1549,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         paymentForm.setSelectedPaymentMethod(StaticPaymentMethods.BANK_TRANSFER);
 
         // bank transfer does not have a transaction, it's created on confirmOverview call
-        var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.BANK_TRANSFER);
+        var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.BANK_TRANSFER.name());
         assertEquals(HttpStatus.NOT_FOUND, tStatus.getStatusCode());
         //
         var promoCodeUsage = promoCodeRequestManager.retrieveDetailedUsage(promoCodeId, context.event.getId());
@@ -1562,7 +1562,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
         checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT, context);
 
-        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.BANK_TRANSFER);
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.BANK_TRANSFER.name());
         assertEquals(HttpStatus.OK, tStatus.getStatusCode());
         assertNotNull(tStatus.getBody());
         assertFalse(tStatus.getBody().isSuccess());
@@ -1585,7 +1585,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertEventLogged(extLogs, TICKET_ASSIGNED_GENERATE_METADATA, online ? 12 : 10);
         assertEventLogged(extLogs, TICKET_MAIL_CUSTOM_TEXT, online ? 12 : 10);
 
-        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.BANK_TRANSFER);
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, StaticPaymentMethods.BANK_TRANSFER.name());
         assertEquals(HttpStatus.OK, tStatus.getStatusCode());
         assertNotNull(tStatus.getBody());
         assertTrue(tStatus.getBody().isSuccess());

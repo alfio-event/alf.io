@@ -19,12 +19,14 @@ package alfio.model.transaction;
 import java.util.Arrays;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.jspecify.annotations.Nullable;
 
 @JsonDeserialize(using = PaymentMethodDeserializer.class)
 public interface PaymentMethod {
     public String name();
     public String getPaymentMethodId();
 
+    @Nullable
     public static PaymentMethod safeParse(String asString) {
         return Arrays
             .stream(StaticPaymentMethods.values())

@@ -57,6 +57,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSourceResolvable;
@@ -699,13 +700,20 @@ public class ReservationApiV2Controller {
     @GetMapping("/reservation/{reservationId}/payment/{method}/status")
     public ResponseEntity<ReservationPaymentResult> getTransactionStatus(
                                                               @PathVariable String reservationId,
-                                                              @PathVariable("method") PaymentMethod paymentMethod) {
+                                                              @PathVariable("method") String paymentMethodAsString) {
 
-
+        var paymentMethod = PaymentMethod.safeParse(paymentMethodAsString);
         if(paymentMethod == null) {
             return ResponseEntity.badRequest().build();
         }
 
+        return getTransactionStatus(reservationId, paymentMethod);
+    }
+
+    /*
+     * This method has been kept here for integration tests
+     */
+    public ResponseEntity<ReservationPaymentResult> getTransactionStatus(@NonNull String reservationId, @NonNull PaymentMethod paymentMethod) {
         return purchaseContextManager.getReservationWithPurchaseContext(reservationId)
             .flatMap(pair -> paymentManager.getTransactionStatus(pair.getRight(), paymentMethod))
             .map(pr -> ResponseEntity.ok(new ReservationPaymentResult(pr.isSuccessful(), pr.isRedirect(), pr.getRedirectUrl(), pr.isFailed(), pr.getGatewayIdOrNull())))
