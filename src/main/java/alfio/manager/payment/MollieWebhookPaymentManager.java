@@ -358,6 +358,9 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
             }
         } else {
             log.warn("was not able to create a payment for reservation id " + reservationId);
+            try (InputStream inputStream = response.body()) {
+                log.warn(new String(inputStream.readAllBytes()));
+            }
             return PaymentResult.failed(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
         }
     }
