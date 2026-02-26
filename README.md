@@ -97,7 +97,7 @@ Add a new line with: `-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,addr
 
 
 ## Contributing to alf.io
-Importing the Gradle project into Intellij and Eclipse both work.
+Importing the Gradle project into IntelliJ and Eclipse both work.
 
 **Notes**:
 - this project uses [Project Lombok](https://projectlombok.org/). You will need to install the corresponding Lombok plugin for integration into your IDE.
