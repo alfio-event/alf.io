@@ -33,7 +33,7 @@ export class TurnstileChallengeComponent implements AfterViewInit, OnDestroy {
             const callBackName = `onloadTurnstileCallback${idCallback}`;
 
             scriptElem.src = `https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=${callBackName}&language=${this.i18nService.getCurrentLang()}`;
-            scriptElem.id = 'recaptcha-api-script';
+            scriptElem.id = 'cf-turnstile-script';
             scriptElem.async = true;
             scriptElem.defer = true;
 
