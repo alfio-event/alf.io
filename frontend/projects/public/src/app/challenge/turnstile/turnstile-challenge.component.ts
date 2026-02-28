@@ -63,7 +63,7 @@ export class TurnstileChallengeComponent implements AfterViewInit, OnDestroy {
                 sitekey: this.siteKey,
                 "response-field": false,
                 callback: function(token: string, preClearance: boolean) {
-                    console.log(`Challenge Success ${token}. Pre-clearance ${preClearance}`);
+                    console.log(`Challenge Success. Pre-clearance ${preClearance}`);
                     notify(token);
                 },
                 "expired-callback": function () {
