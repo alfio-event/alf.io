@@ -33,7 +33,7 @@ export class TurnstileChallengeComponent implements AfterViewInit, OnDestroy {
             const callBackName = `onloadTurnstileCallback${idCallback}`;
 
             scriptElem.src = `https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=${callBackName}&language=${this.i18nService.getCurrentLang()}`;
-            scriptElem.id = 'recaptcha-api-script';
+            scriptElem.id = 'cf-turnstile-script';
             scriptElem.async = true;
             scriptElem.defer = true;
 
@@ -63,7 +63,7 @@ export class TurnstileChallengeComponent implements AfterViewInit, OnDestroy {
                 sitekey: this.siteKey,
                 "response-field": false,
                 callback: function(token: string, preClearance: boolean) {
-                    console.log(`Challenge Success ${token}. Pre-clearance ${preClearance}`);
+                    console.log(`Challenge Success. Pre-clearance ${preClearance}`);
                     notify(token);
                 },
                 "expired-callback": function () {
