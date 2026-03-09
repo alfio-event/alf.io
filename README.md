@@ -24,6 +24,7 @@ The open source ticket reservation system.
     <li><a href="#check-dependencies-to-update">Check dependencies to update</a></li>
     <li><a href="#running-docker-containers">Running Docker containers</a></li>
     <li><a href="#contributors">Contributors</a></li>
+    <li><a href="#sponsors">Sponsors</a></li>
 
   </ol>
 </details>
@@ -215,7 +216,7 @@ translations completed but not yet integrated (WIP)
 | Japanese (jp) | Martin      |    | |
 | Chinese (Taiwan) (cn_TW) | Yu-cheng, Lin      |    | |
 
-### Sponsors
+## Sponsors
 
 This project is sponsored by:
 
