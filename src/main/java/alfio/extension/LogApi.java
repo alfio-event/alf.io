@@ -16,23 +16,27 @@
  */
 package alfio.extension;
 
-import org.junit.jupiter.api.Test;
+import io.roastedroot.quickjs4j.annotations.Builtins;
+import io.roastedroot.quickjs4j.annotations.HostFunction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Map;
+@Builtins("log")
+class LogApi {
+    private static final Logger log = LoggerFactory.getLogger(LogApi.class);
 
-import static org.junit.jupiter.api.Assertions.*;
+    @HostFunction
+    public void warn(String msg) { log.warn(msg); }
 
-class ExtensionUtilsTest {
+    @HostFunction
+    public void info(String msg) { log.info(msg); }
 
-    @Test
-    void convertIntegerToJson() {
-        var db = 1.0D;
-        assertEquals("{\"number\":1}", ExtensionUtils.convertToJson(Map.of("number", db)));
-    }
+    @HostFunction
+    public void error(String msg) { log.error(msg); }
 
-    @Test
-    void convertDecimalToJson() {
-        var db = 1.1D;
-        assertEquals("{\"number\":1.1}", ExtensionUtils.convertToJson(Map.of("number", db)));
-    }
+    @HostFunction
+    public void debug(String msg) { log.debug(msg); }
+
+    @HostFunction
+    public void trace(String msg) { log.trace(msg); }
 }
