@@ -54,9 +54,9 @@ import static java.util.stream.Collectors.toSet;
 @AllArgsConstructor
 public class ExtensionService {
 
-    private static final String EVALUATE_RESULT = "res = GSON.fromJson(JSON.stringify(res), returnClass);";
-    private static final String PROCESS_EXTENSION_RESULT  = "var res = executeScript(extensionEvent); " + EVALUATE_RESULT;
-    private static final String PROCESS_CAPABILITY_RESULT = "var res = executeCapability(capability); " + EVALUATE_RESULT;
+    private static final String SET_RESULT = "alfio_internal.setResult(JSON.stringify(res));";
+    private static final String PROCESS_EXTENSION_RESULT  = "var res = executeScript(extensionEvent); " + SET_RESULT;
+    private static final String PROCESS_CAPABILITY_RESULT = "var res = executeCapability(capability); " + SET_RESULT;
     private static final String EXECUTE_SCRIPT = "executeScript(extensionEvent);";
     private static final String OUTPUT = "output";
     private static final String EXECUTION_KEY = "executionKey";
@@ -112,7 +112,7 @@ public class ExtensionService {
     private ExtensionMetadata getMetadata(String name, String script) {
         return scriptingExecutionService.executeScript(
             name,
-            script + "\n;GSON.fromJson(JSON.stringify(getScriptMetadata()), returnClass);", //<- ugly hack, but the interop java<->js is simpler that way...
+            script + "\n;alfio_internal.setResult(JSON.stringify(getScriptMetadata()));",
             Collections.emptyMap(),
             ExtensionMetadata.class, new NoopExtensionLogger());
     }
@@ -121,8 +121,6 @@ public class ExtensionService {
     public void createOrUpdate(String previousPath, String previousName, Extension script) {
         Validate.notBlank(script.getName(), "Name is mandatory");
         Validate.notBlank(script.getPath(), "Path must be defined");
-        ScriptValidation validation = new ScriptValidation(script.getScript());
-        validation.validate();
         String hash = DigestUtils.sha256Hex(script.getScript());
         ExtensionMetadata extensionMetadata = getMetadata(script.getName(), script.getScript());
 

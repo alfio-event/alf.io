@@ -18,10 +18,9 @@
 package alfio.extension;
 
 import alfio.extension.exception.AlfioScriptingException;
+import alfio.extension.exception.ExecutionTimeoutException;
 import alfio.extension.exception.InvalidScriptException;
-import alfio.extension.exception.OutOfBoundariesException;
 import alfio.extension.exception.ScriptRuntimeException;
-import alfio.extension.support.SandboxContextFactory;
 import alfio.manager.system.AdminJobManager;
 import alfio.repository.system.AdminJobQueueRepository;
 import alfio.util.ClockProvider;
@@ -29,7 +28,9 @@ import alfio.util.Json;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
-import org.mozilla.javascript.*;
+import io.roastedroot.quickjs4j.core.Engine;
+import io.roastedroot.quickjs4j.core.GuestException;
+import io.roastedroot.quickjs4j.core.Runner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -41,8 +42,8 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static alfio.manager.system.AdminJobExecutor.JobName.EXECUTE_EXTENSION;
 
@@ -64,9 +65,12 @@ public class ScriptingExecutionService {
     static final String CONNECT_EXCEPTION_MESSAGE = "Cannot connect to remote service. Please check your configuration";
     static final String DEFAULT_ERROR_MESSAGE = "Error while executing extension. Please retry.";
     private static final Logger log = LoggerFactory.getLogger(ScriptingExecutionService.class);
+    private static final int EXECUTION_TIMEOUT_MS = 15_000;
 
     private final Supplier<Executor> executorSupplier;
-    private final ScriptableObject sealedScope;
+    private final SimpleHttpClientApi simpleHttpClientApi;
+    private final LogApi logApi = new LogApi();
+    private final ExtensionUtilsApi extensionUtilsApi = new ExtensionUtilsApi();
     private final AdminJobQueueRepository adminJobQueueRepository;
 
     private final Cache<String, Executor> asyncExecutors = Caffeine.newBuilder()
@@ -78,29 +82,47 @@ public class ScriptingExecutionService {
         })
         .build();
 
-    static {
-        ContextFactory.initGlobal(new SandboxContextFactory());
-    }
-
+    // Backward-compat shims: HashMap constructor and GSON alias.
+    // The variadic wrappers for ExtensionUtils.format/computeHMAC collect
+    // the JS arguments array and forward them to the proper builtins.
+    private static final String JS_PRELUDE = """
+        function HashMap() { return {}; }
+        var GSON = {
+            toJson: function(obj) { return JSON.stringify(obj); },
+            fromJson: function(str) { return JSON.parse(str); }
+        };
+        var _origFormat = ExtensionUtils.format;
+        ExtensionUtils.format = function(str) {
+            return _origFormat(str, Array.prototype.slice.call(arguments, 1));
+        };
+        var _origHMAC = ExtensionUtils.computeHMAC;
+        ExtensionUtils.computeHMAC = function(secret) {
+            return _origHMAC(secret, Array.prototype.slice.call(arguments, 1));
+        };
+        ExtensionUtils.convertToJson = function(obj) { return JSON.stringify(obj); };
+        (function() {
+            function _variadicWrap(fn) {
+                return function() {
+                    fn(Array.prototype.slice.call(arguments).join(' '));
+                };
+            }
+            var _methods = ['log', 'warn', 'error'];
+            for (var _i = 0; _i < _methods.length; _i++) {
+                console[_methods[_i]] = _variadicWrap(console[_methods[_i]]);
+            }
+            var _logMethods = ['warn', 'info', 'error', 'debug', 'trace'];
+            for (var _i = 0; _i < _logMethods.length; _i++) {
+                log[_logMethods[_i]] = _variadicWrap(log[_logMethods[_i]]);
+            }
+        })();
+        """;
 
     public ScriptingExecutionService(HttpClient httpClient,
                                      AdminJobQueueRepository adminJobQueueRepository,
                                      Supplier<Executor> executorSupplier) {
         this.executorSupplier = executorSupplier;
         this.adminJobQueueRepository = adminJobQueueRepository;
-        var simpleHttpClient = new SimpleHttpClient(httpClient);
-        Context cx = ContextFactory.getGlobal().enterContext();
-        try {
-            sealedScope = cx.initSafeStandardObjects(null, true);
-            sealedScope.put("log", sealedScope, log);
-            sealedScope.put("GSON", sealedScope, Json.GSON);
-            sealedScope.put("JSON", sealedScope, new NativeJavaClass(sealedScope, JSON.class));
-            sealedScope.put("simpleHttpClient", sealedScope, simpleHttpClient);
-            sealedScope.put("HashMap", sealedScope, new NativeJavaClass(sealedScope, HashMap.class));
-            sealedScope.put("ExtensionUtils", sealedScope, new NativeJavaClass(sealedScope, ExtensionUtils.class));
-        } finally {
-            Context.exit();
-        }
+        this.simpleHttpClientApi = new SimpleHttpClientApi(new SimpleHttpClient(httpClient));
     }
 
     public <T> T executeScript(String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params, Class<T> clazz, ExtensionLogger extensionLogger) {
@@ -118,10 +140,7 @@ public class ScriptingExecutionService {
                 try {
                     executeScript(name, hash, scriptFetcher, params, Object.class, extensionLogger);
                 } catch (AlfioScriptingException | IllegalStateException ex) {
-                    // we got an error while executing the script. We must now re-schedule the script to be executed again
-                    // at a later time
                     var paramsCopy = new HashMap<>(params);
-                    // do not persist extension parameters because they could contain sensitive information
                     paramsCopy.remove(EXTENSION_CONFIGURATION_PARAMETERS);
                     Map<String, Object> metadata = Map.of(
                         EXTENSION_NAME, name,
@@ -135,7 +154,6 @@ public class ScriptingExecutionService {
                     ).apply(adminJobQueueRepository);
                     if(!scheduled) {
                         log.warn("Cannot schedule extension {} for retry", name);
-                        // throw exception only if we can't schedule the extension for later execution
                         throw ex;
                     } else {
                         log.warn("Error while executing extension "+name + ", which has been scheduled for retry", ex);
@@ -148,82 +166,57 @@ public class ScriptingExecutionService {
         return executeScriptFinally(name, script, params, clazz, extensionLogger);
     }
 
-    public static class JavaClassInterop {
-
-        private final Map<String, Class<?>> mapping;
-        private final Scriptable scope;
-
-        JavaClassInterop(Map<String, Class<?>> mapping, Scriptable scope) {
-            this.mapping = mapping;
-            this.scope = scope;
+    private <T> T executeScriptFinally(String name, String script, Map<String, Object> params, Class<T> clazz, ExtensionLogger extensionLogger) {
+        if (params == null) {
+            params = Collections.emptyMap();
         }
 
-        public NativeJavaClass type(String clazz) {
-            if (mapping.containsKey(clazz)) {
-                return new NativeJavaClass(scope, mapping.get(clazz));
-            } else {
-                throw new IllegalArgumentException("Type "+clazz+" is not recognized");
-            }
-        }
-    }
+        var internalApi = new InternalApi();
+        var consoleApi = new ConsoleApi(new ConsoleLogger(extensionLogger));
+        var extLoggerApi = new ExtensionLoggerApi(extensionLogger);
 
-    @SuppressWarnings("unchecked")
-    private <T> T executeScriptFinally(String name, String script, Map<String, Object> params, Class<T> clazz,  ExtensionLogger extensionLogger) {
-        try (var cx = Context.enter()) {
-            if(params == null) {
-                params = Collections.emptyMap();
-            }
+        String paramDeclarations = buildParamDeclarations(params);
+        String fullScript = paramDeclarations + "\n" + JS_PRELUDE + "\n" + script;
 
-            Scriptable scope = cx.newObject(sealedScope);
-            scope.setPrototype(sealedScope);
-            scope.setParentScope(null);
-            scope.put("extensionLogger", scope, extensionLogger);
-            scope.put("console", scope, new ConsoleLogger(extensionLogger));
+        var engine = Engine.builder()
+            .addBuiltins(LogApi_Builtins.toBuiltins(logApi))
+            .addBuiltins(ExtensionLoggerApi_Builtins.toBuiltins(extLoggerApi))
+            .addBuiltins(ConsoleApi_Builtins.toBuiltins(consoleApi))
+            .addBuiltins(SimpleHttpClientApi_Builtins.toBuiltins(simpleHttpClientApi))
+            .addBuiltins(ExtensionUtilsApi_Builtins.toBuiltins(extensionUtilsApi))
+            .addBuiltins(InternalApi_Builtins.toBuiltins(internalApi))
+            .build();
 
-            // retrocompatibility
-            scope.put("Java", scope, new JavaClassInterop(Map.of("alfio.model.CustomerName", alfio.model.CustomerName.class), scope));
+        try (var runner = Runner.builder()
+            .withEngine(engine)
+            .withTimeoutMs(EXECUTION_TIMEOUT_MS)
+            .build()) {
 
-            scope.put("returnClass", scope, clazz);
-
-            for (var entry : params.entrySet()) {
-                var value = entry.getValue();
-                if(entry.getKey().equals(EXTENSION_CONFIGURATION_PARAMETERS)) {
-                    scope.put(entry.getKey(), scope, convertExtensionParameters(scope, value));
-                } else {
-                    scope.put(entry.getKey(), scope, Context.javaToJS(value, scope));
-                }
-            }
-            Object res;
-            res = cx.evaluateString(scope, script, name, 1, null);
+            runner.compileAndExec(fullScript);
             extensionLogger.logSuccess("Script executed successfully.");
-            if (res instanceof NativeJavaObject nativeRes) {
-                return (T) nativeRes.unwrap();
-            } else if(clazz.isInstance(res)) {
-                return (T) res;
-            } else {
-                return null;
+
+            if (internalApi.getResultJson() != null && clazz != Void.class && clazz != void.class) {
+                return Json.OBJECT_MAPPER.readValue(internalApi.getResultJson(), clazz);
             }
-        } catch (EcmaError ex) {
+            return null;
+        } catch (GuestException ex) {
+            String message = ex.getMessage();
+            log.warn("Runtime error in script " + name, ex);
+            extensionLogger.logError(message);
+            throw new ScriptRuntimeException(message, ex);
+        } catch (IllegalArgumentException ex) {
             log.warn("Syntax error detected in script " + name, ex);
-            extensionLogger.logError("Syntax error while executing script: " + ex.getMessage() + "(" + ex.lineNumber() + ":" + ex.columnNumber() + ")");
+            extensionLogger.logError("Syntax error while executing script: " + ex.getMessage());
             throw new InvalidScriptException("Syntax error in script " + name);
-        } catch (WrappedException ex) {
-            var actualException = ex.getWrappedException();
+        } catch (RuntimeException ex) {
+            if (ex.getCause() instanceof TimeoutException) {
+                throw new ExecutionTimeoutException("Script execution timeout.");
+            }
+            var actualException = ex.getCause() != null ? ex.getCause() : ex;
             var message = getErrorMessage(actualException);
             extensionLogger.logError("Error from script: " + message);
             throw new AlfioScriptingException(message, actualException);
-        } catch (JavaScriptException ex) {
-            String message;
-            if (ex.getValue() != null) {
-                message = ex.details();
-            } else {
-                message = ex.getMessage();
-            }
-            extensionLogger.logError(message);
-            throw new ScriptRuntimeException(message, ex);
-        } catch (OutOfBoundariesException ex) {
-            throw ex;
-        } catch (Exception ex) { //
+        } catch (Exception ex) {
             extensionLogger.logError("Error while executing script: " + ex.getMessage());
             throw new IllegalStateException(ex);
         }
@@ -247,9 +240,21 @@ public class ScriptingExecutionService {
         return Objects.requireNonNullElse(lastMessage, DEFAULT_ERROR_MESSAGE);
     }
 
-    private Object convertExtensionParameters(Scriptable context, Object extensionParameters) {
-        return ((Map<?, ?>) extensionParameters).entrySet().stream()
-            .map(entry -> Map.entry(entry.getKey(), ScriptRuntime.toObject(context, entry.getValue())))
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    private String buildParamDeclarations(Map<String, Object> params) {
+        var sb = new StringBuilder();
+        for (var entry : params.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            String jsonValue;
+            try {
+                jsonValue = Json.OBJECT_MAPPER.writeValueAsString(value);
+            } catch (Exception e) {
+                log.warn("Cannot serialize param '{}' to JSON, skipping", key, e);
+                continue;
+            }
+            sb.append("var ").append(key).append(" = ").append(jsonValue).append(";\n");
+        }
+        return sb.toString();
     }
+
 }

@@ -55,7 +55,6 @@ public class ConsoleLogger {
         if(others != null) {
             parameterPlaceholders = " %s".repeat(others.length);
             paramObjects = Stream.concat(Stream.of(first), Arrays.stream(others))
-                .map(ExtensionUtils::unwrap)
                 .toArray();
         } else {
             paramObjects = new Object[] {first};
