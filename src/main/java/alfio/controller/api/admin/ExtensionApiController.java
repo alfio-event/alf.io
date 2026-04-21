@@ -31,6 +31,7 @@ import alfio.model.ExtensionSupport.ExtensionParameterMetadataAndValue;
 import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,6 +97,11 @@ public class ExtensionApiController {
     private ResponseEntity<SerializablePair<Boolean, String>> createOrUpdate(String previousPath, String previousName, Extension script, Principal principal) {
         try {
             accessService.ensureAdmin(principal);
+            String scriptNamePattern = "^[A-Za-z0-9]+$";
+            Validate.matchesPattern(script.getName(), scriptNamePattern, "Name can only contain letters and numbers");
+            if (previousName != null) {
+                Validate.matchesPattern(previousName, scriptNamePattern, "Name can only contain letters and numbers");
+            }
             extensionService.createOrUpdate(previousPath, previousName, script);
             return ResponseEntity.ok(SerializablePair.of(true, null));
         } catch (Throwable t) {
