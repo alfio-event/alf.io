@@ -773,24 +773,21 @@ export class AdditionalFieldEdit extends LitElement {
             displayAtCheckIn: false,
             required: false,
             context: purchaseContext.type === 'subscription' ? 'SUBSCRIPTION' : 'ATTENDEE',
-            selectableOptions: this.parseRestrictedValues(template)
+            selectableOptions: this.parseRestrictedValues(purchaseContext, template)
         };
     }
 
-    private parseRestrictedValues(template?: NewAdditionalFieldFromTemplate): SelectableOption[]  {
+    private parseRestrictedValues(purchaseContext: PurchaseContext,
+                                  template?: NewAdditionalFieldFromTemplate): SelectableOption[]  {
         if (template == null) {
             return [];
         }
 
         return (template.restrictedValues ?? []).map(v => {
             const description: {[lang: string]: string} = {};
-            Object.entries(template.description).forEach(([lang, fd]) => {
-                const restrictedValues = fd.restrictedValues;
-                if (restrictedValues == null) {
-                    description[lang] = '';
-                } else {
-                    description[lang] = fd.restrictedValues![v] ?? '';
-                }
+            purchaseContext.contentLanguages.forEach(({locale}) => {
+                const fd = template.description[locale];
+                description[locale] = fd?.restrictedValues?.[v] ?? '';
             });
             return {
                 fieldName: v,
