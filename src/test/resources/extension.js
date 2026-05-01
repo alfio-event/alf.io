@@ -31,7 +31,7 @@ function executeScript(scriptEvent) {
     // test JSON stringify/parse
     var string = JSON.stringify(map);
     log.warn(string);
-    var parsed = JSON.parse(string, function() {});
+    var parsed = JSON.parse(string);
     if (scriptEvent === 'EVENT_CREATED') {
         console.log('created event. Here some debug info', parsed.test, parsed.name, 'custom string', map);
     }

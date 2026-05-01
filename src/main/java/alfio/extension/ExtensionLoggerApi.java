@@ -14,18 +14,28 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.extension.exception;
+package alfio.extension;
 
-/**
- * Exception thrown if some out of boundaries usage (forbidden methods calls) happens when executing a script.
- */
-public class OutOfBoundariesException extends AlfioScriptingException {
+import io.roastedroot.quickjs4j.annotations.Builtins;
+import io.roastedroot.quickjs4j.annotations.HostFunction;
 
-    public OutOfBoundariesException(String message) {
-        super(message);
+@Builtins("extensionLogger")
+class ExtensionLoggerApi {
+    private final ExtensionLogger logger;
+
+    ExtensionLoggerApi(ExtensionLogger logger) {
+        this.logger = logger;
     }
 
-    public OutOfBoundariesException(String message, Throwable cause) {
-        super(message, cause);
-    }
+    @HostFunction
+    public void logInfo(String msg) { logger.logInfo(msg); }
+
+    @HostFunction
+    public void logWarning(String msg) { logger.logWarning(msg); }
+
+    @HostFunction
+    public void logError(String msg) { logger.logError(msg); }
+
+    @HostFunction
+    public void logSuccess(String msg) { logger.logSuccess(msg); }
 }

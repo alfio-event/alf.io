@@ -14,23 +14,21 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.extension.support;
+package alfio.extension;
 
-import alfio.extension.exception.OutOfBoundariesException;
-import org.mozilla.javascript.NativeJavaList;
-import org.mozilla.javascript.Scriptable;
+import io.roastedroot.quickjs4j.annotations.Builtins;
+import io.roastedroot.quickjs4j.annotations.HostFunction;
 
-public class SandboxNativeJavaList extends NativeJavaList {
-    public SandboxNativeJavaList(Scriptable scope, Object map) {
-        super(scope, map);
+@Builtins("alfio_internal")
+class InternalApi {
+    private String resultJson;
+
+    @HostFunction
+    public void setResult(String json) {
+        this.resultJson = json;
     }
 
-    @Override
-    public Object get(String name, Scriptable start) {
-        if (name.equals("getClass")) {
-            throw new OutOfBoundariesException("Out of boundaries class use.");
-        }
-
-        return super.get(name, start);
+    String getResultJson() {
+        return resultJson;
     }
 }

@@ -160,7 +160,9 @@ dependencies {
     implementation 'ch.digitalfondue.vatchecker:vatchecker:1.6.0'
     implementation 'ch.digitalfondue.basicxlsx:basicxlsx:0.7.1'
     implementation 'org.imgscalr:imgscalr-lib:4.2'
-    implementation 'org.mozilla:rhino-runtime:1.7.15.1'
+    implementation 'io.roastedroot:quickjs4j:0.0.17'
+    implementation 'io.roastedroot:quickjs4j-annotations:0.0.17'
+    annotationProcessor 'io.roastedroot:quickjs4j-processor:0.0.17'
     implementation 'com.google.auth:google-auth-library-oauth2-http:1.41.0'
 
     testImplementation 'org.testcontainers:testcontainers'
