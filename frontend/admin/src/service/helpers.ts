@@ -88,6 +88,20 @@ export function escapeHtml(message: string): string {
     return div.innerHTML;
 }
 
+export function asString(value: any): string | null {
+    if (value != null) {
+        return `${value}`;
+    }
+    return value;
+}
+
+export function asNumber(value?: string): number | null {
+    if (value != null) {
+        return Number.parseInt(value, 10);
+    }
+    return value ?? null;
+}
+
 declare global {
     interface Window {
         SUPPORTED_LANGUAGES: string | null;

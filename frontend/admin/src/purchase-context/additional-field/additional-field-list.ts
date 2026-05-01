@@ -13,10 +13,13 @@ import {PurchaseContextService} from "../../service/purchase-context.ts";
 import {AdditionalFieldService} from "../../service/additional-field.ts";
 import {repeat} from "lit/directives/repeat.js";
 import {renderIf} from "../../service/helpers.ts";
-import {badges, cardBgColors, itemsList, pageHeader, textColors} from "../../styles.ts";
+import {badges, cardBgColors, itemsList, pageHeader, retroCompat, textColors} from "../../styles.ts";
 import {ConfirmationDialogService} from "../../service/confirmation-dialog.ts";
 import {AlfioDialogClosed, dispatchFeedback} from "../../model/dom-events.ts";
 import {LocalizedAdditionalFieldContent, renderPreview} from "./additional-field-util.ts";
+import {AdditionalItem} from "../../model/additional-item.ts";
+import {AdditionalItemService} from "../../service/additional-item.ts";
+
 interface Model {
     purchaseContextType: PurchaseContextType;
     event?: AlfioEvent;
@@ -25,6 +28,7 @@ interface Model {
     dataTask: Task<ReadonlyArray<number>, ListData>;
     isSubscription: boolean;
     templates: ReadonlyArray<AdditionalFieldTemplate>
+    additionalItems: ReadonlyArray<AdditionalItem>
 }
 
 interface ListData {
@@ -52,9 +56,13 @@ export class AdditionalFieldList extends LitElement {
         async ([publicIdentifier, purchaseContextType, organizationId]) => {
             const result = await PurchaseContextService.load(publicIdentifier, purchaseContextType as PurchaseContextType, Number.parseInt(organizationId, 10));
             const isSubscription = (purchaseContextType as PurchaseContextType) === 'subscription';
-            const purchaseContext = isSubscription ? result.subscriptionDescriptor! : result.eventWithOrganization!.event;
+            const purchaseContext: PurchaseContext = isSubscription ? result.subscriptionDescriptor! : result.eventWithOrganization!.event;
             const templates = await AdditionalFieldService.loadTemplates(purchaseContext);
             const supportedLanguages = purchaseContext.contentLanguages;
+            const additionalItems: AdditionalItem[] = [];
+            if ((purchaseContextType as PurchaseContextType) === 'event') {
+                additionalItems.push(...(await AdditionalItemService.loadAll({eventId: result.eventWithOrganization!.event.id})));
+            }
             const dataTask = new Task<ReadonlyArray<number>, ListData>(this, async (_) => {
                 const items = await AdditionalFieldService.loadAllByPurchaseContext(purchaseContext);
                 let standardIndex = items.findIndex(i => i.order >= 0);
@@ -70,18 +78,31 @@ export class AdditionalFieldList extends LitElement {
                 supportedLanguages,
                 dataTask,
                 isSubscription,
-                templates
+                templates,
+                additionalItems
             }
         },
         () => [this.publicIdentifier!, this.purchaseContextType!, this.organizationId!]);
 
-    static readonly styles = [pageHeader, textColors, itemsList, cardBgColors, badges, css`
+    static readonly styles = [pageHeader, textColors, itemsList, cardBgColors, badges, retroCompat, css`
         sl-tab-group {
             height: 100%;
         }
         div.m-1 {
             margin-top: 1em;
             margin-bottom: 1em;
+        }
+        div.info-box {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 1em;
+        }
+        div.info-box--messages {
+            display: flex;
+            flex-direction: column;
+            align-items: start;
+            gap: 10px;
         }
     `];
 
@@ -211,6 +232,7 @@ export class AdditionalFieldList extends LitElement {
                                     </sl-tab-group>
                                 </div>
                             </div>
+                            ${this.displayFilters(field, model)}
                         </sl-card>
                     `;
                 });
@@ -224,6 +246,38 @@ export class AdditionalFieldList extends LitElement {
                 return renderedItems;
             }
         })
+    }
+
+    private displayFilters(field: AdditionalField, model: Model) {
+
+        const eventCategories = model.event?.ticketCategories ?? [];
+        const selectedCategories = field.categoryIds?.length ?? 0;
+        const additionalItem = model.additionalItems.find(ai => ai.id === field.additionalServiceId);
+
+        if (selectedCategories === 0 && additionalItem == null) {
+            return html``;
+        }
+
+        return html`
+            <sl-divider></sl-divider>
+            <div class="info-box">
+                <sl-icon slot="icon" name="info-circle" style="color: var(--sl-color-primary-600); font-size: 1.5em"></sl-icon>
+                <div class="info-box--messages">
+                    ${renderIf(() => selectedCategories > 0, () => html`
+                        <div>
+                            Collected only for the following Categories: ${repeat(eventCategories.filter(c => field.categoryIds!.includes(c.id)), c => c.id, category => html`<sl-badge variant="neutral" class="ms-1">${category.name}</sl-badge>`)}
+                        </div>
+                    `)}
+                    ${renderIf(() => additionalItem != null, () => html`
+                        <div>
+                            Collected only if additional option <sl-badge variant="neutral" class="ms-1">${additionalItem!.title.map(t => t.value).join(" / ")}</sl-badge> was selected
+                        </div>
+                    `)}
+                </div>
+
+            </div>
+
+        `;
     }
 
     private showMoveUpDownButtons(index: number, field: AdditionalField, listData: ListData, model: Model) {

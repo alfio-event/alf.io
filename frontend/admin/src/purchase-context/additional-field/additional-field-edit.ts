@@ -1,6 +1,6 @@
 import {customElement, query, state} from "lit/decorators.js";
 import {css, html, LitElement, nothing, TemplateResult} from "lit";
-import {SlDialog, SlRequestCloseEvent} from "@shoelace-style/shoelace";
+import {SlDialog, SlRequestCloseEvent, SlSelect} from "@shoelace-style/shoelace";
 import {
     AdditionalField, AdditionalFieldType,
     additionalFieldTypesWithDescription,
@@ -14,7 +14,7 @@ import {
 } from "../../model/additional-field.ts";
 import {ContentLanguage, PurchaseContext} from "../../model/purchase-context.ts";
 import {TanStackFormController} from "@tanstack/lit-form";
-import {notifyChange, renderIf} from "../../service/helpers.ts";
+import {asNumber, asString, notifyChange, renderIf} from "../../service/helpers.ts";
 import {repeat} from "lit/directives/repeat.js";
 import {
     cardBgColors,
@@ -585,10 +585,10 @@ export class AdditionalFieldEdit extends LitElement {
                     const selectionChanged = (e: InputEvent) => {
                         const target = e.currentTarget as HTMLInputElement;
                         const checked = target.checked;
+                        this.allCategories = checked;
                         if (checked) {
                             field.handleChange([]);
                         }
-                        this.allCategories = checked;
                     }
 
                     return html`
@@ -613,18 +613,16 @@ export class AdditionalFieldEdit extends LitElement {
     private renderCategories(event: AlfioEvent, field: {state: {meta: any, value?: number[]}, handleChange: (values: any) => void}) {
 
         const selectionChanged = (e: InputEvent) => {
-            const target = e.currentTarget as HTMLSelectElement;
+            const target = e.currentTarget as SlSelect;
             const values  = [];
-            for(const option of target.options) {
-                if (option.selected) {
-                    values.push(Number.parseInt(option.value));
-                }
+            for(const option of target.selectedOptions) {
+                values.push(Number.parseInt(option.value));
             }
             field.handleChange(values);
         };
 
         return html`
-            <sl-select label="Select Categories" required class=${classMap({ error: this.hasError(field.state.meta), 'no-mt': true })} multiple .value=${field.state.value?.join(' ') ?? ''} @sl-change=${selectionChanged}>
+            <sl-select label="Select Categories" required value=${field.state.value?.join(' ') ?? ''} class=${classMap({ error: this.hasError(field.state.meta), 'no-mt': true })} multiple @sl-change=${selectionChanged}>
                 ${event.ticketCategories.map((tc) => {
                     return html`<sl-option value="${tc.id}">${tc.name}</sl-option>`;
                 })}
@@ -664,8 +662,8 @@ export class AdditionalFieldEdit extends LitElement {
                             }
                         }
                     }, (field) => html`
-                        <sl-select label="Additional Item" required class=${classMap({ error: this.hasError(field.state.meta), "no-mt block": true })} .value=${field.state.value} @sl-change=${(e: InputEvent) => notifyChange(e, field)}>
-                            ${repeat(this.additionalItems, item => html`<sl-option .value=${item.id}>${findTitle(item)} ${item.id}</sl-option>`)}
+                        <sl-select label="Additional Item" required class=${classMap({ error: this.hasError(field.state.meta), "no-mt block": true })} .value=${asString(field.state.value)} @sl-change=${(e: InputEvent) => notifyChange(e, field, asNumber)}>
+                            ${repeat(this.additionalItems, item => html`<sl-option .value=${item.id}>${findTitle(item)}</sl-option>`)}
                         </sl-select>
                     `)}
                 `)}
@@ -824,80 +822,88 @@ export class AdditionalFieldEdit extends LitElement {
 
     private async save(additionalFieldForm: AdditionalFieldForm) {
         if (additionalFieldForm.id == null) {
-            const descriptionRequest: { [locale: string]: DescriptionRequest } = {};
-            const selectableOptions: SelectableOption[] = [];
-            if (supportsRestrictedValues(additionalFieldForm.type) && additionalFieldForm.selectableOptions != null) {
-                selectableOptions.push(...additionalFieldForm.selectableOptions);
-            }
-            const restrictedValues: RestrictedValueRequest[] = selectableOptions.map(option => ({
-                value: option.fieldName,
-                enabled: true
-            }));
-            Object.entries(additionalFieldForm.description).forEach(([key, value]) => {
-                descriptionRequest[key] = {
-                    label: value.description.label,
-                    placeholder: value.description.placeholder ?? ''
-                }
-                if (selectableOptions.length > 0) {
-                    descriptionRequest[key].restrictedValues = {};
-                    selectableOptions.forEach(option => {
-                        descriptionRequest[key].restrictedValues![option.fieldName] = option.description[key];
-                    });
-                }
-            });
-            const updateResult = await AdditionalFieldService.createNewField(this.purchaseContext!, {
-                type: additionalFieldForm.type,
-                name: additionalFieldForm.name,
-                order: additionalFieldForm.order,
-                categoryIds: additionalFieldForm.categoryIds ?? [],
-                displayAtCheckIn: additionalFieldForm.displayAtCheckIn,
-                forAdditionalService: this.additionalItems.find(item => item.id === additionalFieldForm.additionalServiceId),
-                maxLength: additionalFieldForm.maxLength,
-                minLength: additionalFieldForm.minLength,
-                readOnly: !additionalFieldForm.editable,
-                required: additionalFieldForm.required,
-                description: descriptionRequest,
-                restrictedValues: restrictedValues,
-                userDefinedOrder: false
-            });
-            if (updateResult.success) {
-                await this.close(true);
-            } else {
-                const nameError = updateResult.validationErrors.find(e => e.fieldName === 'name')?.code;
-
-                if (nameError != null) {
-                    this.#form.api.getFieldMeta('name')?.errors?.push(nameError);
-                }
-
-                let feedback: string;
-                if (nameError === 'duplicate') {
-                    feedback = `Field with internal name ${this.#form.api.getFieldValue('name')} already exists`;
-                } else if (nameError == null) {
-                    feedback = "Error while saving Additional Field";
-                } else {
-                    feedback = "Internal Name is not formatted correctly";
-                }
-
-                dispatchFeedback({
-                    type: "danger",
-                    message: feedback
-                }, this);
-
-            }
+            await this.createNew(additionalFieldForm);
         } else {
-            const additionalField = this.getAdditionalFieldFromForm(additionalFieldForm);
-            const response = await AdditionalFieldService.saveField(this.purchaseContext!, additionalField);
-            if (response.ok) {
-                await this.close(true);
-            } else {
-                dispatchFeedback({
-                    type: "danger",
-                    message: "Unexpected error. Please retry."
-                }, this);
-            }
+            await this.updateExisting(additionalFieldForm);
         }
     }
 
+
+    private async updateExisting(additionalFieldForm: AdditionalFieldForm) {
+        const additionalField = this.getAdditionalFieldFromForm(additionalFieldForm);
+        const response = await AdditionalFieldService.saveField(this.purchaseContext!, additionalField);
+        if (response.ok) {
+            await this.close(true);
+        } else {
+            dispatchFeedback({
+                type: "danger",
+                message: "Unexpected error. Please retry."
+            }, this);
+        }
+    }
+
+    private async createNew(additionalFieldForm: AdditionalFieldForm) {
+        const descriptionRequest: { [locale: string]: DescriptionRequest } = {};
+        const selectableOptions: SelectableOption[] = [];
+        if (supportsRestrictedValues(additionalFieldForm.type) && additionalFieldForm.selectableOptions != null) {
+            selectableOptions.push(...additionalFieldForm.selectableOptions);
+        }
+        const restrictedValues: RestrictedValueRequest[] = selectableOptions.map(option => ({
+            value: option.fieldName,
+            enabled: true
+        }));
+        Object.entries(additionalFieldForm.description).forEach(([key, value]) => {
+            descriptionRequest[key] = {
+                label: value.description.label,
+                placeholder: value.description.placeholder ?? ''
+            }
+            if (selectableOptions.length > 0) {
+                descriptionRequest[key].restrictedValues = {};
+                selectableOptions.forEach(option => {
+                    descriptionRequest[key].restrictedValues![option.fieldName] = option.description[key];
+                });
+            }
+        });
+        const updateResult = await AdditionalFieldService.createNewField(this.purchaseContext!, {
+            type: additionalFieldForm.type,
+            name: additionalFieldForm.name,
+            order: additionalFieldForm.order,
+            categoryIds: additionalFieldForm.categoryIds ?? [],
+            displayAtCheckIn: additionalFieldForm.displayAtCheckIn,
+            forAdditionalService: this.additionalItems.find(item => item.id === additionalFieldForm.additionalServiceId),
+            maxLength: additionalFieldForm.maxLength,
+            minLength: additionalFieldForm.minLength,
+            readOnly: !additionalFieldForm.editable,
+            required: additionalFieldForm.required,
+            description: descriptionRequest,
+            restrictedValues: restrictedValues,
+            userDefinedOrder: false
+        });
+        if (updateResult.success) {
+            await this.close(true);
+        } else {
+            const nameError = updateResult.validationErrors.find(e => e.fieldName === 'name')?.code;
+
+            if (nameError != null) {
+                this.#form.api.getFieldMeta('name')?.errors?.push(nameError);
+            }
+
+            let feedback: string;
+            if (nameError === 'duplicate') {
+                feedback = `Field with internal name ${this.#form.api.getFieldValue('name')} already exists`;
+            } else if (nameError == null) {
+                feedback = "Error while saving Additional Field";
+            } else {
+                feedback = "Internal Name is not formatted correctly";
+            }
+
+            dispatchFeedback({
+                type: "danger",
+                message: feedback
+            }, this);
+
+        }
+    }
 
     private getAdditionalFieldFromForm(additionalFieldForm: AdditionalFieldForm) {
         const {selectableOptions, ...additionalField} = {...additionalFieldForm};
