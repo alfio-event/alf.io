@@ -25,6 +25,7 @@ import ch.digitalfondue.npjt.*;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 @QueryRepository
 public interface AdditionalServiceItemRepository {
@@ -173,7 +174,7 @@ public interface AdditionalServiceItemRepository {
     @Query("""
         select count(*) from additional_service_item asi\
          join ticket t on asi.ticket_id_fk = t.id and asi.event_id_fk = t.event_id\
-         where t.uuid = :ticketUUID and asi.id in (:additionalServiceIds)\
+         where t.public_uuid = :ticketUUID and asi.id in (:additionalServiceIds)\
         """)
-    int countMatchingItemsForTicket(@Bind("ticketUUID") String ticketUuid, @Bind("additionalServiceIds") Collection<Integer> ids);
+    int countMatchingItemsForTicket(@Bind("ticketUUID") UUID ticketPublicUUID, @Bind("additionalServiceIds") Collection<Integer> ids);
 }
