@@ -33,6 +33,7 @@ import alfio.util.*;
 import alfio.util.Validator.AdvancedTicketAssignmentValidator;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -118,7 +119,7 @@ public class TicketHelper {
         Validator.AdvancedValidationContext context = new Validator.AdvancedValidationContext(updateTicketOwner, fieldConf, t.getCategoryId(), t.getUuid(), formPrefix);
 
         ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, ticketFieldFilterer.getFieldsForTicket(t.getPublicUuid(), EnumSet.of(ATTENDEE)), bindingResult, event, formPrefix, sameCountryValidator, extensionManager)
-                .or(validateAdditionalItemsFields(event, updateTicketOwner, t.getUuid(), ticketFieldFilterer.getFieldsForTicket(t.getPublicUuid(), EnumSet.of(ADDITIONAL_SERVICE)), additionalServiceItems, bindingResult.orElse(null), sameCountryValidator))
+                .or(validateAdditionalItemsFields(event, updateTicketOwner, t.getPublicUuid(), ticketFieldFilterer.getFieldsForTicket(t.getPublicUuid(), EnumSet.of(ADDITIONAL_SERVICE)), additionalServiceItems, bindingResult.orElse(null), sameCountryValidator))
                 .or(Validator.performAdvancedValidation(advancedValidator, context, bindingResult.orElse(null)))
                 .ifSuccess(() -> updateTicketOwner(updateTicketOwner, fallbackLocale, t, event, ticketReservation, userDetails));
         return Triple.of(validationResult, event, ticketsInReservation.stream().filter(t2 -> t2.getUuid().equals(t.getUuid())).findFirst().orElseThrow());
@@ -126,7 +127,7 @@ public class TicketHelper {
 
     private ValidationResult validateAdditionalItemsFields(Event event,
                                                            UpdateTicketOwnerForm updateTicketOwner,
-                                                           String ticketUuid,
+                                                           UUID ticketPublicUUID,
                                                            List<PurchaseContextFieldConfiguration> fieldsForTicket,
                                                            List<AdditionalServiceItem> additionalServiceItems,
                                                            BindingResult bindingResult,
@@ -135,13 +136,14 @@ public class TicketHelper {
         if (!event.supportsLinkedAdditionalServices() || fieldsForTicket.isEmpty() || bindingResult == null) {
             return ValidationResult.success();
         }
+        final String publicUUIDAsString = ticketPublicUUID.toString();
         Map<String, List<AdditionalServiceLinkForm>> map = requireNonNullElse(updateTicketOwner.getAdditionalServices(), Map.of());
-        var fieldForms = Objects.requireNonNullElse(map.get(ticketUuid), List.<AdditionalServiceLinkForm>of());
+        var fieldForms = Objects.requireNonNullElse(map.get(publicUUIDAsString), List.<AdditionalServiceLinkForm>of());
         int formFieldsSize = (int) fieldForms.stream().flatMap(f -> f.getAdditional().keySet().stream()).distinct().count();
         if (formFieldsSize != fieldsForTicket.size()) {
             // form contains wrong fields. Reject all values
             bindingResult.reject(ErrorsCode.EMPTY_FIELD);
-            return ValidationResult.failed(new ValidationResult.ErrorDescriptor("", ErrorsCode.EMPTY_FIELD));
+            return ValidationResult.failed(new ValidationResult.ErrorDescriptor("", "", ErrorsCode.EMPTY_FIELD));
         } else if (formFieldsSize == 0) {
             return ValidationResult.success();
         }
@@ -149,18 +151,18 @@ public class TicketHelper {
         var bookedItems = fieldForms.stream().map(AdditionalServiceLinkForm::getAdditionalServiceItemId).collect(Collectors.toSet());
 
         // validate that the input form only contains items that are actually linked to the current ticket
-        int count = additionalServiceItemRepository.countMatchingItemsForTicket(ticketUuid, bookedItems);
+        int count = additionalServiceItemRepository.countMatchingItemsForTicket(ticketPublicUUID, bookedItems);
         ValidationResult result;
 
         if (count != bookedItems.size()) {
-            result = ValidationResult.failed(new ValidationResult.ErrorDescriptor("", ErrorsCode.EMPTY_FIELD));
+            result = ValidationResult.failed(new ValidationResult.ErrorDescriptor("", "", ErrorsCode.EMPTY_FIELD));
         } else {
             result = ValidationResult.success();
         }
 
-        for (int i = 0; i < formFieldsSize; i++) {
+        for (int i = 0; i < fieldForms.size(); i++) {
             var form = fieldForms.get(i);
-            result = result.or(Validator.validateAdditionalItemFieldsForTicket(form, fieldsForTicket, bindingResult, "additionalServices["+ticketUuid+"]["+i+"]", vatValidator, fieldForms, additionalServiceItems));
+            result = result.or(Validator.validateAdditionalItemFieldsForTicket(form, fieldsForTicket, bindingResult, "additionalServices["+publicUUIDAsString+"]["+i+"]", vatValidator, fieldForms, additionalServiceItems));
         }
 
         return result;
@@ -235,7 +237,7 @@ public class TicketHelper {
 
     public static List<Pair<String, String>> getLocalizedEUCountriesForVat(Locale locale, String euCountries) {
         return fixVAT(mapISOCountries(Stream.of(Locale.getISOCountries())
-            .filter(isoCode -> StringUtils.contains(euCountries, isoCode) || "GR".equals(isoCode)), locale));
+            .filter(isoCode -> Strings.CS.contains(euCountries, isoCode) || "GR".equals(isoCode)), locale));
     }
 
     public static List<Pair<String, String>> getLocalizedCountriesForVat(Locale locale) {
