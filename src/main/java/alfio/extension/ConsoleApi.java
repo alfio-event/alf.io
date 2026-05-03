@@ -14,13 +14,25 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.extension.exception;
+package alfio.extension;
 
-/**
- * Exception thrown if script is not valid for execution.
- */
-public class ScriptNotValidException extends AlfioScriptingException {
-    public ScriptNotValidException(String message) {
-        super(message);
+import io.roastedroot.quickjs4j.annotations.Builtins;
+import io.roastedroot.quickjs4j.annotations.HostFunction;
+
+@Builtins("console")
+class ConsoleApi {
+    private final ConsoleLogger logger;
+
+    ConsoleApi(ConsoleLogger logger) {
+        this.logger = logger;
     }
+
+    @HostFunction
+    public void log(String msg) { logger.log(msg); }
+
+    @HostFunction
+    public void warn(String msg) { logger.warn(msg); }
+
+    @HostFunction
+    public void error(String msg) { logger.error(msg); }
 }

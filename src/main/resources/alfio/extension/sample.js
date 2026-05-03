@@ -35,8 +35,8 @@ function getScriptMetadata() {
 function executeScript(scriptEvent) {
     log.warn('hello from script with event: ' + scriptEvent);
     log.warn('extension parameters are: ' + extensionParameters);
-    //this sample calls the https://csrng.net/ website and generates a random invoice number
-    var randomNumber = simpleHttpClient.get('https://jsonplaceholder.typicode.com/todos/1').getJsonBody().get("userId");
+    //this sample calls the https://jsonplaceholder.typicode.com/ website and generates a random invoice number
+    var randomNumber = JSON.parse(simpleHttpClient.get('https://jsonplaceholder.typicode.com/todos/1').body).userId;
     log.warn('the invoice number will be: ' + randomNumber);
     return {
         invoiceNumber: randomNumber

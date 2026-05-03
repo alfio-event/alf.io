@@ -23,8 +23,6 @@ function getScriptMetadata() {
     };
 }
 
-var CustomerName = Java.type('alfio.model.CustomerName');
-
 var MERGE_FIELDS = "merge-fields/";
 var ALFIO_EVENT_KEY = "ALFIO_EKEY";
 var APPLICATION_JSON = "application/json";
@@ -38,19 +36,19 @@ var LIST_MEMBERS = "members/";
  */
 function executeScript(scriptEvent) {
     if('TICKET_ASSIGNED' === scriptEvent) {
-        var customerName = new CustomerName(ticket.fullName, ticket.firstName, ticket.lastName, event.mustUseFirstAndLastName());
-        subscribeUser(ticket.email, customerName, ticket.userLanguage, event);
+        var firstName = event.mustUseFirstAndLastName ? ticket.firstName : ticket.fullName;
+        subscribeUser(ticket.email, firstName, ticket.fullName, ticket.userLanguage, event);
     } else if ('RESERVATION_CONFIRMED' === scriptEvent) {
-        var customerName = new CustomerName(reservation.fullName, reservation.firstName, reservation.lastName, event.mustUseFirstAndLastName());
-        subscribeUser(reservation.email, customerName, reservation.userLanguage, event);
+        var firstName = event.mustUseFirstAndLastName ? reservation.firstName : reservation.fullName;
+        subscribeUser(reservation.email, firstName, reservation.fullName, reservation.userLanguage, event);
     } else if ('WAITING_QUEUE_SUBSCRIPTION' === scriptEvent) {
-        var customerName = new CustomerName(waitingQueueSubscription.fullName, waitingQueueSubscription.firstName, waitingQueueSubscription.lastName, event.mustUseFirstAndLastName());
-        subscribeUser(waitingQueueSubscription.emailAddress, customerName, waitingQueueSubscription.userLanguage, event);
+        var firstName = event.mustUseFirstAndLastName ? waitingQueueSubscription.firstName : waitingQueueSubscription.fullName;
+        subscribeUser(waitingQueueSubscription.emailAddress, firstName, waitingQueueSubscription.fullName, waitingQueueSubscription.userLanguage, event);
     }
 }
 
 
-function subscribeUser(email, customerName, language, event) {
+function subscribeUser(email, firstName, fullName, language, event) {
   var eventShortName = event.shortName;
 
   var dataCenter = extensionParameters.apiKey.match(/\-([a-zA-Z0-9]+)$/)[1];
@@ -59,7 +57,7 @@ function subscribeUser(email, customerName, language, event) {
   var apiKey = extensionParameters.apiKey;
   createMergeFieldIfNotPresent(listAddress, apiKey, event.id, eventShortName);
   var md5Email = ExtensionUtils.md5(email);
-  send(event.id, listAddress + LIST_MEMBERS + md5Email, apiKey, email, customerName, language, eventShortName);
+  send(event.id, listAddress + LIST_MEMBERS + md5Email, apiKey, email, firstName, fullName, language, eventShortName);
 }
 
 
@@ -69,50 +67,52 @@ function createMergeFieldIfNotPresent(listAddress, apiKey, eventId, eventShortNa
     var res = simpleHttpClient.get(listAddress + MERGE_FIELDS, {'Authorization': simpleHttpClient.basicCredentials('alfio', apiKey)});
     var body = res.body;
     if(body == null) {
-      log.warn("null response from mailchimp for list {}", listAddress);
+      log.warn("null response from mailchimp for list " + listAddress);
       return;
     }
-    if(!body.contains(ALFIO_EVENT_KEY)) {
+    if(body.indexOf(ALFIO_EVENT_KEY) === -1) {
       log.debug("can't find ALFIO_EKEY for event " + eventShortName);
       createMergeField(listAddress, apiKey, eventShortName, eventId);
     }
   } catch (e) {
-    log.warn("exception while reading merge fields for event id "+eventId, e);
-    extensionLogger.logWarning(ExtensionUtils.format("Cannot get merge fields for %s, got: %s", eventShortName, e.getMessage ? e.getMessage() : e));
+    log.warn("exception while reading merge fields for event id " + eventId + ": " + (e.message || e));
+    extensionLogger.logWarning(ExtensionUtils.format("Cannot get merge fields for %s, got: %s", eventShortName, e.message || e));
   }
 }
 
 function createMergeField(listAddress, apiKey, eventShortName, eventId) {
-  var mergeField = new HashMap();
-  mergeField.put("tag", ALFIO_EVENT_KEY);
-  mergeField.put("name", "Alfio's event key");
-  mergeField.put("type", "text");
-  mergeField.put("required", false);
-  mergeField.put("public", false);
+  var mergeField = {
+    "tag": ALFIO_EVENT_KEY,
+    "name": "Alfio's event key",
+    "type": "text",
+    "required": false,
+    "public": false
+  };
   try {
     var response = simpleHttpClient.post(listAddress + MERGE_FIELDS, {'Authorization': simpleHttpClient.basicCredentials('alfio', apiKey)}, mergeField);
-    if(!response.isSuccessful()) {
+    if(!response.successful) {
       var body = response.body;
-      log.warn("can't create {} merge field. Got: {}", ALFIO_EVENT_KEY, body != null ? body : "null");
+      log.warn("can't create " + ALFIO_EVENT_KEY + " merge field. Got: " + (body != null ? body : "null"));
     }
   } catch(e) {
-    log.warn("exception while creating ALFIO_EKEY for event id "+eventId, e);
-    extensionLogger.logWarning(ExtensionUtils.format("Cannot create merge field for %s, got: %s", eventShortName, e.getMessage ? e.getMessage() : e));
+    log.warn("exception while creating ALFIO_EKEY for event id " + eventId + ": " + (e.message || e));
+    extensionLogger.logWarning(ExtensionUtils.format("Cannot create merge field for %s, got: %s", eventShortName, e.message || e));
   }
 }
 
-function send(eventId, address, apiKey, email, name, language, eventShortName) {
-  var content = new HashMap();
-  content.put("email_address", email);
-  content.put("status", "subscribed");
-  var mergeFields = new HashMap();
-  mergeFields.put("FNAME", name.isHasFirstAndLastName() ? name.getFirstName() : name.getFullName());
-  mergeFields.put(ALFIO_EVENT_KEY, eventShortName);
-  content.put("merge_fields", mergeFields);
-  content.put("language", language);
+function send(eventId, address, apiKey, email, firstName, fullName, language, eventShortName) {
+  var content = {
+    "email_address": email,
+    "status": "subscribed",
+    "merge_fields": {
+      "FNAME": firstName,
+      "ALFIO_EKEY": eventShortName
+    },
+    "language": language
+  };
   try {
     var response = simpleHttpClient.put(address, {'Authorization': simpleHttpClient.basicCredentials('alfio', apiKey)}, content);
-    if(response.isSuccessful()) {
+    if(response.successful) {
       extensionLogger.logSuccess(ExtensionUtils.format("user %s has been subscribed to list", email));
       return;
     }
@@ -121,12 +121,12 @@ function send(eventId, address, apiKey, email, name, language, eventShortName) {
       return;
     }
 
-    if (response.code != 400 || body.contains("\"errors\"")) {
-      extensionLogger.logError(ExtensionUtils.format(FAILURE_MSG, email, name, language, body));
+    if (response.code != 400 || body.indexOf("\"errors\"") !== -1) {
+      extensionLogger.logError(ExtensionUtils.format(FAILURE_MSG, email, fullName, language, body));
     } else {
-      extensionLogger.logWarning(ExtensionUtils.format(FAILURE_MSG, email, name, language, body));
+      extensionLogger.logWarning(ExtensionUtils.format(FAILURE_MSG, email, fullName, language, body));
     }
   } catch(e) {
-    extensionLogger.logError(ExtensionUtils.format(FAILURE_MSG, email, name, language, e.getMessage ? e.getMessage() : e));
+    extensionLogger.logError(ExtensionUtils.format(FAILURE_MSG, email, fullName, language, e.message || e));
   }
 }

@@ -24,7 +24,7 @@ function executeScript(scriptEvent) {
     var keys = Object.keys(reservationForm.tickets);
     var containsModifiedElements = false;
     var out = [];
-    for (i = 0; i < keys.length; i++) {
+    for (var i = 0; i < keys.length; i++) {
         var uuid = keys[i];
         var attendee = reservationForm.tickets[uuid];
         var ticketInfo = ticketInfoByUuid[uuid];

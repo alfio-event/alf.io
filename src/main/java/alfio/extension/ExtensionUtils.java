@@ -22,7 +22,6 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mozilla.javascript.*;
 
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
@@ -31,7 +30,8 @@ import java.security.NoSuchAlgorithmException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.stream.Collectors;
 
 public class ExtensionUtils {
@@ -83,56 +83,8 @@ public class ExtensionUtils {
             .encodeToString(input.getBytes(StandardCharsets.UTF_8));
     }
 
-    /**
-     * Unwrap / convert all Scriptable object to their java native counterpart and transform to json
-     * <ul>
-     *     <li>NativeArray -> ArrayList</li>
-     *     <li>NativeJavaObject -> unwrapped java object</li>
-     *     <li>NativeObject -> LinkedHashMap</li>
-     *  </ul>
-     *
-     * @param o
-     * @return
-     */
     public static String convertToJson(Object o) {
-        return JSON_SERIALIZER.toJson(unwrap(o));
-    }
-
-    static Object unwrap(Object o) {
-        if (o instanceof Scriptable) {
-            if (o instanceof NativeArray na) {
-                List<Object> res = new ArrayList<>();
-                for (var a : na) {
-                    res.add(unwrap(a));
-                }
-                return res;
-            } else if (o instanceof NativeJavaObject object) {
-                return object.unwrap();
-            } else if (o instanceof NativeObject na) {
-                Map<Object, Object> res = new LinkedHashMap<>();
-                for (var kv : na.entrySet()) {
-                    res.put(kv.getKey(), unwrap(kv.getValue()));
-                }
-                return res;
-            } else if (o instanceof IdScriptableObject object) {
-                return parseIdScriptableObject(object);
-            }
-        } else if (o instanceof CharSequence) {
-            return o.toString();
-        }
-        return o;
-    }
-
-    private static Object parseIdScriptableObject(IdScriptableObject object) {
-        var className = object.getClassName();
-        return switch (className) {
-            case "String" -> ScriptRuntime.toCharSequence(object);
-            case "Boolean" -> Context.jsToJava(object, Boolean.class);
-            case "Date" -> Context.jsToJava(object, Date.class);
-            default ->
-                // better safe than sorry: we ignore all the unknown objects
-                null;
-        };
+        return JSON_SERIALIZER.toJson(o);
     }
 
     /**

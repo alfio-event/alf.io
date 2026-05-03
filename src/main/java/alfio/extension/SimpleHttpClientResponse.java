@@ -17,7 +17,6 @@
 package alfio.extension;
 
 import alfio.util.Json;
-import com.google.gson.JsonSyntaxException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -47,8 +46,8 @@ public class SimpleHttpClientResponse {
 
     private static <T> T tryParse(String body, Class<T> clazz) {
         try {
-            return Json.GSON.fromJson(body, clazz);
-        } catch (JsonSyntaxException jse) {
+            return Json.OBJECT_MAPPER.readValue(body, clazz);
+        } catch (Exception e) {
             return null;
         }
     }
