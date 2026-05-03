@@ -18,7 +18,10 @@ package alfio.controller.api.v1.admin;
 
 import alfio.manager.AccessService;
 import alfio.manager.PurchaseContextManager;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.system.Mailer;
+import alfio.model.Configurable;
 import alfio.model.Event;
 import alfio.model.PurchaseContext;
 import alfio.model.modification.ConfigurationModification;
@@ -33,6 +36,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,13 +50,16 @@ public class ConfigurationApiV1Controller {
     private final ConfigurationManager configurationManager;
     private final AccessService accessService;
     private final PurchaseContextManager purchaseContextManager;
+    private final Mailer mailer;
 
     public ConfigurationApiV1Controller(ConfigurationManager configurationManager,
                                         PurchaseContextManager purchaseContextManager,
-                                        AccessService accessService) {
+                                        AccessService accessService,
+                                        Mailer mailer) {
         this.configurationManager = configurationManager;
         this.accessService = accessService;
         this.purchaseContextManager = purchaseContextManager;
+        this.mailer = mailer;
     }
 
     @PutMapping("/organization/{organizationId}")
@@ -132,6 +139,26 @@ public class ConfigurationApiV1Controller {
 
 
         return ResponseEntity.ok().body("OK");
+    }
+
+    @PostMapping("/organization/{organizationId}/test-email")
+    public ResponseEntity<Void> testEmail(@RequestBody TestEmailRequest request,
+                                          @PathVariable int organizationId,
+                                          Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
+        var configLevel = ConfigurationLevel.organization(organizationId);
+        Configurable configurable = new Configurable() {
+            public ConfigurationLevel getConfigurationLevel() {
+                return configLevel;
+            }
+
+            public int getOrganizationId() {
+                return organizationId;
+            }
+        };
+
+        mailer.send(configurable, "alf.io", request.getEmail().trim(), Collections.emptyList(), request.getSubject().trim(), request.getText(), Optional.empty());
+        return ResponseEntity.ok().build();
     }
 
     static class ConfigurationKeyValue {
