@@ -181,7 +181,12 @@ public class ScriptingExecutionService {
             scope.put("console", scope, new ConsoleLogger(extensionLogger));
 
             // retrocompatibility
-            scope.put("Java", scope, new JavaClassInterop(Map.of("alfio.model.CustomerName", alfio.model.CustomerName.class), scope));
+            scope.put("Java", scope, new JavaClassInterop(
+                Map.of("alfio.model.CustomerName", alfio.model.CustomerName.class,
+                    "alfio.model.metadata.TicketMetadata", alfio.model.metadata.TicketMetadata.class,
+                    "alfio.model.metadata.JoinLink", alfio.model.metadata.JoinLink.class
+                ), 
+                scope));
 
             scope.put("returnClass", scope, clazz);
 
