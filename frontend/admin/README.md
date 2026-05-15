@@ -2,7 +2,7 @@
 
 Use lit element + shoelace style.
 
-Created with vite: `npm create vite@latest admin -- --template lit-ts`
+Created with vite: `pnpm create vite@latest admin -- --template lit-ts`
 
 See https://vitejs.dev/guide/backend-integration.html
 
@@ -10,14 +10,9 @@ See https://stackoverflow.com/a/76446465 for icon/static assets
 
 ## run dev server
 
-`npm run dev`
+`pnpm run dev`
 
 Then you can launch alf.io normally and go to localhost:8080/admin/ -> all the components exported in the main.ts will be available.
-
-## update deps
-
-> npx npm-check-updates -u
-> npm install
 
 ## todo
 
