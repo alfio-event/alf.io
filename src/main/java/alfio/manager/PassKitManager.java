@@ -178,7 +178,7 @@ public class PassKitManager {
             .passInformation(
                 new EventTicket()
                     .headerFields(List.of(
-                        new TextField("eventStartDate", "Date", ticketValidityStart.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withLocale(ticketLocale)))
+                        new TextField("eventStartDate", "Date", ticketValidityStart.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withLocale(ticketLocale)))
                     ))
                     .primaryFields(List.of(
                         new TextField("categoryId", event.getDisplayName(), category.getName())
