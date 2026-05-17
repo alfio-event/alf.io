@@ -30,18 +30,20 @@ class ItalianTaxIdValidatorTest {
     @ValueSource(strings = { "63828920585", "58148510561", "61579460223" })
     // note: the numbers above are random and as of 2021-02-06 they are not present in the italian database.
     void businessCodeValidationSuccess(String number) {
-        assertTrue(ItalianTaxIdValidator.validateFiscalCode(number));
+        assertTrue(ItalianTaxIdValidator.validateFiscalCode(number, true));
+        assertFalse(ItalianTaxIdValidator.validateFiscalCode(number, false));
     }
 
     @ParameterizedTest
     @ValueSource(strings = { "63828920583", "58148510562", "61579460221" })
     void businessCodeValidationFailure(String number) {
-        assertFalse(ItalianTaxIdValidator.validateFiscalCode(number));
+        assertFalse(ItalianTaxIdValidator.validateFiscalCode(number, false));
+        assertFalse(ItalianTaxIdValidator.validateFiscalCode(number, true));
     }
 
     @ParameterizedTest
     @ValueSource(strings = { "63828920585", "58148510561", "61579460223" })
-    // note: the numbers above are random and as of 2021-02-05 they are not present in the italian database.
+    // note: the numbers above are random, and as of 2021-02-05, they are not present in the italian database.
     void vatIdValidationSuccess(String number) {
         assertTrue(ItalianTaxIdValidator.validateVatId(number));
     }
@@ -56,32 +58,36 @@ class ItalianTaxIdValidatorTest {
     @ValueSource(strings = { "SMPHMR66A01B602I", "SMPLSI96L50C770S", "PRSBTL38H18H826X", "prsbtl38h18h826x" })
     // note: the numbers above are random
     void personalCodeValidationSuccess(String number) {
-        assertTrue(ItalianTaxIdValidator.validateFiscalCode(number));
+        assertTrue(ItalianTaxIdValidator.validateFiscalCode(number, true));
+        assertTrue(ItalianTaxIdValidator.validateFiscalCode(number, false));
     }
 
     @ParameterizedTest
     @ValueSource(strings = { "SMPHMR66A01B602F", "SMPLSI96L50C770A", "PRSBTL38H18H826S", "PRSBTL38H18H826", "PRSBTL38H18H826SX" })
     void personalCodeValidationFailure(String number) {
-        assertFalse(ItalianTaxIdValidator.validateFiscalCode(number));
+        assertFalse(ItalianTaxIdValidator.validateFiscalCode(number, true));
+        assertFalse(ItalianTaxIdValidator.validateFiscalCode(number, false));
     }
 
     @Test
     void validateNamePart() {
-        assertTrue(fiscalCodeMatchesWithName("Homer", "Simpson", "SMPHMR66A01B602I"));
-        assertTrue(fiscalCodeMatchesWithName("Lisa", "Simpson", "SMPLSI96L50C770S"));
-        assertTrue(fiscalCodeMatchesWithName("Lisà", "Sìmpsön", "SMPLSI96L50C770S"));
-        assertTrue(fiscalCodeMatchesWithName("Lisa Mary", "Simpson", "SMPLMR96S50F205L"));
-        assertTrue(fiscalCodeMatchesWithName("Gi", "Ma", "MAXGIX80E02F205R"));
-        assertTrue(fiscalCodeMatchesWithName("First", "Last", "63828920585"));
+        assertTrue(fiscalCodeMatchesWithName("Homer", "Simpson", "SMPHMR66A01B602I", false));
+        assertTrue(fiscalCodeMatchesWithName("Lisa", "Simpson", "SMPLSI96L50C770S", false));
+        assertTrue(fiscalCodeMatchesWithName("Lisà", "Sìmpsön", "SMPLSI96L50C770S", false));
+        assertTrue(fiscalCodeMatchesWithName("Lisa Mary", "Simpson", "SMPLMR96S50F205L", false));
+        assertTrue(fiscalCodeMatchesWithName("Gi", "Ma", "MAXGIX80E02F205R", false));
+        assertTrue(fiscalCodeMatchesWithName("First", "Last", "63828920585", true));
+        assertFalse(fiscalCodeMatchesWithName("First", "Last", "63828920585", false));
     }
 
     @Test
     void namePartValidationFailure() {
-        assertFalse(fiscalCodeMatchesWithName("Homer", "Simenon", "SMPHMR66A01B602I")); // should be: Simpson
-        assertFalse(fiscalCodeMatchesWithName("Lissa", "Simpson", "SMPLSI96L50C770S")); // should be: Lisa
-        assertFalse(fiscalCodeMatchesWithName("Lisa", "Simpson", "SMPLMR96S50F205L")); // should be: Lisa Mary
-        assertFalse(fiscalCodeMatchesWithName("Gi", "Mar", "MAXGIX80E02F205R")); // should be: Ma Gi
-        assertFalse(fiscalCodeMatchesWithName("First", "Last", "61579460221"));
+        assertFalse(fiscalCodeMatchesWithName("Homer", "Simenon", "SMPHMR66A01B602I", false)); // should be: Simpson
+        assertFalse(fiscalCodeMatchesWithName("Lissa", "Simpson", "SMPLSI96L50C770S", false)); // should be: Lisa
+        assertFalse(fiscalCodeMatchesWithName("Lisa", "Simpson", "SMPLMR96S50F205L", false)); // should be: Lisa Mary
+        assertFalse(fiscalCodeMatchesWithName("Gi", "Mar", "MAXGIX80E02F205R", false)); // should be: Ma Gi
+        assertFalse(fiscalCodeMatchesWithName("First", "Last", "61579460221", true));
+        assertFalse(fiscalCodeMatchesWithName("First", "Last", "61579460221", false));
     }
 
 }

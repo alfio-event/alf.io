@@ -70,12 +70,13 @@ public class ItalianTaxIdValidator {
     private ItalianTaxIdValidator() {
     }
 
-    public static boolean validateFiscalCode(String fiscalCode) {
+    public static boolean validateFiscalCode(String fiscalCode, boolean companyRegistration) {
         var code = StringUtils.upperCase(trimToNull(fiscalCode));
         int length = length(code);
         if(length == COMPANY_TAX_ID_LENGTH) {
-            // when length is 11 the fiscal code is equal to the VAT Number
-            return validateVatId(fiscalCode);
+            // when length is 11, the fiscal code is equal to the VAT Number
+            // This only applies to company reservations
+            return companyRegistration && validateVatId(fiscalCode);
         } else if(isBlank(code) || length != 16) {
             return false;
         }
@@ -88,8 +89,8 @@ public class ItalianTaxIdValidator {
         return chars[15] == CONTROL_CHARS[sum % 26];
     }
 
-    public static boolean fiscalCodeMatchesWithName(String firstName, String lastName, String fiscalCode) {
-        if(validateFiscalCode(fiscalCode)) {
+    public static boolean fiscalCodeMatchesWithName(String firstName, String lastName, String fiscalCode, boolean companyRegistration) {
+        if(validateFiscalCode(fiscalCode, companyRegistration)) {
             if(length(fiscalCode) == COMPANY_TAX_ID_LENGTH) {
                 // if the fiscal code belongs to a company then there's no point in checking the name in it
                 return true;

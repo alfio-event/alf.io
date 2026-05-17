@@ -258,10 +258,11 @@ public class ContactAndTicketsForm implements Serializable {
                 bindingResult.rejectValue("vatNr", "error.STEP_2_INVALID_VAT");
             }
 
-            boolean fiscalCodeValid = ItalianTaxIdValidator.validateFiscalCode(italyEInvoicingFiscalCode);
+            boolean companyRegistration = StringUtils.trimToNull(billingAddressCompany) != null;
+            boolean fiscalCodeValid = ItalianTaxIdValidator.validateFiscalCode(italyEInvoicingFiscalCode, companyRegistration);
             if(!fiscalCodeValid) {
                 bindingResult.rejectValue("italyEInvoicingFiscalCode", "error.restrictedValue");
-            } else if(!ItalianTaxIdValidator.fiscalCodeMatchesWithName(firstName, lastName, italyEInvoicingFiscalCode)) {
+            } else if(!ItalianTaxIdValidator.fiscalCodeMatchesWithName(firstName, lastName, italyEInvoicingFiscalCode, companyRegistration)) {
                 bindingResult.addWarning("warning.fiscal-code-name-mismatch");
             }
 
