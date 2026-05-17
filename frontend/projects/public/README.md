@@ -6,7 +6,9 @@ This is the "public" frontend of [alf.io](https://alf.io/).
 
 ## Development server
 
-Run `npm run start` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+Run `pnpm run start` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+
+(if `pnpm run start` fail, you must ensure you have done `pnpm install` in the "frontend" folder!)
 
 ## Code scaffolding
 
