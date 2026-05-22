@@ -1,0 +1,4 @@
+# Browserslist configuration
+last 2 versions
+not dead
+Safari >= 14
