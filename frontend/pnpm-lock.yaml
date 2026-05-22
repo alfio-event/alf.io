@@ -57,6 +57,9 @@ importers:
       '@types/jasmine':
         specifier: ~5.1.4
         version: 5.1.15
+      browserslist:
+        specifier: 4.28.2
+        version: 4.28.2
       jasmine-core:
         specifier: ~5.1.1
         version: 5.1.2
