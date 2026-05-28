@@ -28,6 +28,10 @@ public class SandboxNativeJavaObject extends NativeJavaObject {
 
     @Override
     public Object get(String name, Scriptable start) {
+        if (javaObject instanceof Class<?>) {
+            throw new OutOfBoundariesException("Out of boundaries class use.");
+        }
+
         if (name.equals("getClass")) {
             throw new OutOfBoundariesException("Out of boundaries class use.");
         }
