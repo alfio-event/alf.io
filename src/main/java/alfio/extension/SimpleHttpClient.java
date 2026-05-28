@@ -35,6 +35,18 @@ public class SimpleHttpClient {
 
     private static final Logger log = LoggerFactory.getLogger(SimpleHttpClient.class);
     private static final Set<String> NULL_REQUEST_BODY = Set.of("GET", "HEAD");
+    static final Path ALLOWED_TMP_FILE_DIR = Path.of(System.getProperty("java.io.tmpdir"), "alfio-extension");
+    private static final Path OUTPUT_FILE_DIR = Path.of(System.getProperty("java.io.tmpdir"), "alfio-extension-output");
+
+    static {
+        // make sure input and output directories exist
+        try {
+            Files.createDirectories(ALLOWED_TMP_FILE_DIR);
+            Files.createDirectories(OUTPUT_FILE_DIR);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
     private final HttpClient httpClient;
 
@@ -83,6 +95,10 @@ public class SimpleHttpClient {
     }
 
     public SimpleHttpClientCachedResponse postFileAndSaveResponse(String url, Map<String, String> headers, String file, String filename, String contentType) throws IOException {
+        Path resolved = Path.of(file).normalize().toAbsolutePath();
+        if (!resolved.startsWith(ALLOWED_TMP_FILE_DIR)) {
+            throw new SecurityException("File access outside allowed base directory ("+ALLOWED_TMP_FILE_DIR+")");
+        }
         var mpb = new HttpUtils.MultiPartBodyPublisher();
         mpb.addPart("file", () -> {
             try {
@@ -189,7 +205,7 @@ public class SimpleHttpClient {
         if (HttpUtils.callSuccessful(response)) {
             InputStream body = response.body();
             if (body != null) {
-                tempFile = Files.createTempFile("extension-out", ".tmp");
+                tempFile = Files.createTempFile(OUTPUT_FILE_DIR, "extension-out", ".tmp");
                 try (FileOutputStream out = new FileOutputStream(tempFile.toFile())) {
                     body.transferTo(out);
                 }
