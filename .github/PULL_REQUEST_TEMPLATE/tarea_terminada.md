@@ -1,26 +1,30 @@
-## Resumen del Cambio
-## Tipo de Tarea
-- [ ] Corrección de bug
-- [ ] Nueva Feature
-- [ ] Refuerzo de Cobertura (Solo tests nuevos)
-- [ ] Refactor / Deuda Técnica
+## Descripcion del Cambio
+## Tareas Enlazadas
+Closes #
 
 ---
 
-## Control de Calidad Interno (Evidencia Obligatoria)
-*El autor del PR debe marcar las pruebas ejecutadas localmente y adjuntar evidencia en la sección de abajo.*
+## Tipo de Tarea Asociada
+- [ ] TAREA/IMPLEMENTACIÓN (Codigo fuente, correccion de errores, refactorizacion)
+- [ ] TAREA/TESTING (Scripts de prueba, nuevas suites de automatizacion, configuracion de QA)
+- [ ] TAREA/DOCS (Manuales, guias tecnicas, planes de prueba, cambios en la wiki)
+- [ ] TAREA/GESTIÓN (Cambios en archivos de configuracion del proyecto, dependencias globales)
 
-| Nivel de Prueba | Estado | Suite / Comando ejecutado |
+---
+
+## Control de Calidad Interno y Pruebas (si aplica)
+| Nivel de Prueba Evaluado | Estado | Herramienta / Comando Ejecutado |
 | :--- | :---: | :--- |
-| **Pruebas Unitarias** | [ ] | `mvn test` (o equivalente) |
-| **Pruebas de Integración**| [ ] | Pruebas de persistencia / API |
-| **Pruebas de Sistema** | [ ] | Test de interfaz o flujo completo |
-| **Pruebas de Usuario** | [ ] | Verificación manual en entorno local |
+| Pruebas Unitarias | [ ] | ej. mvn test |
+| Pruebas de Integracion | [ ] | ej. Pruebas de persistencia con BD |
+| Pruebas de Sistema / E2E | [ ] | ej. Flujos completos automatizados |
+| Pruebas de Usuario / UAT | [ ] | Verificacion manual de criterios de aceptacion |
 
-### Evidencia de Pruebas
+### Evidencia de Pruebas (si aplica)
 ---
 
-## Checklist de Entrega
-- [ ] Mi código compila localmente sin warnings ni errores.
-- [ ] No he reducido la cobertura general de pruebas del repositorio.
-- [ ] Los pipelines de la CI de GitHub Actions pasan correctamente antes de solicitar la revisión.
+## Lista de Verificacion (Checklist)
+- [ ] El codigo compila localmente de manera limpia y cumple con las directrices de estilo del equipo.
+- [ ] Los cambios propuestos cumplen estrictamente con los criterios de aceptacion del Issue enlazado.
+- [ ] No se ha reducido la cobertura general de pruebas del repositorio con esta entrega.
+- [ ] Todos los pipelines de integracion continua (CI) en GitHub Actions se encuentran en estado exitoso (verde).

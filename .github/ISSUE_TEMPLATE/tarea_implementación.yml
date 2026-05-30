@@ -1,0 +1,62 @@
+name: TAREA/IMPLEMENTACIÓN
+description: Para asignar el desarrollo de código fuente, corrección de bugs o refactorizaciones en la lógica de negocio.
+title: "[TAREA/IMPLEMENTACIÓN]: "
+labels: ["implementación"]
+assignees: ""
+projects: catarinas-ps-2026/1
+type: tarea
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Esta tarea se enfoca en la modificación directa del código fuente del proyecto. Comprende el desarrollo de nuevas características, refactorización y resolución de errores de software.
+    - type: textarea
+      id: descripcion
+      attributes:
+          label: Descripción detallada
+          description: Proporciona una descripción detallada de los requisitos técnicos del cambio de código, la arquitectura afectada y posibles impactos colaterales.
+          placeholder: "Escribe aquí la descripción detallada de la tarea de implementación..."
+      validations:
+          required: true
+    - type: dropdown
+      id: tipo_implementacion
+      attributes:
+          label: Tipo de Implementación
+          description: Selecciona el carácter principal del cambio que se realizará en el código fuente.
+          multiple: false
+          options:
+              - Nueva Característica (Feature)
+              - Corrección de Error (Bug Fix)
+              - Refactorización / Optimización de Rendimiento
+              - Actualización de Dependencias / Seguridad
+      validations:
+          required: true
+    - type: input
+      id: impacto_arquitectura
+      attributes:
+          label: Impacto en la Arquitectura
+          description: Indica qué capas de la aplicación se modifican (ej. Capa de persistencia, lógica de negocio, controladores).
+          placeholder: "ej. Controladores REST y modelos de base de datos"
+      validations:
+          required: true
+    - type: textarea
+      id: entregables
+      attributes:
+          label: Entregables Específicos
+          description: Lista los módulos, lógica específica o APIs que deben quedar operativas.
+          placeholder: |
+              - [ ] Implementar el nuevo endpoint para la consulta de boletos.
+              - [ ] Modificar el esquema de migración de Flyway.
+      validations:
+          required: true
+    - type: checkboxes
+      id: criterios_aceptacion
+      attributes:
+          label: Definición de Terminado
+          description: Requisitos mínimos para considerar esta tarea como completada.
+          options:
+              - label: Se han culminado todos los entregables listados en la sección de entregables específicos.
+              - label: El código compila localmente de manera limpia, sin advertencias críticas ni errores.
+              - label: El código se asocia con su respectiva validación de pruebas unitarias o de integración según aplique.
+      validations:
+          required: true

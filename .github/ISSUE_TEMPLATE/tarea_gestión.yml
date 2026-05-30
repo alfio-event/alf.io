@@ -1,0 +1,76 @@
+name: TAREA/GESTIÓN
+description: Para asignar actividades de coordinación, planificación, organización del backlog o tareas administrativas.
+title: "[TAREA/GESTIÓN]: "
+labels: ["gestión"]
+assignees: ""
+projects: catarinas-ps-2026/1
+type: tarea
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Esta tarea se enfoca en actividades de gestión, organización y coordinación interna dentro del proyecto. No involucra cambios directos en el código fuente ni creación de artefactos técnicos de prueba.
+    - type: textarea
+      id: descripcion
+      attributes:
+          label: Descripción detallada
+          description: Proporciona una descripción detallada de la tarea de gestión, incluyendo el contexto organizativo, la necesidad técnica o de negocio y el impacto en el equipo.
+          placeholder: "Escribe aquí la descripción detallada de la tarea de gestión..."
+      validations:
+          required: true
+    - type: dropdown
+      id: tipo_gestion
+      attributes:
+          label: Tipo de Gestión
+          description: Selecciona el área o tipo de actividad de gestión a realizar.
+          multiple: false
+          options:
+              - Planificación de Sprint o Ciclo
+              - Refinamiento de Backlog
+              - Configuración de Herramientas de Proyecto
+      validations:
+          required: true
+    - type: input
+      id: impacto
+      attributes:
+          label: Impacto u Objetivos
+          description: ¿Cuál es el resultado esperado de esta gestión para el beneficio del equipo?
+          placeholder: "ej. Optimizar la velocidad del equipo, clarificar requerimientos de la pasarela"
+      validations:
+          required: true
+    - type: textarea
+      id: entregables
+      attributes:
+          label: Entregables Específicos
+          description: Lista los elementos, tableros, reportes o asignaciones que deben completarse.
+          placeholder: |
+              - [ ] Actualizar estados en el tablero del proyecto.
+              - [ ] Asignar prioridades a las historias de usuario de la fase 2.
+      validations:
+          required: true
+    - type: dropdown
+      id: ubicacion_final
+      attributes:
+          label: Ubicación Final
+          description: ¿Dónde se registrarán o impactarán los resultados de esta gestión?
+          multiple: true
+          options:
+              - GitHub Projects
+              - GitHub Issues
+              - GitHub Wiki
+              - GitHub Actions
+              - Pull Requests
+          default: 0
+      validations:
+          required: true
+    - type: checkboxes
+      id: criterios_aceptacion
+      attributes:
+          label: Definición de Terminado
+          description: Requisitos mínimos para considerar esta tarea como completada.
+          options:
+              - label: Se han culminado todos los entregables listados en la sección de entregables específicos.
+              - label: Los cambios organizativos han sido notificados o son visibles para todo el equipo.
+              - label: Las prioridades y dependencias quedan claramente establecidas en el entorno de trabajo.
+      validations:
+          required: true
