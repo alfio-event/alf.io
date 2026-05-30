@@ -3,7 +3,7 @@ description: Para agendar, estructurar el orden del día y consolidar las minuta
 title: "[TAREA/REUNIONES]: "
 labels: ["reuniones"]
 assignees: ""
-projects: catarinas-ps-2026/1
+projects: ["catarinas-ps-2026/1"]
 type: tarea
 body:
     - type: markdown

@@ -3,7 +3,7 @@ description: Para asignar el diseño, ejecución y automatización de suites de 
 title: "[TAREA/TESTING]: "
 labels: ["testing"]
 assignees: ""
-projects: catarinas-ps-2026/1
+projects: ["catarinas-ps-2026/1"]
 type: tarea
 body:
     - type: markdown

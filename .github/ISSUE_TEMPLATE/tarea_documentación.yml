@@ -3,7 +3,7 @@ description: Para asignar la creación de suites de prueba.
 title: "[TAREA/DOCS]: "
 labels: ["documentación"]
 assignees: ""
-projects: catarinas-ps-2026/1
+projects: ["catarinas-ps-2026/1"]
 type: tarea
 body:
     - type: markdown

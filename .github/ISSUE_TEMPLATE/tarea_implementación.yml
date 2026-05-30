@@ -3,7 +3,7 @@ description: Para asignar el desarrollo de código fuente, corrección de bugs o
 title: "[TAREA/IMPLEMENTACIÓN]: "
 labels: ["implementación"]
 assignees: ""
-projects: catarinas-ps-2026/1
+projects: ["catarinas-ps-2026/1"]
 type: tarea
 body:
     - type: markdown

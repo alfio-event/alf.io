@@ -3,7 +3,7 @@ description: Para asignar actividades de coordinación, planificación, organiza
 title: "[TAREA/GESTIÓN]: "
 labels: ["gestión"]
 assignees: ""
-projects: catarinas-ps-2026/1
+projects: ["catarinas-ps-2026/1"]
 type: tarea
 body:
     - type: markdown
