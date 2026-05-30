@@ -1,0 +1,73 @@
+name: TAREA/DOCS
+description: Para asignar la creación de suites de prueba.
+title: "[TAREA/DOCS]: "
+labels: ["documentación"]
+projects: ["catarinas-ps-2026/1"]
+type: tarea
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Esta tarea se enfoca en documentación de cualquier tipo en el proyecto. Puede ser para describir funcionalidades, crear guías de uso, o documentar procesos internos.
+    - type: textarea
+      id: descripcion
+      attributes:
+          label: Descripción detallada
+          description: Proporciona una descripción detallada de la tarea de documentación, incluyendo los objetivos específicos, el alcance y cualquier información relevante que pueda ayudar a los colaboradores a entender lo que se espera de esta tarea.
+          placeholder: "Escribe aquí la descripción detallada de la tarea de documentación..."
+      validations:
+          required: true
+    - type: dropdown
+      id: tipo_documento
+      attributes:
+          label: Tipo de Documentación
+          description: Selecciona qué tipo de documento se va a generar o actualizar.
+          multiple: false
+          options:
+              - Guía de Usuario
+              - Documentación Técnica
+              - Planes de Prueba
+              - Procesos Internos del Equipo
+      validations:
+          required: true
+    - type: input
+      id: audiencia
+      attributes:
+          label: Público Objetivo
+          description: ¿Quién va a leer este documento? (ej. Desarrolladores, Product Owners, Usuarios Finales)
+          placeholder: "ej. Equipo de QA / Desarrolladores backend"
+      validations:
+          required: true
+    - type: textarea
+      id: entregables
+      attributes:
+          label: Entregables Específicos
+          description: Lista los documentos, archivos o secciones exactas que deben completarse.
+          placeholder: |
+              - [ ] Crear archivo manual_checkin.md en la wiki.
+              - [ ] Actualizar el diagrama de flujo de pagos en Miro.
+      validations:
+          required: true
+    - type: dropdown
+      id: ubicacion_final
+      attributes:
+          label: Ubicación Final
+          description: ¿Dónde se ubicara esta documentación?
+          multiple: true
+          options:
+              - GitHub Wiki
+              - GitHub Pages
+          default: 0
+      validations:
+          required: true
+    - type: checkboxes
+      id: criterios_aceptacion
+      attributes:
+          label: Definición de Terminado
+          description: Requisitos mínimos para considerar esta tarea como completada.
+          options:
+              - label: Se han culminado todos los entregables listados en la sección de entregables específicos.
+              - label: La redacción es clara, técnica y libre de errores ortográficos.
+              - label: Se incluyen capturas de pantalla o diagramas actualizados.
+      validations:
+          required: true

@@ -1,0 +1,53 @@
+name: TAREA/REUNIONES
+description: Para agendar, estructurar el orden del día y consolidar las minutas de las sesiones técnicas o de coordinación del equipo.
+title: "[TAREA/REUNIONES]: "
+labels: ["reuniones"]
+projects: ["catarinas-ps-2026/1"]
+type: tarea
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Esta tarea sirve para registrar las sesiones de trabajo sincrónicas, definir los temas a tratar con antelación y almacenar los acuerdos o compromisos derivados de las mismas.
+    - type: textarea
+      id: descripcion
+      attributes:
+          label: Descripción detallada
+          description: Detalla el propósito principal de Sla reunión, la justificación de la sesión y el contexto para los participantes internos convocados.
+          placeholder: "Escribe aquí la descripción detallada de la reunión..."
+      validations:
+          required: true
+    - type: dropdown
+      id: tipo_reunion
+      attributes:
+          label: Tipo de Reunión
+          description: Clasificación de la sesión dentro de las actividades operativas de la organización.
+          multiple: false
+          options:
+              - Daily Scrum
+              - Revisión de Avances / Retrospectiva
+              - Sesión Técnica de Arquitectura
+              - Reunión Extraordinaria de Coordinación
+      validations:
+          required: true
+    - type: textarea
+      id: entregables
+      attributes:
+          label: Agenda
+          description: Temas a discutir previos a la sesión y espacio reservado para la minuta de acuerdos y tareas asignadas.
+          placeholder: |
+              - [ ] Punto de agenda 1: Revisión de bloqueos en pruebas de integración.
+              - [ ] Registro de compromisos, fechas límites y responsables acordados.
+      validations:
+          required: true
+    - type: checkboxes
+      id: criterios_aceptacion
+      attributes:
+          label: Definición de Terminado
+          description: Requisitos mínimos para considerar esta tarea como completada.
+          options:
+              - label: Se ha llegado a un acuerdo respecto a todos los temas de la agenda.
+              - label: Los acuerdos clave han sido redactados de forma concisa y son accesibles para todo el equipo.
+              - label: Todas las acciones derivadas de la reunión se han transformado en sus respectivas tareas individuales dentro del proyecto.
+      validations:
+          required: true

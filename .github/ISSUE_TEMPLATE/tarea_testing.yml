@@ -1,0 +1,61 @@
+name: TAREA/TESTING
+description: Para asignar el diseño, ejecución y automatización de suites de prueba en sus diferentes niveles.
+title: "[TAREA/TESTING]: "
+labels: ["testing"]
+projects: ["catarinas-ps-2026/1"]
+type: tarea
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Esta tarea se enfoca en el proceso completo de aseguramiento de calidad y pruebas. Incluye la creación de scripts de automatización, ejecución de planes y validaciones.
+    - type: textarea
+      id: descripcion
+      attributes:
+          label: Descripción detallada
+          description: Proporciona una descripción detallada de la tarea de pruebas, incluyendo los objetivos de cobertura, flujos de la aplicación afectados y consideraciones de automatización.
+          placeholder: "Escribe aquí la descripción detallada de la tarea de testing..."
+      validations:
+          required: true
+    - type: dropdown
+      id: nivel_prueba
+      attributes:
+          label: Nivel de Prueba
+          description: Selecciona el nivel principal de la pirámide de pruebas que cubre esta tarea.
+          multiple: false
+          options:
+              - Pruebas Unitarias
+              - Pruebas de Integración
+              - Pruebas de Sistema
+              - Pruebas de Aceptación
+      validations:
+          required: true
+    - type: input
+      id: componente_afectado
+      attributes:
+          label: Componente Afectado
+          description: Módulo, servicio o API de alf.io que será sometido a pruebas (ej. pasarela de pago, motor de reservas).
+          placeholder: "ej. API de autenticación / Generación de tickets"
+      validations:
+          required: true
+    - type: textarea
+      id: entregables
+      attributes:
+          label: Entregables Específicos
+          description: Lista los scripts de prueba, configuraciones de entorno o reportes esperados.
+          placeholder: |
+              - [ ] Desarrollar clases de prueba automatizadas con JUnit.
+              - [ ] Configurar Testcontainers para simular la base de datos PostgreSQL.
+      validations:
+          required: true
+    - type: checkboxes
+      id: criterios_aceptacion
+      attributes:
+          label: Definición de Terminado (Definición de Terminado)
+          description: Requisitos mínimos para considerar esta tarea como completada.
+          options:
+              - label: Se han culminado todos los entregables listados en la sección de entregables específicos.
+              - label: Las pruebas automatizadas creadas pasan localmente de manera exitosa y sin intermitencias.
+              - label: Se mantiene o incrementa el porcentaje de cobertura de código establecido por la organización.
+      validations:
+          required: true
