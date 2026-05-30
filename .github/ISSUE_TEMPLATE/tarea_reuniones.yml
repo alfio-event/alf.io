@@ -2,7 +2,6 @@ name: TAREA/REUNIONES
 description: Para agendar, estructurar el orden del día y consolidar las minutas de las sesiones técnicas o de coordinación del equipo.
 title: "[TAREA/REUNIONES]: "
 labels: ["reuniones"]
-assignees: ""
 projects: ["catarinas-ps-2026/1"]
 type: tarea
 body:

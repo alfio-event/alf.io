@@ -2,7 +2,6 @@ name: TAREA/TESTING
 description: Para asignar el diseño, ejecución y automatización de suites de prueba en sus diferentes niveles.
 title: "[TAREA/TESTING]: "
 labels: ["testing"]
-assignees: ""
 projects: ["catarinas-ps-2026/1"]
 type: tarea
 body:

@@ -2,7 +2,6 @@ name: TAREA/IMPLEMENTACIÓN
 description: Para asignar el desarrollo de código fuente, corrección de bugs o refactorizaciones en la lógica de negocio.
 title: "[TAREA/IMPLEMENTACIÓN]: "
 labels: ["implementación"]
-assignees: ""
 projects: ["catarinas-ps-2026/1"]
 type: tarea
 body:

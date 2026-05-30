@@ -2,7 +2,6 @@ name: TAREA/GESTIÓN
 description: Para asignar actividades de coordinación, planificación, organización del backlog o tareas administrativas.
 title: "[TAREA/GESTIÓN]: "
 labels: ["gestión"]
-assignees: ""
 projects: ["catarinas-ps-2026/1"]
 type: tarea
 body:
