@@ -116,11 +116,17 @@
                 if (!window.USER_IS_OWNER) {
                     return $q.reject('not authorized');
                 }
+                if (key === 'BASE_URL') {
+                    return $q.resolve({data: window.BASE_URL || ''});
+                }
                 return $http.get('/admin/api/configuration/events/'+eventName+'/single/'+key).error(HttpErrorHandler.handle)
             },
             loadSingleConfigForOrganization: function(organizationId, key) {
                 if (!window.USER_IS_OWNER) {
                     return $q.reject('not authorized');
+                }
+                if (key === 'BASE_URL') {
+                    return $q.resolve({data: window.BASE_URL || ''});
                 }
                 return $http.get('/admin/api/configuration/organizations/'+organizationId+'/single/'+key).error(HttpErrorHandler.handle)
             },
