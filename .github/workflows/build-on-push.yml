@@ -28,6 +28,11 @@ jobs:
                   java-version: 17
                   distribution: temurin
             - name: Build with Gradle
+              env:
+                  DOCKER_HOST: ${{ env.DOCKER_HOST }}
+                  DOCKER_TLS_VERIFY: ${{ env.DOCKER_TLS_VERIFY }}
+                  DOCKER_CERT_PATH: ${{ env.DOCKER_CERT_PATH }}
+                  TESTCONTAINERS_RYUK_DISABLED: "true"
               run: ./gradlew build distribution jacocoTestReport -Dpgsql.version=${{ matrix.postgresql }}
             - name: Upload coverage to Codecov
               if: ${{ matrix.postgresql == '16'}}
