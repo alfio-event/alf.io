@@ -28,7 +28,12 @@ jobs:
                   java-version: 17
                   distribution: temurin
             - name: Build with Gradle
-              run: ./gradlew build distribution jacocoTestReport -Dpgsql.version=${{ matrix.postgresql }}
+              run: |
+                  ./gradlew build distribution jacocoTestReport \
+                  -Dpgsql.version=${{ matrix.postgresql }} \
+                  -Ddocker.host=tcp://dind:2376 \
+                  -Ddocker.tls.verify=1 \
+                  -Ddocker.cert.path=/certs/client
             - name: Upload coverage to Codecov
               if: ${{ matrix.postgresql == '16'}}
               uses: codecov/codecov-action@v5
