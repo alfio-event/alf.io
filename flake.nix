@@ -38,6 +38,9 @@
               jdk17
               jdt-language-server
               gradle
+              pnpm
+              nodejs
+              postgresql
               nixd
             ];
 
