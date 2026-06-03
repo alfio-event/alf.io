@@ -2,5 +2,4 @@
 
 #### How to...
 
-- [Configure Apple(tm) Pass integration](howto/configuration/apple-pass/index.md)
-- [Configure Stripe for Strong Customer Authentication](howto/configuration/stripe-sca/index.md)
+- [Use the built Docker image](howto/docker.md)

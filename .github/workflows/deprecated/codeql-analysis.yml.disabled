@@ -1,0 +1,49 @@
+name: "Code scanning - action"
+
+on:
+    push:
+    pull_request:
+    schedule:
+        - cron: "0 0 * * *"
+
+jobs:
+    CodeQL-Build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  # We must fetch at least the immediate parents so that if this is
+                  # a pull request then we can checkout the head.
+                  fetch-depth: 2
+
+            # Initializes the CodeQL tools for scanning.
+            - name: Initialize CodeQL
+              uses: github/codeql-action/init@v2
+              # Override language selection by uncommenting this and choosing your languages
+              # with:
+              #   languages: go, javascript, csharp, python, cpp, java
+
+            - name: Set up JDK
+              uses: actions/setup-java@v4
+              with:
+                  java-version: 17
+                  distribution: temurin
+
+            - name: Build with Gradle
+              run: ./gradlew build -x test
+
+            # ℹ️ Command-line programs to run using the OS shell.
+            # 📚 https://git.io/JvXDl
+
+            # ✏️ If the Autobuild fails above, remove it and uncomment the following three lines
+            #    and modify them (or add more) to build your code if your project
+            #    uses a compiled language
+
+            #- run: |
+            #   make bootstrap
+            #   make release
+
+            - name: Perform CodeQL Analysis
+              uses: github/codeql-action/analyze@v2
