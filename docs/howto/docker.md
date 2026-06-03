@@ -51,7 +51,7 @@ services:
       retries: 5
 
   alfio:
-    image: ghcr.io/alfio-event/alf.io:latest
+    image: ghcr.io/catarinas-ps-2026/alf.io:latest
     ports:
       - "8080:8080"
     environment:
@@ -59,6 +59,7 @@ services:
       - DATASOURCE_USERNAME=postgres
       - DATASOURCE_PASSWORD=password
       - SPRING_PROFILES_ACTIVE=prod
+      # - ALFIO_OVERRIDE_SYSTEM_SETTINGS_HTTPS_FORCE_REDIRECT=false - for running behind a reverse proxy 
     depends_on:
       db:
         condition: service_healthy
