@@ -8,9 +8,6 @@ on:
 jobs:
     build:
         uses: ./.github/workflows/build.yml
-        with:
-            postgresql_versions: '["10"]'
-            run_tests: false
         secrets: inherit
 
     publish:
