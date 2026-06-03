@@ -15,14 +15,12 @@ RUN "$JAVA_HOME/bin/jlink" --compress=2 --strip-java-debug-attributes --no-heade
     --output /jlinked
 
 RUN /jlinked/bin/java -Xshare:dump -XX:+UseSerialGC -version
-RUN "$JAVA_HOME/bin/java" -Djarmode=tools -jar alfio-boot.jar extract --destination /cds && \
-    (cd /cds && java -XX:ArchiveClassesAtExit=alfio-cds.jsa -Dspring.profiles.active=app-cds -Dspring.context.exit=onRefresh -jar alfio-boot.jar)
-
+RUN "$JAVA_HOME/bin/java" -Djarmode=tools -jar alfio-boot.jar extract --destination /cds
 
 FROM alpine:3.19
 LABEL org.opencontainers.image.source=https://github.com/alfio-event/alf.io
 
-ENV LANG en_US.UTF-8
+ENV LANG=en_US.UTF-8
 ENV ALFIO_JAVA_OPTS=""
 ENV ALFIO_PERFORMANCE_OPTS="-Dspring.jmx.enabled=false -Dlog4j2.disableJmx=true"
 
@@ -41,7 +39,6 @@ USER 1001
 # Define working directory.
 WORKDIR /home/alfio/app
 
-CMD /opt/jdk/bin/java $ALFIO_JAVA_OPTS $ALFIO_PERFORMANCE_OPTS -XX:+UseContainerSupport \
-    -XX:SharedArchiveFile=alfio-cds.jsa -jar alfio-boot.jar
+CMD /opt/jdk/bin/java $ALFIO_JAVA_OPTS $ALFIO_PERFORMANCE_OPTS -XX:+UseContainerSupport -jar alfio-boot.jar
 
 EXPOSE 8080

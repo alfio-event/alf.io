@@ -54,22 +54,22 @@ public enum PlatformProvider {
 
         @Override
         public String getUrl(Environment env) {
-            String dbHost = Objects.requireNonNull(System.getenv("OPENSHIFT_POSTGRESQL_DB_HOST"), "OPENSHIFT_POSTGRESQL_DB_HOST env variable is missing");
-            String port = Objects.requireNonNull(System.getenv("OPENSHIFT_POSTGRESQL_DB_PORT"), "OPENSHIFT_POSTGRESQL_DB_PORT env variable is missing");
-            String dbName = Objects.requireNonNull(System.getenv("OPENSHIFT_APP_NAME"), "OPENSHIFT_APP_NAME env variable is missing");
+            String dbHost = env.getRequiredProperty("OPENSHIFT_POSTGRESQL_DB_HOST");
+            String port = env.getRequiredProperty("OPENSHIFT_POSTGRESQL_DB_PORT");
+            String dbName = env.getRequiredProperty("OPENSHIFT_APP_NAME");
 
             return "jdbc:postgresql://" + dbHost + ":" + port + "/" + dbName;
         }
 
         @Override
         public String getUsername(Environment env) {
-            return Objects.requireNonNull(System.getenv("OPENSHIFT_POSTGRESQL_DB_USERNAME"), "OPENSHIFT_POSTGRESQL_DB_USERNAME env variable is missing");
+            return env.getRequiredProperty("OPENSHIFT_POSTGRESQL_DB_USERNAME");
         }
 
 
         @Override
         public String getPassword(Environment env) {
-            return Objects.requireNonNull(System.getenv("OPENSHIFT_POSTGRESQL_DB_PASSWORD"), "OPENSHIFT_POSTGRESQL_DB_PASSWORD env variable is missing");
+            return env.getRequiredProperty("OPENSHIFT_POSTGRESQL_DB_PASSWORD");
         }
 
         @Override
@@ -148,26 +148,26 @@ public enum PlatformProvider {
 
         @Override
         public String getUrl(Environment env) {
-            String dbHost = Objects.requireNonNull(System.getenv("POSTGRES_PORT_5432_TCP_ADDR"), "POSTGRES_PORT_5432_TCP_ADDR env variable is missing");
-            String port = Objects.requireNonNull(System.getenv("POSTGRES_PORT_5432_TCP_PORT"), "POSTGRES_PORT_5432_TCP_PORT env variable is missing");
-            String dbName = Objects.requireNonNull(System.getenv("POSTGRES_ENV_POSTGRES_DB"), "POSTGRES_ENV_POSTGRES_DB env variable is missing");
+            String dbHost = env.getRequiredProperty("POSTGRES_PORT_5432_TCP_ADDR");
+            String port = env.getRequiredProperty("POSTGRES_PORT_5432_TCP_PORT");
+            String dbName = env.getRequiredProperty("POSTGRES_ENV_POSTGRES_DB");
             return "jdbc:postgresql://" + dbHost + ":" + port + "/" + dbName;
         }
 
         @Override
         public String getUsername(Environment env) {
-            return Objects.requireNonNull(System.getenv("POSTGRES_ENV_POSTGRES_USERNAME"), "POSTGRES_ENV_POSTGRES_USERNAME env variable is missing");
+            return env.getRequiredProperty("POSTGRES_ENV_POSTGRES_USERNAME");
         }
 
 
         @Override
         public String getPassword(Environment env) {
-            return Objects.requireNonNull(System.getenv("POSTGRES_ENV_POSTGRES_PASSWORD"), "POSTGRES_ENV_POSTGRES_PASSWORD env variable is missing");
+            return env.getRequiredProperty("POSTGRES_ENV_POSTGRES_PASSWORD");
         }
 
         @Override
         public boolean isHosting(Environment env) {
-            return ofNullable(System.getenv("POSTGRES_ENV_POSTGRES_DB")).isPresent();
+            return ofNullable(env.getProperty("POSTGRES_ENV_POSTGRES_DB")).isPresent();
         }
     },
 
