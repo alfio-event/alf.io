@@ -29,6 +29,7 @@ import alfio.manager.user.UserManager;
 import alfio.model.user.User;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
+import alfio.model.system.ConfigurationKeys;
 import jakarta.servlet.Filter;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.Cookie;
@@ -177,7 +178,8 @@ abstract class AbstractFormBasedWebSecurity {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, StripeConnectManager stripeConnectManager, MollieConnectManager mollieConnectManager) throws Exception {
-        if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE))) {
+        if (configurationManager.getForSystem(ConfigurationKeys.HTTPS_FORCE_REDIRECT).getValue().map(Boolean::parseBoolean)
+            .orElseGet(() -> environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)))) {
             http.redirectToHttps(customizer -> customizer.requestMatchers(new NegatedRequestMatcher(antStyleMatcher("/healthz"))));
         }
 

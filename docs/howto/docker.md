@@ -35,8 +35,6 @@ Using Docker Compose is the recommended way to run Alf.io, as it allows you to m
 Create a `docker-compose.yml` file with the following content:
 
 ```yaml
-version: '3.8'
-
 services:
   db:
     image: postgres:15
