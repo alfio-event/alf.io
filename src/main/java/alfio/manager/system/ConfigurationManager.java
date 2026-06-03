@@ -598,6 +598,10 @@ public class ConfigurationManager {
     public Map<ConfigurationKeys, MaybeConfiguration> getFor(Collection<ConfigurationKeys> keys, ConfigurationLevel configurationLevel) {
         var keysAsString = keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toSet());
         List<ConfigurationKeyValuePathLevel> found = new ArrayList<>(externalConfiguration.getAll(keysAsString));
+        for (ConfigurationKeys key : keys) {
+            Optional.ofNullable(environment.getProperty("ALFIO_OVERRIDE_SYSTEM_SETTINGS_" + key.name()))
+                .ifPresent(v -> found.add(new ConfigurationKeyValuePathLevel(key.getValue(), v, ConfigurationPathLevel.EXTERNAL)));
+        }
         switch(configurationLevel.getPathLevel()) {
             case SYSTEM:
                 found.addAll(configurationRepository.findByKeysAtSystemLevel(keysAsString));
@@ -867,6 +871,21 @@ public class ConfigurationManager {
             configurationRepository.insert(SYSTEM_API_KEY.name(), apiKeyValue, SYSTEM_API_KEY.getDescription());
         }
         return apiKeyValue;
+    }
+
+    public void seedSystemSettings() {
+        for (ConfigurationKeys key : ConfigurationKeys.values()) {
+            if (key == NOT_RECOGNIZED) {
+                continue;
+            }
+            Optional.ofNullable(environment.getProperty("ALFIO_OVERRIDE_SYSTEM_SETTINGS_" + key.name()))
+                .or(() -> Optional.ofNullable(externalConfiguration.getSettings().get(key.name())))
+                .ifPresent(value -> {
+                    if (configurationRepository.findByKeyAtSystemLevel(key.getValue()).isEmpty()) {
+                        saveSystemConfiguration(key, value);
+                    }
+                });
+        }
     }
 
     private String generateApiKey() {

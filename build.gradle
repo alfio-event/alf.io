@@ -75,9 +75,7 @@ ext {
     datasourceUsername = 'postgres'
     datasourcePassword = 'password'
     datasourceValidationQuery = 'SELECT 1'
-    //springProfilesActive = 'dev
-    //springProfilesActive = 'dev,demo'
-    springProfilesActive = 'dev'
+    springProfilesActive = profile
     port = "8080"
 
 
@@ -87,6 +85,7 @@ ext {
             datasourceUsername = 'postgres'
             datasourcePassword = 'postgres'
             datasourceValidationQuery = 'SELECT 1'
+            springProfilesActive = 'dev'
             break
         case 'travis':
             project.springProfilesActive = 'travis'

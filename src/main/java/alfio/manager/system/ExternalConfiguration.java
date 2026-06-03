@@ -59,7 +59,16 @@ public class ExternalConfiguration {
     }
 
     public Optional<Configuration> getSingle(String key) {
-        return Optional.ofNullable(settings.get(key)).map(value -> new Configuration(EXTERNAL_CONFIGURATION_ID, key, value, ConfigurationPathLevel.EXTERNAL));
+        return Optional.ofNullable(settings.get(key))
+            .or(() -> settings.entrySet().stream()
+                .filter(e -> normalize(e.getKey()).equals(normalize(key)))
+                .map(Map.Entry::getValue)
+                .findFirst())
+            .map(value -> new Configuration(EXTERNAL_CONFIGURATION_ID, key, value, ConfigurationPathLevel.EXTERNAL));
+    }
+
+    private static String normalize(String s) {
+        return s.toLowerCase().replace("_", "").replace("-", "");
     }
 
     public List<ConfigurationKeyValuePathLevel> getAll(Collection<String> keys) {
