@@ -1,41 +1,41 @@
 name: build
 
 on:
-  workflow_call:
-    inputs:
-      upload_artifact:
-        required: false
-        type: boolean
-        default: true
+    workflow_call:
+        inputs:
+            upload_artifact:
+                required: false
+                type: boolean
+                default: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-      - uses: actions/cache@v4
-        with:
-          path: ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('**/gradlew') }}
-          restore-keys: |
-            ${{ runner.os }}-gradlew-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: 17
-          distribution: temurin
-      - name: Build with Gradle
-        run: ./gradlew distribution -x test
-      - name: 'Upload Build'
-        if: ${{ inputs.upload_artifact }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: build
-          retention-days: 5
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/cache@v4
+              with:
+                  path: ~/.gradle/caches
+                  key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+                  restore-keys: |
+                      ${{ runner.os }}-gradle-
+            - uses: actions/cache@v4
+              with:
+                  path: ~/.gradle/wrapper
+                  key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('**/gradlew') }}
+                  restore-keys: |
+                      ${{ runner.os }}-gradlew-
+            - name: Set up JDK
+              uses: actions/setup-java@v4
+              with:
+                  java-version: 17
+                  distribution: temurin
+            - name: Build with Gradle
+              run: ./gradlew distribution -x test
+            - name: "Upload Build"
+              if: ${{ inputs.upload_artifact }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: dist
+                  path: build
+                  retention-days: 5
