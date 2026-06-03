@@ -1,7 +1,7 @@
 name: "E2E Test"
 on:
     schedule:
-        - cron:  '0 4 * * *'
+        - cron: "0 4 * * *"
     workflow_dispatch:
 
 jobs:
@@ -9,7 +9,7 @@ jobs:
         if: github.repository == 'alfio-event/alf.io'
         strategy:
             matrix:
-                browser: ['chrome', 'firefox', 'safari']
+                browser: ["chrome", "firefox", "safari"]
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
@@ -30,8 +30,8 @@ jobs:
               with:
                   java-version: 17
                   distribution: temurin
-            - name: 'BrowserStack Env Setup'
-              uses: 'browserstack/github-actions/setup-env@master'
+            - name: "BrowserStack Env Setup"
+              uses: "browserstack/github-actions/setup-env@master"
               with:
                   username: ${{ secrets.BROWSERSTACK_USERNAME }}
                   access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
