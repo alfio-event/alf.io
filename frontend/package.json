@@ -7,10 +7,12 @@
     "build": "ng build public",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "vitest": "pnpm --prefix projects/public test:run && pnpm --prefix admin test:run",
+    "coverage": "pnpm --prefix projects/public coverage && pnpm --prefix admin coverage",
     "eslint": "ng lint",
     "format": "biome format . --write",
     "format:check": "biome format .",
-    "postinstall": "pnpm --prefix projects/public ci"
+    "postinstall": "pnpm --prefix projects/public ci && pnpm --prefix admin ci"
   },
   "private": true,
   "dependencies": {

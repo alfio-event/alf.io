@@ -3,15 +3,16 @@ import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 
 export default defineConfig({
-    plugins:
-    viteStaticCopy({
-      targets: [
-        {
-          src: 'node_modules/@shoelace-style/shoelace/dist/assets/icons/*.svg',
-          dest: 'shoelace/assets/icons'
-        }
-      ]
-    }),
+    plugins: [
+        viteStaticCopy({
+            targets: [
+                {
+                    src: 'node_modules/@shoelace-style/shoelace/dist/assets/icons/*.svg',
+                    dest: 'shoelace/assets/icons'
+                }
+            ]
+        })
+    ],
     build: {
         // generate .vite/manifest.json in outDir
         manifest: true,
@@ -22,5 +23,13 @@ export default defineConfig({
     },
     server: {
         origin: 'http://127.0.0.1:8080',
+    },
+    test: {
+        globals: true,
+        environment: 'jsdom',
+        coverage: {
+            provider: 'v8',
+            reporter: ['text', 'json', 'html'],
+        },
     },
 });

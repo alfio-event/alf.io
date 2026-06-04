@@ -1,0 +1,79 @@
+name: Test Push
+
+on:
+    push:
+        branches:
+            - main
+
+permissions:
+    contents: write
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                postgresql: ["10", "15", "16"]
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up JDK 17
+              uses: actions/setup-java@v4
+              with:
+                  java-version: 17
+                  distribution: temurin
+                  cache: gradle
+
+            - uses: pnpm/action-setup@v3
+              with:
+                  version: 11.1.2
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: "pnpm"
+                  cache-dependency-path: frontend/pnpm-lock.yaml
+
+            - name: Run Backend Tests
+              run: ./gradlew test jacocoTestReport -Dpgsql.version=${{ matrix.postgresql }}
+
+            - name: Run Frontend Tests
+              if: matrix.postgresql == '16'
+              run: |
+                  pnpm --prefix frontend install
+                  pnpm --prefix frontend run coverage
+
+            - name: Prepare Coverage for Deployment
+              if: matrix.postgresql == '16'
+              run: |
+                  mkdir -p public-coverage
+                  mkdir -p public-coverage/backend
+                  mkdir -p public-coverage/frontend-admin
+                  mkdir -p public-coverage/frontend-public
+                  cp -r build/reports/jacoco/test/html/* public-coverage/backend/
+                  cp -r frontend/admin/coverage/* public-coverage/frontend-admin/
+                  cp -r frontend/projects/public/coverage/* public-coverage/frontend-public/
+                  cat <<EOF > public-coverage/index.html
+                  <!DOCTYPE html>
+                  <html>
+                  <head><title>Coverage Reports - main branch</title></head>
+                  <body>
+                  <h1>Coverage Reports - main branch</h1>
+                  <ul>
+                  <li><a href="backend/index.html">Backend (Jacoco)</a></li>
+                  <li><a href="frontend-admin/index.html">Frontend Admin</a></li>
+                  <li><a href="frontend-public/index.html">Frontend Public</a></li>
+                  </ul>
+                  </body>
+                  </html>
+                  EOF
+
+            - name: Deploy Coverage to GitHub Pages
+              if: matrix.postgresql == '16'
+              uses: peaceiris/actions-gh-pages@v4
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: ./public-coverage
+                  keep_files: true
