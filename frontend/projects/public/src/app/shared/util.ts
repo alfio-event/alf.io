@@ -8,7 +8,7 @@ import type {
     ReservationInfo,
     ReservationStatus,
 } from '../model/reservation-info';
-import type { ReservationService } from './reservation.service';
+import { ReservationService } from './reservation.service';
 
 export const DELETE_ACCOUNT_CONFIRMATION = 'alfio.delete-account.confirmation';
 

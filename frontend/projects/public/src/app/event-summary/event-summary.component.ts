@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import type { TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import type { DateValidity } from '../model/date-validity';
 import type { Event } from '../model/event';
 

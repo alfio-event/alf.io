@@ -1,6 +1,6 @@
 import { Component, type OnInit } from '@angular/core';
 import type { Info } from '../model/info';
-import type { InfoService } from '../shared/info.service';
+import { InfoService } from '../shared/info.service';
 import { getFromSessionStorage, writeToSessionStorage } from '../shared/util';
 
 const hideAnnouncementBannerKey = 'alfio.hideAnnouncementBanner';

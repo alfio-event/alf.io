@@ -1,4 +1,4 @@
-import type { HttpClient } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { type Observable, of } from 'rxjs';
 import { shareReplay } from 'rxjs/operators';

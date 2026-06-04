@@ -1,7 +1,7 @@
 import { Component, type OnInit } from '@angular/core';
 import type { UntypedFormArray, UntypedFormGroup } from '@angular/forms';
-import type { ActivatedRoute, Router } from '@angular/router';
-import type { TranslateService } from '@ngx-translate/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { first } from 'rxjs/operators';
 import { ReservationStatusChanged } from '../../model/embedding-configuration';
 import type { Event } from '../../model/event';
@@ -12,12 +12,12 @@ import type {
     TicketsByTicketCategory,
 } from '../../model/reservation-info';
 import type { Ticket } from '../../model/ticket';
-import type { AnalyticsService } from '../../shared/analytics.service';
-import type { EventService } from '../../shared/event.service';
-import type { I18nService } from '../../shared/i18n.service';
-import type { InfoService } from '../../shared/info.service';
-import type { ReservationService } from '../../shared/reservation.service';
-import type { TicketService } from '../../shared/ticket.service';
+import { AnalyticsService } from '../../shared/analytics.service';
+import { EventService } from '../../shared/event.service';
+import { I18nService } from '../../shared/i18n.service';
+import { InfoService } from '../../shared/info.service';
+import { ReservationService } from '../../shared/reservation.service';
+import { TicketService } from '../../shared/ticket.service';
 import {
     embedded,
     type GroupedAdditionalServiceWithData,

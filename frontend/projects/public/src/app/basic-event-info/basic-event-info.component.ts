@@ -1,6 +1,6 @@
 import { Component, Input, type OnInit } from '@angular/core';
 import type { Params } from '@angular/router';
-import type { TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import type { BasicEventInfo } from '../model/basic-event-info';
 import { getLocalizedContent } from '../shared/subscription.service';
 

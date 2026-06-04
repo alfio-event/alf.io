@@ -1,9 +1,9 @@
 import { Component, type OnInit } from '@angular/core';
-import type { ActivatedRoute } from '@angular/router';
-import type { TranslateService } from '@ngx-translate/core';
+import { ActivatedRoute } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import type { Event } from '../model/event';
-import type { EventService } from '../shared/event.service';
-import type { I18nService } from '../shared/i18n.service';
+import { EventService } from '../shared/event.service';
+import { I18nService } from '../shared/i18n.service';
 
 @Component({
     selector: 'app-live-poll',

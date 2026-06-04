@@ -1,10 +1,10 @@
 import { Component, type OnInit } from '@angular/core';
-import type { ActivatedRoute, Router, UrlSerializer } from '@angular/router';
+import { ActivatedRoute, Router, UrlSerializer } from '@angular/router';
 import { zip } from 'rxjs';
-import type { I18nService } from '../../shared/i18n.service';
-import type {
+import { I18nService } from '../../shared/i18n.service';
+import {
     PurchaseContextService,
-    PurchaseContextType,
+    type PurchaseContextType,
 } from '../../shared/purchase-context.service';
 
 @Component({

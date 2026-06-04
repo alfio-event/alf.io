@@ -1,11 +1,11 @@
-import type { HttpClient } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import type {
     UntypedFormArray,
     UntypedFormBuilder,
     UntypedFormGroup,
 } from '@angular/forms';
-import type { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { from, type Observable, of } from 'rxjs';
 import { map, mergeMap } from 'rxjs/operators';
 import type { DateValidity } from '../model/date-validity';
@@ -20,7 +20,7 @@ import type { User } from '../model/user';
 import type { ValidatedResponse } from '../model/validated-response';
 import { DownloadTicketComponent } from '../reservation/download-ticket/download-ticket.component';
 import { ReleaseTicketComponent } from '../reservation/release-ticket/release-ticket.component';
-import type { AdditionalFieldService } from './additional-field.service';
+import { AdditionalFieldService } from './additional-field.service';
 
 @Injectable({
     providedIn: 'root',

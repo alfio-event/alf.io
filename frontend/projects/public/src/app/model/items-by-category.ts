@@ -1,4 +1,4 @@
-import type { AdditionalService } from './additional-service';
+import { AdditionalService } from './additional-service';
 import type { TicketCategory } from './ticket-category';
 
 export class ItemsByCategory {

@@ -1,4 +1,4 @@
-import type { ReservationStatus } from './reservation-info';
+import { ReservationStatus } from './reservation-info';
 
 export class ReservationStatusChanged {
     constructor(

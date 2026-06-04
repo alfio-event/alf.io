@@ -8,7 +8,7 @@ import {
 import { type Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { handleCustomCss } from './shared/custom-css-helper';
-import type { EventService } from './shared/event.service';
+import { EventService } from './shared/event.service';
 
 @Injectable({
     providedIn: 'root',

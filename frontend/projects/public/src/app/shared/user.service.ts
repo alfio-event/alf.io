@@ -1,4 +1,4 @@
-import type { HttpClient } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, isDevMode } from '@angular/core';
 import { BehaviorSubject, type Observable, of } from 'rxjs';
 import { map, mergeMap, tap } from 'rxjs/operators';

@@ -7,7 +7,7 @@ import {
     type SimpleChanges,
 } from '@angular/core';
 import type { UntypedFormGroup } from '@angular/forms';
-import type { I18nService } from 'projects/public/src/app/shared/i18n.service';
+import { I18nService } from 'projects/public/src/app/shared/i18n.service';
 import type {
     CustomOfflinePayment,
     PaymentMethodId,

@@ -1,6 +1,6 @@
 import { Component, type OnInit } from '@angular/core';
-import type { ActivatedRoute } from '@angular/router';
-import type { TranslateService } from '@ngx-translate/core';
+import { ActivatedRoute } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { zip } from 'rxjs';
 import type { BasicEventInfo } from '../../model/basic-event-info';
 import { ReservationStatusChanged } from '../../model/embedding-configuration';
@@ -11,15 +11,15 @@ import type {
 } from '../../model/reservation-info';
 import { SearchParams } from '../../model/search-params';
 import type { SubscriptionInfo } from '../../model/subscription';
-import type { AnalyticsService } from '../../shared/analytics.service';
-import type { EventService } from '../../shared/event.service';
-import type { FeedbackService } from '../../shared/feedback/feedback.service';
-import type { I18nService } from '../../shared/i18n.service';
-import type {
+import { AnalyticsService } from '../../shared/analytics.service';
+import { EventService } from '../../shared/event.service';
+import { FeedbackService } from '../../shared/feedback/feedback.service';
+import { I18nService } from '../../shared/i18n.service';
+import {
     PurchaseContextService,
-    PurchaseContextType,
+    type PurchaseContextType,
 } from '../../shared/purchase-context.service';
-import type { ReservationService } from '../../shared/reservation.service';
+import { ReservationService } from '../../shared/reservation.service';
 import { embedded, pollReservationStatus } from '../../shared/util';
 
 @Component({

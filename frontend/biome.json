@@ -27,6 +27,11 @@
     },
 
     "linter": {
-        "enabled": false
+        "enabled": false,
+        "rules": {
+            "style": {
+                "useImportType": "off"
+            }
+        }
     }
 }

@@ -7,13 +7,13 @@ import {
 } from '@angular/core';
 import {
     type FormArray,
-    type UntypedFormBuilder,
+    UntypedFormBuilder,
     type UntypedFormGroup,
     Validators,
 } from '@angular/forms';
-import type { ActivatedRoute, Router } from '@angular/router';
-import type { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import type { TranslateService } from '@ngx-translate/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { TranslateService } from '@ngx-translate/core';
 import { type Observable, of, Subject, zip } from 'rxjs';
 import { first } from 'rxjs/operators';
 import { ReservationStatusChanged } from '../../model/embedding-configuration';
@@ -34,17 +34,17 @@ import type {
 } from '../../model/ticket';
 import { ANONYMOUS, type User } from '../../model/user';
 import type { ErrorDescriptor } from '../../model/validated-response';
-import type { AdditionalFieldService } from '../../shared/additional-field.service';
-import type { AnalyticsService } from '../../shared/analytics.service';
-import type { FeedbackService } from '../../shared/feedback/feedback.service';
-import type { I18nService } from '../../shared/i18n.service';
-import type {
+import { AdditionalFieldService } from '../../shared/additional-field.service';
+import { AnalyticsService } from '../../shared/analytics.service';
+import { FeedbackService } from '../../shared/feedback/feedback.service';
+import { I18nService } from '../../shared/i18n.service';
+import {
     PurchaseContextService,
-    PurchaseContextType,
+    type PurchaseContextType,
 } from '../../shared/purchase-context.service';
-import type { ReservationService } from '../../shared/reservation.service';
-import type { TicketService } from '../../shared/ticket.service';
-import type { UserService } from '../../shared/user.service';
+import { ReservationService } from '../../shared/reservation.service';
+import { TicketService } from '../../shared/ticket.service';
+import { UserService } from '../../shared/user.service';
 import { embedded } from '../../shared/util';
 import {
     getErrorObject,

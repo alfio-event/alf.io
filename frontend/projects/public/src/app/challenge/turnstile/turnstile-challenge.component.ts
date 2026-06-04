@@ -6,7 +6,7 @@ import {
     type OnDestroy,
     Output,
 } from '@angular/core';
-import type { I18nService } from '../../shared/i18n.service';
+import { I18nService } from '../../shared/i18n.service';
 import { ChallengeError } from '../challenge.service';
 
 let idCallback = 0;

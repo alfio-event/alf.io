@@ -1,18 +1,18 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, type OnInit } from '@angular/core';
-import type { ActivatedRoute, Router } from '@angular/router';
-import type { TranslateService } from '@ngx-translate/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { zip } from 'rxjs';
 import type { Event } from '../model/event';
 import type { WalletConfiguration } from '../model/info';
 import type { AdditionalField } from '../model/ticket';
 import type { TicketInfo } from '../model/ticket-info';
-import type { AnalyticsService } from '../shared/analytics.service';
-import type { EventService } from '../shared/event.service';
-import type { I18nService } from '../shared/i18n.service';
-import type { InfoService } from '../shared/info.service';
-import type { TicketService } from '../shared/ticket.service';
+import { AnalyticsService } from '../shared/analytics.service';
+import { EventService } from '../shared/event.service';
+import { I18nService } from '../shared/i18n.service';
+import { InfoService } from '../shared/info.service';
+import { TicketService } from '../shared/ticket.service';
 import {
     type GroupedAdditionalServiceWithData,
     groupAdditionalData,

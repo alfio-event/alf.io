@@ -1,6 +1,6 @@
 import { Component, type OnInit } from '@angular/core';
-import type { ActivatedRoute, Router } from '@angular/router';
-import type { TranslateService } from '@ngx-translate/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { zip } from 'rxjs';
 import { mergeMap } from 'rxjs/operators';
 import type { BasicEventInfo } from '../model/basic-event-info';
@@ -9,11 +9,11 @@ import { globalTermsPrivacyLinks } from '../model/info';
 import { filterAvailableLanguages } from '../model/purchase-context';
 import { SearchParams } from '../model/search-params';
 import type { BasicSubscriptionInfo } from '../model/subscription';
-import type { AnalyticsService } from '../shared/analytics.service';
-import type { EventService } from '../shared/event.service';
-import type { I18nService } from '../shared/i18n.service';
-import type { InfoService } from '../shared/info.service';
-import type { SubscriptionService } from '../shared/subscription.service';
+import { AnalyticsService } from '../shared/analytics.service';
+import { EventService } from '../shared/event.service';
+import { I18nService } from '../shared/i18n.service';
+import { InfoService } from '../shared/info.service';
+import { SubscriptionService } from '../shared/subscription.service';
 
 @Component({
     selector: 'app-home',

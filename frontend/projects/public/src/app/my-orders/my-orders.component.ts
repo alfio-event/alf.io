@@ -1,14 +1,14 @@
 import { Component, type OnInit } from '@angular/core';
 import type { IconProp } from '@fortawesome/fontawesome-svg-core';
-import type { TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import type { Language } from '../model/event';
 import type {
     PurchaseContextWithReservation,
     ReservationHeader,
 } from '../model/user';
-import type { I18nService } from '../shared/i18n.service';
+import { I18nService } from '../shared/i18n.service';
 import { getLocalizedContent } from '../shared/subscription.service';
-import type { UserService } from '../shared/user.service';
+import { UserService } from '../shared/user.service';
 
 @Component({
     selector: 'app-my-orders',

@@ -5,15 +5,15 @@ import {
     type OnInit,
     ViewChild,
 } from '@angular/core';
-import type {
-    UntypedFormArray,
+import {
+    type UntypedFormArray,
     UntypedFormBuilder,
-    UntypedFormGroup,
+    type UntypedFormGroup,
 } from '@angular/forms';
-import type { ActivatedRoute, Router } from '@angular/router';
-import type { TranslateService } from '@ngx-translate/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { debounceTime, Subject, type Subscription, zip } from 'rxjs';
-import type { AdditionalService } from '../model/additional-service';
+import { AdditionalService } from '../model/additional-service';
 import type { Event as AlfioEvent } from '../model/event';
 import type { DynamicDiscount, EventCode } from '../model/event-code';
 import type {
@@ -25,11 +25,11 @@ import { SearchParams } from '../model/search-params';
 import type { TicketCategory } from '../model/ticket-category';
 import { ErrorDescriptor } from '../model/validated-response';
 import type { WaitingListSubscriptionRequest } from '../model/waiting-list-subscription-request';
-import type { AnalyticsService } from '../shared/analytics.service';
-import type { EventService } from '../shared/event.service';
-import type { FeedbackService } from '../shared/feedback/feedback.service';
-import type { I18nService } from '../shared/i18n.service';
-import type { ReservationService } from '../shared/reservation.service';
+import { AnalyticsService } from '../shared/analytics.service';
+import { EventService } from '../shared/event.service';
+import { FeedbackService } from '../shared/feedback/feedback.service';
+import { I18nService } from '../shared/i18n.service';
+import { ReservationService } from '../shared/reservation.service';
 import { handleServerSideValidationError } from '../shared/validation-helper';
 
 @Component({

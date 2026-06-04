@@ -1,18 +1,18 @@
 import {
     Directive,
-    type ElementRef,
+    ElementRef,
     Input,
     type OnDestroy,
     type OnInit,
     Optional,
 } from '@angular/core';
-import type {
-    AbstractControl,
+import {
+    type AbstractControl,
     FormControlName,
-    UntypedFormGroup,
-    ValidationErrors,
+    type UntypedFormGroup,
+    type ValidationErrors,
 } from '@angular/forms';
-import type { TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import type { Subscription } from 'rxjs';
 import type { ErrorDescriptor } from '../model/validated-response';
 import { removeDOMNode } from './event.service';

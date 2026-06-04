@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import type { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup } from '@angular/forms';
 import type { AdditionalField } from '../model/ticket';
 import type { UserAdditionalData } from '../model/user';
 

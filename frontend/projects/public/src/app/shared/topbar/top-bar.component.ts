@@ -5,12 +5,12 @@ import {
     type OnDestroy,
     type OnInit,
 } from '@angular/core';
-import type { Router } from '@angular/router';
+import { Router } from '@angular/router';
 import type { Subscription } from 'rxjs';
 import type { Language } from '../../model/event';
 import { ANONYMOUS, type User } from '../../model/user';
-import type { FeedbackService } from '../feedback/feedback.service';
-import type { UserService } from '../user.service';
+import { FeedbackService } from '../feedback/feedback.service';
+import { UserService } from '../user.service';
 import {
     DELETE_ACCOUNT_CONFIRMATION,
     getFromSessionStorage,

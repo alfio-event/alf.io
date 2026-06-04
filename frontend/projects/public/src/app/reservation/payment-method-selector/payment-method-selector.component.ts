@@ -6,7 +6,7 @@ import {
     Output,
 } from '@angular/core';
 import type { UntypedFormGroup } from '@angular/forms';
-import type { I18nService } from 'projects/public/src/app/shared/i18n.service';
+import { I18nService } from 'projects/public/src/app/shared/i18n.service';
 import {
     type CustomOfflinePayment,
     type PaymentMethodDetails,
@@ -19,7 +19,7 @@ import {
 import type { PurchaseContext } from '../../model/purchase-context';
 import type { ReservationInfo } from '../../model/reservation-info';
 import type { PaymentProvider } from '../../payment/payment-provider';
-import type { ReservationService } from '../../shared/reservation.service';
+import { ReservationService } from '../../shared/reservation.service';
 
 @Component({
     selector: 'app-payment-method-selector',

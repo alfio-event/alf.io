@@ -1,16 +1,16 @@
 import { Component, type OnInit } from '@angular/core';
-import type { ActivatedRoute } from '@angular/router';
-import type { TranslateService } from '@ngx-translate/core';
+import { ActivatedRoute } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { zip } from 'rxjs';
 import type { PurchaseContext } from '../../model/purchase-context';
 import type { ReservationInfo } from '../../model/reservation-info';
-import type { AnalyticsService } from '../../shared/analytics.service';
-import type { I18nService } from '../../shared/i18n.service';
-import type {
+import { AnalyticsService } from '../../shared/analytics.service';
+import { I18nService } from '../../shared/i18n.service';
+import {
     PurchaseContextService,
-    PurchaseContextType,
+    type PurchaseContextType,
 } from '../../shared/purchase-context.service';
-import type { ReservationService } from '../../shared/reservation.service';
+import { ReservationService } from '../../shared/reservation.service';
 
 @Component({
     selector: 'app-deferred-offline-payment',

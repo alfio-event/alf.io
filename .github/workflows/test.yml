@@ -1,4 +1,4 @@
-name: test
+name: Run test suites
 
 on:
     pull_request:
@@ -42,3 +42,27 @@ jobs:
               uses: codecov/test-results-action@v1
               with:
                   token: ${{ secrets.CODECOV_TOKEN }}
+
+    build-frontend:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Set up JDK
+              uses: actions/setup-java@v4
+              with:
+                  java-version: 17
+                  distribution: temurin
+            - uses: actions/cache@v4
+              with:
+                  path: ~/.gradle/caches
+                  key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+                  restore-keys: |
+                      ${{ runner.os }}-gradle-
+            - uses: actions/cache@v4
+              with:
+                  path: ~/.gradle/wrapper
+                  key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('**/gradlew') }}
+                  restore-keys: |
+                      ${{ runner.os }}-gradlew-
+            - name: Build Frontend
+              run: ./gradlew frontendBuild frontendAdminBuild

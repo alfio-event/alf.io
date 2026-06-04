@@ -3,11 +3,11 @@ import type {
     ActivatedRouteSnapshot,
     RouterStateSnapshot,
 } from '@angular/router';
-import type { TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import type { Observable } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
-import type { I18nService } from './shared/i18n.service';
-import type {
+import { I18nService } from './shared/i18n.service';
+import {
     PurchaseContextService,
     PurchaseContextType,
 } from './shared/purchase-context.service';

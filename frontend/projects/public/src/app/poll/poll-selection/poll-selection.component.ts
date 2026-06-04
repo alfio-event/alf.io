@@ -1,16 +1,16 @@
 import { Component, type OnInit } from '@angular/core';
-import type {
-    FormControl,
-    FormGroup,
+import {
+    type FormControl,
+    type FormGroup,
     UntypedFormBuilder,
 } from '@angular/forms';
-import type { ActivatedRoute, Router } from '@angular/router';
-import type { TranslateService } from '@ngx-translate/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { combineLatest } from 'rxjs';
 import type { ErrorDescriptor } from '../../model/validated-response';
 import { handleServerSideValidationError } from '../../shared/validation-helper';
 import type { Poll } from '../model/poll';
-import type { PollService } from '../shared/poll.service';
+import { PollService } from '../shared/poll.service';
 
 @Component({
     selector: 'app-poll-selection',

@@ -1,4 +1,4 @@
-import type { HttpClient } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 import type { ValidatedResponse } from '../../model/validated-response';

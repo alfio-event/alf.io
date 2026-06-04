@@ -1,9 +1,9 @@
 import { Component, Input, type OnDestroy, type OnInit } from '@angular/core';
-import type { TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import type { Event } from '../../model/event';
 import type { PurchaseContext } from '../../model/purchase-context';
 import { removeDOMNode } from '../event.service';
-import type { I18nService } from '../i18n.service';
+import { I18nService } from '../i18n.service';
 import type { PurchaseContextType } from '../purchase-context.service';
 
 @Component({

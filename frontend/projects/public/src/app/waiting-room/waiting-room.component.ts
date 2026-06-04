@@ -1,16 +1,16 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, type OnInit } from '@angular/core';
-import type { ActivatedRoute, Router } from '@angular/router';
-import type { TranslateService } from '@ngx-translate/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { zip } from 'rxjs';
 import { mergeMap } from 'rxjs/operators';
 import type { DateValidity } from '../model/date-validity';
 import type { Event } from '../model/event';
 import type { Ticket } from '../model/ticket';
-import type { AnalyticsService } from '../shared/analytics.service';
-import type { EventService } from '../shared/event.service';
-import type { I18nService } from '../shared/i18n.service';
-import type { TicketService } from '../shared/ticket.service';
+import { AnalyticsService } from '../shared/analytics.service';
+import { EventService } from '../shared/event.service';
+import { I18nService } from '../shared/i18n.service';
+import { TicketService } from '../shared/ticket.service';
 
 @Component({
     selector: 'app-waiting-room',
