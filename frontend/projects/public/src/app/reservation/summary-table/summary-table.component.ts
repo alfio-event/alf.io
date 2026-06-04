@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import type { TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import type { PurchaseContext } from '../../model/purchase-context';
 import type { ReservationInfo, SummaryRow } from '../../model/reservation-info';
 import type { PurchaseContextType } from '../../shared/purchase-context.service';

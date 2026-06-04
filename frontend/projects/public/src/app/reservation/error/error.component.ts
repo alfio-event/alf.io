@@ -1,9 +1,9 @@
 import { Component, type OnInit } from '@angular/core';
-import type { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { zip } from 'rxjs';
 import type { PurchaseContext } from '../../model/purchase-context';
-import type { I18nService } from '../../shared/i18n.service';
-import type { PurchaseContextService } from '../../shared/purchase-context.service';
+import { I18nService } from '../../shared/i18n.service';
+import { PurchaseContextService } from '../../shared/purchase-context.service';
 
 @Component({
     selector: 'app-error',

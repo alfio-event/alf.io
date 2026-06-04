@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Component, Input } from '@angular/core';
-import type { TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import type { SubscriptionOwner } from '../model/reservation-info';
 import type { SubscriptionSummaryData } from '../model/subscription';
 import type { AdditionalField } from '../model/ticket';

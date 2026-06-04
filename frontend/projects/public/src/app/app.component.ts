@@ -1,7 +1,7 @@
 import { Component, type OnDestroy } from '@angular/core';
-import type { TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import type { Subscription } from 'rxjs';
-import type { I18nService } from './shared/i18n.service';
+import { I18nService } from './shared/i18n.service';
 
 @Component({
     selector: 'app-root',

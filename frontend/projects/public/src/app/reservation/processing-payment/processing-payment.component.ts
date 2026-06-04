@@ -1,16 +1,16 @@
 import { Component, type OnDestroy, type OnInit } from '@angular/core';
-import type { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { zip } from 'rxjs';
 import type { PurchaseContext } from '../../model/purchase-context';
 import type { ReservationInfo } from '../../model/reservation-info';
 import { SearchParams } from '../../model/search-params';
-import type { AnalyticsService } from '../../shared/analytics.service';
-import type { I18nService } from '../../shared/i18n.service';
-import type {
+import { AnalyticsService } from '../../shared/analytics.service';
+import { I18nService } from '../../shared/i18n.service';
+import {
     PurchaseContextService,
-    PurchaseContextType,
+    type PurchaseContextType,
 } from '../../shared/purchase-context.service';
-import type { ReservationService } from '../../shared/reservation.service';
+import { ReservationService } from '../../shared/reservation.service';
 import { notifyPaymentErrorToParent } from '../../shared/util';
 
 @Component({

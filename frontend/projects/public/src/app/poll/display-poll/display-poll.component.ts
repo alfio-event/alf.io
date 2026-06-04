@@ -1,11 +1,11 @@
 import { Component, type OnInit } from '@angular/core';
-import type { FormGroup, UntypedFormBuilder } from '@angular/forms';
-import type { ActivatedRoute } from '@angular/router';
-import type { TranslateService } from '@ngx-translate/core';
+import { FormGroup, UntypedFormBuilder } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { combineLatest } from 'rxjs';
 import type { PollVoteForm } from '../model/poll-vote-form';
 import type { PollWithOptions } from '../model/poll-with-options';
-import type { PollService } from '../shared/poll.service';
+import { PollService } from '../shared/poll.service';
 
 @Component({
     selector: 'app-display-poll',

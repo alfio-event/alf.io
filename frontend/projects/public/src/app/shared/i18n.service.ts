@@ -1,7 +1,7 @@
-import type { HttpClient } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import type { Title } from '@angular/platform-browser';
-import { NavigationStart, type Router } from '@angular/router';
+import { Title } from '@angular/platform-browser';
+import { NavigationStart, Router } from '@angular/router';
 import type {
     LangChangeEvent,
     TranslateLoader,
@@ -12,7 +12,7 @@ import { catchError, map, mergeMap, shareReplay, tap } from 'rxjs/operators';
 import type { Language } from '../model/event';
 import type { LocalizedCountry } from '../model/localized-country';
 import type { PurchaseContext } from '../model/purchase-context';
-import type { EventService } from './event.service';
+import { EventService } from './event.service';
 import type { PurchaseContextType } from './purchase-context.service';
 import {
     getFromSessionStorage,

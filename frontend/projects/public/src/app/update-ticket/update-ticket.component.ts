@@ -1,17 +1,17 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, type OnInit } from '@angular/core';
 import type { UntypedFormGroup } from '@angular/forms';
-import type { ActivatedRoute, Router } from '@angular/router';
-import type { TranslateService } from '@ngx-translate/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { zip } from 'rxjs';
 import type { Event } from '../model/event';
 import type { TicketsByTicketCategory } from '../model/reservation-info';
 import type { Ticket } from '../model/ticket';
 import type { TicketAccessType } from '../model/ticket-category';
-import type { AnalyticsService } from '../shared/analytics.service';
-import type { EventService } from '../shared/event.service';
-import type { I18nService } from '../shared/i18n.service';
-import type { TicketService } from '../shared/ticket.service';
+import { AnalyticsService } from '../shared/analytics.service';
+import { EventService } from '../shared/event.service';
+import { I18nService } from '../shared/i18n.service';
+import { TicketService } from '../shared/ticket.service';
 import { handleServerSideValidationError } from '../shared/validation-helper';
 
 @Component({

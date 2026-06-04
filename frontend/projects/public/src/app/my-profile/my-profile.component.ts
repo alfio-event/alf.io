@@ -1,20 +1,20 @@
 import { Component, type OnInit } from '@angular/core';
 import {
-    type UntypedFormBuilder,
+    UntypedFormBuilder,
     type UntypedFormGroup,
     Validators,
 } from '@angular/forms';
-import type { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import type { TranslateService } from '@ngx-translate/core';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { TranslateService } from '@ngx-translate/core';
 import { zip } from 'rxjs';
 import type { InvoicingConfiguration, Language } from '../model/event';
 import type { User, UserAdditionalData } from '../model/user';
 import type { ErrorDescriptor } from '../model/validated-response';
 import { BookingComponent } from '../reservation/booking/booking.component';
-import type { FeedbackService } from '../shared/feedback/feedback.service';
-import type { I18nService } from '../shared/i18n.service';
-import type { InfoService } from '../shared/info.service';
-import type { UserService } from '../shared/user.service';
+import { FeedbackService } from '../shared/feedback/feedback.service';
+import { I18nService } from '../shared/i18n.service';
+import { InfoService } from '../shared/info.service';
+import { UserService } from '../shared/user.service';
 import {
     DELETE_ACCOUNT_CONFIRMATION,
     writeToSessionStorage,

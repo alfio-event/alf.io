@@ -1,9 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import type { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { from, type Observable, throwError } from 'rxjs';
 import { catchError, mergeMap, tap } from 'rxjs/operators';
-import type { InfoService } from '../shared/info.service';
+import { InfoService } from '../shared/info.service';
 import { ChallengeComponent } from './challenge.component';
 
 @Injectable({

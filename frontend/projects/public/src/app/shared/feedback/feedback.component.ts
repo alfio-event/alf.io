@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import type { IconProp } from '@fortawesome/fontawesome-svg-core';
 import type { FeedbackType } from '../../model/feedback';
-import type { FeedbackService } from './feedback.service';
+import { FeedbackService } from './feedback.service';
 
 @Component({
     selector: 'app-feedback',

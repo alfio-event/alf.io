@@ -4,10 +4,10 @@ import {
     type OnInit,
     ViewChild,
 } from '@angular/core';
-import type { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
-import type { ActivatedRoute, NavigationExtras, Router } from '@angular/router';
-import type { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import type { TranslateService } from '@ngx-translate/core';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { ActivatedRoute, NavigationExtras, Router } from '@angular/router';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { TranslateService } from '@ngx-translate/core';
 import { zip } from 'rxjs';
 import {
     type CustomOfflinePayment,
@@ -30,14 +30,14 @@ import {
     type PaymentStatusNotification,
     SimplePaymentProvider,
 } from '../../payment/payment-provider';
-import type { AnalyticsService } from '../../shared/analytics.service';
-import type { FeedbackService } from '../../shared/feedback/feedback.service';
-import type { I18nService } from '../../shared/i18n.service';
-import type {
+import { AnalyticsService } from '../../shared/analytics.service';
+import { FeedbackService } from '../../shared/feedback/feedback.service';
+import { I18nService } from '../../shared/i18n.service';
+import {
     PurchaseContextService,
-    PurchaseContextType,
+    type PurchaseContextType,
 } from '../../shared/purchase-context.service';
-import type { ReservationService } from '../../shared/reservation.service';
+import { ReservationService } from '../../shared/reservation.service';
 import { notifyPaymentErrorToParent } from '../../shared/util';
 import {
     handleServerSideValidationError,

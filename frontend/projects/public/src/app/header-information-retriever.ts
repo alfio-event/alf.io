@@ -8,7 +8,7 @@ import {
 import { Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import type { UserService } from './shared/user.service';
+import { UserService } from './shared/user.service';
 
 @Injectable()
 export class HeaderInformationRetriever implements HttpInterceptor {

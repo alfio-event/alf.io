@@ -1,10 +1,10 @@
 import { Component, type OnDestroy, type OnInit } from '@angular/core';
-import type { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { type Subscription, zip } from 'rxjs';
 import type { PurchaseContext } from '../model/purchase-context';
-import type {
+import {
     PurchaseContextService,
-    PurchaseContextType,
+    type PurchaseContextType,
 } from '../shared/purchase-context.service';
 
 @Component({

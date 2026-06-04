@@ -1,14 +1,14 @@
 import { Component, type OnInit } from '@angular/core';
-import type { ActivatedRoute, Router } from '@angular/router';
-import type { TranslateService } from '@ngx-translate/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { zip } from 'rxjs';
 import type { SubscriptionInfo } from '../model/subscription';
 import type { ErrorDescriptor } from '../model/validated-response';
-import type { AnalyticsService } from '../shared/analytics.service';
-import type { FeedbackService } from '../shared/feedback/feedback.service';
-import type { I18nService } from '../shared/i18n.service';
-import type { InfoService } from '../shared/info.service';
-import type { SubscriptionService } from '../shared/subscription.service';
+import { AnalyticsService } from '../shared/analytics.service';
+import { FeedbackService } from '../shared/feedback/feedback.service';
+import { I18nService } from '../shared/i18n.service';
+import { InfoService } from '../shared/info.service';
+import { SubscriptionService } from '../shared/subscription.service';
 import { getErrorObject } from '../shared/validation-helper';
 
 @Component({

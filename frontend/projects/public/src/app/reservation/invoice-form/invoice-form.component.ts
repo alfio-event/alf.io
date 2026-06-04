@@ -1,11 +1,11 @@
 import { Component, Input, type OnDestroy, type OnInit } from '@angular/core';
 import type { UntypedFormGroup } from '@angular/forms';
-import type { TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import type { Subscription } from 'rxjs';
 import type { InvoicingConfiguration } from '../../model/event';
 import type { LocalizedCountry } from '../../model/localized-country';
 import type { PurchaseContext } from '../../model/purchase-context';
-import type { I18nService } from '../../shared/i18n.service';
+import { I18nService } from '../../shared/i18n.service';
 import { mobile } from '../../shared/util';
 
 @Component({

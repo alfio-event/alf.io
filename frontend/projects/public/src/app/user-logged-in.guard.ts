@@ -8,7 +8,7 @@ import type {
 import type { Observable } from 'rxjs';
 import { first, map } from 'rxjs/operators';
 import { ANONYMOUS } from './model/user';
-import type { UserService } from './shared/user.service';
+import { UserService } from './shared/user.service';
 
 @Injectable({
     providedIn: 'root',

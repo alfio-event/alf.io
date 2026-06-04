@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import type { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import type { WalletConfiguration } from '../../model/info';
 import type { Ticket } from '../../model/ticket';
 

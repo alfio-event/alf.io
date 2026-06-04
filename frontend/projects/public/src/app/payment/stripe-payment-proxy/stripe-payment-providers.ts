@@ -1,8 +1,8 @@
-import type { TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import { EMPTY, Observable, Subject, type Subscriber } from 'rxjs';
-import type { PurchaseContext } from '../../model/purchase-context';
-import type { ReservationInfo } from '../../model/reservation-info';
-import type { ReservationService } from '../../shared/reservation.service';
+import { PurchaseContext } from '../../model/purchase-context';
+import { ReservationInfo } from '../../model/reservation-info';
+import { ReservationService } from '../../shared/reservation.service';
 import {
     type PaymentProvider,
     PaymentResult,

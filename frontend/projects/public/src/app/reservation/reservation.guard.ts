@@ -9,7 +9,7 @@ import { type Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import type { ReservationStatus } from '../model/reservation-info';
 import type { PurchaseContextType } from '../shared/purchase-context.service';
-import type { ReservationService } from '../shared/reservation.service';
+import { ReservationService } from '../shared/reservation.service';
 import { BookingComponent } from './booking/booking.component';
 import { CustomOfflinePaymentComponent } from './custom-offline-payment/custom-offline-payment.component';
 import { DeferredOfflinePaymentComponent } from './deferred-offline-payment/deferred-offline-payment.component';

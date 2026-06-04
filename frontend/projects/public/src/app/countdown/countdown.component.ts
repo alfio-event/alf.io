@@ -6,7 +6,7 @@ import {
     type OnInit,
     Output,
 } from '@angular/core';
-import type { TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import type { Subscription } from 'rxjs';
 import * as countdown from './countdown'; // see issue: https://stackoverflow.com/a/70506557 + https://github.com/mckamey/countdownjs/issues/39
 

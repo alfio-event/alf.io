@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
 import {
-    type UntypedFormBuilder,
+    UntypedFormBuilder,
     type UntypedFormGroup,
     Validators,
 } from '@angular/forms';
-import type { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'app-my-profile-delete-warning',

@@ -5,10 +5,10 @@ import {
     type OnInit,
     type SimpleChanges,
 } from '@angular/core';
-import type { Router } from '@angular/router';
+import { Router } from '@angular/router';
 import type { Observable } from 'rxjs';
 import type { Language } from '../../model/event';
-import type { I18nService } from '../i18n.service';
+import { I18nService } from '../i18n.service';
 
 @Component({
     selector: 'app-language-selector',

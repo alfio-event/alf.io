@@ -1,12 +1,12 @@
 import { Component, Input, type OnDestroy, type OnInit } from '@angular/core';
-import type {
-    UntypedFormArray,
+import {
+    type UntypedFormArray,
     UntypedFormBuilder,
-    UntypedFormGroup,
+    type UntypedFormGroup,
 } from '@angular/forms';
-import type { TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import type { Subscription } from 'rxjs';
-import type { AdditionalService } from '../model/additional-service';
+import { AdditionalService } from '../model/additional-service';
 import type { Event } from '../model/event';
 
 @Component({

@@ -8,7 +8,7 @@ import {
     Output,
     ViewChild,
 } from '@angular/core';
-import type { TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import type { Subscription } from 'rxjs';
 
 declare const grecaptcha: any;

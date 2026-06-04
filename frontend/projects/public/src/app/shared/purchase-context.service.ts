@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 import type { PurchaseContext } from '../model/purchase-context';
-import type { EventService } from './event.service';
-import type { SubscriptionService } from './subscription.service';
+import { EventService } from './event.service';
+import { SubscriptionService } from './subscription.service';
 
 @Injectable({
     providedIn: 'root',

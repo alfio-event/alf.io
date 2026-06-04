@@ -1,10 +1,10 @@
 import { Component, Input, type OnDestroy, type OnInit } from '@angular/core';
 import type { UntypedFormArray, UntypedFormGroup } from '@angular/forms';
-import type { TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import type { Subscription } from 'rxjs';
 import type { LocalizedCountry } from '../model/localized-country';
 import type { AdditionalField } from '../model/ticket';
-import type { I18nService } from '../shared/i18n.service';
+import { I18nService } from '../shared/i18n.service';
 import { mobile } from '../shared/util';
 
 @Component({
