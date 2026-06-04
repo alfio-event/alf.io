@@ -1,0 +1,77 @@
+name: Test Push
+
+on:
+    push:
+        branches:
+            - main
+
+permissions:
+    contents: read
+    pages: write
+    id-token: write
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                postgresql: ["10", "15", "16"]
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up JDK 17
+              uses: actions/setup-java@v4
+              with:
+                  java-version: 17
+                  distribution: temurin
+                  cache: gradle
+
+            - uses: pnpm/action-setup@v3
+              with:
+                  version: 11.1.2
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: 'pnpm'
+                  cache-dependency-path: frontend/pnpm-lock.yaml
+
+            - name: Run Backend Tests
+              run: ./gradlew test jacocoTestReport -Dpgsql.version=${{ matrix.postgresql }}
+
+            - name: Run Frontend Tests
+              if: matrix.postgresql == '16'
+              run: |
+                  pnpm --prefix frontend install
+                  pnpm --prefix frontend run coverage
+
+            - name: Prepare Coverage for Deployment
+              if: matrix.postgresql == '16'
+              run: |
+                  mkdir -p public-coverage
+                  mkdir -p public-coverage/backend
+                  mkdir -p public-coverage/frontend-admin
+                  mkdir -p public-coverage/frontend-public
+                  cp -r build/reports/jacoco/test/html/* public-coverage/backend/
+                  cp -r frontend/admin/coverage/* public-coverage/frontend-admin/
+                  cp -r frontend/projects/public/coverage/* public-coverage/frontend-public/
+
+            - name: Upload Pages Artifact
+              if: matrix.postgresql == '16'
+              uses: actions/upload-pages-artifact@v3
+              with:
+                  path: public-coverage
+
+    deploy:
+        if: github.ref == 'refs/heads/main'
+        needs: test
+        runs-on: ubuntu-latest
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        steps:
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4
