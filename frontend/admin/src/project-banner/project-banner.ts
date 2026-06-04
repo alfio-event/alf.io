@@ -1,12 +1,11 @@
-import { LitElement, html, css } from 'lit';
-import { customElement, property } from 'lit/decorators.js'
+import { css, html, LitElement } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
 import { when } from 'lit/directives/when.js';
 import { ConfigurationService } from '../service/configuration';
-import { retroCompat, textColors, row } from '../styles'
+import { retroCompat, row, textColors } from '../styles';
 
 @customElement('alfio-project-banner')
 export class ProjectBanner extends LitElement {
-
     @property({ type: String, attribute: 'data-full-banner' })
     fullBanner?: 'true' | 'false';
 
@@ -17,7 +16,7 @@ export class ProjectBanner extends LitElement {
         retroCompat,
         textColors,
         row,
-        css` :host { --alfio-row-cols: 3 }`
+        css` :host { --alfio-row-cols: 3 }`,
     ];
 
     render() {
@@ -60,7 +59,10 @@ export class ProjectBanner extends LitElement {
 
     async dismiss() {
         try {
-            await ConfigurationService.update({ key: 'SHOW_PROJECT_BANNER', value: 'false' });
+            await ConfigurationService.update({
+                key: 'SHOW_PROJECT_BANNER',
+                value: 'false',
+            });
             this.fullBanner = 'false';
             window.location.reload();
         } catch (e) {
@@ -71,6 +73,6 @@ export class ProjectBanner extends LitElement {
 
 declare global {
     interface HTMLElementTagNameMap {
-        'alfio-project-banner': ProjectBanner
+        'alfio-project-banner': ProjectBanner;
     }
 }

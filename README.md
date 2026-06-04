@@ -221,8 +221,9 @@ translations completed but not yet integrated (WIP)
 This project is sponsored by:
 
 <a href="https://swicket.io" target="_blank">
-  <img alt="Swicket" src="https://swicket.io/logo-web.png" width="200">
+  <img alt="Swicket" src="https://swicket.io/assets/logo-white-bg.png" width="200">
 </a><br/>
+<hr>
 <a href="https://www.browserstack.com/open-source" target="_blank"><img alt="Powered by BrowserStack" src="https://user-images.githubusercontent.com/2320747/150974875-769c7085-f8bf-49b8-aff9-b650231300eb.jpg" width="200"/> Open Source program</a>
 <br><br>
 <img alt="Exteso" src="https://alf.io/img/logos/exteso_logo.jpg" width="150"> &nbsp;

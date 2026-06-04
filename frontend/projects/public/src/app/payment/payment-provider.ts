@@ -1,4 +1,4 @@
-import {EMPTY, Observable, of} from 'rxjs';
+import { EMPTY, type Observable, of } from 'rxjs';
 
 export interface PaymentProvider {
     readonly paymentMethodDeferred: boolean;
@@ -7,15 +7,22 @@ export interface PaymentProvider {
 }
 
 export class PaymentResult {
-    constructor(public success: boolean, public gatewayToken: string, public reason: string = null, public reservationChanged = false) {}
+    constructor(
+        public success: boolean,
+        public gatewayToken: string,
+        public reason: string = null,
+        public reservationChanged = false,
+    ) {}
 }
 
 export class PaymentStatusNotification {
-    constructor(public delayed: boolean, public indeterminate: boolean) {}
+    constructor(
+        public delayed: boolean,
+        public indeterminate: boolean,
+    ) {}
 }
 
 export class SimplePaymentProvider implements PaymentProvider {
-
     pay(): Observable<PaymentResult> {
         return of(new PaymentResult(true, null));
     }

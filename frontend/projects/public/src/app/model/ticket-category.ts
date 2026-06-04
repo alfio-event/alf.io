@@ -6,18 +6,17 @@ export interface TicketCategory {
     ticketAccessType: TicketAccessType;
     bounded: boolean;
     maximumSaleableTickets: number;
-    description: {[key: string]: string};
+    description: { [key: string]: string };
     free: boolean;
     formattedFinalPrice: string;
     hasDiscount: boolean;
     formattedDiscountedPrice: string;
 
-
     //
     expired: boolean;
     saleInFuture: boolean;
-    formattedInception: {[key: string]: string};
-    formattedExpiration: {[key: string]: string};
+    formattedInception: { [key: string]: string };
+    formattedExpiration: { [key: string]: string };
     //
 
     saleableAndLimitNotReached: boolean;
@@ -29,4 +28,3 @@ export interface TicketCategory {
 
     displayTaxInformation: boolean;
 }
-

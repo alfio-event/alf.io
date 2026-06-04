@@ -1,12 +1,15 @@
-import {DatesWithOffset, DateValidity} from './date-validity';
-import {AnalyticsConfiguration} from './analytics-configuration';
-import {IconName, IconPrefix} from '@fortawesome/fontawesome-svg-core';
-import {OfflinePaymentConfiguration, PurchaseContext} from './purchase-context';
-import {EmbeddingConfiguration} from './embedding-configuration';
+import type { IconName, IconPrefix } from '@fortawesome/fontawesome-svg-core';
+import type { AnalyticsConfiguration } from './analytics-configuration';
+import type { DatesWithOffset, DateValidity } from './date-validity';
+import type { EmbeddingConfiguration } from './embedding-configuration';
+import type {
+    OfflinePaymentConfiguration,
+    PurchaseContext,
+} from './purchase-context';
 
 export interface TermsPrivacyLinksContainer {
-  privacyPolicyUrl?: string;
-  termsAndConditionsUrl?: string;
+    privacyPolicyUrl?: string;
+    termsAndConditionsUrl?: string;
 }
 
 export class Event implements DateValidity, PurchaseContext {
@@ -24,7 +27,7 @@ export class Event implements DateValidity, PurchaseContext {
     organizationName: string;
     organizationEmail: string;
 
-    description: {[key: string]: string};
+    description: { [key: string]: string };
     vatIncluded: boolean;
     vat: string;
     free: boolean;
@@ -40,10 +43,10 @@ export class Event implements DateValidity, PurchaseContext {
     timeZone: string;
     datesWithOffset: DatesWithOffset;
     sameDay: boolean;
-    formattedBeginDate: {[key: string]: string}; // day, month, year
-    formattedBeginTime: {[key: string]: string}; // the hour/minute component
-    formattedEndDate: {[key: string]: string};
-    formattedEndTime: {[key: string]: string};
+    formattedBeginDate: { [key: string]: string }; // day, month, year
+    formattedBeginTime: { [key: string]: string }; // the hour/minute component
+    formattedEndDate: { [key: string]: string };
+    formattedEndTime: { [key: string]: string };
     //
 
     //
@@ -59,7 +62,7 @@ export class Event implements DateValidity, PurchaseContext {
 
     embeddingConfiguration: EmbeddingConfiguration;
 
-    i18nOverride: {[lang: string]: {[key: string]: string}};
+    i18nOverride: { [lang: string]: { [key: string]: string } };
 
     availableTicketsCount: number | null;
 
@@ -68,7 +71,7 @@ export class Event implements DateValidity, PurchaseContext {
     canApplySubscriptions: boolean;
 
     offlinePaymentConfiguration: OfflinePaymentConfiguration = {
-      showOnlyBasicInstructions: false
+        showOnlyBasicInstructions: false,
     };
 }
 
@@ -89,14 +92,14 @@ export class Language {
 
 export class PaymentProxyWithParameters {
     paymentProxy: PaymentProxy;
-    parameters: {[key: string]: any};
+    parameters: { [key: string]: any };
 }
 
 export type EventFormat = 'IN_PERSON' | 'ONLINE' | 'HYBRID';
 
 export interface PaymentMethod {
-    paymentMethodId: string
-    paymentMethodName: string
+    paymentMethodId: string;
+    paymentMethodName: string;
 }
 
 /**
@@ -106,8 +109,8 @@ export interface PaymentMethod {
 export interface CustomOfflinePayment extends PaymentMethod {
     localizations: {
         [lang: string]: CustomOfflinePaymentLocalization;
-    }
-};
+    };
+}
 
 /**
  * Defines a single language localization for a payment method
@@ -121,68 +124,88 @@ export type CustomOfflinePaymentLocalization = {
 export type PaymentMethodId = string;
 
 export type StaticPaymentMethodNames =
-    'CREDIT_CARD' | 'PAYPAL' | 'IDEAL' | 'BANK_TRANSFER' | 'ON_SITE'
-                            | 'APPLE_PAY' | 'BANCONTACT' | 'ING_HOME_PAY' | 'BELFIUS' | 'PRZELEWY_24' | 'KBC' | 'ETRANSFER' | 'NONE';
+    | 'CREDIT_CARD'
+    | 'PAYPAL'
+    | 'IDEAL'
+    | 'BANK_TRANSFER'
+    | 'ON_SITE'
+    | 'APPLE_PAY'
+    | 'BANCONTACT'
+    | 'ING_HOME_PAY'
+    | 'BELFIUS'
+    | 'PRZELEWY_24'
+    | 'KBC'
+    | 'ETRANSFER'
+    | 'NONE';
 
-export type PaymentProxy = 'STRIPE' | 'ON_SITE' | 'OFFLINE' | 'PAYPAL' | 'MOLLIE' | 'SAFERPAY' | 'CUSTOM_OFFLINE';
+export type PaymentProxy =
+    | 'STRIPE'
+    | 'ON_SITE'
+    | 'OFFLINE'
+    | 'PAYPAL'
+    | 'MOLLIE'
+    | 'SAFERPAY'
+    | 'CUSTOM_OFFLINE';
 export interface PaymentMethodDetails {
     labelKey: string;
     icon: [IconPrefix, IconName];
 }
 
-export const staticPaymentMethodDetails: {[key in StaticPaymentMethodNames]: PaymentMethodDetails} = {
-    'CREDIT_CARD': {
+export const staticPaymentMethodDetails: {
+    [key in StaticPaymentMethodNames]: PaymentMethodDetails;
+} = {
+    CREDIT_CARD: {
         labelKey: 'reservation-page.credit-card',
-        icon: ['fas', 'credit-card']
+        icon: ['fas', 'credit-card'],
     },
-    'PAYPAL': {
+    PAYPAL: {
         labelKey: 'reservation-page.paypal',
-        icon: ['fab', 'paypal']
+        icon: ['fab', 'paypal'],
     },
-    'IDEAL': {
+    IDEAL: {
         labelKey: 'reservation-page.payment-method.ideal',
-        icon: ['fab', 'ideal']
+        icon: ['fab', 'ideal'],
     },
-    'BANCONTACT': {
+    BANCONTACT: {
         labelKey: 'reservation-page.payment-method.bancontact',
-        icon: ['fas', 'exchange-alt']
+        icon: ['fas', 'exchange-alt'],
     },
-    'ING_HOME_PAY': {
+    ING_HOME_PAY: {
         labelKey: 'reservation-page.payment-method.ing-home-pay',
-        icon: ['fas', 'exchange-alt']
+        icon: ['fas', 'exchange-alt'],
     },
-    'BELFIUS': {
+    BELFIUS: {
         labelKey: 'reservation-page.payment-method.belfius',
-        icon: ['fas', 'exchange-alt']
+        icon: ['fas', 'exchange-alt'],
     },
-    'PRZELEWY_24': {
+    PRZELEWY_24: {
         labelKey: 'reservation-page.payment-method.przelewy-24',
-        icon: ['fas', 'exchange-alt']
+        icon: ['fas', 'exchange-alt'],
     },
-    'BANK_TRANSFER': {
+    BANK_TRANSFER: {
         labelKey: 'reservation-page.offline',
-        icon: ['fas', 'exchange-alt']
+        icon: ['fas', 'exchange-alt'],
     },
-    'ON_SITE': {
+    ON_SITE: {
         labelKey: 'reservation-page.on-site',
-        icon: ['fas', 'money-bill']
+        icon: ['fas', 'money-bill'],
     },
-    'APPLE_PAY': {
+    APPLE_PAY: {
         labelKey: 'reservation-page.payment-method.apple-pay',
-        icon: ['fab', 'apple-pay']
+        icon: ['fab', 'apple-pay'],
     },
-    'KBC': {
+    KBC: {
         labelKey: 'reservation-page.payment-method.kbc',
-        icon: ['fas', 'money-check-alt']
+        icon: ['fas', 'money-check-alt'],
     },
-    'ETRANSFER': {
+    ETRANSFER: {
         labelKey: 'reservation-page.payment-method.etransfer',
-        icon: ['fas', 'exchange-alt']
+        icon: ['fas', 'exchange-alt'],
     },
-    'NONE': {
+    NONE: {
         labelKey: null,
-        icon: ['fas', 'exchange-alt']
-    }
+        icon: ['fas', 'exchange-alt'],
+    },
 };
 
 export class CaptchaConfiguration {

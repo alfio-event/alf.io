@@ -123,8 +123,8 @@
           "builder": "@angular-eslint/builder:lint",
           "options": {
             "lintFilePatterns": [
-              "src/**/*.ts",
-              "src/**/*.html"
+              "projects/public/src/**/*.ts",
+              "projects/public/src/**/*.html"
             ]
           }
         }

@@ -1,6 +1,10 @@
-import {AdditionalField, Ticket} from './ticket';
-import {PaymentProxy, PaymentProxyWithParameters, type PaymentMethod} from './event';
-import {TicketAccessType} from './ticket-category';
+import type {
+    PaymentMethod,
+    PaymentProxy,
+    PaymentProxyWithParameters,
+} from './event';
+import type { AdditionalField, Ticket } from './ticket';
+import type { TicketAccessType } from './ticket-category';
 
 export class ReservationInfo {
     id: string;
@@ -16,7 +20,7 @@ export class ReservationInfo {
     status: ReservationStatus;
     validatedBookingInformation: boolean;
     //
-    formattedExpirationDate: {[key: string]: string};
+    formattedExpirationDate: { [key: string]: string };
     //
 
     //
@@ -40,54 +44,56 @@ export class ReservationInfo {
     containsCategoriesLinkedToGroups: boolean;
     //
 
-    activePaymentMethods: {[key in PaymentMethod['paymentMethodId']]: PaymentProxyWithParameters} = {};
+    activePaymentMethods: {
+        [key in PaymentMethod['paymentMethodId']]: PaymentProxyWithParameters;
+    } = {};
     subscriptionInfos?: Array<ReservationSubscriptionInfo>;
     metadata: ReservationMetadata;
     additionalServiceWithData?: Array<AdditionalServiceWithData>;
 }
 
 export interface AdditionalServiceWithData {
-  title: {[lang: string]: string};
-  itemId: number;
-  serviceId: number;
-  ticketUUID: string | null;
-  ticketFieldConfiguration: Array<AdditionalField>;
-  type: 'DONATION' | 'SUPPLEMENT';
+    title: { [lang: string]: string };
+    itemId: number;
+    serviceId: number;
+    ticketUUID: string | null;
+    ticketFieldConfiguration: Array<AdditionalField>;
+    type: 'DONATION' | 'SUPPLEMENT';
 }
 
 export interface ReservationMetadata {
-  hideContactData: boolean;
-  lockEmailEdit: boolean;
-  hideConfirmationButtons: boolean;
-  readyForConfirmation: boolean;
-  finalized: boolean;
+    hideContactData: boolean;
+    lockEmailEdit: boolean;
+    hideConfirmationButtons: boolean;
+    readyForConfirmation: boolean;
+    finalized: boolean;
 }
 
 export class ReservationSubscriptionInfo {
-  id?: string;
-  pin?: string;
-  usageDetails?: SubscriptionUsageDetails;
-  owner?: SubscriptionOwner;
-  configuration?: SubscriptionConfiguration;
-  fieldConfigurationBeforeStandard: AdditionalField[];
-  fieldConfigurationAfterStandard: AdditionalField[];
-  additionalFields: AdditionalField[];
+    id?: string;
+    pin?: string;
+    usageDetails?: SubscriptionUsageDetails;
+    owner?: SubscriptionOwner;
+    configuration?: SubscriptionConfiguration;
+    fieldConfigurationBeforeStandard: AdditionalField[];
+    fieldConfigurationAfterStandard: AdditionalField[];
+    additionalFields: AdditionalField[];
 }
 
 export class SubscriptionOwner {
-  firstName: string;
-  lastName: string;
-  email: string;
+    firstName: string;
+    lastName: string;
+    email: string;
 }
 
 export interface SubscriptionConfiguration {
-  displayPin: boolean;
+    displayPin: boolean;
 }
 
 export interface SubscriptionUsageDetails {
-  total: number | null;
-  used: number;
-  available: number | null;
+    total: number | null;
+    used: number;
+    available: number | null;
 }
 
 export class ReservationStatusInfo {
@@ -101,7 +107,13 @@ export class TicketsByTicketCategory {
     tickets: Ticket[];
 }
 
-export type SummaryType = 'TICKET' | 'PROMOTION_CODE' | 'DYNAMIC_DISCOUNT' | 'ADDITIONAL_SERVICE' | 'APPLIED_SUBSCRIPTION' | 'TAX_DETAIL';
+export type SummaryType =
+    | 'TICKET'
+    | 'PROMOTION_CODE'
+    | 'DYNAMIC_DISCOUNT'
+    | 'ADDITIONAL_SERVICE'
+    | 'APPLIED_SUBSCRIPTION'
+    | 'TAX_DETAIL';
 
 export class OrderSummary {
     summary: SummaryRow[];
@@ -123,37 +135,48 @@ export class SummaryRow {
     taxPercentage: string;
 }
 
-export type ReservationStatus = 'PENDING' | 'IN_PAYMENT' | 'EXTERNAL_PROCESSING_PAYMENT' |
-                                'WAITING_EXTERNAL_CONFIRMATION' | 'OFFLINE_PAYMENT' | 'CUSTOM_OFFLINE_PAYMENT' | 'DEFERRED_OFFLINE_PAYMENT' |
-                                'OFFLINE_FINALIZING' | 'FINALIZING' | 'COMPLETE' | 'STUCK' | 'CANCELLED' |
-                                'CREDIT_NOTE_ISSUED' | 'NOT_FOUND';
+export type ReservationStatus =
+    | 'PENDING'
+    | 'IN_PAYMENT'
+    | 'EXTERNAL_PROCESSING_PAYMENT'
+    | 'WAITING_EXTERNAL_CONFIRMATION'
+    | 'OFFLINE_PAYMENT'
+    | 'CUSTOM_OFFLINE_PAYMENT'
+    | 'DEFERRED_OFFLINE_PAYMENT'
+    | 'OFFLINE_FINALIZING'
+    | 'FINALIZING'
+    | 'COMPLETE'
+    | 'STUCK'
+    | 'CANCELLED'
+    | 'CREDIT_NOTE_ISSUED'
+    | 'NOT_FOUND';
 
 export type ItalianEInvoicingReferenceType = 'ADDRESSEE_CODE' | 'PEC' | 'NONE';
 
 export interface BillingDetails {
-  companyName: string;
-  addressLine1: string;
-  addressLine2: string;
-  zip: string;
-  city: string;
-  state: string;
-  country: string;
-  taxId: string;
-  invoicingAdditionalInfo: TicketReservationInvoicingAdditionalInfo;
+    companyName: string;
+    addressLine1: string;
+    addressLine2: string;
+    zip: string;
+    city: string;
+    state: string;
+    country: string;
+    taxId: string;
+    invoicingAdditionalInfo: TicketReservationInvoicingAdditionalInfo;
 }
 
 export interface TicketReservationInvoicingAdditionalInfo {
-  italianEInvoicing?: ItalianEInvoicing;
+    italianEInvoicing?: ItalianEInvoicing;
 }
 
 export interface ItalianEInvoicing {
-  referenceType: ItalianEInvoicingReferenceType;
-  fiscalCode: string;
-  addresseeCode: string;
-  pec: string;
-  /**
-   * either addressee code, pec, or null
-   */
-  reference: string;
-  splitPayment: boolean;
+    referenceType: ItalianEInvoicingReferenceType;
+    fiscalCode: string;
+    addresseeCode: string;
+    pec: string;
+    /**
+     * either addressee code, pec, or null
+     */
+    reference: string;
+    splitPayment: boolean;
 }

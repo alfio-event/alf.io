@@ -1,4 +1,4 @@
-import {css} from "lit";
+import { css } from 'lit';
 
 export const pageHeader = css`
     .page-header {
@@ -42,7 +42,7 @@ export const cardBgColors = css`
         background-color: var(--sl-color-gray-100);
         border-color: var(--sl-color-gray-200);
     }
-`
+`;
 
 export const badges = css`
     sl-badge::part(base) {
@@ -196,7 +196,6 @@ export const form = css`
         display: inline-block;
     }
 `;
-
 
 // imported minimal common css part from bootstrap
 export const retroCompat = css`

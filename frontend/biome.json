@@ -1,0 +1,32 @@
+{
+    "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
+
+    "files": {
+        "includes": [
+            "projects/public/src/**/*.ts",
+            "projects/public/src/**/*.html",
+            "projects/public/src/**/*.scss",
+            "admin/src/**/*.ts",
+            "admin/src/**/*.css"
+        ]
+    },
+
+    "javascript": {
+        "parser": {
+            "unsafeParameterDecoratorsEnabled": true
+        },
+        "formatter": {
+            "quoteStyle": "single"
+        }
+    },
+
+    "formatter": {
+        "enabled": true,
+        "indentStyle": "space",
+        "indentWidth": 4
+    },
+
+    "linter": {
+        "enabled": false
+    }
+}

@@ -6,10 +6,14 @@ export class EventCode {
 }
 
 export type EventCodeType = 'SPECIAL_PRICE' | 'DISCOUNT' | 'ACCESS';
-export type DiscountType = 'FIXED_AMOUNT' | 'FIXED_AMOUNT_RESERVATION' | 'PERCENTAGE' | 'NONE';
+export type DiscountType =
+    | 'FIXED_AMOUNT'
+    | 'FIXED_AMOUNT_RESERVATION'
+    | 'PERCENTAGE'
+    | 'NONE';
 
 export interface DynamicDiscount {
     discount: string;
     discountType: DiscountType;
-    formattedMessage: {[key: string]: string};
+    formattedMessage: { [key: string]: string };
 }

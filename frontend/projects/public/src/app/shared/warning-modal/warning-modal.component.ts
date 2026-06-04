@@ -1,17 +1,16 @@
-import {Component, Input} from '@angular/core';
-import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
+import { Component, Input } from '@angular/core';
+import type { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
-  selector: 'app-warning-modal',
-  templateUrl: './warning-modal.component.html'
+    selector: 'app-warning-modal',
+    templateUrl: './warning-modal.component.html',
 })
 export class WarningModalComponent {
+    @Input()
+    message: string;
 
-  @Input()
-  message: string;
+    @Input()
+    parameters: { [key: string]: string };
 
-  @Input()
-  parameters: {[key: string]: string};
-
-  constructor(public activeModal: NgbActiveModal) {}
+    constructor(public activeModal: NgbActiveModal) {}
 }

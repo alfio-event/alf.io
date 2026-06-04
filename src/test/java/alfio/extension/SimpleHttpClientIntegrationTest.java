@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -167,7 +168,7 @@ class SimpleHttpClientIntegrationTest {
         stubFor(post("/simple-post-file").withRequestBody(containing("content"))
             .willReturn(ok("Hello World!").withHeader("Content-Type", "text/plain")));
 
-        File tmp = File.createTempFile("test", "test");
+        File tmp = Files.createTempFile(SimpleHttpClient.ALLOWED_TMP_FILE_DIR, "test", "test").toFile();
         FileUtils.write(tmp, "content", StandardCharsets.UTF_8.toString());
 
         var res = simpleHttpClient.postFileAndSaveResponse(wmRuntimeInfo.getHttpBaseUrl() + "/simple-post-file", Map.of(), tmp.getAbsolutePath(), tmp.getName(), "text/plain");

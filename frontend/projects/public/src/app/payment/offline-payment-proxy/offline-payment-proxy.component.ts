@@ -1,46 +1,56 @@
-import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
-import {PaymentProxy, type PaymentMethodId} from '../../model/event';
-import {PaymentProvider, SimplePaymentProvider} from '../payment-provider';
-import {UntypedFormGroup} from '@angular/forms';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    type OnChanges,
+    Output,
+    type SimpleChanges,
+} from '@angular/core';
+import type { UntypedFormGroup } from '@angular/forms';
+import type { PaymentMethodId, PaymentProxy } from '../../model/event';
+import {
+    type PaymentProvider,
+    SimplePaymentProvider,
+} from '../payment-provider';
 
 @Component({
-  selector: 'app-offline-payment-proxy',
-  templateUrl: './offline-payment-proxy.component.html'
+    selector: 'app-offline-payment-proxy',
+    templateUrl: './offline-payment-proxy.component.html',
 })
 export class OfflinePaymentProxyComponent implements OnChanges {
+    @Input()
+    method: PaymentMethodId;
 
-  @Input()
-  method: PaymentMethodId;
+    @Input()
+    proxy: PaymentProxy;
 
-  @Input()
-  proxy: PaymentProxy;
+    @Input()
+    parameters: { [key: string]: any };
 
-  @Input()
-  parameters: {[key: string]: any};
+    @Input()
+    overviewForm: UntypedFormGroup;
 
-  @Input()
-  overviewForm: UntypedFormGroup;
+    @Output()
+    paymentProvider: EventEmitter<PaymentProvider> =
+        new EventEmitter<PaymentProvider>();
 
-  @Output()
-  paymentProvider: EventEmitter<PaymentProvider> = new EventEmitter<PaymentProvider>();
+    constructor() {}
 
-  constructor() { }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (this.matchProxyAndMethod && changes.method) {
-      this.paymentProvider.emit(new SimplePaymentProvider());
+    ngOnChanges(changes: SimpleChanges): void {
+        if (this.matchProxyAndMethod && changes.method) {
+            this.paymentProvider.emit(new SimplePaymentProvider());
+        }
     }
-  }
 
-  public get matchProxyAndMethod(): boolean {
-    return this.method === 'BANK_TRANSFER' && this.proxy === 'OFFLINE';
-  }
+    public get matchProxyAndMethod(): boolean {
+        return this.method === 'BANK_TRANSFER' && this.proxy === 'OFFLINE';
+    }
 
-  handleRecaptchaResponse(recaptchaValue: string) {
-    this.overviewForm.get('captcha').setValue(recaptchaValue);
-  }
+    handleRecaptchaResponse(recaptchaValue: string) {
+        this.overviewForm.get('captcha').setValue(recaptchaValue);
+    }
 
-  public get deferred(): boolean {
-    return this.parameters['deferred'];
-  }
+    public get deferred(): boolean {
+        return this.parameters['deferred'];
+    }
 }

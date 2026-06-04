@@ -1,9 +1,13 @@
-import {EMPTY, Observable, Subject, Subscriber} from 'rxjs';
-import {PaymentProvider, PaymentResult, PaymentStatusNotification} from '../payment-provider';
-import {TranslateService} from '@ngx-translate/core';
-import {ReservationInfo} from '../../model/reservation-info';
-import {ReservationService} from '../../shared/reservation.service';
-import {PurchaseContext} from '../../model/purchase-context';
+import type { TranslateService } from '@ngx-translate/core';
+import { EMPTY, Observable, Subject, type Subscriber } from 'rxjs';
+import type { PurchaseContext } from '../../model/purchase-context';
+import type { ReservationInfo } from '../../model/reservation-info';
+import type { ReservationService } from '../../shared/reservation.service';
+import {
+    type PaymentProvider,
+    PaymentResult,
+    PaymentStatusNotification,
+} from '../payment-provider';
 
 // global variable defined by stripe when the scripts are loaded
 declare const StripeCheckout: any;
@@ -12,20 +16,19 @@ declare const StripeCheckout: any;
 export const STRIPE_CHECKOUT_ID_SCRIPT = 'stripe-payment-proxy-checkout';
 
 export class StripeCheckoutPaymentProvider implements PaymentProvider {
-
     constructor(
         private translate: TranslateService,
         private parameters: { [key: string]: any },
         private reservation: ReservationInfo,
-        private purchaseContext: PurchaseContext) {
-    }
+        private purchaseContext: PurchaseContext,
+    ) {}
 
     get paymentMethodDeferred(): boolean {
         return false;
     }
 
     pay(): Observable<PaymentResult> {
-        const obs = new Observable<PaymentResult>(subscriber => {
+        const obs = new Observable<PaymentResult>((subscriber) => {
             this.loadScript(subscriber);
         });
         return obs;
@@ -43,9 +46,11 @@ export class StripeCheckoutPaymentProvider implements PaymentProvider {
             });
             document.body.appendChild(scriptElem);
         } else if (!window['StripeCheckout']) {
-            document.getElementById(STRIPE_CHECKOUT_ID_SCRIPT).addEventListener('load', () => {
-                this.configureAndOpen(subscriber);
-            });
+            document
+                .getElementById(STRIPE_CHECKOUT_ID_SCRIPT)
+                .addEventListener('load', () => {
+                    this.configureAndOpen(subscriber);
+                });
         } else {
             this.configureAndOpen(subscriber);
         }
@@ -64,7 +69,7 @@ export class StripeCheckoutPaymentProvider implements PaymentProvider {
                 if (!tokenSubmitted) {
                     subscriber.next(new PaymentResult(false, null));
                 }
-            }
+            },
         });
         stripeHandler.open({
             name: `${this.reservation.firstName} ${this.reservation.lastName}`,
@@ -73,7 +78,7 @@ export class StripeCheckoutPaymentProvider implements PaymentProvider {
             allowRememberMe: false,
             amount: this.reservation.orderSummary.priceInCents,
             currency: this.purchaseContext.currency,
-            email: this.reservation.email
+            email: this.reservation.email,
         });
     }
 
@@ -83,80 +88,138 @@ export class StripeCheckoutPaymentProvider implements PaymentProvider {
 }
 
 export class StripePaymentV3 implements PaymentProvider {
-
     private notificationSubject = new Subject<PaymentStatusNotification>();
 
     constructor(
         private reservationService: ReservationService,
         private reservation: ReservationInfo,
         private stripeHandler: any,
-        private card: any
-    ) {
-    }
+        private card: any,
+    ) {}
 
     get paymentMethodDeferred(): boolean {
         return false;
     }
 
     pay(): Observable<PaymentResult> {
-
-        const obs = new Observable<PaymentResult>(subscriber => {
-
-            this.reservationService.initPayment(this.reservation.id).subscribe(res => {
-
-                if (res.reservationStatusChanged || res.clientSecret == null) {
-                    subscriber.next(new PaymentResult(false, null, null, res.reservationStatusChanged));
-                    return;
-                }
-
-                const clientSecret = res.clientSecret;
-                let billingAddress = null;
-                if (this.reservation.billingDetails.addressLine1 != null) {
-                    billingAddress = {
-                        line1: this.reservation.billingDetails.addressLine1,
-                        postal_code: this.reservation.billingDetails.zip,
-                        country: StripePaymentV3.toCountryISOCode(this.reservation.billingDetails.country).toLowerCase()
-                   };
-                }
-                const paymentData = {
-                    payment_method_data: {
-                        billing_details: {
-                            name: `${this.reservation.firstName} ${this.reservation.lastName}`,
-                            email: this.reservation.email,
-                            address: billingAddress
-                        }
+        const obs = new Observable<PaymentResult>((subscriber) => {
+            this.reservationService.initPayment(this.reservation.id).subscribe(
+                (res) => {
+                    if (
+                        res.reservationStatusChanged ||
+                        res.clientSecret == null
+                    ) {
+                        subscriber.next(
+                            new PaymentResult(
+                                false,
+                                null,
+                                null,
+                                res.reservationStatusChanged,
+                            ),
+                        );
+                        return;
                     }
-                };
 
-                this.stripeHandler.handleCardPayment(clientSecret, this.card, paymentData).then(cardPaymentResult => {
-                    let retryCount = 0;
-                    let handleCheck: number;
-                    const checkIfPaid = () => {
-                        console.log('checking reservation status...');
-                        retryCount++;
-                        if (retryCount % 10 === 0) {
-                            this.notificationSubject.next(new PaymentStatusNotification(true, retryCount > 120));
-                        }
-                        this.reservationService.getPaymentStatus(this.reservation.id).subscribe(status => {
-                            if (cardPaymentResult.error || status.success) {
-                                window.clearInterval(handleCheck);
-                            }
-                            if (status.success) {
-                                subscriber.next(new PaymentResult(true, status.gatewayIdOrNull));
-                            } else if (cardPaymentResult.error) {
-                                subscriber.error(new PaymentResult(false, null, cardPaymentResult.error.message));
-                            } else if (status.failure) {
-                                subscriber.error(new PaymentResult(false, null));
-                            }
-                        }, err => console.log('got error while calling getStatus(). Retrying in 1s', err));
+                    const clientSecret = res.clientSecret;
+                    let billingAddress = null;
+                    if (this.reservation.billingDetails.addressLine1 != null) {
+                        billingAddress = {
+                            line1: this.reservation.billingDetails.addressLine1,
+                            postal_code: this.reservation.billingDetails.zip,
+                            country: StripePaymentV3.toCountryISOCode(
+                                this.reservation.billingDetails.country,
+                            ).toLowerCase(),
+                        };
+                    }
+                    const paymentData = {
+                        payment_method_data: {
+                            billing_details: {
+                                name: `${this.reservation.firstName} ${this.reservation.lastName}`,
+                                email: this.reservation.email,
+                                address: billingAddress,
+                            },
+                        },
                     };
-                    handleCheck = window.setInterval(checkIfPaid, 1000);
-                }, err => {
+
+                    this.stripeHandler
+                        .handleCardPayment(clientSecret, this.card, paymentData)
+                        .then(
+                            (cardPaymentResult) => {
+                                let retryCount = 0;
+                                let handleCheck: number;
+                                const checkIfPaid = () => {
+                                    console.log(
+                                        'checking reservation status...',
+                                    );
+                                    retryCount++;
+                                    if (retryCount % 10 === 0) {
+                                        this.notificationSubject.next(
+                                            new PaymentStatusNotification(
+                                                true,
+                                                retryCount > 120,
+                                            ),
+                                        );
+                                    }
+                                    this.reservationService
+                                        .getPaymentStatus(this.reservation.id)
+                                        .subscribe(
+                                            (status) => {
+                                                if (
+                                                    cardPaymentResult.error ||
+                                                    status.success
+                                                ) {
+                                                    window.clearInterval(
+                                                        handleCheck,
+                                                    );
+                                                }
+                                                if (status.success) {
+                                                    subscriber.next(
+                                                        new PaymentResult(
+                                                            true,
+                                                            status.gatewayIdOrNull,
+                                                        ),
+                                                    );
+                                                } else if (
+                                                    cardPaymentResult.error
+                                                ) {
+                                                    subscriber.error(
+                                                        new PaymentResult(
+                                                            false,
+                                                            null,
+                                                            cardPaymentResult
+                                                                .error.message,
+                                                        ),
+                                                    );
+                                                } else if (status.failure) {
+                                                    subscriber.error(
+                                                        new PaymentResult(
+                                                            false,
+                                                            null,
+                                                        ),
+                                                    );
+                                                }
+                                            },
+                                            (err) =>
+                                                console.log(
+                                                    'got error while calling getStatus(). Retrying in 1s',
+                                                    err,
+                                                ),
+                                        );
+                                };
+                                handleCheck = window.setInterval(
+                                    checkIfPaid,
+                                    1000,
+                                );
+                            },
+                            (err) => {
+                                subscriber.error(err);
+                            },
+                        );
+                },
+                (err) => {
                     subscriber.error(err);
-                });
-            }, err => {
-                subscriber.error(err);
-            });
+                },
+            );
         });
         return obs;
     }
@@ -166,8 +229,8 @@ export class StripePaymentV3 implements PaymentProvider {
     }
 
     private static toCountryISOCode(country: string): string {
-      // The form contains EU-VAT prefix for Greece (EL).
-      // Here we need the country ISO Code instead
-      return country === 'EL' ? 'GR' : country;
+        // The form contains EU-VAT prefix for Greece (EL).
+        // Here we need the country ISO Code instead
+        return country === 'EL' ? 'GR' : country;
     }
 }

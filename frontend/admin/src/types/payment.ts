@@ -6,7 +6,7 @@ type CustomOfflinePayment = {
     paymentMethodId: string | null;
     localizations: {
         [lang: string]: CustomOfflinePaymentLocalization;
-    }
+    };
 };
 
 /**

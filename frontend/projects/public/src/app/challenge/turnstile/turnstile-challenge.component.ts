@@ -1,20 +1,26 @@
-import {AfterViewInit, Component, EventEmitter, Input, OnDestroy, Output} from "@angular/core";
-import {I18nService} from "../../shared/i18n.service";
-import {ChallengeError} from "../challenge.service";
+import {
+    type AfterViewInit,
+    Component,
+    EventEmitter,
+    Input,
+    type OnDestroy,
+    Output,
+} from '@angular/core';
+import type { I18nService } from '../../shared/i18n.service';
+import { ChallengeError } from '../challenge.service';
 
 let idCallback = 0;
 
 declare const turnstile: {
-    render: (string, any) => any
-    remove: (string) => void
+    render: (string, any) => any;
+    remove: (string) => void;
 };
 
 @Component({
     selector: 'app-turnstile-challenge',
-    template: '<div class="cf-turnstile mt-2 mb-2" data-theme="light"></div>'
+    template: '<div class="cf-turnstile mt-2 mb-2" data-theme="light"></div>',
 })
 export class TurnstileChallengeComponent implements AfterViewInit, OnDestroy {
-
     @Input()
     siteKey?: string;
     @Output()
@@ -23,8 +29,7 @@ export class TurnstileChallengeComponent implements AfterViewInit, OnDestroy {
     tokenError = new EventEmitter<ChallengeError>();
     private widgetId?: string;
 
-    constructor(private i18nService: I18nService) {
-    }
+    constructor(private i18nService: I18nService) {}
 
     ngAfterViewInit(): void {
         if (!document.getElementById('cf-turnstile-script')) {
@@ -61,14 +66,16 @@ export class TurnstileChallengeComponent implements AfterViewInit, OnDestroy {
             };
             this.widgetId = turnstile.render('.cf-turnstile', {
                 sitekey: this.siteKey,
-                "response-field": false,
-                callback: function(token: string, preClearance: boolean) {
-                    console.log(`Challenge Success. Pre-clearance ${preClearance}`);
+                'response-field': false,
+                callback: (token: string, preClearance: boolean) => {
+                    console.log(
+                        `Challenge Success. Pre-clearance ${preClearance}`,
+                    );
                     notify(token);
                 },
-                "expired-callback": function () {
+                'expired-callback': () => {
                     notify(undefined);
-                }
+                },
             });
         } else {
             console.error('cannot initialize turnstile');

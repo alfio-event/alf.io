@@ -1,16 +1,16 @@
 export interface TicketIdentifier {
-  index: number;
-  uuid: string;
-  firstName: string;
-  lastName: string;
-  categoryName: string;
+    index: number;
+    uuid: string;
+    firstName: string;
+    lastName: string;
+    categoryName: string;
 }
 
 export interface MoveAdditionalServiceRequest {
-  index: number;
-  itemId: number;
-  currentTicketUuid: string;
-  newTicketUuid: string;
+    index: number;
+    itemId: number;
+    currentTicketUuid: string;
+    newTicketUuid: string;
 }
 
 export class Ticket {
@@ -28,7 +28,7 @@ export class Ticket {
     downloadEnabled: boolean;
     ticketFieldConfigurationBeforeStandard: AdditionalField[];
     ticketFieldConfigurationAfterStandard: AdditionalField[];
-    formattedOnlineCheckInDate: {[key: string]: string};
+    formattedOnlineCheckInDate: { [key: string]: string };
     onlineEventStarted: boolean;
 }
 
@@ -42,13 +42,13 @@ export class AdditionalField {
     maxLength: number;
     restrictedValues: string[];
     fields: Field[];
-    description: {[key: string]: Description};
+    description: { [key: string]: Description };
 }
 
 export class Description {
     label: string;
     placeholder: string;
-    restrictedValuesDescription: {[key: string]: string};
+    restrictedValuesDescription: { [key: string]: string };
 }
 
 export class Field {
@@ -56,4 +56,13 @@ export class Field {
     fieldValue: string;
 }
 
-export type AdditionalFieldType = 'input:text' | 'input:tel' | 'vat:eu' | 'textarea' | 'country' | 'select' | 'checkbox' | 'radio' | 'input:dateOfBirth';
+export type AdditionalFieldType =
+    | 'input:text'
+    | 'input:tel'
+    | 'vat:eu'
+    | 'textarea'
+    | 'country'
+    | 'select'
+    | 'checkbox'
+    | 'radio'
+    | 'input:dateOfBirth';

@@ -1,13 +1,12 @@
-import type { SlDialog } from "@shoelace-style/shoelace";
-import { TanStackFormController } from "@tanstack/lit-form";
-import { customElement, property, query, state } from "lit/decorators.js";
-import { html, LitElement, type TemplateResult } from "lit";
-import {Task} from '@lit/task';
-import { repeat } from "lit/directives/repeat.js";
-import { dialog, form, row } from "../styles";
-import { classMap } from "lit/directives/class-map.js";
-import { type SlSelect } from '@shoelace-style/shoelace';
-import { LocalizationService } from "../service/localization";
+import { Task } from '@lit/task';
+import type { SlDialog, SlSelect } from '@shoelace-style/shoelace';
+import { TanStackFormController } from '@tanstack/lit-form';
+import { html, LitElement, type TemplateResult } from 'lit';
+import { customElement, property, query, state } from 'lit/decorators.js';
+import { classMap } from 'lit/directives/class-map.js';
+import { repeat } from 'lit/directives/repeat.js';
+import { LocalizationService } from '../service/localization';
+import { dialog, form, row } from '../styles';
 
 type LocalizationFormFields = CustomOfflinePaymentLocalization & {
     localizationKey: string;
@@ -21,7 +20,7 @@ type LocalizationFormFields = CustomOfflinePaymentLocalization & {
 export class OfflinePaymentDialog extends LitElement {
     static styles = [row, dialog, form];
 
-    @query("sl-dialog#offlinePaymentDialog")
+    @query('sl-dialog#offlinePaymentDialog')
     dialog?: SlDialog;
 
     /**
@@ -39,7 +38,12 @@ export class OfflinePaymentDialog extends LitElement {
     localizationKey?: string;
 
     @state()
-    availableLanguages: {locale: string, value: number, language: string, displayLanguage: string}[] = [];
+    availableLanguages: {
+        locale: string;
+        value: number;
+        language: string;
+        displayLanguage: string;
+    }[] = [];
 
     @state()
     editingExistingLocalization: boolean = false;
@@ -48,9 +52,8 @@ export class OfflinePaymentDialog extends LitElement {
      * The current payment methods known by the system.
      * Used for name collision client-side validation.
      */
-    @property({type: Array})
+    @property({ type: Array })
     currentMethods: CustomOfflinePayment[] = [];
-
 
     /**
      * Allows component to access Alf.io supported languages
@@ -60,28 +63,31 @@ export class OfflinePaymentDialog extends LitElement {
 
     #form = new TanStackFormController(this, {
         defaultValues: {
-            localizationKey: "",
-            paymentName: "",
-            paymentDescription: "",
-            paymentInstructions: ""
-        } as LocalizationFormFields
+            localizationKey: '',
+            paymentName: '',
+            paymentDescription: '',
+            paymentInstructions: '',
+        } as LocalizationFormFields,
     });
 
     private _updateLanguagesTask = new Task(this, {
         task: async () => {
-            let response = await this.localizationService?.getEventsSupportedLanguages();
-            if(!response) { throw new Error("Failed to get languages"); }
+            const response =
+                await this.localizationService?.getEventsSupportedLanguages();
+            if (!response) {
+                throw new Error('Failed to get languages');
+            }
 
-            return response
+            return response;
         },
-        args: () => []
+        args: () => [],
     });
 
     protected render(): TemplateResult {
         return html`
             <div>
                 <sl-dialog
-                    label="${this.editObject ? "Update" : "Create"} Payment Method"
+                    label="${this.editObject ? 'Update' : 'Create'} Payment Method"
                     id="offlinePaymentDialog"
                     style="--width: 50vw; --sl-font-size-large: 1.5rem;"
                     class="dialog"
@@ -95,21 +101,21 @@ export class OfflinePaymentDialog extends LitElement {
     renderPaymentMethodForm(): TemplateResult {
         return html`<form
             id="form"
-            @submit=${
-                async (e: Event) => {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    await this.#form.api.handleSubmit();
-                }
-            }
+            @submit=${async (e: Event) => {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                await this.#form.api.handleSubmit();
+            }}
         >
             ${this.#form.field(
                 {
                     name: `localizationKey`,
                     validators: {
-                        onChange: ({ value }: {value: string}) => {
-                            return !value ? 'Language selection is required.' : undefined;
-                        }
+                        onChange: ({ value }: { value: string }) => {
+                            return !value
+                                ? 'Language selection is required.'
+                                : undefined;
+                        },
                     },
                 },
                 (field) => {
@@ -123,39 +129,59 @@ export class OfflinePaymentDialog extends LitElement {
                         @sl-blur=${() => field.handleBlur()}
                         @sl-change=${(event: Event) => {
                             if (event.currentTarget) {
-                                const newValue = (event.currentTarget as SlSelect).value as string;
+                                const newValue = (
+                                    event.currentTarget as SlSelect
+                                ).value as string;
                                 field.handleChange(newValue);
                             }
                         }}>
                         ${this._updateLanguagesTask.render({
-                            pending: () => html`<sl-option value="" disabled>Loading available languages...</sl-option>`,
+                            pending: () =>
+                                html`<sl-option value="" disabled>Loading available languages...</sl-option>`,
                             complete: (languages) => {
-                                if(this.editObject && !this.editingExistingLocalization) {
-                                    const existingLocalizations = Object.keys(this.editObject.localizations);
-                                    languages = languages.filter(item => !existingLocalizations.includes(item.locale));
+                                if (
+                                    this.editObject &&
+                                    !this.editingExistingLocalization
+                                ) {
+                                    const existingLocalizations = Object.keys(
+                                        this.editObject.localizations,
+                                    );
+                                    languages = languages.filter(
+                                        (item) =>
+                                            !existingLocalizations.includes(
+                                                item.locale,
+                                            ),
+                                    );
                                 }
 
                                 return html`
-                                    ${repeat(languages, (language) => language.value, (language) => {
-                                        return html`
+                                    ${repeat(
+                                        languages,
+                                        (language) => language.value,
+                                        (language) => {
+                                            return html`
                                         <sl-option value="${language.locale}">${language.displayLanguage}</sl-option>
                                         `;
-                                    })}
-                                `
+                                        },
+                                    )}
+                                `;
                             },
-                            error: (_e) => html`<sl-option value="" disabled>Failed to load available languages...</sl-option>`
+                            error: (_e) =>
+                                html`<sl-option value="" disabled>Failed to load available languages...</sl-option>`,
                         })}
                     </sl-select>
                     `;
-                }
+                },
             )}
             ${this.#form.field(
                 {
                     name: `paymentName`,
                     validators: {
-                        onChange: ({ value }: {value: string}) => {
-                            return value.length < 3 ? 'Name is too short.' : undefined;
-                        }
+                        onChange: ({ value }: { value: string }) => {
+                            return value.length < 3
+                                ? 'Name is too short.'
+                                : undefined;
+                        },
                     },
                 },
                 (field) => {
@@ -170,21 +196,25 @@ export class OfflinePaymentDialog extends LitElement {
                             @sl-blur=${() => field.handleBlur()}
                             @sl-change=${(event: InputEvent) => {
                                 if (event.currentTarget) {
-                                    const newValue = (event.currentTarget as HTMLInputElement).value;
+                                    const newValue = (
+                                        event.currentTarget as HTMLInputElement
+                                    ).value;
                                     field.handleChange(newValue);
                                 }
                             }}
                         >
                         </sl-input>
-                    </div>`
+                    </div>`;
                 },
             )}
             ${this.#form.field(
                 {
                     name: `paymentDescription`,
                     validators: {
-                    onChange: ({ value }: {value: string}) =>
-                        value.length < 3 ? 'Description is too short' : undefined,
+                        onChange: ({ value }: { value: string }) =>
+                            value.length < 3
+                                ? 'Description is too short'
+                                : undefined,
                     },
                 },
                 (field) => {
@@ -199,7 +229,9 @@ export class OfflinePaymentDialog extends LitElement {
                             @sl-blur=${() => field.handleBlur()}
                             @sl-change=${(event: InputEvent) => {
                                 if (event.currentTarget) {
-                                    const newValue = (event.currentTarget as HTMLInputElement).value;
+                                    const newValue = (
+                                        event.currentTarget as HTMLInputElement
+                                    ).value;
                                     field.handleChange(newValue);
                                 }
                             }}
@@ -212,15 +244,17 @@ export class OfflinePaymentDialog extends LitElement {
                                 </alfio-display-commonmark-preview>
                             </div>
                         </sl-textarea>
-                    </div>`
+                    </div>`;
                 },
             )}
             ${this.#form.field(
                 {
                     name: `paymentInstructions`,
                     validators: {
-                    onChange: ({ value }: {value: string}) =>
-                        value.length < 3 ? 'Instructions are too short.' : undefined,
+                        onChange: ({ value }: { value: string }) =>
+                            value.length < 3
+                                ? 'Instructions are too short.'
+                                : undefined,
                     },
                 },
                 (field) => {
@@ -235,7 +269,9 @@ export class OfflinePaymentDialog extends LitElement {
                             @sl-blur=${() => field.handleBlur()}
                             @sl-change=${(event: InputEvent) => {
                                 if (event.currentTarget) {
-                                    const newValue = (event.currentTarget as HTMLInputElement).value;
+                                    const newValue = (
+                                        event.currentTarget as HTMLInputElement
+                                    ).value;
                                     field.handleChange(newValue);
                                 }
                             }}
@@ -248,7 +284,7 @@ export class OfflinePaymentDialog extends LitElement {
                                 </alfio-display-commonmark-preview>
                             </div>
                         </sl-textarea>
-                    </div>`
+                    </div>`;
                 },
             )}
             <div slot="footer">
@@ -270,11 +306,14 @@ export class OfflinePaymentDialog extends LitElement {
         `;
     }
 
-    async openDialog(editObject?: CustomOfflinePayment, localizationKey?: string) {
+    async openDialog(
+        editObject?: CustomOfflinePayment,
+        localizationKey?: string,
+    ) {
         this.editObject = editObject;
         this.localizationKey = localizationKey;
 
-        if(editObject && localizationKey) {
+        if (editObject && localizationKey) {
             this.editingExistingLocalization = true;
         } else {
             this.editingExistingLocalization = false;
@@ -282,45 +321,52 @@ export class OfflinePaymentDialog extends LitElement {
 
         const curLocaleKey = this.localizationKey ?? '';
 
-        if(this.dialog) {
+        if (this.dialog) {
             this.#form.api.update({
                 defaultValues: this._buildInitialFormValues(curLocaleKey),
-                onSubmit: async ({value}) => {
-                    let existingLocalizations = this.editObject ? {...this.editObject.localizations} : {};
+                onSubmit: async ({ value }) => {
+                    const existingLocalizations = this.editObject
+                        ? { ...this.editObject.localizations }
+                        : {};
                     const newPaymentObj = {
-                        paymentMethodId: this.editObject?.paymentMethodId ?? null,
+                        paymentMethodId:
+                            this.editObject?.paymentMethodId ?? null,
                         localizations: {
                             ...existingLocalizations,
-                        }
+                        },
                     };
 
                     newPaymentObj.localizations[value.localizationKey] = {
                         paymentName: value.paymentName,
                         paymentDescription: value.paymentDescription,
-                        paymentInstructions: value.paymentInstructions
+                        paymentInstructions: value.paymentInstructions,
                     };
 
                     this.dispatchEvent(
-                        new CustomEvent("offlinePaymentDialogSave", {
+                        new CustomEvent('offlinePaymentDialogSave', {
                             detail: {
                                 newPayment: newPaymentObj,
-                                oldPayment: this.editObject
-                            }
-                        })
-                    )
+                                oldPayment: this.editObject,
+                            },
+                        }),
+                    );
                 },
                 validators: {
-                    onSubmitAsync: async props => {
-                        if(
-                            !this.editObject
-                            && this.currentMethods.some(method => method.localizations.en.paymentName === props.value.paymentName)
+                    onSubmitAsync: async (props) => {
+                        if (
+                            !this.editObject &&
+                            this.currentMethods.some(
+                                (method) =>
+                                    method.localizations.en.paymentName ===
+                                    props.value.paymentName,
+                            )
                         ) {
                             return 'Chosen payment method name matches one already created for this organization. Please choose a different name';
                         }
 
                         return undefined;
-                    }
-                }
+                    },
+                },
             });
             await this.dialog.show();
         }
@@ -332,25 +378,31 @@ export class OfflinePaymentDialog extends LitElement {
     }
 
     private _hasError(meta: any) {
-        return (meta.isTouched && meta.errors.length > 0);
+        return meta.isTouched && meta.errors.length > 0;
     }
 
-    private _buildInitialFormValues(localizationKey?: string) : LocalizationFormFields {
-        if(this.editObject && localizationKey) {
+    private _buildInitialFormValues(
+        localizationKey?: string,
+    ): LocalizationFormFields {
+        if (this.editObject && localizationKey) {
             return {
                 localizationKey: localizationKey,
-                paymentName: this.editObject.localizations[localizationKey].paymentName,
-                paymentDescription: this.editObject.localizations[localizationKey].paymentDescription,
-                paymentInstructions: this.editObject.localizations[localizationKey].paymentInstructions
+                paymentName:
+                    this.editObject.localizations[localizationKey].paymentName,
+                paymentDescription:
+                    this.editObject.localizations[localizationKey]
+                        .paymentDescription,
+                paymentInstructions:
+                    this.editObject.localizations[localizationKey]
+                        .paymentInstructions,
             };
         }
 
         return {
-            localizationKey: "",
-            paymentName: "",
-            paymentDescription: "",
-            paymentInstructions: "",
-        }
+            localizationKey: '',
+            paymentName: '',
+            paymentDescription: '',
+            paymentInstructions: '',
+        };
     }
 }
-

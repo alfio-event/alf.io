@@ -1,34 +1,41 @@
-import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
-import {PaymentProxy, type PaymentMethodId} from '../../model/event';
-import {ReservationInfo} from '../../model/reservation-info';
-import {PaymentProvider} from '../payment-provider';
-import {SaferpayPaymentProvider} from './saferpay-payment-provider';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    type OnChanges,
+    Output,
+    type SimpleChanges,
+} from '@angular/core';
+import type { PaymentMethodId, PaymentProxy } from '../../model/event';
+import type { ReservationInfo } from '../../model/reservation-info';
+import type { PaymentProvider } from '../payment-provider';
+import { SaferpayPaymentProvider } from './saferpay-payment-provider';
 
 @Component({
-  selector: 'app-saferpay-payment-proxy',
-  templateUrl: './saferpay-payment-proxy.component.html'
+    selector: 'app-saferpay-payment-proxy',
+    templateUrl: './saferpay-payment-proxy.component.html',
 })
 export class SaferpayPaymentProxyComponent implements OnChanges {
-  @Input()
-  method: PaymentMethodId;
+    @Input()
+    method: PaymentMethodId;
 
-  @Input()
-  proxy: PaymentProxy;
+    @Input()
+    proxy: PaymentProxy;
 
-  @Input()
-  reservation: ReservationInfo;
+    @Input()
+    reservation: ReservationInfo;
 
-  @Output()
-  paymentProvider: EventEmitter<PaymentProvider> = new EventEmitter<PaymentProvider>();
+    @Output()
+    paymentProvider: EventEmitter<PaymentProvider> =
+        new EventEmitter<PaymentProvider>();
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (this.matchProxyAndMethod && changes.method) {
-      this.paymentProvider.emit(new SaferpayPaymentProvider());
+    ngOnChanges(changes: SimpleChanges): void {
+        if (this.matchProxyAndMethod && changes.method) {
+            this.paymentProvider.emit(new SaferpayPaymentProvider());
+        }
     }
-  }
 
-  public get matchProxyAndMethod(): boolean {
-    return this.proxy === 'SAFERPAY';
-  }
-
+    public get matchProxyAndMethod(): boolean {
+        return this.proxy === 'SAFERPAY';
+    }
 }

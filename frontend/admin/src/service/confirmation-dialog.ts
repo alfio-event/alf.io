@@ -1,9 +1,11 @@
-import {escapeHtml} from "./helpers.ts";
+import { escapeHtml } from './helpers.ts';
 
 export class ConfirmationDialogService {
-    public static requestConfirm(title: string,
-                                 message: string,
-                                 variant: 'success' | 'danger' | 'warning' | 'primary'  = 'success'): Promise<boolean> {
+    public static requestConfirm(
+        title: string,
+        message: string,
+        variant: 'success' | 'danger' | 'warning' | 'primary' = 'success',
+    ): Promise<boolean> {
         return new Promise((resolve) => {
             const div = document.createElement('div');
             div.innerHTML = `
@@ -24,20 +26,24 @@ export class ConfirmationDialogService {
                     document.body.removeChild(div);
                     resolve(r);
                 });
-            }
+            };
             customElements.whenDefined('sl-dialog').then(async () => {
                 await dialog.show();
-                div.querySelectorAll('sl-button')?.forEach(e => e.addEventListener('click', () => {
-                    close(e.id === 'confirm')
-                }));
+                div.querySelectorAll('sl-button')?.forEach((e) =>
+                    e.addEventListener('click', () => {
+                        close(e.id === 'confirm');
+                    }),
+                );
                 dialog.addEventListener('sl-hide', (e) => {
-                    if (['close-button', 'keyboard', 'overlay'].includes(e.detail.source)) {
+                    if (
+                        ['close-button', 'keyboard', 'overlay'].includes(
+                            e.detail.source,
+                        )
+                    ) {
                         resolve(false);
                     }
                 });
             });
-        })
+        });
     }
-
-
 }

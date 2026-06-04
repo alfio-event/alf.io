@@ -1,21 +1,40 @@
-import {customElement, query, state} from "lit/decorators.js";
-import {css, html, LitElement, nothing, TemplateResult} from "lit";
-import {SlDialog, SlRequestCloseEvent, SlSelect} from "@shoelace-style/shoelace";
+import type {
+    SlDialog,
+    SlRequestCloseEvent,
+    SlSelect,
+} from '@shoelace-style/shoelace';
+import { TanStackFormController } from '@tanstack/lit-form';
+import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
+import { customElement, query, state } from 'lit/decorators.js';
+import { classMap } from 'lit/directives/class-map.js';
+import { repeat } from 'lit/directives/repeat.js';
 import {
-    AdditionalField, AdditionalFieldType,
+    type AdditionalField,
+    type AdditionalFieldType,
     additionalFieldTypesWithDescription,
-    DescriptionRequest,
-    NewAdditionalFieldFromTemplate,
-    PurchaseContextFieldDescriptionContainer,
-    RestrictedValueRequest,
+    type DescriptionRequest,
+    type NewAdditionalFieldFromTemplate,
+    type PurchaseContextFieldDescriptionContainer,
+    type RestrictedValueRequest,
     supportsMinMaxLength,
     supportsPlaceholder,
-    supportsRestrictedValues
-} from "../../model/additional-field.ts";
-import {ContentLanguage, PurchaseContext} from "../../model/purchase-context.ts";
-import {TanStackFormController} from "@tanstack/lit-form";
-import {asNumber, asString, notifyChange, renderIf} from "../../service/helpers.ts";
-import {repeat} from "lit/directives/repeat.js";
+    supportsRestrictedValues,
+} from '../../model/additional-field.ts';
+import type { AdditionalItem } from '../../model/additional-item.ts';
+import { dispatchFeedback } from '../../model/dom-events.ts';
+import type { AlfioEvent } from '../../model/event.ts';
+import type {
+    ContentLanguage,
+    PurchaseContext,
+} from '../../model/purchase-context.ts';
+import { AdditionalFieldService } from '../../service/additional-field.ts';
+import { AdditionalItemService } from '../../service/additional-item.ts';
+import {
+    asNumber,
+    asString,
+    notifyChange,
+    renderIf,
+} from '../../service/helpers.ts';
 import {
     cardBgColors,
     dialog as dialogStyling,
@@ -26,19 +45,13 @@ import {
     retroCompat,
     row,
     textAlign,
-    textColors
-} from "../../styles.ts";
-import {AlfioEvent} from "../../model/event.ts";
-import {AdditionalFieldService} from "../../service/additional-field.ts";
-import {AdditionalItem} from "../../model/additional-item.ts";
-import {AdditionalItemService} from "../../service/additional-item.ts";
-import {renderPreview} from "./additional-field-util.ts";
-import {classMap} from "lit/directives/class-map.js";
-import {dispatchFeedback} from "../../model/dom-events.ts";
+    textColors,
+} from '../../styles.ts';
+import { renderPreview } from './additional-field-util.ts';
 
 interface SelectableOption {
     fieldName: string;
-    description: {[lang: string]: string};
+    description: { [lang: string]: string };
     toBePersisted: boolean;
 }
 
@@ -48,8 +61,7 @@ interface AdditionalFieldForm extends AdditionalField {
 
 @customElement('alfio-additional-field-edit')
 export class AdditionalFieldEdit extends LitElement {
-
-    @query("sl-dialog#editDialog")
+    @query('sl-dialog#editDialog')
     dialog?: SlDialog;
 
     @state()
@@ -79,7 +91,17 @@ export class AdditionalFieldEdit extends LitElement {
     @state()
     unsubscribeFn?: () => void;
 
-    static readonly styles = [pageHeader, row, dialogStyling, form, textColors, cardBgColors, textAlign, itemsList, listGroup, css`
+    static readonly styles = [
+        pageHeader,
+        row,
+        dialogStyling,
+        form,
+        textColors,
+        cardBgColors,
+        textAlign,
+        itemsList,
+        listGroup,
+        css`
         .block {
             display: block;
         }
@@ -154,7 +176,9 @@ export class AdditionalFieldEdit extends LitElement {
         sl-tab.has-error:not([active])::part(base) {
             color: var(--sl-color-danger-600);
         }
-    `, retroCompat];
+    `,
+        retroCompat,
+    ];
 
     readonly #form = new TanStackFormController(this, {
         defaultValues: {
@@ -173,10 +197,9 @@ export class AdditionalFieldEdit extends LitElement {
             additionalServiceId: undefined,
             disabledValues: undefined,
             categoryIds: undefined,
-            selectableOptions: []
-        } as AdditionalFieldForm
+            selectableOptions: [],
+        } as AdditionalFieldForm,
     });
-
 
     protected render(): TemplateResult {
         return html`
@@ -187,7 +210,10 @@ export class AdditionalFieldEdit extends LitElement {
                 label=${this.dialogTitle}
                 @sl-request-close=${this.preventAccidentalClose}>
 
-                    ${renderIf(() => this.displayForm, () => this.renderForm())}
+                    ${renderIf(
+                        () => this.displayForm,
+                        () => this.renderForm(),
+                    )}
 
             </sl-dialog>
         `;
@@ -196,13 +222,17 @@ export class AdditionalFieldEdit extends LitElement {
     private renderForm(): TemplateResult {
         const contentLanguages = this.purchaseContext?.contentLanguages ?? [];
         return html`
-            <form id="form" @submit="${async (e: Event) => {e.preventDefault(); e.stopImmediatePropagation(); await this.#form.api.handleSubmit();}}">
+            <form id="form" @submit="${async (e: Event) => {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                await this.#form.api.handleSubmit();
+            }}">
                 <div class="row custom" style="--alfio-custom-row-cols-layout: 2fr 1fr">
                     <div class="col">
                         <section>
                             <div class="section-header">Field Definition</div>
                             <div class="section-subtitle">What kind of data will you collect?</div>
-                            ${(this.renderFieldTypeSelector())}
+                            ${this.renderFieldTypeSelector()}
                             ${this.renderConstraints()}
                         </section>
                         <sl-divider></sl-divider>
@@ -212,7 +242,11 @@ export class AdditionalFieldEdit extends LitElement {
                             <sl-tab-group>
                                 ${contentLanguages.map((d, index) => {
                                     return html`
-                                            <sl-tab slot="nav" panel=${d.locale}>${d.displayLanguage}${renderIf(() => index === 0, () => html`<sl-badge variant="primary" pill class="ms-1">Primary</sl-badge>`)}</sl-tab>
+                                            <sl-tab slot="nav" panel=${d.locale}>${d.displayLanguage}${renderIf(
+                                                () => index === 0,
+                                                () =>
+                                                    html`<sl-badge variant="primary" pill class="ms-1">Primary</sl-badge>`,
+                                            )}</sl-tab>
                                             <sl-tab-panel name=${d.locale}>
                                                 <div class="info-container">
                                                     ${this.renderLanguageFields(d, index === 0)}
@@ -227,7 +261,7 @@ export class AdditionalFieldEdit extends LitElement {
                         <section>
                             <div class="section-header">Field Reference</div>
                             <div class="section-subtitle">How field will be referenced in export/import Spreadsheets</div>
-                            ${(this.renderNameField())}
+                            ${this.renderNameField()}
                         </section>
                         <sl-divider></sl-divider>
                         <section>
@@ -245,7 +279,9 @@ export class AdditionalFieldEdit extends LitElement {
                                 </li>
                             </ul>
                         </section>
-                        ${renderIf(() => this.purchaseContext?.type === 'event', () => html`
+                        ${renderIf(
+                            () => this.purchaseContext?.type === 'event',
+                            () => html`
                             <sl-divider></sl-divider>
                             <section>
                                 <div class="section-header">Visibility Rules</div>
@@ -257,7 +293,8 @@ export class AdditionalFieldEdit extends LitElement {
                                     <li class="list-group-item"></li>
                                 </ul>
                             </section>
-                        `)}
+                        `,
+                        )}
                     </div>
                     <div class="col live-preview-container">
 
@@ -288,7 +325,8 @@ export class AdditionalFieldEdit extends LitElement {
     }
 
     private buildPreview(cl: ContentLanguage) {
-        const descriptionForContentLanguage = this.#form.api.getFieldValue('description')[cl.language];
+        const descriptionForContentLanguage =
+            this.#form.api.getFieldValue('description')[cl.language];
         if (this.preview == null) {
             return html`
                 <sl-alert variant="warning" open class="mt-3">
@@ -300,80 +338,112 @@ export class AdditionalFieldEdit extends LitElement {
         } else {
             return html`
                 <sl-card class="item bg-default mt-3 preview-container">
-                    ${renderPreview({
-                        locale: cl.locale,
-                        localeLabel: cl.displayLanguage,
-                        description: descriptionForContentLanguage
-                    }, this.preview)}
+                    ${renderPreview(
+                        {
+                            locale: cl.locale,
+                            localeLabel: cl.displayLanguage,
+                            description: descriptionForContentLanguage,
+                        },
+                        this.preview,
+                    )}
                 </sl-card>
             `;
         }
     }
 
     private renderEditableField() {
-        return this.#form.field({
-            name: 'editable'
-        }, (field) => html`
-            <sl-switch .value=${field.state.value} help-text="Attendee can modify after initial submission" checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field, _ => (e.currentTarget as HTMLInputElement).checked)} class="block mt-2 mb-2">
+        return this.#form.field(
+            {
+                name: 'editable',
+            },
+            (field) => html`
+            <sl-switch .value=${field.state.value} help-text="Attendee can modify after initial submission" checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field, (_) => (e.currentTarget as HTMLInputElement).checked)} class="block mt-2 mb-2">
                 Editable by attendee
             </sl-switch>
-        `);
+        `,
+        );
     }
 
     private renderDisplayAtCheckInField() {
-        return this.#form.field({
-            name: 'displayAtCheckIn'
-        }, (field) => html`
-            <sl-switch help-text="Displayed in check-in app upon successful scan" checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field, _ => (e.currentTarget as HTMLInputElement).checked)} class="block mt-2 mb-2">
+        return this.#form.field(
+            {
+                name: 'displayAtCheckIn',
+            },
+            (field) => html`
+            <sl-switch help-text="Displayed in check-in app upon successful scan" checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field, (_) => (e.currentTarget as HTMLInputElement).checked)} class="block mt-2 mb-2">
                 Show at check-in
             </sl-switch>
-        `);
+        `,
+        );
     }
 
     private renderRequiredCheckbox() {
-        return this.#form.field({
-            name: 'required'
-        }, (field) => html`
-            <sl-switch size="medium" .value=${field.state.value} checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field, _ => (e.currentTarget as HTMLInputElement).checked)} class="block mt-2 mb-2">
+        return this.#form.field(
+            {
+                name: 'required',
+            },
+            (field) => html`
+            <sl-switch size="medium" .value=${field.state.value} checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field, (_) => (e.currentTarget as HTMLInputElement).checked)} class="block mt-2 mb-2">
                 Required field
             </sl-switch>
-        `);
+        `,
+        );
     }
 
     private renderFieldTypeSelector() {
-
-        return this.#form.field({
-            name: 'type'
-        }, (field) => {
-            const selectionChangeHandler = (e: InputEvent) => {
-                const value = (e.currentTarget as HTMLInputElement).value as AdditionalFieldType;
-                if (supportsRestrictedValues(value) && this.#form.api.getFieldValue("selectableOptions").length === 0) {
-                    // add first selectable option
-                    this.#form.api.setFieldValue("selectableOptions", [{fieldName: '', description: {}, toBePersisted: true}]);
-                }
-                notifyChange(e, field);
-            }
-            return html`
+        return this.#form.field(
+            {
+                name: 'type',
+            },
+            (field) => {
+                const selectionChangeHandler = (e: InputEvent) => {
+                    const value = (e.currentTarget as HTMLInputElement)
+                        .value as AdditionalFieldType;
+                    if (
+                        supportsRestrictedValues(value) &&
+                        this.#form.api.getFieldValue('selectableOptions')
+                            .length === 0
+                    ) {
+                        // add first selectable option
+                        this.#form.api.setFieldValue('selectableOptions', [
+                            {
+                                fieldName: '',
+                                description: {},
+                                toBePersisted: true,
+                            },
+                        ]);
+                    }
+                    notifyChange(e, field);
+                };
+                return html`
                 <sl-select label="Field Type" required .value=${field.state.value} @sl-change=${(e: InputEvent) => selectionChangeHandler(e)} class=${classMap({ error: this.hasError(field.state.meta) })}>
-                    ${repeat(Object.entries(additionalFieldTypesWithDescription), ([k]) => k, ([value, description]) => html`
+                    ${repeat(
+                        Object.entries(additionalFieldTypesWithDescription),
+                        ([k]) => k,
+                        ([value, description]) => html`
                         <sl-option value=${value}>${description}</sl-option>
-                    `)}
+                    `,
+                    )}
                 </sl-select>
             `;
-        });
+            },
+        );
     }
 
     private renderNameField() {
-        return this.#form.field({
-            name: 'name',
-            validators: {
-                onChange: ({value}) => {
-                    return this.validateName(value);
-                }
-            }
-        }, (field) => html`
+        return this.#form.field(
+            {
+                name: 'name',
+                validators: {
+                    onChange: ({ value }) => {
+                        return this.validateName(value);
+                    },
+                },
+            },
+            (field) => html`
              <sl-input placeholder="Name" label="Internal Field Name" maxlength="64" help-text="Letters, numbers, and underscores only." required class=${classMap({ error: this.hasError(field.state.meta) })} .value=${field.state.value} @sl-change=${(e: InputEvent) => notifyChange(e, field)} .disabled=${this.editField}></sl-input>
-        `);
+        `,
+        );
     }
 
     private validateName(value: string) {
@@ -387,45 +457,66 @@ export class AdditionalFieldEdit extends LitElement {
     }
 
     private renderLanguageFields(cl: ContentLanguage, primary: boolean) {
-
         const descriptionChanged = (e: InputEvent, field: any) => {
             if (primary && !this.editField) {
                 const value = (e.currentTarget as HTMLInputElement).value;
                 const currentFieldName = this.#form.api.getFieldValue(`name`);
-                const currentFieldNameUntouched = this.#form.api.getFieldMeta(`name`)!.isPristine;
-                if (currentFieldNameUntouched || currentFieldName?.length === 0) {
-                    let generatedValue = value.toLowerCase().replaceAll(/\W/g,"_").substring(0, 64);
-                    if (generatedValue.endsWith("_")) {
-                        generatedValue = generatedValue.substring(0, generatedValue.length - 1);
+                const currentFieldNameUntouched =
+                    this.#form.api.getFieldMeta(`name`)!.isPristine;
+                if (
+                    currentFieldNameUntouched ||
+                    currentFieldName?.length === 0
+                ) {
+                    let generatedValue = value
+                        .toLowerCase()
+                        .replaceAll(/\W/g, '_')
+                        .substring(0, 64);
+                    if (generatedValue.endsWith('_')) {
+                        generatedValue = generatedValue.substring(
+                            0,
+                            generatedValue.length - 1,
+                        );
                     }
-                    this.#form.api.setFieldValue(`name`, generatedValue, {dontUpdateMeta: true});
+                    this.#form.api.setFieldValue(`name`, generatedValue, {
+                        dontUpdateMeta: true,
+                    });
                 }
             }
             notifyChange(e, field);
         };
 
         return html`
-            ${this.#form.field({
-                name: `description.${cl.locale}.description.label`,
-                validators: {
-                    onChange: ({value}) => {
-                        if (value.trim().length === 0) {
-                            return 'error.required';
-                        }
-                        return undefined;
-                    }
-                }
-            }, (field) => {
-                return html`
+            ${this.#form.field(
+                {
+                    name: `description.${cl.locale}.description.label`,
+                    validators: {
+                        onChange: ({ value }) => {
+                            if (value.trim().length === 0) {
+                                return 'error.required';
+                            }
+                            return undefined;
+                        },
+                    },
+                },
+                (field) => {
+                    return html`
                         <sl-input label="Title" placeholder="The question attendees will see" required class=${classMap({ error: this.hasError(field.state.meta) })} .value=${field.state.value ?? nothing} @sl-change=${(e: InputEvent) => descriptionChanged(e, field)}></sl-input>
-                    `
-            })}
-            ${renderIf(() => supportsPlaceholder(this.#form.api.state.values.type),
+                    `;
+                },
+            )}
+            ${renderIf(
+                () => supportsPlaceholder(this.#form.api.state.values.type),
                 () => html`
-                    ${this.#form.field({name: `description.${cl.locale}.description.placeholder`}, (field) => html`
+                    ${this.#form.field(
+                        {
+                            name: `description.${cl.locale}.description.placeholder`,
+                        },
+                        (field) => html`
                         <sl-input label="Placeholder" .value=${field.state.value ?? nothing} placeholder="Optional hint inside the field" @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
-                    `)}
-                `)}
+                    `,
+                    )}
+                `,
+            )}
             `;
     }
 
@@ -439,41 +530,81 @@ export class AdditionalFieldEdit extends LitElement {
                 <div class="section-header">Selectable Options</div>
                 <div class="section-subtitle">Define the options attendees can choose from</div>
                 <div class="field-constraints">
-                    ${this.#form.field({
-                        name: 'selectableOptions',
-                    }, (selectableOptionsField) => {
-                        const contentLanguages = this.purchaseContext?.contentLanguages ?? [];
-                        const selectableOptions = selectableOptionsField.state.value ?? [];
-                        return html`
-                            ${repeat(selectableOptions, (_, index) => index, (_, index) => {
-                                return this.renderSelectableOptionCard(index,
-                                    selectableOptions.length - 1,
-                                    contentLanguages,
-                                    () => selectableOptionsField.removeValue(index),
-                                    (newIndex) => selectableOptionsField.moveValue(index, newIndex)
-                                );
-                            })}
-                            <sl-button class="mt-2" variant="success" @click=${() => {selectableOptionsField.pushValue({fieldName: '', description: {}, toBePersisted: true})}}>Add option</sl-button>
+                    ${this.#form.field(
+                        {
+                            name: 'selectableOptions',
+                        },
+                        (selectableOptionsField) => {
+                            const contentLanguages =
+                                this.purchaseContext?.contentLanguages ?? [];
+                            const selectableOptions =
+                                selectableOptionsField.state.value ?? [];
+                            return html`
+                            ${repeat(
+                                selectableOptions,
+                                (_, index) => index,
+                                (_, index) => {
+                                    return this.renderSelectableOptionCard(
+                                        index,
+                                        selectableOptions.length - 1,
+                                        contentLanguages,
+                                        () =>
+                                            selectableOptionsField.removeValue(
+                                                index,
+                                            ),
+                                        (newIndex) =>
+                                            selectableOptionsField.moveValue(
+                                                index,
+                                                newIndex,
+                                            ),
+                                    );
+                                },
+                            )}
+                            <sl-button class="mt-2" variant="success" @click=${() => {
+                                selectableOptionsField.pushValue({
+                                    fieldName: '',
+                                    description: {},
+                                    toBePersisted: true,
+                                });
+                            }}>Add option</sl-button>
                         `;
-                    })}
+                        },
+                    )}
                 </div>
             </section>
         `;
     }
 
-    private renderSelectableOptionCard(optionIndex: number,
-                                       maxIndex: number,
-                                       contentLanguages: ContentLanguage[],
-                                       removeField: () => void,
-                                       moveField: (newIndex: number) => void) {
-        const descriptionChanged = (e: InputEvent, languageIdx: number, field: any) => {
+    private renderSelectableOptionCard(
+        optionIndex: number,
+        maxIndex: number,
+        contentLanguages: ContentLanguage[],
+        removeField: () => void,
+        moveField: (newIndex: number) => void,
+    ) {
+        const descriptionChanged = (
+            e: InputEvent,
+            languageIdx: number,
+            field: any,
+        ) => {
             if (languageIdx === 0 && !this.editField) {
                 // only process it when it's the first language
                 const value = (e.currentTarget as HTMLInputElement).value;
-                const currentFieldName = this.#form.api.getFieldValue(`selectableOptions[${optionIndex}].fieldName`);
-                const currentFieldNameTouched = this.#form.api.getFieldMeta(`selectableOptions[${optionIndex}].fieldName`)!.isPristine;
+                const currentFieldName = this.#form.api.getFieldValue(
+                    `selectableOptions[${optionIndex}].fieldName`,
+                );
+                const currentFieldNameTouched = this.#form.api.getFieldMeta(
+                    `selectableOptions[${optionIndex}].fieldName`,
+                )!.isPristine;
                 if (currentFieldNameTouched || currentFieldName?.length === 0) {
-                    this.#form.api.setFieldValue(`selectableOptions[${optionIndex}].fieldName`, value.toLowerCase().replaceAll(/\W/g,"_").substring(0, 64), {dontUpdateMeta: true});
+                    this.#form.api.setFieldValue(
+                        `selectableOptions[${optionIndex}].fieldName`,
+                        value
+                            .toLowerCase()
+                            .replaceAll(/\W/g, '_')
+                            .substring(0, 64),
+                        { dontUpdateMeta: true },
+                    );
                 }
             }
             notifyChange(e, field);
@@ -483,25 +614,35 @@ export class AdditionalFieldEdit extends LitElement {
                 <div slot="header">
                     <div class="col option-title">Option ${optionIndex + 1}</div>
                     <div class="col">
-                        ${renderIf(() => this.#form.api.getFieldValue(`selectableOptions[${optionIndex}].toBePersisted`),
-                            () => html`<sl-button variant="danger" outline @click=${() => removeField()}><sl-icon slot="prefix" name="trash"></sl-icon> delete</sl-button>`)}
+                        ${renderIf(
+                            () =>
+                                this.#form.api.getFieldValue(
+                                    `selectableOptions[${optionIndex}].toBePersisted`,
+                                ),
+                            () =>
+                                html`<sl-button variant="danger" outline @click=${() => removeField()}><sl-icon slot="prefix" name="trash"></sl-icon> delete</sl-button>`,
+                        )}
                     </div>
                 </div>
                 <div slot="footer">
-                    ${renderIf(() => optionIndex > 0,
+                    ${renderIf(
+                        () => optionIndex > 0,
                         () => html`
                             <sl-button type="button" variant="default" @click=${() => moveField(optionIndex - 1)}>
                                 <sl-icon name="arrow-up" slot="prefix"></sl-icon>
                                 Move up
                             </sl-button>
-                        `)}
-                    ${renderIf(() => optionIndex < maxIndex,
+                        `,
+                    )}
+                    ${renderIf(
+                        () => optionIndex < maxIndex,
                         () => html`
                         <sl-button type="button" variant="default" @click=${() => moveField(optionIndex + 1)}>
                             <sl-icon name="arrow-down" slot="prefix"></sl-icon>
                             Move down
                         </sl-button>
-                    `)}
+                    `,
+                    )}
                 </div>
                 <div class="item-body" style="--alfio-custom-row-cols-layout: 1fr 10fr">
                     ${contentLanguages.map((d, languageIndex) => {
@@ -509,22 +650,28 @@ export class AdditionalFieldEdit extends LitElement {
                             <div class="row custom">
                                 <div class="col text-end selectable-option-header pt-2">${d.displayLanguage}</div>
                                 <div class="col">
-                                    ${this.#form.field({
-                                        name: `selectableOptions[${optionIndex}].description.${d.locale}`,
-                                        validators: {
-                                            onChange: ({value}) => {
-                                                if (value.trim().length === 0) {
-                                                    return 'error.required';
-                                                }
-                                                return undefined;
-                                            }
-                                        }
-                                    }, (field) => html`
+                                    ${this.#form.field(
+                                        {
+                                            name: `selectableOptions[${optionIndex}].description.${d.locale}`,
+                                            validators: {
+                                                onChange: ({ value }) => {
+                                                    if (
+                                                        value.trim().length ===
+                                                        0
+                                                    ) {
+                                                        return 'error.required';
+                                                    }
+                                                    return undefined;
+                                                },
+                                            },
+                                        },
+                                        (field) => html`
                                         <sl-input type="text" placeholder=${`enter description (${d.displayLanguage})`}
                                                   required .value=${field.state.value ?? ''}
                                                   class=${classMap({ error: this.hasError(field.state.meta) })}
                                                   @sl-change=${(e: InputEvent) => descriptionChanged(e, languageIndex, field)}></sl-input>
-                                    `)}
+                                    `,
+                                    )}
                                 </div>
                             </div>
                         `;
@@ -533,14 +680,16 @@ export class AdditionalFieldEdit extends LitElement {
                     <div class="row custom">
                         <div class="col text-end selectable-option-header">Value</div>
                         <div class="col">
-                            ${this.#form.field({
-                                name: `selectableOptions[${optionIndex}].fieldName`,
-                                validators: {
-                                    onChange: ({value}) => {
-                                        return this.validateName(value);
-                                    }
-                                }
-                            }, (field) => html`
+                            ${this.#form.field(
+                                {
+                                    name: `selectableOptions[${optionIndex}].fieldName`,
+                                    validators: {
+                                        onChange: ({ value }) => {
+                                            return this.validateName(value);
+                                        },
+                                    },
+                                },
+                                (field) => html`
                                 <sl-input type="text" placeholder="Value will be autogenerated from description"
                                           required .value=${field.state.value}
                                           class=${classMap({ error: this.hasError(field.state.meta) })}
@@ -548,74 +697,91 @@ export class AdditionalFieldEdit extends LitElement {
                                           help-text="Used in data exports. Letters, numbers, and underscores only."
                                           @sl-change=${(e: InputEvent) => notifyChange(e, field)}
                                           .readonly=${this.editField}></sl-input>
-                            `)}
+                            `,
+                            )}
                         </div>
                     </div>
             </sl-card>
         `;
     }
 
-    private async close(success: boolean):Promise<boolean> {
+    private async close(success: boolean): Promise<boolean> {
         if (this.dialog != null) {
             await this.dialog.hide();
         }
-        this.dispatchEvent(new CustomEvent('alfio-dialog-closed', { detail: { success } }));
+        this.dispatchEvent(
+            new CustomEvent('alfio-dialog-closed', { detail: { success } }),
+        );
         return this.dialog != null;
     }
-
-
 
     private renderCollectFor() {
         if (this.purchaseContext?.type === 'event') {
             const event = this.purchaseContext as AlfioEvent;
 
             return html`
-                ${this.#form.field({
-                    name: 'categoryIds',
-                    validators: {
-                        onChange: ({value}) => {
-                            if (!this.allCategories && (value?.length ?? 0) === 0) {
-                                return 'error.required';
+                ${this.#form.field(
+                    {
+                        name: 'categoryIds',
+                        validators: {
+                            onChange: ({ value }) => {
+                                if (
+                                    !this.allCategories &&
+                                    (value?.length ?? 0) === 0
+                                ) {
+                                    return 'error.required';
+                                }
+                                return undefined;
+                            },
+                        },
+                    },
+                    (field) => {
+                        const selectionChanged = (e: InputEvent) => {
+                            const target = e.currentTarget as HTMLInputElement;
+                            const checked = target.checked;
+                            this.allCategories = checked;
+                            if (checked) {
+                                field.handleChange([]);
                             }
-                            return undefined;
-                        }
-                    }
-                }, (field) => {
+                        };
 
-                    const selectionChanged = (e: InputEvent) => {
-                        const target = e.currentTarget as HTMLInputElement;
-                        const checked = target.checked;
-                        this.allCategories = checked;
-                        if (checked) {
-                            field.handleChange([]);
-                        }
-                    }
-
-                    return html`
+                        return html`
                         <ul class="list-group">
                             <li class="list-group-item">
                                 <sl-switch help-text="Or select specific categories" class="block mt-2 mb-2"
                                            .checked=${this.allCategories}
                                            @sl-change=${(e: InputEvent) => selectionChanged(e)}>Apply to all ticket categories</sl-switch>
-                                ${renderIf(() => !this.allCategories, () => html`
+                                ${renderIf(
+                                    () => !this.allCategories,
+                                    () => html`
                                     ${this.renderCategories(event, field)}
-                                `)}
+                                `,
+                                )}
                             </li>
-                            ${renderIf(() => this.additionalItems.length > 0, () => this.renderAdditionalItemSelector())}
+                            ${renderIf(
+                                () => this.additionalItems.length > 0,
+                                () => this.renderAdditionalItemSelector(),
+                            )}
                         </ul>
                     `;
-                })}
+                    },
+                )}
             `;
         }
         return html``;
     }
 
-    private renderCategories(event: AlfioEvent, field: {state: {meta: any, value?: number[]}, handleChange: (values: any) => void}) {
-
+    private renderCategories(
+        event: AlfioEvent,
+        field: {
+            state: { meta: any; value?: number[] };
+            handleChange: (values: any) => void;
+        },
+    ) {
         const selectionChanged = (e: InputEvent) => {
             const target = e.currentTarget as SlSelect;
-            const values  = [];
-            for(const option of target.selectedOptions) {
+            const values = [];
+            for (const option of target.selectedOptions) {
                 values.push(Number.parseInt(option.value));
             }
             field.handleChange(values);
@@ -631,42 +797,59 @@ export class AdditionalFieldEdit extends LitElement {
     }
 
     private renderAdditionalItemSelector() {
-        const selectionChange = (e: InputEvent, field: { handleChange: (m: any) => void }) => {
-            const additionalService = (e.currentTarget as HTMLInputElement).checked;
-            field.handleChange(additionalService ? 'ADDITIONAL_SERVICE' : 'ATTENDEE');
+        const selectionChange = (
+            e: InputEvent,
+            field: { handleChange: (m: any) => void },
+        ) => {
+            const additionalService = (e.currentTarget as HTMLInputElement)
+                .checked;
+            field.handleChange(
+                additionalService ? 'ADDITIONAL_SERVICE' : 'ATTENDEE',
+            );
             if (!additionalService) {
                 this.#form.api.setFieldValue('additionalServiceId', undefined);
             }
-        }
+        };
 
         const findTitle = (item: AdditionalItem) => item.title[0].value ?? '';
         return html`
             <li class="list-group-item">
-                ${this.#form.field({
-                    name: 'context'
-                }, (field) => html`
+                ${this.#form.field(
+                    {
+                        name: 'context',
+                    },
+                    (field) => html`
                         <sl-switch help-text="Field appears when attendee selects an Additional Item" class="block mt-2 mb-2" .checked=${field.state.value === 'ADDITIONAL_SERVICE'} @sl-change=${(e: InputEvent) => selectionChange(e, field)}>
                             Show only for specific Additional Item
                         </sl-switch>
-                    `)}
+                    `,
+                )}
 
-                ${renderIf(() => this.#form.api.state.values.context === 'ADDITIONAL_SERVICE', () => html`
-                    ${this.#form.field({
-                        name: 'additionalServiceId',
-                        validators: {
-                            onChange: ({value}) => {
-                                if (value == null) {
-                                    return 'error.required';
-                                }
-                                return undefined;
-                            }
-                        }
-                    }, (field) => html`
-                        <sl-select label="Additional Item" required class=${classMap({ error: this.hasError(field.state.meta), "no-mt block": true })} .value=${asString(field.state.value)} @sl-change=${(e: InputEvent) => notifyChange(e, field, asNumber)}>
-                            ${repeat(this.additionalItems, item => html`<sl-option .value=${item.id}>${findTitle(item)}</sl-option>`)}
+                ${renderIf(
+                    () =>
+                        this.#form.api.state.values.context ===
+                        'ADDITIONAL_SERVICE',
+                    () => html`
+                    ${this.#form.field(
+                        {
+                            name: 'additionalServiceId',
+                            validators: {
+                                onChange: ({ value }) => {
+                                    if (value == null) {
+                                        return 'error.required';
+                                    }
+                                    return undefined;
+                                },
+                            },
+                        },
+                        (field) => html`
+                        <sl-select label="Additional Item" required class=${classMap({ error: this.hasError(field.state.meta), 'no-mt block': true })} .value=${asString(field.state.value)} @sl-change=${(e: InputEvent) => notifyChange(e, field, asNumber)}>
+                            ${repeat(this.additionalItems, (item) => html`<sl-option .value=${item.id}>${findTitle(item)}</sl-option>`)}
                         </sl-select>
-                    `)}
-                `)}
+                    `,
+                    )}
+                `,
+                )}
             </li>
 
         `;
@@ -682,16 +865,20 @@ export class AdditionalFieldEdit extends LitElement {
 
                     <div class="row">
                         <div class="col">
-                            ${this.#form.field({name: 'minLength'},
+                            ${this.#form.field(
+                                { name: 'minLength' },
                                 (field) => html`
-                                     <sl-input label=${fieldType === 'input:dateOfBirth' ? "Min age (years)" : "Min length"} .value=${field.state.value ?? nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
-                                `)}
+                                     <sl-input label=${fieldType === 'input:dateOfBirth' ? 'Min age (years)' : 'Min length'} .value=${field.state.value ?? nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
+                                `,
+                            )}
                         </div>
                         <div class="col">
-                            ${this.#form.field({name: 'maxLength'},
+                            ${this.#form.field(
+                                { name: 'maxLength' },
                                 (field) => html`
-                                     <sl-input label=${fieldType === 'input:dateOfBirth' ? "Max age (years)" : "Max length"} .value=${field.state.value ?? nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
-                                `)}
+                                     <sl-input label=${fieldType === 'input:dateOfBirth' ? 'Max age (years)' : 'Max length'} .value=${field.state.value ?? nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
+                                `,
+                            )}
                         </div>
                     </div>
 
@@ -702,25 +889,36 @@ export class AdditionalFieldEdit extends LitElement {
     }
 
     public async open(request: {
-        field?: AdditionalField,
-        template?: NewAdditionalFieldFromTemplate,
-        purchaseContext: PurchaseContext,
-        ordinal: number
+        field?: AdditionalField;
+        template?: NewAdditionalFieldFromTemplate;
+        purchaseContext: PurchaseContext;
+        ordinal: number;
     }): Promise<boolean> {
-
         if (this.dialog != null) {
-            this.dialogTitle = request.field == null ? `Add attendee data field` : `Edit ${request.field.name} field`;
+            this.dialogTitle =
+                request.field == null
+                    ? `Add attendee data field`
+                    : `Edit ${request.field.name} field`;
             this.editField = request.field != null;
             this.existingFieldName = request.field?.name;
             this.purchaseContext = request.purchaseContext;
             this.#form.api.update({
-                defaultValues: this.buildDefaultValues(request.purchaseContext, request.ordinal, request.field, request.template),
+                defaultValues: this.buildDefaultValues(
+                    request.purchaseContext,
+                    request.ordinal,
+                    request.field,
+                    request.template,
+                ),
                 onSubmit: async (state) => {
                     await this.save(state.value);
-                }
+                },
             });
             if (request.purchaseContext.type === 'event' && !this.editField) {
-                this.additionalItems.push(...await AdditionalItemService.loadAll({eventId: (request.purchaseContext as AlfioEvent).id}));
+                this.additionalItems.push(
+                    ...(await AdditionalItemService.loadAll({
+                        eventId: (request.purchaseContext as AlfioEvent).id,
+                    })),
+                );
             }
             this.displayForm = true;
             await this.dialog.show();
@@ -733,32 +931,39 @@ export class AdditionalFieldEdit extends LitElement {
             e.preventDefault();
         } else {
             this.displayForm = false;
-            this.dispatchEvent(new CustomEvent('alfio-dialog-closed', { detail: { success: false } }));
+            this.dispatchEvent(
+                new CustomEvent('alfio-dialog-closed', {
+                    detail: { success: false },
+                }),
+            );
         }
     }
 
-    private buildDefaultValues(purchaseContext: PurchaseContext,
-                               ordinal: number,
-                               field?: AdditionalField,
-                               template?: NewAdditionalFieldFromTemplate): AdditionalFieldForm {
-
+    private buildDefaultValues(
+        purchaseContext: PurchaseContext,
+        ordinal: number,
+        field?: AdditionalField,
+        template?: NewAdditionalFieldFromTemplate,
+    ): AdditionalFieldForm {
         if (field != null) {
             return {
                 ...field,
-                selectableOptions: (field.restrictedValues ?? []).map(v => {
-                    const description: {[lang: string]: string} = {};
+                selectableOptions: (field.restrictedValues ?? []).map((v) => {
+                    const description: { [lang: string]: string } = {};
                     Object.entries(field.description).forEach(([lang, fd]) => {
-                        const restrictedValues = fd.description.restrictedValues;
+                        const restrictedValues =
+                            fd.description.restrictedValues;
                         if (restrictedValues == null) {
                             description[lang] = '';
                         } else {
-                            description[lang] = fd.description.restrictedValues![v] ?? '';
+                            description[lang] =
+                                fd.description.restrictedValues![v] ?? '';
                         }
                     });
                     return {
                         fieldName: v,
                         description,
-                        toBePersisted: false
+                        toBePersisted: false,
                     };
                 }),
             };
@@ -772,35 +977,46 @@ export class AdditionalFieldEdit extends LitElement {
             editable: true,
             displayAtCheckIn: false,
             required: false,
-            context: purchaseContext.type === 'subscription' ? 'SUBSCRIPTION' : 'ATTENDEE',
-            selectableOptions: this.parseRestrictedValues(purchaseContext, template)
+            context:
+                purchaseContext.type === 'subscription'
+                    ? 'SUBSCRIPTION'
+                    : 'ATTENDEE',
+            selectableOptions: this.parseRestrictedValues(
+                purchaseContext,
+                template,
+            ),
         };
     }
 
-    private parseRestrictedValues(purchaseContext: PurchaseContext,
-                                  template?: NewAdditionalFieldFromTemplate): SelectableOption[]  {
+    private parseRestrictedValues(
+        purchaseContext: PurchaseContext,
+        template?: NewAdditionalFieldFromTemplate,
+    ): SelectableOption[] {
         if (template == null) {
             return [];
         }
 
-        return (template.restrictedValues ?? []).map(v => {
-            const description: {[lang: string]: string} = {};
-            purchaseContext.contentLanguages.forEach(({locale}) => {
+        return (template.restrictedValues ?? []).map((v) => {
+            const description: { [lang: string]: string } = {};
+            purchaseContext.contentLanguages.forEach(({ locale }) => {
                 const fd = template.description[locale];
                 description[locale] = fd?.restrictedValues?.[v] ?? '';
             });
             return {
                 fieldName: v,
                 description,
-                toBePersisted: true
+                toBePersisted: true,
             };
         });
     }
 
-    private parseDescriptions(purchaseContext: PurchaseContext,
-                              template?: NewAdditionalFieldFromTemplate): {[p: string]: PurchaseContextFieldDescriptionContainer} {
-
-        const descriptions: {[p: string]: PurchaseContextFieldDescriptionContainer} = {};
+    private parseDescriptions(
+        purchaseContext: PurchaseContext,
+        template?: NewAdditionalFieldFromTemplate,
+    ): { [p: string]: PurchaseContextFieldDescriptionContainer } {
+        const descriptions: {
+            [p: string]: PurchaseContextFieldDescriptionContainer;
+        } = {};
         purchaseContext.contentLanguages.forEach((lang) => {
             const fromTemplate = template?.description[lang.locale];
             descriptions[lang.locale] = {
@@ -810,12 +1026,11 @@ export class AdditionalFieldEdit extends LitElement {
                     placeholder: fromTemplate?.placeholder,
                     restrictedValues: fromTemplate?.restrictedValues,
                 },
-                fieldName: template?.name ?? ''
+                fieldName: template?.name ?? '',
             };
         });
         return descriptions;
     }
-
 
     private async save(additionalFieldForm: AdditionalFieldForm) {
         if (additionalFieldForm.id == null) {
@@ -825,61 +1040,83 @@ export class AdditionalFieldEdit extends LitElement {
         }
     }
 
-
     private async updateExisting(additionalFieldForm: AdditionalFieldForm) {
-        const additionalField = this.getAdditionalFieldFromForm(additionalFieldForm);
-        const response = await AdditionalFieldService.saveField(this.purchaseContext!, additionalField);
+        const additionalField =
+            this.getAdditionalFieldFromForm(additionalFieldForm);
+        const response = await AdditionalFieldService.saveField(
+            this.purchaseContext!,
+            additionalField,
+        );
         if (response.ok) {
             await this.close(true);
         } else {
-            dispatchFeedback({
-                type: "danger",
-                message: "Unexpected error. Please retry."
-            }, this);
+            dispatchFeedback(
+                {
+                    type: 'danger',
+                    message: 'Unexpected error. Please retry.',
+                },
+                this,
+            );
         }
     }
 
     private async createNew(additionalFieldForm: AdditionalFieldForm) {
         const descriptionRequest: { [locale: string]: DescriptionRequest } = {};
         const selectableOptions: SelectableOption[] = [];
-        if (supportsRestrictedValues(additionalFieldForm.type) && additionalFieldForm.selectableOptions != null) {
+        if (
+            supportsRestrictedValues(additionalFieldForm.type) &&
+            additionalFieldForm.selectableOptions != null
+        ) {
             selectableOptions.push(...additionalFieldForm.selectableOptions);
         }
-        const restrictedValues: RestrictedValueRequest[] = selectableOptions.map(option => ({
-            value: option.fieldName,
-            enabled: true
-        }));
-        Object.entries(additionalFieldForm.description).forEach(([key, value]) => {
-            descriptionRequest[key] = {
-                label: value.description.label,
-                placeholder: value.description.placeholder ?? ''
-            }
-            if (selectableOptions.length > 0) {
-                descriptionRequest[key].restrictedValues = {};
-                selectableOptions.forEach(option => {
-                    descriptionRequest[key].restrictedValues![option.fieldName] = option.description[key];
-                });
-            }
-        });
-        const updateResult = await AdditionalFieldService.createNewField(this.purchaseContext!, {
-            type: additionalFieldForm.type,
-            name: additionalFieldForm.name,
-            order: additionalFieldForm.order,
-            categoryIds: additionalFieldForm.categoryIds ?? [],
-            displayAtCheckIn: additionalFieldForm.displayAtCheckIn,
-            forAdditionalService: this.additionalItems.find(item => item.id === additionalFieldForm.additionalServiceId),
-            maxLength: additionalFieldForm.maxLength,
-            minLength: additionalFieldForm.minLength,
-            readOnly: !additionalFieldForm.editable,
-            required: additionalFieldForm.required,
-            description: descriptionRequest,
-            restrictedValues: restrictedValues,
-            userDefinedOrder: false
-        });
+        const restrictedValues: RestrictedValueRequest[] =
+            selectableOptions.map((option) => ({
+                value: option.fieldName,
+                enabled: true,
+            }));
+        Object.entries(additionalFieldForm.description).forEach(
+            ([key, value]) => {
+                descriptionRequest[key] = {
+                    label: value.description.label,
+                    placeholder: value.description.placeholder ?? '',
+                };
+                if (selectableOptions.length > 0) {
+                    descriptionRequest[key].restrictedValues = {};
+                    selectableOptions.forEach((option) => {
+                        descriptionRequest[key].restrictedValues![
+                            option.fieldName
+                        ] = option.description[key];
+                    });
+                }
+            },
+        );
+        const updateResult = await AdditionalFieldService.createNewField(
+            this.purchaseContext!,
+            {
+                type: additionalFieldForm.type,
+                name: additionalFieldForm.name,
+                order: additionalFieldForm.order,
+                categoryIds: additionalFieldForm.categoryIds ?? [],
+                displayAtCheckIn: additionalFieldForm.displayAtCheckIn,
+                forAdditionalService: this.additionalItems.find(
+                    (item) =>
+                        item.id === additionalFieldForm.additionalServiceId,
+                ),
+                maxLength: additionalFieldForm.maxLength,
+                minLength: additionalFieldForm.minLength,
+                readOnly: !additionalFieldForm.editable,
+                required: additionalFieldForm.required,
+                description: descriptionRequest,
+                restrictedValues: restrictedValues,
+                userDefinedOrder: false,
+            },
+        );
         if (updateResult.success) {
             await this.close(true);
         } else {
-            const nameError = updateResult.validationErrors.find(e => e.fieldName === 'name')?.code;
+            const nameError = updateResult.validationErrors.find(
+                (e) => e.fieldName === 'name',
+            )?.code;
 
             if (nameError != null) {
                 this.#form.api.getFieldMeta('name')?.errors?.push(nameError);
@@ -889,52 +1126,72 @@ export class AdditionalFieldEdit extends LitElement {
             if (nameError === 'duplicate') {
                 feedback = `Field with internal name ${this.#form.api.getFieldValue('name')} already exists`;
             } else if (nameError == null) {
-                feedback = "Error while saving Additional Field";
+                feedback = 'Error while saving Additional Field';
             } else {
-                feedback = "Internal Name is not formatted correctly";
+                feedback = 'Internal Name is not formatted correctly';
             }
 
-            dispatchFeedback({
-                type: "danger",
-                message: feedback
-            }, this);
-
+            dispatchFeedback(
+                {
+                    type: 'danger',
+                    message: feedback,
+                },
+                this,
+            );
         }
     }
 
-    private getAdditionalFieldFromForm(additionalFieldForm: AdditionalFieldForm) {
-        const {selectableOptions, ...additionalField} = {...additionalFieldForm};
-        additionalField.restrictedValues = selectableOptions.map(option => option.fieldName);
-        selectableOptions.forEach(option => {
+    private getAdditionalFieldFromForm(
+        additionalFieldForm: AdditionalFieldForm,
+    ) {
+        const { selectableOptions, ...additionalField } = {
+            ...additionalFieldForm,
+        };
+        additionalField.restrictedValues = selectableOptions.map(
+            (option) => option.fieldName,
+        );
+        selectableOptions.forEach((option) => {
             Object.entries(option.description).forEach(([lang, text]) => {
-                const restrictedValuesField: {[k:string] : string} = {};
-                Object.entries(additionalField.description[lang].description.restrictedValues ?? {})
-                    .filter(([k,_]) => additionalField.restrictedValues?.includes(k) ?? false)
-                    .forEach(([k,v]) => {
+                const restrictedValuesField: { [k: string]: string } = {};
+                Object.entries(
+                    additionalField.description[lang].description
+                        .restrictedValues ?? {},
+                )
+                    .filter(
+                        ([k, _]) =>
+                            additionalField.restrictedValues?.includes(k) ??
+                            false,
+                    )
+                    .forEach(([k, v]) => {
                         restrictedValuesField[k] = v;
                     });
                 restrictedValuesField[option.fieldName] = text;
-                additionalField.description[lang].description.restrictedValues = restrictedValuesField;
-            })
+                additionalField.description[lang].description.restrictedValues =
+                    restrictedValuesField;
+            });
         });
         return {
             ...additionalField,
-            name: this.existingFieldName ?? additionalField.name
+            name: this.existingFieldName ?? additionalField.name,
         };
     }
 
     connectedCallback() {
         super.connectedCallback();
-        this.unsubscribeFn = this.#form.api.store.subscribe(formState => {
+        this.unsubscribeFn = this.#form.api.store.subscribe((formState) => {
             if (!this.displayForm) {
                 return;
             }
-            const locale = this.purchaseContext?.contentLanguages?.at(0)?.locale;
+            const locale =
+                this.purchaseContext?.contentLanguages?.at(0)?.locale;
             if (locale == null) {
                 return;
             }
             const currentValue = formState.currentVal.values;
-            if (currentValue.description[locale] != null && currentValue.description[locale].description.label.length > 0) {
+            if (
+                currentValue.description[locale] != null &&
+                currentValue.description[locale].description.label.length > 0
+            ) {
                 this.preview = this.getAdditionalFieldFromForm(currentValue);
             }
         });
@@ -948,9 +1205,14 @@ export class AdditionalFieldEdit extends LitElement {
     }
 
     updated() {
-        this.shadowRoot?.querySelectorAll('sl-tab').forEach(tab => {
-            const panel = this.shadowRoot?.querySelector(`sl-tab-panel[name="${tab.panel}"]`);
-            tab.classList.toggle('has-error', panel?.querySelector('.error') !== null);
+        this.shadowRoot?.querySelectorAll('sl-tab').forEach((tab) => {
+            const panel = this.shadowRoot?.querySelector(
+                `sl-tab-panel[name="${tab.panel}"]`,
+            );
+            tab.classList.toggle(
+                'has-error',
+                panel?.querySelector('.error') !== null,
+            );
         });
     }
 
@@ -961,6 +1223,6 @@ export class AdditionalFieldEdit extends LitElement {
 
 declare global {
     interface HTMLElementTagNameMap {
-        'alfio-additional-field-edit': AdditionalFieldEdit
+        'alfio-additional-field-edit': AdditionalFieldEdit;
     }
 }

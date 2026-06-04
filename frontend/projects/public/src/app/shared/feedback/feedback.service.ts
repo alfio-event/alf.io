@@ -1,44 +1,42 @@
-import {Injectable} from '@angular/core';
-import {Observable, Subject} from 'rxjs';
-import {FeedbackContent} from '../../model/feedback';
+import { Injectable } from '@angular/core';
+import { type Observable, Subject } from 'rxjs';
+import type { FeedbackContent } from '../../model/feedback';
 
 @Injectable({
-  providedIn: 'root'
+    providedIn: 'root',
 })
 export class FeedbackService {
+    private toastSubject = new Subject<FeedbackContent>();
 
-  private toastSubject = new Subject<FeedbackContent>();
+    public showSuccess(message: string) {
+        this.toastSubject.next({
+            active: true,
+            message,
+            type: 'SUCCESS',
+        });
+    }
 
-  public showSuccess(message: string) {
-    this.toastSubject.next({
-      active: true,
-      message,
-      type: 'SUCCESS'
-    });
-  }
+    public showError(message: string) {
+        this.toastSubject.next({
+            active: true,
+            message,
+            type: 'ERROR',
+        });
+    }
 
-  public showError(message: string) {
-    this.toastSubject.next({
-      active: true,
-      message,
-      type: 'ERROR'
-    });
-  }
+    public showInfo(message: string) {
+        this.toastSubject.next({
+            active: true,
+            message,
+            type: 'INFO',
+        });
+    }
 
-  public showInfo(message: string) {
-    this.toastSubject.next({
-      active: true,
-      message,
-      type: 'INFO'
-    });
-  }
+    public hide() {
+        this.toastSubject.next({ active: false });
+    }
 
-  public hide() {
-    this.toastSubject.next({ active: false });
-  }
-
-  public displayNotification(): Observable<FeedbackContent> {
-    return this.toastSubject;
-  }
-
+    public displayNotification(): Observable<FeedbackContent> {
+        return this.toastSubject;
+    }
 }

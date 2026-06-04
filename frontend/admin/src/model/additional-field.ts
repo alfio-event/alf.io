@@ -1,4 +1,4 @@
-import {AdditionalItem} from "./additional-item.ts";
+import type { AdditionalItem } from './additional-item.ts';
 
 export interface AdditionalField {
     id?: number;
@@ -15,7 +15,7 @@ export interface AdditionalField {
     categoryIds?: number[];
     disabledValues?: string[];
     displayAtCheckIn: boolean;
-    description: {[lang: string]: PurchaseContextFieldDescriptionContainer};
+    description: { [lang: string]: PurchaseContextFieldDescriptionContainer };
 }
 
 export interface RestrictedValueRequest {
@@ -26,7 +26,7 @@ export interface RestrictedValueRequest {
 export interface DescriptionRequest {
     label: string;
     placeholder: string;
-    restrictedValues?: {[k: string]: string};
+    restrictedValues?: { [k: string]: string };
 }
 
 export interface AdditionalFieldCreateRequest {
@@ -39,12 +39,11 @@ export interface AdditionalFieldCreateRequest {
     minLength?: number;
     maxLength?: number;
     restrictedValues?: RestrictedValueRequest[];
-    description: {[lang: string]: DescriptionRequest};
+    description: { [lang: string]: DescriptionRequest };
     forAdditionalService?: AdditionalItem;
     categoryIds: number[];
     displayAtCheckIn: boolean;
 }
-
 
 export interface AdditionalFieldTemplate {
     name: string;
@@ -52,10 +51,11 @@ export interface AdditionalFieldTemplate {
     maxLength?: number;
     minLength?: number;
     restrictedValues?: string[];
-    description: {[lang: string]: PurchaseContextFieldDescription};
+    description: { [lang: string]: PurchaseContextFieldDescription };
 }
 
-export interface NewAdditionalFieldFromTemplate extends AdditionalFieldTemplate {
+export interface NewAdditionalFieldFromTemplate
+    extends AdditionalFieldTemplate {
     order: number;
 }
 
@@ -65,34 +65,50 @@ export interface AdditionalFieldStats {
     percentage: number;
 }
 
-export type AdditionalFieldContext = 'ATTENDEE' | 'ADDITIONAL_SERVICE' | 'SUBSCRIPTION';
+export type AdditionalFieldContext =
+    | 'ATTENDEE'
+    | 'ADDITIONAL_SERVICE'
+    | 'SUBSCRIPTION';
 
-export type AdditionalFieldType = 'input:text' | 'input:tel' | 'vat:eu' | 'textarea' | 'country' | 'select' | 'checkbox' | 'radio' | 'input:dateOfBirth';
+export type AdditionalFieldType =
+    | 'input:text'
+    | 'input:tel'
+    | 'vat:eu'
+    | 'textarea'
+    | 'country'
+    | 'select'
+    | 'checkbox'
+    | 'radio'
+    | 'input:dateOfBirth';
 
 export const additionalFieldTypesWithDescription = {
     'input:text': 'Single-line text input',
     'input:tel': 'Phone number input',
     'vat:eu': 'European VAT number input',
-    'textarea': 'Multi-line text input',
-    'country': 'Country selection drop-down',
-    'select': 'Single-choice drop-down',
-    'radio': 'Single-choice radio buttons',
-    'checkbox': 'Multiple-choice checkboxes',
-    'input:dateOfBirth': 'Date of birth input'
+    textarea: 'Multi-line text input',
+    country: 'Country selection drop-down',
+    select: 'Single-choice drop-down',
+    radio: 'Single-choice radio buttons',
+    checkbox: 'Multiple-choice checkboxes',
+    'input:dateOfBirth': 'Date of birth input',
 };
 
 export function supportsPlaceholder(fieldType: AdditionalFieldType) {
-    return fieldType === 'input:text'
-        || fieldType === 'input:tel'
-        || fieldType === 'vat:eu'
-        || fieldType === 'textarea'
-        || fieldType === 'input:dateOfBirth';
+    return (
+        fieldType === 'input:text' ||
+        fieldType === 'input:tel' ||
+        fieldType === 'vat:eu' ||
+        fieldType === 'textarea' ||
+        fieldType === 'input:dateOfBirth'
+    );
 }
 
 export function supportsRestrictedValues(fieldType: AdditionalFieldType) {
-    return fieldType === 'checkbox'
-        || fieldType === 'radio'
-        || fieldType === 'select';
+    return (
+        fieldType === 'checkbox' ||
+        fieldType === 'radio' ||
+        fieldType === 'select'
+    );
 }
 
 export interface PurchaseContextFieldDescriptionContainer {
@@ -104,7 +120,7 @@ export interface PurchaseContextFieldDescriptionContainer {
 export interface PurchaseContextFieldDescription {
     label: string;
     placeholder?: string;
-    restrictedValues?: {[lang: string]: string};
+    restrictedValues?: { [lang: string]: string };
 }
 
 export function renderAdditionalFieldType(type: AdditionalFieldType): string {
@@ -113,8 +129,10 @@ export function renderAdditionalFieldType(type: AdditionalFieldType): string {
 }
 
 export function supportsMinMaxLength(fieldType: AdditionalFieldType): boolean {
-    return fieldType === 'input:text'
-        || fieldType === 'input:tel'
-        || fieldType === 'textarea'
-        || fieldType === 'input:dateOfBirth';
+    return (
+        fieldType === 'input:text' ||
+        fieldType === 'input:tel' ||
+        fieldType === 'textarea' ||
+        fieldType === 'input:dateOfBirth'
+    );
 }

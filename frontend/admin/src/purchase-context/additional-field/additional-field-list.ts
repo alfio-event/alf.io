@@ -1,24 +1,43 @@
-import {customElement, property, state} from "lit/decorators.js";
-import {css, html, LitElement} from "lit";
-import {AlfioEvent} from "../../model/event.ts";
-import {Task} from "@lit/task";
+import { Task } from '@lit/task';
+import { css, html, LitElement } from 'lit';
+import { customElement, property, state } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
 import {
-    AdditionalField, AdditionalFieldTemplate, NewAdditionalFieldFromTemplate,
+    type AdditionalField,
+    type AdditionalFieldTemplate,
+    type NewAdditionalFieldFromTemplate,
     renderAdditionalFieldType,
-    supportsMinMaxLength
-} from "../../model/additional-field.ts";
-import {ContentLanguage, PurchaseContext, PurchaseContextType} from "../../model/purchase-context.ts";
-import {SubscriptionDescriptor} from "../../model/subscription-descriptor.ts";
-import {PurchaseContextService} from "../../service/purchase-context.ts";
-import {AdditionalFieldService} from "../../service/additional-field.ts";
-import {repeat} from "lit/directives/repeat.js";
-import {renderIf} from "../../service/helpers.ts";
-import {badges, cardBgColors, itemsList, pageHeader, retroCompat, textColors} from "../../styles.ts";
-import {ConfirmationDialogService} from "../../service/confirmation-dialog.ts";
-import {AlfioDialogClosed, dispatchFeedback} from "../../model/dom-events.ts";
-import {LocalizedAdditionalFieldContent, renderPreview} from "./additional-field-util.ts";
-import {AdditionalItem} from "../../model/additional-item.ts";
-import {AdditionalItemService} from "../../service/additional-item.ts";
+    supportsMinMaxLength,
+} from '../../model/additional-field.ts';
+import type { AdditionalItem } from '../../model/additional-item.ts';
+import {
+    type AlfioDialogClosed,
+    dispatchFeedback,
+} from '../../model/dom-events.ts';
+import type { AlfioEvent } from '../../model/event.ts';
+import type {
+    ContentLanguage,
+    PurchaseContext,
+    PurchaseContextType,
+} from '../../model/purchase-context.ts';
+import type { SubscriptionDescriptor } from '../../model/subscription-descriptor.ts';
+import { AdditionalFieldService } from '../../service/additional-field.ts';
+import { AdditionalItemService } from '../../service/additional-item.ts';
+import { ConfirmationDialogService } from '../../service/confirmation-dialog.ts';
+import { renderIf } from '../../service/helpers.ts';
+import { PurchaseContextService } from '../../service/purchase-context.ts';
+import {
+    badges,
+    cardBgColors,
+    itemsList,
+    pageHeader,
+    retroCompat,
+    textColors,
+} from '../../styles.ts';
+import {
+    type LocalizedAdditionalFieldContent,
+    renderPreview,
+} from './additional-field-util.ts';
 
 interface Model {
     purchaseContextType: PurchaseContextType;
@@ -27,15 +46,14 @@ interface Model {
     supportedLanguages: ContentLanguage[];
     dataTask: Task<ReadonlyArray<number>, ListData>;
     isSubscription: boolean;
-    templates: ReadonlyArray<AdditionalFieldTemplate>
-    additionalItems: ReadonlyArray<AdditionalItem>
+    templates: ReadonlyArray<AdditionalFieldTemplate>;
+    additionalItems: ReadonlyArray<AdditionalItem>;
 }
 
 interface ListData {
     items: ReadonlyArray<AdditionalField>;
     standardIndex: number;
 }
-
 
 @customElement('alfio-additional-field-list')
 export class AdditionalFieldList extends LitElement {
@@ -52,25 +70,48 @@ export class AdditionalFieldList extends LitElement {
     @state()
     itemsCount: number = 0;
 
-    private readonly retrievePageDataTask = new Task<ReadonlyArray<string>, Model>(this,
+    private readonly retrievePageDataTask = new Task<
+        ReadonlyArray<string>,
+        Model
+    >(
+        this,
         async ([publicIdentifier, purchaseContextType, organizationId]) => {
-            const result = await PurchaseContextService.load(publicIdentifier, purchaseContextType as PurchaseContextType, Number.parseInt(organizationId, 10));
-            const isSubscription = (purchaseContextType as PurchaseContextType) === 'subscription';
-            const purchaseContext: PurchaseContext = isSubscription ? result.subscriptionDescriptor! : result.eventWithOrganization!.event;
-            const templates = await AdditionalFieldService.loadTemplates(purchaseContext);
+            const result = await PurchaseContextService.load(
+                publicIdentifier,
+                purchaseContextType as PurchaseContextType,
+                Number.parseInt(organizationId, 10),
+            );
+            const isSubscription =
+                (purchaseContextType as PurchaseContextType) === 'subscription';
+            const purchaseContext: PurchaseContext = isSubscription
+                ? result.subscriptionDescriptor!
+                : result.eventWithOrganization!.event;
+            const templates =
+                await AdditionalFieldService.loadTemplates(purchaseContext);
             const supportedLanguages = purchaseContext.contentLanguages;
             const additionalItems: AdditionalItem[] = [];
             if ((purchaseContextType as PurchaseContextType) === 'event') {
-                additionalItems.push(...(await AdditionalItemService.loadAll({eventId: result.eventWithOrganization!.event.id})));
+                additionalItems.push(
+                    ...(await AdditionalItemService.loadAll({
+                        eventId: result.eventWithOrganization!.event.id,
+                    })),
+                );
             }
-            const dataTask = new Task<ReadonlyArray<number>, ListData>(this, async (_) => {
-                const items = await AdditionalFieldService.loadAllByPurchaseContext(purchaseContext);
-                let standardIndex = items.findIndex(i => i.order >= 0);
-                return {
-                    items,
-                    standardIndex
-                };
-            }, () => [this.refreshCount]);
+            const dataTask = new Task<ReadonlyArray<number>, ListData>(
+                this,
+                async (_) => {
+                    const items =
+                        await AdditionalFieldService.loadAllByPurchaseContext(
+                            purchaseContext,
+                        );
+                    const standardIndex = items.findIndex((i) => i.order >= 0);
+                    return {
+                        items,
+                        standardIndex,
+                    };
+                },
+                () => [this.refreshCount],
+            );
             return {
                 purchaseContextType: purchaseContextType as PurchaseContextType,
                 event: result.eventWithOrganization?.event,
@@ -79,12 +120,24 @@ export class AdditionalFieldList extends LitElement {
                 dataTask,
                 isSubscription,
                 templates,
-                additionalItems
-            }
+                additionalItems,
+            };
         },
-        () => [this.publicIdentifier!, this.purchaseContextType!, this.organizationId!]);
+        () => [
+            this.publicIdentifier!,
+            this.purchaseContextType!,
+            this.organizationId!,
+        ],
+    );
 
-    static readonly styles = [pageHeader, textColors, itemsList, cardBgColors, badges, retroCompat, css`
+    static readonly styles = [
+        pageHeader,
+        textColors,
+        itemsList,
+        cardBgColors,
+        badges,
+        retroCompat,
+        css`
         sl-tab-group {
             height: 100%;
         }
@@ -104,7 +157,8 @@ export class AdditionalFieldList extends LitElement {
             align-items: start;
             gap: 10px;
         }
-    `];
+    `,
+    ];
 
     protected render(): unknown {
         return this.retrievePageDataTask.render({
@@ -115,7 +169,7 @@ export class AdditionalFieldList extends LitElement {
                         <sl-icon name="info-circle"></sl-icon> ${model.isSubscription ? `Subscription owner's` : `Attendees'`} data to collect
                     </h3>
                     <h5 class="text-muted">
-                        The following data will be collected ${model.isSubscription ? '': `(full name, e-mail and language are collected by default)`}
+                        The following data will be collected ${model.isSubscription ? '' : `(full name, e-mail and language are collected by default)`}
                     </h5>
                 </div>
 
@@ -126,7 +180,7 @@ export class AdditionalFieldList extends LitElement {
                 </div>
 
                 <div class="m-1"></div>
-            `
+            `,
         });
     }
 
@@ -138,9 +192,13 @@ export class AdditionalFieldList extends LitElement {
                     <sl-menu-item>
                         From Template
                         <sl-menu slot="submenu">
-                            ${repeat(model.templates, t => t.name, (template) => html`
+                            ${repeat(
+                                model.templates,
+                                (t) => t.name,
+                                (template) => html`
                                     <sl-menu-item @click=${() => this.newFromTemplate(model, template, this.itemsCount)}>${template.description['en'].label} (${template.name})</sl-menu-item>
-                                `)}
+                                `,
+                            )}
                         </sl-menu>
                     </sl-menu-item>
                     <sl-menu-item @click=${() => this.newCustom(model, this.itemsCount)}>Custom</sl-menu-item>
@@ -152,13 +210,16 @@ export class AdditionalFieldList extends LitElement {
     private iterateItems(model: Model) {
         return model.dataTask.render({
             initial: () => html`loading...`,
-            complete: listData => {
+            complete: (listData) => {
                 this.itemsCount = listData.items.length;
                 if (listData.items.length === 0) {
                     return this.renderStandard();
                 }
-                const renderedItems = repeat(listData.items, (field) => field.id, (field, index) => {
-                    return html`
+                const renderedItems = repeat(
+                    listData.items,
+                    (field) => field.id,
+                    (field, index) => {
+                        return html`
 
                         ${renderIf(() => index === listData.standardIndex, this.renderStandard)}
 
@@ -167,22 +228,31 @@ export class AdditionalFieldList extends LitElement {
                             <div slot="header">
                                 <div class="col"><strong>${field.name}</strong></div>
                                 <div class="col">
-                                    ${renderIf(() => field.required, () => html`
+                                    ${renderIf(
+                                        () => field.required,
+                                        () => html`
                                         <sl-tooltip content="This information is required">
                                             <sl-badge variant="warning" pill>required</sl-badge>
                                         </sl-tooltip>
-                                    `)}
-                                    ${renderIf(() => !field.editable, () => html`
+                                    `,
+                                    )}
+                                    ${renderIf(
+                                        () => !field.editable,
+                                        () => html`
                                         <sl-tooltip content="Information cannot be modified after set">
                                             <sl-badge variant="neutral" pill>read-only</sl-badge>
                                         </sl-tooltip>
-                                    `)}
-                                    ${renderIf(() => field.displayAtCheckIn, () => html`
+                                    `,
+                                    )}
+                                    ${renderIf(
+                                        () => field.displayAtCheckIn,
+                                        () => html`
                                         <sl-tooltip
                                             content="This information will be shown in the check-in app upon successful scan">
                                             <sl-badge variant="success" pill>shown at check-in</sl-badge>
                                         </sl-tooltip>
-                                    `)}
+                                    `,
+                                    )}
                                 </div>
                             </div>
                             <div slot="footer" class="multiple">
@@ -207,7 +277,9 @@ export class AdditionalFieldList extends LitElement {
                                         <strong>Type</strong>
                                         <span>${renderAdditionalFieldType(field.type)}</span>
                                     </div>
-                                    ${renderIf(() => supportsMinMaxLength(field.type), () => html`
+                                    ${renderIf(
+                                        () => supportsMinMaxLength(field.type),
+                                        () => html`
                                         <div class="info">
                                             <strong>Min length</strong>
                                             <span>${field.minLength}</span>
@@ -216,43 +288,53 @@ export class AdditionalFieldList extends LitElement {
                                             <strong>Max length</strong>
                                             <span>${field.maxLength}</span>
                                         </div>
-                                    `)}
+                                    `,
+                                    )}
                                 </div>
                                 <div>
                                     <strong>Preview</strong>
                                     <sl-tab-group>
-                                        ${repeat(this.sortContentLanguages(field, model), d => d.localeLabel, d => html`
+                                        ${repeat(
+                                            this.sortContentLanguages(
+                                                field,
+                                                model,
+                                            ),
+                                            (d) => d.localeLabel,
+                                            (d) => html`
                                             <sl-tab slot="nav" panel=${d.locale}>${d.localeLabel}</sl-tab>
                                             <sl-tab-panel name=${d.locale}>
                                                 <div class="info-container">
                                                     ${renderPreview(d, field)}
                                                 </div>
                                             </sl-tab-panel>
-                                        `)}
+                                        `,
+                                        )}
                                     </sl-tab-group>
                                 </div>
                             </div>
                             ${this.displayFilters(field, model)}
                         </sl-card>
                     `;
-                });
+                    },
+                );
                 if (listData.standardIndex === -1) {
                     // standard fields are set to be at the end
                     return html`
                         ${renderedItems}
                         ${this.renderStandard()}
-                    `
+                    `;
                 }
                 return renderedItems;
-            }
-        })
+            },
+        });
     }
 
     private displayFilters(field: AdditionalField, model: Model) {
-
         const eventCategories = model.event?.ticketCategories ?? [];
         const selectedCategories = field.categoryIds?.length ?? 0;
-        const additionalItem = model.additionalItems.find(ai => ai.id === field.additionalServiceId);
+        const additionalItem = model.additionalItems.find(
+            (ai) => ai.id === field.additionalServiceId,
+        );
 
         if (selectedCategories === 0 && additionalItem == null) {
             return html``;
@@ -263,16 +345,29 @@ export class AdditionalFieldList extends LitElement {
             <div class="info-box">
                 <sl-icon slot="icon" name="info-circle" style="color: var(--sl-color-primary-600); font-size: 1.5em"></sl-icon>
                 <div class="info-box--messages">
-                    ${renderIf(() => selectedCategories > 0, () => html`
+                    ${renderIf(
+                        () => selectedCategories > 0,
+                        () => html`
                         <div>
-                            Collected only for the following Categories: ${repeat(eventCategories.filter(c => field.categoryIds!.includes(c.id)), c => c.id, category => html`<sl-badge variant="neutral" class="ms-1">${category.name}</sl-badge>`)}
+                            Collected only for the following Categories: ${repeat(
+                                eventCategories.filter((c) =>
+                                    field.categoryIds!.includes(c.id),
+                                ),
+                                (c) => c.id,
+                                (category) =>
+                                    html`<sl-badge variant="neutral" class="ms-1">${category.name}</sl-badge>`,
+                            )}
                         </div>
-                    `)}
-                    ${renderIf(() => additionalItem != null, () => html`
+                    `,
+                    )}
+                    ${renderIf(
+                        () => additionalItem != null,
+                        () => html`
                         <div>
-                            Collected only if additional option <sl-badge variant="neutral" class="ms-1">${additionalItem!.title.map(t => t.value).join(" / ")}</sl-badge> was selected
+                            Collected only if additional option <sl-badge variant="neutral" class="ms-1">${additionalItem!.title.map((t) => t.value).join(' / ')}</sl-badge> was selected
                         </div>
-                    `)}
+                    `,
+                    )}
                 </div>
 
             </div>
@@ -280,22 +375,31 @@ export class AdditionalFieldList extends LitElement {
         `;
     }
 
-    private showMoveUpDownButtons(index: number, field: AdditionalField, listData: ListData, model: Model) {
+    private showMoveUpDownButtons(
+        index: number,
+        field: AdditionalField,
+        listData: ListData,
+        model: Model,
+    ) {
         return html`
-        ${renderIf(() => index > 0 || field.order >= listData.standardIndex,
+        ${renderIf(
+            () => index > 0 || field.order >= listData.standardIndex,
             () => html`
                 <sl-button type="button" variant="default" @click=${() => this.fieldUp(field, index, listData, (model.event ?? model.subscriptionDescriptor)!)}>
                     <sl-icon name="arrow-up" slot="prefix"></sl-icon>
                     Move up
                 </sl-button>
-            `)}
-        ${renderIf(() => (index < listData.items.length - 1) || field.order < 0,
+            `,
+        )}
+        ${renderIf(
+            () => index < listData.items.length - 1 || field.order < 0,
             () => html`
                 <sl-button type="button" variant="default" @click=${() => this.fieldDown(field, index, listData, (model.event ?? model.subscriptionDescriptor)!)}>
                     <sl-icon name="arrow-down" slot="prefix"></sl-icon>
                     Move down
                 </sl-button>
-            `)}
+            `,
+        )}
         `;
     }
 
@@ -316,41 +420,75 @@ export class AdditionalFieldList extends LitElement {
         `;
     }
 
-    private async fieldUp(field: AdditionalField, index: number, listData: ListData, purchaseContext: PurchaseContext): Promise<void> {
+    private async fieldUp(
+        field: AdditionalField,
+        index: number,
+        listData: ListData,
+        purchaseContext: PurchaseContext,
+    ): Promise<void> {
         const targetId = field.id;
         const targetPosition = field.order ?? 0;
         if (index > 0) {
             const prevTargetId = listData.items[index - 1].id;
-            await AdditionalFieldService.swapFieldPosition(purchaseContext, targetId!, prevTargetId!);
+            await AdditionalFieldService.swapFieldPosition(
+                purchaseContext,
+                targetId!,
+                prevTargetId!,
+            );
         } else {
-            await AdditionalFieldService.moveField(purchaseContext, targetId!, targetPosition - 1);
+            await AdditionalFieldService.moveField(
+                purchaseContext,
+                targetId!,
+                targetPosition - 1,
+            );
         }
         this.refreshCount++;
     }
 
-    private async fieldDown(field: AdditionalField, index: number, listData: ListData, purchaseContext: PurchaseContext): Promise<void> {
+    private async fieldDown(
+        field: AdditionalField,
+        index: number,
+        listData: ListData,
+        purchaseContext: PurchaseContext,
+    ): Promise<void> {
         if (index < listData.items.length) {
             const nextField = listData.items[index + 1];
             if (field.order < 0 && nextField.order >= 0) {
-                await AdditionalFieldService.moveField(purchaseContext, field.id!, 0);
+                await AdditionalFieldService.moveField(
+                    purchaseContext,
+                    field.id!,
+                    0,
+                );
             } else {
-                await AdditionalFieldService.swapFieldPosition(purchaseContext, field.id!, nextField.id!);
+                await AdditionalFieldService.swapFieldPosition(
+                    purchaseContext,
+                    field.id!,
+                    nextField.id!,
+                );
             }
         } else {
-            await AdditionalFieldService.moveField(purchaseContext, field.id!, 0);
+            await AdditionalFieldService.moveField(
+                purchaseContext,
+                field.id!,
+                0,
+            );
         }
         this.refreshCount++;
     }
 
-    private sortContentLanguages(item: AdditionalField, model: Model): LocalizedAdditionalFieldContent[] {
+    private sortContentLanguages(
+        item: AdditionalField,
+        model: Model,
+    ): LocalizedAdditionalFieldContent[] {
         return model.supportedLanguages
-            .filter(cl => {
+            .filter((cl) => {
                 return item.description[cl.locale] != null;
-            }).map(cl => {
+            })
+            .map((cl) => {
                 return {
                     locale: cl.locale,
                     localeLabel: cl.displayLanguage,
-                    description: item.description[cl.locale]
+                    description: item.description[cl.locale],
                 };
             });
     }
@@ -360,49 +498,69 @@ export class AdditionalFieldList extends LitElement {
             const confirmation = await ConfirmationDialogService.requestConfirm(
                 `Delete field ${field.name}`,
                 `Are you sure to delete the field "${field.name}"? All the values in the tickets associated to this field will be removed and they cannot be recovered.`,
-                'danger'
+                'danger',
             );
             if (confirmation) {
-                const response = await AdditionalFieldService.deleteField((model.event ?? model.subscriptionDescriptor)!, field.id!);
-                if(response.ok) {
-                    dispatchFeedback({
-                        type: 'success',
-                        message: `Field ${field.name} successfully deleted`
-                    }, this);
+                const response = await AdditionalFieldService.deleteField(
+                    (model.event ?? model.subscriptionDescriptor)!,
+                    field.id!,
+                );
+                if (response.ok) {
+                    dispatchFeedback(
+                        {
+                            type: 'success',
+                            message: `Field ${field.name} successfully deleted`,
+                        },
+                        this,
+                    );
                     this.refreshCount++;
                     return true;
                 } else {
-                    dispatchFeedback({
-                        type: 'danger',
-                        message: `Cannot delete field ${field.name}`
-                    }, this);
+                    dispatchFeedback(
+                        {
+                            type: 'danger',
+                            message: `Cannot delete field ${field.name}`,
+                        },
+                        this,
+                    );
                 }
             }
             return false;
-        } catch(e) {
-            console.error("Error while deleting field", e);
-            dispatchFeedback({
-                type: 'danger',
-                message: `Cannot delete field ${field.name}`
-            }, this);
+        } catch (e) {
+            console.error('Error while deleting field', e);
+            dispatchFeedback(
+                {
+                    type: 'danger',
+                    message: `Cannot delete field ${field.name}`,
+                },
+                this,
+            );
             return false;
         }
     }
 
     private showStatisticsButton(field: AdditionalField, model: Model) {
-        return renderIf(() => field.type === 'select' || field.type === 'country', () => html`
+        return renderIf(
+            () => field.type === 'select' || field.type === 'country',
+            () => html`
             <div class="button-container">
                 <sl-button @click=${() => this.openStatisticsDetail(model, field)}><sl-icon name="bar-chart-line" slot="prefix"></sl-icon> Statistics</sl-button>
             </div>
-        `);
+        `,
+        );
     }
 
-    private async openStatisticsDetail(model: Model, field: AdditionalField): Promise<void> {
+    private async openStatisticsDetail(
+        model: Model,
+        field: AdditionalField,
+    ): Promise<void> {
         const div = document.createElement('div');
         div.innerHTML = `
             <alfio-additional-field-statistics></alfio-additional-field-statistics>
         `;
-        const component = div.querySelector('alfio-additional-field-statistics')!;
+        const component = div.querySelector(
+            'alfio-additional-field-statistics',
+        )!;
         document.body.appendChild(div);
         await customElements.whenDefined('alfio-additional-field-statistics');
         component.addEventListener('alfio-drawer-closed', async () => {
@@ -410,14 +568,16 @@ export class AdditionalFieldList extends LitElement {
         });
         await component.show({
             purchaseContext: (model.event ?? model.subscriptionDescriptor)!,
-            field
+            field,
         });
     }
 
-    private async openEditDialog(model: Model,
-                                 ordinal: number,
-                                 field?: AdditionalField,
-                                 template?: NewAdditionalFieldFromTemplate): Promise<void> {
+    private async openEditDialog(
+        model: Model,
+        ordinal: number,
+        field?: AdditionalField,
+        template?: NewAdditionalFieldFromTemplate,
+    ): Promise<void> {
         const div = document.createElement('div');
         div.innerHTML = `
             <alfio-additional-field-edit></alfio-additional-field-edit>
@@ -429,27 +589,36 @@ export class AdditionalFieldList extends LitElement {
             await this.editDialogClosed(e);
             setTimeout(() => div.remove());
         });
-        const purchaseContext: PurchaseContext = (model.isSubscription ? model.subscriptionDescriptor : model.event)!;
+        const purchaseContext: PurchaseContext = (
+            model.isSubscription ? model.subscriptionDescriptor : model.event
+        )!;
         await component.open({
             field,
             template,
             purchaseContext,
-            ordinal
+            ordinal,
         });
     }
 
-
-    private async newFromTemplate(model: Model, template: AdditionalFieldTemplate, fieldsCount: number) {
+    private async newFromTemplate(
+        model: Model,
+        template: AdditionalFieldTemplate,
+        fieldsCount: number,
+    ) {
         const ordinal = fieldsCount + 1;
         const newField: NewAdditionalFieldFromTemplate = {
             ...template,
-            order: ordinal
+            order: ordinal,
         };
         await this.openEditDialog(model, ordinal, undefined, newField);
     }
 
     private async edit(additionalField: AdditionalField, model: Model) {
-        await this.openEditDialog(model, additionalField.order, additionalField);
+        await this.openEditDialog(
+            model,
+            additionalField.order,
+            additionalField,
+        );
     }
 
     private async newCustom(model: Model, itemsCount: number) {
@@ -460,16 +629,19 @@ export class AdditionalFieldList extends LitElement {
         this.editActive = false;
         if (e.detail.success) {
             this.refreshCount++;
-            dispatchFeedback({
-                type: 'success',
-                message: 'Operation completed successfully'
-            }, this);
+            dispatchFeedback(
+                {
+                    type: 'success',
+                    message: 'Operation completed successfully',
+                },
+                this,
+            );
         }
     }
 }
 
 declare global {
     interface HTMLElementTagNameMap {
-        'alfio-additional-field-list': AdditionalFieldList
+        'alfio-additional-field-list': AdditionalFieldList;
     }
 }

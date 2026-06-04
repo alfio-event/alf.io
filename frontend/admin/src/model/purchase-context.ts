@@ -1,4 +1,3 @@
-
 export interface PurchaseContext {
     type: PurchaseContextType;
     publicIdentifier: string;
@@ -9,9 +8,9 @@ export interface PurchaseContext {
 export type PurchaseContextType = 'event' | 'subscription';
 
 export interface ContentLanguage {
-    locale:          string;
-    value:           number;
-    language:        string;
+    locale: string;
+    value: number;
+    language: string;
     displayLanguage: string;
 }
 

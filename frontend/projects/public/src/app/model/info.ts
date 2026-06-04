@@ -1,17 +1,20 @@
-import {AnalyticsConfiguration} from './analytics-configuration';
-import {InvoicingConfiguration, TermsPrivacyLinksContainer} from './event';
+import type { AnalyticsConfiguration } from './analytics-configuration';
+import type {
+    InvoicingConfiguration,
+    TermsPrivacyLinksContainer,
+} from './event';
 
 export interface Info {
-  demoModeEnabled: boolean;
-  devModeEnabled: boolean;
-  prodModeEnabled: boolean;
-  analyticsConfiguration: AnalyticsConfiguration;
-  globalPrivacyPolicyUrl?: string;
-  globalTermsUrl?: string;
-  invoicingConfiguration?: InvoicingConfiguration;
-  announcementBannerContentHTML?: string;
-  walletConfiguration: WalletConfiguration;
-  challengeConfiguration: ChallengeConfiguration;
+    demoModeEnabled: boolean;
+    devModeEnabled: boolean;
+    prodModeEnabled: boolean;
+    analyticsConfiguration: AnalyticsConfiguration;
+    globalPrivacyPolicyUrl?: string;
+    globalTermsUrl?: string;
+    invoicingConfiguration?: InvoicingConfiguration;
+    announcementBannerContentHTML?: string;
+    walletConfiguration: WalletConfiguration;
+    challengeConfiguration: ChallengeConfiguration;
 }
 
 export interface ChallengeConfiguration {
@@ -21,10 +24,15 @@ export interface ChallengeConfiguration {
 }
 
 export interface WalletConfiguration {
-  gWalletEnabled: boolean;
-  passEnabled: boolean;
+    gWalletEnabled: boolean;
+    passEnabled: boolean;
 }
 
-export function globalTermsPrivacyLinks(info: Info): TermsPrivacyLinksContainer {
-  return { privacyPolicyUrl: info.globalPrivacyPolicyUrl, termsAndConditionsUrl: info.globalTermsUrl };
+export function globalTermsPrivacyLinks(
+    info: Info,
+): TermsPrivacyLinksContainer {
+    return {
+        privacyPolicyUrl: info.globalPrivacyPolicyUrl,
+        termsAndConditionsUrl: info.globalTermsUrl,
+    };
 }

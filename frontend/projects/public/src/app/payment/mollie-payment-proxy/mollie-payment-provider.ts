@@ -1,7 +1,7 @@
-import {SimplePaymentProvider} from '../payment-provider';
+import { SimplePaymentProvider } from '../payment-provider';
 
 export class MolliePaymentProvider extends SimplePaymentProvider {
-  override get paymentMethodDeferred(): boolean {
+    override get paymentMethodDeferred(): boolean {
         return false;
     }
 }

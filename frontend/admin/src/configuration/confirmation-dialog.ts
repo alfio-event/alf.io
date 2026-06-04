@@ -1,7 +1,7 @@
-import { html, LitElement, type TemplateResult } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
-import { dialog, row } from "../styles";
-import type { SlDialog } from "@shoelace-style/shoelace";
+import type { SlDialog } from '@shoelace-style/shoelace';
+import { html, LitElement, type TemplateResult } from 'lit';
+import { customElement, property, query, state } from 'lit/decorators.js';
+import { dialog, row } from '../styles';
 
 /**
  * Basic confirm/cancel helper dialog for prompting
@@ -12,19 +12,19 @@ import type { SlDialog } from "@shoelace-style/shoelace";
 export class ConfirmationDialog extends LitElement {
     static styles = [row, dialog];
 
-    @property({attribute: "dialog-title", type: String})
+    @property({ attribute: 'dialog-title', type: String })
     dialogTitle?: string;
 
-    @property({attribute: "dialog-description", type: String})
+    @property({ attribute: 'dialog-description', type: String })
     dialogDescription?: string;
 
-    @property({attribute: "confirm-text", type: String})
+    @property({ attribute: 'confirm-text', type: String })
     confirmText?: string;
 
-    @property({attribute: "cancel-text", type: String})
+    @property({ attribute: 'cancel-text', type: String })
     cancelText?: string;
 
-    @property({attribute: "confirm-variant", type: String})
+    @property({ attribute: 'confirm-variant', type: String })
     confirmVariant?: string;
 
     /**
@@ -34,7 +34,7 @@ export class ConfirmationDialog extends LitElement {
     @state()
     dialogPayload?: unknown = null;
 
-    @query("sl-dialog")
+    @query('sl-dialog')
     dialog?: SlDialog;
 
     protected render(): TemplateResult {
@@ -53,11 +53,15 @@ export class ConfirmationDialog extends LitElement {
 
     protected handleConfirmPressed() {
         this.closeDialog();
-        this.dispatchEvent(new CustomEvent("confirmActionButtonPressed", {detail: this.dialogPayload}));
+        this.dispatchEvent(
+            new CustomEvent('confirmActionButtonPressed', {
+                detail: this.dialogPayload,
+            }),
+        );
     }
 
     openDialog(payload?: unknown) {
-        if(payload) {
+        if (payload) {
             this.dialogPayload = payload;
         }
         this.dialog?.show();
@@ -67,4 +71,3 @@ export class ConfirmationDialog extends LitElement {
         this.dialog?.hide();
     }
 }
-

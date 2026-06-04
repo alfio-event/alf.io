@@ -1,13 +1,12 @@
-import {customElement, property, state} from "lit/decorators.js";
-import {unsafeHTML} from 'lit/directives/unsafe-html.js';
-import {css, html, LitElement, TemplateResult} from "lit";
-import {Task} from "@lit/task";
-import {UtilService} from "../service/util.ts";
-import {row} from "../styles.ts";
+import { Task } from '@lit/task';
+import { css, html, LitElement, type TemplateResult } from 'lit';
+import { customElement, property, state } from 'lit/decorators.js';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { UtilService } from '../service/util.ts';
+import { row } from '../styles.ts';
 
 @customElement('alfio-display-commonmark-preview')
 export class DisplayCommonMarkPreview extends LitElement {
-
     static styles = [
         row,
         css`
@@ -17,8 +16,8 @@ export class DisplayCommonMarkPreview extends LitElement {
             sl-button.right::part(base) {
                 justify-content: end;
             }
-        `
-    ]
+        `,
+    ];
 
     @property({ type: String, attribute: 'data-button-text' })
     buttonText?: string;
@@ -48,10 +47,13 @@ export class DisplayCommonMarkPreview extends LitElement {
 
     private openDialog(): void {
         this.dialogOpen = true;
-        this.task = new Task<ReadonlyArray<any>, string>(this,
+        this.task = new Task<ReadonlyArray<any>, string>(
+            this,
             async () => {
                 return await UtilService.renderMarkdown(this.text!);
-            }, () => []);
+            },
+            () => [],
+        );
     }
 
     private closeDialog(): void {
@@ -59,15 +61,17 @@ export class DisplayCommonMarkPreview extends LitElement {
     }
 
     private renderText(): TemplateResult {
-        return this.task?.render({
+        return (
+            this.task?.render({
                 initial: () => html`init`,
-                complete: (value) => html`${unsafeHTML(value)}`
-            }) ?? html`error`;
+                complete: (value) => html`${unsafeHTML(value)}`,
+            }) ?? html`error`
+        );
     }
 }
 
 declare global {
     interface HTMLElementTagNameMap {
-        'alfio-display-commonmark-preview': DisplayCommonMarkPreview
+        'alfio-display-commonmark-preview': DisplayCommonMarkPreview;
     }
 }

@@ -1,67 +1,67 @@
-import {BillingDetails, ReservationStatus} from './reservation-info';
-import {PurchaseContextType} from '../shared/purchase-context.service';
+import type { PurchaseContextType } from '../shared/purchase-context.service';
+import type { BillingDetails, ReservationStatus } from './reservation-info';
 
 export interface AuthenticationStatus {
-  enabled: boolean;
-  user?: User;
+    enabled: boolean;
+    user?: User;
 }
 
 export interface User {
-  firstName?: string;
-  lastName?: string;
-  emailAddress?: string;
-  profile?: UserProfile;
-  external?: boolean;
+    firstName?: string;
+    lastName?: string;
+    emailAddress?: string;
+    profile?: UserProfile;
+    external?: boolean;
 }
 
 export interface UserProfile {
-  billingDetails: BillingDetails;
-  additionalData: UserAdditionalData;
+    billingDetails: BillingDetails;
+    additionalData: UserAdditionalData;
 }
 
 export interface UserAdditionalData {
-  [key: string]: AdditionalInfoWithLabel;
+    [key: string]: AdditionalInfoWithLabel;
 }
 
 export interface AdditionalInfoWithLabel {
-  label: {[key: string]: string};
-  values: string[];
+    label: { [key: string]: string };
+    values: string[];
 }
 
 export const ANONYMOUS: User = {};
 
 export interface PurchaseContextWithReservation {
-  title: { [lang: string]: string };
-  publicIdentifier: string;
-  type: PurchaseContextType;
-  formattedStartDate?: {[key: string]: string};
-  formattedEndDate?: {[key: string]: string};
-  sameDay: boolean;
-  reservations: Array<ReservationHeader>;
+    title: { [lang: string]: string };
+    publicIdentifier: string;
+    type: PurchaseContextType;
+    formattedStartDate?: { [key: string]: string };
+    formattedEndDate?: { [key: string]: string };
+    sameDay: boolean;
+    reservations: Array<ReservationHeader>;
 }
 
 export interface ReservationHeader {
-  id: string;
-  status: ReservationStatus;
-  formattedExpiresOn: {[key: string]: string};
-  formattedConfirmedOn: {[key: string]: string};
-  formattedCreatedOn: {[key: string]: string};
-  invoiceNumber: string;
-  finalPrice: number;
-  currencyCode: string;
-  usedVatPercent: string;
-  vatStatus: string;
-  items: Array<PurchaseContextItem>;
+    id: string;
+    status: ReservationStatus;
+    formattedExpiresOn: { [key: string]: string };
+    formattedConfirmedOn: { [key: string]: string };
+    formattedCreatedOn: { [key: string]: string };
+    invoiceNumber: string;
+    finalPrice: number;
+    currencyCode: string;
+    usedVatPercent: string;
+    vatStatus: string;
+    items: Array<PurchaseContextItem>;
 }
 
 export interface ClientRedirect {
-  targetUrl?: string;
-  empty: boolean;
+    targetUrl?: string;
+    empty: boolean;
 }
 
 export interface PurchaseContextItem {
-  id: string;
-  firstName: string;
-  lastName: string;
-  type: { [k: string]: string };
+    id: string;
+    firstName: string;
+    lastName: string;
+    type: { [k: string]: string };
 }
