@@ -1,13 +1,13 @@
-import { Component, Input } from "@angular/core";
-import type { NgbActiveModal } from "@ng-bootstrap/ng-bootstrap";
+import { Component, Input } from '@angular/core';
+import type { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
-  selector: "app-reservation-expired",
-  templateUrl: "./reservation-expired.component.html",
+    selector: 'app-reservation-expired',
+    templateUrl: './reservation-expired.component.html',
 })
 export class ReservationExpiredComponent {
-  @Input()
-  name: string;
+    @Input()
+    name: string;
 
-  constructor(public activeModal: NgbActiveModal) {}
+    constructor(public activeModal: NgbActiveModal) {}
 }

@@ -1,35 +1,35 @@
-import { Component, type OnInit } from "@angular/core";
-import type { Info } from "../model/info";
-import type { InfoService } from "../shared/info.service";
-import { getFromSessionStorage, writeToSessionStorage } from "../shared/util";
+import { Component, type OnInit } from '@angular/core';
+import type { Info } from '../model/info';
+import type { InfoService } from '../shared/info.service';
+import { getFromSessionStorage, writeToSessionStorage } from '../shared/util';
 
-const hideAnnouncementBannerKey = "alfio.hideAnnouncementBanner";
+const hideAnnouncementBannerKey = 'alfio.hideAnnouncementBanner';
 
 @Component({
-  selector: "app-banner-check",
-  templateUrl: "./banner-check.component.html",
-  styleUrls: ["./banner-check.component.scss"],
+    selector: 'app-banner-check',
+    templateUrl: './banner-check.component.html',
+    styleUrls: ['./banner-check.component.scss'],
 })
 export class BannerCheckComponent implements OnInit {
-  info: Info;
-  secure: boolean;
-  hideAlertInfo: boolean;
-  hideAnnouncementBanner: boolean;
+    info: Info;
+    secure: boolean;
+    hideAlertInfo: boolean;
+    hideAnnouncementBanner: boolean;
 
-  constructor(private infoService: InfoService) {}
+    constructor(private infoService: InfoService) {}
 
-  ngOnInit() {
-    this.hideAnnouncementBanner = !!getFromSessionStorage(
-      hideAnnouncementBannerKey,
-    );
-    this.infoService.getInfo().subscribe((info) => {
-      this.info = info;
-      this.secure = location.protocol.startsWith("https:");
-    });
-  }
+    ngOnInit() {
+        this.hideAnnouncementBanner = !!getFromSessionStorage(
+            hideAnnouncementBannerKey,
+        );
+        this.infoService.getInfo().subscribe((info) => {
+            this.info = info;
+            this.secure = location.protocol.startsWith('https:');
+        });
+    }
 
-  dismissAnnouncementBanner(): void {
-    this.hideAnnouncementBanner = true;
-    writeToSessionStorage(hideAnnouncementBannerKey, "true");
-  }
+    dismissAnnouncementBanner(): void {
+        this.hideAnnouncementBanner = true;
+        writeToSessionStorage(hideAnnouncementBannerKey, 'true');
+    }
 }

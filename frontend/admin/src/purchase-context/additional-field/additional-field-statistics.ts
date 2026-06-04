@@ -3,7 +3,10 @@ import type { SlDrawer } from '@shoelace-style/shoelace';
 import { css, html, LitElement } from 'lit';
 import { customElement, query, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
-import type { AdditionalField, AdditionalFieldStats } from '../../model/additional-field.ts';
+import type {
+    AdditionalField,
+    AdditionalFieldStats,
+} from '../../model/additional-field.ts';
 import type { PurchaseContext } from '../../model/purchase-context.ts';
 import { AdditionalFieldService } from '../../service/additional-field.ts';
 import { renderIf } from '../../service/helpers.ts';
@@ -11,18 +14,18 @@ import { textAlign } from '../../styles.ts';
 
 @customElement('alfio-additional-field-statistics')
 export class AdditionalFieldStatistics extends LitElement {
-  field: AdditionalField | null = null;
-  purchaseContext: PurchaseContext | null = null;
+    field: AdditionalField | null = null;
+    purchaseContext: PurchaseContext | null = null;
 
-  @state()
-  active = false;
+    @state()
+    active = false;
 
-  @query('sl-drawer#drawer-statistics')
-  drawer?: SlDrawer;
+    @query('sl-drawer#drawer-statistics')
+    drawer?: SlDrawer;
 
-  static readonly styles = [
-    textAlign,
-    css`
+    static readonly styles = [
+        textAlign,
+        css`
         sl-drawer {
             --sl-z-index-drawer: 1031;
         }
@@ -47,28 +50,34 @@ export class AdditionalFieldStatistics extends LitElement {
         }
 
     `,
-  ];
+    ];
 
-  private readonly retrievePageDataTask = new Task<ReadonlyArray<boolean>, ReadonlyArray<AdditionalFieldStats>>(
-    this,
-    async () => {
-      if (this.field?.id != null) {
-        return await AdditionalFieldService.loadRestrictedValuesStats(this.purchaseContext!, this.field!.id);
-      }
-      return [];
-    },
-    () => [this.active],
-  );
+    private readonly retrievePageDataTask = new Task<
+        ReadonlyArray<boolean>,
+        ReadonlyArray<AdditionalFieldStats>
+    >(
+        this,
+        async () => {
+            if (this.field?.id != null) {
+                return await AdditionalFieldService.loadRestrictedValuesStats(
+                    this.purchaseContext!,
+                    this.field!.id,
+                );
+            }
+            return [];
+        },
+        () => [this.active],
+    );
 
-  protected render(): unknown {
-    return html`
+    protected render(): unknown {
+        return html`
             <sl-drawer label=${`Statistics for ${this.field?.name}`} id="drawer-statistics">
                ${renderIf(
-                 () => this.active,
-                 () =>
-                   this.retrievePageDataTask.render({
-                     initial: () => html`<sl-spinner></sl-spinner>`,
-                     complete: (stats) => html`
+                   () => this.active,
+                   () =>
+                       this.retrievePageDataTask.render({
+                           initial: () => html`<sl-spinner></sl-spinner>`,
+                           complete: (stats) => html`
                     <table class="table table-striped">
                         <thead>
                             <tr>
@@ -79,9 +88,9 @@ export class AdditionalFieldStatistics extends LitElement {
                         </thead>
                         <tbody>
                             ${repeat(
-                              stats,
-                              (s) => s.name,
-                              (s) => html`
+                                stats,
+                                (s) => s.name,
+                                (s) => html`
                                 <tr>
                                     <td>${s.name}</td>
                                     <td class="text-end">${s.count}</td>
@@ -92,29 +101,32 @@ export class AdditionalFieldStatistics extends LitElement {
                         </tbody>
                     </table>
             `,
-                   })!,
+                       })!,
                )}
             </sl-drawer>
         `;
-  }
-
-  public async show(request: { purchaseContext: PurchaseContext; field: AdditionalField }) {
-    if (this.drawer != null) {
-      this.field = request.field;
-      this.purchaseContext = request.purchaseContext;
-      this.active = true;
-      await this.drawer?.show();
     }
-    this.drawer?.addEventListener('sl-after-hide', async () => {
-      this.active = false;
-      this.dispatchEvent(new CustomEvent('alfio-drawer-closed'));
-    });
-    return this.drawer != null;
-  }
+
+    public async show(request: {
+        purchaseContext: PurchaseContext;
+        field: AdditionalField;
+    }) {
+        if (this.drawer != null) {
+            this.field = request.field;
+            this.purchaseContext = request.purchaseContext;
+            this.active = true;
+            await this.drawer?.show();
+        }
+        this.drawer?.addEventListener('sl-after-hide', async () => {
+            this.active = false;
+            this.dispatchEvent(new CustomEvent('alfio-drawer-closed'));
+        });
+        return this.drawer != null;
+    }
 }
 
 declare global {
-  interface HTMLElementTagNameMap {
-    'alfio-additional-field-statistics': AdditionalFieldStatistics;
-  }
+    interface HTMLElementTagNameMap {
+        'alfio-additional-field-statistics': AdditionalFieldStatistics;
+    }
 }

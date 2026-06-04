@@ -1,4 +1,4 @@
 export class TransactionInitializationToken {
-  clientSecret: string;
-  reservationStatusChanged: boolean;
+    clientSecret: string;
+    reservationStatusChanged: boolean;
 }

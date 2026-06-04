@@ -1,45 +1,48 @@
-import { Component, type OnDestroy, type OnInit } from "@angular/core";
-import type { ActivatedRoute } from "@angular/router";
-import { type Subscription, zip } from "rxjs";
-import type { PurchaseContext } from "../model/purchase-context";
+import { Component, type OnDestroy, type OnInit } from '@angular/core';
+import type { ActivatedRoute } from '@angular/router';
+import { type Subscription, zip } from 'rxjs';
+import type { PurchaseContext } from '../model/purchase-context';
 import type {
-  PurchaseContextService,
-  PurchaseContextType,
-} from "../shared/purchase-context.service";
+    PurchaseContextService,
+    PurchaseContextType,
+} from '../shared/purchase-context.service';
 
 @Component({
-  selector: "app-reservation",
-  templateUrl: "./reservation.component.html",
+    selector: 'app-reservation',
+    templateUrl: './reservation.component.html',
 })
 export class ReservationComponent implements OnInit, OnDestroy {
-  private routerSubscription?: Subscription;
-  purchaseContext: PurchaseContext;
-  type: PurchaseContextType;
-  enableLoginButton = false;
-  displayFooterLinks = false;
+    private routerSubscription?: Subscription;
+    purchaseContext: PurchaseContext;
+    type: PurchaseContextType;
+    enableLoginButton = false;
+    displayFooterLinks = false;
 
-  constructor(
-    private route: ActivatedRoute,
-    private purchaseContextService: PurchaseContextService,
-  ) {}
+    constructor(
+        private route: ActivatedRoute,
+        private purchaseContextService: PurchaseContextService,
+    ) {}
 
-  ngOnInit() {
-    zip(this.route.data, this.route.params).subscribe(([data, params]) => {
-      this.purchaseContextService
-        .getContext(data["type"], params[data["publicIdentifierParameter"]])
-        .subscribe((purchaseContext) => {
-          this.type = data["type"];
-          this.purchaseContext = purchaseContext;
+    ngOnInit() {
+        zip(this.route.data, this.route.params).subscribe(([data, params]) => {
+            this.purchaseContextService
+                .getContext(
+                    data['type'],
+                    params[data['publicIdentifierParameter']],
+                )
+                .subscribe((purchaseContext) => {
+                    this.type = data['type'];
+                    this.purchaseContext = purchaseContext;
+                });
         });
-    });
-    this.routerSubscription = this.route.url.subscribe((url) => {
-      const path = url[url.length - 1].path;
-      this.enableLoginButton = path === "success";
-      this.displayFooterLinks = path === "book";
-    });
-  }
+        this.routerSubscription = this.route.url.subscribe((url) => {
+            const path = url[url.length - 1].path;
+            this.enableLoginButton = path === 'success';
+            this.displayFooterLinks = path === 'book';
+        });
+    }
 
-  ngOnDestroy(): void {
-    this.routerSubscription?.unsubscribe();
-  }
+    ngOnDestroy(): void {
+        this.routerSubscription?.unsubscribe();
+    }
 }

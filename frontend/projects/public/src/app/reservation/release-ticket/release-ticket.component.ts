@@ -1,10 +1,10 @@
-import { Component } from "@angular/core";
-import type { NgbActiveModal } from "@ng-bootstrap/ng-bootstrap";
+import { Component } from '@angular/core';
+import type { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
-  selector: "app-release-ticket",
-  templateUrl: "./release-ticket.html",
+    selector: 'app-release-ticket',
+    templateUrl: './release-ticket.html',
 })
 export class ReleaseTicketComponent {
-  constructor(public activeModal: NgbActiveModal) {}
+    constructor(public activeModal: NgbActiveModal) {}
 }

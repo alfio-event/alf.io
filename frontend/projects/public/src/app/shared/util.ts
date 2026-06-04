@@ -1,133 +1,135 @@
-import { HttpErrorResponse } from "@angular/common/http";
-import { interval } from "rxjs";
-import { filter, mergeMap } from "rxjs/operators";
-import { ReservationStatusChanged } from "../model/embedding-configuration";
-import type { PurchaseContext } from "../model/purchase-context";
+import { HttpErrorResponse } from '@angular/common/http';
+import { interval } from 'rxjs';
+import { filter, mergeMap } from 'rxjs/operators';
+import { ReservationStatusChanged } from '../model/embedding-configuration';
+import type { PurchaseContext } from '../model/purchase-context';
 import type {
-  AdditionalServiceWithData,
-  ReservationInfo,
-  ReservationStatus,
-} from "../model/reservation-info";
-import type { ReservationService } from "./reservation.service";
+    AdditionalServiceWithData,
+    ReservationInfo,
+    ReservationStatus,
+} from '../model/reservation-info';
+import type { ReservationService } from './reservation.service';
 
-export const DELETE_ACCOUNT_CONFIRMATION = "alfio.delete-account.confirmation";
+export const DELETE_ACCOUNT_CONFIRMATION = 'alfio.delete-account.confirmation';
 
 export function writeToSessionStorage(key: string, value: string): void {
-  try {
-    window.sessionStorage.setItem(key, value);
-  } catch (e) {
-    // session storage might be disabled in some contexts
-  }
+    try {
+        window.sessionStorage.setItem(key, value);
+    } catch (e) {
+        // session storage might be disabled in some contexts
+    }
 }
 
 export function getFromSessionStorage(key: string): string | null {
-  try {
-    return window.sessionStorage.getItem(key);
-  } catch (e) {
-    // session storage might be disabled in some contexts
-    return null;
-  }
+    try {
+        return window.sessionStorage.getItem(key);
+    } catch (e) {
+        // session storage might be disabled in some contexts
+        return null;
+    }
 }
 
 export function removeFromSessionStorage(key: string): void {
-  try {
-    window.sessionStorage.removeItem(key);
-  } catch (e) {}
+    try {
+        window.sessionStorage.removeItem(key);
+    } catch (e) {}
 }
 
-export const mobile = window.matchMedia("(max-width: 767px)").matches;
+export const mobile = window.matchMedia('(max-width: 767px)').matches;
 export const embedded = window.parent !== window;
 
 export function notifyPaymentErrorToParent(
-  purchaseContext: PurchaseContext,
-  reservationInfo: ReservationInfo,
-  reservationId: string,
-  err: Error,
+    purchaseContext: PurchaseContext,
+    reservationInfo: ReservationInfo,
+    reservationId: string,
+    err: Error,
 ) {
-  if (embedded && purchaseContext.embeddingConfiguration.enabled) {
-    window.parent.postMessage(
-      new ReservationStatusChanged(
-        reservationInfo.status,
-        reservationId,
-        errorMessage(err),
-      ),
-      purchaseContext.embeddingConfiguration.notificationOrigin,
-    );
-  }
+    if (embedded && purchaseContext.embeddingConfiguration.enabled) {
+        window.parent.postMessage(
+            new ReservationStatusChanged(
+                reservationInfo.status,
+                reservationId,
+                errorMessage(err),
+            ),
+            purchaseContext.embeddingConfiguration.notificationOrigin,
+        );
+    }
 }
 
 export function pollReservationStatus(
-  reservationId: string,
-  reservationService: ReservationService,
-  processSuccessful: (res: ReservationInfo) => void,
-  desiredStatuses: Array<ReservationStatus> = ["COMPLETE"],
+    reservationId: string,
+    reservationService: ReservationService,
+    processSuccessful: (res: ReservationInfo) => void,
+    desiredStatuses: Array<ReservationStatus> = ['COMPLETE'],
 ): void {
-  const subscription = interval(5000)
-    .pipe(
-      mergeMap(() => reservationService.getReservationInfo(reservationId)),
-      filter((reservationInfo) =>
-        desiredStatuses.includes(reservationInfo.status),
-      ),
-    )
-    .subscribe((reservationInfo) => {
-      processSuccessful(reservationInfo);
-      subscription.unsubscribe();
-    });
+    const subscription = interval(5000)
+        .pipe(
+            mergeMap(() =>
+                reservationService.getReservationInfo(reservationId),
+            ),
+            filter((reservationInfo) =>
+                desiredStatuses.includes(reservationInfo.status),
+            ),
+        )
+        .subscribe((reservationInfo) => {
+            processSuccessful(reservationInfo);
+            subscription.unsubscribe();
+        });
 }
 
 function errorMessage(err: Error): string {
-  if (err instanceof HttpErrorResponse) {
-    return `${err.message} (${err.status})`;
-  }
-  return err.message;
+    if (err instanceof HttpErrorResponse) {
+        return `${err.message} (${err.status})`;
+    }
+    return err.message;
 }
 
 export function groupAdditionalData(
-  data: AdditionalServiceWithData[],
+    data: AdditionalServiceWithData[],
 ): GroupedAdditionalServiceWithData[] {
-  if (data == null || data.length === 0) {
-    return [];
-  }
-  const byServiceId = data
-    .map((d) => {
-      return {
-        count: 1,
-        ...d,
-      };
-    })
-    .reduce(
-      (accumulator, currentValue) => {
-        const existing = accumulator[currentValue.serviceId];
-        if (existing != null) {
-          existing.count += 1;
-          existing.ticketFieldConfiguration = [
-            ...existing.ticketFieldConfiguration,
-            ...currentValue.ticketFieldConfiguration,
-          ];
-        } else {
-          accumulator[currentValue.serviceId] = {
-            count: currentValue.count,
-            ...currentValue,
-          };
-        }
-        return accumulator;
-      },
-      <{ [k: number]: GroupedAdditionalServiceWithData }>{},
-    );
-  return Object.values(byServiceId);
+    if (data == null || data.length === 0) {
+        return [];
+    }
+    const byServiceId = data
+        .map((d) => {
+            return {
+                count: 1,
+                ...d,
+            };
+        })
+        .reduce(
+            (accumulator, currentValue) => {
+                const existing = accumulator[currentValue.serviceId];
+                if (existing != null) {
+                    existing.count += 1;
+                    existing.ticketFieldConfiguration = [
+                        ...existing.ticketFieldConfiguration,
+                        ...currentValue.ticketFieldConfiguration,
+                    ];
+                } else {
+                    accumulator[currentValue.serviceId] = {
+                        count: currentValue.count,
+                        ...currentValue,
+                    };
+                }
+                return accumulator;
+            },
+            <{ [k: number]: GroupedAdditionalServiceWithData }>{},
+        );
+    return Object.values(byServiceId);
 }
 
 export interface GroupedAdditionalServiceWithData
-  extends AdditionalServiceWithData {
-  count: number;
+    extends AdditionalServiceWithData {
+    count: number;
 }
 
 // load preloaded data which are json and url encoded
 export function loadPreloaded(id: string) {
-  const preload = document.getElementById(id);
-  if (preload && preload.textContent) {
-    return JSON.parse(decodeURIComponent(preload.textContent));
-  } else {
-    return undefined;
-  }
+    const preload = document.getElementById(id);
+    if (preload && preload.textContent) {
+        return JSON.parse(decodeURIComponent(preload.textContent));
+    } else {
+        return undefined;
+    }
 }

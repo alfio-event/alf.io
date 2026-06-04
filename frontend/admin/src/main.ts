@@ -38,15 +38,15 @@ import '@shoelace-style/shoelace/dist/components/switch/switch.js';
 
 // see https://vitejs.dev/guide/env-and-mode
 if (import.meta.env.MODE === 'development') {
-  const baseUrl = import.meta.env.MODE ? 'http://localhost:5173/' : '';
-  setBasePath(`${baseUrl}shoelace/`);
+    const baseUrl = import.meta.env.MODE ? 'http://localhost:5173/' : '';
+    setBasePath(`${baseUrl}shoelace/`);
 } else if (import.meta.env.MODE === 'production') {
-  setBasePath(
-    `${document
-      .getElementById('lit-js')
-      ?.getAttribute('src')
-      ?.replace(/assets.*/g, '')}shoelace/`,
-  );
+    setBasePath(
+        `${document
+            .getElementById('lit-js')
+            ?.getAttribute('src')
+            ?.replace(/assets.*/g, '')}shoelace/`,
+    );
 }
 
 export { ConfirmationDialog } from './configuration/confirmation-dialog';

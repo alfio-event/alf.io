@@ -3,8 +3,8 @@ import { customElement } from 'lit/decorators.js';
 
 @customElement('new-element')
 export class NewElement extends LitElement {
-  render() {
-    return html`<h1>Hello world</h1>
+    render() {
+        return html`<h1>Hello world</h1>
         <sl-card>
           <sl-rating></sl-rating>
           <sl-button>plop2</sl-button>
@@ -13,11 +13,11 @@ export class NewElement extends LitElement {
             This is a standard alert. You can customize its content and even the icon.
           </sl-alert>
         </sl-card>`;
-  }
+    }
 }
 
 declare global {
-  interface HTMLElementTagNameMap {
-    'new-element': NewElement;
-  }
+    interface HTMLElementTagNameMap {
+        'new-element': NewElement;
+    }
 }

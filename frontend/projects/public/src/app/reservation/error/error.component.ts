@@ -1,38 +1,38 @@
-import { Component, type OnInit } from "@angular/core";
-import type { ActivatedRoute } from "@angular/router";
-import { zip } from "rxjs";
-import type { PurchaseContext } from "../../model/purchase-context";
-import type { I18nService } from "../../shared/i18n.service";
-import type { PurchaseContextService } from "../../shared/purchase-context.service";
+import { Component, type OnInit } from '@angular/core';
+import type { ActivatedRoute } from '@angular/router';
+import { zip } from 'rxjs';
+import type { PurchaseContext } from '../../model/purchase-context';
+import type { I18nService } from '../../shared/i18n.service';
+import type { PurchaseContextService } from '../../shared/purchase-context.service';
 
 @Component({
-  selector: "app-error",
-  templateUrl: "./error.component.html",
+    selector: 'app-error',
+    templateUrl: './error.component.html',
 })
 export class ErrorComponent implements OnInit {
-  reservationId: string;
-  purchaseContext: PurchaseContext;
+    reservationId: string;
+    purchaseContext: PurchaseContext;
 
-  constructor(
-    private route: ActivatedRoute,
-    private purchaseContextService: PurchaseContextService,
-    private i18nService: I18nService,
-  ) {}
+    constructor(
+        private route: ActivatedRoute,
+        private purchaseContextService: PurchaseContextService,
+        private i18nService: I18nService,
+    ) {}
 
-  ngOnInit() {
-    zip(this.route.data, this.route.params).subscribe(([data, params]) => {
-      const publicIdentifier = params[data.publicIdentifierParameter];
-      this.reservationId = params["reservationId"];
-      const purchaseContextType = data.type;
-      this.purchaseContextService
-        .getContext(purchaseContextType, publicIdentifier)
-        .subscribe((ev) => {
-          this.purchaseContext = ev;
-          this.i18nService.setPageTitle(
-            "reservation-page-not-found.header.title",
-            ev,
-          );
+    ngOnInit() {
+        zip(this.route.data, this.route.params).subscribe(([data, params]) => {
+            const publicIdentifier = params[data.publicIdentifierParameter];
+            this.reservationId = params['reservationId'];
+            const purchaseContextType = data.type;
+            this.purchaseContextService
+                .getContext(purchaseContextType, publicIdentifier)
+                .subscribe((ev) => {
+                    this.purchaseContext = ev;
+                    this.i18nService.setPageTitle(
+                        'reservation-page-not-found.header.title',
+                        ev,
+                    );
+                });
         });
-    });
-  }
+    }
 }

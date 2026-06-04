@@ -1,18 +1,18 @@
-import { Pipe, type PipeTransform } from "@angular/core";
-import type { TranslateService } from "@ngx-translate/core";
-import { getLocalizedContent } from "./subscription.service";
+import { Pipe, type PipeTransform } from '@angular/core';
+import type { TranslateService } from '@ngx-translate/core';
+import { getLocalizedContent } from './subscription.service';
 
 @Pipe({
-  name: "translateDescription",
+    name: 'translateDescription',
 })
 export class TranslateDescriptionPipe implements PipeTransform {
-  constructor(private translate: TranslateService) {}
+    constructor(private translate: TranslateService) {}
 
-  transform(value?: { [k: string]: any }): any {
-    if (value != null) {
-      const lang = this.translate.currentLang;
-      return getLocalizedContent(value, lang);
+    transform(value?: { [k: string]: any }): any {
+        if (value != null) {
+            const lang = this.translate.currentLang;
+            return getLocalizedContent(value, lang);
+        }
+        return null;
     }
-    return null;
-  }
 }

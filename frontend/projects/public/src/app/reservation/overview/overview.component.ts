@@ -1,622 +1,650 @@
 import {
-  Component,
-  type ElementRef,
-  type OnInit,
-  ViewChild,
-} from "@angular/core";
-import type { UntypedFormBuilder, UntypedFormGroup } from "@angular/forms";
-import type { ActivatedRoute, NavigationExtras, Router } from "@angular/router";
-import type { NgbModal } from "@ng-bootstrap/ng-bootstrap";
-import type { TranslateService } from "@ngx-translate/core";
-import { zip } from "rxjs";
+    Component,
+    type ElementRef,
+    type OnInit,
+    ViewChild,
+} from '@angular/core';
+import type { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import type { ActivatedRoute, NavigationExtras, Router } from '@angular/router';
+import type { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import type { TranslateService } from '@ngx-translate/core';
+import { zip } from 'rxjs';
 import {
-  type CustomOfflinePayment,
-  type PaymentMethod,
-  type PaymentMethodId,
-  type PaymentProxy,
-  type PaymentProxyWithParameters,
-  staticPaymentMethodDetails,
-} from "../../model/event";
-import type { PurchaseContext } from "../../model/purchase-context";
-import type { ReservationInfo, SummaryRow } from "../../model/reservation-info";
-import { SearchParams } from "../../model/search-params";
+    type CustomOfflinePayment,
+    type PaymentMethod,
+    type PaymentMethodId,
+    type PaymentProxy,
+    type PaymentProxyWithParameters,
+    staticPaymentMethodDetails,
+} from '../../model/event';
+import type { PurchaseContext } from '../../model/purchase-context';
+import type { ReservationInfo, SummaryRow } from '../../model/reservation-info';
+import { SearchParams } from '../../model/search-params';
 import {
-  ErrorDescriptor,
-  ValidatedResponse,
-} from "../../model/validated-response";
+    ErrorDescriptor,
+    ValidatedResponse,
+} from '../../model/validated-response';
 import {
-  type PaymentProvider,
-  PaymentResult,
-  type PaymentStatusNotification,
-  SimplePaymentProvider,
-} from "../../payment/payment-provider";
-import type { AnalyticsService } from "../../shared/analytics.service";
-import type { FeedbackService } from "../../shared/feedback/feedback.service";
-import type { I18nService } from "../../shared/i18n.service";
+    type PaymentProvider,
+    PaymentResult,
+    type PaymentStatusNotification,
+    SimplePaymentProvider,
+} from '../../payment/payment-provider';
+import type { AnalyticsService } from '../../shared/analytics.service';
+import type { FeedbackService } from '../../shared/feedback/feedback.service';
+import type { I18nService } from '../../shared/i18n.service';
 import type {
-  PurchaseContextService,
-  PurchaseContextType,
-} from "../../shared/purchase-context.service";
-import type { ReservationService } from "../../shared/reservation.service";
-import { notifyPaymentErrorToParent } from "../../shared/util";
+    PurchaseContextService,
+    PurchaseContextType,
+} from '../../shared/purchase-context.service';
+import type { ReservationService } from '../../shared/reservation.service';
+import { notifyPaymentErrorToParent } from '../../shared/util';
 import {
-  handleServerSideValidationError,
-  isServerError,
-} from "../../shared/validation-helper";
-import { ReservationExpiredComponent } from "../expired-notification/reservation-expired.component";
-import { ModalRemoveSubscriptionComponent } from "../modal-remove-subscription/modal-remove-subscription.component";
+    handleServerSideValidationError,
+    isServerError,
+} from '../../shared/validation-helper';
+import { ReservationExpiredComponent } from '../expired-notification/reservation-expired.component';
+import { ModalRemoveSubscriptionComponent } from '../modal-remove-subscription/modal-remove-subscription.component';
 
 @Component({
-  selector: "app-overview",
-  templateUrl: "./overview.component.html",
-  styleUrls: ["./overview.component.scss"],
+    selector: 'app-overview',
+    templateUrl: './overview.component.html',
+    styleUrls: ['./overview.component.scss'],
 })
 export class OverviewComponent implements OnInit {
-  reservationInfo: ReservationInfo;
-  overviewForm: UntypedFormGroup;
-  globalErrors: ErrorDescriptor[];
+    reservationInfo: ReservationInfo;
+    overviewForm: UntypedFormGroup;
+    globalErrors: ErrorDescriptor[];
 
-  private publicIdentifier: string;
-  private reservationId: string;
-  purchaseContext: PurchaseContext;
-  purchaseContextType: PurchaseContextType;
-  expired: boolean;
+    private publicIdentifier: string;
+    private reservationId: string;
+    purchaseContext: PurchaseContext;
+    purchaseContextType: PurchaseContextType;
+    expired: boolean;
 
-  submitting: boolean;
-  paymentStatusNotification: PaymentStatusNotification;
-  private forceCheckInProgress = false;
+    submitting: boolean;
+    paymentStatusNotification: PaymentStatusNotification;
+    private forceCheckInProgress = false;
 
-  selectedPaymentProvider: PaymentProvider;
+    selectedPaymentProvider: PaymentProvider;
 
-  activePaymentMethods: {
-    [key in PaymentMethod["paymentMethodId"]]: PaymentProxyWithParameters;
-  } = {};
-  displaySubscriptionForm = false;
+    activePaymentMethods: {
+        [key in PaymentMethod['paymentMethodId']]: PaymentProxyWithParameters;
+    } = {};
+    displaySubscriptionForm = false;
 
-  @ViewChild("subscriptionInput")
-  subscriptionInput: ElementRef<HTMLInputElement>;
-  subscriptionCodeForm: UntypedFormGroup;
-  customOfflinePaymentMethods: CustomOfflinePayment[] = [];
+    @ViewChild('subscriptionInput')
+    subscriptionInput: ElementRef<HTMLInputElement>;
+    subscriptionCodeForm: UntypedFormGroup;
+    customOfflinePaymentMethods: CustomOfflinePayment[] = [];
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private reservationService: ReservationService,
-    private formBuilder: UntypedFormBuilder,
-    private i18nService: I18nService,
-    private translate: TranslateService,
-    private analytics: AnalyticsService,
-    private modalService: NgbModal,
-    private purchaseContextService: PurchaseContextService,
-    private feedbackService: FeedbackService,
-  ) {}
+    constructor(
+        private route: ActivatedRoute,
+        private router: Router,
+        private reservationService: ReservationService,
+        private formBuilder: UntypedFormBuilder,
+        private i18nService: I18nService,
+        private translate: TranslateService,
+        private analytics: AnalyticsService,
+        private modalService: NgbModal,
+        private purchaseContextService: PurchaseContextService,
+        private feedbackService: FeedbackService,
+    ) {}
 
-  ngOnInit() {
-    zip(this.route.data, this.route.params).subscribe(([data, params]) => {
-      this.publicIdentifier = params[data.publicIdentifierParameter];
-      this.reservationId = params["reservationId"];
-      this.purchaseContextType = data.type;
+    ngOnInit() {
+        zip(this.route.data, this.route.params).subscribe(([data, params]) => {
+            this.publicIdentifier = params[data.publicIdentifierParameter];
+            this.reservationId = params['reservationId'];
+            this.purchaseContextType = data.type;
 
-      this.purchaseContextService
-        .getContext(this.purchaseContextType, this.publicIdentifier)
-        .subscribe((ev) => {
-          this.purchaseContext = ev;
+            this.purchaseContextService
+                .getContext(this.purchaseContextType, this.publicIdentifier)
+                .subscribe((ev) => {
+                    this.purchaseContext = ev;
 
-          this.i18nService.setPageTitle("reservation-page.header.title", ev);
+                    this.i18nService.setPageTitle(
+                        'reservation-page.header.title',
+                        ev,
+                    );
 
-          this.loadReservation();
+                    this.loadReservation();
 
-          this.analytics.pageView(ev.analyticsConfiguration);
+                    this.analytics.pageView(ev.analyticsConfiguration);
+                });
         });
-    });
 
-    this.subscriptionCodeForm = this.formBuilder.group({
-      subscriptionCode: this.formBuilder.control(null),
-    });
-
-    this.reservationService
-      .getApplicableCustomPaymentMethodDetails(this.reservationId)
-      .subscribe((methods) => {
-        this.customOfflinePaymentMethods = methods;
-      });
-  }
-
-  loadReservation() {
-    this.reservationService
-      .getReservationInfo(this.reservationId)
-      .subscribe((resInfo) => {
-        this.reservationInfo = resInfo;
-
-        this.activePaymentMethods = this.reservationInfo.activePaymentMethods;
-        let currentPaymentProxy: PaymentProxy | null = null;
-        let selectedPaymentMethod: PaymentMethodId | null = null;
-
-        if (!resInfo.orderSummary.free && this.paymentMethodsCount() === 1) {
-          selectedPaymentMethod = this.getSinglePaymentMethod();
-          currentPaymentProxy =
-            this.reservationInfo.activePaymentMethods[selectedPaymentMethod]
-              .paymentProxy;
-        }
-
-        if (resInfo.orderSummary.free) {
-          selectedPaymentMethod = "NONE";
-          this.selectedPaymentProvider = new SimplePaymentProvider();
-        }
-
-        //
-        if (this.reservationInfo.tokenAcquired) {
-          currentPaymentProxy = this.reservationInfo.paymentProxy;
-          selectedPaymentMethod =
-            this.getPaymentMethodMatchingProxy(currentPaymentProxy);
-
-          // we override and keep only the one selected
-          if (selectedPaymentMethod) {
-            const paymentProxyAndParam =
-              this.reservationInfo.activePaymentMethods[selectedPaymentMethod];
-            this.activePaymentMethods = {};
-            this.activePaymentMethods[selectedPaymentMethod] =
-              paymentProxyAndParam;
-          }
-          //
-        } else {
-          this.activePaymentMethods = this.reservationInfo.activePaymentMethods;
-        }
-        //
-
-        this.overviewForm = this.formBuilder.group({
-          termAndConditionsAccepted: this.reservationInfo.tokenAcquired,
-          privacyPolicyAccepted: this.reservationInfo.tokenAcquired,
-          selectedPaymentMethod: selectedPaymentMethod,
-          paymentProxy: currentPaymentProxy,
-          gatewayToken: null,
-          captcha: null,
+        this.subscriptionCodeForm = this.formBuilder.group({
+            subscriptionCode: this.formBuilder.control(null),
         });
-      });
-  }
 
-  paymentMethodsCount(): number {
-    return Object.keys(this.activePaymentMethods).length;
-  }
-
-  private getPaymentMethodMatchingProxy(
-    paymentProxy: PaymentProxy,
-  ): PaymentMethodId | null {
-    const keys: PaymentMethodId[] = Object.keys(
-      this.activePaymentMethods,
-    ) as PaymentMethodId[];
-    for (const idx in keys) {
-      if (this.activePaymentMethods[keys[idx]].paymentProxy === paymentProxy) {
-        return keys[idx];
-      }
-    }
-    return null;
-  }
-
-  getSinglePaymentMethod(): PaymentMethodId {
-    return Object.keys(this.activePaymentMethods)[0];
-  }
-
-  back(requestInvoice?: boolean): void {
-    const extras: NavigationExtras = {};
-    if (requestInvoice != null) {
-      extras.queryParams = {
-        requestInvoice: requestInvoice,
-      };
-    }
-    if (this.expired) {
-      this.reservationService
-        .cancelPendingReservation(this.reservationId)
-        .subscribe((res) => {
-          this.router.navigate([
-            this.purchaseContextType,
-            this.publicIdentifier,
-          ]);
-        });
-    } else {
-      this.reservationService
-        .backToBooking(this.reservationId)
-        .subscribe((res) => {
-          this.router.navigate(
-            [
-              this.purchaseContextType,
-              this.publicIdentifier,
-              "reservation",
-              this.reservationId,
-              "book",
-            ],
-            extras,
-          );
-        });
-    }
-  }
-
-  confirm() {
-    if (!this.overviewForm.valid || this.selectedPaymentProvider == null) {
-      return; // prevent accidental submissions
+        this.reservationService
+            .getApplicableCustomPaymentMethodDetails(this.reservationId)
+            .subscribe((methods) => {
+                this.customOfflinePaymentMethods = methods;
+            });
     }
 
-    this.submitting = true;
-    this.registerUnloadHook();
-    this.selectedPaymentProvider
-      .statusNotifications()
-      .subscribe((notification) => {
-        if (!this.forceCheckInProgress) {
-          this.paymentStatusNotification = notification;
-        }
-      });
-    this.selectedPaymentProvider.pay().subscribe({
-      next: (paymentResult) => {
-        if (paymentResult.success) {
-          this.overviewForm
-            .get("gatewayToken")
-            ?.setValue(paymentResult.gatewayToken);
-          const selectedPaymentMethodId = this.overviewForm.get(
-            "selectedPaymentMethod",
-          )?.value;
-          if (
-            selectedPaymentMethodId &&
-            !Object.keys(staticPaymentMethodDetails).includes(
-              selectedPaymentMethodId,
-            )
-          ) {
-            const maybeFoundCustomMethod =
-              this.customOfflinePaymentMethods.find(
-                (pm) => pm.paymentMethodId === selectedPaymentMethodId,
-              );
-            if (maybeFoundCustomMethod) {
-              const foundCustomMethod = maybeFoundCustomMethod!;
-              this.overviewForm
-                .get("selectedPaymentMethod")
-                ?.setValue(foundCustomMethod);
+    loadReservation() {
+        this.reservationService
+            .getReservationInfo(this.reservationId)
+            .subscribe((resInfo) => {
+                this.reservationInfo = resInfo;
+
+                this.activePaymentMethods =
+                    this.reservationInfo.activePaymentMethods;
+                let currentPaymentProxy: PaymentProxy | null = null;
+                let selectedPaymentMethod: PaymentMethodId | null = null;
+
+                if (
+                    !resInfo.orderSummary.free &&
+                    this.paymentMethodsCount() === 1
+                ) {
+                    selectedPaymentMethod = this.getSinglePaymentMethod();
+                    currentPaymentProxy =
+                        this.reservationInfo.activePaymentMethods[
+                            selectedPaymentMethod
+                        ].paymentProxy;
+                }
+
+                if (resInfo.orderSummary.free) {
+                    selectedPaymentMethod = 'NONE';
+                    this.selectedPaymentProvider = new SimplePaymentProvider();
+                }
+
+                //
+                if (this.reservationInfo.tokenAcquired) {
+                    currentPaymentProxy = this.reservationInfo.paymentProxy;
+                    selectedPaymentMethod =
+                        this.getPaymentMethodMatchingProxy(currentPaymentProxy);
+
+                    // we override and keep only the one selected
+                    if (selectedPaymentMethod) {
+                        const paymentProxyAndParam =
+                            this.reservationInfo.activePaymentMethods[
+                                selectedPaymentMethod
+                            ];
+                        this.activePaymentMethods = {};
+                        this.activePaymentMethods[selectedPaymentMethod] =
+                            paymentProxyAndParam;
+                    }
+                    //
+                } else {
+                    this.activePaymentMethods =
+                        this.reservationInfo.activePaymentMethods;
+                }
+                //
+
+                this.overviewForm = this.formBuilder.group({
+                    termAndConditionsAccepted:
+                        this.reservationInfo.tokenAcquired,
+                    privacyPolicyAccepted: this.reservationInfo.tokenAcquired,
+                    selectedPaymentMethod: selectedPaymentMethod,
+                    paymentProxy: currentPaymentProxy,
+                    gatewayToken: null,
+                    captcha: null,
+                });
+            });
+    }
+
+    paymentMethodsCount(): number {
+        return Object.keys(this.activePaymentMethods).length;
+    }
+
+    private getPaymentMethodMatchingProxy(
+        paymentProxy: PaymentProxy,
+    ): PaymentMethodId | null {
+        const keys: PaymentMethodId[] = Object.keys(
+            this.activePaymentMethods,
+        ) as PaymentMethodId[];
+        for (const idx in keys) {
+            if (
+                this.activePaymentMethods[keys[idx]].paymentProxy ===
+                paymentProxy
+            ) {
+                return keys[idx];
             }
-          }
-          const overviewFormValue = this.overviewForm.value;
+        }
+        return null;
+    }
 
-          this.reservationService
-            .confirmOverview(
-              this.reservationId,
-              overviewFormValue,
-              this.translate.currentLang,
-            )
-            .subscribe(
-              (res) => {
-                if (res.success) {
-                  this.unregisterHook();
-                  if (res.value.redirect) {
-                    // handle the case of redirects (e.g. paypal, stripe)
-                    window.location.href = res.value.redirectUrl;
-                  } else {
-                    this.router.navigate(
-                      [
+    getSinglePaymentMethod(): PaymentMethodId {
+        return Object.keys(this.activePaymentMethods)[0];
+    }
+
+    back(requestInvoice?: boolean): void {
+        const extras: NavigationExtras = {};
+        if (requestInvoice != null) {
+            extras.queryParams = {
+                requestInvoice: requestInvoice,
+            };
+        }
+        if (this.expired) {
+            this.reservationService
+                .cancelPendingReservation(this.reservationId)
+                .subscribe((res) => {
+                    this.router.navigate([
                         this.purchaseContextType,
                         this.publicIdentifier,
-                        "reservation",
-                        this.reservationId,
-                        "success",
-                      ],
-                      {
-                        queryParams: SearchParams.transformParams(
-                          this.route.snapshot.queryParams,
-                          this.route.snapshot.params,
-                        ),
-                      },
+                    ]);
+                });
+        } else {
+            this.reservationService
+                .backToBooking(this.reservationId)
+                .subscribe((res) => {
+                    this.router.navigate(
+                        [
+                            this.purchaseContextType,
+                            this.publicIdentifier,
+                            'reservation',
+                            this.reservationId,
+                            'book',
+                        ],
+                        extras,
                     );
-                  }
-                } else {
-                  this.submitting = false;
-                  this.unregisterHook();
-                  this.globalErrors = handleServerSideValidationError(
-                    res,
-                    this.overviewForm,
-                  );
+                });
+        }
+    }
+
+    confirm() {
+        if (!this.overviewForm.valid || this.selectedPaymentProvider == null) {
+            return; // prevent accidental submissions
+        }
+
+        this.submitting = true;
+        this.registerUnloadHook();
+        this.selectedPaymentProvider
+            .statusNotifications()
+            .subscribe((notification) => {
+                if (!this.forceCheckInProgress) {
+                    this.paymentStatusNotification = notification;
                 }
-              },
-              (err) => {
+            });
+        this.selectedPaymentProvider.pay().subscribe({
+            next: (paymentResult) => {
+                if (paymentResult.success) {
+                    this.overviewForm
+                        .get('gatewayToken')
+                        ?.setValue(paymentResult.gatewayToken);
+                    const selectedPaymentMethodId = this.overviewForm.get(
+                        'selectedPaymentMethod',
+                    )?.value;
+                    if (
+                        selectedPaymentMethodId &&
+                        !Object.keys(staticPaymentMethodDetails).includes(
+                            selectedPaymentMethodId,
+                        )
+                    ) {
+                        const maybeFoundCustomMethod =
+                            this.customOfflinePaymentMethods.find(
+                                (pm) =>
+                                    pm.paymentMethodId ===
+                                    selectedPaymentMethodId,
+                            );
+                        if (maybeFoundCustomMethod) {
+                            const foundCustomMethod = maybeFoundCustomMethod!;
+                            this.overviewForm
+                                .get('selectedPaymentMethod')
+                                ?.setValue(foundCustomMethod);
+                        }
+                    }
+                    const overviewFormValue = this.overviewForm.value;
+
+                    this.reservationService
+                        .confirmOverview(
+                            this.reservationId,
+                            overviewFormValue,
+                            this.translate.currentLang,
+                        )
+                        .subscribe(
+                            (res) => {
+                                if (res.success) {
+                                    this.unregisterHook();
+                                    if (res.value.redirect) {
+                                        // handle the case of redirects (e.g. paypal, stripe)
+                                        window.location.href =
+                                            res.value.redirectUrl;
+                                    } else {
+                                        this.router.navigate(
+                                            [
+                                                this.purchaseContextType,
+                                                this.publicIdentifier,
+                                                'reservation',
+                                                this.reservationId,
+                                                'success',
+                                            ],
+                                            {
+                                                queryParams:
+                                                    SearchParams.transformParams(
+                                                        this.route.snapshot
+                                                            .queryParams,
+                                                        this.route.snapshot
+                                                            .params,
+                                                    ),
+                                            },
+                                        );
+                                    }
+                                } else {
+                                    this.submitting = false;
+                                    this.unregisterHook();
+                                    this.globalErrors =
+                                        handleServerSideValidationError(
+                                            res,
+                                            this.overviewForm,
+                                        );
+                                }
+                            },
+                            (err) => {
+                                this.submitting = false;
+                                this.unregisterHook();
+                                notifyPaymentErrorToParent(
+                                    this.purchaseContext,
+                                    this.reservationInfo,
+                                    this.reservationId,
+                                    err,
+                                );
+                                this.globalErrors =
+                                    handleServerSideValidationError(
+                                        err,
+                                        this.overviewForm,
+                                    );
+                                if (isServerError(err)) {
+                                    this.feedbackService.showError(
+                                        'error.STEP_2_PAYMENT_REQUEST_CREATION',
+                                    );
+                                }
+                            },
+                        );
+                } else {
+                    console.log(
+                        'paymentResult is not success (may be cancelled)',
+                    );
+                    this.unregisterHook();
+                    if (paymentResult.reservationChanged) {
+                        console.log(
+                            'reservation status is changed. Trying to reload it...',
+                        );
+                        // reload reservation, try to go to /success
+                        this.router.navigate([
+                            this.purchaseContextType,
+                            this.publicIdentifier,
+                            'reservation',
+                            this.reservationId,
+                            'success',
+                        ]);
+                    } else {
+                        this.submitting = false;
+                    }
+                }
+            },
+            error: (err) => {
                 this.submitting = false;
                 this.unregisterHook();
+                this.notifyPaymentError(err);
                 notifyPaymentErrorToParent(
-                  this.purchaseContext,
-                  this.reservationInfo,
-                  this.reservationId,
-                  err,
+                    this.purchaseContext,
+                    this.reservationInfo,
+                    this.reservationId,
+                    err,
                 );
-                this.globalErrors = handleServerSideValidationError(
-                  err,
-                  this.overviewForm,
-                );
-                if (isServerError(err)) {
-                  this.feedbackService.showError(
-                    "error.STEP_2_PAYMENT_REQUEST_CREATION",
-                  );
-                }
-              },
-            );
-        } else {
-          console.log("paymentResult is not success (may be cancelled)");
-          this.unregisterHook();
-          if (paymentResult.reservationChanged) {
-            console.log(
-              "reservation status is changed. Trying to reload it...",
-            );
-            // reload reservation, try to go to /success
-            this.router.navigate([
-              this.purchaseContextType,
-              this.publicIdentifier,
-              "reservation",
-              this.reservationId,
-              "success",
-            ]);
-          } else {
-            this.submitting = false;
-          }
-        }
-      },
-      error: (err) => {
-        this.submitting = false;
-        this.unregisterHook();
-        this.notifyPaymentError(err);
-        notifyPaymentErrorToParent(
-          this.purchaseContext,
-          this.reservationInfo,
-          this.reservationId,
-          err,
-        );
-      },
-    });
-  }
-
-  forceCheck(): void {
-    this.paymentStatusNotification = null;
-    this.forceCheckInProgress = true;
-    this.reservationService
-      .forcePaymentStatusCheck(this.reservationId)
-      .subscribe({
-        next: (res) => {
-          if (res.success) {
-            console.log(
-              "reservation has been confirmed. Waiting for the PaymentProvider to acknowledge it...",
-            );
-          }
-        },
-        error: (err) => {
-          console.log("error while force-checking", err);
-          notifyPaymentErrorToParent(
-            this.purchaseContext,
-            this.reservationInfo,
-            this.reservationId,
-            err,
-          );
-        },
-      });
-  }
-
-  private registerUnloadHook(): void {
-    window.addEventListener("beforeunload", onUnLoadListener);
-    console.log("warn on page reload: on");
-  }
-
-  private unregisterHook(): void {
-    window.removeEventListener("beforeunload", onUnLoadListener);
-    console.log("warn on page reload: off");
-  }
-
-  private notifyPaymentError(response: any): void {
-    const errorDescriptor = new ErrorDescriptor();
-    errorDescriptor.fieldName = "";
-    if (response != null && response instanceof PaymentResult) {
-      errorDescriptor.code = "error.STEP_2_PAYMENT_PROCESSING_ERROR";
-      errorDescriptor.arguments = {
-        "0": response.reason,
-      };
-    } else {
-      errorDescriptor.code = "error.STEP_2_PAYMENT_REQUEST_CREATION";
+            },
+        });
     }
-    if (isServerError(response)) {
-      this.feedbackService.showError("error.STEP_2_PAYMENT_REQUEST_CREATION");
-    }
-    const validatedResponse = new ValidatedResponse();
-    validatedResponse.errorCount = 1;
-    validatedResponse.validationErrors = [errorDescriptor];
-    this.globalErrors = handleServerSideValidationError(
-      validatedResponse,
-      this.overviewForm,
-    );
-  }
 
-  get acceptedPrivacyAndTermAndConditions(): boolean {
-    if (this.purchaseContext.privacyPolicyUrl) {
-      return (
-        this.overviewForm.value.privacyPolicyAccepted &&
-        this.overviewForm.value.termAndConditionsAccepted
-      );
-    } else {
-      return this.overviewForm.value.termAndConditionsAccepted;
-    }
-  }
-
-  handleExpired(expired: boolean) {
-    setTimeout(() => {
-      if (!this.expired) {
-        this.expired = expired;
-        this.modalService
-          .open(ReservationExpiredComponent, {
-            centered: true,
-            backdrop: "static",
-          })
-          .result.then(() =>
-            this.router.navigate(
-              [this.purchaseContextType, this.publicIdentifier],
-              { replaceUrl: true },
-            ),
-          );
-      }
-    });
-  }
-
-  registerCurrentPaymentProvider(paymentProvider: PaymentProvider) {
-    this.selectedPaymentProvider = paymentProvider;
-  }
-
-  clearToken(): void {
-    this.reservationService
-      .removePaymentToken(this.reservationId)
-      .subscribe((r) => {
-        this.loadReservation();
-      });
-  }
-
-  handleRecaptchaResponse(recaptchaValue: string) {
-    this.overviewForm.get("captcha").setValue(recaptchaValue);
-  }
-
-  applySubscription() {
-    if (!this.subscriptionCodeForm.valid) {
-      return;
-    }
-    const control = this.subscriptionCodeForm.get("subscriptionCode");
-    const subscriptionCode = control.value;
-    this.reservationService
-      .applySubscriptionCode(
-        this.reservationId,
-        subscriptionCode,
-        this.reservationInfo.email,
-      )
-      .subscribe((res) => {
-        if (res.success) {
-          this.feedbackService.showSuccess(
-            "reservation-page.overview.applied-subscription-code",
-          );
-          this.loadReservation();
-        } else {
-          // set the first argument as the input
-          res.validationErrors.forEach((ed) => {
-            ed.arguments = { "0": subscriptionCode };
-          });
-          control.setErrors({ serverError: res.validationErrors });
-        }
-      });
-  }
-
-  removeSubscription(subscriptionRow: SummaryRow) {
-    this.modalService
-      .open(ModalRemoveSubscriptionComponent, {
-        centered: true,
-        backdrop: "static",
-      })
-      .result.then((res) => {
-        if (res) {
-          this.reservationService
-            .removeSubscription(this.reservationId)
-            .subscribe(() => {
-              this.feedbackService.showInfo(
-                "reservation-page.overview.removed-subscription",
-              );
-              this.loadReservation();
+    forceCheck(): void {
+        this.paymentStatusNotification = null;
+        this.forceCheckInProgress = true;
+        this.reservationService
+            .forcePaymentStatusCheck(this.reservationId)
+            .subscribe({
+                next: (res) => {
+                    if (res.success) {
+                        console.log(
+                            'reservation has been confirmed. Waiting for the PaymentProvider to acknowledge it...',
+                        );
+                    }
+                },
+                error: (err) => {
+                    console.log('error while force-checking', err);
+                    notifyPaymentErrorToParent(
+                        this.purchaseContext,
+                        this.reservationInfo,
+                        this.reservationId,
+                        err,
+                    );
+                },
             });
+    }
+
+    private registerUnloadHook(): void {
+        window.addEventListener('beforeunload', onUnLoadListener);
+        console.log('warn on page reload: on');
+    }
+
+    private unregisterHook(): void {
+        window.removeEventListener('beforeunload', onUnLoadListener);
+        console.log('warn on page reload: off');
+    }
+
+    private notifyPaymentError(response: any): void {
+        const errorDescriptor = new ErrorDescriptor();
+        errorDescriptor.fieldName = '';
+        if (response != null && response instanceof PaymentResult) {
+            errorDescriptor.code = 'error.STEP_2_PAYMENT_PROCESSING_ERROR';
+            errorDescriptor.arguments = {
+                '0': response.reason,
+            };
+        } else {
+            errorDescriptor.code = 'error.STEP_2_PAYMENT_REQUEST_CREATION';
         }
-      });
-  }
-
-  toggleSubscriptionFormVisible(): void {
-    this.displaySubscriptionForm = !this.displaySubscriptionForm;
-    if (this.displaySubscriptionForm) {
-      setTimeout(() => this.subscriptionInput.nativeElement.focus(), 200);
-    } else {
-      this.subscriptionInput.nativeElement.value = null;
-    }
-  }
-
-  get enabledItalyEInvoicing(): boolean {
-    return (
-      this.purchaseContext.invoicingConfiguration.enabledItalyEInvoicing &&
-      this.reservationInfo.billingDetails.invoicingAdditionalInfo
-        .italianEInvoicing != null
-    );
-  }
-
-  get hasTaxId(): boolean {
-    return (
-      this.reservationInfo.invoiceRequested &&
-      !this.reservationInfo.skipVatNr &&
-      this.reservationInfo.billingDetails.taxId != null
-    );
-  }
-
-  get italyEInvoicingReference(): string {
-    const itEInvoicing =
-      this.reservationInfo.billingDetails.invoicingAdditionalInfo
-        .italianEInvoicing;
-    if (!this.enabledItalyEInvoicing || itEInvoicing == null) {
-      return "";
-    }
-    return itEInvoicing.reference;
-  }
-
-  get italyEInvoicingSelectedAddresseeKey(): string {
-    if (!this.enabledItalyEInvoicing) {
-      return "";
-    }
-    const referenceType =
-      this.reservationInfo.billingDetails.invoicingAdditionalInfo
-        .italianEInvoicing.referenceType;
-    return referenceType === "ADDRESSEE_CODE"
-      ? "invoice-fields.addressee-code"
-      : "invoice-fields.pec";
-  }
-
-  get italyEInvoicingFiscalCode(): string {
-    const itEInvoicing =
-      this.reservationInfo.billingDetails.invoicingAdditionalInfo
-        .italianEInvoicing;
-    if (!this.enabledItalyEInvoicing || itEInvoicing == null) {
-      return "";
-    }
-    return itEInvoicing.fiscalCode;
-  }
-
-  get paymentMethodDeferred(): boolean {
-    let result = false;
-    if (this.reservationInfo.tokenAcquired) {
-      result = false;
-    } else {
-      result =
-        this.selectedPaymentProvider != null &&
-        this.selectedPaymentProvider.paymentMethodDeferred;
+        if (isServerError(response)) {
+            this.feedbackService.showError(
+                'error.STEP_2_PAYMENT_REQUEST_CREATION',
+            );
+        }
+        const validatedResponse = new ValidatedResponse();
+        validatedResponse.errorCount = 1;
+        validatedResponse.validationErrors = [errorDescriptor];
+        this.globalErrors = handleServerSideValidationError(
+            validatedResponse,
+            this.overviewForm,
+        );
     }
 
-    return result;
-  }
-
-  get appliedSubscription(): boolean {
-    if (
-      this.reservationInfo &&
-      this.reservationInfo.orderSummary &&
-      this.reservationInfo.orderSummary.summary
-    ) {
-      return (
-        this.reservationInfo.orderSummary.summary.filter(
-          (s) => s.type === "APPLIED_SUBSCRIPTION",
-        ).length > 0
-      );
+    get acceptedPrivacyAndTermAndConditions(): boolean {
+        if (this.purchaseContext.privacyPolicyUrl) {
+            return (
+                this.overviewForm.value.privacyPolicyAccepted &&
+                this.overviewForm.value.termAndConditionsAccepted
+            );
+        } else {
+            return this.overviewForm.value.termAndConditionsAccepted;
+        }
     }
-    return false;
-  }
 
-  get displayRemoveSubscription() {
-    return this.purchaseContextType === "event";
-  }
-
-  get taxIdMessageKey(): string {
-    if (this.reservationInfo.billingDetails.country === "IT") {
-      return "invoice-fields.fiscalCode";
+    handleExpired(expired: boolean) {
+        setTimeout(() => {
+            if (!this.expired) {
+                this.expired = expired;
+                this.modalService
+                    .open(ReservationExpiredComponent, {
+                        centered: true,
+                        backdrop: 'static',
+                    })
+                    .result.then(() =>
+                        this.router.navigate(
+                            [this.purchaseContextType, this.publicIdentifier],
+                            { replaceUrl: true },
+                        ),
+                    );
+            }
+        });
     }
-    return "invoice-fields.tax-id";
-  }
+
+    registerCurrentPaymentProvider(paymentProvider: PaymentProvider) {
+        this.selectedPaymentProvider = paymentProvider;
+    }
+
+    clearToken(): void {
+        this.reservationService
+            .removePaymentToken(this.reservationId)
+            .subscribe((r) => {
+                this.loadReservation();
+            });
+    }
+
+    handleRecaptchaResponse(recaptchaValue: string) {
+        this.overviewForm.get('captcha').setValue(recaptchaValue);
+    }
+
+    applySubscription() {
+        if (!this.subscriptionCodeForm.valid) {
+            return;
+        }
+        const control = this.subscriptionCodeForm.get('subscriptionCode');
+        const subscriptionCode = control.value;
+        this.reservationService
+            .applySubscriptionCode(
+                this.reservationId,
+                subscriptionCode,
+                this.reservationInfo.email,
+            )
+            .subscribe((res) => {
+                if (res.success) {
+                    this.feedbackService.showSuccess(
+                        'reservation-page.overview.applied-subscription-code',
+                    );
+                    this.loadReservation();
+                } else {
+                    // set the first argument as the input
+                    res.validationErrors.forEach((ed) => {
+                        ed.arguments = { '0': subscriptionCode };
+                    });
+                    control.setErrors({ serverError: res.validationErrors });
+                }
+            });
+    }
+
+    removeSubscription(subscriptionRow: SummaryRow) {
+        this.modalService
+            .open(ModalRemoveSubscriptionComponent, {
+                centered: true,
+                backdrop: 'static',
+            })
+            .result.then((res) => {
+                if (res) {
+                    this.reservationService
+                        .removeSubscription(this.reservationId)
+                        .subscribe(() => {
+                            this.feedbackService.showInfo(
+                                'reservation-page.overview.removed-subscription',
+                            );
+                            this.loadReservation();
+                        });
+                }
+            });
+    }
+
+    toggleSubscriptionFormVisible(): void {
+        this.displaySubscriptionForm = !this.displaySubscriptionForm;
+        if (this.displaySubscriptionForm) {
+            setTimeout(() => this.subscriptionInput.nativeElement.focus(), 200);
+        } else {
+            this.subscriptionInput.nativeElement.value = null;
+        }
+    }
+
+    get enabledItalyEInvoicing(): boolean {
+        return (
+            this.purchaseContext.invoicingConfiguration
+                .enabledItalyEInvoicing &&
+            this.reservationInfo.billingDetails.invoicingAdditionalInfo
+                .italianEInvoicing != null
+        );
+    }
+
+    get hasTaxId(): boolean {
+        return (
+            this.reservationInfo.invoiceRequested &&
+            !this.reservationInfo.skipVatNr &&
+            this.reservationInfo.billingDetails.taxId != null
+        );
+    }
+
+    get italyEInvoicingReference(): string {
+        const itEInvoicing =
+            this.reservationInfo.billingDetails.invoicingAdditionalInfo
+                .italianEInvoicing;
+        if (!this.enabledItalyEInvoicing || itEInvoicing == null) {
+            return '';
+        }
+        return itEInvoicing.reference;
+    }
+
+    get italyEInvoicingSelectedAddresseeKey(): string {
+        if (!this.enabledItalyEInvoicing) {
+            return '';
+        }
+        const referenceType =
+            this.reservationInfo.billingDetails.invoicingAdditionalInfo
+                .italianEInvoicing.referenceType;
+        return referenceType === 'ADDRESSEE_CODE'
+            ? 'invoice-fields.addressee-code'
+            : 'invoice-fields.pec';
+    }
+
+    get italyEInvoicingFiscalCode(): string {
+        const itEInvoicing =
+            this.reservationInfo.billingDetails.invoicingAdditionalInfo
+                .italianEInvoicing;
+        if (!this.enabledItalyEInvoicing || itEInvoicing == null) {
+            return '';
+        }
+        return itEInvoicing.fiscalCode;
+    }
+
+    get paymentMethodDeferred(): boolean {
+        let result = false;
+        if (this.reservationInfo.tokenAcquired) {
+            result = false;
+        } else {
+            result =
+                this.selectedPaymentProvider != null &&
+                this.selectedPaymentProvider.paymentMethodDeferred;
+        }
+
+        return result;
+    }
+
+    get appliedSubscription(): boolean {
+        if (
+            this.reservationInfo &&
+            this.reservationInfo.orderSummary &&
+            this.reservationInfo.orderSummary.summary
+        ) {
+            return (
+                this.reservationInfo.orderSummary.summary.filter(
+                    (s) => s.type === 'APPLIED_SUBSCRIPTION',
+                ).length > 0
+            );
+        }
+        return false;
+    }
+
+    get displayRemoveSubscription() {
+        return this.purchaseContextType === 'event';
+    }
+
+    get taxIdMessageKey(): string {
+        if (this.reservationInfo.billingDetails.country === 'IT') {
+            return 'invoice-fields.fiscalCode';
+        }
+        return 'invoice-fields.tax-id';
+    }
 }
 
 function onUnLoadListener(e: BeforeUnloadEvent) {
-  // Cancel the event
-  e.preventDefault();
-  // Chrome requires returnValue to be set
-  e.returnValue = "";
+    // Cancel the event
+    e.preventDefault();
+    // Chrome requires returnValue to be set
+    e.returnValue = '';
 }

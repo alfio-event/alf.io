@@ -3,110 +3,141 @@ import { css, html, LitElement } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import {
-  type AdditionalField,
-  type AdditionalFieldTemplate,
-  type NewAdditionalFieldFromTemplate,
-  renderAdditionalFieldType,
-  supportsMinMaxLength,
+    type AdditionalField,
+    type AdditionalFieldTemplate,
+    type NewAdditionalFieldFromTemplate,
+    renderAdditionalFieldType,
+    supportsMinMaxLength,
 } from '../../model/additional-field.ts';
 import type { AdditionalItem } from '../../model/additional-item.ts';
-import { type AlfioDialogClosed, dispatchFeedback } from '../../model/dom-events.ts';
+import {
+    type AlfioDialogClosed,
+    dispatchFeedback,
+} from '../../model/dom-events.ts';
 import type { AlfioEvent } from '../../model/event.ts';
-import type { ContentLanguage, PurchaseContext, PurchaseContextType } from '../../model/purchase-context.ts';
+import type {
+    ContentLanguage,
+    PurchaseContext,
+    PurchaseContextType,
+} from '../../model/purchase-context.ts';
 import type { SubscriptionDescriptor } from '../../model/subscription-descriptor.ts';
 import { AdditionalFieldService } from '../../service/additional-field.ts';
 import { AdditionalItemService } from '../../service/additional-item.ts';
 import { ConfirmationDialogService } from '../../service/confirmation-dialog.ts';
 import { renderIf } from '../../service/helpers.ts';
 import { PurchaseContextService } from '../../service/purchase-context.ts';
-import { badges, cardBgColors, itemsList, pageHeader, retroCompat, textColors } from '../../styles.ts';
-import { type LocalizedAdditionalFieldContent, renderPreview } from './additional-field-util.ts';
+import {
+    badges,
+    cardBgColors,
+    itemsList,
+    pageHeader,
+    retroCompat,
+    textColors,
+} from '../../styles.ts';
+import {
+    type LocalizedAdditionalFieldContent,
+    renderPreview,
+} from './additional-field-util.ts';
 
 interface Model {
-  purchaseContextType: PurchaseContextType;
-  event?: AlfioEvent;
-  subscriptionDescriptor?: SubscriptionDescriptor;
-  supportedLanguages: ContentLanguage[];
-  dataTask: Task<ReadonlyArray<number>, ListData>;
-  isSubscription: boolean;
-  templates: ReadonlyArray<AdditionalFieldTemplate>;
-  additionalItems: ReadonlyArray<AdditionalItem>;
+    purchaseContextType: PurchaseContextType;
+    event?: AlfioEvent;
+    subscriptionDescriptor?: SubscriptionDescriptor;
+    supportedLanguages: ContentLanguage[];
+    dataTask: Task<ReadonlyArray<number>, ListData>;
+    isSubscription: boolean;
+    templates: ReadonlyArray<AdditionalFieldTemplate>;
+    additionalItems: ReadonlyArray<AdditionalItem>;
 }
 
 interface ListData {
-  items: ReadonlyArray<AdditionalField>;
-  standardIndex: number;
+    items: ReadonlyArray<AdditionalField>;
+    standardIndex: number;
 }
 
 @customElement('alfio-additional-field-list')
 export class AdditionalFieldList extends LitElement {
-  @property({ type: String, attribute: 'data-public-identifier' })
-  publicIdentifier?: string;
-  @property({ type: String, attribute: 'data-purchase-context-type' })
-  purchaseContextType?: PurchaseContextType;
-  @property({ type: String, attribute: 'data-organization-id' })
-  organizationId?: string;
-  @state()
-  editActive: boolean = false;
-  @state()
-  refreshCount: number = 0;
-  @state()
-  itemsCount: number = 0;
+    @property({ type: String, attribute: 'data-public-identifier' })
+    publicIdentifier?: string;
+    @property({ type: String, attribute: 'data-purchase-context-type' })
+    purchaseContextType?: PurchaseContextType;
+    @property({ type: String, attribute: 'data-organization-id' })
+    organizationId?: string;
+    @state()
+    editActive: boolean = false;
+    @state()
+    refreshCount: number = 0;
+    @state()
+    itemsCount: number = 0;
 
-  private readonly retrievePageDataTask = new Task<ReadonlyArray<string>, Model>(
-    this,
-    async ([publicIdentifier, purchaseContextType, organizationId]) => {
-      const result = await PurchaseContextService.load(
-        publicIdentifier,
-        purchaseContextType as PurchaseContextType,
-        Number.parseInt(organizationId, 10),
-      );
-      const isSubscription = (purchaseContextType as PurchaseContextType) === 'subscription';
-      const purchaseContext: PurchaseContext = isSubscription
-        ? result.subscriptionDescriptor!
-        : result.eventWithOrganization!.event;
-      const templates = await AdditionalFieldService.loadTemplates(purchaseContext);
-      const supportedLanguages = purchaseContext.contentLanguages;
-      const additionalItems: AdditionalItem[] = [];
-      if ((purchaseContextType as PurchaseContextType) === 'event') {
-        additionalItems.push(
-          ...(await AdditionalItemService.loadAll({ eventId: result.eventWithOrganization!.event.id })),
-        );
-      }
-      const dataTask = new Task<ReadonlyArray<number>, ListData>(
+    private readonly retrievePageDataTask = new Task<
+        ReadonlyArray<string>,
+        Model
+    >(
         this,
-        async (_) => {
-          const items = await AdditionalFieldService.loadAllByPurchaseContext(purchaseContext);
-          const standardIndex = items.findIndex((i) => i.order >= 0);
-          return {
-            items,
-            standardIndex,
-          };
+        async ([publicIdentifier, purchaseContextType, organizationId]) => {
+            const result = await PurchaseContextService.load(
+                publicIdentifier,
+                purchaseContextType as PurchaseContextType,
+                Number.parseInt(organizationId, 10),
+            );
+            const isSubscription =
+                (purchaseContextType as PurchaseContextType) === 'subscription';
+            const purchaseContext: PurchaseContext = isSubscription
+                ? result.subscriptionDescriptor!
+                : result.eventWithOrganization!.event;
+            const templates =
+                await AdditionalFieldService.loadTemplates(purchaseContext);
+            const supportedLanguages = purchaseContext.contentLanguages;
+            const additionalItems: AdditionalItem[] = [];
+            if ((purchaseContextType as PurchaseContextType) === 'event') {
+                additionalItems.push(
+                    ...(await AdditionalItemService.loadAll({
+                        eventId: result.eventWithOrganization!.event.id,
+                    })),
+                );
+            }
+            const dataTask = new Task<ReadonlyArray<number>, ListData>(
+                this,
+                async (_) => {
+                    const items =
+                        await AdditionalFieldService.loadAllByPurchaseContext(
+                            purchaseContext,
+                        );
+                    const standardIndex = items.findIndex((i) => i.order >= 0);
+                    return {
+                        items,
+                        standardIndex,
+                    };
+                },
+                () => [this.refreshCount],
+            );
+            return {
+                purchaseContextType: purchaseContextType as PurchaseContextType,
+                event: result.eventWithOrganization?.event,
+                subscriptionDescriptor: result.subscriptionDescriptor,
+                supportedLanguages,
+                dataTask,
+                isSubscription,
+                templates,
+                additionalItems,
+            };
         },
-        () => [this.refreshCount],
-      );
-      return {
-        purchaseContextType: purchaseContextType as PurchaseContextType,
-        event: result.eventWithOrganization?.event,
-        subscriptionDescriptor: result.subscriptionDescriptor,
-        supportedLanguages,
-        dataTask,
-        isSubscription,
-        templates,
-        additionalItems,
-      };
-    },
-    () => [this.publicIdentifier!, this.purchaseContextType!, this.organizationId!],
-  );
+        () => [
+            this.publicIdentifier!,
+            this.purchaseContextType!,
+            this.organizationId!,
+        ],
+    );
 
-  static readonly styles = [
-    pageHeader,
-    textColors,
-    itemsList,
-    cardBgColors,
-    badges,
-    retroCompat,
-    css`
+    static readonly styles = [
+        pageHeader,
+        textColors,
+        itemsList,
+        cardBgColors,
+        badges,
+        retroCompat,
+        css`
         sl-tab-group {
             height: 100%;
         }
@@ -127,12 +158,12 @@ export class AdditionalFieldList extends LitElement {
             gap: 10px;
         }
     `,
-  ];
+    ];
 
-  protected render(): unknown {
-    return this.retrievePageDataTask.render({
-      initial: () => html`loading...`,
-      complete: (model) => html`
+    protected render(): unknown {
+        return this.retrievePageDataTask.render({
+            initial: () => html`loading...`,
+            complete: (model) => html`
                 <div class="page-header">
                     <h3>
                         <sl-icon name="info-circle"></sl-icon> ${model.isSubscription ? `Subscription owner's` : `Attendees'`} data to collect
@@ -150,11 +181,11 @@ export class AdditionalFieldList extends LitElement {
 
                 <div class="m-1"></div>
             `,
-    });
-  }
+        });
+    }
 
-  private renderCreateButton(model: Model) {
-    return html`
+    private renderCreateButton(model: Model) {
+        return html`
             <sl-dropdown>
                 <sl-button variant="success" slot="trigger" caret>Create new</sl-button>
                 <sl-menu>
@@ -162,9 +193,9 @@ export class AdditionalFieldList extends LitElement {
                         From Template
                         <sl-menu slot="submenu">
                             ${repeat(
-                              model.templates,
-                              (t) => t.name,
-                              (template) => html`
+                                model.templates,
+                                (t) => t.name,
+                                (template) => html`
                                     <sl-menu-item @click=${() => this.newFromTemplate(model, template, this.itemsCount)}>${template.description['en'].label} (${template.name})</sl-menu-item>
                                 `,
                             )}
@@ -174,21 +205,21 @@ export class AdditionalFieldList extends LitElement {
                 </sl-menu>
             </sl-dropdown>
         `;
-  }
+    }
 
-  private iterateItems(model: Model) {
-    return model.dataTask.render({
-      initial: () => html`loading...`,
-      complete: (listData) => {
-        this.itemsCount = listData.items.length;
-        if (listData.items.length === 0) {
-          return this.renderStandard();
-        }
-        const renderedItems = repeat(
-          listData.items,
-          (field) => field.id,
-          (field, index) => {
-            return html`
+    private iterateItems(model: Model) {
+        return model.dataTask.render({
+            initial: () => html`loading...`,
+            complete: (listData) => {
+                this.itemsCount = listData.items.length;
+                if (listData.items.length === 0) {
+                    return this.renderStandard();
+                }
+                const renderedItems = repeat(
+                    listData.items,
+                    (field) => field.id,
+                    (field, index) => {
+                        return html`
 
                         ${renderIf(() => index === listData.standardIndex, this.renderStandard)}
 
@@ -198,24 +229,24 @@ export class AdditionalFieldList extends LitElement {
                                 <div class="col"><strong>${field.name}</strong></div>
                                 <div class="col">
                                     ${renderIf(
-                                      () => field.required,
-                                      () => html`
+                                        () => field.required,
+                                        () => html`
                                         <sl-tooltip content="This information is required">
                                             <sl-badge variant="warning" pill>required</sl-badge>
                                         </sl-tooltip>
                                     `,
                                     )}
                                     ${renderIf(
-                                      () => !field.editable,
-                                      () => html`
+                                        () => !field.editable,
+                                        () => html`
                                         <sl-tooltip content="Information cannot be modified after set">
                                             <sl-badge variant="neutral" pill>read-only</sl-badge>
                                         </sl-tooltip>
                                     `,
                                     )}
                                     ${renderIf(
-                                      () => field.displayAtCheckIn,
-                                      () => html`
+                                        () => field.displayAtCheckIn,
+                                        () => html`
                                         <sl-tooltip
                                             content="This information will be shown in the check-in app upon successful scan">
                                             <sl-badge variant="success" pill>shown at check-in</sl-badge>
@@ -247,8 +278,8 @@ export class AdditionalFieldList extends LitElement {
                                         <span>${renderAdditionalFieldType(field.type)}</span>
                                     </div>
                                     ${renderIf(
-                                      () => supportsMinMaxLength(field.type),
-                                      () => html`
+                                        () => supportsMinMaxLength(field.type),
+                                        () => html`
                                         <div class="info">
                                             <strong>Min length</strong>
                                             <span>${field.minLength}</span>
@@ -264,9 +295,12 @@ export class AdditionalFieldList extends LitElement {
                                     <strong>Preview</strong>
                                     <sl-tab-group>
                                         ${repeat(
-                                          this.sortContentLanguages(field, model),
-                                          (d) => d.localeLabel,
-                                          (d) => html`
+                                            this.sortContentLanguages(
+                                                field,
+                                                model,
+                                            ),
+                                            (d) => d.localeLabel,
+                                            (d) => html`
                                             <sl-tab slot="nav" panel=${d.locale}>${d.localeLabel}</sl-tab>
                                             <sl-tab-panel name=${d.locale}>
                                                 <div class="info-container">
@@ -281,49 +315,54 @@ export class AdditionalFieldList extends LitElement {
                             ${this.displayFilters(field, model)}
                         </sl-card>
                     `;
-          },
-        );
-        if (listData.standardIndex === -1) {
-          // standard fields are set to be at the end
-          return html`
+                    },
+                );
+                if (listData.standardIndex === -1) {
+                    // standard fields are set to be at the end
+                    return html`
                         ${renderedItems}
                         ${this.renderStandard()}
                     `;
-        }
-        return renderedItems;
-      },
-    });
-  }
-
-  private displayFilters(field: AdditionalField, model: Model) {
-    const eventCategories = model.event?.ticketCategories ?? [];
-    const selectedCategories = field.categoryIds?.length ?? 0;
-    const additionalItem = model.additionalItems.find((ai) => ai.id === field.additionalServiceId);
-
-    if (selectedCategories === 0 && additionalItem == null) {
-      return html``;
+                }
+                return renderedItems;
+            },
+        });
     }
 
-    return html`
+    private displayFilters(field: AdditionalField, model: Model) {
+        const eventCategories = model.event?.ticketCategories ?? [];
+        const selectedCategories = field.categoryIds?.length ?? 0;
+        const additionalItem = model.additionalItems.find(
+            (ai) => ai.id === field.additionalServiceId,
+        );
+
+        if (selectedCategories === 0 && additionalItem == null) {
+            return html``;
+        }
+
+        return html`
             <sl-divider></sl-divider>
             <div class="info-box">
                 <sl-icon slot="icon" name="info-circle" style="color: var(--sl-color-primary-600); font-size: 1.5em"></sl-icon>
                 <div class="info-box--messages">
                     ${renderIf(
-                      () => selectedCategories > 0,
-                      () => html`
+                        () => selectedCategories > 0,
+                        () => html`
                         <div>
                             Collected only for the following Categories: ${repeat(
-                              eventCategories.filter((c) => field.categoryIds!.includes(c.id)),
-                              (c) => c.id,
-                              (category) => html`<sl-badge variant="neutral" class="ms-1">${category.name}</sl-badge>`,
+                                eventCategories.filter((c) =>
+                                    field.categoryIds!.includes(c.id),
+                                ),
+                                (c) => c.id,
+                                (category) =>
+                                    html`<sl-badge variant="neutral" class="ms-1">${category.name}</sl-badge>`,
                             )}
                         </div>
                     `,
                     )}
                     ${renderIf(
-                      () => additionalItem != null,
-                      () => html`
+                        () => additionalItem != null,
+                        () => html`
                         <div>
                             Collected only if additional option <sl-badge variant="neutral" class="ms-1">${additionalItem!.title.map((t) => t.value).join(' / ')}</sl-badge> was selected
                         </div>
@@ -334,13 +373,18 @@ export class AdditionalFieldList extends LitElement {
             </div>
 
         `;
-  }
+    }
 
-  private showMoveUpDownButtons(index: number, field: AdditionalField, listData: ListData, model: Model) {
-    return html`
+    private showMoveUpDownButtons(
+        index: number,
+        field: AdditionalField,
+        listData: ListData,
+        model: Model,
+    ) {
+        return html`
         ${renderIf(
-          () => index > 0 || field.order >= listData.standardIndex,
-          () => html`
+            () => index > 0 || field.order >= listData.standardIndex,
+            () => html`
                 <sl-button type="button" variant="default" @click=${() => this.fieldUp(field, index, listData, (model.event ?? model.subscriptionDescriptor)!)}>
                     <sl-icon name="arrow-up" slot="prefix"></sl-icon>
                     Move up
@@ -348,8 +392,8 @@ export class AdditionalFieldList extends LitElement {
             `,
         )}
         ${renderIf(
-          () => index < listData.items.length - 1 || field.order < 0,
-          () => html`
+            () => index < listData.items.length - 1 || field.order < 0,
+            () => html`
                 <sl-button type="button" variant="default" @click=${() => this.fieldDown(field, index, listData, (model.event ?? model.subscriptionDescriptor)!)}>
                     <sl-icon name="arrow-down" slot="prefix"></sl-icon>
                     Move down
@@ -357,10 +401,10 @@ export class AdditionalFieldList extends LitElement {
             `,
         )}
         `;
-  }
+    }
 
-  private renderStandard() {
-    return html`
+    private renderStandard() {
+        return html`
             <sl-card class="item bg-primary">
                 <div slot="header">
                     Standard Fields
@@ -374,192 +418,230 @@ export class AdditionalFieldList extends LitElement {
                 </div>
             </sl-card>
         `;
-  }
-
-  private async fieldUp(
-    field: AdditionalField,
-    index: number,
-    listData: ListData,
-    purchaseContext: PurchaseContext,
-  ): Promise<void> {
-    const targetId = field.id;
-    const targetPosition = field.order ?? 0;
-    if (index > 0) {
-      const prevTargetId = listData.items[index - 1].id;
-      await AdditionalFieldService.swapFieldPosition(purchaseContext, targetId!, prevTargetId!);
-    } else {
-      await AdditionalFieldService.moveField(purchaseContext, targetId!, targetPosition - 1);
     }
-    this.refreshCount++;
-  }
 
-  private async fieldDown(
-    field: AdditionalField,
-    index: number,
-    listData: ListData,
-    purchaseContext: PurchaseContext,
-  ): Promise<void> {
-    if (index < listData.items.length) {
-      const nextField = listData.items[index + 1];
-      if (field.order < 0 && nextField.order >= 0) {
-        await AdditionalFieldService.moveField(purchaseContext, field.id!, 0);
-      } else {
-        await AdditionalFieldService.swapFieldPosition(purchaseContext, field.id!, nextField.id!);
-      }
-    } else {
-      await AdditionalFieldService.moveField(purchaseContext, field.id!, 0);
-    }
-    this.refreshCount++;
-  }
-
-  private sortContentLanguages(item: AdditionalField, model: Model): LocalizedAdditionalFieldContent[] {
-    return model.supportedLanguages
-      .filter((cl) => {
-        return item.description[cl.locale] != null;
-      })
-      .map((cl) => {
-        return {
-          locale: cl.locale,
-          localeLabel: cl.displayLanguage,
-          description: item.description[cl.locale],
-        };
-      });
-  }
-
-  async delete(field: AdditionalField, model: Model): Promise<boolean> {
-    try {
-      const confirmation = await ConfirmationDialogService.requestConfirm(
-        `Delete field ${field.name}`,
-        `Are you sure to delete the field "${field.name}"? All the values in the tickets associated to this field will be removed and they cannot be recovered.`,
-        'danger',
-      );
-      if (confirmation) {
-        const response = await AdditionalFieldService.deleteField(
-          (model.event ?? model.subscriptionDescriptor)!,
-          field.id!,
-        );
-        if (response.ok) {
-          dispatchFeedback(
-            {
-              type: 'success',
-              message: `Field ${field.name} successfully deleted`,
-            },
-            this,
-          );
-          this.refreshCount++;
-          return true;
+    private async fieldUp(
+        field: AdditionalField,
+        index: number,
+        listData: ListData,
+        purchaseContext: PurchaseContext,
+    ): Promise<void> {
+        const targetId = field.id;
+        const targetPosition = field.order ?? 0;
+        if (index > 0) {
+            const prevTargetId = listData.items[index - 1].id;
+            await AdditionalFieldService.swapFieldPosition(
+                purchaseContext,
+                targetId!,
+                prevTargetId!,
+            );
         } else {
-          dispatchFeedback(
-            {
-              type: 'danger',
-              message: `Cannot delete field ${field.name}`,
-            },
-            this,
-          );
+            await AdditionalFieldService.moveField(
+                purchaseContext,
+                targetId!,
+                targetPosition - 1,
+            );
         }
-      }
-      return false;
-    } catch (e) {
-      console.error('Error while deleting field', e);
-      dispatchFeedback(
-        {
-          type: 'danger',
-          message: `Cannot delete field ${field.name}`,
-        },
-        this,
-      );
-      return false;
+        this.refreshCount++;
     }
-  }
 
-  private showStatisticsButton(field: AdditionalField, model: Model) {
-    return renderIf(
-      () => field.type === 'select' || field.type === 'country',
-      () => html`
+    private async fieldDown(
+        field: AdditionalField,
+        index: number,
+        listData: ListData,
+        purchaseContext: PurchaseContext,
+    ): Promise<void> {
+        if (index < listData.items.length) {
+            const nextField = listData.items[index + 1];
+            if (field.order < 0 && nextField.order >= 0) {
+                await AdditionalFieldService.moveField(
+                    purchaseContext,
+                    field.id!,
+                    0,
+                );
+            } else {
+                await AdditionalFieldService.swapFieldPosition(
+                    purchaseContext,
+                    field.id!,
+                    nextField.id!,
+                );
+            }
+        } else {
+            await AdditionalFieldService.moveField(
+                purchaseContext,
+                field.id!,
+                0,
+            );
+        }
+        this.refreshCount++;
+    }
+
+    private sortContentLanguages(
+        item: AdditionalField,
+        model: Model,
+    ): LocalizedAdditionalFieldContent[] {
+        return model.supportedLanguages
+            .filter((cl) => {
+                return item.description[cl.locale] != null;
+            })
+            .map((cl) => {
+                return {
+                    locale: cl.locale,
+                    localeLabel: cl.displayLanguage,
+                    description: item.description[cl.locale],
+                };
+            });
+    }
+
+    async delete(field: AdditionalField, model: Model): Promise<boolean> {
+        try {
+            const confirmation = await ConfirmationDialogService.requestConfirm(
+                `Delete field ${field.name}`,
+                `Are you sure to delete the field "${field.name}"? All the values in the tickets associated to this field will be removed and they cannot be recovered.`,
+                'danger',
+            );
+            if (confirmation) {
+                const response = await AdditionalFieldService.deleteField(
+                    (model.event ?? model.subscriptionDescriptor)!,
+                    field.id!,
+                );
+                if (response.ok) {
+                    dispatchFeedback(
+                        {
+                            type: 'success',
+                            message: `Field ${field.name} successfully deleted`,
+                        },
+                        this,
+                    );
+                    this.refreshCount++;
+                    return true;
+                } else {
+                    dispatchFeedback(
+                        {
+                            type: 'danger',
+                            message: `Cannot delete field ${field.name}`,
+                        },
+                        this,
+                    );
+                }
+            }
+            return false;
+        } catch (e) {
+            console.error('Error while deleting field', e);
+            dispatchFeedback(
+                {
+                    type: 'danger',
+                    message: `Cannot delete field ${field.name}`,
+                },
+                this,
+            );
+            return false;
+        }
+    }
+
+    private showStatisticsButton(field: AdditionalField, model: Model) {
+        return renderIf(
+            () => field.type === 'select' || field.type === 'country',
+            () => html`
             <div class="button-container">
                 <sl-button @click=${() => this.openStatisticsDetail(model, field)}><sl-icon name="bar-chart-line" slot="prefix"></sl-icon> Statistics</sl-button>
             </div>
         `,
-    );
-  }
+        );
+    }
 
-  private async openStatisticsDetail(model: Model, field: AdditionalField): Promise<void> {
-    const div = document.createElement('div');
-    div.innerHTML = `
+    private async openStatisticsDetail(
+        model: Model,
+        field: AdditionalField,
+    ): Promise<void> {
+        const div = document.createElement('div');
+        div.innerHTML = `
             <alfio-additional-field-statistics></alfio-additional-field-statistics>
         `;
-    const component = div.querySelector('alfio-additional-field-statistics')!;
-    document.body.appendChild(div);
-    await customElements.whenDefined('alfio-additional-field-statistics');
-    component.addEventListener('alfio-drawer-closed', async () => {
-      setTimeout(() => div.remove());
-    });
-    await component.show({
-      purchaseContext: (model.event ?? model.subscriptionDescriptor)!,
-      field,
-    });
-  }
+        const component = div.querySelector(
+            'alfio-additional-field-statistics',
+        )!;
+        document.body.appendChild(div);
+        await customElements.whenDefined('alfio-additional-field-statistics');
+        component.addEventListener('alfio-drawer-closed', async () => {
+            setTimeout(() => div.remove());
+        });
+        await component.show({
+            purchaseContext: (model.event ?? model.subscriptionDescriptor)!,
+            field,
+        });
+    }
 
-  private async openEditDialog(
-    model: Model,
-    ordinal: number,
-    field?: AdditionalField,
-    template?: NewAdditionalFieldFromTemplate,
-  ): Promise<void> {
-    const div = document.createElement('div');
-    div.innerHTML = `
+    private async openEditDialog(
+        model: Model,
+        ordinal: number,
+        field?: AdditionalField,
+        template?: NewAdditionalFieldFromTemplate,
+    ): Promise<void> {
+        const div = document.createElement('div');
+        div.innerHTML = `
             <alfio-additional-field-edit></alfio-additional-field-edit>
         `;
-    const component = div.querySelector('alfio-additional-field-edit')!;
-    document.body.appendChild(div);
-    await customElements.whenDefined('alfio-additional-field-edit');
-    component.addEventListener('alfio-dialog-closed', async (e) => {
-      await this.editDialogClosed(e);
-      setTimeout(() => div.remove());
-    });
-    const purchaseContext: PurchaseContext = (model.isSubscription ? model.subscriptionDescriptor : model.event)!;
-    await component.open({
-      field,
-      template,
-      purchaseContext,
-      ordinal,
-    });
-  }
-
-  private async newFromTemplate(model: Model, template: AdditionalFieldTemplate, fieldsCount: number) {
-    const ordinal = fieldsCount + 1;
-    const newField: NewAdditionalFieldFromTemplate = {
-      ...template,
-      order: ordinal,
-    };
-    await this.openEditDialog(model, ordinal, undefined, newField);
-  }
-
-  private async edit(additionalField: AdditionalField, model: Model) {
-    await this.openEditDialog(model, additionalField.order, additionalField);
-  }
-
-  private async newCustom(model: Model, itemsCount: number) {
-    await this.openEditDialog(model, itemsCount + 1);
-  }
-
-  private async editDialogClosed(e: AlfioDialogClosed) {
-    this.editActive = false;
-    if (e.detail.success) {
-      this.refreshCount++;
-      dispatchFeedback(
-        {
-          type: 'success',
-          message: 'Operation completed successfully',
-        },
-        this,
-      );
+        const component = div.querySelector('alfio-additional-field-edit')!;
+        document.body.appendChild(div);
+        await customElements.whenDefined('alfio-additional-field-edit');
+        component.addEventListener('alfio-dialog-closed', async (e) => {
+            await this.editDialogClosed(e);
+            setTimeout(() => div.remove());
+        });
+        const purchaseContext: PurchaseContext = (
+            model.isSubscription ? model.subscriptionDescriptor : model.event
+        )!;
+        await component.open({
+            field,
+            template,
+            purchaseContext,
+            ordinal,
+        });
     }
-  }
+
+    private async newFromTemplate(
+        model: Model,
+        template: AdditionalFieldTemplate,
+        fieldsCount: number,
+    ) {
+        const ordinal = fieldsCount + 1;
+        const newField: NewAdditionalFieldFromTemplate = {
+            ...template,
+            order: ordinal,
+        };
+        await this.openEditDialog(model, ordinal, undefined, newField);
+    }
+
+    private async edit(additionalField: AdditionalField, model: Model) {
+        await this.openEditDialog(
+            model,
+            additionalField.order,
+            additionalField,
+        );
+    }
+
+    private async newCustom(model: Model, itemsCount: number) {
+        await this.openEditDialog(model, itemsCount + 1);
+    }
+
+    private async editDialogClosed(e: AlfioDialogClosed) {
+        this.editActive = false;
+        if (e.detail.success) {
+            this.refreshCount++;
+            dispatchFeedback(
+                {
+                    type: 'success',
+                    message: 'Operation completed successfully',
+                },
+                this,
+            );
+        }
+    }
 }
 
 declare global {
-  interface HTMLElementTagNameMap {
-    'alfio-additional-field-list': AdditionalFieldList;
-  }
+    interface HTMLElementTagNameMap {
+        'alfio-additional-field-list': AdditionalFieldList;
+    }
 }
