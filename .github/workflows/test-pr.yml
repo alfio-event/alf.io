@@ -6,6 +6,7 @@ on:
 
 permissions:
     pull-requests: write
+    contents: write
 
 jobs:
     test:
@@ -28,7 +29,7 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: 22
-                  cache: "pnpm"
+                  cache: 'pnpm'
                   cache-dependency-path: frontend/pnpm-lock.yaml
 
             - name: Run Backend Tests
@@ -39,27 +40,50 @@ jobs:
                   pnpm --prefix frontend install
                   pnpm --prefix frontend run coverage
 
-            - name: Upload Coverage Artifacts
-              uses: actions/upload-artifact@v4
+            - name: Prepare Coverage for Deployment
+              run: |
+                  mkdir -p public-coverage
+                  mkdir -p public-coverage/backend
+                  mkdir -p public-coverage/frontend-admin
+                  mkdir -p public-coverage/frontend-public
+                  cp -r build/reports/jacoco/test/html/* public-coverage/backend/
+                  cp -r frontend/admin/coverage/* public-coverage/frontend-admin/
+                  cp -r frontend/projects/public/coverage/* public-coverage/frontend-public/
+                  cat <<EOF > public-coverage/index.html
+                  <!DOCTYPE html>
+                  <html>
+                  <head><title>Coverage Reports - PR #${{ github.event.number }}</title></head>
+                  <body>
+                  <h1>Coverage Reports - PR #${{ github.event.number }}</h1>
+                  <ul>
+                  <li><a href="backend/index.html">Backend (Jacoco)</a></li>
+                  <li><a href="frontend-admin/index.html">Frontend Admin</a></li>
+                  <li><a href="frontend-public/index.html">Frontend Public</a></li>
+                  </ul>
+                  </body>
+                  </html>
+                  EOF
+
+            - name: Deploy PR Coverage to GitHub Pages
+              uses: peaceiris/actions-gh-pages@v4
               with:
-                  name: coverage-reports
-                  path: |
-                      build/reports/jacoco/test/html
-                      frontend/admin/coverage
-                      frontend/projects/public/coverage
-                  retention-days: 7
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: ./public-coverage
+                  destination_dir: pr-${{ github.event.number }}
+                  keep_files: true
 
             - name: Comment on PR
               uses: actions/github-script@v7
               with:
                   script: |
-                      const run_id = context.runId;
                       const repo = context.repo.repo;
                       const owner = context.repo.owner;
-                      const link = `${process.env.GITHUB_SERVER_URL}/${owner}/${repo}/actions/runs/${run_id}`;
+                      const prNumber = context.issue.number;
+                      const link = `https://${owner}.github.io/${repo}/pr-${prNumber}/`;
                       github.rest.issues.createComment({
-                        issue_number: context.issue.number,
+                        issue_number: prNumber,
                         owner: owner,
                         repo: repo,
-                        body: `Test suite completed! \n\n📊 [View Coverage Reports and Artifacts](${link})`
+                        body: `🚀 Test suite completed with Postgres 16! \n\n📊 [View Live Coverage Report](${link})`
                       })
+

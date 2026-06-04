@@ -6,9 +6,7 @@ on:
             - main
 
 permissions:
-    contents: read
-    pages: write
-    id-token: write
+    contents: write
 
 jobs:
     test:
@@ -57,21 +55,25 @@ jobs:
                   cp -r build/reports/jacoco/test/html/* public-coverage/backend/
                   cp -r frontend/admin/coverage/* public-coverage/frontend-admin/
                   cp -r frontend/projects/public/coverage/* public-coverage/frontend-public/
+                  cat <<EOF > public-coverage/index.html
+                  <!DOCTYPE html>
+                  <html>
+                  <head><title>Coverage Reports - main branch</title></head>
+                  <body>
+                  <h1>Coverage Reports - main branch</h1>
+                  <ul>
+                  <li><a href="backend/index.html">Backend (Jacoco)</a></li>
+                  <li><a href="frontend-admin/index.html">Frontend Admin</a></li>
+                  <li><a href="frontend-public/index.html">Frontend Public</a></li>
+                  </ul>
+                  </body>
+                  </html>
+                  EOF
 
-            - name: Upload Pages Artifact
+            - name: Deploy Coverage to GitHub Pages
               if: matrix.postgresql == '16'
-              uses: actions/upload-pages-artifact@v3
+              uses: peaceiris/actions-gh-pages@v4
               with:
-                  path: public-coverage
-
-    deploy:
-        if: github.ref == 'refs/heads/main'
-        needs: test
-        runs-on: ubuntu-latest
-        environment:
-            name: github-pages
-            url: ${{ steps.deployment.outputs.page_url }}
-        steps:
-            - name: Deploy to GitHub Pages
-              id: deployment
-              uses: actions/deploy-pages@v4
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: ./public-coverage
+                  keep_files: true

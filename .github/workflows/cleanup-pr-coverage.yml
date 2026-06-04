@@ -1,0 +1,30 @@
+name: Cleanup PR Coverage
+
+on:
+    pull_request:
+        types: [closed]
+
+permissions:
+    contents: write
+
+jobs:
+    cleanup:
+        runs-on: ubuntu-latest
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: gh-pages
+
+            - name: Remove PR Coverage Directory
+              run: |
+                  if [ -d "pr-${{ github.event.number }}" ]; then
+                    git config user.name github-actions
+                    git config user.email github-actions@github.com
+                    rm -rf "pr-${{ github.event.number }}"
+                    git add .
+                    git commit -m "Cleanup coverage for PR #${{ github.event.number }}"
+                    git push origin gh-pages
+                  else
+                    echo "Directory pr-${{ github.event.number }} not found, skipping."
+                  fi
