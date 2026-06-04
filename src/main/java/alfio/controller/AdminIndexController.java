@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static alfio.controller.Constants.*;
+import static alfio.model.system.ConfigurationKeys.BASE_URL;
 import static alfio.model.system.ConfigurationKeys.SHOW_PROJECT_BANNER;
 
 @Controller
@@ -109,6 +110,7 @@ public class AdminIndexController {
         //
         addCommonModelAttributes(model, request, version, environment);
         model.addAttribute("displayProjectBanner", isAdmin && configurationManager.getForSystem(SHOW_PROJECT_BANNER).getValueAsBooleanOrDefault());
+        model.addAttribute("baseUrl", configurationManager.getForSystem(BASE_URL).getValueOrDefault(""));
         //
 
         model.addAttribute("litAdminStatic", manifestEntry != null);

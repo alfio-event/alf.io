@@ -335,19 +335,28 @@ public class ConfigurationManager {
         }
     }
 
+    /**
+     * Returns the first organization-level config, but only for keys that support ORGANIZATION as ConfigurationPathLevel.
+     */
     public String getSingleConfigForOrganization(int organizationId, String keyAsString, String username) {
         User user = userManager.findUserByUsername(username);
         if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return null;
         }
         var key = safeValueOf(keyAsString);
-        return getFirstConfigurationResult(configurationRepository.findByOrganizationAndKey(organizationId, key.name()), keyAsString);
+        if (!key.supports(ORGANIZATION)) {
+            return null;
+        }
+        return getFirstConfigurationResult(configurationRepository.findByOrganizationAndKey(organizationId, key.name()));
     }
 
     public boolean isNotifyOrganizerOnReservationEnabled(Configurable configurable) {
         return getFor(NOTIFY_ORGANIZER_ON_RESERVATION, configurable.getConfigurationLevel()).getValueAsBooleanOrDefault();
     }
 
+    /**
+     * Returns the first event-level config, but only for keys that support PURCHASE_CONTEXT as ConfigurationPathLevel.
+     */
     public String getSingleConfigForEvent(int eventId, String keyAsString, String username) {
         User user = userManager.findUserByUsername(username);
         EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
@@ -356,14 +365,16 @@ public class ConfigurationManager {
             return null;
         }
         var key = safeValueOf(keyAsString);
-        return getFirstConfigurationResult(configurationRepository.findByEventAndKey(organizationId, eventId, key.name()), keyAsString);
+        if (!key.supports(PURCHASE_CONTEXT)) {
+            return null;
+        }
+        return getFirstConfigurationResult(configurationRepository.findByEventAndKey(organizationId, eventId, key.name()));
     }
 
-    private String getFirstConfigurationResult(List<Configuration> results, String keyAsString) {
+    private String getFirstConfigurationResult(List<Configuration> results) {
         return Objects.requireNonNull(results).stream()
             .findFirst()
             .map(Configuration::getValue)
-            .or(() -> externalConfiguration.getSingle(keyAsString).map(Configuration::getValue))
             .orElse(null);
     }
 
