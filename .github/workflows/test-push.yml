@@ -26,10 +26,12 @@ jobs:
                   cache: gradle
 
             - uses: pnpm/action-setup@v3
+              if: matrix.postgresql == '16'
               with:
                   version: 11.1.2
 
             - name: Set up Node.js
+              if: matrix.postgresql == '16'
               uses: actions/setup-node@v4
               with:
                   node-version: 22
