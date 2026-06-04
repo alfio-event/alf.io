@@ -1,18 +1,27 @@
-import {AfterViewInit, Component, Input, OnDestroy, OnInit} from '@angular/core';
-import {UserService} from '../user.service';
-import {ANONYMOUS, User} from '../../model/user';
-import {Language} from '../../model/event';
-import {Subscription} from 'rxjs';
-import {Router} from '@angular/router';
-import {FeedbackService} from '../feedback/feedback.service';
-import {DELETE_ACCOUNT_CONFIRMATION, getFromSessionStorage, removeFromSessionStorage} from '../util';
+import {
+  type AfterViewInit,
+  Component,
+  Input,
+  type OnDestroy,
+  type OnInit,
+} from "@angular/core";
+import type { Router } from "@angular/router";
+import type { Subscription } from "rxjs";
+import type { Language } from "../../model/event";
+import { ANONYMOUS, type User } from "../../model/user";
+import type { FeedbackService } from "../feedback/feedback.service";
+import type { UserService } from "../user.service";
+import {
+  DELETE_ACCOUNT_CONFIRMATION,
+  getFromSessionStorage,
+  removeFromSessionStorage,
+} from "../util";
 
 @Component({
-  selector: 'app-topbar',
-  templateUrl: './top-bar.component.html'
+  selector: "app-topbar",
+  templateUrl: "./top-bar.component.html",
 })
 export class TopBarComponent implements OnInit, OnDestroy, AfterViewInit {
-
   private authenticationStatusSubscription?: Subscription;
   @Input()
   contentLanguages: Language[];
@@ -20,29 +29,33 @@ export class TopBarComponent implements OnInit, OnDestroy, AfterViewInit {
   displayLoginButton = true;
   user?: User;
   authenticationEnabled = false;
-  private root = document.querySelector(':root') as HTMLElement;
+  private root = document.querySelector(":root") as HTMLElement;
 
-  constructor(private userService: UserService,
-              private router: Router,
-              private feedbackService: FeedbackService) {
-  }
+  constructor(
+    private userService: UserService,
+    private router: Router,
+    private feedbackService: FeedbackService,
+  ) {}
 
   ngOnInit(): void {
-    this.authenticationStatusSubscription = this.userService.authenticationStatus.subscribe(authenticationStatus => {
-      this.authenticationEnabled = authenticationStatus.enabled;
-      if (authenticationStatus.user !== ANONYMOUS) {
-        this.user = authenticationStatus.user;
-      }
-    });
+    this.authenticationStatusSubscription =
+      this.userService.authenticationStatus.subscribe(
+        (authenticationStatus) => {
+          this.authenticationEnabled = authenticationStatus.enabled;
+          if (authenticationStatus.user !== ANONYMOUS) {
+            this.user = authenticationStatus.user;
+          }
+        },
+      );
   }
 
   ngAfterViewInit(): void {
-    if (getFromSessionStorage(DELETE_ACCOUNT_CONFIRMATION) === 'y') {
-      this.feedbackService.showSuccess('my-profile.delete.success');
+    if (getFromSessionStorage(DELETE_ACCOUNT_CONFIRMATION) === "y") {
+      this.feedbackService.showSuccess("my-profile.delete.success");
       removeFromSessionStorage(DELETE_ACCOUNT_CONFIRMATION);
-    } else if (this.root?.getAttribute('data-signed-up') != null) {
-      this.feedbackService.showSuccess('my-profile.sign-up.success');
-      this.root.removeAttribute('data-signed-up');
+    } else if (this.root?.getAttribute("data-signed-up") != null) {
+      this.feedbackService.showSuccess("my-profile.sign-up.success");
+      this.root.removeAttribute("data-signed-up");
     }
   }
 
@@ -55,7 +68,7 @@ export class TopBarComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   logout(): void {
-    this.userService.logout().subscribe(response => {
+    this.userService.logout().subscribe((response) => {
       this.user = undefined;
       if (!response.empty) {
         window.location.href = response.targetUrl;
@@ -64,10 +77,10 @@ export class TopBarComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   myOrders(): void {
-    this.router.navigate(['my-orders']);
+    this.router.navigate(["my-orders"]);
   }
 
   myProfile(): void {
-    this.router.navigate(['my-profile']);
+    this.router.navigate(["my-profile"]);
   }
 }

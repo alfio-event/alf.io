@@ -1,19 +1,18 @@
-import {Injectable} from '@angular/core';
-import {Observable, Subject} from 'rxjs';
-import {FeedbackContent} from '../../model/feedback';
+import { Injectable } from "@angular/core";
+import { type Observable, Subject } from "rxjs";
+import type { FeedbackContent } from "../../model/feedback";
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root",
 })
 export class FeedbackService {
-
   private toastSubject = new Subject<FeedbackContent>();
 
   public showSuccess(message: string) {
     this.toastSubject.next({
       active: true,
       message,
-      type: 'SUCCESS'
+      type: "SUCCESS",
     });
   }
 
@@ -21,7 +20,7 @@ export class FeedbackService {
     this.toastSubject.next({
       active: true,
       message,
-      type: 'ERROR'
+      type: "ERROR",
     });
   }
 
@@ -29,7 +28,7 @@ export class FeedbackService {
     this.toastSubject.next({
       active: true,
       message,
-      type: 'INFO'
+      type: "INFO",
     });
   }
 
@@ -40,5 +39,4 @@ export class FeedbackService {
   public displayNotification(): Observable<FeedbackContent> {
     return this.toastSubject;
   }
-
 }

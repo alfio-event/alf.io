@@ -1,23 +1,22 @@
-import {Component, OnInit} from '@angular/core';
-import {TicketService} from '../shared/ticket.service';
-import {ActivatedRoute, Router} from '@angular/router';
-import {EventService} from '../shared/event.service';
-import {I18nService} from '../shared/i18n.service';
-import {AnalyticsService} from '../shared/analytics.service';
-import {zip} from 'rxjs';
-import {HttpErrorResponse} from '@angular/common/http';
-import {mergeMap} from 'rxjs/operators';
-import {Event} from '../model/event';
-import {Ticket} from '../model/ticket';
-import {DateValidity} from '../model/date-validity';
-import {TranslateService} from '@ngx-translate/core';
+import { HttpErrorResponse } from "@angular/common/http";
+import { Component, type OnInit } from "@angular/core";
+import type { ActivatedRoute, Router } from "@angular/router";
+import type { TranslateService } from "@ngx-translate/core";
+import { zip } from "rxjs";
+import { mergeMap } from "rxjs/operators";
+import type { DateValidity } from "../model/date-validity";
+import type { Event } from "../model/event";
+import type { Ticket } from "../model/ticket";
+import type { AnalyticsService } from "../shared/analytics.service";
+import type { EventService } from "../shared/event.service";
+import type { I18nService } from "../shared/i18n.service";
+import type { TicketService } from "../shared/ticket.service";
 
 @Component({
-  selector: 'app-waiting-room',
-  templateUrl: './waiting-room.component.html'
+  selector: "app-waiting-room",
+  templateUrl: "./waiting-room.component.html",
 })
 export class WaitingRoomComponent implements OnInit {
-
   event: Event;
   ticketIdentifier: string;
   ticket: Ticket;
@@ -32,30 +31,42 @@ export class WaitingRoomComponent implements OnInit {
     private eventService: EventService,
     private i18nService: I18nService,
     private analytics: AnalyticsService,
-    private translate: TranslateService) { }
+    private translate: TranslateService,
+  ) {}
 
   ngOnInit(): void {
-    this.route.params.pipe(mergeMap(params => {
-      this.ticketIdentifier = params['ticketId'];
-      const eventShortName = params['eventShortName'];
-      this.checkInCode = params['ticketCodeHash'];
-      return zip(
-        this.eventService.getEvent(eventShortName),
-        this.ticketService.getTicket(eventShortName, this.ticketIdentifier),
-        this.ticketService.getOnlineCheckInInfo(eventShortName, this.ticketIdentifier, this.checkInCode)
+    this.route.params
+      .pipe(
+        mergeMap((params) => {
+          this.ticketIdentifier = params["ticketId"];
+          const eventShortName = params["eventShortName"];
+          this.checkInCode = params["ticketCodeHash"];
+          return zip(
+            this.eventService.getEvent(eventShortName),
+            this.ticketService.getTicket(eventShortName, this.ticketIdentifier),
+            this.ticketService.getOnlineCheckInInfo(
+              eventShortName,
+              this.ticketIdentifier,
+              this.checkInCode,
+            ),
+          );
+        }),
+      )
+      .subscribe(
+        ([event, ticketInfo, checkInInfo]) => {
+          this.event = event;
+          this.ticket = ticketInfo.tickets[0];
+          this.categoryName = ticketInfo.name;
+          this.i18nService.setPageTitle("show-ticket.header.title", event);
+          this.analytics.pageView(event.analyticsConfiguration);
+          this.checkInInfo = checkInInfo;
+        },
+        (e) => {
+          if (e instanceof HttpErrorResponse && e.status === 404) {
+            this.router.navigate([""]);
+          }
+        },
       );
-    })).subscribe(([event, ticketInfo, checkInInfo]) => {
-      this.event = event;
-      this.ticket = ticketInfo.tickets[0];
-      this.categoryName = ticketInfo.name;
-      this.i18nService.setPageTitle('show-ticket.header.title', event);
-      this.analytics.pageView(event.analyticsConfiguration);
-      this.checkInInfo = checkInInfo;
-    }, e => {
-      if (e instanceof HttpErrorResponse && e.status === 404) {
-        this.router.navigate(['']);
-      }
-    });
   }
 
   get checkInDate(): string {
@@ -73,7 +84,9 @@ export class WaitingRoomComponent implements OnInit {
   }
 
   get eventStartsInTheFuture(): boolean {
-    return new Date().getTime() < this.checkInInfo.datesWithOffset.startDateTime;
+    return (
+      new Date().getTime() < this.checkInInfo.datesWithOffset.startDateTime
+    );
   }
 
   get eventEnded(): boolean {

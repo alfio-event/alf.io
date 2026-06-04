@@ -1,3 +1,3 @@
-import {PurchaseContext} from "./purchase-context.ts";
+import type { PurchaseContext } from './purchase-context.ts';
 
 export interface SubscriptionDescriptor extends PurchaseContext {}

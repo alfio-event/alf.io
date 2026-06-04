@@ -1,5 +1,5 @@
-import {BillingDetails, ReservationStatus} from './reservation-info';
-import {PurchaseContextType} from '../shared/purchase-context.service';
+import type { PurchaseContextType } from "../shared/purchase-context.service";
+import type { BillingDetails, ReservationStatus } from "./reservation-info";
 
 export interface AuthenticationStatus {
   enabled: boolean;
@@ -24,7 +24,7 @@ export interface UserAdditionalData {
 }
 
 export interface AdditionalInfoWithLabel {
-  label: {[key: string]: string};
+  label: { [key: string]: string };
   values: string[];
 }
 
@@ -34,8 +34,8 @@ export interface PurchaseContextWithReservation {
   title: { [lang: string]: string };
   publicIdentifier: string;
   type: PurchaseContextType;
-  formattedStartDate?: {[key: string]: string};
-  formattedEndDate?: {[key: string]: string};
+  formattedStartDate?: { [key: string]: string };
+  formattedEndDate?: { [key: string]: string };
   sameDay: boolean;
   reservations: Array<ReservationHeader>;
 }
@@ -43,9 +43,9 @@ export interface PurchaseContextWithReservation {
 export interface ReservationHeader {
   id: string;
   status: ReservationStatus;
-  formattedExpiresOn: {[key: string]: string};
-  formattedConfirmedOn: {[key: string]: string};
-  formattedCreatedOn: {[key: string]: string};
+  formattedExpiresOn: { [key: string]: string };
+  formattedConfirmedOn: { [key: string]: string };
+  formattedCreatedOn: { [key: string]: string };
   invoiceNumber: string;
   finalPrice: number;
   currencyCode: string;

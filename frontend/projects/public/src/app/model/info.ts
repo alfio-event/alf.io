@@ -1,5 +1,8 @@
-import {AnalyticsConfiguration} from './analytics-configuration';
-import {InvoicingConfiguration, TermsPrivacyLinksContainer} from './event';
+import type { AnalyticsConfiguration } from "./analytics-configuration";
+import type {
+  InvoicingConfiguration,
+  TermsPrivacyLinksContainer,
+} from "./event";
 
 export interface Info {
   demoModeEnabled: boolean;
@@ -15,9 +18,9 @@ export interface Info {
 }
 
 export interface ChallengeConfiguration {
-    apiKey?: string;
-    providerId?: string;
-    enabled: boolean;
+  apiKey?: string;
+  providerId?: string;
+  enabled: boolean;
 }
 
 export interface WalletConfiguration {
@@ -25,6 +28,11 @@ export interface WalletConfiguration {
   passEnabled: boolean;
 }
 
-export function globalTermsPrivacyLinks(info: Info): TermsPrivacyLinksContainer {
-  return { privacyPolicyUrl: info.globalPrivacyPolicyUrl, termsAndConditionsUrl: info.globalTermsUrl };
+export function globalTermsPrivacyLinks(
+  info: Info,
+): TermsPrivacyLinksContainer {
+  return {
+    privacyPolicyUrl: info.globalPrivacyPolicyUrl,
+    termsAndConditionsUrl: info.globalTermsUrl,
+  };
 }

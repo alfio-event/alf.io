@@ -1,27 +1,21 @@
-import { LitElement, html, css } from 'lit';
-import { customElement, property } from 'lit/decorators.js'
+import { css, html, LitElement } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
 import { when } from 'lit/directives/when.js';
 import { ConfigurationService } from '../service/configuration';
-import { retroCompat, textColors, row } from '../styles'
+import { retroCompat, row, textColors } from '../styles';
 
 @customElement('alfio-project-banner')
 export class ProjectBanner extends LitElement {
+  @property({ type: String, attribute: 'data-full-banner' })
+  fullBanner?: 'true' | 'false';
 
-    @property({ type: String, attribute: 'data-full-banner' })
-    fullBanner?: 'true' | 'false';
+  @property({ type: String, attribute: 'data-alfio-version' })
+  alfioVersion?: string;
 
-    @property({ type: String, attribute: 'data-alfio-version' })
-    alfioVersion?: string;
+  static styles = [retroCompat, textColors, row, css` :host { --alfio-row-cols: 3 }`];
 
-    static styles = [
-        retroCompat,
-        textColors,
-        row,
-        css` :host { --alfio-row-cols: 3 }`
-    ];
-
-    render() {
-        const notFullBanner = () => html`
+  render() {
+    const notFullBanner = () => html`
             <div>
                 <h5 class="text-muted">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.${this.alfioVersion}</h5>
                 <small><a href="https://github.com/alfio-event/alf.io/issues" target="_blank" rel="noopener">report an issue</a> or <a href="https://github.com/alfio-event/alf.io/discussions" target="_blank" rel="nofollow noopener noreferrer">ask for help</a></small>
@@ -31,7 +25,7 @@ export class ProjectBanner extends LitElement {
             </div>
         `;
 
-        const fullBanner = () => html`
+    const fullBanner = () => html`
             <div>
                 <h3 class="text-center">Thank you for using Alf.io!</h3>
                 <h4> We don't track usage in any way, because we respect your privacy<br>
@@ -55,22 +49,22 @@ export class ProjectBanner extends LitElement {
             </div>
         `;
 
-        return html`${when(this.fullBanner === 'true', fullBanner, notFullBanner)}`;
-    }
+    return html`${when(this.fullBanner === 'true', fullBanner, notFullBanner)}`;
+  }
 
-    async dismiss() {
-        try {
-            await ConfigurationService.update({ key: 'SHOW_PROJECT_BANNER', value: 'false' });
-            this.fullBanner = 'false';
-            window.location.reload();
-        } catch (e) {
-            console.log('error while updating...');
-        }
+  async dismiss() {
+    try {
+      await ConfigurationService.update({ key: 'SHOW_PROJECT_BANNER', value: 'false' });
+      this.fullBanner = 'false';
+      window.location.reload();
+    } catch (e) {
+      console.log('error while updating...');
     }
+  }
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'alfio-project-banner': ProjectBanner
-    }
+  interface HTMLElementTagNameMap {
+    'alfio-project-banner': ProjectBanner;
+  }
 }

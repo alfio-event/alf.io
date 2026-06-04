@@ -1,21 +1,23 @@
-import {AnalyticsConfiguration} from './analytics-configuration';
-import {
+import type { AnalyticsConfiguration } from "./analytics-configuration";
+import type { DatesWithOffset } from "./date-validity";
+import type { EmbeddingConfiguration } from "./embedding-configuration";
+import type {
   AssignmentConfiguration,
   CaptchaConfiguration,
   CurrencyDescriptor,
   InvoicingConfiguration,
-  Language
-} from './event';
-import {
+  Language,
+} from "./event";
+import type {
   Localized,
   OfflinePaymentConfiguration,
   PurchaseContext,
-  PurchaseContextPriceDescriptor
-} from './purchase-context';
-import {DatesWithOffset} from './date-validity';
-import {EmbeddingConfiguration} from './embedding-configuration';
+  PurchaseContextPriceDescriptor,
+} from "./purchase-context";
 
-export interface SubscriptionSummaryData extends PurchaseContextPriceDescriptor, Localized {
+export interface SubscriptionSummaryData
+  extends PurchaseContextPriceDescriptor,
+    Localized {
   salePeriod: DatesWithOffset;
   formattedOnSaleFrom: { [key: string]: string };
   formattedOnSaleTo?: { [key: string]: string };
@@ -58,14 +60,15 @@ export class BasicSubscriptionInfo implements SubscriptionSummaryData {
   formattedOnSaleFrom: { [key: string]: string };
   formattedOnSaleTo?: { [key: string]: string };
   contentLanguages: Language[] = [];
-
 }
 
-export type SubscriptionValidityType = 'STANDARD' | 'CUSTOM' | 'NOT_SET';
-export type SubscriptionTimeUnit = 'DAYS' | 'MONTHS' | 'YEARS';
-export type SubscriptionUsageType = 'ONCE_PER_EVENT' | 'UNLIMITED';
+export type SubscriptionValidityType = "STANDARD" | "CUSTOM" | "NOT_SET";
+export type SubscriptionTimeUnit = "DAYS" | "MONTHS" | "YEARS";
+export type SubscriptionUsageType = "ONCE_PER_EVENT" | "UNLIMITED";
 
-export class SubscriptionInfo implements PurchaseContext, SubscriptionSummaryData {
+export class SubscriptionInfo
+  implements PurchaseContext, SubscriptionSummaryData
+{
   id: string;
 
   invoicingConfiguration: InvoicingConfiguration;
@@ -112,6 +115,6 @@ export class SubscriptionInfo implements PurchaseContext, SubscriptionSummaryDat
   maxEntries?: number;
 
   offlinePaymentConfiguration: OfflinePaymentConfiguration = {
-    showOnlyBasicInstructions: false
+    showOnlyBasicInstructions: false,
   };
 }

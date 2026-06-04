@@ -1,7 +1,7 @@
-import {PollOption} from './poll-option';
-import {Poll} from './poll';
+import type { Poll } from "./poll";
+import type { PollOption } from "./poll-option";
 
 export class PollWithOptions {
-    poll: Poll;
-    options: PollOption[];
+  poll: Poll;
+  options: PollOption[];
 }

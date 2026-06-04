@@ -1,14 +1,23 @@
-import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
-import {PaymentProxy, type PaymentMethodId} from '../../model/event';
-import {PaymentProvider, SimplePaymentProvider} from '../payment-provider';
-import {UntypedFormGroup} from '@angular/forms';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  type OnChanges,
+  Output,
+  type SimpleChanges,
+} from "@angular/core";
+import type { UntypedFormGroup } from "@angular/forms";
+import type { PaymentMethodId, PaymentProxy } from "../../model/event";
+import {
+  type PaymentProvider,
+  SimplePaymentProvider,
+} from "../payment-provider";
 
 @Component({
-  selector: 'app-onsite-payment-proxy',
-  templateUrl: './onsite-payment-proxy.component.html'
+  selector: "app-onsite-payment-proxy",
+  templateUrl: "./onsite-payment-proxy.component.html",
 })
 export class OnsitePaymentProxyComponent implements OnChanges {
-
   @Input()
   method: PaymentMethodId;
 
@@ -16,15 +25,16 @@ export class OnsitePaymentProxyComponent implements OnChanges {
   proxy: PaymentProxy;
 
   @Input()
-  parameters: {[key: string]: any};
+  parameters: { [key: string]: any };
 
   @Input()
   overviewForm: UntypedFormGroup;
 
   @Output()
-  paymentProvider: EventEmitter<PaymentProvider> = new EventEmitter<PaymentProvider>();
+  paymentProvider: EventEmitter<PaymentProvider> =
+    new EventEmitter<PaymentProvider>();
 
-  constructor() { }
+  constructor() {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.matchProxyAndMethod && changes.method) {
@@ -33,11 +43,10 @@ export class OnsitePaymentProxyComponent implements OnChanges {
   }
 
   public get matchProxyAndMethod(): boolean {
-    return this.method === 'ON_SITE' && this.proxy === 'ON_SITE';
+    return this.method === "ON_SITE" && this.proxy === "ON_SITE";
   }
 
   handleRecaptchaResponse(recaptchaValue: string) {
-    this.overviewForm.get('captcha').setValue(recaptchaValue);
+    this.overviewForm.get("captcha").setValue(recaptchaValue);
   }
-
 }

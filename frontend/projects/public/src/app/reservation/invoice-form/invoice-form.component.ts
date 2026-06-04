@@ -1,19 +1,18 @@
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
-import {UntypedFormGroup} from '@angular/forms';
-import {TranslateService} from '@ngx-translate/core';
-import {I18nService} from '../../shared/i18n.service';
-import {Subscription} from 'rxjs';
-import {LocalizedCountry} from '../../model/localized-country';
-import {PurchaseContext} from '../../model/purchase-context';
-import {InvoicingConfiguration} from '../../model/event';
-import {mobile} from '../../shared/util';
+import { Component, Input, type OnDestroy, type OnInit } from "@angular/core";
+import type { UntypedFormGroup } from "@angular/forms";
+import type { TranslateService } from "@ngx-translate/core";
+import type { Subscription } from "rxjs";
+import type { InvoicingConfiguration } from "../../model/event";
+import type { LocalizedCountry } from "../../model/localized-country";
+import type { PurchaseContext } from "../../model/purchase-context";
+import type { I18nService } from "../../shared/i18n.service";
+import { mobile } from "../../shared/util";
 
 @Component({
-  selector: 'app-invoice-form',
-  templateUrl: './invoice-form.component.html'
+  selector: "app-invoice-form",
+  templateUrl: "./invoice-form.component.html",
 })
 export class InvoiceFormComponent implements OnInit, OnDestroy {
-
   @Input()
   form: UntypedFormGroup;
 
@@ -31,20 +30,25 @@ export class InvoiceFormComponent implements OnInit, OnDestroy {
 
   isMobile = mobile;
 
-  constructor(private translate: TranslateService, private i18nService: I18nService) { }
+  constructor(
+    private translate: TranslateService,
+    private i18nService: I18nService,
+  ) {}
 
   ngOnInit(): void {
     this.getCountries(this.translate.currentLang);
-    this.langChangeSub = this.translate.onLangChange.subscribe(change => {
+    this.langChangeSub = this.translate.onLangChange.subscribe((change) => {
       this.getCountries(this.translate.currentLang);
     });
 
     this.updateItalyEInvoicingFields();
 
-    this.form.get('italyEInvoicingReferenceType').valueChanges.subscribe(change => {
-      this.updateItalyEInvoicingFields();
-    });
-    this.form.get('skipVatNr')?.valueChanges.subscribe(change => {
+    this.form
+      .get("italyEInvoicingReferenceType")
+      .valueChanges.subscribe((change) => {
+        this.updateItalyEInvoicingFields();
+      });
+    this.form.get("skipVatNr")?.valueChanges.subscribe((change) => {
       this.taxIdIsRequired = !change;
     });
   }
@@ -55,29 +59,30 @@ export class InvoiceFormComponent implements OnInit, OnDestroy {
     }
   }
 
-
   updateItalyEInvoicingFields(): void {
-    const refType = this.form.get('italyEInvoicingReferenceType').value;
-    if (refType === 'ADDRESSEE_CODE') {
-      this.form.get('italyEInvoicingReferencePEC').setValue(null);
-    } else if (refType === 'PEC') {
-      this.form.get('italyEInvoicingReferenceAddresseeCode').setValue(null);
-    } else if (refType === 'NONE') {
-      this.form.get('italyEInvoicingReferencePEC').setValue(null);
-      this.form.get('italyEInvoicingReferenceAddresseeCode').setValue(null);
+    const refType = this.form.get("italyEInvoicingReferenceType").value;
+    if (refType === "ADDRESSEE_CODE") {
+      this.form.get("italyEInvoicingReferencePEC").setValue(null);
+    } else if (refType === "PEC") {
+      this.form.get("italyEInvoicingReferenceAddresseeCode").setValue(null);
+    } else if (refType === "NONE") {
+      this.form.get("italyEInvoicingReferencePEC").setValue(null);
+      this.form.get("italyEInvoicingReferenceAddresseeCode").setValue(null);
     }
   }
 
   get addresseeCodeSelected(): boolean {
-    return this.form.get('italyEInvoicingReferenceType').value === 'ADDRESSEE_CODE';
+    return (
+      this.form.get("italyEInvoicingReferenceType").value === "ADDRESSEE_CODE"
+    );
   }
 
   get pecSelected(): boolean {
-    return this.form.get('italyEInvoicingReferenceType').value === 'PEC';
+    return this.form.get("italyEInvoicingReferenceType").value === "PEC";
   }
 
   getCountries(currentLang: string): void {
-    this.i18nService.getVatCountries(currentLang).subscribe(countries => {
+    this.i18nService.getVatCountries(currentLang).subscribe((countries) => {
       this.countries = countries;
     });
   }
@@ -103,7 +108,9 @@ export class InvoiceFormComponent implements OnInit, OnDestroy {
   }
 
   get italyEInvoicingFormDisplayed(): boolean {
-    return this.enabledItalyEInvoicing && this.form.value.vatCountryCode === 'IT';
+    return (
+      this.enabledItalyEInvoicing && this.form.value.vatCountryCode === "IT"
+    );
   }
 
   get countrySelected(): boolean {
@@ -111,16 +118,22 @@ export class InvoiceFormComponent implements OnInit, OnDestroy {
   }
 
   private get invoicingConf(): InvoicingConfiguration {
-    return this.purchaseContext?.invoicingConfiguration || this.invoicingConfiguration;
+    return (
+      this.purchaseContext?.invoicingConfiguration ||
+      this.invoicingConfiguration
+    );
   }
 
   searchCountry(term: string, country: LocalizedCountry): boolean {
     if (term) {
       term = term.toLowerCase();
-      return country.isoCode.toLowerCase().indexOf(term) > -1 || country.name.toLowerCase().indexOf(term) > -1;
+      return (
+        country.isoCode.toLowerCase().indexOf(term) > -1 ||
+        country.name.toLowerCase().indexOf(term) > -1
+      );
     }
     return true;
   }
 
-    protected readonly mobile = mobile;
+  protected readonly mobile = mobile;
 }

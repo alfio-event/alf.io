@@ -1,12 +1,19 @@
-import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
-import {PaymentProxy, type PaymentMethodId} from '../../model/event';
-import {ReservationInfo} from '../../model/reservation-info';
-import {PaymentProvider} from '../payment-provider';
-import {SaferpayPaymentProvider} from './saferpay-payment-provider';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  type OnChanges,
+  Output,
+  type SimpleChanges,
+} from "@angular/core";
+import type { PaymentMethodId, PaymentProxy } from "../../model/event";
+import type { ReservationInfo } from "../../model/reservation-info";
+import type { PaymentProvider } from "../payment-provider";
+import { SaferpayPaymentProvider } from "./saferpay-payment-provider";
 
 @Component({
-  selector: 'app-saferpay-payment-proxy',
-  templateUrl: './saferpay-payment-proxy.component.html'
+  selector: "app-saferpay-payment-proxy",
+  templateUrl: "./saferpay-payment-proxy.component.html",
 })
 export class SaferpayPaymentProxyComponent implements OnChanges {
   @Input()
@@ -19,7 +26,8 @@ export class SaferpayPaymentProxyComponent implements OnChanges {
   reservation: ReservationInfo;
 
   @Output()
-  paymentProvider: EventEmitter<PaymentProvider> = new EventEmitter<PaymentProvider>();
+  paymentProvider: EventEmitter<PaymentProvider> =
+    new EventEmitter<PaymentProvider>();
 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.matchProxyAndMethod && changes.method) {
@@ -28,7 +36,6 @@ export class SaferpayPaymentProxyComponent implements OnChanges {
   }
 
   public get matchProxyAndMethod(): boolean {
-    return this.proxy === 'SAFERPAY';
+    return this.proxy === "SAFERPAY";
   }
-
 }

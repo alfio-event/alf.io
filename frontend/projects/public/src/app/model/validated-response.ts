@@ -9,7 +9,7 @@ export class ValidatedResponse<T> {
 export class ErrorDescriptor {
   fieldName: string;
   code: string;
-  arguments: {[key: string]: any};
+  arguments: { [key: string]: any };
 }
 
 export interface WarningMessage {

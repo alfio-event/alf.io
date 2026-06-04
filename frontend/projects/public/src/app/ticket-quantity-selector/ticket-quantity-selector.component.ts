@@ -1,13 +1,12 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {TicketCategory} from '../model/ticket-category';
-import {UntypedFormGroup} from '@angular/forms';
+import { Component, EventEmitter, Input, Output } from "@angular/core";
+import type { UntypedFormGroup } from "@angular/forms";
+import type { TicketCategory } from "../model/ticket-category";
 
 @Component({
-  selector: 'app-ticket-quantity-selector',
-  templateUrl: './ticket-quantity-selector.html'
+  selector: "app-ticket-quantity-selector",
+  templateUrl: "./ticket-quantity-selector.html",
 })
 export class TicketQuantitySelectorComponent {
-
   @Input()
   parentGroup: UntypedFormGroup;
 
@@ -29,7 +28,7 @@ export class TicketQuantitySelectorComponent {
   formGroup: UntypedFormGroup;
 
   selectionChanged(): void {
-    this.valueChange.next(this.parentGroup.get('amount').value);
+    this.valueChange.next(this.parentGroup.get("amount").value);
   }
 
   refreshCategories(): void {

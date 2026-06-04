@@ -1,14 +1,12 @@
-import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
-
-import {PollRoutingModule} from './poll-routing.module';
-import {PollComponent} from './poll.component';
-import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {DisplayPollComponent} from './display-poll/display-poll.component';
-import {TranslateModule} from '@ngx-translate/core';
-import {SharedModule} from '../shared/shared.module';
-import {PollSelectionComponent} from './poll-selection/poll-selection.component';
-
+import { CommonModule } from "@angular/common";
+import { NgModule } from "@angular/core";
+import { FormsModule, ReactiveFormsModule } from "@angular/forms";
+import { TranslateModule } from "@ngx-translate/core";
+import { SharedModule } from "../shared/shared.module";
+import { DisplayPollComponent } from "./display-poll/display-poll.component";
+import { PollComponent } from "./poll.component";
+import { PollRoutingModule } from "./poll-routing.module";
+import { PollSelectionComponent } from "./poll-selection/poll-selection.component";
 
 @NgModule({
   declarations: [PollComponent, DisplayPollComponent, PollSelectionComponent],
@@ -18,7 +16,7 @@ import {PollSelectionComponent} from './poll-selection/poll-selection.component'
     PollRoutingModule,
     FormsModule,
     ReactiveFormsModule,
-    SharedModule
-  ]
+    SharedModule,
+  ],
 })
-export class PollModule { }
+export class PollModule {}

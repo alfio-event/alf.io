@@ -1,10 +1,10 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {CurrencyDescriptor} from '../model/event';
-import {PurchaseContextPriceDescriptor} from '../model/purchase-context';
+import { Component, Input, type OnInit } from "@angular/core";
+import type { CurrencyDescriptor } from "../model/event";
+import type { PurchaseContextPriceDescriptor } from "../model/purchase-context";
 
 @Component({
-  selector: 'app-price-tag',
-  templateUrl: './price-tag.component.html'
+  selector: "app-price-tag",
+  templateUrl: "./price-tag.component.html",
 })
 export class PriceTagComponent implements OnInit {
   @Input()
@@ -27,11 +27,17 @@ export class PriceTagComponent implements OnInit {
 
   ngOnInit(): void {
     this.currencyDescriptor = this.purchaseContext.currencyDescriptor;
-    this.displayCurrencySymbol = this.currencyDescriptor && this.currencyDescriptor.symbol !== this.currencyDescriptor.code;
+    this.displayCurrencySymbol =
+      this.currencyDescriptor &&
+      this.currencyDescriptor.symbol !== this.currencyDescriptor.code;
   }
 
   get displayDiscountedPrice(): boolean {
-    return this.showDiscount && this.discountedPrice != null && this.discountedPrice !== this.formattedPrice;
+    return (
+      this.showDiscount &&
+      this.discountedPrice != null &&
+      this.discountedPrice !== this.formattedPrice
+    );
   }
 
   get showTaxes(): boolean {
@@ -39,12 +45,12 @@ export class PriceTagComponent implements OnInit {
   }
 
   removeRedundantPrecision(input: string): string {
-    let substringEnd = input.lastIndexOf('.');
+    let substringEnd = input.lastIndexOf(".");
     if (substringEnd > -1) {
       const fraction = input.substring(substringEnd + 1);
       let additionalChars = 1;
       for (let i = 0; i < fraction.length; i++) {
-        if (fraction.charAt(i) !== '0') {
+        if (fraction.charAt(i) !== "0") {
           additionalChars++;
         }
       }

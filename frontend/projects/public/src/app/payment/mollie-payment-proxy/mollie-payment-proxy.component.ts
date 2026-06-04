@@ -1,16 +1,21 @@
-import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
-
-import {PaymentProvider} from '../payment-provider';
-import {UntypedFormGroup} from '@angular/forms';
-import {MolliePaymentProvider} from './mollie-payment-provider';
-import {PaymentProxy, type PaymentMethodId} from '../../model/event';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  type OnChanges,
+  Output,
+  type SimpleChanges,
+} from "@angular/core";
+import type { UntypedFormGroup } from "@angular/forms";
+import type { PaymentMethodId, PaymentProxy } from "../../model/event";
+import type { PaymentProvider } from "../payment-provider";
+import { MolliePaymentProvider } from "./mollie-payment-provider";
 
 @Component({
-  selector: 'app-mollie-payment-proxy',
-  templateUrl: './mollie-payment-proxy.component.html'
+  selector: "app-mollie-payment-proxy",
+  templateUrl: "./mollie-payment-proxy.component.html",
 })
 export class MolliePaymentProxyComponent implements OnChanges {
-
   @Input()
   method: PaymentMethodId;
 
@@ -18,17 +23,27 @@ export class MolliePaymentProxyComponent implements OnChanges {
   proxy: PaymentProxy;
 
   @Input()
-  parameters: {[key: string]: any};
+  parameters: { [key: string]: any };
 
   @Input()
   overviewForm: UntypedFormGroup;
 
   @Output()
-  paymentProvider: EventEmitter<PaymentProvider> = new EventEmitter<PaymentProvider>();
+  paymentProvider: EventEmitter<PaymentProvider> =
+    new EventEmitter<PaymentProvider>();
 
-  private compatibleMethods: PaymentMethodId[] = ['CREDIT_CARD', 'IDEAL', 'APPLE_PAY', 'BANCONTACT', 'BELFIUS', 'ING_HOME_PAY', 'KBC', 'PRZELEWY_24'];
+  private compatibleMethods: PaymentMethodId[] = [
+    "CREDIT_CARD",
+    "IDEAL",
+    "APPLE_PAY",
+    "BANCONTACT",
+    "BELFIUS",
+    "ING_HOME_PAY",
+    "KBC",
+    "PRZELEWY_24",
+  ];
 
-  constructor() { }
+  constructor() {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.matchProxyAndMethod && changes.method) {
@@ -37,7 +52,8 @@ export class MolliePaymentProxyComponent implements OnChanges {
   }
 
   public get matchProxyAndMethod(): boolean {
-    return (this.compatibleMethods.includes(this.method)) && this.proxy === 'MOLLIE';
+    return (
+      this.compatibleMethods.includes(this.method) && this.proxy === "MOLLIE"
+    );
   }
-
 }

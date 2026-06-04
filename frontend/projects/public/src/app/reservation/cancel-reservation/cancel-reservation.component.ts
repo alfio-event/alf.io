@@ -1,11 +1,10 @@
-import {Component} from '@angular/core';
-import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
+import { Component } from "@angular/core";
+import type { NgbActiveModal } from "@ng-bootstrap/ng-bootstrap";
 
 @Component({
-    selector: 'app-cancel-reservation',
-    templateUrl: './cancel-reservation.html'
+  selector: "app-cancel-reservation",
+  templateUrl: "./cancel-reservation.html",
 })
 export class CancelReservationComponent {
-    constructor(public activeModal: NgbActiveModal) {
-    }
+  constructor(public activeModal: NgbActiveModal) {}
 }

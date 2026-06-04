@@ -1,20 +1,18 @@
-import {Component, OnInit} from '@angular/core';
-import {ActivatedRoute} from '@angular/router';
-import {PollService} from '../shared/poll.service';
-import {combineLatest} from 'rxjs';
-import {PollWithOptions} from '../model/poll-with-options';
-import {TranslateService} from '@ngx-translate/core';
-import {FormGroup, UntypedFormBuilder} from '@angular/forms';
-import {PollVoteForm} from '../model/poll-vote-form';
+import { Component, type OnInit } from "@angular/core";
+import type { FormGroup, UntypedFormBuilder } from "@angular/forms";
+import type { ActivatedRoute } from "@angular/router";
+import type { TranslateService } from "@ngx-translate/core";
+import { combineLatest } from "rxjs";
+import type { PollVoteForm } from "../model/poll-vote-form";
+import type { PollWithOptions } from "../model/poll-with-options";
+import type { PollService } from "../shared/poll.service";
 
 @Component({
-  selector: 'app-display-poll',
-  templateUrl: './display-poll.component.html',
-  styleUrls: ['./display-poll.component.scss']
+  selector: "app-display-poll",
+  templateUrl: "./display-poll.component.html",
+  styleUrls: ["./display-poll.component.scss"],
 })
 export class DisplayPollComponent implements OnInit {
-
-
   eventShortName: string;
   pollId: number;
   pin: string;
@@ -27,32 +25,42 @@ export class DisplayPollComponent implements OnInit {
     private route: ActivatedRoute,
     public translate: TranslateService,
     private pollService: PollService,
-    private fb: UntypedFormBuilder) { }
+    private fb: UntypedFormBuilder,
+  ) {}
 
   ngOnInit(): void {
+    this.pollForm = this.fb.group({ optionId: null });
 
-    this.pollForm = this.fb.group({optionId: null});
-
-    combineLatest([this.route.parent.params, this.route.params, this.route.queryParams]).subscribe(([parentParams, params, query]) => {
-      this.eventShortName = parentParams['eventShortName'];
-      this.pollId = parseInt(params['pollId']);
-      this.pin = query['pin'];
-      this.loadPoll()
+    combineLatest([
+      this.route.parent.params,
+      this.route.params,
+      this.route.queryParams,
+    ]).subscribe(([parentParams, params, query]) => {
+      this.eventShortName = parentParams["eventShortName"];
+      this.pollId = parseInt(params["pollId"]);
+      this.pin = query["pin"];
+      this.loadPoll();
     });
   }
 
-
   loadPoll() {
-    this.pollService.getPoll(this.eventShortName, this.pollId, this.pin).subscribe(res => {
-      if (res.success) {
-        this.poll = res.value;
-      }
-    })
+    this.pollService
+      .getPoll(this.eventShortName, this.pollId, this.pin)
+      .subscribe((res) => {
+        if (res.success) {
+          this.poll = res.value;
+        }
+      });
   }
 
   submitChoice() {
-    this.pollService.registerAnswer(this.eventShortName, this.pollId, {pin: this.pin, optionId: this.pollForm.value.optionId}).subscribe(res => {
-      this.pollSubmittedWithSuccess = res.success && res.value;
-    })
+    this.pollService
+      .registerAnswer(this.eventShortName, this.pollId, {
+        pin: this.pin,
+        optionId: this.pollForm.value.optionId,
+      })
+      .subscribe((res) => {
+        this.pollSubmittedWithSuccess = res.success && res.value;
+      });
   }
 }

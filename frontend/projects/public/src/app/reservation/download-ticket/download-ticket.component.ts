@@ -1,11 +1,11 @@
-import {Component, Input} from '@angular/core';
-import {Ticket} from '../../model/ticket';
-import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
-import {WalletConfiguration} from '../../model/info';
+import { Component, Input } from "@angular/core";
+import type { NgbActiveModal } from "@ng-bootstrap/ng-bootstrap";
+import type { WalletConfiguration } from "../../model/info";
+import type { Ticket } from "../../model/ticket";
 
 @Component({
-  selector: 'app-download-ticket',
-  templateUrl: './download-ticket.component.html'
+  selector: "app-download-ticket",
+  templateUrl: "./download-ticket.component.html",
 })
 export class DownloadTicketComponent {
   @Input()
@@ -17,18 +17,22 @@ export class DownloadTicketComponent {
   @Input()
   walletConfiguration: WalletConfiguration;
 
-  constructor(private activeModal: NgbActiveModal) {
-  }
+  constructor(private activeModal: NgbActiveModal) {}
 
   close(): void {
     this.activeModal.dismiss();
   }
 
   get gWalletEnabled(): boolean {
-    return this.walletConfiguration != null && this.walletConfiguration.gWalletEnabled;
+    return (
+      this.walletConfiguration != null &&
+      this.walletConfiguration.gWalletEnabled
+    );
   }
 
   get passEnabled(): boolean {
-    return this.walletConfiguration != null && this.walletConfiguration.passEnabled;
+    return (
+      this.walletConfiguration != null && this.walletConfiguration.passEnabled
+    );
   }
 }

@@ -1,15 +1,21 @@
-import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
-import {PaymentProxy, type PaymentMethodId} from '../../model/event';
-import {PaymentProvider} from '../payment-provider';
-import {ReservationInfo} from '../../model/reservation-info';
-import {PayPalPaymentProvider} from './paypal-payment-provider';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  type OnChanges,
+  Output,
+  type SimpleChanges,
+} from "@angular/core";
+import type { PaymentMethodId, PaymentProxy } from "../../model/event";
+import type { ReservationInfo } from "../../model/reservation-info";
+import type { PaymentProvider } from "../payment-provider";
+import { PayPalPaymentProvider } from "./paypal-payment-provider";
 
 @Component({
-  selector: 'app-paypal-payment-proxy',
-  templateUrl: './paypal-payment-proxy.component.html',
+  selector: "app-paypal-payment-proxy",
+  templateUrl: "./paypal-payment-proxy.component.html",
 })
 export class PaypalPaymentProxyComponent implements OnChanges {
-
   @Input()
   method: PaymentMethodId;
 
@@ -20,9 +26,10 @@ export class PaypalPaymentProxyComponent implements OnChanges {
   reservation: ReservationInfo;
 
   @Output()
-  paymentProvider: EventEmitter<PaymentProvider> = new EventEmitter<PaymentProvider>();
+  paymentProvider: EventEmitter<PaymentProvider> =
+    new EventEmitter<PaymentProvider>();
 
-  constructor() { }
+  constructor() {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.matchProxyAndMethod && changes.method) {
@@ -31,6 +38,6 @@ export class PaypalPaymentProxyComponent implements OnChanges {
   }
 
   public get matchProxyAndMethod(): boolean {
-    return this.proxy === 'PAYPAL';
+    return this.proxy === "PAYPAL";
   }
 }

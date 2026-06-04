@@ -1,13 +1,13 @@
-import {Component, Input} from '@angular/core';
-import {UntypedFormGroup} from '@angular/forms';
-import {TicketCategory} from '../model/ticket-category';
-import {AdditionalService} from '../model/additional-service';
-import {BasicEventInfo} from '../model/basic-event-info';
+import { Component, Input } from "@angular/core";
+import type { UntypedFormGroup } from "@angular/forms";
+import type { AdditionalService } from "../model/additional-service";
+import type { BasicEventInfo } from "../model/basic-event-info";
+import type { TicketCategory } from "../model/ticket-category";
 
 @Component({
-  selector: 'app-item-card',
-  templateUrl: './item-card.html',
-  styleUrls: ['./item-card.scss']
+  selector: "app-item-card",
+  templateUrl: "./item-card.html",
+  styleUrls: ["./item-card.scss"],
 })
 export class ItemCardComponent {
   @Input()
@@ -20,7 +20,7 @@ export class ItemCardComponent {
   event: BasicEventInfo;
 
   @Input()
-  additionalClass = '';
+  additionalClass = "";
 
   @Input()
   currentLang: string;

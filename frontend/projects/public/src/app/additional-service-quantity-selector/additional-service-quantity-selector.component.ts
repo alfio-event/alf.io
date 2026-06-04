@@ -1,14 +1,13 @@
-import {Component, Input} from '@angular/core';
-import {AdditionalService} from '../model/additional-service';
-import {Event} from '../model/event';
-import {UntypedFormGroup} from '@angular/forms';
+import { Component, Input } from "@angular/core";
+import type { UntypedFormGroup } from "@angular/forms";
+import type { AdditionalService } from "../model/additional-service";
+import type { Event } from "../model/event";
 
 @Component({
-  selector: 'app-additional-service-quantity-selector',
-  templateUrl: './additional-service-quantity-selector.html'
+  selector: "app-additional-service-quantity-selector",
+  templateUrl: "./additional-service-quantity-selector.html",
 })
 export class AdditionalServiceQuantitySelectorComponent {
-
   @Input()
   additionalService: AdditionalService;
 
@@ -20,5 +19,4 @@ export class AdditionalServiceQuantitySelectorComponent {
 
   @Input()
   parentGroup: UntypedFormGroup;
-
 }

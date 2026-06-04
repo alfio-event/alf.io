@@ -1,4 +1,4 @@
-import {FormControl} from '@angular/forms';
+import type { FormControl } from "@angular/forms";
 
 export interface PollVoteForm {
   optionId: FormControl<number>;
