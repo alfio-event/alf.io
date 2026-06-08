@@ -40,7 +40,7 @@ public interface ScanAuditRepository {
     List<ScanAudit> findAllForEvent(@Bind("eventId") int eventId);
 
     @Query("""
-        select t.uuid t_uuid, jsonb_build_object('firstName', t.first_name, 'lastName', t.last_name, 'email', t.email_address, 'metadata', coalesce(t.metadata::jsonb#>'{metadataMap, general, attributes}', '{}')) attendee_data, jsonb_agg(jsonb_build_object('ticketUuid', sa.ticket_uuid, 'scanTimestamp', sa.scan_ts, 'username', sa.username, 'checkInStatus', sa.check_in_status, 'operation', sa.operation)) scans from ticket t
+        select t.uuid t_uuid, jsonb_build_object('firstName', t.first_name, 'lastName', t.last_name, 'email', t.email_address, 'userLanguage', t.user_language, 'metadata', coalesce(t.metadata::jsonb#>'{metadataMap, general, attributes}', '{}')) attendee_data, jsonb_agg(jsonb_build_object('ticketUuid', sa.ticket_uuid, 'scanTimestamp', sa.scan_ts, 'username', sa.username, 'checkInStatus', sa.check_in_status, 'operation', sa.operation)) scans from ticket t
             join event e on t.event_id = e.id\
             join scan_audit sa on e.id = sa.event_id_fk and t.uuid = sa.ticket_uuid\
             where e.id = :eventId\

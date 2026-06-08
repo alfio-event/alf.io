@@ -111,6 +111,7 @@ public class ReservationApiV1Controller {
                         ticket.getFirstName(),
                         ticket.getLastName(),
                         ticket.getEmail(),
+                        ticket.getUserLanguage(),
                         ticket.getExtReference(),
                         tfc.getAttributes(),
                         additional,

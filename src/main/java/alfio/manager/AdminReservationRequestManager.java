@@ -98,7 +98,7 @@ public class AdminReservationRequestManager {
             .map(ticket -> {
                 var category = new AdminReservationModification.Category(ticket.getTicketCategoryId(), "", null, null);
                 var attendees = ticket.getAttendees().stream()
-                    .map(attendee -> new AdminReservationModification.Attendee(null, attendee.getFirstName(), attendee.getLastName(), attendee.getEmail(), "", false, attendee.getExternalReference(), null, attendee.getAdditional(), attendee.getMetadata()))
+                    .map(attendee -> new AdminReservationModification.Attendee(null, attendee.getFirstName(), attendee.getLastName(), attendee.getEmail(), attendee.getUserLanguage(), false, attendee.getExternalReference(), null, attendee.getAdditional(), attendee.getMetadata()))
                     .toList();
                 return new AdminReservationModification.TicketsInfo(category, attendees, false, false);
             }).toList();

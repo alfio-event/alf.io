@@ -28,6 +28,7 @@ public class AttendeeData {
     private final String firstName;
     private final String lastName;
     private final String email;
+    private final String userLanguage;
     private final Map<String, String> metadata;
     private final Map<String, List<String>> additional;
     private final String externalReference;
@@ -37,15 +38,17 @@ public class AttendeeData {
     public AttendeeData(@JsonProperty("firstName") String firstName,
                         @JsonProperty("lastName") String lastName,
                         @JsonProperty("email") String email,
+                        @JsonProperty("userLanguage") String userLanguage,
                         @JsonProperty("externalReference") String externalReference,
                         @JsonProperty("metadata") Map<String, String> metadata,
                         @JsonProperty("additional") Map<String, List<String>> additional) {
-        this(firstName, lastName, email, externalReference, metadata, additional, AttendeeResources.empty());
+        this(firstName, lastName, email, externalReference, userLanguage, metadata, additional, AttendeeResources.empty());
     }
 
     public AttendeeData(String firstName,
                         String lastName,
                         String email,
+                        String userLanguage,
                         String externalReference,
                         Map<String, String> metadata,
                         Map<String, List<String>> additional,
@@ -53,6 +56,7 @@ public class AttendeeData {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
+        this.userLanguage = StringUtils.toRootLowerCase(userLanguage);
         this.externalReference = externalReference;
         this.metadata = metadata;
         this.additional = additional;
@@ -108,7 +112,11 @@ public class AttendeeData {
         return externalReference;
     }
 
+    public String getUserLanguage() {
+        return userLanguage;
+    }
+
     public static AttendeeData empty() {
-        return new AttendeeData(null, null, null, null, null, null);
+        return new AttendeeData(null, null, null, null, null, null, null);
     }
 }

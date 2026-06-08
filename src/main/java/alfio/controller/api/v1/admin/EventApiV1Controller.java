@@ -209,6 +209,7 @@ public class EventApiV1Controller {
                         return new DownloadedAttendeeData(ticket.getFirstName(),
                             ticket.getLastName(),
                             ticket.getEmail(),
+                            ticket.getUserLanguage(),
                             Map.of(),
                             additional,
                             ticket.getExtReference(),

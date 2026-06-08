@@ -472,7 +472,7 @@ public class TicketReservationManager {
                 ticketRepository.reserveTicket(reservationId,
                     ticketId,
                     sp.getId(),
-                    locale.getLanguage(),
+                    Objects.requireNonNullElseGet(StringUtils.trimToNull(attendee.getUserLanguage()), locale::getLanguage),
                     category.getSrcPriceCts(),
                     category.getCurrencyCode(),
                     event.getVatStatus(),
