@@ -83,79 +83,82 @@ public class CustomMessageManager {
         boolean googleWalletEnabled = configuration.get(ConfigurationKeys.ENABLE_WALLET).getValueAsBooleanOrDefault();
         boolean appleWalletEnabled = configuration.get(ConfigurationKeys.ENABLE_PASS).getValueAsBooleanOrDefault();
 
-        sendMessagesExecutor.execute(() -> {
-            var messageSource = messageSourceManager.getMessageSourceFor(event);
-            categoryId.map(id -> ticketRepository.findConfirmedByCategoryId(event.getId(), id))
-                .orElseGet(() -> ticketRepository.findAllConfirmed(event.getId()))
-                .stream()
-                .filter(t -> isNotBlank(t.getFullName()) && Validator.isEmailValid(t.getEmail()))
-                .parallel()
-                .map(t -> {
-                    Model model = new ExtendedModelMap();
-                    model.addAttribute("eventName", event.getDisplayName());
-                    model.addAttribute("fullName", t.getFullName());
-                    model.addAttribute("organizationName", organization.getName());
-                    model.addAttribute("organizationEmail", organization.getEmail());
-                    model.addAttribute("reservationURL", ticketReservationManager.reservationUrl(t.getTicketsReservationId(), event));
-                    model.addAttribute("reservationID", ticketReservationManager.getShortReservationID(event, t.getTicketsReservationId()));
-                    model.addAttribute("ticketURL", ReservationUtil.ticketUpdateUrl(event, t, configurationManager));
-                    model.addAttribute("ticketID", t.getPublicUuid().toString());
-                    model.addAttribute("ticket", t);
-                    return Triple.of(t, t.getEmail(), model);
-                })
-                .forEach(triple -> {
-                    Ticket ticket = triple.getLeft();
-                    MessageModification m = Optional.ofNullable(byLanguage.get(ticket.getUserLanguage())).orElseGet(() -> byLanguage.get(byLanguage.keySet().stream().findFirst().orElseThrow(IllegalStateException::new))).get(0);
-                    Model model = triple.getRight();
-                    String subject = renderResource(m.getSubject(), event, model, m.getLocale(), templateManager);
-                    StringBuilder text = new StringBuilder(renderResource(m.getText(), event, model, m.getLocale(), templateManager));
-                    List<Mailer.Attachment> attachments = new ArrayList<>();
-                    var templateModel = new HashMap<>(model.asMap());
-                    if(m.isAttachTicket()) {
-                        var optionalReservation = ticketReservationManager.findById(ticket.getTicketsReservationId());
-                        var optionalTicketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId());
-                        boolean onlineTicket = optionalTicketCategory.isPresent() && EventUtil.isAccessOnline(optionalTicketCategory.get(), event);
+        sendMessagesExecutor.execute(() -> internalSendMessages(categoryId, new SendMessagesParams(event, organization, byLanguage,googleWalletEnabled, appleWalletEnabled, baseUrl), categoriesById, configuration));
 
-                        if(optionalReservation.isPresent() && onlineTicket) {
-                            var onlineCheckInModel = new HashMap<>(TicketCheckInUtil.getOnlineCheckInInfo(
-                                extensionManager,
-                                eventRepository,
-                                ticketCategoryRepository,
-                                configurationManager,
-                                event,
-                                Locale.forLanguageTag(ticket.getUserLanguage()),
-                                ticket,
-                                categoriesById.get(ticket.getCategoryId()),
-                                ticketReservationManager.retrieveAttendeeAdditionalInfoForTicket(ticket)
-                            ));
-                            // add ticket model in order to be able to generate the calendar invitation
-                            onlineCheckInModel.putAll(getModelForTicket(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization));
-                            // generate only calendar invitation, as Ticket PDF would not make sense in this case.
-                            attachments.add(generateCalendarAttachmentForOnlineEvent(onlineCheckInModel));
-                            // add check-in URL and prerequisites, if any
-                            text.append(notificationManager.buildOnlineCheckInText(onlineCheckInModel, Locale.forLanguageTag(ticket.getUserLanguage()), messageSource));
-                            templateModel.putAll(onlineCheckInModel);
-                        } else if(optionalReservation.isPresent() && optionalTicketCategory.isPresent()) {
-                            boolean htmlEmailsEnabled = configuration.get(ConfigurationKeys.ENABLE_HTML_EMAILS).getValueAsBooleanOrDefault();
-                            attachments.add(generateTicketAttachment(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization, htmlEmailsEnabled));
-                        }
-                        templateModel.put("googleWalletEnabled", googleWalletEnabled && !onlineTicket);
-                        templateModel.put("appleWalletEnabled", appleWalletEnabled && !onlineTicket);
-                        templateModel.put("walletEnabled", (googleWalletEnabled || appleWalletEnabled) && !onlineTicket);
-                    } else {
-                        // ticket attachment was not requested. Do not display wallet
-                        templateModel.put("googleWalletEnabled", false);
-                        templateModel.put("appleWalletEnabled", false);
-                        templateModel.put("walletEnabled", false);
+    }
+
+    record SendMessagesParams(Event event, Organization organization, Map<String, List<MessageModification>> byLanguage, boolean googleWalletEnabled, boolean appleWalletEnabled, String baseUrl) {}
+
+    private void internalSendMessages(Optional<Integer> categoryId, SendMessagesParams params, Map<Integer, TicketCategory> categoriesById, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configuration) {
+        var messageSource = messageSourceManager.getMessageSourceFor(params.event);
+        categoryId.map(id -> ticketRepository.findConfirmedByCategoryId(params.event.getId(), id))
+            .orElseGet(() -> ticketRepository.findAllConfirmed(params.event.getId()))
+            .stream()
+            .filter(t -> isNotBlank(t.getFullName()) && Validator.isEmailValid(t.getEmail()))
+            .map(t -> {
+                Model model = new ExtendedModelMap();
+                model.addAttribute("eventName", params.event.getDisplayName());
+                model.addAttribute("fullName", t.getFullName());
+                model.addAttribute("organizationName", params.organization.getName());
+                model.addAttribute("organizationEmail", params.organization.getEmail());
+                model.addAttribute("reservationURL", ticketReservationManager.reservationUrl(t.getTicketsReservationId(), params.event));
+                model.addAttribute("reservationID", ticketReservationManager.getShortReservationID(params.event, t.getTicketsReservationId()));
+                model.addAttribute("ticketURL", ReservationUtil.ticketUpdateUrl(params.event, t, configurationManager));
+                model.addAttribute("ticketID", t.getPublicUuid().toString());
+                model.addAttribute("ticket", t);
+                return Triple.of(t, t.getEmail(), model);
+            })
+            .forEach(triple -> {
+                Ticket ticket = triple.getLeft();
+                MessageModification m = Optional.ofNullable(params.byLanguage.get(ticket.getUserLanguage())).orElseGet(() -> params.byLanguage.get(params.byLanguage.keySet().stream().findFirst().orElseThrow(IllegalStateException::new))).get(0);
+                Model model = triple.getRight();
+                String subject = renderResource(m.getSubject(), params.event, model, m.getLocale(), templateManager);
+                StringBuilder text = new StringBuilder(renderResource(m.getText(), params.event, model, m.getLocale(), templateManager));
+                List<Mailer.Attachment> attachments = new ArrayList<>();
+                var templateModel = new HashMap<>(model.asMap());
+                if(m.isAttachTicket()) {
+                    var optionalReservation = ticketReservationManager.findById(ticket.getTicketsReservationId());
+                    var optionalTicketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId());
+                    boolean onlineTicket = optionalTicketCategory.isPresent() && EventUtil.isAccessOnline(optionalTicketCategory.get(), params.event);
+
+                    if(optionalReservation.isPresent() && onlineTicket) {
+                        var onlineCheckInModel = new HashMap<>(TicketCheckInUtil.getOnlineCheckInInfo(
+                            extensionManager,
+                            eventRepository,
+                            ticketCategoryRepository,
+                            configurationManager,
+                            params.event,
+                            Locale.forLanguageTag(ticket.getUserLanguage()),
+                            ticket,
+                            categoriesById.get(ticket.getCategoryId()),
+                            ticketReservationManager.retrieveAttendeeAdditionalInfoForTicket(ticket)
+                        ));
+                        // add ticket model in order to be able to generate the calendar invitation
+                        onlineCheckInModel.putAll(getModelForTicket(ticket, optionalReservation.get(), optionalTicketCategory.get(), params.organization));
+                        // generate only calendar invitation, as Ticket PDF would not make sense in this case.
+                        attachments.add(generateCalendarAttachmentForOnlineEvent(onlineCheckInModel));
+                        // add check-in URL and prerequisites, if any
+                        text.append(notificationManager.buildOnlineCheckInText(onlineCheckInModel, Locale.forLanguageTag(ticket.getUserLanguage()), messageSource));
+                        templateModel.putAll(onlineCheckInModel);
+                    } else if(optionalReservation.isPresent() && optionalTicketCategory.isPresent()) {
+                        boolean htmlEmailsEnabled = configuration.get(ConfigurationKeys.ENABLE_HTML_EMAILS).getValueAsBooleanOrDefault();
+                        attachments.add(generateTicketAttachment(ticket, optionalReservation.get(), optionalTicketCategory.get(), params.organization, htmlEmailsEnabled));
                     }
-                    templateModel.put("message", text);
-                    templateModel.put("event", event);
-                    templateModel.put("baseUrl", baseUrl);
-                    notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), triple.getMiddle(), subject,
-                        () -> templateManager.renderTemplate(event, TemplateResource.CUSTOM_MESSAGE, templateModel, Locale.forLanguageTag(ticket.getUserLanguage())), attachments);
-                });
-        });
-
+                    templateModel.put("googleWalletEnabled", params.googleWalletEnabled && !onlineTicket);
+                    templateModel.put("appleWalletEnabled", params.appleWalletEnabled && !onlineTicket);
+                    templateModel.put("walletEnabled", (params.googleWalletEnabled || params.appleWalletEnabled) && !onlineTicket);
+                } else {
+                    // ticket attachment was not requested. Do not display wallet
+                    templateModel.put("googleWalletEnabled", false);
+                    templateModel.put("appleWalletEnabled", false);
+                    templateModel.put("walletEnabled", false);
+                }
+                templateModel.put("message", text);
+                templateModel.put("event", params.event);
+                templateModel.put("baseUrl", params.baseUrl);
+                notificationManager.sendSimpleEmail(params.event, ticket.getTicketsReservationId(), triple.getMiddle(), subject,
+                    () -> templateManager.renderTemplate(params.event, TemplateResource.CUSTOM_MESSAGE, templateModel, Locale.forLanguageTag(ticket.getUserLanguage())), attachments);
+            });
     }
 
     private List<MessageModification> preview(Event event, List<MessageModification> input, String username) {
@@ -172,7 +175,7 @@ public class CustomMessageManager {
         return input.stream()
                 .map(m -> MessageModification.preview(m, renderResource(m.getSubject(), event, model, m.getLocale(), templateManager),
                     renderResource(m.getText(), event, model, m.getLocale(), templateManager), m.isAttachTicket()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public static Mailer.Attachment generateTicketAttachment(Ticket ticket,
@@ -194,32 +197,6 @@ public class CustomMessageManager {
         model.put("reservationId", reservation.getId());
         model.put("organizationId", Integer.toString(organization.getId()));
         return model;
-    }
-
-    public static Mailer.Attachment generateCalendarAttachmentForOnlineEvent(Event event,
-                                                                             Ticket ticket,
-                                                                             Locale attachmentLanguage,
-                                                                             TicketReservation reservation,
-                                                                             TicketCategory ticketCategory,
-                                                                             Organization organization,
-                                                                             ExtensionManager extensionManager,
-                                                                             EventRepository eventRepository,
-                                                                             TicketCategoryRepository ticketCategoryRepository,
-                                                                             ConfigurationManager configurationManager,
-                                                                             Map<String, List<String>> ticketAdditionalInfo) {
-        var model = getModelForTicket(ticket, reservation, ticketCategory, organization);
-        model.putAll(TicketCheckInUtil.getOnlineCheckInInfo(
-            extensionManager,
-            eventRepository,
-            ticketCategoryRepository,
-            configurationManager,
-            event,
-            attachmentLanguage,
-            ticket,
-            ticketCategory,
-            ticketAdditionalInfo
-        ));
-        return generateCalendarAttachmentForOnlineEvent(model);
     }
 
     public static Mailer.Attachment generateCalendarAttachmentForOnlineEvent(Map<String, String> model) {
