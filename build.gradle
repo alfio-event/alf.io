@@ -18,7 +18,7 @@ buildscript {
         // for processing the index.html at build time
         classpath "ch.digitalfondue.jfiveparse:jfiveparse:1.1.4"
         // for processing the mjml templates at build time
-        classpath "ch.digitalfondue.mjml4j:mjml4j:1.1.5"
+        classpath "ch.digitalfondue.mjml4j:mjml4j:1.2.2"
     }
 
 
@@ -38,9 +38,9 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.54.0'
     id 'com.github.hierynomus.license' version '0.16.1'
     id 'net.researchgate.release' version '3.1.0'
-    id 'org.springframework.boot' version '3.5.14'
+    id 'org.springframework.boot' version '3.5.16'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'org.sonarqube' version '7.3.0.8198'
+    id 'org.sonarqube' version '7.3.1.8318'
     // id 'net.ltgt.errorprone' version '3.1.0'
     id 'com.github.node-gradle.node' version '7.1.0'
 }
@@ -125,7 +125,7 @@ dependencies {
     /**/
     implementation 'io.github.openhtmltopdf:openhtmltopdf-core:1.1.37'
     implementation 'io.github.openhtmltopdf:openhtmltopdf-pdfbox:1.1.37'
-    implementation 'ch.digitalfondue.jfiveparse:jfiveparse:1.1.4'
+    implementation 'ch.digitalfondue.jfiveparse:jfiveparse:2.0.1'
     /**/
     implementation 'com.google.zxing:core:3.5.4'
     implementation 'com.google.zxing:javase:3.5.4'
@@ -162,7 +162,7 @@ dependencies {
     implementation 'ch.digitalfondue.basicxlsx:basicxlsx:0.7.1'
     implementation 'org.imgscalr:imgscalr-lib:4.2'
     implementation 'org.mozilla:rhino-runtime:1.7.15.1'
-    implementation 'com.google.auth:google-auth-library-oauth2-http:1.46.0'
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.48.0'
 
     testImplementation 'org.testcontainers:testcontainers'
     testImplementation 'org.testcontainers:postgresql'
