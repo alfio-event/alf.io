@@ -42,7 +42,7 @@ public class AttendeeData {
                         @JsonProperty("externalReference") String externalReference,
                         @JsonProperty("metadata") Map<String, String> metadata,
                         @JsonProperty("additional") Map<String, List<String>> additional) {
-        this(firstName, lastName, email, externalReference, userLanguage, metadata, additional, AttendeeResources.empty());
+        this(firstName, lastName, email, userLanguage, externalReference, metadata, additional, AttendeeResources.empty());
     }
 
     public AttendeeData(String firstName,
