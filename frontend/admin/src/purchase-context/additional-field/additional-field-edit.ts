@@ -445,12 +445,13 @@ export class AdditionalFieldEdit extends LitElement {
                         const contentLanguages = this.purchaseContext?.contentLanguages ?? [];
                         const selectableOptions = selectableOptionsField.state.value ?? [];
                         return html`
-                            ${repeat(selectableOptions, (_, index) => index, (_, index) => {
+                            ${repeat(selectableOptions, (_, index) => index, (option, index) => {
                                 return this.renderSelectableOptionCard(index,
                                     selectableOptions.length - 1,
                                     contentLanguages,
                                     () => selectableOptionsField.removeValue(index),
-                                    (newIndex) => selectableOptionsField.moveValue(index, newIndex)
+                                    (newIndex) => selectableOptionsField.moveValue(index, newIndex),
+                                    option.toBePersisted
                                 );
                             })}
                             <sl-button class="mt-2" variant="success" @click=${() => {selectableOptionsField.pushValue({fieldName: '', description: {}, toBePersisted: true})}}>Add option</sl-button>
@@ -465,9 +466,10 @@ export class AdditionalFieldEdit extends LitElement {
                                        maxIndex: number,
                                        contentLanguages: ContentLanguage[],
                                        removeField: () => void,
-                                       moveField: (newIndex: number) => void) {
+                                       moveField: (newIndex: number) => void,
+                                       toBePersisted: boolean) {
         const descriptionChanged = (e: InputEvent, languageIdx: number, field: any) => {
-            if (languageIdx === 0 && !this.editField) {
+            if (languageIdx === 0 && (!this.editField || toBePersisted)) {
                 // only process it when it's the first language
                 const value = (e.currentTarget as HTMLInputElement).value;
                 const currentFieldName = this.#form.api.getFieldValue(`selectableOptions[${optionIndex}].fieldName`);
@@ -547,7 +549,7 @@ export class AdditionalFieldEdit extends LitElement {
                                           maxlength="64"
                                           help-text="Used in data exports. Letters, numbers, and underscores only."
                                           @sl-change=${(e: InputEvent) => notifyChange(e, field)}
-                                          .readonly=${this.editField}></sl-input>
+                                          .disabled=${this.editField && !toBePersisted}></sl-input>
                             `)}
                         </div>
                     </div>
