@@ -195,9 +195,11 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
                 var paymentIntent = PaymentIntent.retrieve(transaction.getPaymentId(), requestOptions);
                 var status = paymentIntent.getStatus();
                 if(status.equals("succeeded")) {
-                    // the existing PaymentIntent succeeded, so we can confirm the reservation
-                    log.info("marking reservation {} as paid, because PaymentIntent reports success", transaction.getReservationId());
-                    processSuccessfulPaymentIntent(transaction, paymentIntent, ticketReservationRepository.findReservationById(transaction.getReservationId()), purchaseContext, requestOptions);
+                    // the existing PaymentIntent succeeded. We leave the transaction untouched (PENDING):
+                    // the caller is expected to react to the "status changed" flag by triggering a forced
+                    // transaction check, which confirms transaction AND reservation through the standard
+                    // PaymentWebhookResult handling
+                    log.info("PaymentIntent reports success for reservation {}. Requesting a forced transaction check", transaction.getReservationId());
                     return errorToken("Reservation status changed", true);
                 } else if(!status.equals(REQUIRES_PAYMENT_METHOD)) {
                     return errorToken("Payment in process", true);

@@ -1528,6 +1528,8 @@ class TicketReservationManagerTest {
             when(purchaseContextManager.findByReservationId(PENDING_RESERVATION_ID)).thenReturn(Optional.of(purchaseContextMock));
             when(transactionRepository.loadOptionalByReservationIdAndStatusForUpdate(PENDING_RESERVATION_ID, Transaction.Status.PENDING))
                 .thenReturn(Optional.of(transactionMock));
+            when(ticketReservationRepository.findOptionalReservationByIdForUpdate(PENDING_RESERVATION_ID))
+                .thenReturn(Optional.of(pendingReservationMock));
         }
 
         @Test
@@ -1545,6 +1547,7 @@ class TicketReservationManagerTest {
             verify(waitingQueueManager).cleanExpiredReservations(expiredReservationIds);
             verify(ticketReservationRepository).findReservationsWithPendingTransaction(reservationIds);
             verify(ticketReservationRepository).findOptionalStatusAndValidationById(PENDING_RESERVATION_ID);
+            verify(ticketReservationRepository).findOptionalReservationByIdForUpdate(PENDING_RESERVATION_ID);
             verifyNoMoreInteractions(ticketReservationRepository, specialPriceRepository, ticketRepository, applicationEventPublisher);
         }
 
@@ -1575,6 +1578,7 @@ class TicketReservationManagerTest {
             verify(transactionRepository).loadOptionalByReservationId(PENDING_RESERVATION_ID);
             verify(ticketReservationRepository).updateReservationStatus(PENDING_RESERVATION_ID, TicketReservationStatus.PENDING.toString());
             verify(ticketReservationRepository).findReservationsWithPendingTransaction(reservationIds);
+            verify(ticketReservationRepository).findOptionalReservationByIdForUpdate(PENDING_RESERVATION_ID);
             verify(stripeManager).discardTransaction(transactionMock, purchaseContextMock);
             verifyNoMoreInteractions(ticketReservationRepository, specialPriceRepository, ticketRepository);
         }

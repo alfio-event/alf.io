@@ -146,6 +146,9 @@ public interface TicketReservationRepository {
     @Query("select * from tickets_reservation where id = :id for update")
     TicketReservation findReservationByIdForUpdate(@Bind("id") String id);
 
+    @Query("select * from tickets_reservation where id = :id for update")
+    Optional<TicketReservation> findOptionalReservationByIdForUpdate(@Bind("id") String id);
+
     @Query("select * from tickets_reservation where id = :id")
     Optional<TicketReservation> findOptionalReservationById(@Bind("id") String id);
 
