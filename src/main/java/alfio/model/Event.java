@@ -35,6 +35,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
+import static java.util.Objects.requireNonNull;
 
 @Getter
 public class Event extends EventAndOrganizationId implements EventHiddenFieldContainer, EventCheckInInfo, PurchaseContext {
@@ -155,8 +156,8 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     public BigDecimal getRegularPrice() {
         return MonetaryUtil.centsToUnit(srcPriceCts, currency);
     }
-    
-    
+
+
     public boolean getSameDay() {
         return begin.truncatedTo(ChronoUnit.DAYS).equals(end.truncatedTo(ChronoUnit.DAYS));
     }
@@ -166,7 +167,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     public String getPrivateKey() {
         return privateKey;
     }
-    
+
     @Override
     @JsonIgnore
     public Pair<String, String> getLatLong() {
@@ -211,7 +212,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     public boolean getFree() {
         return isFreeOfCharge();
     }
-    
+
     public boolean getImageIsPresent() {
         return StringUtils.isNotBlank(imageUrl) || StringUtils.isNotBlank(fileBlobId);
     }
@@ -226,7 +227,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     }
 
     public PaymentProxy getFirstPaymentMethod() {
-        return allowedPaymentProxies.isEmpty() ? null : allowedPaymentProxies.get(0);//it is guaranteed that this list is not null. 
+        return allowedPaymentProxies.isEmpty() ? null : allowedPaymentProxies.get(0);//it is guaranteed that this list is not null.
     }
 
     public boolean supportsPaymentMethod(PaymentProxy paymentProxy) {
@@ -240,7 +241,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     public boolean isOnline() {
         return format == EventFormat.ONLINE;
     }
-    
+
     // mustache
     public boolean getOnline() {
     	return isOnline();
@@ -287,7 +288,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     }
 
     public int getBeginTimeZoneOffset() {
-        return getBegin().getOffset().get(OFFSET_SECONDS);
+        return requireNonNull(getBegin()).getOffset().get(OFFSET_SECONDS);
     }
 
     public int getEndTimeZoneOffset() {

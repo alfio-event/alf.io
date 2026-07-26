@@ -20,8 +20,10 @@ import alfio.model.Event;
 import lombok.Data;
 
 import java.time.ZonedDateTime;
+import java.util.Objects;
 
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
+import static java.util.Objects.requireNonNull;
 
 @Data
 public class DatesWithTimeZoneOffset {
@@ -31,8 +33,10 @@ public class DatesWithTimeZoneOffset {
     private final int endTimeZoneOffset;
 
     public static DatesWithTimeZoneOffset fromEvent(Event event) {
-        return new DatesWithTimeZoneOffset(toEpochMilli(event.getBegin()),
-            event.getBeginTimeZoneOffset(), toEpochMilli(event.getEnd()), event.getEndTimeZoneOffset());
+        var begin = requireNonNull(event.getBegin());
+        var end = requireNonNull(event.getEnd());
+        return new DatesWithTimeZoneOffset(toEpochMilli(begin),
+            event.getBeginTimeZoneOffset(), toEpochMilli(end), event.getEndTimeZoneOffset());
     }
 
     public static DatesWithTimeZoneOffset fromDates(ZonedDateTime start, ZonedDateTime end) {
