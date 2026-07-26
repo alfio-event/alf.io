@@ -113,6 +113,7 @@ class EventApiControllerIntegrationTest {
     private static final String TEST_ATTENDEE_FIRST_NAME = "Attendee";
     private static final String TEST_ATTENDEE_LAST_NAME = "Test";
     private static final String TEST_ATTENDEE_EMAIL = "attendee@test.com";
+    private static final String TEST_RESERVATION_EMAIL = "integration-test@test.ch";
 
     @Test
     void getAllEventsForExternalInPerson() {
@@ -191,7 +192,7 @@ class EventApiControllerIntegrationTest {
         mockRequest.addParameter("fields", FIXED_FIELDS.toArray(new String[0]));
         MockHttpServletResponse mockResponse = new MockHttpServletResponse();
         this.eventApiController.downloadAllTicketsCSV(event.getShortName(), "csv", mockRequest, mockResponse, principal);
-        String expectedTestAttendeeCsvLine = "\""+foundTicket.getUuid()+"\""+",default,"+"\""+event.getShortName()+"\""+",ACQUIRED,0,0,0,0,"+"\""+foundTicket.getTicketsReservationId()+"\""+",\""+TEST_ATTENDEE_FIRST_NAME+" "+TEST_ATTENDEE_LAST_NAME+"\","+TEST_ATTENDEE_FIRST_NAME+","+TEST_ATTENDEE_LAST_NAME+","+TEST_ATTENDEE_EMAIL+",false,"+TEST_ATTENDEE_USER_LANGUAGE;
+        String expectedTestAttendeeCsvLine = "\""+foundTicket.getUuid()+"\""+",default,"+"\""+event.getShortName()+"\""+",ACQUIRED,0,0,0,0,"+"\""+foundTicket.getTicketsReservationId()+"\","+TEST_RESERVATION_EMAIL+",\""+TEST_ATTENDEE_FIRST_NAME+" "+TEST_ATTENDEE_LAST_NAME+"\","+TEST_ATTENDEE_FIRST_NAME+","+TEST_ATTENDEE_LAST_NAME+","+TEST_ATTENDEE_EMAIL+",false,"+TEST_ATTENDEE_USER_LANGUAGE;
         String returnedCsvContent = mockResponse.getContentAsString().trim().replace("\uFEFF", ""); // remove BOM
         assertTrue(returnedCsvContent.startsWith(getExpectedHeaderCsvLine() + "\n" + expectedTestAttendeeCsvLine));
         assertTrue(returnedCsvContent.endsWith("\"Billing Address\",,"+TEST_PROMO_CODE+",,," + TEST_ATTENDEE_EXTERNAL_REFERENCE));
@@ -315,7 +316,7 @@ class EventApiControllerIntegrationTest {
 
     private AdminReservationModification getTestAdminReservationModification() {
         DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
-        AdminReservationModification.CustomerData customerData = new AdminReservationModification.CustomerData("Integration", "Test", "integration-test@test.ch", "Billing Address", "reference", "en", "1234", "CH", null);
+        AdminReservationModification.CustomerData customerData = new AdminReservationModification.CustomerData("Integration", "Test", TEST_RESERVATION_EMAIL, "Billing Address", "reference", "en", "1234", "CH", null);
         var ticketCategoryList = this.ticketCategoryRepository.findAllTicketCategories(event.getId());
         AdminReservationModification.Category category = new AdminReservationModification.Category(ticketCategoryList.get(0).getId(), "name", new BigDecimal("100.00"), null);
         List<AdminReservationModification.TicketsInfo> ticketsInfoList = Collections.singletonList(new AdminReservationModification.TicketsInfo(category, Collections.singletonList(generateTestAttendee()), true, false));
@@ -339,6 +340,7 @@ class EventApiControllerIntegrationTest {
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Full Name", "\"Full Name\"");
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("First Name", "\"First Name\"");
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Last Name", "\"Last Name\"");
+        expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Reservation Email address", "\"Reservation Email address\"");
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Billing Address", "\"Billing Address\"");
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Country Code", "\"Country Code\"");
         expectedHeaderCsvLine = expectedHeaderCsvLine.replaceAll("Promo Code", "\"Promo Code\"");
