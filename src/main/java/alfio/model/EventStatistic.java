@@ -134,6 +134,10 @@ public class EventStatistic implements StatisticsContainer, Comparable<EventStat
         return isVisibleForCurrentUser() && statisticsEnabled;
     }
 
+    public String getTimeZone() {
+        return event.getTimeZone();
+    }
+
     @Override
     public int compareTo(EventStatistic o) {
         CompareToBuilder builder = new CompareToBuilder();
