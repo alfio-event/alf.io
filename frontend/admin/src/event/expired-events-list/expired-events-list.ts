@@ -2,7 +2,7 @@ import {css, html, LitElement, nothing, TemplateResult} from 'lit';
 import {customElement, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
-import {fetchJson, formatDate, injectFontAwesome, renderEventActions} from '../../service/helpers.ts';
+import {fetchJson, renderEventActions} from '../../service/helpers.ts';
 import {EventStatistic} from '../../model/event.ts';
 import {panelStyles, spacing} from '../../styles.ts';
 
@@ -47,7 +47,7 @@ export class ExpiredEventsList extends LitElement {
                     () => html`
                         <div class="panel-body">
                             <div class="alert alert-danger">
-                                <span><i class="fa fa-exclamation-triangle"></i> failed to load expired events.</span>
+                                <span><sl-icon name="exclamation-triangle"></sl-icon> failed to load expired events.</span>
                             </div>
                         </div>
                     `,
@@ -57,7 +57,7 @@ export class ExpiredEventsList extends LitElement {
                     () => html`
                         <div class="panel-body">
                             <div class="alert alert-info">
-                                <span><i class="fa fa-info-circle"></i> no past events have been found.</span>
+                                <span><sl-icon name="info-circle"></sl-icon> no past events have been found.</span>
                             </div>
                         </div>
                     `,
@@ -77,7 +77,7 @@ export class ExpiredEventsList extends LitElement {
                                                     </h4>
                                                 </div>
                                                 <div class="list-group-item-text">
-                                                    ${formatDate(ev.formattedBegin)} / ${formatDate(ev.formattedEnd)}
+                                                    <sl-format-date lang="de-DE" time-zone="UTC" date=${ev.formattedBegin.replace(' ', 'T') + 'Z'} month="2-digit" day="2-digit" year="numeric"></sl-format-date> <sl-format-date lang="de-DE" time-zone="UTC" date=${ev.formattedBegin.replace(' ', 'T') + 'Z'} hour="2-digit" minute="2-digit"></sl-format-date> / <sl-format-date lang="de-DE" time-zone="UTC" date=${ev.formattedEnd.replace(' ', 'T') + 'Z'} month="2-digit" day="2-digit" year="numeric"></sl-format-date> <sl-format-date lang="de-DE" time-zone="UTC" date=${ev.formattedEnd.replace(' ', 'T') + 'Z'} hour="2-digit" minute="2-digit"></sl-format-date>
                                                 </div>
                                             </div>
                                             <div class="col col-actions text-right wMarginTop10px">
@@ -102,10 +102,6 @@ export class ExpiredEventsList extends LitElement {
                     () => nothing)}
             </div>
         `;
-    }
-
-    firstUpdated(): void {
-        injectFontAwesome(this.renderRoot as ShadowRoot);
     }
 
     private async loadEvents(): Promise<void> {

@@ -78,5 +78,6 @@ export interface EventStatistic {
     displayStatistics: boolean;
     organizationId: number;
     allowedPaymentProxies: PaymentProxy[];
+    timeZone: string;
 }
 

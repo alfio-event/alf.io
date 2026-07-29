@@ -1,7 +1,6 @@
 import {css, html, LitElement, nothing, TemplateResult} from 'lit';
 import {customElement, state} from 'lit/decorators.js';
 import {when} from 'lit/directives/when.js';
-import {injectFontAwesome} from '../../service/helpers.ts';
 import {panelStyles, dialog, form, row} from '../../styles.ts';
 
 @customElement('alfio-export-reservations-button')
@@ -41,7 +40,7 @@ export class ExportReservationsButton extends LitElement {
             border-radius: 4px;
         }
 
-        .export-reservations-button .btn-block i {
+        .export-reservations-button .btn-block sl-icon {
             margin-right: 0;
         }
 
@@ -289,7 +288,7 @@ export class ExportReservationsButton extends LitElement {
                         <div class="button-row">
                             <div class="button-wrapper">
                                 <button type="button" class="btn btn-block" @click=${() => this.openDialog()}>
-                                    <i class="fa fa-download"></i> Export Reservations
+                                    <sl-icon name="download"></sl-icon> Export Reservations
                                 </button>
                             </div>
                         </div>
@@ -353,10 +352,6 @@ export class ExportReservationsButton extends LitElement {
     connectedCallback(): void {
         super.connectedCallback();
         this.loadEventsCount();
-    }
-
-    firstUpdated(): void {
-        injectFontAwesome(this.renderRoot as ShadowRoot);
     }
 
     private async loadEventsCount(): Promise<void> {

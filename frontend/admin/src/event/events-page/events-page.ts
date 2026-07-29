@@ -1,6 +1,5 @@
 import {css, html, LitElement} from 'lit';
 import {customElement} from 'lit/decorators.js';
-import {injectFontAwesome} from '../../service/helpers.ts';
 import {retroCompat, panelStyles, spacing} from '../../styles.ts';
 
 @customElement('alfio-events-page')
@@ -69,10 +68,6 @@ export class EventsPage extends LitElement {
                 <alfio-expired-events-list></alfio-expired-events-list>
             </div>
         `;
-    }
-
-    firstUpdated(): void {
-        injectFontAwesome(this.renderRoot as ShadowRoot);
     }
 }
 

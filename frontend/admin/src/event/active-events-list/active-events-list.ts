@@ -3,7 +3,7 @@ import {customElement, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
 import {Task, TaskStatus} from '@lit/task';
-import {fetchJson, formatDate, injectFontAwesome, renderEventActions, supportsOfflinePayments} from '../../service/helpers.ts';
+import {fetchJson, renderEventActions, supportsOfflinePayments} from '../../service/helpers.ts';
 import {EventStatistic} from '../../model/event.ts';
 import {panelStyles, spacing} from '../../styles.ts';
 
@@ -42,7 +42,7 @@ export class ActiveEventsList extends LitElement {
                         () => html`
                             <div class="hidden-xs hidden-sm pull-right">
                                 <a class="btn btn-xs btn-success" href="#/events/new">
-                                    <i class="fa fa-file-text-o"></i> create new event
+                                    <sl-icon name="file-text"></sl-icon> create new event
                                 </a>
                             </div>
                         `,
@@ -83,7 +83,7 @@ export class ActiveEventsList extends LitElement {
             () => html`
                 <div class="panel-body">
                     <div class="alert alert-info">
-                        <span><i class="fa fa-info-circle"></i> no active events have been found.</span>
+                        <span><sl-icon name="info-circle"></sl-icon> no active events have been found.</span>
                     </div>
                 </div>
             `);
@@ -119,7 +119,7 @@ ${when(ev.warningNeeded,
                                                  () => html`
                                                      <span class="label label-danger" @click=${(e: Event) => { e.preventDefault(); e.stopPropagation(); }}>
 <sl-tooltip content="Something wrong is happening...">
-                                                            <i class="fa fa-warning" style="cursor: help;" tabindex="0" aria-label="Warning: something wrong is happening"></i>
+                                                            <sl-icon name="exclamation-triangle" style="cursor: help;" tabindex="0" aria-label="Warning: something wrong is happening"></sl-icon>
                                                         </sl-tooltip>
                                                      </span>
                                                  `,
@@ -128,7 +128,7 @@ ${when(ev.status === 'DRAFT',
                                                  () => html`
                                                      <span class="label label-warning" @click=${(e: Event) => { e.preventDefault(); e.stopPropagation(); }}>
 <sl-tooltip content="This event has not yet been published">
-                                                            <i class="fa fa-eye-slash" style="cursor: help;" tabindex="0" aria-label="This event has not yet been published"></i>
+                                                            <sl-icon name="eye-slash" style="cursor: help;" tabindex="0" aria-label="This event has not yet been published"></sl-icon>
                                                         </sl-tooltip>
                                                      </span>
                                                  `,
@@ -137,7 +137,7 @@ ${when(ev.status === 'DRAFT',
                                         </h4>
                                     </div>
                                     <div class="list-group-item-text">
-                                        ${formatDate(ev.formattedBegin)} / ${formatDate(ev.formattedEnd)}
+                                        <sl-format-date time-zone=${ev.timeZone} date=${ev.formattedBegin.replace(' ', 'T')} month="short" day="2-digit" year="numeric" hour="2-digit" minute="2-digit" hour-format="24"></sl-format-date> / <sl-format-date time-zone=${ev.timeZone} date=${ev.formattedEnd.replace(' ', 'T') + 'Z'} month="short" day="2-digit" year="numeric" hour="2-digit" minute="2-digit" hour-format="24"></sl-format-date>
                                     </div>
                                 </div>
                                 <div class="col col-actions text-right wMarginTop10px">
@@ -155,10 +155,10 @@ ${when(ev.status === 'DRAFT',
         return html`
             ${renderEventActions(ev, true)}
             ${when(!ev.expired,
-                () => html`<a class="btn btn-primary btn-xs" href="#/events/${ev.shortName}/check-in"><i class="fa fa-check"></i> Check-In</a>`,
+                () => html`<a class="btn btn-primary btn-xs" href="#/events/${ev.shortName}/check-in"><sl-icon name="check"></sl-icon> Check-In</a>`,
                 () => nothing)}
             ${when(ev.visibleForCurrentUser && supportsOfflinePayments(ev.allowedPaymentProxies),
-                () => html`<a class="btn btn-warning btn-xs" href="#/events/${ev.shortName}/pending-payments"><i class="fa fa-dollar"></i> Pending payments <span class="badge pending-count" data-event-name="${ev.shortName}"></span></a>`,
+                () => html`<a class="btn btn-warning btn-xs" href="#/events/${ev.shortName}/pending-payments"><sl-icon name="currency-dollar"></sl-icon> Pending payments <span class="badge pending-count" data-event-name="${ev.shortName}"></span></a>`,
                 () => nothing)}
         `;
     }
@@ -189,10 +189,6 @@ ${when(ev.status === 'DRAFT',
         this.retryTimers.clear();
         this.loadedCounts.clear();
         this.taskComplete = true;
-    }
-
-    firstUpdated(): void {
-        injectFontAwesome(this.renderRoot as ShadowRoot);
     }
 
     updated(): void {
