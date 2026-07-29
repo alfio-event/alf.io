@@ -60,3 +60,7 @@ export { ConfirmationDialog } from './configuration/confirmation-dialog';
 export { CustomOfflinePaymentEventSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-event-selector';
 export { CustomOfflinePaymentSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-selector';
 export { CustomOfflinePaymentDeniedMethodsSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-denied-methods-selector';
+export { ActiveEventsList } from './event/active-events-list/active-events-list';
+export { ExpiredEventsList } from './event/expired-events-list/expired-events-list';
+export { EventsPage } from './event/events-page/events-page';
+export { ExportReservationsButton } from './event/export-reservations/export-reservations-button';

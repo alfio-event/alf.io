@@ -1,4 +1,4 @@
-import {DateTimeModification} from "../model/event.ts";
+import {DateTimeModification, EventStatistic} from "../model/event.ts";
 import {html, nothing, TemplateResult} from "lit";
 import {when} from "lit/directives/when.js";
 import {ContentLanguage} from "../model/purchase-context.ts";
@@ -102,8 +102,45 @@ export function asNumber(value?: string): number | null {
     return value ?? null;
 }
 
+export function renderEventActions(ev: EventStatistic, hideTicketWhenExpired: boolean = false): TemplateResult {
+    const total = ev.soldTickets + ev.checkedInTickets;
+    return html`
+        ${when((!hideTicketWhenExpired || !ev.expired) && ev.visibleForCurrentUser,
+            () => html`<a class="btn btn-primary btn-xs" href="#/events/${ev.shortName}/detail"><i class="fa fa-ticket"></i> ${total} / ${ev.availableSeats}</a>`,
+            () => nothing)}
+        <a class="btn btn-primary btn-xs hidden-xs hidden-sm" href="#/events/${ev.shortName}/detail"><i class="fa fa-bar-chart"></i> Detail</a>
+        ${when(ev.visibleForCurrentUser,
+            () => html`<a class="btn btn-primary btn-xs hidden-xs hidden-sm" href="#/events/${ev.shortName}/configuration"><i class="fa fa-wrench"></i> Settings</a>`,
+            () => nothing)}
+    `;
+}
+
+export function supportsOfflinePayments(allowedPaymentProxies: string[]): boolean {
+    return allowedPaymentProxies.includes('OFFLINE');
+}
+
+export function formatDate(dateString: string): string {
+    if (!dateString) return '';
+    const cleaned = dateString.replace(/\[[A-Za-z0-9\-/]+]/, '');
+    const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/.exec(cleaned);
+    if (!m) return dateString;
+    const [, year, month, day, hours, minutes] = m;
+    return `${day}.${month}.${year} ${hours}:${minutes}`;
+}
+
+export function injectFontAwesome(root: ShadowRoot): void {
+    if (root.querySelector('link[href*="font-awesome"]')) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = `${(window.ALFIO_CONTEXT_PATH || '').replace(/\/+$/, '')}/resources/bower_components/components-font-awesome/css/font-awesome.min.css`;
+    root.appendChild(link);
+}
+
 declare global {
     interface Window {
         SUPPORTED_LANGUAGES: string | null;
+        USER_IS_OWNER: boolean;
+        ALFIO_CONTEXT_PATH: string;
+        BASE_URL: string;
     }
 }

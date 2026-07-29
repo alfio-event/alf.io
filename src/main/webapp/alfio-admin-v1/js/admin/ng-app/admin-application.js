@@ -26,13 +26,7 @@
         $stateProvider
             .state('index', {
                 url: "/",
-                template: ['<div class="container" container-fluid-responsive="">',
-                               '<h1>Events</h1>',
-                               '<hr />',
-                               '<export-reservations-button></export-reservations-button>',
-                               '<active-events-list></active-events-list>',
-                               '<expired-events-list></expired-events-list>',
-                           '</div>'].join('')
+                template: '<alfio-events-page></alfio-events-page>'
             })
             .state('organizations', {
                 url: "/organizations/",
