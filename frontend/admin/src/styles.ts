@@ -483,7 +483,7 @@ export const panelStyles = css`
         border-radius: 3px;
     }
 
-    .btn-xs i, .btn i {
+    .btn-xs sl-icon, .btn sl-icon {
         font-size: 14px;
         margin-right: 4px;
     }

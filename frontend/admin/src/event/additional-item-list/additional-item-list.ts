@@ -194,7 +194,7 @@ export class AdditionalItemList extends LitElement {
     private generateFooter(model: Model, listData: ListData): TemplateResult {
         const warning = () => html`
             <div class="alert alert-warning">
-                <p><span class="fa fa-warning"></span> Cannot add <span>${model.type === 'DONATION' ? 'donations' : 'additional options'}</span> to an event marked as "free of charge".</p>
+                <p><sl-icon name="exclamation-triangle"></sl-icon> Cannot add <span>${model.type === 'DONATION' ? 'donations' : 'additional options'}</span> to an event marked as "free of charge".</p>
                 <p>Please change this setting, add a default price > 0, specify currency and Taxes</p>
             </div>`;
         const footer = () => html`
