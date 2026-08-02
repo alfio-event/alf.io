@@ -276,7 +276,7 @@ static readonly styles = [dialogStyling, panelStyles, pageHeader, form, textColo
             <div class="form-group">
                 <sl-input label="Slug"
                     type="text"
-                    pattern="^[A-Za-z0-9]+([\-_]*[A-Za-z0-9]+)+$"
+                    pattern="^[A-Za-z0-9]+([_-]+[A-Za-z0-9]+)*$"
                     class=${classMap({ error: !this.slugValid || this.hasError(field.state.meta) })}
                     .value=${field.state.value ?? ''}
                     @sl-change=${(e: InputEvent) => {
