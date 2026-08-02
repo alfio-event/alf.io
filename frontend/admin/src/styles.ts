@@ -283,7 +283,7 @@ export const retroCompat = css`
 export const panelStyles = css`
     :host {
         display: block;
-        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
         font-size: 14px;
         line-height: 1.42857143;
         -webkit-font-smoothing: antialiased;
@@ -440,10 +440,6 @@ export const panelStyles = css`
 
     .text-center {
         text-align: center;
-    }
-
-    .text-muted {
-        color: #777;
     }
 
     .pull-right {

@@ -63,4 +63,6 @@ export { CustomOfflinePaymentDeniedMethodsSelector } from './event/custom-offlin
 export { ActiveEventsList } from './event/active-events-list/active-events-list';
 export { ExpiredEventsList } from './event/expired-events-list/expired-events-list';
 export { EventsPage } from './event/events-page/events-page';
+export { OrganizationList } from './organization/organization-list.ts';
+export { OrganizationEdit } from './organization/organization-edit.ts';
 export { ExportReservationsButton } from './event/export-reservations/export-reservations-button';
