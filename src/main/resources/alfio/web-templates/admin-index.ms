@@ -31,6 +31,8 @@
     <script nonce="{{nonce}}">
         window.ALFIO_CONTEXT_PATH = "{{contextPath}}";
         window.USER_IS_OWNER = {{isOwner}};
+        window.isAdmin = {{isAdmin}}; //backwards compatibility
+        window.IS_ADMIN = {{isAdmin}};
         window.SUPPORTED_LANGUAGES = {{#render-json}}supportedLanguages{{/render-json}};
         window.BASE_URL = "{{baseUrl}}"
     </script>
@@ -67,7 +69,7 @@
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/event-statistic/event-statistic.js"></script>
 
-    
+
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/additional-fields-to-collect/additional-fields-to-collect.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/promo-codes/promo-codes.js"></script>
@@ -81,9 +83,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/user-edit/user-edit.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/apikey-bulk-import/apikey-bulk-import.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/user-edit-current/user-edit-current.js"></script>
-
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/organizations/organizations.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/organization-edit/organization-edit.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/resources/show/resources-show.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/resources/edit/resources-edit.js"></script>

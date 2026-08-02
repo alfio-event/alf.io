@@ -196,7 +196,7 @@ export class AdditionalFieldEdit extends LitElement {
     private renderForm(): TemplateResult {
         const contentLanguages = this.purchaseContext?.contentLanguages ?? [];
         return html`
-            <form id="form" @submit="${async (e: Event) => {e.preventDefault(); e.stopImmediatePropagation(); await this.#form.api.handleSubmit();}}">
+            <form id="form" @submit="${async (e: Event) => {e.preventDefault(); e.stopImmediatePropagation(); this.clearServerErrors(); await this.#form.api.handleSubmit();}}">
                 <div class="row custom" style="--alfio-custom-row-cols-layout: 2fr 1fr">
                     <div class="col">
                         <section>
@@ -819,6 +819,16 @@ export class AdditionalFieldEdit extends LitElement {
     }
 
 
+    private clearServerErrors() {
+        this.#form.api.setFieldMeta('name', (meta: any) => ({
+            ...meta,
+            errorMap: {
+                ...meta.errorMap,
+                onServer: undefined
+            }
+        }));
+    }
+
     private async save(additionalFieldForm: AdditionalFieldForm) {
         if (additionalFieldForm.id == null) {
             await this.createNew(additionalFieldForm);
@@ -884,7 +894,13 @@ export class AdditionalFieldEdit extends LitElement {
             const nameError = updateResult.validationErrors.find(e => e.fieldName === 'name')?.code;
 
             if (nameError != null) {
-                this.#form.api.getFieldMeta('name')?.errors?.push(nameError);
+                this.#form.api.setFieldMeta('name', (meta: any) => ({
+                    ...meta,
+                    errorMap: {
+                        ...meta.errorMap,
+                        onServer: nameError
+                    }
+                }));
             }
 
             let feedback: string;

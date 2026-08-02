@@ -2,7 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js';
 import { ConfigurationService } from '../service/configuration';
-import { retroCompat, textColors, row, spacing } from '../styles'
+import { retroCompat, textColors, panelStyles, row, spacing } from '../styles'
 
 @customElement('alfio-project-banner')
 export class ProjectBanner extends LitElement {
@@ -13,8 +13,9 @@ export class ProjectBanner extends LitElement {
     @property({ type: String, attribute: 'data-alfio-version' })
     alfioVersion?: string;
 
-    static readonly styles = [
+        static readonly styles = [
         retroCompat,
+        panelStyles,
         textColors,
         row,
         spacing,

@@ -63,4 +63,6 @@ export { CustomOfflinePaymentSelector } from './event/custom-offline-payment-eve
 export { CustomOfflinePaymentDeniedMethodsSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-denied-methods-selector';
 export { EventsList } from './event/events-list/events-list';
 export { EventsPage } from './event/events-page/events-page';
+export { OrganizationList } from './organization/organization-list.ts';
+export { OrganizationEdit } from './organization/organization-edit.ts';
 export { ExportReservationsButton } from './event/export-reservations/export-reservations-button';
