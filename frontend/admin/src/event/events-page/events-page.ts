@@ -22,8 +22,8 @@ export class EventsPage extends LitElement {
             .container {
                 max-width: 1170px;
             }
-        }
-    `];
+        `
+    ];
 
     render() {
         return html`

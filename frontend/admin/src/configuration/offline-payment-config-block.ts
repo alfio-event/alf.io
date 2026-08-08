@@ -73,12 +73,12 @@ export class OfflinePaymentConfigBlock extends LitElement {
                                     }}
                                 ></sl-icon-button>
                             </sl-tooltip>
-                            <span style="font-size: 14pt;">
+                            <span>
                                 ${config.localizations?.en?.paymentName || config.localizations[Object.keys(config.localizations)[0]].paymentName}
                             </span>
                         </div>
                         <sl-tab-group>
-                            ${repeat([...Object.keys(config.localizations)], (key) => key, (key) => html`
+                            ${repeat(Object.keys(config.localizations), (key) => key, (key) => html`
                                 <sl-tab
                                     .closable=${Object.keys(config.localizations).length > 1}
                                     @sl-close=${() => {
@@ -210,7 +210,7 @@ export class OfflinePaymentConfigBlock extends LitElement {
         const {newPayment, oldPayment} = event.detail;
 
         let submitResult;
-        if (oldPayment && oldPayment.paymentMethodId) {
+        if (oldPayment?.paymentMethodId) {
             submitResult = await this.paymentMethodService?.updatePaymentMethod(
                 this.organization,
                 oldPayment.paymentMethodId,
