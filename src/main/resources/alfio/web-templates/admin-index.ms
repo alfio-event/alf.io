@@ -64,7 +64,7 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/service/user.service.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/email/email-log.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/util/file-upload.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/user-edit-current/user-edit-current.js"></script>
+    
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/configuration/configuration.js"></script>
 

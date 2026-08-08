@@ -43,3 +43,9 @@ export interface BulkImportPayload {
     role: string;
     descriptions: string[];
 }
+
+export interface PasswordModification {
+    oldPassword: string;
+    newPassword: string;
+    newPasswordConfirm: string;
+}

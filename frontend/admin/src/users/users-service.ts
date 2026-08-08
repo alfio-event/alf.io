@@ -1,5 +1,5 @@
 import {fetchJson, postJson, putJson, callDelete} from '../service/helpers.ts';
-import {User, Role, UserModification, BulkImportPayload} from '../model/user.ts';
+import {User, Role, UserModification, BulkImportPayload, PasswordModification} from '../model/user.ts';
 import {Organization} from '../model/organization.ts';
 import {ValidatedResponse} from '../model/validation.ts';
 
@@ -82,5 +82,16 @@ export class UsersService {
 
     static loadOrganizations(): Promise<Organization[]> {
         return fetchJson('/admin/api/organizations');
+    }
+
+    static async updateCurrentUserContactInfo(user: UserModification): Promise<void> {
+        const response = await postJson('/admin/api/users/current/edit', user);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    }
+
+    static async updateCurrentUserPassword(password: PasswordModification): Promise<UserValidationResult> {
+        const response = await postJson('/admin/api/users/current/update-password', password);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
     }
 }
