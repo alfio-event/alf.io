@@ -115,7 +115,7 @@
             })
             .state('edit-current-user', {
                 url: "/profile/edit",
-                template: '<user-edit-current></user-edit-current>'
+                template: '<alfio-user-profile-edit></alfio-user-profile-edit>'
             })
             .state('events', {
                 abstract: true,
