@@ -61,7 +61,7 @@ export class ExportReservationsButton extends LitElement {
         .dialog::part(title) {
             font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: 34px;
-            font-weight: 500;
+            font-weight: 700;
             line-height: 1.1;
             margin: 22px 0 11px;
         }
@@ -125,7 +125,7 @@ export class ExportReservationsButton extends LitElement {
 
         .dialog-body h4 {
             font-size: 20px;
-            font-weight: 500;
+            font-weight: 700;
             line-height: 1.1;
             margin: 11px 0;
         }

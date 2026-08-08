@@ -50,7 +50,7 @@ export class OrganizationList extends LitElement {
             h1 {
                 font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
                 font-size: 41px;
-                font-weight: 500;
+                font-weight: 700;
                 line-height: 1.1;
                 margin-top: 22px;
                 margin-bottom: 11px;

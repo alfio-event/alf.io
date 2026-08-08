@@ -107,55 +107,11 @@
             })
             .state('users', {
                 url: "/users/",
-                template: "<users data-title='Users' type='user'></users>"
-            })
-            .state('users.new', {
-                url: "new",
-                views: {
-                    "editUser": {
-                        template: "<user-edit type='new' for='user'></user-edit>"
-                    }
-                }
-            })
-            .state('users.edit', {
-                url: ":userId/edit",
-                views: {
-                    "editUser": {
-                        template: "<user-edit type='edit' for='user' user-id='$ctrl.$state.params.userId'></user-edit>",
-                        controller: ['$state', function($state) {this.$state = $state;}],
-                        controllerAs: '$ctrl'
-                    }
-                }
+                template: "<alfio-users alfio-title='Users' type='user'></alfio-users>"
             })
             .state('apikey', {
                 url: "/api-keys/",
-                template: "<users data-title='Api Keys' type='apikey'></users>"
-            })
-            .state('apikey.new', {
-                url: "new",
-                views: {
-                    "editUser": {
-                        template: "<user-edit type='new' for='apikey'></user-edit>"
-                    }
-                }
-            })
-            .state('apikey.edit', {
-                url: ":userId/edit",
-                views: {
-                    "editUser": {
-                        template: "<user-edit type='edit' for='apikey' user-id='$ctrl.$state.params.userId'></user-edit>",
-                        controller: ['$state', function($state) {this.$state = $state;}],
-                        controllerAs: '$ctrl'
-                    }
-                }
-            })
-            .state('apikey.bulk', {
-                url: "bulk-creation",
-                views: {
-                    "editUser": {
-                        template: "<api-key-bulk-import></api-key-bulk-import>"
-                    }
-                }
+                template: "<alfio-users alfio-title='Api Keys' type='apikey'></alfio-users>"
             })
             .state('edit-current-user', {
                 url: "/profile/edit",

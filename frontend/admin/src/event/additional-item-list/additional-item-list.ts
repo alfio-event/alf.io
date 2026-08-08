@@ -150,7 +150,7 @@ export class AdditionalItemList extends LitElement {
         await customElements.whenDefined('alfio-additional-item-edit');
         itemEditComponent.addEventListener('alfio-dialog-closed', async (e) => {
             await this.editDialogClosed(e);
-            setTimeout(() => document.body.removeChild(div));
+            setTimeout(() => div.remove());
         });
         await itemEditComponent.open({
             supportedLanguages: model.event.contentLanguages,
@@ -186,7 +186,7 @@ export class AdditionalItemList extends LitElement {
                 }
             }
             return false;
-        } catch(e) {
+        } catch {
             return false;
         }
     }
@@ -200,7 +200,7 @@ export class AdditionalItemList extends LitElement {
             </sl-alert>`;
         const footer = () => html`
             <div class="row">
-                <div class="col-xs-12" style="font-size: 20px">
+                <div class="col-xs-12" style="font-size: var(--sl-font-size-large)">
                     <sl-button type="button" variant="success" @click=${() => this.addNew(model, listData.items.length)} size="large">
                         <sl-icon name="plus-circle" slot="prefix"></sl-icon>
                         Add new
