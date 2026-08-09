@@ -2,13 +2,25 @@ import {css, html, LitElement, nothing, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
-import {ref} from 'lit/directives/ref.js';
 import {Task, TaskStatus} from '@lit/task';
 import {UsersService} from './users-service.ts';
 import {ConfirmationDialogService} from '../service/confirmation-dialog.ts';
 import {Role, User, UserModification, UserType} from '../model/user.ts';
 import {Organization} from '../model/organization.ts';
-import {badges, base, dialog, form, modernLayout, modernTable, pageHeader, panelStyles, retroCompat, row, spacing, textColors} from '../styles.ts';
+import {
+    badges,
+    base,
+    dialog,
+    form,
+    modernLayout,
+    modernTable,
+    pageHeader,
+    panelStyles,
+    retroCompat,
+    row,
+    spacing,
+    textColors
+} from '../styles.ts';
 import {dispatchFeedback} from '../model/dom-events.ts';
 import {ErrorDescriptor} from '../model/validation.ts';
 import Papa from 'papaparse';
