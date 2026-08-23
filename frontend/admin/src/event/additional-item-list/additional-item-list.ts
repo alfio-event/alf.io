@@ -193,10 +193,11 @@ export class AdditionalItemList extends LitElement {
 
     private generateFooter(model: Model, listData: ListData): TemplateResult {
         const warning = () => html`
-            <div class="alert alert-warning">
-                <p><sl-icon name="exclamation-triangle"></sl-icon> Cannot add <span>${model.type === 'DONATION' ? 'donations' : 'additional options'}</span> to an event marked as "free of charge".</p>
+            <sl-alert open variant="warning">
+                <sl-icon name="exclamation-triangle" slot="icon"></sl-icon>
+                <p>Cannot add <span>${model.type === 'DONATION' ? 'donations' : 'additional options'}</span> to an event marked as "free of charge".</p>
                 <p>Please change this setting, add a default price > 0, specify currency and Taxes</p>
-            </div>`;
+            </sl-alert>`;
         const footer = () => html`
             <div class="row">
                 <div class="col-xs-12" style="font-size: 20px">
@@ -298,8 +299,8 @@ export class AdditionalItemList extends LitElement {
         if (listData.allowDownload) {
             return html`
                 <div class="download-container pb-2">
-                    <sl-button href=${`/admin/api/events/${model.event.publicIdentifier}/additional-services/${this.type}/export`} target="_blank" rel="noopener">
-                                <sl-icon name="download"></sl-icon> Export purchased items
+<sl-button href=${`/admin/api/events/${model.event.publicIdentifier}/additional-services/${this.type}/export`} target="_blank" rel="noopener">
+                                 <sl-icon name="download" slot="prefix"></sl-icon> Export purchased items
                     </sl-button>
                 </div>`;
         }

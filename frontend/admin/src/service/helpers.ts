@@ -1,4 +1,4 @@
-import {DateTimeModification, EventStatistic} from "../model/event.ts";
+import {DateTimeModification} from "../model/event.ts";
 import {html, nothing, TemplateResult} from "lit";
 import {when} from "lit/directives/when.js";
 import {ContentLanguage} from "../model/purchase-context.ts";
@@ -100,19 +100,6 @@ export function asNumber(value?: string): number | null {
         return Number.parseInt(value, 10);
     }
     return value ?? null;
-}
-
-export function renderEventActions(ev: EventStatistic, hideTicketWhenExpired: boolean = false): TemplateResult {
-    const total = ev.soldTickets + ev.checkedInTickets;
-    return html`
-        ${when((!hideTicketWhenExpired || !ev.expired) && ev.visibleForCurrentUser,
-            () => html`<a class="btn btn-primary btn-xs" href="#/events/${ev.shortName}/detail"><sl-icon name="ticket-detailed"></sl-icon> ${total} / ${ev.availableSeats}</a>`,
-            () => nothing)}
-        <a class="btn btn-primary btn-xs hidden-xs hidden-sm" href="#/events/${ev.shortName}/detail"><sl-icon name="bar-chart"></sl-icon> Detail</a>
-        ${when(ev.visibleForCurrentUser,
-            () => html`<a class="btn btn-primary btn-xs hidden-xs hidden-sm" href="#/events/${ev.shortName}/configuration"><sl-icon name="wrench"></sl-icon> Settings</a>`,
-            () => nothing)}
-    `;
 }
 
 export function supportsOfflinePayments(allowedPaymentProxies: string[]): boolean {

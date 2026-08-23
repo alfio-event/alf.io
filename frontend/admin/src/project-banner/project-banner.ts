@@ -50,7 +50,7 @@ export class ProjectBanner extends LitElement {
                         </sl-button>
                     </div>
                     <div>
-                        <sl-button type="button" class="btn btn-default ml-3" @click=${this.dismiss} ng-click="$ctrl.dismiss()">Dismiss</sl-button>
+                        <sl-button type="button" variant="default" @click=${this.dismiss}>Dismiss</sl-button>
                     </div>
                 </div>
             </div>

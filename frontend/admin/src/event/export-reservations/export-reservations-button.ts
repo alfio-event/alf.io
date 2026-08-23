@@ -32,18 +32,6 @@ export class ExportReservationsButton extends LitElement {
             margin-bottom: 30px;
         }
 
-        .export-reservations-button .btn-block {
-            width: 100%;
-            color: #333;
-            font-size: 16px;
-            font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            border-radius: 4px;
-        }
-
-        .export-reservations-button .btn-block sl-icon {
-            margin-right: 0;
-        }
-
         .button-row {
             display: flex;
             width: 100%;
@@ -57,23 +45,6 @@ export class ExportReservationsButton extends LitElement {
         @media (min-width: 992px) {
             .button-wrapper {
                 width: calc(25% - 30px);
-            }
-        }
-
-        .action-row {
-            display: flex;
-            gap: 10px;
-        }
-
-        @media (min-width: 768px) {
-            .action-row {
-                flex-direction: row;
-            }
-        }
-
-        @media (max-width: 767px) {
-            .action-row {
-                flex-direction: column;
             }
         }
 
@@ -102,7 +73,6 @@ export class ExportReservationsButton extends LitElement {
 
         .dialog::part(footer) {
             box-sizing: border-box;
-            border-top: 1px solid #e5e5e5;
         }
 
         .dialog::part(panel) {
@@ -204,73 +174,7 @@ export class ExportReservationsButton extends LitElement {
             outline: none;
         }
 
-        .footer-btn {
-            display: block;
-            width: 100%;
-            padding: 10px 16px;
-            font-size: 20px;
-            line-height: 1.3333333;
-            border-radius: 6px;
-            font-weight: normal;
-            text-align: center;
-            cursor: pointer;
-            border: 1px solid transparent;
-        }
-
-        .close-btn {
-            color: #333;
-            background-color: #fff;
-            border-color: #ccc;
-        }
-
-        .close-btn:hover {
-            color: #333;
-            background-color: #e9e9e9;
-            border-color: #adadad;
-        }
-
-        .download-btn {
-            color: #fff;
-            background-color: #f0ad4e;
-            border-color: #eea236;
-        }
-
-        .download-btn:hover {
-            color: #fff;
-            background-color: #ec971f;
-            border-color: #d58512;
-        }
-
-        .footer-row {
-            margin-left: -15px;
-            margin-right: -15px;
-        }
-
-        .footer-col-md-4 {
-            float: left;
-            width: 33.33333%;
-            padding-left: 15px;
-            padding-right: 15px;
-            position: relative;
-            min-height: 1px;
-        }
-
-        .footer-col-md-4.footer-push-4 {
-            position: relative;
-            left: 33.33333%;
-        }
-
-        @media (max-width: 767px) {
-            .footer-col-md-4 {
-                width: 100%;
-                float: none;
-            }
-
-            .footer-col-md-4.footer-push-4 {
-                left: 0;
-            }
-        }
-    `];
+        `];
 
     render(): TemplateResult {
         return html`
@@ -279,7 +183,7 @@ export class ExportReservationsButton extends LitElement {
                 () => nothing)}
 
             ${when(this.error,
-                () => html`<div class="alert alert-danger">Failed to load events</div>`,
+                () => html`<sl-alert open variant="danger"><sl-icon name="exclamation-triangle" slot="icon"></sl-icon>Failed to load events</sl-alert>`,
                 () => nothing)}
 
             ${when(!this.loading && !this.error && this.isOwner && this.eventsCount !== null && this.eventsCount > 0,
@@ -287,16 +191,16 @@ export class ExportReservationsButton extends LitElement {
                     <div class="export-reservations-button">
                         <div class="button-row">
                             <div class="button-wrapper">
-                                <button type="button" class="btn btn-block" @click=${() => this.openDialog()}>
-                                    <sl-icon name="download"></sl-icon> Export Reservations
-                                </button>
+                                <sl-button type="button" variant="default" size="large" @click=${() => this.openDialog()} style="width: 100%;">
+                                    <sl-icon name="download" slot="prefix"></sl-icon> Export Reservations
+                                </sl-button>
                             </div>
                         </div>
                     </div>
                 `,
                 () => nothing)}
 
-              <sl-dialog label="Export Reservations" class="dialog" ?open=${this.dialogOpen} @sl-request-close=${(e: CustomEvent<any>) => this.handleRequestClose(e)} @sl-after-hide=${() => this.dialogOpen = false} style="--width: 895px;">
+              <sl-dialog label="Export Reservations" class="dialog" ?open=${this.dialogOpen} @sl-request-close=${this.handleRequestClose} @sl-after-hide=${() => this.dialogOpen = false} style="--width: 895px;">
                  <div class="dialog-body">
                     <div class="row">
                           <div class="col-xs-12">
@@ -331,20 +235,18 @@ export class ExportReservationsButton extends LitElement {
                           </div>
                       </div>
                  </div>
-                 <span slot="footer" style="display: block;">
-                     <div class="footer-row clearfix">
-                         <div class="footer-col-md-4">
-                             <button type="button" class="footer-btn close-btn" style="margin-bottom: 10px" @click=${() => this.closeDialog()}>Close</button>
-                         </div>
-                         <div class="footer-col-md-4 footer-push-4">
-                             ${when(this.isReady(),
-                                 () => html`
-                                     <button type="button" class="footer-btn download-btn" style="margin-bottom: 10px" @click=${() => this.download()}>Download</button>
-                                 `,
-                                () => nothing)}
-                         </div>
-                     </div>
-                 </span>
+<div slot="footer">
+                      <sl-divider></sl-divider>
+                      <div class="row" style="--alfio-row-cols: 3">
+                          <sl-button type="button" variant="default" size="large" @click=${() => this.closeDialog()}>Close</sl-button>
+                          <div></div>
+                          ${when(this.isReady(),
+                              () => html`
+                                  <sl-button type="button" variant="success" size="large" @click=${() => this.download()}>Download</sl-button>
+                              `,
+                              () => nothing)}
+                      </div>
+                  </div>
              </sl-dialog>
         `;
     }
