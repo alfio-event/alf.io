@@ -52,6 +52,39 @@ export const badges = css`
 
 export const spacing = css`
     .wMarginTop10px { margin-top: 10px; }
+
+    .ms-1 {
+        margin-left: var(--sl-spacing-2x-small);
+    }
+    .ms-2 {
+        margin-left: var(--sl-spacing-x-small);
+    }
+    .mt-1 {
+        margin-top: var(--sl-spacing-x-small);
+    }
+    .mt-2 {
+        margin-top: var(--sl-spacing-small);
+    }
+    .mt-3 {
+        margin-top: var(--sl-spacing-medium);
+    }
+
+    .p-1 {
+        padding: var(--sl-spacing-2x-small);
+    }
+
+    .pt-1 {
+        padding-top: var(--sl-spacing-2x-small);
+    }
+    .pt-1 {
+        padding-top: var(--sl-spacing-x-small);
+    }
+    .pt-2 {
+        padding-top: var(--sl-spacing-small);
+    }
+    .pt-3 {
+        padding-top: var(--sl-spacing-medium);
+    }
 `;
 
 export const textAlign = css`
@@ -235,32 +268,6 @@ export const retroCompat = css`
     a { color: #337ab7; text-decoration: none }
     a:hover,a:focus { color: #23527c; text-decoration: underline }
     a:focus { outline: 5px auto -webkit-focus-ring-color; outline-offset: -2px }
-
-    .ms-1 {
-        margin-left: var(--sl-spacing-2x-small);
-    }
-    .mt-1 {
-        margin-top: var(--sl-spacing-x-small);
-    }
-    .mt-2 {
-        margin-top: var(--sl-spacing-small);
-    }
-    .mt-3 {
-        margin-top: var(--sl-spacing-medium);
-    }
-
-    .pt-1 {
-        padding-top: var(--sl-spacing-2x-small);
-    }
-    .pt-1 {
-        padding-top: var(--sl-spacing-x-small);
-    }
-    .pt-2 {
-        padding-top: var(--sl-spacing-small);
-    }
-    .pt-3 {
-        padding-top: var(--sl-spacing-medium);
-    }
 
     sl-switch {
         padding-bottom: 0.5rem;
