@@ -45,12 +45,15 @@ export interface AlfioEvent extends PurchaseContext {
     finalPrice:                        number;
     netPrice:                          number;
     taxablePrice:                      number;
+    timeZone:                          string;
 }
 
 export interface TicketCategory {
     description:                  LocalizedContent;
     name:                         string;
     id:                           number;
+    expired:                      boolean;
+    accessRestricted:             boolean;
 }
 
 export type PaymentProxy = 'STRIPE' | 'ON_SITE' | 'OFFLINE' | 'NONE' | 'ADMIN' | 'PAYPAL' | 'MOLLIE' | 'SAFERPAY' | 'CUSTOM_OFFLINE';
