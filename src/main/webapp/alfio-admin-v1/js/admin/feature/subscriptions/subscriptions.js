@@ -42,11 +42,11 @@
         })
         .state('subscriptions.single.reservationsList', {
             url: '/reservations/?search',
-            template: '<reservations-list purchase-context="ctrl.subscriptionDescriptor" purchase-context-type="ctrl.purchaseContextType"></reservations-list>',
+            // The Lit component owns filtering; query changes must preserve its DOM.
+            reloadOnSearch: false,
+            template: '<alfio-reservations-list data-event-name="{{ctrl.subscriptionDescriptor.publicIdentifier}}" data-organization-id="{{ctrl.subscriptionDescriptor.organizationId}}" data-purchase-context-type="subscription" data-title="{{ctrl.subscriptionDescriptor.title.en}}"></alfio-reservations-list>',
             controller: ['loadSubscription', function(loadSubscription) {
-                var ctrl = this;
-                ctrl.subscriptionDescriptor = loadSubscription.data;
-                ctrl.purchaseContextType = 'subscription';
+                this.subscriptionDescriptor = loadSubscription.data;
             }],
             controllerAs: 'ctrl'
         })

@@ -405,14 +405,11 @@
                             <div class="panel-heading">
                                 <div class="panel-title">Reservation Completed using this Subscription</div>
                             </div>
-                            <div class="panel-body" data-ng-if="$ctrl.subscriptionDetails.reservations.length === 0">
-                                No Reservations completed so far
-                            </div>
-                            <div class="table-responsive" data-ng-if="$ctrl.subscriptionDetails.reservations.length > 0">
-                                <reservations-list-table purchase-context="$ctrl.purchaseContext"
-                                                         purchase-context-type="$ctrl.purchaseContextType"
-                                                         target-context-type="'event'"
-                                                         reservations="$ctrl.subscriptionDetails.reservations"></reservations-list-table>
+                            <div class="panel-body">
+                                <alfio-reservations-list data-event-name="{{$ctrl.purchaseContext.publicIdentifier}}"
+                                                         data-purchase-context-type="subscription"
+                                                         data-completed-only="true"
+                                                         data-reservations="{{$ctrl.subscriptionDetails.reservations}}"></alfio-reservations-list>
                             </div>
                         </div>
                     </div>
