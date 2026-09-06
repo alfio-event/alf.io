@@ -180,11 +180,12 @@ export class ReservationsList extends LitElement {
                 font-style: italic;
             }
             .filter-toolbar {
-                padding: 0;
-                background: transparent;
-                border: 0;
-                border-radius: 0;
-                margin-bottom: var(--sl-spacing-small);
+                align-items: center;
+                margin-bottom: var(--sl-spacing-large);
+            }
+            .filter-left,
+            .filter-right {
+                align-items: center;
             }
             .reservation-search {
                 flex: 1 1 20rem;
@@ -214,7 +215,7 @@ export class ReservationsList extends LitElement {
                 color: var(--sl-color-gray-700);
             }
             .reservation-tabs {
-                margin-top: var(--sl-spacing-medium);
+                margin-top: 0;
             }
             .reservation-tabs::part(nav) {
                 border-bottom-color: var(--sl-color-gray-300);
@@ -246,9 +247,6 @@ export class ReservationsList extends LitElement {
             }
             .table > thead > tr > th {
                 padding: var(--sl-spacing-small);
-                font-size: var(--sl-font-size-medium);
-                text-transform: none;
-                letter-spacing: normal;
             }
             .table > tbody > tr > td {
                 padding: var(--sl-spacing-small);
@@ -269,7 +267,10 @@ export class ReservationsList extends LitElement {
                 width: 12%;
             }
             .table > thead > tr > th:nth-child(6) {
-                width: 18%;
+                width: 16%;
+            }
+            .table > thead > tr > th:nth-child(7) {
+                width: 7%;
             }
             .reservation-id {
                 font-family: var(--sl-font-mono);
@@ -285,27 +286,44 @@ export class ReservationsList extends LitElement {
                 text-decoration: underline;
             }
             .email {
-                min-width: 19rem;
+                min-width: 16rem;
                 white-space: nowrap;
             }
             .amount,
             .confirmation {
                 white-space: nowrap;
             }
+            .amount {
+                font-weight: var(--sl-font-weight-semibold);
+                text-align: right;
+            }
+            .payment-method {
+                display: inline-flex;
+                align-items: center;
+                gap: var(--sl-spacing-2x-small);
+                font-size: var(--sl-font-size-small);
+                color: var(--sl-color-gray-600);
+            }
+            .payment-method sl-icon {
+                color: var(--sl-color-gray-500);
+            }
+            .actions-cell {
+                justify-content: flex-end;
+            }
             .pagination-bar {
                 display: flex;
-                justify-content: center;
                 align-items: center;
-                flex-wrap: wrap;
-                gap: var(--sl-spacing-x-small);
-                padding-block: var(--sl-spacing-large);
+                justify-content: flex-end;
+                gap: var(--sl-spacing-2x-small);
+                padding-block: var(--sl-spacing-medium);
             }
             .pagination-summary {
-                flex-basis: 100%;
-                text-align: center;
+                flex: 1;
+                order: -1;
+                text-align: left;
                 color: var(--sl-color-neutral-600);
                 font-size: var(--sl-font-size-small);
-                margin-top: var(--sl-spacing-x-small);
+                margin: 0;
             }
             .pagination-ellipsis {
                 color: var(--sl-color-neutral-500);
@@ -413,6 +431,16 @@ export class ReservationsList extends LitElement {
                             <sl-icon slot="prefix" name="search"></sl-icon>
                         </sl-input>
                     </div>
+                    ${this.purchaseContextType === 'event' && !data.event?.expired
+                        ? html`
+                              <div class="filter-right">
+                                  <sl-button variant="success" size="large" href=${this.newReservationHref()}>
+                                      <sl-icon slot="prefix" name="plus-circle"></sl-icon>
+                                      Create Reservation
+                                  </sl-button>
+                              </div>
+                          `
+                        : nothing}
                 </div>
                 ${stuck.right > 0
                     ? html`
@@ -479,12 +507,13 @@ export class ReservationsList extends LitElement {
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <th>Id</th>
-                            <th>Customer’s name</th>
-                            <th class="hide-small">Customer’s email</th>
+                            <th>ID</th>
+                            <th>Customer</th>
+                            <th class="hide-small">Email</th>
                             <th class="hide-small">Payment</th>
                             <th>Amount</th>
                             <th class="hide-small">Confirmation</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -500,12 +529,34 @@ export class ReservationsList extends LitElement {
                                     </td>
                                     <td>${this.fullName(reservation)}</td>
                                     <td class="email hide-small">${reservation.email ?? ''}</td>
-                                    <td class="hide-small">${reservation.paymentMethod ?? ''}</td>
+                                    <td class="hide-small">
+                                        ${reservation.paymentMethod
+                                            ? html`
+                                                  <span class="payment-method">
+                                                      ${this.paymentMethodIcon(reservation.paymentMethod)
+                                                          ? html`<sl-icon name=${this.paymentMethodIcon(reservation.paymentMethod)}></sl-icon>`
+                                                          : nothing}
+                                                      ${reservation.paymentMethod}
+                                                  </span>
+                                              `
+                                            : ''}
+                                    </td>
                                     <td class="amount">
                                         ${reservation.finalPriceCts > 0 ? this.formatAmount(reservation) : ''}
                                     </td>
                                     <td class="confirmation hide-small">
                                         ${this.formatDate(reservation.confirmationTimestamp, event?.timeZone ?? 'UTC')}
+                                    </td>
+                                    <td class="actions-cell">
+                                        <sl-button
+                                            size="small"
+                                            variant="default"
+                                            outline
+                                            href=${this.reservationHref(reservation, event)}
+                                        >
+                                            <sl-icon slot="prefix" name="eye"></sl-icon>
+                                            View
+                                        </sl-button>
                                     </td>
                                 </tr>
                             `,
@@ -518,18 +569,24 @@ export class ReservationsList extends LitElement {
     private renderPagination(name: TabName, total: number): TemplateResult {
         const page = this.pages[name];
         const lastPage = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
-        const visiblePages = Array.from({length: lastPage}, (_, index) => index + 1)
-            .filter(number => number === 1 || number === lastPage || Math.abs(number - page) <= 2);
+        const displayedReservations = Math.min(ITEMS_PER_PAGE, Math.max(0, total - (page - 1) * ITEMS_PER_PAGE));
+        const sectionLabel = sections.find((section) => section.name === name)?.label.toLowerCase() ?? 'reservations';
+        const visiblePages = Array.from({ length: lastPage }, (_, index) => index + 1)
+            .filter((number) => number === 1 || number === lastPage || Math.abs(number - page) <= 2);
         return html`
             <nav class="pagination-bar" aria-label="${name} reservations pages">
+                <span class="pagination-summary">
+                    ${lastPage === 1
+                        ? html`${displayedReservations.toLocaleString()} of ${total.toLocaleString()} ${sectionLabel} reservations`
+                        : html`Page ${page} of ${lastPage} · ${displayedReservations.toLocaleString()} of ${total.toLocaleString()} ${sectionLabel} reservations`}
+                </span>
                 <sl-button
-                    size="large"
+                    size="small"
                     variant="default"
                     outline
                     ?disabled=${page === 1}
                     @click=${() => this.changePage(name, page - 1)}
                 >
-                    <sl-icon slot="prefix" name="chevron-left"></sl-icon>
                     Previous
                 </sl-button>
                 ${visiblePages.map((number, index) => html`
@@ -537,7 +594,7 @@ export class ReservationsList extends LitElement {
                         ? html`<span class="pagination-ellipsis" aria-hidden="true">…</span>`
                         : nothing}
                     <sl-button
-                        size="large"
+                        size="small"
                         variant=${number === page ? 'primary' : 'default'}
                         ?outline=${number !== page}
                         aria-label="Page ${number}"
@@ -546,16 +603,14 @@ export class ReservationsList extends LitElement {
                     >${number}</sl-button>
                 `)}
                 <sl-button
-                    size="large"
+                    size="small"
                     variant="default"
                     outline
                     ?disabled=${page >= lastPage}
                     @click=${() => this.changePage(name, page + 1)}
                 >
                     Next
-                    <sl-icon slot="suffix" name="chevron-right"></sl-icon>
                 </sl-button>
-                <span class="pagination-summary">Page ${page} of ${lastPage} · ${total.toLocaleString()} reservations</span>
             </nav>
         `;
     }
@@ -618,12 +673,27 @@ export class ReservationsList extends LitElement {
             : (reservation.fullName ?? '');
     }
     private reservationIdentifier(reservation: Reservation): string {
-        return reservation.invoiceNumber ?? reservation.id.substring(0, 8).toUpperCase();
+        return reservation.invoiceNumber?.trim() || 'N/A';
+    }
+    private paymentMethodIcon(paymentMethod: string): string | undefined {
+        switch (paymentMethod.toUpperCase()) {
+            case 'STRIPE':
+            case 'MOLLIE':
+            case 'SAFERPAY':
+                return 'credit-card';
+            case 'OFFLINE':
+                return 'cash-stack';
+            default:
+                return undefined;
+        }
     }
     private reservationHref(reservation: Reservation, event: AlfioEvent | null): string {
         return this.purchaseContextType === 'subscription' && !this.completedOnly
             ? `#/subscriptions/${this.organizationId}/${this.eventName}/reservation/${reservation.id}`
             : `#/events/${reservation.eventPublicIdentifier ?? event?.shortName ?? this.eventName}/reservation/${reservation.id}`;
+    }
+    private newReservationHref(): string {
+        return `#/events/${this.eventName}/reservation/new`;
     }
     private formatAmount(reservation: Reservation): string {
         return reservation.paidAmount == null || reservation.currencyCode == null
