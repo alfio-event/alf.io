@@ -296,17 +296,20 @@ export class ReservationsList extends LitElement {
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                gap: 0;
-                padding-top: var(--sl-spacing-medium);
+                flex-wrap: wrap;
+                gap: var(--sl-spacing-x-small);
+                padding-block: var(--sl-spacing-large);
             }
-            .pagination-bar sl-button::part(base) {
-                border-radius: 0;
+            .pagination-summary {
+                flex-basis: 100%;
+                text-align: center;
+                color: var(--sl-color-neutral-600);
+                font-size: var(--sl-font-size-small);
+                margin-top: var(--sl-spacing-x-small);
             }
-            .pagination-bar sl-button:first-child::part(base) {
-                border-radius: var(--sl-border-radius-medium) 0 0 var(--sl-border-radius-medium);
-            }
-            .pagination-bar sl-button:last-child::part(base) {
-                border-radius: 0 var(--sl-border-radius-medium) var(--sl-border-radius-medium) 0;
+            .pagination-ellipsis {
+                color: var(--sl-color-neutral-500);
+                padding-inline: var(--sl-spacing-x-small);
             }
             .loading {
                 display: grid;
@@ -515,26 +518,45 @@ export class ReservationsList extends LitElement {
     private renderPagination(name: TabName, total: number): TemplateResult {
         const page = this.pages[name];
         const lastPage = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+        const visiblePages = Array.from({length: lastPage}, (_, index) => index + 1)
+            .filter(number => number === 1 || number === lastPage || Math.abs(number - page) <= 2);
         return html`
-            <div class="pagination-bar">
+            <nav class="pagination-bar" aria-label="${name} reservations pages">
                 <sl-button
-                    size="small"
+                    size="large"
                     variant="default"
+                    outline
                     ?disabled=${page === 1}
                     @click=${() => this.changePage(name, page - 1)}
                 >
+                    <sl-icon slot="prefix" name="chevron-left"></sl-icon>
                     Previous
                 </sl-button>
-                <sl-button size="small" variant="primary">${page}</sl-button>
+                ${visiblePages.map((number, index) => html`
+                    ${index > 0 && number - visiblePages[index - 1] > 1
+                        ? html`<span class="pagination-ellipsis" aria-hidden="true">…</span>`
+                        : nothing}
+                    <sl-button
+                        size="large"
+                        variant=${number === page ? 'primary' : 'default'}
+                        ?outline=${number !== page}
+                        aria-label="Page ${number}"
+                        aria-current=${number === page ? 'page' : nothing}
+                        @click=${() => this.changePage(name, number)}
+                    >${number}</sl-button>
+                `)}
                 <sl-button
-                    size="small"
+                    size="large"
                     variant="default"
+                    outline
                     ?disabled=${page >= lastPage}
                     @click=${() => this.changePage(name, page + 1)}
                 >
                     Next
+                    <sl-icon slot="suffix" name="chevron-right"></sl-icon>
                 </sl-button>
-            </div>
+                <span class="pagination-summary">Page ${page} of ${lastPage} · ${total.toLocaleString()} reservations</span>
+            </nav>
         `;
     }
     private async loadReservations(
