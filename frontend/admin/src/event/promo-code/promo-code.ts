@@ -13,6 +13,7 @@ import {
     UsageDetailEvent
 } from '../../model/promo-code.ts';
 import {PromoCodeService} from '../../service/promo-code.ts';
+import {UtilService} from '../../service/util.ts';
 import {ConfirmationDialogService} from '../../service/confirmation-dialog.ts';
 import {
     badges,
@@ -80,6 +81,12 @@ export class PromoCode extends LitElement {
 
     @state()
     private usageData: UsageDetailEvent[] = [];
+
+    @state()
+    private usageCode = '';
+
+    @state()
+    private usageTimeZone = 'UTC';
 
     @state()
     private saving = false;
@@ -202,6 +209,19 @@ export class PromoCode extends LitElement {
 
             .code-section > .section-header {
                 flex-wrap: wrap;
+                align-items: center;
+            }
+
+            .code-section {
+                margin-bottom: var(--sl-spacing-x-large);
+            }
+
+            .section-heading {
+                display: flex;
+                align-items: center;
+                gap: var(--sl-spacing-small);
+                min-width: 0;
+                order: 1;
             }
 
             .code-section > .section-header h3 {
@@ -222,7 +242,33 @@ export class PromoCode extends LitElement {
             }
 
             .section-description {
+                flex-basis: 100%;
+                font-size: var(--sl-font-size-small);
+                line-height: var(--sl-line-height-normal);
+                order: 3;
+            }
+
+            .code-section .header-toolbar {
                 margin-inline-start: auto;
+                margin-block: calc(-1 * var(--sl-spacing-2x-small));
+                padding: 0;
+                border: 0;
+                background: transparent;
+                order: 2;
+            }
+
+            .code-section .header-toolbar .filter-left {
+                flex: 0 1 auto;
+                flex-wrap: nowrap;
+                white-space: nowrap;
+            }
+
+            .code-section .header-toolbar {
+                flex-wrap: nowrap;
+            }
+
+            .code-section .empty-state sl-icon {
+                font-size: var(--sl-font-size-3x-large);
             }
 
             .code-section > .section-body {
@@ -234,9 +280,16 @@ export class PromoCode extends LitElement {
             }
 
             .code-section .filter-select, .code-search {
-                flex: 0 1 14rem;
                 min-width: 0;
                 margin-top: 0;
+            }
+
+            .code-section .filter-select {
+                flex: 0 1 20rem;
+            }
+
+            .code-section .code-search {
+                flex: 0 1 16rem;
             }
 
             .code-status {
@@ -266,7 +319,19 @@ export class PromoCode extends LitElement {
                 flex-wrap: nowrap;
             }
 
-            .code-section sl-icon-button.danger {
+            @media (max-width: 767px) {
+                .code-section .header-toolbar,
+                .code-section .header-toolbar .filter-left {
+                    flex-wrap: wrap;
+                }
+
+                .code-section .filter-select,
+                .code-section .code-search {
+                    flex: 1 1 14rem;
+                }
+            }
+
+            .code-section sl-menu-item.danger::part(base) {
                 color: var(--sl-color-danger-600);
             }
 
@@ -279,6 +344,10 @@ export class PromoCode extends LitElement {
                 display: flex;
                 align-items: flex-start;
                 gap: var(--sl-spacing-small);
+            }
+
+            #usage-details-dialog {
+                --width: min(75rem, calc(100vw - (2 * var(--sl-spacing-large))));
             }
 
             #code-dialog {
@@ -361,10 +430,13 @@ export class PromoCode extends LitElement {
         return html`
             ${when(
                 !data.event?.freeOfCharge,
-                () => this.renderSection(data, data.promocodes, false)
+                () => html`
+                    <div class="first-element text-right" style="margin-bottom: var(--sl-spacing-x-large)">${this.renderAddCodeButton(data)}</div>
+                    ${this.renderSection(data, data.promocodes, false)}
+                `
             )}
             ${when(
-                data.forEvent && data.restrictedCategories.length > 0 && !data.event?.freeOfCharge,
+                this.canAddAccessCode(data),
                 () => this.renderSection(data, data.accesscodes, true)
             )}
             ${when(
@@ -389,7 +461,6 @@ export class PromoCode extends LitElement {
         const description = isAccess
             ? 'Access codes are special codes that give access to hidden categories. By entering an Access Code, an attendee can register one or more tickets, depending on the configuration.'
             : `Manage/Handle the ${data.promoCodeDescription} codes.`;
-        const codeType: PromoCodeType = isAccess ? 'ACCESS' : 'DISCOUNT';
 
         const filterKey = isAccess ? 'access' : 'promo';
         const filter = this.filters[filterKey];
@@ -400,41 +471,67 @@ export class PromoCode extends LitElement {
             this.filters = {...this.filters, [filterKey]: {...filter, [field]: value}};
         };
         return html`
-            <div class="section-card code-section ${isAccess ? '' : 'first-element'}">
+            <div class="section-card code-section">
                 <div class="section-header">
-                    <sl-icon name=${icon}></sl-icon><h3>${title}</h3>
-                    <sl-badge variant="primary" pill>${filteredCodes.length === codes.length ? codes.length : `${filteredCodes.length} / ${codes.length}`}</sl-badge>
+                    <div class="section-heading">
+                        <sl-icon name=${icon}></sl-icon><h3>${title}</h3>
+                        <sl-badge variant="primary" pill>${filteredCodes.length === codes.length ? codes.length : `${filteredCodes.length} / ${codes.length}`}</sl-badge>
+                    </div>
                     <span class="text-muted section-description">${description}</span>
-                </div>
-                <div class="section-body">
-                    <div class="filter-toolbar">
+                    <div class="filter-toolbar header-toolbar">
                         <div class="filter-left">
-                            <sl-input class="code-search" size="small" placeholder="Search code" aria-label="Search ${title}"
-                                .value=${filter.search} @sl-input=${(e: Event) => setFilter('search', (e.target as SlInput).value)}>
+                            <sl-input class="code-search" size="small" clearable placeholder="Search code" aria-label="Search ${title}"
+                                .value=${filter.search}
+                                @sl-input=${(e: Event) => setFilter('search', (e.target as SlInput).value)}
+                                @sl-clear=${() => setFilter('search', '')}>
                                 <sl-icon name="search" slot="prefix"></sl-icon>
                             </sl-input>
                             ${when(data.forEvent, () => html`
-                                <sl-select class="filter-select" size="small" placeholder="All categories" aria-label="Filter ${title} by category"
-                                    .value=${filter.category} @sl-change=${(e: Event) => setFilter('category', (e.target as SlSelect).value as string)}>
+                                <sl-select class="filter-select" size="small" clearable placeholder="All categories" aria-label="Filter ${title} by category"
+                                    .value=${filter.category}
+                                    @sl-change=${(e: Event) => setFilter('category', (e.target as SlSelect).value as string)}
+                                    @sl-clear=${() => setFilter('category', '')}>
                                     ${repeat(Object.values(data.ticketCategoriesById).filter(cat => !isAccess || cat.accessRestricted), cat => cat.id,
                                         cat => html`<sl-option value=${String(cat.id)}>${cat.name}</sl-option>`)}
                                 </sl-select>
                             `)}
-                            <sl-icon-button class="filter-clear-btn" name="x-circle" label="Clear ${title} filters"
-                                @click=${() => {this.filters = {...this.filters, [filterKey]: {search: '', category: ''}};}}></sl-icon-button>
                         </div>
                         <div class="filter-right">
                             <sl-button size="small" ?disabled=${filteredCodes.length === 0} @click=${() => this.downloadCodes(filteredCodes, data, isAccess)}>
                                 <sl-icon name="download" slot="prefix"></sl-icon>Download
                             </sl-button>
-                            <sl-button variant="success" size="large" @click=${() => this.openCodeDialog(data, codeType)}>
-                                <sl-icon name="plus-circle" slot="prefix"></sl-icon>Add ${isAccess ? 'Access' : data.promoCodeDescription} Code
-                            </sl-button>
                         </div>
                     </div>
+                </div>
+                <div class="section-body">
                     ${this.renderTable(data, filteredCodes, isAccess)}
                 </div>
             </div>
+        `;
+    }
+
+    private canAddAccessCode(data: LoadData): boolean {
+        return data.forEvent && data.restrictedCategories.length > 0 && !data.event?.freeOfCharge;
+    }
+
+    private renderAddCodeButton(data: LoadData): TemplateResult {
+        if (!this.canAddAccessCode(data)) {
+            return html`
+                <sl-button variant="success" size="large" @click=${() => this.openCodeDialog(data, 'DISCOUNT')}>
+                    <sl-icon name="plus-circle" slot="prefix"></sl-icon>Add ${data.promoCodeDescription} Code
+                </sl-button>
+            `;
+        }
+        return html`
+            <sl-dropdown hoist placement="bottom-end">
+                <sl-button slot="trigger" variant="success" size="large" caret>
+                    <sl-icon name="plus-circle" slot="prefix"></sl-icon>Add Code
+                </sl-button>
+                <sl-menu @sl-select=${(e: CustomEvent) => this.openCodeDialog(data, e.detail.item.value as PromoCodeType)}>
+                    <sl-menu-item value="DISCOUNT"><sl-icon name="percent" slot="prefix"></sl-icon>${data.promoCodeDescription} Code</sl-menu-item>
+                    <sl-menu-item value="ACCESS"><sl-icon name="unlock" slot="prefix"></sl-icon>Access Code</sl-menu-item>
+                </sl-menu>
+            </sl-dropdown>
         `;
     }
 
@@ -533,12 +630,29 @@ export class PromoCode extends LitElement {
                                     <td>${code.description || '—'}<small class="text-muted code-contact">${code.emailReference}</small></td>
                                     <td>
                                         <div class="actions-cell">
-                                            <sl-icon-button name="pencil" label="Edit ${code.promoCode}" @click=${() => this.openCodeDialog(data, code.codeType, code)}></sl-icon-button>
-                                            ${when(!code.expired, () => html`
-                                                <sl-icon-button name="eye-slash" label="Disable ${code.promoCode}" @click=${() => this.disableCode(code, data)}></sl-icon-button>
+                                            ${when(data.event, () => html`
+                                                <sl-icon-button name="link-45deg" label="Copy link for ${code.promoCode}"
+                                                    @click=${() => UtilService.copyValueToClipboard(
+                                                        () => `${window.BASE_URL.replace(/\/+$/, '')}/e/${encodeURIComponent(data.event!.shortName)}/c/${encodeURIComponent(code.promoCode)}`,
+                                                        'Code link', this
+                                                    )}></sl-icon-button>
                                             `)}
-                                            ${when(code.useCount === 0, () => html`
-                                                <sl-icon-button class="danger" name="trash" label="Delete ${code.promoCode}" @click=${() => this.deleteCode(code, data)}></sl-icon-button>
+                                            <sl-icon-button name="pencil" label="Edit ${code.promoCode}" @click=${() => this.openCodeDialog(data, code.codeType, code)}></sl-icon-button>
+                                            ${when(!code.expired || code.useCount === 0, () => html`
+                                                <sl-dropdown hoist placement="bottom-end">
+                                                    <sl-icon-button slot="trigger" name="three-dots-vertical" label="More actions for ${code.promoCode}"></sl-icon-button>
+                                                    <sl-menu @sl-select=${(e: CustomEvent) => {
+                                                        if (e.detail.item.value === 'disable') this.disableCode(code, data);
+                                                        if (e.detail.item.value === 'delete') this.deleteCode(code, data);
+                                                    }}>
+                                                        ${when(!code.expired, () => html`
+                                                            <sl-menu-item value="disable"><sl-icon name="eye-slash" slot="prefix"></sl-icon>Disable</sl-menu-item>
+                                                        `)}
+                                                        ${when(code.useCount === 0, () => html`
+                                                            <sl-menu-item value="delete" class="danger"><sl-icon name="trash" slot="prefix"></sl-icon>Delete</sl-menu-item>
+                                                        `)}
+                                                    </sl-menu>
+                                                </sl-dropdown>
                                             `)}
                                         </div>
                                     </td>
@@ -832,8 +946,6 @@ export class PromoCode extends LitElement {
         }
     }
 
-    // ── Usage details dialog ──
-
     private async showUsageDetails(code: PromoCodeDiscount, data: LoadData): Promise<void> {
         try {
             this.usageData = await PromoCodeService.getUsageDetails(code.id, data.event?.shortName);
@@ -841,6 +953,9 @@ export class PromoCode extends LitElement {
                 dispatchFeedback({type: 'warning', message: 'No reservations found for this code.'}, this);
                 return;
             }
+            this.usageCode = code.promoCode;
+            this.usageTimeZone = data.event?.timeZone ?? 'UTC';
+            await this.updateComplete;
             this.usageDetailsDialog.show();
         } catch {
             dispatchFeedback({type: 'danger', message: 'Failed to load usage details.'}, this);
@@ -850,13 +965,24 @@ export class PromoCode extends LitElement {
     private renderUsageDetailsDialog(): TemplateResult {
         return html`
             <sl-dialog id="usage-details-dialog" label="Usage details" class="usage-details-dialog" size="large" placement="bottom">
+                <div slot="label" class="promo-dialog-title">
+                    <sl-icon name="ticket-perforated"></sl-icon>
+                    <div>
+                        <strong>Usage details - ${this.usageCode}</strong>
+                        <small>Reservations and attendees using this code. Times shown in ${this.usageTimeZone} time zone.</small>
+                    </div>
+                </div>
                 ${repeat(this.usageData, (detail) => detail.event.shortName, (detail) => html`
-                    <h4>${detail.event.displayName}</h4>
-                    <div class="table-responsive">
-                        <table class="table table-striped">
+                    <section class="section-card">
+                        <div class="dialog-section-header">
+                            <sl-icon name="calendar-event"></sl-icon>${detail.event.displayName}
+                            <sl-badge variant="primary" pill>${detail.reservations.length} ${detail.reservations.length === 1 ? 'reservation' : 'reservations'}</sl-badge>
+                        </div>
+                        <div class="section-body table-responsive">
+                        <table class="table table-striped" aria-label="Reservations for ${detail.event.displayName}">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th scope="col">Reservation</th>
                                     <th>Customer</th>
                                     <th>Payment</th>
                                     <th>Amount</th>
@@ -866,29 +992,33 @@ export class PromoCode extends LitElement {
                             <tbody>
                                 ${repeat(detail.reservations, (r) => r.id, (reservation) => html`
                                     <tr>
-                                        <td><a href="/admin/#/events/${detail.event.shortName}/reservations/${reservation.id}" target="_blank">${reservation.id}</a></td>
-                                        <td>${reservation.firstName} ${reservation.lastName} &lt;${reservation.email}&gt;</td>
+                                        <td><a href="/admin/#/events/${encodeURIComponent(detail.event.shortName)}/reservation/${encodeURIComponent(reservation.id)}" target="_blank" rel="noopener" class="username-link" title=${reservation.id} aria-label="Open reservation ${reservation.id}">${reservation.id.substring(0, 8).toUpperCase()}</a></td>
+                                        <td>${reservation.firstName} ${reservation.lastName}<small class="text-muted code-contact">${reservation.email}</small></td>
                                         <td>${reservation.paymentType}</td>
                                         <td>
-                                            ${when(reservation.paymentType !== 'NONE', () => html`${reservation.currency} ${reservation.formattedAmount}`)}
+                                            ${when(reservation.paymentType !== 'NONE' && reservation.finalPriceCts != null && reservation.currency,
+                                                () => html`<sl-format-number type="currency" currency=${reservation.currency} value=${reservation.finalPriceCts! / 100}></sl-format-number>`,
+                                                () => html`—`)}
                                         </td>
                                         <td>
-                                            <sl-format-date
-                                                time-zone="UTC"
-                                                date=${this.asUtcDateTime(reservation.confirmationTimestamp)}
-                                                month="short" day="2-digit" year="numeric" hour="2-digit" minute="2-digit" hour-format="24"
-                                            ></sl-format-date>
+                                            ${when(reservation.confirmationTimestamp, () => html`
+                                                <sl-format-date
+                                                    time-zone=${this.usageTimeZone}
+                                                    date=${this.asUtcDateTime(reservation.confirmationTimestamp!)}
+                                                    month="short" day="2-digit" year="numeric" hour="2-digit" minute="2-digit" hour-format="24"
+                                                ></sl-format-date>
+                                            `, () => html`<span class="text-muted">Not confirmed</span>`)}
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td></td>
-                                        <td colspan="4">
-                                            <table class="table">
+                                        <td colspan="5">
+                                            <sl-details summary="Tickets (${reservation.tickets.length})">
+                                            <table class="table" aria-label="Tickets for reservation ${reservation.id}">
                                                 <thead>
                                                     <tr>
-                                                        <th style="font-weight:normal">Ticket ID</th>
-                                                        <th style="font-weight:normal">Attendee</th>
-                                                        <th style="font-weight:normal">Type</th>
+                                                        <th scope="col">Ticket ID</th>
+                                                        <th scope="col">Attendee</th>
+                                                        <th scope="col">Type</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -901,12 +1031,14 @@ export class PromoCode extends LitElement {
                                                     `)}
                                                 </tbody>
                                             </table>
+                                            </sl-details>
                                         </td>
                                     </tr>
                                 `)}
                             </tbody>
                         </table>
-                    </div>
+                        </div>
+                    </section>
                 `)}
 
                 <div slot="footer">
@@ -914,7 +1046,7 @@ export class PromoCode extends LitElement {
                     <div class="row" style="--alfio-row-cols: 3">
                         <div></div>
                         <div></div>
-                        <sl-button variant="default" size="large" @click=${() => this.usageDetailsDialog.hide()}>Close</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.usageDetailsDialog.hide()}><sl-icon name="x-circle" slot="prefix"></sl-icon>Close</sl-button>
                     </div>
                 </div>
             </sl-dialog>

@@ -39,14 +39,14 @@ export interface UsageDetailEvent {
 }
 
 export interface UsageReservation {
-    id: number;
+    id: string;
     firstName: string;
     lastName: string;
     email: string;
     paymentType: string;
     currency: string;
-    formattedAmount: string;
-    confirmationTimestamp: string;
+    finalPriceCts: number | null;
+    confirmationTimestamp: string | null;
     tickets: UsageTicket[];
 }
 
