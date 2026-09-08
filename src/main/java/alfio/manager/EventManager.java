@@ -504,7 +504,7 @@ public class EventManager {
 
     void reallocateTickets(TicketCategoryStatisticView src, Optional<TicketCategory> target, EventAndOrganizationId event) {
         int notSoldTickets = src.getNotSoldTicketsCount();
-        if (notSoldTickets == 0) {
+        if (notSoldTickets <= 0) {
             log.debug("since all the ticket have been sold, ticket moving is not needed anymore.");
             return;
         }
@@ -718,6 +718,11 @@ public class EventManager {
         int eventId = event.getId();
         final int price = evaluatePrice(tc.getPrice(), freeOfCharge, event.getCurrency());
         TicketCategory original = ticketCategoryRepository.getByIdAndActive(tc.getId(), eventId);
+        boolean allocationStrategyChanged = original.isBounded() ^ tc.isBounded();
+        TicketCategoryStatisticView originalStatistic = null;
+        if (allocationStrategyChanged && original.isBounded()) {
+            originalStatistic = ticketCategoryRepository.findStatisticWithId(tc.getId(), eventId);
+        }
         ticketCategoryRepository.update(tc.getId(), tc.getName(), tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getMaxTickets(), tc.isTokenGenerationRequested(), price, StringUtils.trimToNull(tc.getCode()),
                 atZone(tc.getValidCheckInFrom(), zoneId),
@@ -727,8 +732,8 @@ public class EventManager {
                 requireNonNullElse(tc.getTicketCheckInStrategy(), ONCE_PER_EVENT), tc.getTicketAccessType());
         TicketCategory updated = ticketCategoryRepository.getByIdAndActive(tc.getId(), eventId);
         int addedTickets = 0;
-        if(original.isBounded() ^ tc.isBounded()) {
-            handleTicketAllocationStrategyChange(event, original, tc);
+        if(allocationStrategyChanged) {
+            handleTicketAllocationStrategyChange(event, original, tc, originalStatistic);
         } else {
             addedTickets = updated.getMaxTickets() - original.getMaxTickets();
             handleTicketNumberModification(event, updated, addedTickets, resetTicketsToFree);
@@ -745,7 +750,10 @@ public class EventManager {
 
     }
 
-    private void handleTicketAllocationStrategyChange(EventAndOrganizationId event, TicketCategory original, TicketCategoryModification updated) {
+    private void handleTicketAllocationStrategyChange(EventAndOrganizationId event,
+                                                     TicketCategory original,
+                                                     TicketCategoryModification updated,
+                                                     TicketCategoryStatisticView originalStatistic) {
         if(updated.isBounded()) {
             //the ticket allocation strategy has been changed to "bounded",
             //therefore we have to link the tickets which have not yet been acquired to this category
@@ -753,12 +761,12 @@ public class EventManager {
             int newSize = updated.getMaxTickets();
             int confirmed = ticketRepository.countConfirmedForCategory(eventId, original.getId());
             int addedTickets = newSize - confirmed;
-            List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, addedTickets, singletonList(TicketStatus.FREE.name()));
             Validate.isTrue(addedTickets >= 0, "Cannot reduce capacity to "+newSize+". Minimum size allowed is "+confirmed);
+            List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, addedTickets, singletonList(TicketStatus.FREE.name()));
             Validate.isTrue(ids.size() >= addedTickets, "not enough tickets");
             Validate.isTrue(ids.isEmpty() || ticketRepository.moveToAnotherCategory(ids, original.getId(), MonetaryUtil.unitToCents(updated.getPrice(), original.getCurrencyCode())) == ids.size(), "not enough tickets");
         } else {
-            reallocateTickets(ticketCategoryRepository.findStatisticWithId(original.getId(), event.getId()), Optional.empty(), event);
+            reallocateTickets(originalStatistic, Optional.empty(), event);
         }
         ticketCategoryRepository.updateBoundedFlag(original.getId(), updated.isBounded());
     }

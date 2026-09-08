@@ -499,6 +499,57 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    void testUpdateBoundedFlagToFalseWithStaleMaxTicketsValue() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 5,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Event event = pair.getLeft();
+        String username = pair.getRight();
+
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
+        int staleMaxTickets = category.getMaxTickets();
+        assertTrue(eventManager.updateCategory(category.getId(), event, categoryModification(category, categoryDescription, 15, true), username, true).isSuccess());
+        int ticketsSold = 12;
+        sellTickets(event, ticketCategoryRepository.getByIdAndActive(category.getId(), event.getId()), ticketsSold);
+        assertEquals(ticketsSold, ticketRepository.countConfirmedForCategory(event.getId(), category.getId()).intValue());
+
+        // the organizer tries to change the category to "dynamic"
+        TicketCategoryModification tcm = categoryModification(category, categoryDescription, staleMaxTickets, false);
+
+        Result<TicketCategory> result = eventManager.updateCategory(category.getId(), event, tcm, username);
+        assertTrue(result.isSuccess());
+        TicketCategory updated = ticketCategoryRepository.getByIdAndActive(category.getId(), event.getId());
+        assertFalse(updated.isBounded());
+        // the 12 sold tickets are still linked to the category
+        assertEquals(ticketsSold, ticketRepository.countConfirmedForCategory(event.getId(), category.getId()).intValue());
+        // the 3 tickets which were still free have been released back to the event
+        assertEquals(AVAILABLE_SEATS - ticketsSold, ticketRepository.countNotAllocatedFreeAndReleasedTicket(event.getId()).intValue());
+    }
+
+    private TicketCategoryModification categoryModification(TicketCategory category,
+                                                            Map<String, String> categoryDescription,
+                                                            int maxTickets,
+                                                            boolean bounded) {
+        return new TicketCategoryModification(category.getId(), category.getName(), TicketCategory.TicketAccessType.INHERIT, maxTickets,
+            DateTimeModification.fromZonedDateTime(category.getUtcInception()),
+            DateTimeModification.fromZonedDateTime(category.getUtcExpiration()),
+            categoryDescription, category.getPrice(), false, "", bounded, null, null, null, null, null, 0, null, null, AlfioMetadata.empty());
+    }
+
+    private void sellTickets(Event event, TicketCategory category, int amount) {
+        List<Integer> tickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), category.getId(), amount, Collections.singletonList(Ticket.TicketStatus.FREE.name()));
+        assertEquals(amount, tickets.size());
+        String reservationId = UUID.randomUUID().toString();
+        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(clockProvider.getClock()), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency(), event.getOrganizationId(), null);
+        assertEquals(amount, ticketRepository.reserveTickets(reservationId, tickets, category, "en", event.getVatStatus(), i -> null));
+        assertEquals(amount, ticketRepository.updateTicketsStatusWithReservationId(reservationId, Ticket.TicketStatus.ACQUIRED.name()));
+    }
+
+    @Test
     void testValidationBoundedFailedRestrictedFlag() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
