@@ -1,0 +1,1272 @@
+import {css, html, LitElement, TemplateResult} from 'lit';
+import {customElement, property, query, state} from 'lit/decorators.js';
+import {repeat} from 'lit/directives/repeat.js';
+import {when} from 'lit/directives/when.js';
+import {Task} from '@lit/task';
+import Papa from 'papaparse';
+import {AlfioEvent, TicketCategory} from '../../model/event.ts';
+import {
+    PromoCodeDiscount,
+    PromoCodeType,
+    DiscountType,
+    DateTimeModification,
+    UsageDetailEvent
+} from '../../model/promo-code.ts';
+import {PromoCodeService} from '../../service/promo-code.ts';
+import {UtilService} from '../../service/util.ts';
+import {ConfirmationDialogService} from '../../service/confirmation-dialog.ts';
+import {
+    badges,
+    dialog,
+    form,
+    modernLayout,
+    modernTable,
+    retroCompat,
+    row,
+    spacing,
+    textColors
+} from '../../styles.ts';
+import {dispatchFeedback} from '../../model/dom-events.ts';
+import {EventService} from '../../service/event.ts';
+import {fetchJson} from '../../service/helpers.ts';
+import type {SlDialog, SlInput, SlSelect, SlSwitch, SlTextarea} from '@shoelace-style/shoelace';
+
+interface PromoCodeWithUsage extends PromoCodeDiscount {
+    useCount: number | undefined;
+}
+
+interface LoadData {
+    promoCodeDescription: string;
+    promocodes: PromoCodeWithUsage[];
+    accesscodes: PromoCodeWithUsage[];
+    restrictedCategories: TicketCategory[];
+    validCategories: TicketCategory[];
+    ticketCategoriesById: Record<number, TicketCategory>;
+    currencies: AvailableCurrency[];
+    event: AlfioEvent | null;
+    forEvent: boolean;
+    organizationId: number;
+}
+
+interface EditingState {
+    code: PromoCodeDiscount;
+    data: LoadData;
+}
+
+interface AvailableCurrency {
+    code: string;
+    name: string;
+}
+
+type SortKey = 'code' | 'status' | 'usage' | 'start' | 'end' | 'amount' | 'description';
+type SortDirection = 'asc' | 'desc';
+interface TableState {
+    page: number;
+    sortKey: SortKey;
+    sortDirection: SortDirection;
+}
+
+@customElement('alfio-promo-code')
+export class PromoCode extends LitElement {
+
+    @property({type: String, attribute: 'data-event-name'})
+    eventName?: string;
+
+    @property({type: Number, attribute: 'data-organization-id'})
+    organizationId?: number;
+
+    @property({type: Boolean, attribute: 'data-for-event'})
+    forEvent?: boolean;
+
+    @query('sl-dialog#code-dialog')
+    codeDialog!: SlDialog;
+
+    @query('sl-dialog#usage-details-dialog')
+    usageDetailsDialog!: SlDialog;
+
+    @state()
+    private validationErrors: Record<string, string> = {};
+
+    @state()
+    private usageData: UsageDetailEvent[] = [];
+
+    @state()
+    private usageCode = '';
+
+    @state()
+    private usageTimeZone = 'UTC';
+
+    @state()
+    private saving = false;
+
+    @state()
+    private editingState: EditingState | null = null;
+
+    @state()
+    private pendingCodeType: PromoCodeType = 'DISCOUNT';
+
+    @state()
+    private selectedDiscountType: DiscountType = 'PERCENTAGE';
+
+    @state()
+    private allCategories = true;
+
+    @state()
+    private selectedCategories: string[] = [];
+
+    @state()
+    private filters = {promo: {search: '', category: ''}, access: {search: '', category: ''}};
+
+    @state()
+    private tableState: Record<'promo' | 'access', TableState> = {
+        promo: {page: 1, sortKey: 'code', sortDirection: 'asc'},
+        access: {page: 1, sortKey: 'code', sortDirection: 'asc'},
+    };
+
+    private loadDataTask = new Task(this,
+        async ([_eventName, _orgId, _forEvent]) => {
+            void _eventName;
+            void _orgId;
+            void _forEvent;
+
+            const forEvent = !!this.forEvent && !!this.eventName;
+            let ev: AlfioEvent | null = null;
+            if (forEvent && this.eventName) {
+                try {
+                    const result = await EventService.load(this.eventName);
+                    ev = result.event;
+                } catch {
+                    // fall through
+                }
+            }
+            const orgId = this.organizationId ?? (ev?.organizationId ?? 0);
+
+            let promoCodeDescription = 'Promo';
+            if (forEvent && ev) {
+                try {
+                    const val = await PromoCodeService.loadSingleConfig(ev.shortName, 'USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL');
+                    promoCodeDescription = (val === 'true') ? 'Partner' : 'Promo';
+                } catch {
+                    // ignore, keep default
+                }
+            }
+
+            const allCodes = forEvent
+                ? await PromoCodeService.listByEvent(ev!.id)
+                : await PromoCodeService.listByOrganization(orgId);
+
+            const promocodes = allCodes
+                .filter(pc => pc.codeType === 'DISCOUNT' || pc.codeType === 'DYNAMIC') as PromoCodeWithUsage[];
+
+            const accesscodes = allCodes
+                .filter(pc => pc.codeType === 'ACCESS') as PromoCodeWithUsage[];
+
+            const discountOrAccess = allCodes.filter(pc => pc.codeType === 'DISCOUNT' || pc.codeType === 'ACCESS');
+
+            await Promise.allSettled(discountOrAccess.map(async (pc) => {
+                (pc as PromoCodeWithUsage).useCount = await PromoCodeService.countUse(pc.id);
+            }));
+
+            const ticketCategoriesById: Record<number, TicketCategory> = {};
+            const restrictedCategories: TicketCategory[] = [];
+            const validCategories: TicketCategory[] = [];
+
+            if (forEvent && ev) {
+                for (const tc of ev.ticketCategories) {
+                    ticketCategoriesById[tc.id] = tc;
+                    if ((tc as any).accessRestricted && !(tc as any).expired) {
+                        restrictedCategories.push(tc);
+                    }
+                    if (!(tc as any).expired && !(tc as any).accessRestricted) {
+                        validCategories.push(tc);
+                    }
+                }
+            }
+
+            let currencies: AvailableCurrency[] = [];
+            if (!forEvent) {
+                const currencyResult = await fetchJson<AvailableCurrency[]>('/admin/api/utils/currencies');
+                currencies = Array.isArray(currencyResult) ? currencyResult : [];
+            }
+
+            return {
+                promoCodeDescription,
+                promocodes,
+                accesscodes,
+                restrictedCategories,
+                validCategories,
+                ticketCategoriesById,
+                currencies,
+                event: ev ?? null,
+                forEvent,
+                organizationId: orgId,
+            };
+        },
+        () => [this.eventName ?? '', this.organizationId ?? 0, this.forEvent ?? false]
+    );
+
+    static readonly styles = [
+        retroCompat,
+        textColors,
+        form,
+        dialog,
+        badges,
+        modernTable,
+        modernLayout,
+        row,
+        spacing,
+        css`
+            .promo-code-name {
+                font-family: var(--sl-font-mono);
+                font-weight: 600;
+            }
+
+            .code-section > .section-header {
+                flex-wrap: wrap;
+                align-items: center;
+            }
+
+            .code-section {
+                margin-bottom: var(--sl-spacing-x-large);
+            }
+
+            .section-heading {
+                display: flex;
+                align-items: center;
+                gap: var(--sl-spacing-small);
+                min-width: 0;
+                order: 1;
+            }
+
+            .code-section > .section-header h3 {
+                font-size: var(--sl-font-size-small);
+                font-weight: 600;
+                text-transform: uppercase;
+            }
+            .category-badge::part(base) {
+                background: var(--sl-color-gray-100);
+                color: var(--sl-color-gray-700);
+            }
+
+            .code-section > .section-header > sl-icon {
+                color: var(--sl-color-primary-600);
+                background: var(--sl-color-primary-100);
+                padding: var(--sl-spacing-2x-small);
+                border-radius: var(--sl-border-radius-small);
+            }
+
+            .section-description {
+                flex-basis: 100%;
+                font-size: var(--sl-font-size-small);
+                line-height: var(--sl-line-height-normal);
+                order: 3;
+            }
+
+            .section-description::part(base) {
+                border: 0;
+                background: transparent;
+                padding: 0;
+            }
+
+            .section-description::part(summary) {
+                color: var(--sl-color-gray-600);
+                font-size: var(--sl-font-size-small);
+            }
+
+            .section-description::part(content) {
+                padding: var(--sl-spacing-2x-small) 0 0;
+                color: var(--sl-color-gray-600);
+            }
+
+            .code-section .header-toolbar {
+                margin-inline-start: auto;
+                margin-block: calc(-1 * var(--sl-spacing-2x-small));
+                padding: 0;
+                border: 0;
+                background: transparent;
+                order: 2;
+            }
+
+            .code-section .header-toolbar .filter-left {
+                flex: 0 1 auto;
+                flex-wrap: nowrap;
+                white-space: nowrap;
+            }
+
+            .code-section .header-toolbar {
+                flex-wrap: nowrap;
+            }
+
+            .code-section .empty-state sl-icon {
+                font-size: var(--sl-font-size-3x-large);
+            }
+
+            .code-section > .section-body {
+                padding: var(--sl-spacing-medium);
+            }
+
+            .code-section .filter-toolbar, .code-section .filter-left, .code-section .filter-right {
+                align-items: center;
+            }
+
+            .code-section .filter-select, .code-search {
+                min-width: 0;
+                margin-top: 0;
+            }
+
+            .code-section .filter-select {
+                flex: 0 1 20rem;
+            }
+
+            .code-section .code-search {
+                flex: 0 1 16rem;
+            }
+
+            .code-status {
+                display: inline-flex;
+                align-items: center;
+                gap: var(--sl-spacing-2x-small);
+                font-weight: 600;
+                white-space: nowrap;
+            }
+
+            .code-usage {
+                min-width: 5rem;
+                white-space: nowrap;
+            }
+
+            .code-usage sl-progress-bar {
+                --height: var(--sl-spacing-2x-small);
+                margin-top: var(--sl-spacing-2x-small);
+            }
+
+            .code-contact {
+                display: block;
+                overflow-wrap: anywhere;
+            }
+
+            .code-section .actions-cell {
+                flex-wrap: nowrap;
+            }
+
+            @media (max-width: 767px) {
+                .code-section .header-toolbar,
+                .code-section .header-toolbar .filter-left {
+                    flex-wrap: wrap;
+                }
+
+                .code-section .filter-select,
+                .code-section .code-search {
+                    flex: 1 1 14rem;
+                }
+            }
+
+            .code-section sl-menu-item.danger::part(base) {
+                color: var(--sl-color-danger-600);
+            }
+
+
+            .code-section sl-format-date {
+                white-space: nowrap;
+            }
+
+            .code-section .table-responsive {
+                max-height: 65vh;
+                overflow: auto;
+            }
+
+            .code-section .table {
+                border-collapse: separate;
+                border-spacing: 0;
+            }
+
+            .code-section .table thead {
+                position: relative;
+                z-index: 3;
+            }
+
+            .code-section .table thead th {
+                position: sticky;
+                top: 0;
+                z-index: 4;
+                background-color: var(--sl-color-gray-50) !important;
+                background-clip: padding-box;
+                box-shadow: 0 2px 0 var(--sl-color-gray-300);
+            }
+
+            .sortable-header {
+                cursor: pointer;
+                user-select: none;
+            }
+
+            .sortable-header:hover {
+                color: var(--sl-color-primary-600);
+            }
+
+            .sort-icon {
+                margin-inline-start: var(--sl-spacing-2x-small);
+            }
+
+            .pagination-bar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: var(--sl-spacing-small);
+                padding-top: var(--sl-spacing-medium);
+            }
+
+            .pagination-actions {
+                display: flex;
+                gap: var(--sl-spacing-2x-small);
+            }
+
+            .promo-dialog-title {
+                display: flex;
+                align-items: flex-start;
+                gap: var(--sl-spacing-small);
+            }
+
+            #usage-details-dialog {
+                --width: min(75rem, calc(100vw - (2 * var(--sl-spacing-large))));
+            }
+
+            #code-dialog {
+                --width: min(52rem, calc(100vw - (2 * var(--sl-spacing-large))));
+            }
+
+            .promo-dialog-title sl-icon,
+            .dialog-section-header sl-icon {
+                color: var(--sl-color-primary-600);
+            }
+
+            .promo-dialog-title sl-icon {
+                margin-top: var(--sl-spacing-2x-small);
+                font-size: var(--sl-font-size-x-large);
+            }
+
+            .promo-dialog-title strong,
+            .promo-dialog-title small {
+                display: block;
+            }
+
+            .promo-dialog-title small {
+                margin-top: var(--sl-spacing-2x-small);
+                color: var(--sl-color-gray-500);
+                font-size: var(--sl-font-size-small);
+                font-weight: normal;
+            }
+
+            .promo-dialog-form {
+                display: grid;
+                gap: var(--sl-spacing-medium);
+            }
+
+            .promo-dialog-form .section-card {
+                margin-bottom: 0;
+            }
+
+            .promo-dialog-form .section-body {
+                padding: var(--sl-spacing-medium);
+            }
+
+            .dialog-section-header {
+                display: flex;
+                align-items: center;
+                gap: var(--sl-spacing-small);
+                padding: var(--sl-spacing-small) var(--sl-spacing-medium);
+                background: var(--sl-color-gray-50);
+                border-bottom: 1px solid var(--sl-color-gray-200);
+                color: var(--sl-color-gray-700);
+                font-size: var(--sl-font-size-small);
+                font-weight: 600;
+                letter-spacing: 0.025em;
+                text-transform: uppercase;
+            }
+
+            .dialog-section-header sl-badge {
+                margin-inline-start: auto;
+                letter-spacing: normal;
+                text-transform: none;
+            }
+
+            .promo-dialog-form sl-input,
+            .promo-dialog-form sl-select,
+            .promo-dialog-form sl-textarea {
+                margin-top: 0;
+            }
+
+        `
+    ];
+
+    render() {
+        return this.loadDataTask.render({
+            initial: () => html`<sl-spinner></sl-spinner>`,
+            error: () => html`<sl-alert open variant="danger"><sl-icon name="exclamation-triangle" slot="icon"></sl-icon>Failed to load promo codes.</sl-alert>`,
+            complete: (data) => this.renderContent(data),
+        });
+    }
+
+    private renderContent(data: LoadData): TemplateResult {
+        return html`
+            ${when(
+                !data.event?.freeOfCharge,
+                () => html`
+                    <div class="first-element text-right" style="margin-bottom: var(--sl-spacing-x-large)">${this.renderAddCodeButton(data)}</div>
+                    ${this.renderSection(data, data.promocodes, false)}
+                `
+            )}
+            ${when(
+                this.shouldRenderAccessSection(data),
+                () => this.renderSection(data, data.accesscodes, true)
+            )}
+            ${when(
+                data.forEvent && data.event?.freeOfCharge,
+                () => html`
+                    <sl-alert open variant="warning" class="first-element">
+                        <sl-icon name="exclamation-triangle" slot="icon"></sl-icon>
+                        <strong>Your event cannot have ${data.promoCodeDescription} or Access Codes</strong>
+                        <p>Free events do not support promo or access codes.</p>
+                    </sl-alert>
+                `
+            )}
+
+            ${this.renderCodeDialog(data)}
+            ${this.renderUsageDetailsDialog()}
+        `;
+    }
+
+    private renderSection(data: LoadData, codes: PromoCodeWithUsage[], isAccess: boolean): TemplateResult {
+        const title = isAccess ? 'Access codes' : `${data.promoCodeDescription} codes`;
+        const icon = isAccess ? 'unlock' : 'percent';
+        const description = isAccess
+            ? 'Access codes are special codes that give access to hidden categories. By entering an Access Code, an attendee can register one or more tickets, depending on the configuration.'
+            : `Manage/Handle the ${data.promoCodeDescription} codes.`;
+
+        const filterKey = isAccess ? 'access' : 'promo';
+        const filter = this.filters[filterKey];
+        const searchTerm = filter.search.trim().toLowerCase();
+        const matchedCodes = codes.filter(code => `${code.promoCode} ${code.description ?? ''}`.toLowerCase().includes(searchTerm)
+            && (!filter.category || (isAccess ? code.hiddenCategoryId === Number(filter.category)
+                : !code.categories?.length || code.categories.includes(Number(filter.category)))));
+        const state = this.tableState[filterKey];
+        const sortedCodes = this.sortCodes(matchedCodes, state.sortKey, state.sortDirection);
+        const pageCount = Math.max(1, Math.ceil(sortedCodes.length / 25));
+        const page = Math.min(state.page, pageCount);
+        if (page !== state.page) {
+            queueMicrotask(() => this.setTablePage(filterKey, page));
+        }
+        const setFilter = (field: 'search' | 'category', value: string) => {
+            this.filters = {...this.filters, [filterKey]: {...filter, [field]: value}};
+            this.setTablePage(filterKey, 1);
+        };
+        const setSort = (sortKey: SortKey) => {
+            const direction = state.sortKey === sortKey && state.sortDirection === 'asc' ? 'desc' : 'asc';
+            this.tableState = {...this.tableState, [filterKey]: {page: 1, sortKey, sortDirection: direction}};
+        };
+        return html`
+            <div class="section-card code-section">
+                <div class="section-header">
+                    <div class="section-heading">
+                        <sl-icon name=${icon}></sl-icon><h3>${title}</h3>
+                        <sl-badge variant="primary" pill>${matchedCodes.length === codes.length ? codes.length : `${matchedCodes.length} / ${codes.length}`}</sl-badge>
+                    </div>
+                    <sl-details class="text-muted section-description">
+                        <span slot="summary">About ${title.toLowerCase()}</span>${description}
+                    </sl-details>
+                    <div class="filter-toolbar header-toolbar">
+                        <div class="filter-left">
+                            <sl-input class="code-search" size="small" clearable placeholder="Search code" aria-label="Search ${title}"
+                                .value=${filter.search}
+                                @sl-input=${(e: Event) => setFilter('search', (e.target as SlInput).value)}
+                                @sl-clear=${() => setFilter('search', '')}>
+                                <sl-icon name="search" slot="prefix"></sl-icon>
+                            </sl-input>
+                            ${when(data.forEvent, () => html`
+                                <sl-select class="filter-select" size="small" clearable placeholder="All categories" aria-label="Filter ${title} by category"
+                                    .value=${filter.category}
+                                    @sl-change=${(e: Event) => setFilter('category', (e.target as SlSelect).value as string)}
+                                    @sl-clear=${() => setFilter('category', '')}>
+                                    ${repeat(Object.values(data.ticketCategoriesById).filter(cat => !isAccess || cat.accessRestricted), cat => cat.id,
+                                        cat => html`<sl-option value=${String(cat.id)}>${cat.name}</sl-option>`)}
+                                </sl-select>
+                            `)}
+                        </div>
+                        <div class="filter-right">
+                            <sl-button size="small" ?disabled=${matchedCodes.length === 0} @click=${() => this.downloadCodes(matchedCodes, data, isAccess)}>
+                                <sl-icon name="download" slot="prefix"></sl-icon>Download
+                            </sl-button>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-body">
+                    ${this.renderTable(data, sortedCodes.slice((page - 1) * 25, page * 25), isAccess, setSort, state)}
+                    ${when(sortedCodes.length > 0, () => html`
+                        <div class="pagination-bar">
+                            <span class="text-muted">Showing ${(page - 1) * 25 + 1}–${Math.min(page * 25, sortedCodes.length)} of ${sortedCodes.length}</span>
+                            <div class="pagination-actions">
+                                <sl-button size="small" ?disabled=${page === 1} @click=${() => this.setTablePage(filterKey, page - 1)}>
+                                    <sl-icon name="chevron-left" slot="prefix"></sl-icon>Previous
+                                </sl-button>
+                                <sl-button size="small" ?disabled=${page === pageCount} @click=${() => this.setTablePage(filterKey, page + 1)}>
+                                    Next<sl-icon name="chevron-right" slot="suffix"></sl-icon>
+                                </sl-button>
+                            </div>
+                        </div>
+                    `)}
+                </div>
+            </div>
+        `;
+    }
+
+    private setTablePage(filterKey: 'promo' | 'access', page: number): void {
+        this.tableState = {...this.tableState, [filterKey]: {...this.tableState[filterKey], page}};
+    }
+
+    private sortCodes(codes: PromoCodeWithUsage[], sortKey: SortKey, direction: SortDirection): PromoCodeWithUsage[] {
+        const multiplier = direction === 'asc' ? 1 : -1;
+        return [...codes].sort((a, b) => {
+            let left: string | number = '';
+            let right: string | number = '';
+            if (sortKey === 'code') { left = a.promoCode; right = b.promoCode; }
+            if (sortKey === 'status') { left = this.codeStatus(a).label; right = this.codeStatus(b).label; }
+            if (sortKey === 'usage') { left = a.useCount ?? -1; right = b.useCount ?? -1; }
+            if (sortKey === 'start') { left = a.formattedStart; right = b.formattedStart; }
+            if (sortKey === 'end') { left = a.formattedEnd; right = b.formattedEnd; }
+            if (sortKey === 'amount') { left = a.discountAmount; right = b.discountAmount; }
+            if (sortKey === 'description') { left = a.description ?? ''; right = b.description ?? ''; }
+            return (typeof left === 'number' && typeof right === 'number'
+                ? left - right : String(left).localeCompare(String(right), undefined, {numeric: true, sensitivity: 'base'})) * multiplier;
+        });
+    }
+
+    private canAddAccessCode(data: LoadData): boolean {
+        return data.forEvent && data.restrictedCategories.length > 0 && !data.event?.freeOfCharge;
+    }
+
+    private shouldRenderAccessSection(data: LoadData): boolean {
+        return data.forEvent && !data.event?.freeOfCharge
+            && (data.accesscodes.length > 0 || this.canAddAccessCode(data));
+    }
+
+    private renderAddCodeButton(data: LoadData): TemplateResult {
+        if (!this.canAddAccessCode(data)) {
+            return html`
+                <sl-button variant="success" size="large" @click=${() => this.openCodeDialog(data, 'DISCOUNT')}>
+                    <sl-icon name="plus-circle" slot="prefix"></sl-icon>Add ${data.promoCodeDescription} Code
+                </sl-button>
+            `;
+        }
+        return html`
+            <sl-dropdown hoist placement="bottom-end">
+                <sl-button slot="trigger" variant="success" size="large" caret>
+                    <sl-icon name="plus-circle" slot="prefix"></sl-icon>Add Code
+                </sl-button>
+                <sl-menu @sl-select=${(e: CustomEvent) => this.openCodeDialog(data, e.detail.item.value as PromoCodeType)}>
+                    <sl-menu-item value="DISCOUNT"><sl-icon name="percent" slot="prefix"></sl-icon>${data.promoCodeDescription} Code</sl-menu-item>
+                    <sl-menu-item value="ACCESS"><sl-icon name="unlock" slot="prefix"></sl-icon>Access Code</sl-menu-item>
+                </sl-menu>
+            </sl-dropdown>
+        `;
+    }
+
+    private downloadCodes(codes: PromoCodeWithUsage[], data: LoadData, isAccess: boolean): void {
+        const csv = Papa.unparse(codes.map(code => ({
+            Code: code.promoCode, Status: this.codeStatus(code).label,
+            Usage: code.useCount ?? '', 'Max usage': code.maxUsage ?? '',
+            Start: code.formattedStart, End: code.formattedEnd, 'Time zone': data.event?.timeZone ?? 'UTC',
+            ...(!isAccess ? {Amount: code.formattedDiscountAmount ?? code.discountAmount, 'Discount type': code.discountType, Currency: code.currencyCode} : {}),
+            Categories: (isAccess ? [code.hiddenCategoryId] : code.categories ?? []).filter(id => id != null)
+                .map(id => data.ticketCategoriesById[id!]?.name ?? id).join(', '),
+            Description: code.description, Contact: code.emailReference,
+        })), {escapeFormulae: true});
+        const url = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8;'}));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${isAccess ? 'access' : 'promo'}-codes.csv`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    private codeStatus(code: PromoCodeWithUsage) {
+        if (code.expired) return {label: 'Expired', icon: 'clock-history', color: 'text-muted'};
+        if (code.maxUsage != null && code.useCount != null && code.useCount >= code.maxUsage) {
+            return {label: 'Used up', icon: 'check-circle', color: 'text-muted'};
+        }
+        return code.currentlyValid
+            ? {label: 'Active', icon: 'check-circle', color: 'text-success'}
+            : {label: 'Scheduled', icon: 'clock', color: 'text-muted'};
+    }
+
+    private renderTable(data: LoadData, codes: PromoCodeWithUsage[], isAccess: boolean,
+                        setSort: (key: SortKey) => void, state: TableState): TemplateResult {
+        if (codes.length === 0) {
+            return html`
+                <div class="empty-state">
+                    <sl-icon name="inbox"></sl-icon>
+                    <p>No codes found. Adjust the filters or add a new code.</p>
+                </div>
+            `;
+        }
+
+        return html`
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            ${this.renderSortHeader('Code', 'code', state, setSort)}
+                            ${this.renderSortHeader('Status', 'status', state, setSort)}
+                            ${this.renderSortHeader('Usage', 'usage', state, setSort)}
+                            ${this.renderSortHeader('Start', 'start', state, setSort)}
+                            ${this.renderSortHeader('End', 'end', state, setSort)}
+                            ${when(!isAccess, () => this.renderSortHeader('Amount', 'amount', state, setSort))}
+                            ${when(data.forEvent, () => html`<th>Categories</th>`)}
+                            ${this.renderSortHeader('Description', 'description', state, setSort)}
+                            <th style="text-align:right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${repeat(codes, (code) => code.id, (code) => {
+                            const hasUsage = (code.useCount ?? 0) > 0;
+                            const status = this.codeStatus(code);
+                            return html`
+                                <tr class=${code.expired ? 'text-muted' : ''}>
+                                    <td>
+                                        <span class="promo-code-name">
+                                            ${hasUsage
+                                                ? html`<a href="#" @click=${(e: Event) => { e.preventDefault(); this.showUsageDetails(code, data); }}>${code.promoCode}</a>`
+                                                : code.promoCode}
+                                        </span>
+                                        ${when(!code.expired && code.codeType === 'DYNAMIC', () => html`<span class="text-muted"> (auto)</span>`)}
+                                    </td>
+                                    <td><span class="code-status ${status.color}"><sl-icon name=${status.icon}></sl-icon>${status.label}</span></td>
+                                    <td class="code-usage">
+                                        <strong>${code.useCount ?? '–'}</strong><span class="text-muted"> / ${code.maxUsage ?? '∞'}</span>
+                                        ${when(code.maxUsage != null && code.maxUsage > 0 && code.useCount != null, () => html`
+                                            <sl-progress-bar value=${Math.min(100, 100 * code.useCount! / code.maxUsage!)}
+                                                label="${code.promoCode}: ${code.useCount} of ${code.maxUsage} uses"></sl-progress-bar>
+                                        `)}
+                                    </td>
+                                    <td>
+                                        <sl-format-date
+                                            time-zone=${data.event?.timeZone ?? 'UTC'}
+                                            date=${data.event ? code.formattedStart.replace(' ', 'T') : code.utcStart}
+                                            month="short" day="2-digit" year="numeric" hour="2-digit" minute="2-digit" hour-format="24"
+                                        ></sl-format-date>
+                                    </td>
+                                    <td>
+                                        <sl-format-date
+                                            time-zone=${data.event?.timeZone ?? 'UTC'}
+                                            date=${data.event ? code.formattedEnd.replace(' ', 'T') : code.utcEnd}
+                                            month="short" day="2-digit" year="numeric" hour="2-digit" minute="2-digit" hour-format="24"
+                                        ></sl-format-date>
+                                    </td>
+                                    ${when(!isAccess, () => this.renderDiscountAmount(code))}
+                                    ${when(data.forEvent, () => this.renderCategories(code, data))}
+                                    <td>${code.description || '—'}<small class="text-muted code-contact">${code.emailReference}</small></td>
+                                    <td>
+                                        <div class="actions-cell">
+                                            ${when(data.event, () => html`
+                                                <sl-icon-button name="link-45deg" label="Copy link for ${code.promoCode}"
+                                                    @click=${() => UtilService.copyValueToClipboard(
+                                                        () => `${window.BASE_URL.replace(/\/+$/, '')}/e/${encodeURIComponent(data.event!.shortName)}/c/${encodeURIComponent(code.promoCode)}`,
+                                                        'Code link', this
+                                                    )}></sl-icon-button>
+                                            `)}
+                                            <sl-icon-button name="pencil" label="Edit ${code.promoCode}" @click=${() => this.openCodeDialog(data, code.codeType, code)}></sl-icon-button>
+                                            ${when(!code.expired || code.useCount === 0, () => html`
+                                                <sl-dropdown hoist placement="bottom-end">
+                                                    <sl-icon-button slot="trigger" name="three-dots-vertical" label="More actions for ${code.promoCode}"></sl-icon-button>
+                                                    <sl-menu @sl-select=${(e: CustomEvent) => {
+                                                        if (e.detail.item.value === 'disable') this.disableCode(code, data);
+                                                        if (e.detail.item.value === 'delete') this.deleteCode(code, data);
+                                                    }}>
+                                                        ${when(!code.expired, () => html`
+                                                            <sl-menu-item value="disable"><sl-icon name="eye-slash" slot="prefix"></sl-icon>Disable</sl-menu-item>
+                                                        `)}
+                                                        ${when(code.useCount === 0, () => html`
+                                                            <sl-menu-item value="delete" class="danger"><sl-icon name="trash" slot="prefix"></sl-icon>Delete</sl-menu-item>
+                                                        `)}
+                                                    </sl-menu>
+                                                </sl-dropdown>
+                                            `)}
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    private renderSortHeader(label: string, key: SortKey, state: TableState,
+                             setSort: (key: SortKey) => void): TemplateResult {
+        const active = state.sortKey === key;
+        return html`<th class="sortable-header" aria-sort=${active ? (state.sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+                    @click=${() => setSort(key)}>
+            ${label}${when(active, () => html`<sl-icon class="sort-icon" name=${state.sortDirection === 'asc' ? 'caret-up-fill' : 'caret-down-fill'}></sl-icon>`)}
+        </th>`;
+    }
+
+    private renderDiscountAmount(code: PromoCodeDiscount): TemplateResult {
+        if (code.discountType === 'PERCENTAGE') {
+            return html`<td><strong>-${code.discountAmount}%</strong></td>`;
+        }
+        const currency = code.currencyCode ?? '';
+        return html`
+            <td>
+                -${code.formattedDiscountAmount ?? code.discountAmount}
+                ${currency ? currency : ''}
+                ${when(code.discountType === 'FIXED_AMOUNT', () => html`<div class="text-muted">per ticket</div>`)}
+            </td>
+        `;
+    }
+
+    private renderCategories(code: PromoCodeDiscount, data: LoadData): TemplateResult {
+        if (code.codeType === 'ACCESS' && code.hiddenCategoryId) {
+            const cat = data.ticketCategoriesById[code.hiddenCategoryId];
+            return html`<td><sl-badge variant="neutral" class="category-badge" pill>${cat ? cat.name : code.hiddenCategoryId}</sl-badge></td>`;
+        }
+
+        if (code.categories && code.categories.length > 0) {
+            return html`
+                <td>
+                    ${repeat(code.categories, (id) => id, (id) => {
+                        const cat = data.ticketCategoriesById[id];
+                        return html`<sl-badge variant="neutral" class="category-badge" pill>${cat ? cat.name : id}</sl-badge>`;
+                    })}
+                </td>
+            `;
+        }
+
+        if (code.codeType !== 'ACCESS') {
+            return html`<td>All categories</td>`;
+        }
+
+        return html`<td></td>`;
+    }
+
+    // ── Add / edit code dialog ──
+
+    private async openCodeDialog(data: LoadData, codeType: PromoCodeType, code?: PromoCodeDiscount): Promise<void> {
+        if (this.saving) return;
+        this.validationErrors = {};
+        this.editingState = code ? {code, data} : null;
+        this.pendingCodeType = codeType;
+        this.selectedDiscountType = code?.discountType ?? 'PERCENTAGE';
+        this.selectedCategories = (code?.categories ?? []).map(String);
+        this.allCategories = this.selectedCategories.length === 0;
+        await this.updateComplete;
+
+        const form = this.codeDialog.querySelector('form')!;
+        const localDate = (date: Date) => new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        const values: Record<string, string> = {
+            promoCode: code?.promoCode ?? '',
+            start: code?.formattedStart.replace(' ', 'T') ?? localDate(new Date()),
+            end: code?.formattedEnd.replace(' ', 'T') ?? (data.event?.formattedBegin.replace(' ', 'T') ?? localDate(new Date(Date.now() + 86400000))),
+            maxUsage: code?.maxUsage == null ? '' : String(code.maxUsage),
+            discountType: code?.discountType ?? 'PERCENTAGE',
+            discountAmount: code ? String(code.formattedDiscountAmount ?? code.discountAmount) : '',
+            currencyCode: code?.currencyCode ?? 'USD',
+            description: code?.description ?? '',
+            emailReference: code?.emailReference ?? '',
+            hiddenCategoryId: code?.hiddenCategoryId == null ? '' : String(code.hiddenCategoryId),
+        };
+        form.reset();
+        const allCategoriesSwitch = form.querySelector<SlSwitch>('sl-switch');
+        if (allCategoriesSwitch) allCategoriesSwitch.checked = this.allCategories;
+        form.querySelectorAll<SlInput | SlSelect | SlTextarea>('sl-input, sl-select, sl-textarea')
+            .forEach(control => { control.value = control.name === 'categories' ? this.selectedCategories : values[control.name] ?? ''; });
+        await this.codeDialog.show();
+    }
+
+    private renderCodeDialog(data: LoadData): TemplateResult {
+        const isAccess = this.pendingCodeType === 'ACCESS';
+        const isDiscount = this.pendingCodeType === 'DISCOUNT';
+        const editing = this.editingState != null;
+        const title = `${editing ? 'Edit' : 'Insert new'} ${isAccess ? 'Access' : data.promoCodeDescription} Code`;
+        const save = () => this.saveCode(data);
+
+        return html`
+            <sl-dialog id="code-dialog" label=${title} size="large" placement="bottom"
+                @sl-request-close=${(e: CustomEvent) => { if (this.saving) e.preventDefault(); }}>
+                <div slot="label" class="promo-dialog-title">
+                    <sl-icon name=${isAccess ? 'unlock' : 'ticket-perforated'}></sl-icon>
+                    <div>
+                        <strong>${title}</strong>
+                        <small>${editing ? 'Update validity, usage limits, and details. Code and discount cannot be changed.' : 'Fields marked * are required.'}</small>
+                    </div>
+                </div>
+                <form class="promo-dialog-form" @submit=${(e: Event) => { e.preventDefault(); save(); }}>
+                    <div class="section-card">
+                        <div class="dialog-section-header"><sl-icon name="tag"></sl-icon>Code</div>
+                        <div class="section-body row" style="--alfio-row-cols: 2">
+                            <sl-input name="promoCode" label="Code name" ?readonly=${editing} helper-text="Min 7 characters. Letters, numbers, and -:_@!$*,;" required minlength="7" pattern="[A-Za-z0-9_\\-:@!$*,;]*" clearable @sl-input=${(e: Event) => {
+                                const input = e.target as SlInput;
+                                input.value = input.value.toUpperCase();
+                            }}>
+                                <sl-icon name="tag" slot="prefix"></sl-icon>
+                            </sl-input>
+                            <sl-input name="maxUsage" type="number" label="Limit usage to" helper-text="Leave empty for unlimited uses" min="0">
+                                <sl-icon name="hash" slot="prefix"></sl-icon>
+                            </sl-input>
+                        </div>
+                    </div>
+
+                    <div class="section-card">
+                        <div class="dialog-section-header">
+                            <sl-icon name="calendar-event"></sl-icon>Validity
+                            ${when(data.forEvent && data.event, () => html`<sl-badge variant="primary" pill>${data.event!.timeZone}</sl-badge>`)}
+                        </div>
+                        <div class="section-body row" style="--alfio-row-cols: 2">
+                            <sl-input type="datetime-local" name="start" label="Valid from" required></sl-input>
+                            <sl-input type="datetime-local" name="end" label="Valid until" required></sl-input>
+                        </div>
+                    </div>
+
+                    ${when(isDiscount, () => html`
+                        <div class="section-card">
+                            <div class="dialog-section-header"><sl-icon name="percent"></sl-icon>Discount</div>
+                            <div class="section-body row" style="--alfio-row-cols: ${data.forEvent ? 2 : 3}">
+                                <sl-select name="discountType" label="Discount type" ?disabled=${editing} value="PERCENTAGE" required
+                                    @sl-change=${(e: Event) => { this.selectedDiscountType = (e.target as SlSelect).value as DiscountType; }}>
+                                    <sl-option value="PERCENTAGE">Percentage</sl-option>
+                                    <sl-option value="FIXED_AMOUNT_RESERVATION">Fixed amount, per reservation</sl-option>
+                                    <sl-option value="FIXED_AMOUNT">Fixed amount, per ticket</sl-option>
+                                </sl-select>
+                                <sl-input name="discountAmount" ?readonly=${editing} type="number" label="Discount amount" min="0" required>
+                                    ${when(this.selectedDiscountType === 'PERCENTAGE', () => html`<sl-icon name="percent" slot="suffix"></sl-icon>`)}
+                                </sl-input>
+                                ${when(!data.forEvent, () => html`
+                                    <sl-select name="currencyCode" label="Currency" ?disabled=${editing} value="USD">
+                                        ${repeat(data.currencies, (c) => c.code, (c) => html`<sl-option value=${c.code}>${c.name}</sl-option>`)}
+                                    </sl-select>
+                                `)}
+                            </div>
+                        </div>
+                    `)}
+
+                    ${when(data.forEvent && (isDiscount || isAccess), () => html`
+                        <div class="section-card">
+                            <div class="dialog-section-header"><sl-icon name=${isAccess ? 'unlock' : 'collection'}></sl-icon>Ticket categories</div>
+                            <div class="section-body">
+                                ${when(!isAccess, () => html`
+                                    <sl-switch help-text="Or select specific categories" class="block mt-2 mb-2"
+                                        .checked=${this.allCategories}
+                                        @sl-change=${(e: Event) => {
+                                            this.allCategories = (e.target as SlSwitch).checked;
+                                            if (this.allCategories) this.selectedCategories = [];
+                                        }}>Apply to all ticket categories</sl-switch>
+                                `)}
+                                ${when(isAccess || !this.allCategories, () => html`
+                                    <sl-select name=${isAccess ? 'hiddenCategoryId' : 'categories'}
+                                        label=${isAccess ? 'Select Category' : 'Select Categories'}
+                                        placeholder=${isAccess ? 'Select a category' : 'Select categories'}
+                                        ?multiple=${!isAccess} ?required=${!isAccess || !editing} ?disabled=${isAccess && editing}
+                                        .value=${isAccess ? String(this.editingState?.code.hiddenCategoryId ?? '') : this.selectedCategories}
+                                        @sl-change=${(e: Event) => {
+                                            if (!isAccess) this.selectedCategories = (e.target as SlSelect).value as string[];
+                                        }}>
+                                        ${repeat(isAccess
+                                            ? [...new Set([...data.restrictedCategories.map(cat => cat.id), ...(this.editingState?.code.hiddenCategoryId != null ? [this.editingState.code.hiddenCategoryId] : [])])]
+                                            : [...new Set([...data.validCategories.map(cat => cat.id), ...(this.editingState?.code.categories ?? [])])], id => id,
+                                            id => html`<sl-option value=${String(id)}>${data.ticketCategoriesById[id]?.name ?? id}</sl-option>`)}
+                                    </sl-select>
+                                `)}
+                            </div>
+                        </div>
+                    `)}
+
+                    <div class="section-card">
+                        <div class="dialog-section-header"><sl-icon name="card-text"></sl-icon>Details</div>
+                        <div class="section-body row" style="--alfio-row-cols: 2">
+                            <sl-textarea name="description" label="Description" maxlength="1024" rows="2" resize="auto"></sl-textarea>
+                            <sl-input name="emailReference" type="email" label="Contact" maxlength="256">
+                                <sl-icon name="envelope" slot="prefix"></sl-icon>
+                            </sl-input>
+                        </div>
+                    </div>
+
+                    ${when(Object.keys(this.validationErrors).length > 0, () => html`
+                        <sl-alert open variant="danger">
+                            <sl-icon name="exclamation-triangle" slot="icon"></sl-icon>
+                            ${repeat(Object.entries(this.validationErrors), ([field]) => field,
+                                ([, message]) => html`<div>${message}</div>`)}
+                        </sl-alert>
+                    `)}
+                </form>
+
+                <div slot="footer">
+                    <sl-divider></sl-divider>
+                    <div class="row" style="--alfio-row-cols: 3">
+                        <sl-button variant="default" size="large" @click=${() => this.codeDialog.hide()} ?disabled=${this.saving}>Cancel</sl-button>
+                        <div></div>
+                        <sl-button variant="warning" size="large" @click=${() => save()} ?disabled=${this.saving}>
+                            ${when(this.saving, () => html`<sl-spinner slot="prefix"></sl-spinner>`)}
+                            ${when(!this.saving, () => html`<sl-icon name="check2" slot="prefix"></sl-icon>`)}
+                            Save
+                        </sl-button>
+                    </div>
+                </div>
+            </sl-dialog>
+        `;
+    }
+
+    private async saveCode(data: LoadData): Promise<void> {
+        if (this.saving) return;
+        const code = this.editingState?.code;
+        data = this.editingState?.data ?? data;
+        const form = this.codeDialog.querySelector('form')!;
+        if (!form.reportValidity()) return;
+        const value = (name: string): string => {
+            const control = form.querySelector<SlInput | SlSelect | SlTextarea>(`[name="${name}"]`);
+            return typeof control?.value === 'string' ? control.value : '';
+        };
+        const selectedCategories = this.allCategories ? [] : this.selectedCategories.map(Number);
+        const maxUsage = value('maxUsage');
+        const common = {
+            start: this.parseDateTime(value('start')),
+            end: this.parseDateTime(value('end')),
+            maxUsage: maxUsage ? Number.parseInt(maxUsage, 10) : null,
+            description: value('description'),
+            emailReference: value('emailReference'),
+        };
+        const promoCode = value('promoCode').toUpperCase();
+        const discountType = (value('discountType') || 'PERCENTAGE') as DiscountType;
+        const currencyCode = data.event?.currency ?? value('currencyCode');
+        if (!code) {
+            if (promoCode.length < 7 || !/^[A-Za-z0-9_\-:@!$*,;]*$/.test(promoCode)) {
+                this.validationErrors = {promoCode: 'Use at least 7 characters: letters, numbers, and -:_@!$*,;'};
+                return;
+            }
+            if (!data.forEvent && discountType.startsWith('FIXED_AMOUNT') && !currencyCode) {
+                this.validationErrors = {currencyCode: 'Currency is required for fixed-amount discounts.'};
+                return;
+            }
+        }
+        this.saving = true;
+        this.validationErrors = {};
+        const failureMessage = code ? 'Failed to update code' : 'Failed to create promo code';
+        try {
+            const response = code
+                ? await PromoCodeService.update(code.id, {
+                    ...common,
+                    categories: data.forEvent && code.codeType === 'DISCOUNT'
+                        ? selectedCategories
+                        : code.categories,
+                    hiddenCategoryId: code.hiddenCategoryId,
+                    eventId: code.eventId,
+                    organizationId: code.organizationId!,
+                })
+                : await PromoCodeService.add({
+                    ...common,
+                    promoCode,
+                    discountAmount: value('discountAmount') ? Number(value('discountAmount')) : null,
+                    discountType,
+                    categories: data.forEvent ? selectedCategories : [],
+                    codeType: this.pendingCodeType,
+                    hiddenCategoryId: this.pendingCodeType === 'ACCESS' ? Number(value('hiddenCategoryId')) : null,
+                    currencyCode,
+                    eventId: data.event?.id ?? null,
+                    organizationId: data.forEvent ? null : data.organizationId,
+                });
+            if (response.ok) {
+                await this.codeDialog.hide();
+                this.loadDataTask.run();
+                dispatchFeedback({type: 'success', message: code ? 'Code updated successfully' : 'Promo code created successfully'}, this);
+            } else {
+                const body = await response.json();
+                if (body.validationErrors) {
+                    this.validationErrors = this.extractValidationErrors(body.validationErrors);
+                } else {
+                    dispatchFeedback({type: 'danger', message: failureMessage}, this);
+                }
+            }
+        } catch {
+            dispatchFeedback({type: 'danger', message: failureMessage}, this);
+        } finally {
+            this.saving = false;
+        }
+    }
+
+    private async showUsageDetails(code: PromoCodeDiscount, data: LoadData): Promise<void> {
+        try {
+            this.usageData = await PromoCodeService.getUsageDetails(code.id, data.event?.shortName);
+            if (this.usageData.length === 0) {
+                dispatchFeedback({type: 'warning', message: 'No reservations found for this code.'}, this);
+                return;
+            }
+            this.usageCode = code.promoCode;
+            this.usageTimeZone = data.event?.timeZone ?? 'UTC';
+            await this.updateComplete;
+            this.usageDetailsDialog.show();
+        } catch {
+            dispatchFeedback({type: 'danger', message: 'Failed to load usage details.'}, this);
+        }
+    }
+
+    private renderUsageDetailsDialog(): TemplateResult {
+        return html`
+            <sl-dialog id="usage-details-dialog" label="Usage details" class="usage-details-dialog" size="large" placement="bottom">
+                <div slot="label" class="promo-dialog-title">
+                    <sl-icon name="ticket-perforated"></sl-icon>
+                    <div>
+                        <strong>Usage details - ${this.usageCode}</strong>
+                        <small>Reservations and attendees using this code. Times shown in ${this.usageTimeZone} time zone.</small>
+                    </div>
+                </div>
+                ${repeat(this.usageData, (detail) => detail.event.shortName, (detail) => html`
+                    <section class="section-card">
+                        <div class="dialog-section-header">
+                            <sl-icon name="calendar-event"></sl-icon>${detail.event.displayName}
+                            <sl-badge variant="primary" pill>${detail.reservations.length} ${detail.reservations.length === 1 ? 'reservation' : 'reservations'}</sl-badge>
+                        </div>
+                        <div class="section-body table-responsive">
+                        <table class="table table-striped" aria-label="Reservations for ${detail.event.displayName}">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Reservation</th>
+                                    <th>Customer</th>
+                                    <th>Payment</th>
+                                    <th>Amount</th>
+                                    <th>Confirmation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${repeat(detail.reservations, (r) => r.id, (reservation) => html`
+                                    <tr>
+                                        <td><a href="/admin/#/events/${encodeURIComponent(detail.event.shortName)}/reservation/${encodeURIComponent(reservation.id)}" target="_blank" rel="noopener" class="username-link" title=${reservation.id} aria-label="Open reservation ${reservation.id}">${reservation.id.substring(0, 8).toUpperCase()}</a></td>
+                                        <td>${reservation.firstName} ${reservation.lastName}<small class="text-muted code-contact">${reservation.email}</small></td>
+                                        <td>${reservation.paymentType}</td>
+                                        <td>
+                                            ${when(reservation.paymentType !== 'NONE' && reservation.finalPriceCts != null && reservation.currency,
+                                                () => html`<sl-format-number type="currency" currency=${reservation.currency} value=${reservation.finalPriceCts! / 100}></sl-format-number>`,
+                                                () => html`—`)}
+                                        </td>
+                                        <td>
+                                            ${when(reservation.confirmationTimestamp, () => html`
+                                                <sl-format-date
+                                                    time-zone=${this.usageTimeZone}
+                                                    date=${this.asUtcDateTime(reservation.confirmationTimestamp!)}
+                                                    month="short" day="2-digit" year="numeric" hour="2-digit" minute="2-digit" hour-format="24"
+                                                ></sl-format-date>
+                                            `, () => html`<span class="text-muted">Not confirmed</span>`)}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="5">
+                                            <sl-details summary="Tickets (${reservation.tickets.length})">
+                                            <table class="table" aria-label="Tickets for reservation ${reservation.id}">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col">Ticket ID</th>
+                                                        <th scope="col">Attendee</th>
+                                                        <th scope="col">Type</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${repeat(reservation.tickets, (t) => t.id, (ticket) => html`
+                                                        <tr>
+                                                            <td>${ticket.id.substring(0, 8).toUpperCase()}</td>
+                                                            <td>${ticket.firstName} ${ticket.lastName}</td>
+                                                            <td>${ticket.type}</td>
+                                                        </tr>
+                                                    `)}
+                                                </tbody>
+                                            </table>
+                                            </sl-details>
+                                        </td>
+                                    </tr>
+                                `)}
+                            </tbody>
+                        </table>
+                        </div>
+                    </section>
+                `)}
+
+                <div slot="footer">
+                    <sl-divider></sl-divider>
+                    <div class="row" style="--alfio-row-cols: 3">
+                        <div></div>
+                        <div></div>
+                        <sl-button variant="default" size="large" @click=${() => this.usageDetailsDialog.hide()}><sl-icon name="x-circle" slot="prefix"></sl-icon>Close</sl-button>
+                    </div>
+                </div>
+            </sl-dialog>
+        `;
+    }
+
+    // ── Actions ──
+
+    private async deleteCode(code: PromoCodeDiscount, data: LoadData): Promise<void> {
+        const confirmed = await ConfirmationDialogService.requestConfirm(
+            `Delete ${data.promoCodeDescription} code`,
+            `Do you really want to delete the code "${code.promoCode}"? This action cannot be undone.`,
+            'danger'
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const response = await PromoCodeService.remove(code.id);
+            if (response.ok) {
+                this.loadDataTask.run();
+                dispatchFeedback({type: 'success', message: 'Code deleted successfully'}, this);
+            } else {
+                dispatchFeedback({type: 'danger', message: 'Failed to delete code'}, this);
+            }
+        } catch {
+            dispatchFeedback({type: 'danger', message: 'Failed to delete code'}, this);
+        }
+    }
+
+    private async disableCode(code: PromoCodeDiscount, data: LoadData): Promise<void> {
+        const confirmed = await ConfirmationDialogService.requestConfirm(
+            `Disable ${data.promoCodeDescription} code`,
+            `Do you want to disable the code "${code.promoCode}"?`,
+            'warning'
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const response = await PromoCodeService.disable(code.id);
+            if (response.ok) {
+                this.loadDataTask.run();
+                dispatchFeedback({type: 'success', message: 'Code disabled successfully'}, this);
+            } else {
+                dispatchFeedback({type: 'danger', message: 'Failed to disable code'}, this);
+            }
+        } catch {
+            dispatchFeedback({type: 'danger', message: 'Failed to disable code'}, this);
+        }
+    }
+
+    // ── Helpers ──
+
+    private parseDateTime(isoString: string): DateTimeModification {
+        const date = isoString.substring(0, 10);
+        const time = isoString.substring(11, 16);
+        return {date, time};
+    }
+
+    private asUtcDateTime(dateTime: string): string {
+        const normalized = dateTime.replace(' ', 'T');
+        return /(?:Z|[+-]\d{2}:?\d{2})$/.test(normalized) ? normalized : `${normalized}Z`;
+    }
+
+    private extractValidationErrors(errors: Array<{fieldName: string, message: string}>): Record<string, string> {
+        const result: Record<string, string> = {};
+        for (const err of errors) {
+            result[err.fieldName] = err.message;
+        }
+        return result;
+    }
+}
+
+declare global {
+    interface HTMLElementTagNameMap {
+        'alfio-promo-code': PromoCode;
+    }
+}

@@ -753,48 +753,6 @@
         return instance;
     });
 
-    baseServices.service("PromoCodeService", function($http, HttpErrorHandler) {
-
-        function addUtfOffsetIfNecessary(promoCode) {
-            if(promoCode.eventId == null) {
-                promoCode.utcOffset = (new Date()).getTimezoneOffset()*-60; //in seconds
-            }
-        }
-
-        return {
-                add : function(promoCode) {
-                    addUtfOffsetIfNecessary(promoCode);
-                    return $http['post']('/admin/api/promo-code', promoCode).error(HttpErrorHandler.handle);
-                },
-                remove: function(promoCodeId) {
-                    return $http['delete']('/admin/api/promo-code/' + promoCodeId).error(HttpErrorHandler.handle);
-                },
-                list: function(eventId) {
-                    return $http.get('/admin/api/events/' + eventId + '/promo-code').error(HttpErrorHandler.handle);
-                },
-                listOrganization : function(organizationId) {
-                    return $http.get('/admin/api/organization/' + organizationId + '/promo-code').error(HttpErrorHandler.handle);
-                },
-                countUse : function(promoCodeId) {
-                    return $http.get('/admin/api/promo-code/' + promoCodeId + '/count-use');
-                },
-                disable: function(promoCodeId) {
-                    return $http['post']('/admin/api/promo-code/' + promoCodeId + '/disable');
-                },
-                update: function(promoCodeId, toUpdate) {
-                    addUtfOffsetIfNecessary(toUpdate);
-                    return $http.post('/admin/api/promo-code/' + promoCodeId, toUpdate);
-                },
-                getUsageDetails: function(promoCodeId, eventShortName) {
-                    return $http.get('/admin/api/promo-code/' + promoCodeId + '/detailed-usage', {
-                        params: {
-                            eventShortName
-                        }
-                    });
-                }
-        };
-    });
-
     baseServices.service("CheckInService", ['$http', 'HttpErrorHandler', '$window', function($http, HttpErrorHandler, $window) {
         return {
             findAllTicketIds : function(eventId) {
