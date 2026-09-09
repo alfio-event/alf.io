@@ -211,12 +211,12 @@
             })
             .state('events.single.reservationsList', {
                 url: '/reservations/?search',
-                template: '<reservations-list purchase-context="ctrl.event" purchase-context-type="ctrl.purchaseContextType"></reservations-list>',
-                controller: function(getEvent) {
-                    this.event = getEvent.data.event;
-                    this.purchaseContextType = 'event';
-                },
-                controllerAs: 'ctrl'
+                // The Lit component owns filtering; query changes must preserve its DOM.
+                reloadOnSearch: false,
+                template: '<alfio-reservations-list data-event-name="{{$ctrl.loadEvent.shortName}}"></alfio-reservations-list>',
+                controller: loadEventCtrl,
+                controllerAs: '$ctrl',
+                resolve: loadEvent
             })
             .state('events.single.paymentsList', {
                 url: '/transactions/?search',

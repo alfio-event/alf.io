@@ -70,3 +70,4 @@ export { UserProfileEdit } from './users/user-profile-edit.ts';
 export { ExportReservationsButton } from './event/export-reservations/export-reservations-button';
 export { FileUpload } from './components/file-upload';
 export { PromoCode } from './event/promo-code/promo-code';
+export { ReservationsList } from './event/reservations-list/reservations-list';
