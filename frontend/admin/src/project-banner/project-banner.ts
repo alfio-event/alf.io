@@ -2,7 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js';
 import { ConfigurationService } from '../service/configuration';
-import { retroCompat, textColors, row } from '../styles'
+import { retroCompat, textColors, row, spacing } from '../styles'
 
 @customElement('alfio-project-banner')
 export class ProjectBanner extends LitElement {
@@ -13,10 +13,11 @@ export class ProjectBanner extends LitElement {
     @property({ type: String, attribute: 'data-alfio-version' })
     alfioVersion?: string;
 
-    static styles = [
+    static readonly styles = [
         retroCompat,
         textColors,
         row,
+        spacing,
         css` :host { --alfio-row-cols: 3 }`
     ];
 
@@ -49,7 +50,7 @@ export class ProjectBanner extends LitElement {
                         </sl-button>
                     </div>
                     <div>
-                        <sl-button type="button" class="btn btn-default ml-3" @click=${this.dismiss} ng-click="$ctrl.dismiss()">Dismiss</sl-button>
+                        <sl-button type="button" variant="default" @click=${this.dismiss}>Dismiss</sl-button>
                     </div>
                 </div>
             </div>
@@ -64,7 +65,7 @@ export class ProjectBanner extends LitElement {
             this.fullBanner = 'false';
             window.location.reload();
         } catch (e) {
-            console.log('error while updating...');
+            console.log('error while updating...', e);
         }
     }
 }

@@ -333,7 +333,17 @@ springBoot {
     mainClass = 'alfio.config.SpringBootLauncher'
 }
 
+def killViteDevProcess = {
+    def proc = project.ext.find("viteDevProcess")
+    if (proc != null && proc.isAlive()) {
+        logger.lifecycle("Stopping Vite dev server ...")
+        proc.descendants().forEach { it.destroyForcibly() }
+        proc.destroyForcibly()
+    }
+}
+
 bootRun {
+    dependsOn 'copyFrontendDev', 'frontendAdminPnpmInstall'
     def externalConfig = new File("./custom.jvmargs")
     def opts = []
     opts += [
@@ -348,8 +358,39 @@ bootRun {
         opts += externalConfig.readLines()
     }
     jvmArgs = opts
-    dependsOn 'copyFrontendDev'
     classpath(layout.buildDirectory.dir('index-transformed'), layout.buildDirectory.dir('frontend-dev'))
+
+    doFirst {
+        logger.lifecycle("Starting Vite dev server in frontend/admin ...")
+        def viteDir = file("${project.projectDir}/frontend/admin")
+        def pnpmExe = node.pnpmCommand.get()
+        def viteProcess = new ProcessBuilder(pnpmExe, "run", "dev")
+            .directory(viteDir)
+            .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+            .redirectError(ProcessBuilder.Redirect.INHERIT)
+            .redirectInput(ProcessBuilder.Redirect.PIPE)
+            .start()
+        project.ext.set("viteDevProcess", viteProcess)
+    }
+}
+
+gradle.addListener(new TaskExecutionListener() {
+    @Override
+    void afterExecute(Task task, TaskState state) {
+        if (task.name == 'bootRun') {
+            killViteDevProcess.call()
+        }
+    }
+
+    @Override
+    void beforeExecute(Task task) {
+    }
+})
+
+tasks.register('killViteDevServer') {
+    doLast {
+        killViteDevProcess.call()
+    }
 }
 
 tasks.register('copyFrontendDev', Copy) {
