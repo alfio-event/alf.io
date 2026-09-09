@@ -64,6 +64,7 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/service/user.service.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/email/email-log.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/util/file-upload.js"></script>
+    
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/configuration/configuration.js"></script>
 
@@ -78,11 +79,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/ticket-full-data/ticket-full-data.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation-cancel/reservation-cancel.js"></script>
-
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/users/users.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/user-edit/user-edit.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/apikey-bulk-import/apikey-bulk-import.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/user-edit-current/user-edit-current.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/resources/show/resources-show.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/resources/edit/resources-edit.js"></script>
