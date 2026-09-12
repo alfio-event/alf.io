@@ -151,7 +151,7 @@ public class DataPreloaderManager {
 
         var baseUrl = configurationManager.getForSystem(ConfigurationKeys.BASE_URL).getRequiredValue();
 
-        var title = messageSourceManager.getMessageSourceFor(event).getMessage("event.get-your-ticket-for", new String[] {event.getDisplayName()}, locale);
+        var title = messageSourceManager.getMessageSourceFor(event).getMessage("show-event.header.title", new String[] {event.getDisplayName()}, locale);
 
         var head = eventOpenGraph.getElementsByTagName("head").get(0);
 
@@ -162,7 +162,7 @@ public class DataPreloaderManager {
         getMetaElement(eventOpenGraph, "name", "twitter:image").setAttribute(CONTENT, baseUrl + "/file/" + event.getFileBlobId());
         //
 
-        eventOpenGraph.getElementsByTagName("title").get(0).appendChild(new Text(title));
+        eventOpenGraph.getElementsByTagName("title").get(0).setTextContent(title);
         getMetaElement(eventOpenGraph, PROPERTY, "og:title").setAttribute(CONTENT, title);
         getMetaElement(eventOpenGraph, PROPERTY,"og:image").setAttribute(CONTENT, baseUrl + "/file/" + event.getFileBlobId());
 
@@ -234,21 +234,24 @@ public class DataPreloaderManager {
     }
 
     public static void preloadEventData(String eventShortName,
-                                 ServletWebRequest request,
-                                 HttpSession session,
-                                 EventLoader eventLoader,
-                                 Element head,
-                                 MessageSourceManager messageSourceManager,
-                                 Node idx,
-                                 Json json,
-                                 String lang) {
+                                        ServletWebRequest request,
+                                        HttpSession session,
+                                        EventLoader eventLoader,
+                                        Element head,
+                                        MessageSourceManager messageSourceManager,
+                                        Node idx,
+                                        Json json,
+                                        String lang) {
         String preloadLang = Objects.requireNonNullElse(lang, "en");
         if (eventShortName != null) {
             var eventInfoOptional = eventLoader.loadEventInfo(eventShortName, session);
             if (eventInfoOptional.isPresent()) {
                 var ev = eventInfoOptional.get();
                 head.appendChild(buildScripTag(json.asJsonString(ev), APPLICATION_JSON, "preload-event", eventShortName));
-                preloadLang = getMatchingLocale(request, ev.getContentLanguages().stream().map(Language::getLocale).toList(), lang).getLanguage();
+                var matchingLocale = getMatchingLocale(request, ev.getContentLanguages().stream().map(Language::getLocale).toList(), lang);
+                preloadLang = matchingLocale.getLanguage();
+                var title = messageSourceManager.getMessageSourceFor(ev.purchaseContext()).getMessage("show-event.header.title", new String[] {ev.getDisplayName()}, matchingLocale);
+                Optional.ofNullable(IterableUtils.get(head.getElementsByTagName("title"), 0)).ifPresent(e -> e.setTextContent(title));
                 if (ZonedDateTime.now(ClockProvider.clock()).isAfter(((Event)ev.purchaseContext()).getEnd())) {
                     // event is over.
                     head.appendChild(buildMetaTag("robots", "noindex"));
