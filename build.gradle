@@ -570,6 +570,10 @@ jooq {
 
     configurations {
         main {
+            // Do not wire generateJooq into the normal build lifecycle.
+            // Run it manually with:  ./gradlew generateJooq
+            generateSchemaSourceOnCompilation = false
+
             generationTool {
                 logging = org.jooq.meta.jaxb.Logging.WARN
                 // JDBC block is populated at execution time by the doFirst hook below
