@@ -423,7 +423,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertFalse(docWithOpenGraph.getAllNodesMatching(Selector.select().element("meta").attrValEq("name", "twitter:card").toMatcher()).isEmpty());
 
             var title = (Element) docWithOpenGraph.getAllNodesMatching(Selector.select().element("meta").attrValEq("property", "og:title").toMatcher(), true).get(0);
-            assertEquals("Reserve a Ticket for " + context.event.getDisplayName() + "!", title.getAttribute("content"));
+            assertEquals("Get your tickets for " + context.event.getDisplayName(), title.getAttribute("content"));
         }
         //
 

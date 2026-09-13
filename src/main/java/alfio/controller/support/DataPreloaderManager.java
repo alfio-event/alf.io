@@ -151,7 +151,7 @@ public class DataPreloaderManager {
 
         var baseUrl = configurationManager.getForSystem(ConfigurationKeys.BASE_URL).getRequiredValue();
 
-        var title = messageSourceManager.getMessageSourceFor(event).getMessage("show-event.header.title", new String[] {event.getDisplayName()}, locale);
+        var title = messageSourceManager.getMessageSourceFor(event).getMessage("event.get-your-ticket-for", new String[] {event.getDisplayName()}, locale);
 
         var head = eventOpenGraph.getElementsByTagName("head").get(0);
 
@@ -250,7 +250,7 @@ public class DataPreloaderManager {
                 head.appendChild(buildScripTag(json.asJsonString(ev), APPLICATION_JSON, "preload-event", eventShortName));
                 var matchingLocale = getMatchingLocale(request, ev.getContentLanguages().stream().map(Language::getLocale).toList(), lang);
                 preloadLang = matchingLocale.getLanguage();
-                var title = messageSourceManager.getMessageSourceFor(ev.purchaseContext()).getMessage("show-event.header.title", new String[] {ev.getDisplayName()}, matchingLocale);
+                var title = messageSourceManager.getMessageSourceFor(ev.purchaseContext()).getMessage("event.get-your-ticket-for", new String[] {ev.getDisplayName()}, matchingLocale);
                 Optional.ofNullable(IterableUtils.get(head.getElementsByTagName("title"), 0)).ifPresent(e -> e.setTextContent(title));
                 if (ZonedDateTime.now(ClockProvider.clock()).isAfter(((Event)ev.purchaseContext()).getEnd())) {
                     // event is over.
