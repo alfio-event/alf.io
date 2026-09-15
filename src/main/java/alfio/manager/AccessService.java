@@ -19,14 +19,17 @@ package alfio.manager;
 import alfio.config.authentication.support.APITokenAuthentication;
 import alfio.controller.form.ReservationCreate;
 import alfio.manager.support.AccessDeniedException;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.PurchaseContext;
 import alfio.model.modification.AdditionalServiceReservationModification;
+import alfio.model.modification.ConfigurationModification;
 import alfio.model.modification.GroupModification;
-import alfio.model.modification.PromoCodeDiscountModification;
 import alfio.model.modification.ReservationRequest;
 import alfio.model.subscription.LinkEventsToSubscriptionRequest;
 import alfio.model.subscription.LinkSubscriptionsToEventRequest;
+import alfio.model.system.ConfigurationKeys;
+import alfio.model.system.ConfigurationPathLevel;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.repository.*;
@@ -48,7 +51,6 @@ import java.util.stream.Collectors;
 import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM_API_CLIENT;
 import static alfio.manager.user.UserManager.ADMIN_USERNAME;
 import static alfio.util.MiscUtils.removeTabsAndNewlines;
-import static java.util.Objects.requireNonNullElse;
 
 /**
  * Centralized service for checking if a given Principal can
@@ -155,6 +157,37 @@ public class AccessService {
 
         log.warn("User {} is NOT an owner or supervisor of organizationId {}", principal.getName(), organizationId);
         throw new AccessDeniedException();
+    }
+
+    public void checkSettingsOwnership(Principal principal,
+                                       ConfigurationLevel configurationLevel,
+                                       Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input) {
+        boolean admin = isAdmin(principal);
+        if (!admin) {
+            checkOwnership(principal, configurationLevel);
+            boolean allowed = input.values().stream()
+                .flatMap(List::stream)
+                .map(m -> ConfigurationKeys.fromString(m.getKey()))
+                .allMatch(k -> k.getPathLevels().contains(configurationLevel.getPathLevel()));
+            if (!allowed) {
+                throw new AccessDeniedException();
+            }
+        }
+    }
+
+    private void checkOwnership(Principal principal, ConfigurationLevel configurationLevel) {
+        if (configurationLevel.getPathLevel() == ConfigurationPathLevel.ORGANIZATION) {
+            checkOrganizationOwnership(principal, configurationLevel.getOrganizationId().orElseThrow());
+        } else if (configurationLevel.getPathLevel() == ConfigurationPathLevel.PURCHASE_CONTEXT) {
+            boolean isEvent = configurationLevel.getEventId().isPresent();
+            if (isEvent) {
+                checkEventOwnership(principal, configurationLevel.getEventId().orElseThrow(), configurationLevel.getOrganizationId().orElseThrow());
+            } else {
+                checkSubscriptionDescriptorOwnership(principal, configurationLevel.getSubscriptionDescriptorId().orElseThrow().toString());
+            }
+        } else { // ticket category
+            checkCategoryOwnership(principal, configurationLevel.getEventId().orElseThrow(), configurationLevel.getTicketCategoryId().orElseThrow());
+        }
     }
 
     public void checkOrganizationOwnership(Principal principal, Integer organizationId) {

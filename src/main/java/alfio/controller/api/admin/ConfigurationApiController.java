@@ -30,6 +30,7 @@ import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
@@ -112,7 +113,7 @@ public class ConfigurationApiController {
     public boolean updateOrganizationConfiguration(@PathVariable int organizationId,
                                                    @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
         // id of input are not used, so not needed to check for consistency
-        accessService.checkOrganizationOwnership(principal, organizationId);
+        accessService.checkSettingsOwnership(principal, ConfigurationLevel.organization(organizationId), input);
         //
         configurationManager.saveAllOrganizationConfiguration(organizationId, input.values().stream().flatMap(Collection::stream).toList(), principal.getName());
         return true;
@@ -162,7 +163,7 @@ public class ConfigurationApiController {
     public boolean updateEventConfiguration(@PathVariable int organizationId, @PathVariable int eventId,
                                             @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
         // id of input are not used, so not needed to check for consistency
-        accessService.checkEventOwnership(principal, eventId, organizationId);
+        accessService.checkSettingsOwnership(principal, ConfigurationLevel.event(new EventAndOrganizationId(eventId, organizationId)), input);
         //
         configurationManager.saveAllEventConfiguration(eventId, organizationId, input.values().stream().flatMap(Collection::stream).toList(), principal.getName());
         return true;
@@ -172,7 +173,7 @@ public class ConfigurationApiController {
     public boolean updateCategoryConfiguration(@PathVariable int categoryId, @PathVariable int eventId,
                                                     @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
         // id of input are not used, so no needed to check for consistency
-        accessService.checkCategoryOwnership(principal, eventId, categoryId);
+        accessService.checkSettingsOwnership(principal, ConfigurationLevel.ticketCategory(new EventAndOrganizationId(eventId, -1), categoryId), input);
         //
         configurationManager.saveCategoryConfiguration(categoryId, eventId, input.values().stream().flatMap(Collection::stream).toList(), principal.getName());
         return true;
