@@ -26,12 +26,14 @@ import alfio.model.modification.PromoCodeDiscountWithFormattedTimeAndAmount;
 import alfio.repository.EventRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/admin/api")
@@ -72,8 +74,12 @@ public class PromoCodeDiscountApiController {
     public void updatePromoCode(@PathVariable int promoCodeId,
                                 @RequestBody PromoCodeDiscountModification promoCode,
                                 Principal principal) {
-        accessService.checkAccessToPromoCodeEventOrganization(principal, promoCode.getEventId(), promoCode.getOrganizationId());
         PromoCodeDiscount pcd = promoCodeRequestManager.findById(promoCodeId).orElseThrow();
+        Assert.isTrue(Objects.equals(promoCode.getEventId(), pcd.getEventId()), "Event id does not match");
+        Assert.isTrue(Objects.equals(promoCode.getOrganizationId(), pcd.getOrganizationId()), "Organization id does not match");
+
+        accessService.checkAccessToPromoCodeEventOrganization(principal, promoCode.getEventId(), promoCode.getOrganizationId());
+
         ZoneId zoneId = zoneIdFromEventId(pcd.getEventId(), promoCode.getUtcOffset());
         eventManager.updatePromoCode(promoCodeId, promoCode.getStart().toZonedDateTime(zoneId),
             promoCode.getEnd().toZonedDateTime(zoneId), promoCode.getMaxUsage(), promoCode.getCategories(),
