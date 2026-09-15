@@ -43,6 +43,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static alfio.util.Wrappers.optionally;
 
@@ -78,6 +79,7 @@ public class AttendeeApiController {
     public ResponseEntity<TicketAndCheckInResult> scanBadge(@RequestBody SponsorScanRequest request,
                                                             Principal principal,
                                                             @RequestHeader(name = ALFIO_OPERATOR_HEADER, required = false) String operator) {
+        accessService.canAccessEvent(principal, request.eventName);
         return ResponseEntity.ok(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, request.leadStatus, principal.getName(), operator, request.timestamp));
     }
 
@@ -85,6 +87,9 @@ public class AttendeeApiController {
     public ResponseEntity<List<TicketAndCheckInResult>> scanBadges(@RequestBody List<SponsorScanRequest> requests,
                                                                    Principal principal,
                                                                    @RequestHeader(name = ALFIO_OPERATOR_HEADER, required = false) String operator) {
+        requests.stream().map(SponsorScanRequest::getEventName).collect(Collectors.toSet()).forEach(event -> {
+            accessService.canAccessEvent(principal, event);
+        });
         String username = principal.getName();
         return ResponseEntity.ok(requests.stream()
             .map(request -> attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, request.leadStatus, username, operator, request.timestamp))
