@@ -39,6 +39,7 @@ import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
@@ -156,7 +157,7 @@ class DiscountIntegrationTest extends BaseIntegrationTest {
 
 
                     } catch (Throwable t) {
-
+                        // ignored
                     } finally {
                         countdownLatchBeforePerformPayment.countDown();
                     }
@@ -170,9 +171,10 @@ class DiscountIntegrationTest extends BaseIntegrationTest {
                                 event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
                                 "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
                             var paymentResult = ticketReservationManager.performPayment(specification, totalPrice, PaymentProxy.OFFLINE, StaticPaymentMethods.BANK_TRANSFER, null);
-                            assertTrue(paymentResult.isSuccessful());
+                            Validate.isTrue(paymentResult.isSuccessful());
                         }
                     } catch (Throwable t) {
+                        // ignored
                     } finally {
                         countdownLatchBeforeComplete.countDown();
                     }
@@ -185,6 +187,7 @@ class DiscountIntegrationTest extends BaseIntegrationTest {
                 } catch (InterruptedException e) {
                     throw new IllegalStateException(e);
                 } catch (Throwable t) {
+                    // ignored
                 } finally {
                     doneSignal.countDown();
                 }

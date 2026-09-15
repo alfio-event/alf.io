@@ -111,6 +111,7 @@ import static alfio.model.system.ConfigurationKeys.TRANSLATION_OVERRIDE;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
@@ -292,7 +293,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
         {
             Principal p = Mockito.mock(Principal.class);
-            Mockito.when(p.getName()).thenReturn(context.userId);
+            when(p.getName()).thenReturn(context.userId);
             assertTrue(usersApiController.getAllOrganizations(p).stream().anyMatch(o -> context.event.getOrganizationId() == o.getId()));
             assertEquals(context.event.getOrganizationId(), usersApiController.getOrganization(context.event.getOrganizationId(), p).getId());
         }
@@ -1182,7 +1183,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 cleanupExtensionLog();
 
                 Principal principal = mock(Principal.class);
-                Mockito.when(principal.getName()).thenReturn(context.userId);
+                when(principal.getName()).thenReturn(context.userId);
                 String internalTicketIdentifier = fullTicketInfo.getUuid();
                 String eventName = context.event.getShortName();
 
@@ -1278,7 +1279,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
                 UsersApiController.UserWithPasswordAndQRCode sponsorUser = usersApiController.insertUser(new UserModification(null, context.event.getOrganizationId(), "SPONSOR", "sponsor", "first", "last", "email@email.com", User.Type.INTERNAL, null, null), "http://localhost:8080", principal);
                 Principal sponsorPrincipal = mock(Principal.class);
-                Mockito.when(sponsorPrincipal.getName()).thenReturn(sponsorUser.getUsername());
+                when(sponsorPrincipal.getName()).thenReturn(sponsorUser.getUsername());
 
                 // check failures
                 assertEquals(CheckInStatus.EVENT_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest("not-existing-event", "not-existing-ticket", null, null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
@@ -1490,7 +1491,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
     private void checkReservationExport(ReservationFlowContext context) {
         Principal principal = mock(Principal.class);
-        Mockito.when(principal.getName()).thenReturn(context.userId);
+        when(principal.getName()).thenReturn(context.userId);
         // load all reservations
         var now = LocalDate.now(clockProvider.getClock());
         var reservationsByEvent = exportManager.reservationsForInterval(now.minusDays(1), now, principal);
@@ -1780,7 +1781,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
     protected void validatePayment(String eventName, String reservationIdentifier, ReservationFlowContext context) {
         Principal principal = mock(Principal.class);
-        Mockito.when(principal.getName()).thenReturn(context.userId);
+        when(principal.getName()).thenReturn(context.userId);
         var reservation = ticketReservationRepository.findReservationById(reservationIdentifier);
         assertEquals(context.vatIncluded ? 1000 : 1010, reservation.getFinalPriceCts());
         assertEquals(1000, reservation.getSrcPriceCts());

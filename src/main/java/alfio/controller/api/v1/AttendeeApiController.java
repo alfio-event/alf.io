@@ -18,8 +18,7 @@ package alfio.controller.api.v1;
 
 import alfio.manager.AccessService;
 import alfio.manager.AttendeeManager;
-import alfio.manager.support.SponsorAttendeeData;
-import alfio.manager.support.TicketAndCheckInResult;
+import alfio.manager.support.*;
 import alfio.model.SponsorScan;
 import alfio.model.support.TicketWithAdditionalFields;
 import alfio.repository.SponsorScanRepository;
@@ -79,8 +78,13 @@ public class AttendeeApiController {
     public ResponseEntity<TicketAndCheckInResult> scanBadge(@RequestBody SponsorScanRequest request,
                                                             Principal principal,
                                                             @RequestHeader(name = ALFIO_OPERATOR_HEADER, required = false) String operator) {
-        accessService.canAccessEvent(principal, request.eventName);
-        return ResponseEntity.ok(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, request.leadStatus, principal.getName(), operator, request.timestamp));
+        try {
+            accessService.canAccessEvent(principal, request.eventName);
+            return ResponseEntity.ok(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, request.leadStatus, principal.getName(), operator, request.timestamp));
+        } catch (AccessDeniedException e) {
+            // preserve backwards compatibility
+            return ResponseEntity.ok(new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.EVENT_NOT_FOUND, "event not found")));
+        }
     }
 
     @PostMapping("/sponsor-scan/bulk")
