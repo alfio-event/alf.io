@@ -140,6 +140,7 @@ public class UsersApiController {
     @PostMapping("/api-keys/bulk")
     public ResponseEntity<String> bulkCreate(@RequestBody BulkApiKeyCreation request, Principal principal) {
         accessService.checkOrganizationOwnership(principal, request.organizationId);
+        Validate.isTrue(Set.of(Role.OPERATOR, Role.SUPERVISOR, Role.SPONSOR, Role.API_CONSUMER).contains(request.role), "Role " + request.role + " is not allowed");
         userManager.bulkInsertApiKeys(request.organizationId, request.role, request.descriptions, principal);
         return ResponseEntity.ok(OK);
     }
@@ -299,7 +300,7 @@ public class UsersApiController {
         }
     }
 
-    private static final class RoleDescriptor {
+    public static final class RoleDescriptor {
         private final Role role;
 
         RoleDescriptor(Role role) {
@@ -317,14 +318,14 @@ public class UsersApiController {
         public List<String> getTarget() { return role.getTarget().stream().map(RoleTarget::name).toList(); }
     }
 
-    private static final class PasswordModification {
+    public static final class PasswordModification {
 
         private final String oldPassword;
         private final String newPassword;
         private final String newPasswordConfirm;
 
         @JsonCreator
-        private PasswordModification(@JsonProperty("oldPassword") String oldPassword,
+        public PasswordModification(@JsonProperty("oldPassword") String oldPassword,
                                      @JsonProperty("newPassword") String newPassword,
                                      @JsonProperty("newPasswordConfirm") String newPasswordConfirm) {
             this.oldPassword = oldPassword;
@@ -333,14 +334,14 @@ public class UsersApiController {
         }
     }
 
-    private static final class BulkApiKeyCreation {
+    public static final class BulkApiKeyCreation {
 
         private final int organizationId;
         private final Role role;
         private final List<String> descriptions;
 
         @JsonCreator
-        private BulkApiKeyCreation(@JsonProperty("organizationId") int organizationId,
+        public BulkApiKeyCreation(@JsonProperty("organizationId") int organizationId,
                                    @JsonProperty("role") Role role,
                                    @JsonProperty("descriptions") List<String> descriptions) {
             this.organizationId = organizationId;
