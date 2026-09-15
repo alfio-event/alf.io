@@ -120,6 +120,20 @@ public class FileUploadManager {
         log.debug("removed {} unused file_blob", deleted);
     }
 
+    public boolean ensureIsAnImage(UploadBase64FileModification upload) {
+        var mimeType = MimeTypeUtils.parseMimeType(upload.getType());
+        if (!mimeType.isCompatibleWith(IMAGE_TYPE)) {
+            // not an image, nothing to do here.
+            return false;
+        }
+        try {
+            ImageIO.read(new ByteArrayInputStream(upload.getFile()));
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     /**
      * @author <a href="https://github.com/emassip">Etienne M.</a>
      */

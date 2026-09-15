@@ -22,6 +22,7 @@ import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.net.URI;
@@ -44,7 +45,15 @@ public class FileDownloadManager {
     }
 
     public DownloadedFile downloadFile(String url) {
-        HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(requireNonNull(StringUtils.trimToNull(url)))).GET().build();
+        URI toFetch = URI.create(requireNonNull(StringUtils.trimToNull(url)));
+        String scheme = toFetch.getScheme();
+        Assert.isTrue(
+            scheme != null && (
+                scheme.equalsIgnoreCase("https") || scheme.equalsIgnoreCase("http")
+            ),
+            "scheme must be http or https"
+        );
+        HttpRequest httpRequest = HttpRequest.newBuilder(toFetch).GET().build();
         HttpResponse<byte[]> response;
         try {
             response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofByteArray());

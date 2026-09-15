@@ -46,6 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
@@ -416,11 +417,14 @@ public class EventApiV1Controller {
     }
 
     private String fetchImage(String url) {
-        if(url != null) {
+        if (url != null) {
             FileDownloadManager.DownloadedFile file = fileDownloadManager.downloadFile(url);
-            return file != null ? fileUploadManager.insertFile(file.toUploadBase64FileModification()) : null;
-        } else {
-            return null;
+            if (file != null) {
+                var toInsert = file.toUploadBase64FileModification();
+                Assert.isTrue(fileUploadManager.ensureIsAnImage(toInsert), "File downloaded at " + url + " is not an image");
+                return fileUploadManager.insertFile(toInsert);
+            }
         }
+        return null;
     }
 }
