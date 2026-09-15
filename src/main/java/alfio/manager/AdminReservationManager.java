@@ -494,7 +494,7 @@ public class AdminReservationManager {
             if (transactionDetails.getPaymentProvider() != PaymentProxy.ADMIN) {
                 var timestamp = Objects.requireNonNullElseGet(transactionDetails.getTimestamp(), () -> LocalDateTime.now(clockProvider.getClock())).atZone(purchaseContext.getZoneId());
                 if (transactionRepository.transactionExists(reservationId)) {
-                    paymentManager.updateTransactionDetails(reservationId, transactionDetails.getNotes(), timestamp, null);
+                    paymentManager.updateTransactionDetails(reservationId, transactionDetails.getNotes(), timestamp);
                 } else {
                     var paidAmount = Objects.requireNonNullElse(transactionDetails.getPaidAmount(), BigDecimal.ZERO);
                     transactionRepository.insert(

@@ -98,10 +98,10 @@ public class AdminPaymentsApiController {
         try {
             return ResponseEntity.of(purchaseContextManager.findBy(purchaseContextType, publicIdentifier)
                 .map(purchaseContext -> {
-                    accessService.checkOrganizationOwnership(principal, purchaseContext.getOrganizationId());
+                    accessService.checkReservationMembership(principal, purchaseContext.getType(), publicIdentifier, reservationId);
                     var timestampModification = transactionMetadataModification.getTimestamp();
                     var timestamp = timestampModification != null ? timestampModification.toZonedDateTime(purchaseContext.getZoneId()) : null;
-                    paymentManager.updateTransactionDetails(reservationId, transactionMetadataModification.getNotes(), timestamp, principal);
+                    paymentManager.updateTransactionDetails(reservationId, transactionMetadataModification.getNotes(), timestamp);
                     return "OK";
                 }));
         } catch (IllegalArgumentException ex) {

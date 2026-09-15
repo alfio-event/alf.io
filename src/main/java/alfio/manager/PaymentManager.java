@@ -197,9 +197,7 @@ public class PaymentManager {
 
     public void updateTransactionDetails(String reservationId,
                                          String notes,
-                                         ZonedDateTime timestamp,
-                                         Principal principal) {
-        // TODO check if user can modify transaction once we have a centralized service.
+                                         ZonedDateTime timestamp) {
         var existingTransaction = transactionRepository.loadByReservationId(reservationId);
         Validate.isTrue(existingTransaction.isTimestampEditable() || timestamp == null, "Cannot modify timestamp");
         var existingMetadata = new HashMap<>(existingTransaction.getMetadata());
