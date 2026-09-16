@@ -27,6 +27,7 @@ import ch.digitalfondue.jfiveparse.Element;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.context.MessageSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.ServletWebRequest;
 
@@ -62,6 +63,7 @@ class IndexControllerTest {
         eventLoader = mock(EventLoader.class);
         request = mock(ServletWebRequest.class);
         head = new Element("head");
+        head.appendChild(new Element("title"));
         index = mock(Element.class);
         html = mock(Element.class);
         eventInfo = mock(EventWithAdditionalInfo.class);
@@ -70,6 +72,9 @@ class IndexControllerTest {
         json = mock(Json.class);
         messageSourceManager = mock(MessageSourceManager.class);
         when(messageSourceManager.getBundleAsMap(anyString(), anyBoolean(), anyString(), same(MessageSourceManager.PUBLIC_FRONTEND))).thenReturn(Map.of());
+        var ms = mock(MessageSource.class);
+        when(ms.getMessage(any(), any())).thenReturn("");
+        when(messageSourceManager.getMessageSourceFor(any())).thenReturn(ms);
         when(eventLoader.loadEventInfo(anyString(), eq(session))).thenReturn(Optional.of(eventInfo));
         when(eventInfo.purchaseContext()).thenReturn(event);
         when(event.getEnd()).thenReturn(ZonedDateTime.now(FIXED_TIME_CLOCK.getClock()).plusSeconds(1));
