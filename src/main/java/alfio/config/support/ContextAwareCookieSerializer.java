@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.server.Cookie;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.session.web.http.CookieSerializer;
@@ -64,8 +64,8 @@ public class ContextAwareCookieSerializer implements CookieSerializer {
         }
         this.defaultCookieSerializer = serializer;
         this.authenticationRequestMatcher = new OrRequestMatcher(
-            new AntPathRequestMatcher("/callback"),
-            new AntPathRequestMatcher(OPENID_CALLBACK_PATH)
+            PathPatternRequestMatcher.pathPattern("/callback"),
+            PathPatternRequestMatcher.pathPattern(OPENID_CALLBACK_PATH)
         );
     }
 

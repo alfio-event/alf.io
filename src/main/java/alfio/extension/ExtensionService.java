@@ -279,7 +279,7 @@ public class ExtensionService {
     private Optional<ScriptPathNameHash> getFirstScriptSupportingCapability(ExtensionCapability capability, String basePath) {
         var externalConfCapabilities = externalConfiguration.getAllExtensionsForCapability(capability);
         if(!externalConfCapabilities.isEmpty()) {
-            return Optional.of(externalConfCapabilities.get(0));
+            return Optional.of(externalConfCapabilities.getFirst());
         }
         return extensionRepository.getFirstScriptForCapability(generatePossiblePath(basePath), capability.name());
     }

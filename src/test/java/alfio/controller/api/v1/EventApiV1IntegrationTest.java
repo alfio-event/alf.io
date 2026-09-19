@@ -224,7 +224,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
     void updateTest() {
         controller.create(creationRequest(defaultSlug), mockPrincipal);
         String newTitle = "new title";
-        int categoryId = eventManager.loadTicketCategories(eventManager.getSingleEvent(defaultSlug, username)).get(0).getId();
+        int categoryId = eventManager.loadTicketCategories(eventManager.getSingleEvent(defaultSlug, username)).getFirst().getId();
         // decrease number of tickets
         EventCreationRequest updateRequest = new EventCreationRequest(newTitle,null,null,null, null,null,null,null,null,null, null,null,
             new EventCreationRequest.TicketRequest(null, MAX_TICKETS - 1,null,null,null,null,List.of(
@@ -278,7 +278,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
     void updateExistingCategoryUsingId() {
         controller.create(creationRequest(defaultSlug), mockPrincipal);
         var existing = requireNonNull(controller.stats(defaultSlug, mockPrincipal).getBody());
-        var existingCategory = existing.getTicketCategories().get(0);
+        var existingCategory = existing.getTicketCategories().getFirst();
         var categoriesRequest = List.of(
             new EventCreationRequest.CategoryRequest(
                 existingCategory.getId(),
@@ -302,14 +302,14 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
         assertTrue(controller.update(defaultSlug, updateRequest, mockPrincipal).getStatusCode().is2xxSuccessful());
         var modifiedCategories = ticketCategoryRepository.findAllTicketCategories(existing.getId());
         assertEquals(1, modifiedCategories.size());
-        assertEquals(existingCategory.getName() + "_1", modifiedCategories.get(0).getName());
+        assertEquals(existingCategory.getName() + "_1", modifiedCategories.getFirst().getName());
     }
 
     @Test
     void updateExistingCategoryAndAddNewUsingId() {
         controller.create(creationRequest(defaultSlug), mockPrincipal);
         var existing = requireNonNull(controller.stats(defaultSlug, mockPrincipal).getBody());
-        var existingCategory = existing.getTicketCategories().get(0);
+        var existingCategory = existing.getTicketCategories().getFirst();
         var categoriesRequest = List.of(
             new EventCreationRequest.CategoryRequest(
                 existingCategory.getId(),
@@ -347,8 +347,8 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
         assertTrue(controller.update(defaultSlug, updateRequest, mockPrincipal).getStatusCode().is2xxSuccessful());
         var modifiedCategories = ticketCategoryRepository.findAllTicketCategories(existing.getId());
         assertEquals(2, modifiedCategories.size());
-        assertEquals(existingCategory.getName() + "_1", modifiedCategories.get(0).getName());
-        assertEquals(existingCategory.getOrdinal(), modifiedCategories.get(0).getOrdinal());
+        assertEquals(existingCategory.getName() + "_1", modifiedCategories.getFirst().getName());
+        assertEquals(existingCategory.getOrdinal(), modifiedCategories.getFirst().getOrdinal());
         assertEquals(existingCategory.getName() + "_2", modifiedCategories.get(1).getName());
         assertEquals(existingCategory.getOrdinal() + 1, modifiedCategories.get(1).getOrdinal());
     }
@@ -357,7 +357,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
     void updateExistingCategoryUsingName() {
         controller.create(creationRequest(defaultSlug), mockPrincipal);
         var existing = requireNonNull(controller.stats(defaultSlug, mockPrincipal).getBody());
-        var existingCategory = existing.getTicketCategories().get(0);
+        var existingCategory = existing.getTicketCategories().getFirst();
         var categoriesRequest = List.of(
             new EventCreationRequest.CategoryRequest(null,
                 existingCategory.getName(),
@@ -380,7 +380,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
         assertTrue(controller.update(defaultSlug, updateRequest, mockPrincipal).getStatusCode().is2xxSuccessful());
         var modifiedCategories = ticketCategoryRepository.findAllTicketCategories(existing.getId());
         assertEquals(1, modifiedCategories.size());
-        assertEquals(existingCategory.getMaxTickets() - 1, modifiedCategories.get(0).getMaxTickets());
+        assertEquals(existingCategory.getMaxTickets() - 1, modifiedCategories.getFirst().getMaxTickets());
     }
 
     @Test

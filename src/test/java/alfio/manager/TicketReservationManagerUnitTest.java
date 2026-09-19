@@ -200,7 +200,7 @@ class TicketReservationManagerUnitTest {
             initReservationWithTicket(1000, false);
             List<SummaryRow> summaryRows = generator.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1100, 100, 0, 0, "CHF"));
             Assertions.assertEquals(1, summaryRows.size());
-            Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
+            Assertions.assertEquals("10.00", summaryRows.getFirst().getPrice());
         }
 
         @Test
@@ -208,7 +208,7 @@ class TicketReservationManagerUnitTest {
             initReservationWithTicket(1000, true);
             List<SummaryRow> summaryRows = generator.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
             Assertions.assertEquals(1, summaryRows.size());
-            Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
+            Assertions.assertEquals("10.00", summaryRows.getFirst().getPrice());
         }
 
         @Test
@@ -218,7 +218,7 @@ class TicketReservationManagerUnitTest {
             when(ticket.getFinalPriceCts()).thenReturn(909);
             List<SummaryRow> summaryRows = generator.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
             Assertions.assertEquals(1, summaryRows.size());
-            Assertions.assertEquals("9.09", summaryRows.get(0).getPrice());
+            Assertions.assertEquals("9.09", summaryRows.getFirst().getPrice());
         }
 
         @Test
@@ -228,7 +228,7 @@ class TicketReservationManagerUnitTest {
             when(ticket.getFinalPriceCts()).thenReturn(1000);
             List<SummaryRow> summaryRows = generator.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
             Assertions.assertEquals(1, summaryRows.size());
-            Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
+            Assertions.assertEquals("10.00", summaryRows.getFirst().getPrice());
         }
 
         @Test
@@ -260,7 +260,7 @@ class TicketReservationManagerUnitTest {
             initReservationWithAdditionalServices(true, AdditionalService.VatType.NONE, 1000, 1000);
             List<SummaryRow> summaryRows = generator.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 100, 0, 0, "CHF"));
             Assertions.assertEquals(2, summaryRows.size());
-            Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
+            Assertions.assertEquals("10.00", summaryRows.getFirst().getPrice());
             Assertions.assertEquals("10.00", summaryRows.get(1).getPrice());
         }
     }

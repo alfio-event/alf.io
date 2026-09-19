@@ -485,7 +485,7 @@ public class ReservationApiV2Controller {
                     Validate.isTrue(subscriptionRepository.assignSubscription(reservationId, null, null, null) == 1);
                 }
                 if (MapUtils.isNotEmpty(owner.getAdditional())) {
-                    purchaseContextFieldManager.updateFieldsForReservation(owner, purchaseContext, null, subscriptionRepository.findSubscriptionsByReservationId(reservationId).get(0).getId());
+                    purchaseContextFieldManager.updateFieldsForReservation(owner, purchaseContext, null, subscriptionRepository.findSubscriptionsByReservationId(reservationId).getFirst().getId());
                 }
             }
             //

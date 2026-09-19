@@ -128,7 +128,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         assertTrue(result);
         List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
         assertEquals(1, subscriptions.size());
-        Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime> subscriptionDetail = subscriptions.get(0);
+        Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime> subscriptionDetail = subscriptions.getFirst();
         assertEquals("john@doe.com", subscriptionDetail.getLeft().getEmailAddress());
         TicketReservationWithOptionalCodeModification reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(firstCategory.getId()), reservation.getTicketCategoryId());
@@ -150,7 +150,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         assertTrue(result);
         List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
         assertEquals(1, subscriptions.size());
-        Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime> subscriptionDetail = subscriptions.get(0);
+        Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime> subscriptionDetail = subscriptions.getFirst();
         assertEquals("john@doe.com", subscriptionDetail.getLeft().getEmailAddress());
         TicketReservationWithOptionalCodeModification reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(firstCategory.getId()), reservation.getTicketCategoryId());
@@ -167,7 +167,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
                 new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
-        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(AVAILABLE_SEATS);
@@ -200,7 +200,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
-        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(AVAILABLE_SEATS - 1);
@@ -242,7 +242,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
         List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
         assertEquals(1, subscriptions.size());
-        Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime> subscriptionDetail = subscriptions.get(0);
+        Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime> subscriptionDetail = subscriptions.getFirst();
         assertEquals("john@doe.com", subscriptionDetail.getLeft().getEmailAddress());
         TicketReservationWithOptionalCodeModification reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(unbounded.getId()), reservation.getTicketCategoryId());
@@ -264,7 +264,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
-        TicketCategory bounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory bounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(AVAILABLE_SEATS - 1);
@@ -304,7 +304,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
         List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
         assertEquals(1, subscriptions.size());
-        Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime> subscriptionDetail = subscriptions.get(0);
+        Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime> subscriptionDetail = subscriptions.getFirst();
         assertEquals("john@doe.com", subscriptionDetail.getLeft().getEmailAddress());
         TicketReservationWithOptionalCodeModification reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(bounded.getId()), reservation.getTicketCategoryId());
@@ -332,7 +332,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         List<TicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
-        TicketCategory first = ticketCategories.get(0);
+        TicketCategory first = ticketCategories.getFirst();
         TicketCategory second = ticketCategories.get(1);
 
         TicketReservationModification tr2 = new TicketReservationModification();
@@ -358,7 +358,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
         List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
         assertEquals(2, subscriptions.size());
-        Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime> subscriptionDetail = subscriptions.get(0);
+        Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime> subscriptionDetail = subscriptions.getFirst();
         assertEquals("john@doe.com", subscriptionDetail.getLeft().getEmailAddress());
         TicketReservationWithOptionalCodeModification reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(first.getId()), reservation.getTicketCategoryId());

@@ -116,7 +116,7 @@ class CheckInManagerIntegrationTest {
             AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT, null, null
         );
         var additionalService = additionalServiceManager.insertAdditionalService(event, additionalServiceRequest);
-        var category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        var category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
         TicketReservationModification tr = new TicketReservationModification();
         tr.setQuantity(AVAILABLE_SEATS);
         tr.setTicketCategoryId(category.getId());
@@ -141,13 +141,13 @@ class CheckInManagerIntegrationTest {
         var ticketsWithAdditionalServices = ticketsWithAdditionalServices(reservationId, event);
         //
         assertEquals(1, ticketsWithAdditionalServices.size());
-        var firstTicket = ticketsWithAdditionalServices.get(0);
+        var firstTicket = ticketsWithAdditionalServices.getFirst();
         assertEquals((int) ticketRepository.findFirstTicketIdInReservation(reservationId).orElseThrow(), firstTicket.getId());
 
         // disable link support
         jdbcTemplate.update("update event set version = :version where id = :id", new MapSqlParameterSource("id", event.getId()).addValue("version", VERSION_FOR_CODE_CASE_INSENSITIVE));
         ticketsWithAdditionalServices = ticketsWithAdditionalServices(reservationId, eventRepository.findById(event.getId()));
-        firstTicket = ticketsWithAdditionalServices.get(0);
+        firstTicket = ticketsWithAdditionalServices.getFirst();
         //
         assertEquals(1, ticketsWithAdditionalServices.size());
         assertEquals((int) ticketRepository.findFirstTicketIdInReservation(reservationId).orElseThrow(), firstTicket.getId());
@@ -160,7 +160,7 @@ class CheckInManagerIntegrationTest {
 
         // verify link works
         ticketsWithAdditionalServices = ticketsWithAdditionalServices(reservationId, eventRepository.findById(event.getId()));
-        firstTicket = ticketsWithAdditionalServices.get(0);
+        firstTicket = ticketsWithAdditionalServices.getFirst();
         assertEquals(1, ticketsWithAdditionalServices.size());
         assertEquals(ticketId, firstTicket.getId());
     }

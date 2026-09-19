@@ -24,20 +24,20 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static alfio.config.authentication.support.AuthenticationConstants.ADMIN;
 import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM_API_CLIENT;
+import static java.util.Objects.requireNonNull;
 
 class RoleAndOrganizationsTransactionPreparer {
 
@@ -45,22 +45,22 @@ class RoleAndOrganizationsTransactionPreparer {
     private RoleAndOrganizationsTransactionPreparer() {}
 
     private static final OrRequestMatcher IS_PUBLIC_URLS = new OrRequestMatcher(
-        new AntPathRequestMatcher("/resources/**"),
-        new AntPathRequestMatcher("/webjars/**"),
-        new AntPathRequestMatcher("/event/**"),
-        new AntPathRequestMatcher("/"),
-        new AntPathRequestMatcher("/file/**"),
-        new AntPathRequestMatcher("/api/events/**"),
-        new AntPathRequestMatcher("/api/webhook/**"),
-        new AntPathRequestMatcher("/api/payment/**"),
-        new AntPathRequestMatcher("/api/pass/**"),
-        new AntPathRequestMatcher("/api/v2/info"),
-        new AntPathRequestMatcher("/api/v2/public/**"),
-        new AntPathRequestMatcher("/session-expired"),
-        new AntPathRequestMatcher("/authentication"));
+        PathPatternRequestMatcher.pathPattern("/resources/**"),
+        PathPatternRequestMatcher.pathPattern("/webjars/**"),
+        PathPatternRequestMatcher.pathPattern("/event/**"),
+        PathPatternRequestMatcher.pathPattern("/"),
+        PathPatternRequestMatcher.pathPattern("/file/**"),
+        PathPatternRequestMatcher.pathPattern("/api/events/**"),
+        PathPatternRequestMatcher.pathPattern("/api/webhook/**"),
+        PathPatternRequestMatcher.pathPattern("/api/payment/**"),
+        PathPatternRequestMatcher.pathPattern("/api/pass/**"),
+        PathPatternRequestMatcher.pathPattern("/api/v2/info"),
+        PathPatternRequestMatcher.pathPattern("/api/v2/public/**"),
+        PathPatternRequestMatcher.pathPattern("/session-expired"),
+        PathPatternRequestMatcher.pathPattern("/authentication"));
 
     private static boolean isCurrentlyInAPublicUrlRequest() {
-        HttpServletRequest request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        HttpServletRequest request = requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         return IS_PUBLIC_URLS.matches(request);
     }
 
@@ -78,8 +78,7 @@ class RoleAndOrganizationsTransactionPreparer {
 
     private static boolean isPublic() {
         SecurityContext context = SecurityContextHolder.getContext();
-        if (context != null
-            && context.getAuthentication() instanceof OAuth2AuthenticationToken oauth
+        if (context.getAuthentication() instanceof OAuth2AuthenticationToken oauth
             && oauth.getPrincipal() instanceof OpenIdPrincipal principal) {
             return principal.user().isPublicUser();
         }
@@ -88,10 +87,10 @@ class RoleAndOrganizationsTransactionPreparer {
 
     private static boolean isAdmin() {
         if(isLoggedUser()) {
-            return SecurityContextHolder.getContext().getAuthentication()
+            return requireNonNull(SecurityContextHolder.getContext().getAuthentication())
                 .getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .anyMatch(authority -> authority.equals("ROLE_" + SYSTEM_API_CLIENT) || authority.equals("ROLE_" + ADMIN));
+                .anyMatch(authority -> authority != null && (authority.equals("ROLE_" + SYSTEM_API_CLIENT) || authority.equals("ROLE_" + ADMIN)));
         }
         return false;
     }

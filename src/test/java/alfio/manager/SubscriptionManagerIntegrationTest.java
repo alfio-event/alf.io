@@ -145,18 +145,18 @@ class SubscriptionManagerIntegrationTest {
         assertEquals(42, count);
         var res = subscriptionManager.findAll(orgId);
         assertEquals(1, res.size());
-        var descriptor = res.get(0);
+        var descriptor = res.getFirst();
         assertEquals("title", descriptor.getTitle().get("en"));
         assertEquals("description", descriptor.getDescription().get("en"));
         assertEquals(10000, descriptor.getPrice());
-        assertEquals("en", descriptor.getContentLanguages().get(0).getLanguage());
+        assertEquals("en", descriptor.getContentLanguages().getFirst().getLanguage());
 
         // update price
         subscriptionManager.updateSubscriptionDescriptor(buildSubscriptionDescriptor(orgId, descriptor.getId(), new BigDecimal("200")));
 
         res = subscriptionManager.findAll(orgId);
         assertEquals(1, res.size());
-        descriptor = res.get(0);
+        descriptor = res.getFirst();
         assertEquals("title", descriptor.getTitle().get("en"));
         assertEquals("description", descriptor.getDescription().get("en"));
         assertEquals(20000, descriptor.getPrice());
@@ -167,20 +167,20 @@ class SubscriptionManagerIntegrationTest {
         subscriptionManager.setPublicStatus(descriptor.getId(), orgId, true);
         publicSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor(ZonedDateTime.now(ClockProvider.clock()), SearchOptions.empty());
         assertEquals(1, publicSubscriptions.size());
-        assertEquals(res.get(0).getId(), publicSubscriptions.get(0).getId());
+        assertEquals(res.getFirst().getId(), publicSubscriptions.getFirst().getId());
 
-        assertTrue(subscriptionManager.getSubscriptionById(publicSubscriptions.get(0).getId()).isPresent());
+        assertTrue(subscriptionManager.getSubscriptionById(publicSubscriptions.getFirst().getId()).isPresent());
 
         var subscriptionsWithStatistics = subscriptionManager.loadSubscriptionsWithStatistics(orgId);
         assertEquals(1, subscriptionsWithStatistics.size());
-        assertEquals(0, subscriptionsWithStatistics.get(0).getSoldCount());
+        assertEquals(0, subscriptionsWithStatistics.getFirst().getSoldCount());
 
         assertEquals(1, subscriptionManager.linkSubscriptionToEvent(descriptor.getId(), event.getId(), orgId, 0, null));
         var links = subscriptionManager.getLinkedEvents(orgId, descriptor.getId());
         assertFalse(links.isEmpty());
-        assertEquals(event.getId(), links.get(0).getEventId());
-        assertEquals(descriptor.getId(), links.get(0).getSubscriptionDescriptorId());
-        assertEquals(0, links.get(0).getPricePerTicket());
+        assertEquals(event.getId(), links.getFirst().getEventId());
+        assertEquals(descriptor.getId(), links.getFirst().getSubscriptionDescriptorId());
+        assertEquals(0, links.getFirst().getPricePerTicket());
     }
 
     @Test
@@ -197,9 +197,9 @@ class SubscriptionManagerIntegrationTest {
 
         var links = subscriptionManager.getLinkedEvents(orgId, subscriptionId);
         assertFalse(links.isEmpty());
-        assertEquals(event.getId(), links.get(0).getEventId());
-        assertEquals(subscriptionId, links.get(0).getSubscriptionDescriptorId());
-        assertEquals(0, links.get(0).getPricePerTicket());
+        assertEquals(event.getId(), links.getFirst().getEventId());
+        assertEquals(subscriptionId, links.getFirst().getSubscriptionDescriptorId());
+        assertEquals(0, links.getFirst().getPricePerTicket());
 
 
         // subscription list not present, therefore nothing should happen
@@ -212,9 +212,9 @@ class SubscriptionManagerIntegrationTest {
 
         links = subscriptionManager.getLinkedEvents(orgId, subscriptionId);
         assertFalse(links.isEmpty());
-        assertEquals(event.getId(), links.get(0).getEventId());
-        assertEquals(subscriptionId, links.get(0).getSubscriptionDescriptorId());
-        assertEquals(0, links.get(0).getPricePerTicket());
+        assertEquals(event.getId(), links.getFirst().getEventId());
+        assertEquals(subscriptionId, links.getFirst().getSubscriptionDescriptorId());
+        assertEquals(0, links.getFirst().getPricePerTicket());
 
         // subscription list modified, we expect to have an additional link
         var subscriptionId2 = subscriptionManager.createSubscriptionDescriptor(buildSubscriptionDescriptor(orgId, null, new BigDecimal("100"))).orElseThrow();
@@ -256,7 +256,7 @@ class SubscriptionManagerIntegrationTest {
         assertEquals(0, count);
         var res = subscriptionManager.findAll(orgId);
         assertEquals(1, res.size());
-        var descriptor = res.get(0);
+        var descriptor = res.getFirst();
         assertEquals(-1, descriptor.getMaxAvailable());
 
         request = buildSubscriptionDescriptor(orgId, descriptorId, new BigDecimal("100"), 42);

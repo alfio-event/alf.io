@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;

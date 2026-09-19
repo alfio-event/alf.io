@@ -19,7 +19,7 @@ package alfio.controller.api;
 import alfio.controller.IndexController;
 import alfio.controller.support.DataPreloaderManager;
 import alfio.repository.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -27,7 +27,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -41,12 +41,10 @@ public class ControllerConfiguration implements WebMvcConfigurer {
 
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private JsonMapper objectMapper;
 
-    private MappingJackson2HttpMessageConverter jacksonMessageConverter(ObjectMapper objectMapper) {
-        final MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
-        converter.setObjectMapper(objectMapper);
-        return converter;
+    private JacksonJsonHttpMessageConverter jacksonMessageConverter(JsonMapper objectMapper) {
+        return new JacksonJsonHttpMessageConverter(objectMapper);
     }
 
     @Override

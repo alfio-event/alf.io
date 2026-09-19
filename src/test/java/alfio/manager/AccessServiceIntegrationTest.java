@@ -20,76 +20,36 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
-import alfio.config.authentication.FormBasedWebSecurity;
-import alfio.config.authentication.OpenIdUserSynchronizer;
 import alfio.config.authentication.support.APITokenAuthentication;
 import alfio.manager.support.AccessDeniedException;
-import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.user.Role;
 import alfio.model.user.User;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.UserRepository;
+import alfio.test.config.AccessServiceMvcConfiguration;
+import alfio.test.config.AccessServiceWebSecurityConfiguration;
 import alfio.test.util.AlfioIntegrationTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.csrf.CsrfTokenRepository;
-import org.springframework.session.FindByIndexNameSessionRepository;
-import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
-import javax.sql.DataSource;
 import java.security.Principal;
 import java.util.List;
 
 import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM_API_CLIENT;
 
 @AlfioIntegrationTest
-@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, AccessServiceIntegrationTest.AdHocMvcConfiguration.class, WebSecurityConfig.class, AccessServiceIntegrationTest.CustomContextConfiguration.class})
+@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, AccessServiceMvcConfiguration.class, WebSecurityConfig.class, AccessServiceWebSecurityConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 class AccessServiceIntegrationTest {
-
-    static class AdHocMvcConfiguration {
-        @Bean
-        public SpringSessionBackedSessionRegistry<?> sessionRegistry(FindByIndexNameSessionRepository<?> sessionRepository) {
-            return new SpringSessionBackedSessionRegistry<>(sessionRepository);
-        }
-
-        @Bean
-        public HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
-            return new HandlerMappingIntrospector();
-        }
-    }
-
-
-    static class CustomContextConfiguration extends FormBasedWebSecurity {
-        public CustomContextConfiguration(Environment environment,
-                                          UserManager userManager,
-                                          RecaptchaService recaptchaService,
-                                          ConfigurationManager configurationManager,
-                                          CsrfTokenRepository csrfTokenRepository,
-                                          DataSource dataSource,
-                                          PasswordEncoder passwordEncoder,
-                                          SpringSessionBackedSessionRegistry<?> sessionRegistry,
-                                          OpenIdUserSynchronizer openIdUserSynchronizer) {
-            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, sessionRegistry, openIdUserSynchronizer, null, null);
-        }
-
-        @Bean
-        public AuthenticationManager authenticationManagerBean() {
-            return super.createAuthenticationManager();
-        }
-    }
 
     @Autowired
     UserManager userManager;

@@ -263,7 +263,7 @@ class ReservationApiV2ControllerIntegrationTest {
             Collections.singletonList(TicketRepository.FREE)
         );
 
-        var ticketCategory = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        var ticketCategory = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
         ticketRepository.reserveTickets(
             reservationId,
             ids,
@@ -277,7 +277,7 @@ class ReservationApiV2ControllerIntegrationTest {
         paymentForm.setPrivacyPolicyAccepted(true);
         paymentForm.setTermAndConditionsAccepted(true);
         paymentForm.setPaymentProxy(PaymentProxy.CUSTOM_OFFLINE);
-        paymentForm.setSelectedPaymentMethod(paymentMethods.get(0));
+        paymentForm.setSelectedPaymentMethod(paymentMethods.getFirst());
 
         var confirmOverviewRes = reservationApiV2Controller.confirmOverview(
             reservationId,
@@ -293,7 +293,7 @@ class ReservationApiV2ControllerIntegrationTest {
             .getSelectedCustomPaymentMethodDetails(reservationId, mockPrincipal)
             .getBody();
 
-        assertEquals(paymentMethods.get(0).getPaymentMethodId(), selected.getPaymentMethodId());
+        assertEquals(paymentMethods.getFirst().getPaymentMethodId(), selected.getPaymentMethodId());
     }
 
     @Test
@@ -321,7 +321,7 @@ class ReservationApiV2ControllerIntegrationTest {
         PaymentSpecification specification = new PaymentSpecification(
             reservationId,
             null,
-            paymentMethods.get(0),
+            paymentMethods.getFirst(),
             totalPrice.getPriceWithVAT(),
             event,
             "email@example.com",
@@ -343,7 +343,7 @@ class ReservationApiV2ControllerIntegrationTest {
             specification,
             totalPrice,
             PaymentProxy.CUSTOM_OFFLINE,
-            paymentMethods.get(0),
+            paymentMethods.getFirst(),
             null
         );
         assertTrue(paymentResult.isSuccessful());
@@ -386,7 +386,7 @@ class ReservationApiV2ControllerIntegrationTest {
         );
         var firstCategory = CollectionUtils.get(ticketCategoryRepository.findByEventIdAsMap(event.getId()), 0);
         var tickets = ticketRepository.findFreeByEventId(event.getId());
-        var firstTicket = tickets.get(0);
+        var firstTicket = tickets.getFirst();
         int ticketId = firstTicket.getId();
         ticketRepository.reserveTickets(
             reservationId,

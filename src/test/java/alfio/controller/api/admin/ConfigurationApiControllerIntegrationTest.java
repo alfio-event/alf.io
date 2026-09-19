@@ -158,7 +158,7 @@ class ConfigurationApiControllerIntegrationTest {
         var orgMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(organization.getId());
         assertEquals(1, orgMethods.size());
 
-        var retrieved = orgMethods.get(0);
+        var retrieved = orgMethods.getFirst();
         assertTrue(retrieved.getLocalizations().containsKey(LOCALE));
 
         var retrievedENLocale = retrieved.getLocaleByKey(LOCALE);
@@ -291,7 +291,7 @@ class ConfigurationApiControllerIntegrationTest {
                 )
             )
         );
-        paymentMethods.get(0).setDeleted();
+        paymentMethods.getFirst().setDeleted();
 
         for(var pm : paymentMethods) {
             customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(
@@ -309,7 +309,7 @@ class ConfigurationApiControllerIntegrationTest {
 
         var nonDeletedPaymentMethods = nonDeletedPaymentMethodsResp.getBody();
         assertEquals(1, nonDeletedPaymentMethods.size());
-        assertEquals("ec6c5268-4122-4b27-98ee-fa070df11c5b", nonDeletedPaymentMethods.get(0).getPaymentMethodId());
+        assertEquals("ec6c5268-4122-4b27-98ee-fa070df11c5b", nonDeletedPaymentMethods.getFirst().getPaymentMethodId());
 
         var allOrgMethodsResp = configurationApiController.getPaymentMethodsForOrganization(
             organization.getId(),
@@ -330,7 +330,7 @@ class ConfigurationApiControllerIntegrationTest {
             )
             .collect(Collectors.toList());
         assertEquals(1, deletedPaymentMethods.size());
-        assertEquals("15146df3-2436-4d2e-90b9-0d6cb273e291", deletedPaymentMethods.get(0).getPaymentMethodId());
+        assertEquals("15146df3-2436-4d2e-90b9-0d6cb273e291", deletedPaymentMethods.getFirst().getPaymentMethodId());
     }
 
     @Test
@@ -384,7 +384,7 @@ class ConfigurationApiControllerIntegrationTest {
         var orgMethods = customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethods(organization.getId());
         assertEquals(1, orgMethods.size());
 
-        var retrieved = orgMethods.get(0);
+        var retrieved = orgMethods.getFirst();
         assertTrue(retrieved.getLocalizations().containsKey(LOCALE));
 
         var retrievedENLocale = retrieved.getLocaleByKey(LOCALE);
@@ -412,8 +412,8 @@ class ConfigurationApiControllerIntegrationTest {
             CustomOfflinePaymentMethodDoesNotExistException.class,
             () -> configurationApiController.updatePaymentMethod(
                 organization.getId(),
-                paymentMethods.get(0).getPaymentMethodId(),
-                paymentMethods.get(0),
+                paymentMethods.getFirst().getPaymentMethodId(),
+                paymentMethods.getFirst(),
                 mockPrincipal
             )
         );
@@ -488,7 +488,7 @@ class ConfigurationApiControllerIntegrationTest {
 
         customOfflineConfigurationManager.setAllowedCustomOfflinePaymentMethodsForEvent(
             event,
-            List.of(paymentMethods.get(0).getPaymentMethodId())
+            List.of(paymentMethods.getFirst().getPaymentMethodId())
         );
 
         assertThrows(
@@ -496,7 +496,7 @@ class ConfigurationApiControllerIntegrationTest {
             () -> {
                 configurationApiController.deletePaymentMethod(
                     event.getOrganizationId(),
-                    paymentMethods.get(0).getPaymentMethodId(),
+                    paymentMethods.getFirst().getPaymentMethodId(),
                     mockPrincipal
                 );
             }
@@ -513,7 +513,7 @@ class ConfigurationApiControllerIntegrationTest {
 
         var response = configurationApiController.deletePaymentMethod(
             event.getOrganizationId(),
-            paymentMethods.get(0).getPaymentMethodId(),
+            paymentMethods.getFirst().getPaymentMethodId(),
             mockPrincipal
         );
         assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -521,7 +521,7 @@ class ConfigurationApiControllerIntegrationTest {
         assertThrows(CustomOfflinePaymentMethodDoesNotExistException.class, () ->
             customOfflineConfigurationManager.getOrganizationCustomOfflinePaymentMethodById(
                 event.getOrganizationId(),
-                paymentMethods.get(0).getPaymentMethodId()
+                paymentMethods.getFirst().getPaymentMethodId()
             ),
             "Payment method should not exist after being deleted."
         );
@@ -568,7 +568,7 @@ class ConfigurationApiControllerIntegrationTest {
         var returnedAllowedPaymentMethods = response.getBody();
         assertEquals(1, returnedAllowedPaymentMethods.size());
 
-        var allowedPaymentMethod = returnedAllowedPaymentMethods.get(0);
+        var allowedPaymentMethod = returnedAllowedPaymentMethods.getFirst();
         assertEquals(EXISTING_METHOD_ID, allowedPaymentMethod.getPaymentMethodId());
     }
 
@@ -609,7 +609,7 @@ class ConfigurationApiControllerIntegrationTest {
         );
 
         assertEquals(1, eventSelectedPaymentMethods.size());
-        assertEquals(EXISTING_METHOD_ID, eventSelectedPaymentMethods.get(0).getPaymentMethodId());
+        assertEquals(EXISTING_METHOD_ID, eventSelectedPaymentMethods.getFirst().getPaymentMethodId());
     }
 
     @Test

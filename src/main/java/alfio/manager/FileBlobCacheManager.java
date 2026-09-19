@@ -26,7 +26,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.function.Supplier;
 
@@ -42,7 +41,7 @@ public class FileBlobCacheManager {
     }
 
     private Path getBlobDir(String section) {
-        return Paths.get(cacheDir, "alfio-blob").resolve(section);
+        return Path.of(cacheDir, "alfio-blob").resolve(section);
     }
 
     private void checkPath(Path resourcePath, String section) {

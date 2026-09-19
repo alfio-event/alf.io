@@ -22,6 +22,6 @@ public interface LocalizedContent {
     List<ContentLanguage> getContentLanguages();
 
     default ContentLanguage getFirstContentLanguage() {
-        return getContentLanguages().get(0);
+        return getContentLanguages().getFirst();
     }
 }

@@ -47,10 +47,9 @@ import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.util.*;
 
-import com.fasterxml.jackson.databind.MappingIterator;
-import com.fasterxml.jackson.dataformat.csv.CsvMapper;
-import com.fasterxml.jackson.dataformat.csv.CsvParser;
-import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import tools.jackson.databind.MappingIterator;
+import tools.jackson.dataformat.csv.CsvMapper;
+import tools.jackson.dataformat.csv.CsvSchema;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
@@ -71,6 +70,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.StreamUtils;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
+import tools.jackson.dataformat.csv.CsvReadFeature;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -670,11 +670,11 @@ public class EventApiController {
         try(InputStreamReader isr = new InputStreamReader(file.getInputStream(), UTF_8)) {
             MappingIterator<List<String>> iterator = new CsvMapper().readerForListOf(String.class)
                 .with(CsvSchema.emptySchema().withoutHeader())
-                .with(CsvParser.Feature.WRAP_AS_ARRAY)
+                .with(CsvReadFeature.WRAP_AS_ARRAY)
                 .readValues(isr);
             var all = iterator.readAll().stream()
                 .filter(line -> line.size() > 1)
-                .map(line -> new Transaction(line.get(0), new BigDecimal(line.get(1))))
+                .map(line -> new Transaction(line.getFirst(), new BigDecimal(line.get(1))))
                 .toList();
 
             var reservationIds = all.stream()

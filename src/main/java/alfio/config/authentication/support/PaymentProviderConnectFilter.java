@@ -34,7 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatchers;
 import org.springframework.web.filter.GenericFilterBean;
@@ -73,10 +73,10 @@ public class PaymentProviderConnectFilter extends GenericFilterBean {
         this.userManager = userManager;
         this.stripeConnectManager = stripeConnectManager;
         this.mollieConnectManager = mollieConnectManager;
-        this.requestMatcher = new AntPathRequestMatcher("/admin/configuration/payment/{provider}/connect/{orgId}");
+        this.requestMatcher = PathPatternRequestMatcher.pathPattern("/admin/configuration/payment/{provider}/connect/{orgId}");
         this.authorizeRequestMatcher = RequestMatchers.anyOf(
-            new AntPathRequestMatcher(STRIPE_CONNECT_REDIRECT_PATH),
-            new AntPathRequestMatcher(MOLLIE_CONNECT_REDIRECT_PATH)
+            PathPatternRequestMatcher.pathPattern(STRIPE_CONNECT_REDIRECT_PATH),
+            PathPatternRequestMatcher.pathPattern(MOLLIE_CONNECT_REDIRECT_PATH)
         );
         this.flashMapManager = new SessionFlashMapManager();
     }

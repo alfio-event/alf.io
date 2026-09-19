@@ -16,6 +16,7 @@
  */
 package alfio.manager.support;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Objects;
@@ -33,6 +34,7 @@ public final class PaymentResult {
     private Optional<String> errorCode = Optional.empty();
     private String redirectUrl;
 
+    @JsonCreator
     private PaymentResult(Type type) {
         this.type = type;
     }

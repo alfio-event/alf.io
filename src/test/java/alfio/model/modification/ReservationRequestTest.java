@@ -31,7 +31,7 @@ class ReservationRequestTest {
         var request = new DummyReservationRequest(1, List.of(metadata));
         var attendees = request.getAttendees();
         assertEquals(1, attendees.size());
-        var attendee = attendees.get(0);
+        var attendee = attendees.getFirst();
         assertNull(attendee.getFirstName());
         assertNull(attendee.getLastName());
         assertNull(attendee.getEmail());

@@ -107,7 +107,7 @@ public class ItalianTaxIdValidator {
             } else {
                 // otherwise we remove the second consonant
                 var consonantsList = new ArrayList<Character>();
-                consonantsList.add(firstNameParts.consonants.get(0));
+                consonantsList.add(firstNameParts.consonants.getFirst());
                 consonantsList.addAll(firstNameParts.consonants.subList(2, firstNameParts.consonants.size()));
                 appendLastNameCode(code, new FiscalCodeParts(consonantsList, firstNameParts.vowels));
             }

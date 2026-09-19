@@ -87,8 +87,8 @@ class PaymentManagerTest {
         List<Map.Entry<PaymentMethod, Set<PaymentProxy>>> entries = paymentManager.validateSelection(List.of(PaymentProxy.STRIPE, PaymentProxy.MOLLIE), 1);
         assertFalse(entries.isEmpty());
         assertEquals(1, entries.size());
-        assertSame(StaticPaymentMethods.CREDIT_CARD, entries.get(0).getKey());
-        assertEquals(EnumSet.of(PaymentProxy.STRIPE, PaymentProxy.MOLLIE), entries.get(0).getValue());
+        assertSame(StaticPaymentMethods.CREDIT_CARD, entries.getFirst().getKey());
+        assertEquals(EnumSet.of(PaymentProxy.STRIPE, PaymentProxy.MOLLIE), entries.getFirst().getValue());
     }
 
     /**
@@ -151,6 +151,6 @@ class PaymentManagerTest {
         var paymentMethods = paymentManagerForCustomOffline.getPaymentMethods(orgId);
 
         assertEquals(1, paymentMethods.size());
-        assertEquals(PaymentProxy.OFFLINE, paymentMethods.get(0).getPaymentProxy());
+        assertEquals(PaymentProxy.OFFLINE, paymentMethods.getFirst().getPaymentProxy());
     }
 }

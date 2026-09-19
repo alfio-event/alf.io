@@ -19,7 +19,7 @@ package alfio.model.subscription;
 import alfio.model.FieldNameAndValue;
 import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 
 import java.util.List;
 import java.util.UUID;

@@ -153,6 +153,6 @@ class IndexControllerTest {
         DataPreloaderManager.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, null);
         var robotsNodes = head.getElementsByTagName("meta").stream().filter(n -> "robots".equals(n.getAttribute("name"))).collect(Collectors.toList());
         assertEquals(1, robotsNodes.size());
-        assertEquals("noindex", robotsNodes.get(0).getAttribute("content"));
+        assertEquals("noindex", robotsNodes.getFirst().getAttribute("content"));
     }
 }

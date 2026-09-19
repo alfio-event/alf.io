@@ -16,12 +16,12 @@
  */
 package alfio.manager.wallet;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 public interface WalletEntity {
 
-    public String getId();
+    String getId();
 
-    public String build(ObjectMapper mapper);
+    String build(ObjectMapper mapper);
 
 }

@@ -21,13 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
-
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 import alfio.controller.form.PaymentForm;
 import alfio.model.transaction.PaymentMethod;
@@ -48,11 +46,11 @@ class PaymentMethodDeserializationTest {
 
     @BeforeEach
     void init() {
-        objectMapper = new ObjectMapper();
+        objectMapper = new JsonMapper();
     }
 
     @Test
-    void testStaticPaymentMethodDeserialization() throws JsonProcessingException {
+    void testStaticPaymentMethodDeserialization() {
         String json = """
             {
                 "termAndConditionsAccepted": true,
@@ -73,7 +71,7 @@ class PaymentMethodDeserializationTest {
     }
 
     @Test
-    void testDeletedUserDefinedPaymentMethodsDeserialization() throws JsonProcessingException {
+    void testDeletedUserDefinedPaymentMethodsDeserialization() {
         String json = """
             [
                 {
@@ -94,7 +92,7 @@ class PaymentMethodDeserializationTest {
         var paymentMethods = objectMapper.readValue(json, new TypeReference<List<UserDefinedOfflinePaymentMethod>>() {});
         assertEquals(1, paymentMethods.size());
 
-        var paymentMethod = paymentMethods.get(0);
+        var paymentMethod = paymentMethods.getFirst();
         assertEquals("90561fe0-b514-462d-a966-8248b86c1c70", paymentMethod.getPaymentMethodId());
         assertEquals(1, paymentMethod.getLocalizations().size());
         assertTrue(paymentMethod.getLocalizations().containsKey("en"));

@@ -124,7 +124,7 @@ class EventApiControllerIntegrationTest {
 
         assertNotNull(events);
         assertEquals(1, events.size());
-        assertEquals(event.getShortName(), events.get(0).getKey());
+        assertEquals(event.getShortName(), events.getFirst().getKey());
     }
 
     @Test
@@ -137,7 +137,7 @@ class EventApiControllerIntegrationTest {
 
         assertNotNull(events);
         assertEquals(1, events.size());
-        assertEquals(event.getShortName(), events.get(0).getKey());
+        assertEquals(event.getShortName(), events.getFirst().getKey());
     }
 
     @Test
@@ -154,7 +154,7 @@ class EventApiControllerIntegrationTest {
         events = eventApiController.getAllEventsForExternal(principal, new MockHttpServletRequest(), true);
         assertNotNull(events);
         assertEquals(1, events.size());
-        assertEquals(event.getShortName(), events.get(0).getKey());
+        assertEquals(event.getShortName(), events.getFirst().getKey());
     }
 
     @Test
@@ -166,7 +166,7 @@ class EventApiControllerIntegrationTest {
         when(principal.getName()).thenReturn(owner(eventAndUser.getValue()));
         var modification = getTestAdminReservationModification();
         var result = this.attendeeBulkImportApiController.createReservations(eventAndUser.getKey().getShortName(), modification, false, principal);
-        var organizationId = organizationRepository.findAllForUser(eventAndUser.getRight()).get(0).getId();
+        var organizationId = organizationRepository.findAllForUser(eventAndUser.getRight()).getFirst().getId();
 
         // GIVEN - invocation of async processing job
         var requestStatus = this.attendeeBulkImportApiController.getRequestsStatus(eventAndUser.getKey().getShortName(), result.getData(), principal);
@@ -179,7 +179,7 @@ class EventApiControllerIntegrationTest {
         // THEN - assert correctness of data persisted
         var tickets = this.ticketRepository.findAllConfirmedForCSV(event.getId());
         assertEquals(1, tickets.size());
-        var foundTicket = tickets.get(0).getTicket();
+        var foundTicket = tickets.getFirst().getTicket();
         assertEquals(TEST_ATTENDEE_EXTERNAL_REFERENCE, foundTicket.getExtReference());
         assertEquals(TEST_ATTENDEE_FIRST_NAME, foundTicket.getFirstName());
         assertEquals(TEST_ATTENDEE_LAST_NAME, foundTicket.getLastName());
@@ -203,12 +203,12 @@ class EventApiControllerIntegrationTest {
         event = eventAndUser.getKey();
         var principal = Mockito.mock(Authentication.class);
         when(principal.getName()).thenReturn(owner(eventAndUser.getValue()));
-        var organizationId = organizationRepository.findAllForUser(eventAndUser.getRight()).get(0).getId();
+        var organizationId = organizationRepository.findAllForUser(eventAndUser.getRight()).getFirst().getId();
         var ticketCategoryList = this.ticketCategoryRepository.findAllTicketCategories(event.getId());
 
         assertEquals(1, ticketCategoryList.size());
 
-        var ticketCategory = ticketCategoryList.get(0);
+        var ticketCategory = ticketCategoryList.getFirst();
 
         var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
@@ -239,7 +239,7 @@ class EventApiControllerIntegrationTest {
         customOfflineConfigurationManager.setDeniedPaymentMethodsByTicketCategory(
             event,
             ticketCategory,
-            List.of(paymentMethods.get(0))
+            List.of(paymentMethods.getFirst())
         );
 
         var response = eventApiController.getDeniedCustomPaymentMethods(
@@ -266,7 +266,7 @@ class EventApiControllerIntegrationTest {
 
         assertEquals(1, ticketCategoryList.size());
 
-        var ticketCategory = ticketCategoryList.get(0);
+        var ticketCategory = ticketCategoryList.getFirst();
 
         var paymentMethods = List.of(
             new UserDefinedOfflinePaymentMethod(
@@ -298,7 +298,7 @@ class EventApiControllerIntegrationTest {
         eventApiController.setDeniedCustomPaymentMethods(
             event.getId(),
             ticketCategory.getId(),
-            List.of(paymentMethods.get(0).getPaymentMethodId()),
+            List.of(paymentMethods.getFirst().getPaymentMethodId()),
             principal
         );
 
@@ -317,7 +317,7 @@ class EventApiControllerIntegrationTest {
         DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         AdminReservationModification.CustomerData customerData = new AdminReservationModification.CustomerData("Integration", "Test", "integration-test@test.ch", "Billing Address", "reference", "en", "1234", "CH", null);
         var ticketCategoryList = this.ticketCategoryRepository.findAllTicketCategories(event.getId());
-        AdminReservationModification.Category category = new AdminReservationModification.Category(ticketCategoryList.get(0).getId(), "name", new BigDecimal("100.00"), null);
+        AdminReservationModification.Category category = new AdminReservationModification.Category(ticketCategoryList.getFirst().getId(), "name", new BigDecimal("100.00"), null);
         List<AdminReservationModification.TicketsInfo> ticketsInfoList = Collections.singletonList(new AdminReservationModification.TicketsInfo(category, Collections.singletonList(generateTestAttendee()), true, false));
         return new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", false, false, null, null, null, null);
     }

@@ -26,7 +26,7 @@ public interface SummaryPriceContainer extends PriceContainer {
     Integer getFinalPriceCts();
 
     static int getSummaryPriceBeforeVatCts(List<? extends PriceContainer> elements) {
-        var currencyCode = !elements.isEmpty() ? elements.get(0).getCurrencyCode() : null;
+        var currencyCode = !elements.isEmpty() ? elements.getFirst().getCurrencyCode() : null;
         return elements.stream().map(PriceContainer::getNetPrice)
             .reduce(BigDecimal::add)
             .map(p -> MonetaryUtil.unitToCents(p, currencyCode))

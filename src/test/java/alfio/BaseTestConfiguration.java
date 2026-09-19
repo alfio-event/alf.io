@@ -25,7 +25,8 @@ import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import alfio.util.Json;
 import alfio.util.RefreshableDataSource;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+import tools.jackson.databind.json.JsonMapper;
 import com.stripe.Stripe;
 import com.zaxxer.hikari.HikariConfig;
 import jakarta.annotation.PostConstruct;
@@ -38,7 +39,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.io.ByteArrayResource;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
@@ -67,7 +67,7 @@ public class BaseTestConfiguration {
         return PlatformProvider.DEFAULT;
     }
 
-    private static PostgreSQLContainer<?> postgres;
+    private static PostgreSQLContainer postgres;
     private static GenericContainer<?> stripeMock;
 
     @Bean
@@ -77,7 +77,7 @@ public class BaseTestConfiguration {
         String postgresVersion = Objects.requireNonNullElse(System.getProperty("pgsql.version"), "10");
         log.debug("Running tests using PostgreSQL v.{}", postgresVersion);
         if (postgres == null) {
-            postgres = new PostgreSQLContainer<>("postgres:"+postgresVersion)
+            postgres = new PostgreSQLContainer("postgres:"+postgresVersion)
                 .withDatabaseName(POSTGRES_DB)
                 .withInitScript("init-db-user.sql");
             postgres.start();
@@ -155,7 +155,7 @@ public class BaseTestConfiguration {
     }
 
     @Bean
-    public ObjectMapper objectMapper() {
+    public JsonMapper objectMapper() {
         return Json.OBJECT_MAPPER;
     }
 }

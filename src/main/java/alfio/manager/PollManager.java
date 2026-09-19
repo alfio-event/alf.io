@@ -174,7 +174,7 @@ public class PollManager {
         Validate.isTrue(CollectionUtils.isNotEmpty(ids));
         var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
         Validate.isTrue(CollectionUtils.isNotEmpty(poll.allowedTags()));
-        var tag = poll.allowedTags().get(0);
+        var tag = poll.allowedTags().getFirst();
         var result = ticketRepository.tagTickets(ids, event.getId(), tag);
         Validate.isTrue(ids.size() == result, "Unable to tag tickets");
         var auditingResults = auditingRepository.registerTicketTag(ids, List.of(Map.of("tag", tag)));
@@ -185,7 +185,7 @@ public class PollManager {
     public List<PollParticipant> removeParticipants(EventAndOrganizationId event, List<Integer> ticketIds, long pollId) {
         var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
         Validate.isTrue(CollectionUtils.isNotEmpty(poll.allowedTags()));
-        var tag = poll.allowedTags().get(0);
+        var tag = poll.allowedTags().getFirst();
         var result = ticketRepository.untagTickets(ticketIds, event.getId(), tag);
         Validate.isTrue(result == 1, "Error while removing tag");
         var auditingResults = auditingRepository.registerTicketUntag(ticketIds, List.of(Map.of("tag", tag)));
@@ -220,7 +220,7 @@ public class PollManager {
 
     private void insertOptions(List<PollOptionModification> options, EventAndOrganizationId event, Long pollId) {
         if(options.size() == 1) {
-            var option = options.get(0);
+            var option = options.getFirst();
             pollRepository.insertOption(pollId,
                 option.getTitle(),
                 requireNonNullElse(option.getDescription(), Map.of()),
@@ -262,7 +262,7 @@ public class PollManager {
                 if(numResults != 1) {
                     return Result.error(ErrorCode.custom(numResults > 1 ? "pin.duplicate" : "pin.invalid", ""));
                 }
-                return Result.success(Pair.of(event, tickets.get(0)));
+                return Result.success(Pair.of(event, tickets.getFirst()));
             });
     }
 

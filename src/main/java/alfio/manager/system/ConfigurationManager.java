@@ -44,7 +44,7 @@ import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.util.Json;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.BooleanUtils;
@@ -136,7 +136,7 @@ public class ConfigurationManager {
      * @return
      */
     private Optional<Configuration> selectPath(List<Configuration> conf) {
-        return conf.size() == 1 ? Optional.of(conf.get(0)) : conf.stream().max(Comparator.comparing(Configuration::getConfigurationPathLevel));
+        return conf.size() == 1 ? Optional.of(conf.getFirst()) : conf.stream().max(Comparator.comparing(Configuration::getConfigurationPathLevel));
     }
 
     // begin SYSTEM related configuration methods

@@ -40,7 +40,7 @@ import alfio.repository.EventRepository;
 import alfio.util.ClockProvider;
 import alfio.util.Json;
 import alfio.util.RequestUtils;
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;

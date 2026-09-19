@@ -18,16 +18,14 @@ package alfio.model.user;
 
 import alfio.util.RequestUtils;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.springframework.security.core.context.SecurityContextHolder;
-
-import java.io.IOException;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 
 @Getter
 @JsonSerialize(using = Organization.OrganizationSerializer.class)
@@ -95,26 +93,26 @@ public class Organization {
         }
     }
 
-    public static class OrganizationSerializer extends JsonSerializer<Organization> {
+    public static class OrganizationSerializer extends ValueSerializer<Organization> {
         @Override
-        public void serialize(Organization value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        public void serialize(Organization value, JsonGenerator gen, SerializationContext serializers) {
             if (value != null) {
                 gen.writeStartObject();
-                gen.writeNumberField("id", value.getId());
-                gen.writeStringField("name", value.getName());
-                gen.writeStringField("email", value.getEmail());
-                gen.writeStringField("description", value.getDescription());
+                gen.writeNumberProperty("id", value.getId());
+                gen.writeStringProperty("name", value.getName());
+                gen.writeStringProperty("email", value.getEmail());
+                gen.writeStringProperty("description", value.getDescription());
                 var authentication = SecurityContextHolder.getContext().getAuthentication();
                 if(RequestUtils.isAdmin(authentication) || RequestUtils.isSystemApiKey(authentication)) {
-                    gen.writeStringField("externalId", value.getExternalId());
-                    gen.writeStringField("slug", value.getSlug());
+                    gen.writeStringProperty("externalId", value.getExternalId());
+                    gen.writeStringProperty("slug", value.getSlug());
                 } else {
-                    gen.writeNullField("externalId");
-                    gen.writeNullField("slug");
+                    gen.writeNullProperty("externalId");
+                    gen.writeNullProperty("slug");
                 }
                 gen.writeEndObject();
             } else {
-                serializers.defaultSerializeNull(gen);
+                serializers.defaultSerializeNullValue(gen);
             }
         }
     }

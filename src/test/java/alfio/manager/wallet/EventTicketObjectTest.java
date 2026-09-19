@@ -17,7 +17,7 @@
 package alfio.manager.wallet;
 
 import alfio.util.Json;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,7 +37,7 @@ class EventTicketObjectTest {
         );
         String build = object.build(objectMapper);
 
-        var resource = getClass().getResource("/wallet-json/event-object.json");
+        var resource = getClass().getResourceAsStream("/wallet-json/event-object.json");
         assertNotNull(resource);
         assertEquals(objectMapper.readTree(resource), objectMapper.readTree(build));
     }

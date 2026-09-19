@@ -454,7 +454,7 @@ public class AccessService {
             .orElseThrow(AccessDeniedException::new);
         checkOrganizationOwnership(principal, event.getOrganizationId());
         var reservations = reservationRepository.getReservationIdAndEventId(List.of(reservationId));
-        if (reservations.size() != 1 || reservations.get(0).getEventId() != event.getId()) {
+        if (reservations.size() != 1 || reservations.getFirst().getEventId() != event.getId()) {
             throw new AccessDeniedException();
         }
     }
@@ -464,7 +464,7 @@ public class AccessService {
             .orElseThrow(AccessDeniedException::new);
         checkEventMembership(principal, event.getId(), roles);
         var reservations = reservationRepository.getReservationIdAndEventId(List.of(reservationId));
-        if (reservations.size() != 1 || reservations.get(0).getEventId() != event.getId()) {
+        if (reservations.size() != 1 || reservations.getFirst().getEventId() != event.getId()) {
             throw new AccessDeniedException();
         }
     }
@@ -650,7 +650,7 @@ public class AccessService {
     public void checkTicketMembership(Principal principal, String publicIdentifier, String reservationId, int ticketId) {
         checkReservationMembershipForEvent(principal, publicIdentifier, reservationId, AccessService.MEMBERSHIP_ROLES);
         var tickets = ticketRepository.findByIds(List.of(ticketId));
-        if (tickets.size() != 1 || !tickets.get(0).getTicketsReservationId().equals(reservationId)) {
+        if (tickets.size() != 1 || !tickets.getFirst().getTicketsReservationId().equals(reservationId)) {
             throw new AccessDeniedException();
         }
     }

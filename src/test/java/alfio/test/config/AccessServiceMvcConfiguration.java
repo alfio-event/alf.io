@@ -14,28 +14,21 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.api.admin;
+package alfio.test.config;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.experimental.Delegate;
-import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
-public final class SerializablePair<L,R> {
-    @Delegate
-    @JsonIgnore
-    private final Pair<L, R> pair;
+/**
+ * Test-only MVC configuration for {@code AccessServiceIntegrationTest}.
+ */
+@Configuration
+public class AccessServiceMvcConfiguration {
 
-    @JsonCreator
-    private SerializablePair(Pair<L, R> pair) {
-        this.pair = pair;
-    }
-
-    static <L,R> SerializablePair<L,R> fromPair(Pair<L,R> pair) {
-        return new SerializablePair<>(pair);
-    }
-
-    static <L,R> SerializablePair<L,R> of(L left, R right) {
-        return new SerializablePair<>(Pair.of(left, right));
+    @Bean
+    public SpringSessionBackedSessionRegistry<?> sessionRegistry(FindByIndexNameSessionRepository<?> sessionRepository) {
+        return new SpringSessionBackedSessionRegistry<>(sessionRepository);
     }
 }

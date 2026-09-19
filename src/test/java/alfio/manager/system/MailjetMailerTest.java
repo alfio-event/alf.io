@@ -20,8 +20,8 @@ import alfio.model.Configurable;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.HttpUtils;
 import alfio.util.Json;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -120,18 +120,18 @@ class MailjetMailerTest {
                 var counter = new AtomicInteger(0);
                 var emails = List.of("to", "cc");
                 recipients.forEach(node -> {
-                    if (emails.contains(node.get("Email").asText())) {
+                    if (emails.contains(node.get("Email").asString())) {
                         counter.incrementAndGet();
                     }
                 });
                 // we expect to find both addresses
                 assertEquals(2, counter.get());
-                assertEquals("mail_to", payload.get("Headers").get("Reply-To").asText());
+                assertEquals("mail_to", payload.get("Headers").get("Reply-To").asString());
                 assertEquals(1, payload.get("Attachments").size());
                 var attachment = payload.get("Attachments").get(0);
-                assertEquals("filename", attachment.get("Filename").asText());
-                assertEquals("text/plain", attachment.get("Content-type").asText());
-                assertEquals(Base64.getEncoder().encodeToString("test".getBytes(StandardCharsets.UTF_8)), attachment.get("content").asText());
+                assertEquals("filename", attachment.get("Filename").asString());
+                assertEquals("text/plain", attachment.get("Content-type").asString());
+                assertEquals(Base64.getEncoder().encodeToString("test".getBytes(StandardCharsets.UTF_8)), attachment.get("content").asString());
 
                 var headers = request.headers();
                 assertEquals(HttpUtils.APPLICATION_JSON, headers.firstValue(HttpUtils.CONTENT_TYPE).orElseThrow());
@@ -145,6 +145,6 @@ class MailjetMailerTest {
 
     private String getValue(JsonNode node) {
         assertNotNull(node);
-        return node.asText();
+        return node.asString();
     }
 }

@@ -18,7 +18,7 @@ package alfio.model.transaction;
 
 import java.util.Arrays;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonDeserialize;
 import org.jspecify.annotations.Nullable;
 
 @JsonDeserialize(using = PaymentMethodDeserializer.class)

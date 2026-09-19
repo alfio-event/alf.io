@@ -88,7 +88,7 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
     protected void validateCheckInData(ReservationFlowContext context) {
         var entries = checkInManager.retrieveLogEntries(context.event.getShortName(), context.userId);
         assertEquals(1, entries.size());
-        var entry = entries.get(0);
+        var entry = entries.getFirst();
         assertNotNull(entry.getTicketId());
         assertNotNull(entry.getAttendeeData());
         assertNotNull(entry.getAttendeeData().getMetadata());

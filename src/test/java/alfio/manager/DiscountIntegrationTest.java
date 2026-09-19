@@ -111,7 +111,7 @@ class DiscountIntegrationTest extends BaseIntegrationTest {
 
         var event = eventAndUser.getLeft();
 
-        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
 
         String promoCode = "100_PROMO";
 
@@ -126,7 +126,7 @@ class DiscountIntegrationTest extends BaseIntegrationTest {
             null,
             null);
 
-        var promoCodeDiscount = promoCodeDiscountRepository.findAllInEvent(event.getId()).get(0);
+        var promoCodeDiscount = promoCodeDiscountRepository.findAllInEvent(event.getId()).getFirst();
 
 
         for (int i = 0; i < concurrencyCount; i++) {

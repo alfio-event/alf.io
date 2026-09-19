@@ -110,7 +110,7 @@ public class CustomMessageManager {
             })
             .forEach(triple -> {
                 Ticket ticket = triple.getLeft();
-                MessageModification m = Optional.ofNullable(params.byLanguage.get(ticket.getUserLanguage())).orElseGet(() -> params.byLanguage.get(params.byLanguage.keySet().stream().findFirst().orElseThrow(IllegalStateException::new))).get(0);
+                MessageModification m = Optional.ofNullable(params.byLanguage.get(ticket.getUserLanguage())).orElseGet(() -> params.byLanguage.get(params.byLanguage.keySet().stream().findFirst().orElseThrow(IllegalStateException::new))).getFirst();
                 Model model = triple.getRight();
                 String subject = renderResource(m.getSubject(), params.event, model, m.getLocale(), templateManager);
                 StringBuilder text = new StringBuilder(renderResource(m.getText(), params.event, model, m.getLocale(), templateManager));

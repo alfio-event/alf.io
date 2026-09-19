@@ -16,7 +16,7 @@
  */
 package alfio.model.result;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
 
 import java.util.function.Supplier;

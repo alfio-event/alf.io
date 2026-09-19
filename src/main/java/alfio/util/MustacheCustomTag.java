@@ -149,7 +149,7 @@ public class MustacheCustomTag {
             return;
         }
         String name = args.get(args.size() > 1 ? 1 : 0);
-        String prefix = args.size() > 1 ? args.get(0) + " " : "";
+        String prefix = args.size() > 1 ? args.getFirst() + " " : "";
         String suffix = args.size() > 2 ? " "+args.get(2) : "";
 
         if(fieldNamesAndValues.containsKey(name)) {
@@ -276,12 +276,10 @@ public class MustacheCustomTag {
                 return;
             }
             String ariaLabel;
-            if (content instanceof Text text) {
-                ariaLabel = text.getLiteral() + " " + newTabLabel;
-            } else if (content instanceof Image image) {
-                ariaLabel = image.getTitle() + " " + newTabLabel;
-            } else {
-                ariaLabel = newTabLabel;
+            switch (content) {
+                case Text text -> ariaLabel = text.getLiteral() + " " + newTabLabel;
+                case Image image -> ariaLabel = image.getTitle() + " " + newTabLabel;
+                case null, default -> ariaLabel = newTabLabel;
             }
             attributes.put("aria-label", ariaLabel);
         }

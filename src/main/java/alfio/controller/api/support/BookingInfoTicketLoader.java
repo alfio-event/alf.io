@@ -163,7 +163,7 @@ public class BookingInfoTicketLoader {
     }
 
     public static Stream<AdditionalField> toAdditionalFieldsStream(Map<Long, List<PurchaseContextFieldDescription>> descriptionsByTicketFieldId, PurchaseContextFieldConfiguration tfc, Map<Long, List<PurchaseContextFieldValue>> valuesById) {
-        var tfd = descriptionsByTicketFieldId.get(tfc.getId()).get(0);//take first, temporary!
+        var tfd = descriptionsByTicketFieldId.get(tfc.getId()).getFirst();//take first, temporary!
         var fieldValues = valuesById.get(tfc.getId());
         var descriptions = fromFieldDescriptions(descriptionsByTicketFieldId.get(tfc.getId()));
         if (fieldValues == null) {

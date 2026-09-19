@@ -18,7 +18,8 @@ package alfio.config.authentication.support;
 
 import alfio.manager.RecaptchaService;
 import alfio.manager.system.ConfigurationManager;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.GenericFilterBean;
 
@@ -43,7 +44,7 @@ public class RecaptchaLoginFilter extends GenericFilterBean {
                                 String loginProcessingUrl,
                                 String recaptchaFailureUrl,
                                 ConfigurationManager configurationManager) {
-        this.requestMatcher = new AntPathRequestMatcher(loginProcessingUrl, "POST");
+        this.requestMatcher = PathPatternRequestMatcher.pathPattern(HttpMethod.POST, loginProcessingUrl);
         this.recaptchaService = recaptchaService;
         this.recaptchaFailureUrl = recaptchaFailureUrl;
         this.configurationManager = configurationManager;

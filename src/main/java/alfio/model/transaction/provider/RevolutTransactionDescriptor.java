@@ -93,8 +93,8 @@ public class RevolutTransactionDescriptor {
 
     public Map<String, String> getMetadata() {
         return Map.of(
-            "counterpartyAccountId", Optional.ofNullable(legs.get(0).counterpartyAccountId).orElse("N/A"),
-            "counterpartyType", Optional.ofNullable(legs.get(0).counterpartyType).orElse("N/A")
+            "counterpartyAccountId", Optional.ofNullable(legs.getFirst().counterpartyAccountId).orElse("N/A"),
+            "counterpartyType", Optional.ofNullable(legs.getFirst().counterpartyType).orElse("N/A")
         );
     }
 

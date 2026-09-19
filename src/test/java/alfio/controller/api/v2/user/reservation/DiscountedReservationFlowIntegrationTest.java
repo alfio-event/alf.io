@@ -103,10 +103,10 @@ class DiscountedReservationFlowIntegrationTest extends BaseReservationFlowTest {
     protected void checkDiscountUsage(String reservationId, int promoCodeId, ReservationFlowContext context) {
         var promoCodeUsage = promoCodeRequestManager.retrieveDetailedUsage(promoCodeId, context.event.getId());
         assertEquals(1, promoCodeUsage.size());
-        var usageDetail = promoCodeUsage.get(0);
+        var usageDetail = promoCodeUsage.getFirst();
         assertEquals(PROMO_CODE, usageDetail.getPromoCode());
         assertEquals(1, usageDetail.getReservations().size());
-        assertEquals(reservationId, usageDetail.getReservations().get(0).getId());
-        assertEquals(1, usageDetail.getReservations().get(0).getTickets().size());
+        assertEquals(reservationId, usageDetail.getReservations().getFirst().getId());
+        assertEquals(1, usageDetail.getReservations().getFirst().getTickets().size());
     }
 }

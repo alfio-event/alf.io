@@ -37,7 +37,7 @@ public class PromoCodeDiscountIntegrationTestingToolkit {
     public void createPromoCodeDiscount(final int eventId, final int organizationId, final String email) {
         promoCodeDiscountRepository.addPromoCode(TEST_PROMO_CODE, eventId, organizationId, ZonedDateTime.now(), ZonedDateTime.now()
                                                                                                                              .plusDays(3), 10, PromoCodeDiscount.DiscountType.FIXED_AMOUNT, "[1,2,3]", 1, "test promo code", "test-email@gmail.com", PromoCodeDiscount.CodeType.DISCOUNT, 21, "usd");
-        var promoCodeId = promoCodeDiscountRepository.findAllInEvent(eventId).get(0).getId();
+        var promoCodeId = promoCodeDiscountRepository.findAllInEvent(eventId).getFirst().getId();
         namedParameterJdbcTemplate.update("""
                  update tickets_reservation set promo_code_id_fk = :promotionCodeDiscountId
                  where email_address = :email

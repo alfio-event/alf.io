@@ -51,7 +51,6 @@ import alfio.repository.user.UserRepository;
 import alfio.test.util.TestUtil;
 import alfio.util.*;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
@@ -1453,7 +1452,7 @@ class TicketReservationManagerTest {
     }
 
     @Test
-    void testCustomOfflinePaymentMethodProperlyMatchesDeniedMethods() throws JsonProcessingException {
+    void testCustomOfflinePaymentMethodProperlyMatchesDeniedMethods() {
         var allowedPaymentMethod = new UserDefinedOfflinePaymentMethod(
             "abe32b76-9b9e-4f4b-b058-38c797fe80ff",
             Map.of("en", new UserDefinedOfflinePaymentMethod.Localization(

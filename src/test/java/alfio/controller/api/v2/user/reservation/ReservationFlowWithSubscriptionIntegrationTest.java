@@ -152,7 +152,7 @@ class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlow
         var categoryResult = eventManager.insertCategory(context.event, categoryRequest, context.userId);
         assertTrue(categoryResult.isSuccess());
         int organizationId = context.event.getOrganizationId();
-        var descriptorId = eventManager.getLinkedSubscriptionIds(context.event.getId(), organizationId).get(0);
+        var descriptorId = eventManager.getLinkedSubscriptionIds(context.event.getId(), organizationId).getFirst();
         // remap link
         subscriptionRepository.linkSubscriptionAndEvent(descriptorId, context.event.getId(), 0, organizationId, List.of(categoryResult.getData()));
         super.testAddSubscription(context, 1, newCategoryName);
@@ -164,7 +164,7 @@ class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlow
         super.testAddSubscription(context, 1, DEFAULT_CATEGORY_NAME);
         var params = Map.of("subscriptionId", context.subscriptionId, "eventId", context.event.getId());
         assertEquals(1, jdbcTemplate.queryForObject("select count(*) from tickets_reservation where subscription_id_fk = :subscriptionId and event_id_fk = :eventId", params, Integer.class));
-        int ticketId = ticketRepository.findFreeByEventId(context.event.getId()).get(0).getId();
+        int ticketId = ticketRepository.findFreeByEventId(context.event.getId()).getFirst().getId();
         var exception = assertThrows(UncategorizedSQLException.class, () -> jdbcTemplate.update("update ticket set subscription_id_fk = :subscriptionId where id = :id", Map.of("subscriptionId", context.subscriptionId, "id", ticketId)));
         var serverError = SqlUtils.findServerError(exception);
         assertTrue(serverError.isPresent());
@@ -182,7 +182,7 @@ class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlow
         super.testAddSubscription(context, 1, DEFAULT_CATEGORY_NAME);
         var params = Map.of("subscriptionId", context.subscriptionId, "eventId", context.event.getId());
         assertEquals(1, jdbcTemplate.queryForObject("select count(*) from tickets_reservation where subscription_id_fk = :subscriptionId and event_id_fk = :eventId", params, Integer.class));
-        int ticketId = ticketRepository.findFreeByEventId(context.event.getId()).get(0).getId();
+        int ticketId = ticketRepository.findFreeByEventId(context.event.getId()).getFirst().getId();
         var exception = assertThrows(UncategorizedSQLException.class, () -> jdbcTemplate.update("update ticket set subscription_id_fk = :subscriptionId where id = :id", Map.of("subscriptionId", context.subscriptionId, "id", ticketId)));
         var serverError = SqlUtils.findServerError(exception);
         assertTrue(serverError.isPresent());

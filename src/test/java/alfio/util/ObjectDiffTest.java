@@ -53,24 +53,24 @@ public class ObjectDiffTest {
         var newElement = Map.of("new", "element");
         var newElementRes = ObjectDiffUtil.diff(emptyAfter, newElement);
         assertEquals(1, newElementRes.size());
-        assertEquals("/{new}", newElementRes.get(0).getPropertyName());
-        assertEquals("element", newElementRes.get(0).getNewValue());
-        assertNull(newElementRes.get(0).getOldValue());
-        assertEquals(ObjectDiffUtil.State.ADDED, newElementRes.get(0).getState());
+        assertEquals("/{new}", newElementRes.getFirst().getPropertyName());
+        assertEquals("element", newElementRes.getFirst().getNewValue());
+        assertNull(newElementRes.getFirst().getOldValue());
+        assertEquals(ObjectDiffUtil.State.ADDED, newElementRes.getFirst().getState());
 
         var removedElementRes = ObjectDiffUtil.diff(newElement, empty);
         assertEquals(1, removedElementRes.size());
-        assertEquals("/{new}", removedElementRes.get(0).getPropertyName());
-        assertNull(removedElementRes.get(0).getNewValue());
-        assertEquals("element", removedElementRes.get(0).getOldValue());
-        assertEquals(ObjectDiffUtil.State.REMOVED, removedElementRes.get(0).getState());
+        assertEquals("/{new}", removedElementRes.getFirst().getPropertyName());
+        assertNull(removedElementRes.getFirst().getNewValue());
+        assertEquals("element", removedElementRes.getFirst().getOldValue());
+        assertEquals(ObjectDiffUtil.State.REMOVED, removedElementRes.getFirst().getState());
 
         var changedElem = ObjectDiffUtil.diff(newElement, Map.of("new", "changed"));
         assertEquals(1, changedElem.size());
-        assertEquals("/{new}", changedElem.get(0).getPropertyName());
-        assertEquals("changed", changedElem.get(0).getNewValue());
-        assertEquals("element", changedElem.get(0).getOldValue());
-        assertEquals(ObjectDiffUtil.State.CHANGED, changedElem.get(0).getState());
+        assertEquals("/{new}", changedElem.getFirst().getPropertyName());
+        assertEquals("changed", changedElem.getFirst().getNewValue());
+        assertEquals("element", changedElem.getFirst().getOldValue());
+        assertEquals(ObjectDiffUtil.State.CHANGED, changedElem.getFirst().getState());
 
 
         var untouchedElem = ObjectDiffUtil.diff(newElement, new HashMap<>(newElement));
@@ -82,9 +82,9 @@ public class ObjectDiffTest {
         var res = ObjectDiffUtil.diff(preUpdateTicket, postUpdateTicket);
 
         assertEquals(1, res.size());
-        assertEquals("/status", res.get(0).getPropertyName());
-        assertEquals(Ticket.TicketStatus.CANCELLED, res.get(0).getNewValue());
-        assertEquals(Ticket.TicketStatus.ACQUIRED, res.get(0).getOldValue());
-        assertEquals(ObjectDiffUtil.State.CHANGED, res.get(0).getState());
+        assertEquals("/status", res.getFirst().getPropertyName());
+        assertEquals(Ticket.TicketStatus.CANCELLED, res.getFirst().getNewValue());
+        assertEquals(Ticket.TicketStatus.ACQUIRED, res.getFirst().getOldValue());
+        assertEquals(ObjectDiffUtil.State.CHANGED, res.getFirst().getState());
     }
 }

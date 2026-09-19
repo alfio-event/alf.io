@@ -21,10 +21,9 @@ import alfio.manager.SpecialPriceManager;
 import alfio.model.SpecialPrice;
 import alfio.model.modification.SendCodeModification;
 import alfio.model.modification.UploadBase64FileModification;
-import com.fasterxml.jackson.databind.MappingIterator;
-import com.fasterxml.jackson.dataformat.csv.CsvMapper;
-import com.fasterxml.jackson.dataformat.csv.CsvParser;
-import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import tools.jackson.databind.MappingIterator;
+import tools.jackson.dataformat.csv.CsvMapper;
+import tools.jackson.dataformat.csv.CsvSchema;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -32,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import tools.jackson.dataformat.csv.CsvReadFeature;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -76,12 +76,12 @@ public class SpecialPriceApiController {
         try(InputStreamReader isr = new InputStreamReader(file.getInputStream(), UTF_8)) {
             MappingIterator<List<String>> iterator = new CsvMapper().readerForListOf(String.class)
                 .with(CsvSchema.emptySchema().withoutHeader())
-                .with(CsvParser.Feature.WRAP_AS_ARRAY)
+                .with(CsvReadFeature.WRAP_AS_ARRAY)
                 .readValues(isr);
             var all = iterator.readAll();
             var modificationList = all.stream()
                 .filter(l -> l.size() > 3)
-                .map(list -> new SendCodeModification(StringUtils.trimToNull(list.get(0)), list.get(1), list.get(2), list.get(3))).toList();
+                .map(list -> new SendCodeModification(StringUtils.trimToNull(list.getFirst()), list.get(1), list.get(2), list.get(3))).toList();
             return ResponseEntity.ok(specialPriceManager.linkAssigneeToCode(modificationList, eventName, categoryId, principal.getName()));
         }
     }

@@ -6,4 +6,4 @@ applications:
       buildpack: https://github.com/cloudfoundry/java-buildpack.git
       memory: 256m
       env:
-          JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 17.+ } }'
+          JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 25.+ } }'

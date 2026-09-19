@@ -33,7 +33,6 @@ import alfio.model.ContentLanguage;
 import alfio.util.ErrorsCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -58,7 +57,6 @@ public class UserApiV2Controller {
     private final MessageSourceManager messageSourceManager;
     private final SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
 
-    @Autowired
     public UserApiV2Controller(PublicUserManager publicUserManager,
                                TicketReservationManager ticketReservationManager,
                                ConfigurationManager configurationManager,

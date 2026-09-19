@@ -146,7 +146,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals(AVAILABLE_SEATS, tickets.stream().filter(t -> t.getCategoryId() == null).count());
         List<TicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         assertEquals(1, ticketCategories.size());
-        assertEquals(0, ticketCategories.get(0).getMaxTickets());
+        assertEquals(0, ticketCategories.getFirst().getMaxTickets());
         BaseIntegrationTest.testTransferEventToAnotherOrg(event.getId(), event.getOrganizationId(), eventAndUsername.getRight(), jdbcTemplate);
     }
 
@@ -232,7 +232,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         //shrink the original category to AVAILABLE_SEATS - 2, this would free two seats
-        int categoryId = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0).getId();
+        int categoryId = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst().getId();
         TicketCategoryModification shrink = new TicketCategoryModification(categoryId, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS - 2,
             new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
             new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
@@ -376,7 +376,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
-        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), "default", TicketCategory.TicketAccessType.INHERIT, 20,
                 new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
                 new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
@@ -461,7 +461,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getLeft();
         String username = pair.getRight();
         assertEquals(Integer.valueOf(AVAILABLE_SEATS), ticketRepository.countFreeTicketsForUnbounded(event.getId()));
-        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
         Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
             DateTimeModification.fromZonedDateTime(category.getUtcInception()),
@@ -484,7 +484,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         String username = pair.getRight();
         assertEquals(Integer.valueOf(0), ticketRepository.countFreeTicketsForUnbounded(event.getId()));
 
-        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
         Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
 
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
@@ -509,7 +509,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getLeft();
         String username = pair.getRight();
 
-        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
         Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
         int staleMaxTickets = category.getMaxTickets();
         assertTrue(eventManager.updateCategory(category.getId(), event, categoryModification(category, categoryDescription, 15, true), username, true).isSuccess());
@@ -562,7 +562,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getLeft();
         String username = pair.getRight();
 
-        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
         Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
 
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), TicketCategory.TicketAccessType.INHERIT, 10,
@@ -584,7 +584,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getLeft();
         String username = pair.getRight();
 
-        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
         Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
 
         List<Integer> tickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), category.getId(), 1, Collections.singletonList(Ticket.TicketStatus.FREE.name()));
@@ -612,7 +612,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getLeft();
         String username = pair.getRight();
 
-        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
         Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
 
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), TicketCategory.TicketAccessType.INHERIT, 11,
@@ -637,7 +637,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getLeft();
         String username = pair.getRight();
 
-        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
         Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
 
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), TicketCategory.TicketAccessType.INHERIT, 9,
@@ -667,7 +667,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getLeft();
         String username = pair.getRight();
 
-        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
         Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
 
         specialPriceTokenGenerator.generatePendingCodesForCategory(category.getId());
@@ -739,7 +739,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals(Integer.valueOf(AVAILABLE_SEATS), ticketRepository.countFreeTicketsForUnbounded(event.getId()));
         TicketReservationModification trm = new TicketReservationModification();
         trm.setQuantity(1);
-        trm.setTicketCategoryId(ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0).getId());
+        trm.setTicketCategoryId(ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst().getId());
         TicketReservationWithOptionalCodeModification reservation = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
         ticketReservationManager.createTicketReservation(event, Collections.singletonList(reservation), Collections.emptyList(),
             DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
@@ -771,7 +771,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         var event = pair.getLeft();
         var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         assertEquals(2, categories.size());
-        int categoryId = categories.get(0).getId();
+        int categoryId = categories.getFirst().getId();
         eventManager.deleteCategory(event.getShortName(), categoryId, pair.getRight());
         assertEquals(1, ticketCategoryRepository.findAllTicketCategories(event.getId()).size());
         assertEquals(AVAILABLE_SEATS - 1, (int) ticketRepository.countFreeTicketsForUnbounded(event.getId()));
@@ -793,10 +793,10 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         var tickets = ticketRepository.selectNotAllocatedTicketsForUpdate(event.getId(), 1, List.of(Ticket.TicketStatus.FREE.name()));
         var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         assertEquals(2, categories.size());
-        int categoryId = categories.get(0).getId();
+        int categoryId = categories.getFirst().getId();
         String reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(clockProvider.getClock()), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency(), event.getOrganizationId(), null);
-        int result = ticketRepository.reserveTickets(reservationId, tickets, categories.get(0), "en", event.getVatStatus(), i -> null);
+        int result = ticketRepository.reserveTickets(reservationId, tickets, categories.getFirst(), "en", event.getVatStatus(), i -> null);
         assertEquals(1, result);
         assertThrows(IllegalStateException.class, () -> eventManager.deleteCategory(event.getShortName(), categoryId, pair.getRight()));
     }
@@ -813,10 +813,10 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         var tickets = ticketRepository.selectNotAllocatedTicketsForUpdate(event.getId(), 1, List.of(Ticket.TicketStatus.FREE.name()));
         var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         assertEquals(1, categories.size());
-        int categoryId = categories.get(0).getId();
+        int categoryId = categories.getFirst().getId();
         String reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(clockProvider.getClock()), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency(), event.getOrganizationId(), null);
-        int result = ticketRepository.reserveTickets(reservationId, tickets, categories.get(0), "en", event.getVatStatus(), i -> null);
+        int result = ticketRepository.reserveTickets(reservationId, tickets, categories.getFirst(), "en", event.getVatStatus(), i -> null);
         assertEquals(1, result);
         assertThrows(IllegalArgumentException.class, () -> eventManager.deleteCategory(event.getShortName(), categoryId, pair.getRight()));
     }
@@ -836,7 +836,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         var event = pair.getLeft();
         var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         assertEquals(2, categories.size());
-        int categoryId = categories.get(0).getId();
+        int categoryId = categories.getFirst().getId();
         eventManager.deleteCategory(event.getShortName(), categoryId, pair.getRight());
         assertEquals(1, ticketCategoryRepository.findAllTicketCategories(event.getId()).size());
         waitingQueueSubscriptionProcessor.handleWaitingTickets();
@@ -858,11 +858,11 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         var event = pair.getLeft();
         var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         assertEquals(2, categories.size());
-        int categoryId = categories.get(0).getId();
+        int categoryId = categories.getFirst().getId();
         var tickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), categoryId, 1, List.of(Ticket.TicketStatus.FREE.name()));
         String reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(clockProvider.getClock()), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency(), event.getOrganizationId(), null);
-        int result = ticketRepository.reserveTickets(reservationId, tickets, categories.get(0), "en", event.getVatStatus(), i -> null);
+        int result = ticketRepository.reserveTickets(reservationId, tickets, categories.getFirst(), "en", event.getVatStatus(), i -> null);
         assertEquals(1, result);
         assertThrows(IllegalStateException.class, () -> eventManager.deleteCategory(event.getShortName(), categoryId, pair.getRight()));
     }
@@ -938,10 +938,10 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         var event = pair.getLeft();
         var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         assertEquals(2, categories.size());
-        assertEquals("second", categories.get(0).getName());
+        assertEquals("second", categories.getFirst().getName());
 
         // swap categories
-        var first = categories.get(0);
+        var first = categories.getFirst();
         var second = categories.get(1);
 
         var categoryModifications = List.of(new CategoryOrdinalModification(first.getId(), first.getName(), second.getOrdinal()), new CategoryOrdinalModification(second.getId(), second.getName(), first.getOrdinal()));
@@ -950,7 +950,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
 
         categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         assertEquals(2, categories.size());
-        assertEquals("first", categories.get(0).getName());
+        assertEquals("first", categories.getFirst().getName());
 
     }
 
@@ -1088,7 +1088,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         var eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, List.of(), Event.EventFormat.ONLINE);
         var event = eventAndUsername.getLeft();
         var ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
-        var category1 = ticketCategories.get(0);
+        var category1 = ticketCategories.getFirst();
         var category2 = ticketCategories.get(1);
         // expire category 1
         ticketCategoryRepository.update(category1.getId(), category1.getName(), category1.getUtcInception().minusDays(1), category1.getUtcExpiration().minusDays(1), category1.getMaxTickets(), category1.isAccessRestricted(), category1.getSrcPriceCts(), category1.getCode(), null, null, null, null, category1.getTicketCheckInStrategy(), category1.getTicketAccessType());

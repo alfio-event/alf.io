@@ -20,6 +20,7 @@ import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.support.Array;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.ZonedDateTime;
@@ -58,6 +59,7 @@ public class TicketWithMetadataAttributes {
             ticketMetadataContainer);
     }
 
+    @JsonCreator
     private TicketWithMetadataAttributes(Ticket ticket, TicketMetadataContainer ticketMetadataContainer) {
         this.ticket = ticket;
         this.ticketMetadataContainer = Objects.requireNonNullElseGet(ticketMetadataContainer, TicketMetadataContainer::empty);

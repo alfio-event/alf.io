@@ -131,7 +131,7 @@ class CustomTaxPolicyIntegrationTest {
         assertEquals(2, categories.size());
         var ticketRequest = new TicketReservationModification();
         ticketRequest.setQuantity(2);
-        ticketRequest.setTicketCategoryId(categories.get(0).getId());
+        ticketRequest.setTicketCategoryId(categories.getFirst().getId());
 
         var request = List.of(new TicketReservationWithOptionalCodeModification(ticketRequest, Optional.empty()));
         var reservationId = ticketReservationManager.createTicketReservation(context.event, request, List.of(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
@@ -141,7 +141,7 @@ class CustomTaxPolicyIntegrationTest {
 
         var tickets = ticketRepository.findTicketsInReservation(reservationId);
         assertEquals(2, tickets.size());
-        var firstUuid = tickets.get(0).getPublicUuid();
+        var firstUuid = tickets.getFirst().getPublicUuid();
         var secondUuid = tickets.get(1).getPublicUuid();
         var contactAndTicketsForm = new ContactAndTicketsForm();
         contactAndTicketsForm.setFirstName("The");
@@ -171,7 +171,7 @@ class CustomTaxPolicyIntegrationTest {
         assertEquals(2, categories.size());
         var ticketRequest = new TicketReservationModification();
         ticketRequest.setQuantity(2);
-        ticketRequest.setTicketCategoryId(categories.get(0).getId());
+        ticketRequest.setTicketCategoryId(categories.getFirst().getId());
 
         var request = List.of(new TicketReservationWithOptionalCodeModification(ticketRequest, Optional.empty()));
         var reservationId = ticketReservationManager.createTicketReservation(context.event, request, List.of(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
@@ -181,7 +181,7 @@ class CustomTaxPolicyIntegrationTest {
 
         var tickets = ticketRepository.findTicketsInReservation(reservationId);
         assertEquals(2, tickets.size());
-        var firstUuid = tickets.get(0).getPublicUuid();
+        var firstUuid = tickets.getFirst().getPublicUuid();
         var secondUuid = tickets.get(1).getPublicUuid();
         var contactAndTicketsForm = new ContactAndTicketsForm();
         contactAndTicketsForm.setFirstName("The");

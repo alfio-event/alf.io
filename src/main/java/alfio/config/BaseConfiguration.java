@@ -23,7 +23,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.util.Json;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.context.annotation.Bean;
@@ -55,7 +55,7 @@ public class BaseConfiguration {
     }
 
     @Bean
-    ObjectMapper objectMapper() {
+    JsonMapper objectMapper() {
         return Json.OBJECT_MAPPER;
     }
 }

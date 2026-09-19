@@ -25,7 +25,7 @@ import java.util.Map;
 @Getter
 public class ConditionsLink {
     enum Type {
-        TERMS_OF_PARTICIPATION, PRIVACY_POLICY, CUSTOM;
+        TERMS_OF_PARTICIPATION, PRIVACY_POLICY, CUSTOM
     }
 
     private final Type type;

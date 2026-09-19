@@ -20,17 +20,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import static alfio.config.authentication.support.UserProvidedClientRegistrationRepository.PUBLIC_REGISTRATION_ID;
 
 public class PublicOpenIdRequestResolver implements OAuth2AuthorizationRequestResolver {
     public static final String OPENID_AUTHENTICATION_PATH = "/openid/authentication";
-    private final AntPathRequestMatcher authorizationRequestMatcher;
+    private final RequestMatcher authorizationRequestMatcher;
     private final DefaultOAuth2AuthorizationRequestResolver delegate;
 
     public PublicOpenIdRequestResolver(UserProvidedClientRegistrationRepository repository) {
-        this.authorizationRequestMatcher = new AntPathRequestMatcher(OPENID_AUTHENTICATION_PATH);
+        this.authorizationRequestMatcher = PathPatternRequestMatcher.pathPattern(OPENID_AUTHENTICATION_PATH);
         delegate = new DefaultOAuth2AuthorizationRequestResolver(repository, OPENID_AUTHENTICATION_PATH);
     }
 

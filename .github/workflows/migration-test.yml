@@ -25,7 +25,7 @@ jobs:
             - name: Set up JDK
               uses: actions/setup-java@v4
               with:
-                  java-version: 17
+                  java-version: 25
                   distribution: temurin
                   cache: 'gradle'
             - name: Build with Gradle

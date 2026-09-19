@@ -603,7 +603,7 @@ public class AdminReservationManager {
         }
         var currencyCode = category.getCurrencyCode();
         ticketRepository.reserveTickets(reservationId, reservedForUpdate, category, arm.getLanguage(), event.getVatStatus(), i -> null);
-        Ticket ticket = ticketRepository.findById(reservedForUpdate.get(0), categoryId);
+        Ticket ticket = ticketRepository.findById(reservedForUpdate.getFirst(), categoryId);
         TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event.getVat(), event.getVatStatus(), null);
         ticketRepository.updateTicketPrice(reservedForUpdate,
             categoryId,

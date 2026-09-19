@@ -16,10 +16,10 @@
  */
 package alfio.manager.wallet;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import lombok.Getter;
+import tools.jackson.core.JacksonException;
 
 @Getter
 public class EventTicketObject implements WalletEntity {
@@ -60,7 +60,7 @@ public class EventTicketObject implements WalletEntity {
 
         try {
             return mapper.writeValueAsString(object);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }

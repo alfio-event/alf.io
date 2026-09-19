@@ -31,7 +31,7 @@ import alfio.repository.TransactionRepository;
 import alfio.util.ClockProvider;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.AllArgsConstructor;
@@ -175,7 +175,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
 
         return revolutTransaction -> revolutTransaction.getTransactionBalance().compareTo(BigDecimal.ZERO) > 0
             && Arrays.stream(terms).anyMatch(s -> revolutTransaction.getReference().toLowerCase().contains(s))
-            && transaction.getCurrency().equals(revolutTransaction.getLegs().get(0).getCurrency())
+            && transaction.getCurrency().equals(revolutTransaction.getLegs().getFirst().getCurrency())
             && transaction.getPriceInCents() == MonetaryUtil.unitToCents(revolutTransaction.getTransactionBalance(), transaction.getCurrency());
     }
 
@@ -194,7 +194,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
                 List<RevolutTransactionDescriptor> result = Json.fromJson(response.body(), new TypeReference<>() {});
                 return Result.success(
                     result.stream()
-                        .filter(t -> "completed".equals(t.getState()) && t.getLegs().size() == 1 && accounts.contains(t.getLegs().get(0).getAccountId()))
+                        .filter(t -> "completed".equals(t.getState()) && t.getLegs().size() == 1 && accounts.contains(t.getLegs().getFirst().getAccountId()))
                         .collect(Collectors.toList()));
             }
             return Result.error(ErrorCode.custom("no data received", "No data received from Revolut. Status code is "+response.statusCode()));

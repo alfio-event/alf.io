@@ -151,7 +151,7 @@ public class ReservationApiV1Controller {
         }
         var event = (Event) optionalEvent.get();
         Optional<String> promoCodeDiscount = ReservationUtil.checkPromoCode(reservationCreationRequest, event, promoCodeRequestManager, bindingResult);
-        var locale = Locale.forLanguageTag(requireNonNullElseGet(reservationCreationRequest.getLanguage(), () -> event.getContentLanguages().get(0).getLanguage()));
+        var locale = Locale.forLanguageTag(requireNonNullElseGet(reservationCreationRequest.getLanguage(), () -> event.getContentLanguages().getFirst().getLanguage()));
         var selected = ReservationUtil.validateCreateRequest(reservationCreationRequest, bindingResult, ticketReservationManager, eventManager, additionalServiceManager, "", event);
         if(selected.isPresent() && !bindingResult.hasErrors()) {
             var pair = selected.get();
@@ -202,7 +202,7 @@ public class ReservationApiV1Controller {
             return ResponseEntity.notFound().build();
         }
         var subscriptionDescriptor = (SubscriptionDescriptor) optionalDescriptor.get();
-        var locale = Locale.forLanguageTag(requireNonNullElseGet(creationRequest.getLanguage(), () -> subscriptionDescriptor.getContentLanguages().get(0).getLanguage()));
+        var locale = Locale.forLanguageTag(requireNonNullElseGet(creationRequest.getLanguage(), () -> subscriptionDescriptor.getContentLanguages().getFirst().getLanguage()));
         return handleReservationCreationErrors(() -> ticketReservationManager.createSubscriptionReservation(subscriptionDescriptor, locale, principal, creationRequest.getMetadataOrNull()), bindingResult, subscriptionDescriptor.getType())
             .map(id -> ResponseEntity.ok(postCreate(creationRequest, id, subscriptionDescriptor, locale)))
             .orElseGet(() -> {

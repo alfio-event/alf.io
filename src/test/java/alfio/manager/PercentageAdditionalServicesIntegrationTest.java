@@ -223,7 +223,7 @@ public class PercentageAdditionalServicesIntegrationTest {
     }
 
     private TotalPrice bookAndCalculatePrice(Event event) {
-        var category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        var category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
         TicketReservationModification tr = new TicketReservationModification();
         tr.setQuantity(1);
         tr.setTicketCategoryId(category.getId());

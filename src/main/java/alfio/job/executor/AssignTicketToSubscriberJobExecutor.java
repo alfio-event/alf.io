@@ -135,7 +135,7 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
         var clock = clockProvider.getClock();
         var subscriptionsByDescriptor = subscriptions.stream().collect(Collectors.groupingBy(AvailableSubscriptionsByEvent::getDescriptorId));
         var tickets = subscriptionsByDescriptor.values().stream().flatMap(availableSubscriptionsByEvents -> {
-            var firstValue = availableSubscriptionsByEvents.get(0);
+            var firstValue = availableSubscriptionsByEvents.getFirst();
             var categoryOptional = availableCategories.stream()
                 .filter(c -> CollectionUtils.isEmpty(firstValue.getCompatibleCategoryIds()) || firstValue.getCompatibleCategoryIds().contains(c.getId()))
                 .findFirst();
@@ -158,7 +158,7 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
             new DateTimeModification(LocalDate.now(clock), LocalTime.now(clock).plusMinutes(5L)),
             new CustomerData("", "", "", null, "", null, null, null, null),
             tickets,
-            event.getContentLanguages().get(0).getLanguage(),
+            event.getContentLanguages().getFirst().getLanguage(),
             false,
             false,
             null,

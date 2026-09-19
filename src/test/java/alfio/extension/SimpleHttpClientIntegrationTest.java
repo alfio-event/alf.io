@@ -121,7 +121,7 @@ class SimpleHttpClientIntegrationTest {
         Assertions.assertEquals(200, res.getCode());
         Assertions.assertEquals("Hello World!", res.getBody());
         assertTrue(res.getHeaders().containsKey("Content-Type"));
-        Assertions.assertEquals("text/plain", res.getHeaders().get("Content-Type").get(0));
+        Assertions.assertEquals("text/plain", res.getHeaders().get("Content-Type").getFirst());
         Assertions.assertEquals("text/plain", res.getHeader("Content-Type"));
     }
 

@@ -204,7 +204,7 @@ public class TicketHelper {
         if(tickets.size() > 1) {
             return Optional.empty();
         }
-        var ticketUuid = tickets.get(0).getPublicUuid();
+        var ticketUuid = tickets.getFirst().getPublicUuid();
         UpdateTicketOwnerForm form = new UpdateTicketOwnerForm();
         form.setAdditional(Collections.emptyMap());
         form.setEmail(email);
@@ -256,7 +256,7 @@ public class TicketHelper {
 
     private static List<Pair<String, String>> mapISOCountries(Stream<String> isoCountries, Locale locale) {
         return isoCountries
-            .map(isoCode -> Pair.of(isoCode, new Locale("", isoCode).getDisplayCountry(locale)))
+            .map(isoCode -> Pair.of(isoCode, Locale.of("", isoCode).getDisplayCountry(locale)))
             .sorted(Comparator.comparing(Pair::getRight))
             .collect(Collectors.toList());
     }

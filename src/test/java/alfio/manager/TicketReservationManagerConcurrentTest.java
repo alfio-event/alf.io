@@ -111,7 +111,7 @@ class TicketReservationManagerConcurrentTest {
             event = eventStringPair.getLeft();
             username = eventStringPair.getRight();
             int eventId = event.getId();
-            firstCategoryId = ticketCategoryRepository.findAllTicketCategories(eventId).get(0).getId();
+            firstCategoryId = ticketCategoryRepository.findAllTicketCategories(eventId).getFirst().getId();
 
             specialPriceTokenGenerator.generatePendingCodesForCategory(firstCategoryId);
             promoCodeDiscountRepository.addPromoCode(ACCESS_CODE, eventId, event.getOrganizationId(), ZonedDateTime.now(clockProvider().getClock()), ZonedDateTime.now(clockProvider().getClock()).plusDays(1), 0, PromoCodeDiscount.DiscountType.NONE, null, 100, null, null, PromoCodeDiscount.CodeType.ACCESS, firstCategoryId, null);

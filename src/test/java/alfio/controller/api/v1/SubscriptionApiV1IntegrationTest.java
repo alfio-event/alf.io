@@ -145,7 +145,7 @@ class SubscriptionApiV1IntegrationTest {
         var body = response.getBody();
         assertNotNull(body);
         assertEquals(1, body.size());
-        var linkedEvent = body.get(0);
+        var linkedEvent = body.getFirst();
         assertEquals(eventSlug, linkedEvent.getSlug());
         assertTrue(linkedEvent.getEnabledCategories().isEmpty());
     }

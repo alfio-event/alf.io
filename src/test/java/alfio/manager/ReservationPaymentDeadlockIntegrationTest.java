@@ -131,7 +131,7 @@ class ReservationPaymentDeadlockIntegrationTest {
         });
 
         transactionTemplate.execute(tx -> {
-            int categoryId = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0).getId();
+            int categoryId = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst().getId();
             TicketReservationModification tr = new TicketReservationModification();
             tr.setQuantity(1);
             tr.setTicketCategoryId(categoryId);
@@ -175,7 +175,7 @@ class ReservationPaymentDeadlockIntegrationTest {
             var forceCheckResult = await(forceCheckFuture, errors);
             var cancelResult = await(cancelFuture, errors);
             if (!errors.isEmpty()) {
-                throw new AssertionError("concurrent payment operations failed: " + errors, errors.get(0));
+                throw new AssertionError("concurrent payment operations failed: " + errors, errors.getFirst());
             }
 
             // both flows completed: the check reported the payment as still pending,
@@ -205,7 +205,7 @@ class ReservationPaymentDeadlockIntegrationTest {
                 var initErrors = new ArrayList<Throwable>();
                 var earlyResult = await(initFuture, initErrors);
                 throw new AssertionError("the payment provider was not invoked for init. Result: " + earlyResult + ", errors: " + initErrors,
-                    initErrors.isEmpty() ? null : initErrors.get(0));
+                    initErrors.isEmpty() ? null : initErrors.getFirst());
             }
 
             // flow 2: while flow 1 is busy with the remote verification, the webhook for the same payment
@@ -226,7 +226,7 @@ class ReservationPaymentDeadlockIntegrationTest {
             var initResult = await(initFuture, errors);
             var webhookResult = await(webhookFuture, errors);
             if (!errors.isEmpty()) {
-                throw new AssertionError("concurrent payment operations failed: " + errors, errors.get(0));
+                throw new AssertionError("concurrent payment operations failed: " + errors, errors.getFirst());
             }
 
             // both flows completed: the init flow confirmed the transaction,

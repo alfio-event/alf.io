@@ -16,23 +16,21 @@
  */
 package alfio.model.result;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 
-import java.io.IOException;
-
-class ErrorCodeSerializer extends JsonSerializer<ErrorCode> {
+class ErrorCodeSerializer extends ValueSerializer<ErrorCode> {
     @Override
-    public void serialize(ErrorCode value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+    public void serialize(ErrorCode value, JsonGenerator gen, SerializationContext serializers) {
         gen.writeStartObject();
-        gen.writeStringField("fieldName", value.getLocation());
-        gen.writeStringField("code", value.getCode());
-        gen.writeStringField("description", value.getDescription());
+        gen.writeStringProperty("fieldName", value.getLocation());
+        gen.writeStringProperty("code", value.getCode());
+        gen.writeStringProperty("description", value.getDescription());
         if(value.getArguments() != null) {
-            gen.writeArrayFieldStart("arguments");
+            gen.writeArrayPropertyStart("arguments");
             for (Object arg : value.getArguments()) {
-                gen.writeObject(arg);
+                gen.writePOJO(arg);
             }
             gen.writeEndArray();
         }

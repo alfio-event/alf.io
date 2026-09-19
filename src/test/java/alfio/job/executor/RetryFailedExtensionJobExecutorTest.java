@@ -111,7 +111,7 @@ class RetryFailedExtensionJobExecutorTest {
         // after the failed extension we should have a retry schedule
         var jobs = adminJobQueueRepository.loadAll();
         assertEquals(1, jobs.size());
-        var job = jobs.get(0);
+        var job = jobs.getFirst();
         var metadata = job.getMetadata();
         assertTrue(job.getRequestTimestamp().isAfter(ZonedDateTime.now(ClockProvider.clock())));
         assertEquals(1, job.getAttempts());
@@ -130,7 +130,7 @@ class RetryFailedExtensionJobExecutorTest {
         var expectedDate = ZonedDateTime.now(ClockProvider.clock()).plusSeconds(4).minus(100, ChronoUnit.MILLIS);
         invoker.invokeProcessPendingExtensionRetry(ZonedDateTime.now(ClockProvider.clock()).plus(2001L, ChronoUnit.MILLIS));
         jobs = adminJobQueueRepository.loadAll();
-        job = jobs.get(0);
+        job = jobs.getFirst();
         assertEquals(2, job.getAttempts());
         assertTrue(job.getRequestTimestamp().isAfter(expectedDate));
         assertEquals(AdminJobSchedule.Status.SCHEDULED, job.getStatus());
@@ -142,7 +142,7 @@ class RetryFailedExtensionJobExecutorTest {
         adminJobQueueRepository.scheduleRetry(job.getId(), expectedDate);
         invoker.invokeProcessPendingExtensionRetry(expectedDate.plus(1L, ChronoUnit.MILLIS));
         jobs = adminJobQueueRepository.loadAll();
-        job = jobs.get(0);
+        job = jobs.getFirst();
         assertEquals(3, job.getAttempts());
         assertEquals(AdminJobSchedule.Status.EXECUTED, job.getStatus());
     }

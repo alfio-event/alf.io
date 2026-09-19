@@ -130,7 +130,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(2);
-        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
         tr.setTicketCategoryId(category.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
@@ -177,7 +177,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
 
         List<TicketReservation> reservations = purchaseContextSearchManager.findAllReservationsFor(event, 0, null, null).getKey();
         assertEquals(1, reservations.size());
-        assertEquals(reservationId, reservations.get(0).getId());
+        assertEquals(reservationId, reservations.getFirst().getId());
 
         List<Ticket> pendingTickets = ticketRepository.findPendingTicketsInCategories(List.of(bounded.getId(), unbounded.getId()));
         assertEquals(19, pendingTickets.size());
@@ -257,7 +257,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
 
-        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
 
 
         TicketReservationModification trForDeferred = new TicketReservationModification();
@@ -519,7 +519,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 
         AdditionalServiceReservationModification asrm = new AdditionalServiceReservationModification();
-        asrm.setAdditionalServiceId(additionalServiceRepository.loadAllForEvent(event.getId()).get(0).id());
+        asrm.setAdditionalServiceId(additionalServiceRepository.loadAllForEvent(event.getId()).getFirst().id());
         asrm.setQuantity(1);
 
         ASReservationWithOptionalCodeModification asMod = new ASReservationWithOptionalCodeModification(asrm, Optional.empty());
@@ -541,9 +541,9 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals(3, orderSummary.getTicketAmount());
         List<SummaryRow> asRows = orderSummary.getSummary().stream().filter(s -> s.getType() == SummaryRow.SummaryType.ADDITIONAL_SERVICE).toList();
         assertEquals(1, asRows.size());
-        assertEquals("9.90", asRows.get(0).getPriceBeforeVat());
-        assertEquals("9.90", asRows.get(0).getSubTotalBeforeVat());
-        assertEquals("10.00", asRows.get(0).getSubTotal());
+        assertEquals("9.90", asRows.getFirst().getPriceBeforeVat());
+        assertEquals("9.90", asRows.getFirst().getSubTotalBeforeVat());
+        assertEquals("10.00", asRows.getFirst().getSubTotal());
     }
 
     @Test
@@ -574,7 +574,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
-        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(AVAILABLE_SEATS / 2 + 1);
@@ -641,7 +641,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
             customOfflineConfigurationManager.createOrganizationCustomOfflinePaymentMethod(event.getOrganizationId(), pm);
         }
 
-        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(AVAILABLE_SEATS / 2 + 1);
@@ -655,7 +655,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         PaymentSpecification specification = new PaymentSpecification(
             reservationId,
             null,
-            paymentMethods.get(0),
+            paymentMethods.getFirst(),
             reservationCost.getPriceWithVAT(),
             event,
             "email@example.com",
@@ -676,7 +676,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
             specification,
             reservationCost,
             PaymentProxy.CUSTOM_OFFLINE,
-            paymentMethods.get(0),
+            paymentMethods.getFirst(),
             null
         );
         assertTrue(result.isSuccessful());
@@ -723,7 +723,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
             String reservationId = ticketReservationManager.createTicketReservation(event, List.of(mod), Collections.emptyList(), DateUtils.addDays(new Date(), -2), Optional.empty(), Locale.ENGLISH, false, null);
             List<String> reservationIdPending = idsPendingQuery.get();
             assertEquals(1, reservationIdPending.size());
-            assertEquals(reservationId, reservationIdPending.get(0));
+            assertEquals(reservationId, reservationIdPending.getFirst());
 
             // check tickets
             var tickets = ticketRepository.findTicketsInReservation(reservationId);
@@ -791,7 +791,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         List<String> idsOffline = idsOfflinePayment.get();
 
         assertEquals(1, idsOffline.size());
-        assertEquals(reservationId, idsOffline.get(0));
+        assertEquals(reservationId, idsOffline.getFirst());
 
         ticketReservationManager.cleanupExpiredOfflineReservations(now);
         assertFalse(idsOfflinePayment.get().isEmpty());

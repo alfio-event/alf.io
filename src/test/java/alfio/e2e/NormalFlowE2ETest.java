@@ -203,7 +203,7 @@ class NormalFlowE2ETest {
         var invoiceRequested = driver.findElements(By.cssSelector("label[for=invoiceRequested]"));
         if(CollectionUtils.isNotEmpty(invoiceRequested)) {
             // select "I need an invoice for this reservation"
-            selectElement(invoiceRequested.get(0), browserWebDriver);
+            selectElement(invoiceRequested.getFirst(), browserWebDriver);
         }
 
         scrollTo(driver, driver.findElement(By.id("invoiceTypePrivate"))).click();

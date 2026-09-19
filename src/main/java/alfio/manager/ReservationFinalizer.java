@@ -287,7 +287,7 @@ public class ReservationFinalizer {
             var config = configurationManager.getFor(List.of(SEND_RESERVATION_EMAIL_IF_NECESSARY, SEND_TICKETS_AUTOMATICALLY), purchaseContext.getConfigurationLevel());
             if(ticketReservation.getSrcPriceCts() > 0
                 || CollectionUtils.isEmpty(tickets) || tickets.size() > 1
-                || !tickets.get(0).getEmail().equals(ticketReservation.getEmail())
+                || !tickets.getFirst().getEmail().equals(ticketReservation.getEmail())
                 || !config.get(SEND_RESERVATION_EMAIL_IF_NECESSARY).getValueAsBooleanOrDefault()
                 || !config.get(SEND_TICKETS_AUTOMATICALLY).getValueAsBooleanOrDefault()
             ) {
@@ -376,7 +376,7 @@ public class ReservationFinalizer {
             confirmationTimestamp,
             subscriptionDescriptor.getTimeZone());
         Validate.isTrue(updatedSubscriptions > 0, "must have updated at least one subscription");
-        subscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).get(0); // at the moment it's safe because there can be only one subscription per reservation
+        subscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).getFirst(); // at the moment it's safe because there can be only one subscription per reservation
         var subscriptionId = subscription.getId();
         auditingRepository.insert(reservationId, null, purchaseContext, SUBSCRIPTION_ACQUIRED, new Date(), Audit.EntityType.SUBSCRIPTION, subscriptionId.toString());
         var originalMetadata = subscriptionRepository.getSubscriptionMetadata(subscriptionId);

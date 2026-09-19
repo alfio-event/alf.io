@@ -107,12 +107,12 @@ class GroupManagerIntegrationTest extends BaseIntegrationTest {
         LinkedGroup configuration = groupManager.createLink(group.getId(), event.getId(), modification);
         assertNotNull(configuration);
         List<TicketCategory> ticketCategories = eventManager.loadTicketCategories(event);
-        int categoryId = ticketCategories.get(0).getId();
+        int categoryId = ticketCategories.getFirst().getId();
         assertTrue(groupManager.isGroupLinked(event.getId(), categoryId));
         List<LinkedGroup> activeConfigurations = groupRepository.findActiveConfigurationsFor(event.getId(), categoryId);
         assertFalse(activeConfigurations.isEmpty(), "ActiveConfigurations should be empty");
         assertEquals(1, activeConfigurations.size());
-        assertEquals(configuration.getId(), activeConfigurations.get(0).getId());
+        assertEquals(configuration.getId(), activeConfigurations.getFirst().getId());
         assertFalse(groupManager.isAllowed(TEST_EMAIL_ADDRESS, event.getId(), categoryId), "Group is empty, therefore no value is allowed");
         Result<Integer> items = groupManager.insertMembers(group.getId(), Collections.singletonList(new GroupMemberModification(null, TEST_EMAIL_ADDRESS, "description")));
         assertTrue(items.isSuccess());
@@ -172,7 +172,7 @@ class GroupManagerIntegrationTest extends BaseIntegrationTest {
         Group group = groupManager.createNew("test", "This is a test", event.getOrganizationId());
         assertNotNull(group);
         List<TicketCategory> ticketCategories = eventManager.loadTicketCategories(event);
-        int categoryId = ticketCategories.get(0).getId();
+        int categoryId = ticketCategories.getFirst().getId();
         LinkedGroupModification modification = new LinkedGroupModification(null, group.getId(), event.getId(), categoryId, LinkedGroup.Type.ONCE_PER_VALUE, LinkedGroup.MatchType.EMAIL_DOMAIN, null);
         LinkedGroup configuration = groupManager.createLink(group.getId(), event.getId(), modification);
         assertNotNull(configuration);
@@ -228,7 +228,7 @@ class GroupManagerIntegrationTest extends BaseIntegrationTest {
         Result<Integer> items = groupManager.insertMembers(group.getId(), List.of(new GroupMemberModification(null, TEST_EMAIL_ADDRESS, "description <>")));
         assertTrue(items.isSuccess());
         var persistedGroup = groupManager.loadComplete(group.getId()).orElseThrow();
-        assertEquals("description &lt;&gt;", persistedGroup.getItems().get(0).getDescription());
+        assertEquals("description &lt;&gt;", persistedGroup.getItems().getFirst().getDescription());
         groupManager.update(group.getId(), new GroupModification(group.getId(), "test > 1", "This is a test < 1", event.getOrganizationId(), List.of(new GroupMemberModification(null, TEST_EMAIL_ADDRESS, "description <>"))));
         persistedGroup = groupManager.loadComplete(group.getId()).orElseThrow();
         assertEquals("This is a test &lt; 1", persistedGroup.getDescription());

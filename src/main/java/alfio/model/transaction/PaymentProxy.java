@@ -17,6 +17,7 @@
 package alfio.model.transaction;
 
 import alfio.model.system.ConfigurationKeys;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 
@@ -45,6 +46,7 @@ public enum PaymentProxy {
     private final Set<String> onlyForCurrency;
     private final PaymentMethod paymentMethod;
 
+    @JsonCreator
     PaymentProxy(String description, boolean deskPayment, boolean visible, Set<ConfigurationKeys.SettingCategory> settingCategories, boolean supportRefund, Set<String> onlyForCurrency, PaymentMethod paymentMethod) {
         this.description = description;
         this.deskPayment = deskPayment;

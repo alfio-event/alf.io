@@ -81,7 +81,7 @@ public class Result<T> {
         if(isSuccess() || CollectionUtils.size(errors) == 0) {
             return null;
         }
-        return errors.get(0);
+        return errors.getFirst();
     }
 
     public String getFormattedErrors() {

@@ -192,7 +192,7 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     default String getFieldValueJson(List<String> fieldValues) {
         String fieldValue;
         if(fieldValues.size() == 1) {
-            fieldValue = fieldValues.get(0);
+            fieldValue = fieldValues.getFirst();
         } else if(fieldValues.stream().anyMatch(StringUtils::isNotBlank)) {
             fieldValue = Json.toJson(fieldValues);
         } else {

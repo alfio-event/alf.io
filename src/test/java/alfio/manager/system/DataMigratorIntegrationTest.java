@@ -243,7 +243,7 @@ class DataMigratorIntegrationTest extends BaseIntegrationTest {
         try {
 	        TicketReservationModification trm = new TicketReservationModification();
 	        trm.setAmount(1);
-	        trm.setTicketCategoryId(eventManager.loadTicketCategories(event).get(0).getId());
+	        trm.setTicketCategoryId(eventManager.loadTicketCategories(event).getFirst().getId());
 	        TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
 	        Date expiration = DateUtils.addDays(new Date(), 1);
 	        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Locale.ENGLISH, false, null);
@@ -289,7 +289,7 @@ class DataMigratorIntegrationTest extends BaseIntegrationTest {
         Event event = eventUsername.getKey();
         TicketReservationModification trm = new TicketReservationModification();
         trm.setAmount(1);
-        trm.setTicketCategoryId(eventManager.loadTicketCategories(event).get(0).getId());
+        trm.setTicketCategoryId(eventManager.loadTicketCategories(event).getFirst().getId());
         TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
         Date expiration = DateUtils.addDays(new Date(), 1);
         String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Locale.ENGLISH, false, null);
@@ -297,7 +297,7 @@ class DataMigratorIntegrationTest extends BaseIntegrationTest {
         ticketReservationRepository.updateReservationStatus(reservationId, TicketReservation.TicketReservationStatus.CANCELLED.name());
         List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
         assertEquals(1, ticketsInReservation.size());
-        String uuid = ticketsInReservation.get(0).getUuid();
+        String uuid = ticketsInReservation.getFirst().getUuid();
         assertTrue(ticketsInReservation.stream().allMatch(t -> t.getStatus() == Ticket.TicketStatus.PENDING));
         dataMigrator.fixStuckTickets(event.getId());
         assertSame(Ticket.TicketStatus.RELEASED, ticketRepository.findByUUID(uuid).getStatus());

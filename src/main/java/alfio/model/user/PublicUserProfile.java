@@ -21,7 +21,7 @@ import alfio.model.TicketReservationInvoicingAdditionalInfo;
 import alfio.model.support.JSONData;
 import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 import lombok.Getter;
 
 import java.util.Map;

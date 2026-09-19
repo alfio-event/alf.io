@@ -227,7 +227,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     }
 
     public PaymentProxy getFirstPaymentMethod() {
-        return allowedPaymentProxies.isEmpty() ? null : allowedPaymentProxies.get(0);//it is guaranteed that this list is not null.
+        return allowedPaymentProxies.isEmpty() ? null : allowedPaymentProxies.getFirst();//it is guaranteed that this list is not null.
     }
 
     public boolean supportsPaymentMethod(PaymentProxy paymentProxy) {

@@ -118,7 +118,7 @@ class PollApiControllerIntegrationTest {
         LOGGER.info("pollId {}", pollId);
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(1);
-        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
         tr.setTicketCategoryId(category.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         var reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
@@ -195,7 +195,7 @@ class PollApiControllerIntegrationTest {
         assertNotNull(response.getBody().getValue());
         var pollWithOptions = response.getBody().getValue();
         assertEquals(2, pollWithOptions.getOptions().size());
-        assertEquals("first", pollWithOptions.getOptions().get(0).getTitle().get("en"));
+        assertEquals("first", pollWithOptions.getOptions().getFirst().getTitle().get("en"));
         assertEquals("second", pollWithOptions.getOptions().get(1).getTitle().get("en"));
     }
 
@@ -222,8 +222,8 @@ class PollApiControllerIntegrationTest {
 
         var statistics = pollRepository.getStatisticsFor(pollId, event.getId());
         assertEquals(1, statistics.size());
-        assertEquals(firstOptionId, statistics.get(0).getOptionId());
-        assertEquals(1, statistics.get(0).getVotes());
+        assertEquals(firstOptionId, statistics.getFirst().getOptionId());
+        assertEquals(1, statistics.getFirst().getVotes());
 
         // update vote
         form.setOptionId(secondOptionId);
@@ -231,8 +231,8 @@ class PollApiControllerIntegrationTest {
         assertTrue(response.getStatusCode().is2xxSuccessful());
         statistics = pollRepository.getStatisticsFor(pollId, event.getId());
         assertEquals(1, statistics.size());
-        assertEquals(secondOptionId, statistics.get(0).getOptionId());
-        assertEquals(1, statistics.get(0).getVotes());
+        assertEquals(secondOptionId, statistics.getFirst().getOptionId());
+        assertEquals(1, statistics.getFirst().getVotes());
     }
 
     private void updateVisibility(Poll.PollStatus status) {

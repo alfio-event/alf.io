@@ -3,6 +3,7 @@ import ch.digitalfondue.jfiveparse.NodeMatcher
 import ch.digitalfondue.jfiveparse.Parser
 import ch.digitalfondue.jfiveparse.Selector
 import ch.digitalfondue.mjml4j.Mjml4j
+import de.thetaphi.forbiddenapis.gradle.CheckForbiddenApis
 import org.apache.tools.ant.filters.ReplaceTokens
 
 import java.nio.charset.StandardCharsets
@@ -14,9 +15,10 @@ import java.time.format.DateTimeFormatter
 buildscript {
 
     dependencies {
-        classpath 'org.postgresql:postgresql:42.7.11'
+        classpath 'com.mycila:license-maven-plugin:4.1'
+        classpath 'org.postgresql:postgresql:42.7.13'
         // for processing the index.html at build time
-        classpath "ch.digitalfondue.jfiveparse:jfiveparse:1.1.4"
+        classpath "ch.digitalfondue.jfiveparse:jfiveparse:2.1.1"
         // for processing the mjml templates at build time
         classpath "ch.digitalfondue.mjml4j:mjml4j:1.2.2"
     }
@@ -35,20 +37,27 @@ plugins {
     id 'java'
     id 'idea'
     id 'org.kordamp.gradle.jacoco' version '0.54.0'
-    id 'com.github.ben-manes.versions' version '0.54.0'
+    id 'com.github.ben-manes.versions' version '0.64.0'
     id 'com.github.hierynomus.license' version '0.16.1'
     id 'net.researchgate.release' version '3.1.0'
-    id 'org.springframework.boot' version '3.5.16'
+    id 'org.springframework.boot' version '4.1.1'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'org.sonarqube' version '7.3.1.8318'
+    id 'org.sonarqube' version '7.5.0.8588'
     // id 'net.ltgt.errorprone' version '3.1.0'
     id 'com.github.node-gradle.node' version '7.1.0'
+    id 'de.thetaphi.forbiddenapis' version '3.10'
 }
 
 apply plugin: 'java'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'project-report'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
 
 // MJML email templates translations to HTML
 node {
@@ -61,8 +70,8 @@ node {
 tasks.register('validate') {
     //check JDK version
     def javaVersion = JavaVersion.current()
-    if (!javaVersion.isCompatibleWith(JavaVersion.VERSION_17)) {
-        throw new GradleException("A Java JDK 17+ is required to build the project.")
+    if (!javaVersion.isCompatibleWith(JavaVersion.VERSION_25)) {
+        throw new GradleException("A Java JDK 25+ is required to build the project.")
     }
 }
 
@@ -99,7 +108,7 @@ configurations {
     testCompileOnly
     providedRuntime
     providedCompile
-    all {
+    configureEach {
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
     }
 }
@@ -110,11 +119,10 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.auth0:java-jwt:4.5.2'
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv"
-    implementation "com.fasterxml.jackson.core:jackson-core"
-    implementation "com.fasterxml.jackson.core:jackson-databind"
+    implementation 'com.auth0:java-jwt:4.6.1'
+    implementation "tools.jackson.dataformat:jackson-dataformat-csv"
+    implementation "tools.jackson.core:jackson-core"
+    implementation "tools.jackson.core:jackson-databind"
     implementation "org.springframework.boot:spring-boot-properties-migrator", {
         exclude module : 'spring-boot-starter-logging'
     }
@@ -123,20 +131,20 @@ dependencies {
     implementation "com.samskivert:jmustache:1.16"
     implementation 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
-    implementation 'io.github.openhtmltopdf:openhtmltopdf-core:1.1.37'
-    implementation 'io.github.openhtmltopdf:openhtmltopdf-pdfbox:1.1.37'
-    implementation 'ch.digitalfondue.jfiveparse:jfiveparse:2.0.1'
+    implementation 'io.github.openhtmltopdf:openhtmltopdf-core:1.1.86'
+    implementation 'io.github.openhtmltopdf:openhtmltopdf-pdfbox:1.1.86'
+    implementation 'ch.digitalfondue.jfiveparse:jfiveparse:2.1.1'
     /**/
     implementation 'com.google.zxing:core:3.5.4'
     implementation 'com.google.zxing:javase:3.5.4'
-    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.springframework.boot:spring-boot-starter-flyway'
     implementation 'org.flywaydb:flyway-database-postgresql'
     implementation "org.postgresql:postgresql"
     implementation "com.zaxxer:HikariCP"
 
     /**/
 
-    implementation "com.stripe:stripe-java:25.5.0"
+    implementation "com.stripe:stripe-java:33.4.2"
     implementation 'com.paypal.sdk:checkout-sdk:2.0.0'
     implementation 'com.google.code.gson:gson:2.14.0'
     implementation 'com.fatboyindustrial.gson-javatime-serialisers:gson-javatime-serialisers:1.1.2', {
@@ -145,8 +153,8 @@ dependencies {
 
     implementation 'org.apache.commons:commons-lang3:3.20.0'
     implementation 'org.apache.commons:commons-text:1.15.0'
-    implementation 'org.apache.commons:commons-collections4:4.5.0'
-    implementation 'commons-codec:commons-codec:1.22.0'
+    implementation 'org.apache.commons:commons-collections4:4.6.0'
+    implementation 'commons-codec:commons-codec:1.22.1'
     implementation 'net.sf.biweekly:biweekly:0.6.8'
     implementation 'com.atlassian.commonmark:commonmark:0.17.0'
     implementation 'com.atlassian.commonmark:commonmark-ext-gfm-tables:0.17.0'
@@ -154,23 +162,24 @@ dependencies {
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
         exclude group: 'org.bouncycastle', module: 'bcmail-jdk15on'
     }
-    implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
-    implementation 'org.bouncycastle:bcmail-jdk15on:1.70'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.86'
+    implementation 'org.bouncycastle:bcmail-jdk18on:1.86'
     implementation 'com.github.ben-manes.caffeine:caffeine'
     implementation 'com.github.scribejava:scribejava-core:8.3.3'
     implementation 'ch.digitalfondue.vatchecker:vatchecker:1.6.0'
     implementation 'ch.digitalfondue.basicxlsx:basicxlsx:0.7.1'
     implementation 'org.imgscalr:imgscalr-lib:4.2'
     implementation 'org.mozilla:rhino-runtime:1.7.15.1'
-    implementation 'com.google.auth:google-auth-library-oauth2-http:1.48.0'
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.52.0'
 
     testImplementation 'org.testcontainers:testcontainers'
-    testImplementation 'org.testcontainers:postgresql'
-    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:testcontainers-postgresql'
+    testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
     testImplementation "org.springframework.boot:spring-boot-starter-test", {
         exclude module : 'spring-boot-starter-logging'
     }
-    implementation "org.springframework.boot:spring-boot-starter-web", {
+    testImplementation "org.springframework.boot:spring-boot-starter-webmvc-test"
+    implementation "org.springframework.boot:spring-boot-starter-webmvc", {
         exclude module : 'spring-boot-starter-logging'
         exclude group: "org.springframework.boot", module: 'spring-boot-starter-tomcat'
         exclude group: "org.hibernate.validator"
@@ -185,6 +194,7 @@ dependencies {
         exclude module : 'spring-boot-starter-logging'
     }
 
+    implementation "org.springframework.boot:spring-boot-starter-restclient"
     implementation "org.springframework.boot:spring-boot@jar", {
         exclude module : 'spring-boot-starter-logging'
     }
@@ -200,11 +210,12 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-api"
     testImplementation "org.junit.jupiter:junit-jupiter-engine"
     testImplementation "org.junit.platform:junit-platform-engine"
-    testImplementation "org.mockito:mockito-inline:5.2.0"
+    testImplementation "org.mockito:mockito-core:5.23.0"
 
-    testImplementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8"
+    testImplementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1"
     testImplementation "org.openapitools.openapidiff:openapi-diff-core:2.1.7", {
-        exclude group: "io.swagger.core.v3", module: "swagger-core"
+        exclude group: "org.mozilla", module: "rhino"
+        exclude group: "io.swagger.core.v3"
     }
 
     providedCompile "org.springframework.boot:spring-boot-starter-jetty", {
@@ -218,12 +229,12 @@ dependencies {
         exclude module : 'spring-boot-starter-logging'
     }
 
-    implementation "org.joda:joda-money:1.0.7"
+    implementation "org.joda:joda-money:2.0.3"
 
-    testImplementation 'org.wiremock:wiremock-standalone:3.10.0'
+    testImplementation 'org.wiremock:wiremock-standalone:3.13.2'
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
-    testImplementation 'org.seleniumhq.selenium:selenium-java:4.43.0'
+    testImplementation 'org.seleniumhq.selenium:selenium-java:4.49.0'
 
     //errorprone('com.google.errorprone:error_prone_core:2.24.0')
 }
@@ -261,6 +272,20 @@ sonarqube {
     }
 }
 
+
+// Jackson 2 is on the classpath because java-jwt, biweekly, passkit4j and scribejava need it.
+// alf.io itself is on Jackson 3: both are visible to the compiler and `ObjectMapper` exists in
+// both, so an accidental Jackson 2 import compiles and silently uses an unconfigured mapper.
+tasks.withType(CheckForbiddenApis).configureEach {
+    bundledSignatures = []
+    signatures = [
+        '@defaultMessage alf.io is on Jackson 3: use tools.jackson.* (or alfio.util.Json)',
+        'com.fasterxml.jackson.databind.**',
+        'com.fasterxml.jackson.core.**',
+        'com.fasterxml.jackson.dataformat.**',
+        'com.fasterxml.jackson.datatype.**'
+    ]
+}
 
 processResources {
 
@@ -400,6 +425,16 @@ tasks.register('copyFrontendDev', Copy) {
 }
 
 // -- code-coverage
+
+// 0.8.11 (the version the kordamp plugin defaults to) cannot instrument
+// class file major version 69 (Java 25)
+config {
+    coverage {
+        jacoco {
+            toolVersion = '0.8.15'
+        }
+    }
+}
 
 jacocoTestReport {
     group = 'Reporting'

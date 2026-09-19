@@ -184,7 +184,7 @@ class AdminReservationManagerIntegrationTest extends BaseIntegrationTest {
         List<Ticket> tickets = data.getRight();
         assertEquals(tickets.size(), attendees);
         assertNotNull(data.getLeft());
-        int categoryId = tickets.get(0).getCategoryId();
+        int categoryId = tickets.getFirst().getCategoryId();
         eventManager.getSingleEvent(event.getShortName(), username);
         assertEquals(attendees + 1, eventRepository.countExistingTickets(event.getId()).intValue());
         assertEquals(attendees, ticketRepository.findPendingTicketsInCategories(Collections.singletonList(categoryId)).size());
@@ -209,7 +209,7 @@ class AdminReservationManagerIntegrationTest extends BaseIntegrationTest {
         DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch", "Billing Address", "reference", "en", "1234", "CH", null);
 
-        TicketCategory existingCategory = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        TicketCategory existingCategory = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
 
 
         Category resExistingCategory = new Category(existingCategory.getId(), "", existingCategory.getPrice(), null);
@@ -224,7 +224,7 @@ class AdminReservationManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals(3, tickets.size());
         assertNotNull(data.getLeft());
         assertTrue(tickets.stream().allMatch(t -> t.getTicketsReservationId().equals(data.getKey().getId())));
-        int resExistingCategoryId = tickets.get(0).getCategoryId();
+        int resExistingCategoryId = tickets.getFirst().getCategoryId();
         int resNewCategoryId = tickets.get(2).getCategoryId();
 
         eventManager.getSingleEvent(event.getShortName(), username);
@@ -309,7 +309,7 @@ class AdminReservationManagerIntegrationTest extends BaseIntegrationTest {
         if(reservedTickets > 0) {
             TicketReservationModification trm = new TicketReservationModification();
             trm.setAmount(reservedTickets);
-            trm.setTicketCategoryId(existingCategories.get(0).getId());
+            trm.setTicketCategoryId(existingCategories.getFirst().getId());
             TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
             ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
         }

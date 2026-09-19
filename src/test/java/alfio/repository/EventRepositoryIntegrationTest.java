@@ -105,8 +105,8 @@ class EventRepositoryIntegrationTest extends BaseIntegrationTest {
         assertEquals(endEventDate, e.getEnd(), "End date is not correct");
 
         //since when debugging the toString method is used .... and it rely on the system TimeZone, we test it too
-        System.out.println(e.getBegin().toString());
-        System.out.println(e.getEnd().toString());
+        IO.println(e.getBegin().toString());
+        IO.println(e.getEnd().toString());
     }
 
     @Test
@@ -131,7 +131,7 @@ class EventRepositoryIntegrationTest extends BaseIntegrationTest {
         assertEquals(0, checkInStatistics.getTotalAttendees());
 
         EventWithAdditionalInfo eventWithAdditionalInfo = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), pair.getRight());
-        TicketCategoryWithAdditionalInfo firstCategory = eventWithAdditionalInfo.getTicketCategories().get(0);
+        TicketCategoryWithAdditionalInfo firstCategory = eventWithAdditionalInfo.getTicketCategories().getFirst();
         List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(event.getId(), 5, Collections.singletonList(TicketRepository.FREE));
         String reservationId = "12345678";
         ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(ClockProvider.clock()), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency(), event.getOrganizationId(), null);
@@ -148,7 +148,7 @@ class EventRepositoryIntegrationTest extends BaseIntegrationTest {
         assertEquals(5, checkInStatistics.getTotalAttendees());
 
         List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
-        ticketRepository.updateTicketStatusWithUUID(ticketsInReservation.get(0).getUuid(), Ticket.TicketStatus.CHECKED_IN.name());
+        ticketRepository.updateTicketStatusWithUUID(ticketsInReservation.getFirst().getUuid(), Ticket.TicketStatus.CHECKED_IN.name());
         checkInStatistics = eventRepository.retrieveCheckInStatisticsForEvent(event.getId());
         //checked in ticket must be taken into account
         assertEquals(1, checkInStatistics.getCheckedIn());

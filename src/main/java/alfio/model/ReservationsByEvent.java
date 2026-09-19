@@ -19,7 +19,7 @@ package alfio.model;
 import alfio.model.support.ReservationInfo;
 import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 
 import java.util.List;
 

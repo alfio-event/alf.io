@@ -16,32 +16,29 @@
  */
 package alfio.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 import com.fatboyindustrial.gsonjavatime.Converters;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
-import java.io.IOException;
+import tools.jackson.core.JacksonException;
 
 public class Json {
 
     public static final Gson GSON = Converters.registerAll(new GsonBuilder()).create();
 
 
-    public static final ObjectMapper OBJECT_MAPPER;
+    public static final JsonMapper OBJECT_MAPPER;
 
     static {
-        ObjectMapper m = new ObjectMapper();
-        m.registerModule(new JavaTimeModule());
-        m.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        m.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        OBJECT_MAPPER = m;
+        // Jackson 3 handles java.time and constructor parameter names out of the box,
+        // so only the two non-default settings are kept here.
+        OBJECT_MAPPER = JsonMapper.builder()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+            .build();
     }
 
     public String asJsonString(Object o) {
@@ -55,7 +52,7 @@ public class Json {
     public static String toJson(Object o) {
         try {
             return OBJECT_MAPPER.writeValueAsString(o);
-        } catch(JsonProcessingException e) {
+        } catch(JacksonException e) {
             throw new IllegalStateException(e);
         }
     }
@@ -63,7 +60,7 @@ public class Json {
     public static <T> T fromJson(String value, Class<T> valueType) {
         try {
             return OBJECT_MAPPER.readValue(value, valueType);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException(e);
         }
     }
@@ -71,7 +68,7 @@ public class Json {
     public static <T> T fromJson(String value, TypeReference<T> reference) {
         try {
             return OBJECT_MAPPER.readValue(value, reference);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException(e);
         }
     }

@@ -127,7 +127,7 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         eventManager.createEvent(em, USERNAME);
 
         event = eventManager.getSingleEvent("eventShortName", "test");
-        ticketCategory = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+        ticketCategory = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
     }
 
     @Test
@@ -192,7 +192,7 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
 
         Event event = eventManager.getSingleEvent("eventShortName", "test");
 
-        TicketCategory tc = eventManager.loadTicketCategories(event).get(0);
+        TicketCategory tc = eventManager.loadTicketCategories(event).getFirst();
         //
 
         //check override level up to event level
@@ -397,9 +397,9 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     void ensureNoErrorsWhenDeniedMethodsOptionIsEmpty() {
         var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         // insert empty value
-        configurationRepository.insertTicketCategoryLevel(event.getOrganizationId(), event.getId(), categories.get(0).getId(), PAYMENT_METHODS_BLACKLIST.name(), "", "");
+        configurationRepository.insertTicketCategoryLevel(event.getOrganizationId(), event.getId(), categories.getFirst().getId(), PAYMENT_METHODS_BLACKLIST.name(), "", "");
         // try with single category
-        var deniedMethods = configurationManager.getBlacklistedMethodsForReservation(event, List.of(categories.get(0).getId()));
+        var deniedMethods = configurationManager.getBlacklistedMethodsForReservation(event, List.of(categories.getFirst().getId()));
         assertNotNull(deniedMethods);
         assertTrue(deniedMethods.isEmpty());
 
@@ -430,16 +430,16 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         customOfflineConfigurationManager.setDeniedPaymentMethodsByTicketCategory(
             event,
-            categories.get(0),
+            categories.getFirst(),
             paymentMethods
         );
 
         var deniedMethods = configurationManager.getBlacklistedMethodsForReservation(
             event,
-            List.of(categories.get(0).getId())
+            List.of(categories.getFirst().getId())
         );
 
         assertNotNull(deniedMethods);
-        assertTrue(deniedMethods.stream().anyMatch(pm -> pm.getPaymentMethodId().equals(paymentMethods.get(0).getPaymentMethodId())));
+        assertTrue(deniedMethods.stream().anyMatch(pm -> pm.getPaymentMethodId().equals(paymentMethods.getFirst().getPaymentMethodId())));
     }
 }

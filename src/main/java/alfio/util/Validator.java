@@ -762,7 +762,7 @@ public final class Validator {
                 .filter(f -> context.updateTicketOwnerForm.getAdditional() !=null && context.updateTicketOwnerForm.getAdditional().containsKey(f.getName()))
                 .findFirst();
 
-            Optional<String> vatNr = vatField.map(c -> Objects.requireNonNull(context.updateTicketOwnerForm.getAdditional()).get(c.getName()).get(0));
+            Optional<String> vatNr = vatField.map(c -> Objects.requireNonNull(context.updateTicketOwnerForm.getAdditional()).get(c.getName()).getFirst());
             String vatFieldName = vatField.map(PurchaseContextFieldConfiguration::getName).orElse("");
 
             return new Result.Builder<Void>()

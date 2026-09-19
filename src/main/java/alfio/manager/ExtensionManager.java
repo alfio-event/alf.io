@@ -58,7 +58,6 @@ import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -458,7 +457,7 @@ public class ExtensionManager {
             if(response == null || response.isEmpty()) {
                 return false;
             }
-            Path tempFilePath = Paths.get(response.getTempFilePath());
+            Path tempFilePath = Path.of(response.getTempFilePath());
             if(Files.exists(tempFilePath)) {
                 Files.copy(tempFilePath, outputStream);
                 Files.delete(tempFilePath);

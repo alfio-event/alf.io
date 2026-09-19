@@ -168,7 +168,7 @@ class ReservationApiV1ControllerTest {
 
         var tickets = ticketRepository.findTicketsInReservation(reservationId);
         assertEquals(1, tickets.size());
-        var metadata = ticketRepository.getTicketMetadata(tickets.get(0).getId());
+        var metadata = ticketRepository.getTicketMetadata(tickets.getFirst().getId());
         assertNotNull(metadata);
         var attributes = metadata.getMetadataForKey(TicketMetadataContainer.GENERAL);
         assertTrue(attributes.isPresent());
@@ -216,7 +216,7 @@ class ReservationApiV1ControllerTest {
         var detailBody = detailResponse.getBody();
         assertEquals(reservationId, detailBody.id());
         assertEquals(TicketReservation.TicketReservationStatus.PENDING, detailBody.status());
-        AttendeeData attendeeData = detailBody.tickets().get(0).getAttendees().get(0);
+        AttendeeData attendeeData = detailBody.tickets().getFirst().getAttendees().getFirst();
         var resources = attendeeData.getResources();
         assertNull(resources.ticketPdf());
         assertNull(resources.ticketQrCode());
@@ -243,10 +243,10 @@ class ReservationApiV1ControllerTest {
         assertTrue(detailBody.subscriptionOwners().isEmpty());
         assertFalse(detailBody.tickets().isEmpty());
         assertEquals(1, detailBody.tickets().size());
-        var byCategory = detailBody.tickets().get(0);
+        var byCategory = detailBody.tickets().getFirst();
         assertEquals(category.getId(), byCategory.getTicketCategoryId());
         assertEquals(1, byCategory.getAttendees().size());
-        var attendee = byCategory.getAttendees().get(0);
+        var attendee = byCategory.getAttendees().getFirst();
         assertEquals("Test", attendee.getFirstName());
         assertEquals("Test1", attendee.getLastName());
         assertEquals("test@test.org", attendee.getEmail());
@@ -257,7 +257,7 @@ class ReservationApiV1ControllerTest {
         assertTrue(pdfTemplate.matches(resources.ticketPdf()));
         var match = pdfTemplate.match(resources.ticketPdf());
         assertEquals(event.getShortName(), match.get("eventName"));
-        var publicUuid = ticketRepository.findTicketsInReservation(reservationId).get(0).getPublicUuid().toString();
+        var publicUuid = ticketRepository.findTicketsInReservation(reservationId).getFirst().getPublicUuid().toString();
         assertEquals(publicUuid, match.get("ticketIdentifier"));
         var qrCodeTemplate = new UriTemplate(BASE_URL + TICKET_QR_CODE_URI);
         assertTrue(qrCodeTemplate.matches(resources.ticketQrCode()));
@@ -330,7 +330,7 @@ class ReservationApiV1ControllerTest {
 
         var tickets = ticketRepository.findTicketsInReservation(reservationId);
         assertEquals(1, tickets.size());
-        var metadata = ticketRepository.getTicketMetadata(tickets.get(0).getId());
+        var metadata = ticketRepository.getTicketMetadata(tickets.getFirst().getId());
         assertNotNull(metadata);
         var attributes = metadata.getMetadataForKey(TicketMetadataContainer.GENERAL);
         assertTrue(attributes.isPresent());
@@ -341,7 +341,7 @@ class ReservationApiV1ControllerTest {
         var reservations = ticketReservationRepository.findAllReservationsForUser(createdUser.get().getId());
         assertFalse(reservations.isEmpty());
         assertEquals(1, reservations.size());
-        assertEquals(reservationId, reservations.get(0).getId());
+        assertEquals(reservationId, reservations.getFirst().getId());
     }
 
     @Test
@@ -365,7 +365,7 @@ class ReservationApiV1ControllerTest {
         assertFalse(StringUtils.startsWith(href, LOGGED_IN_RESERVATION_URL_PREFIX));
 
         var tickets = ticketRepository.findTicketsInReservation(reservationId);
-        var savedTicket = tickets.get(0);
+        var savedTicket = tickets.getFirst();
         assertEquals(1, tickets.size());
         assertEquals("firstName", savedTicket.getFirstName());
         assertEquals("lastName", savedTicket.getLastName());
@@ -421,7 +421,7 @@ class ReservationApiV1ControllerTest {
         assertFalse(StringUtils.startsWith(href, LOGGED_IN_RESERVATION_URL_PREFIX));
 
         var tickets = ticketRepository.findTicketsInReservation(reservationId);
-        var savedTicket = tickets.get(0);
+        var savedTicket = tickets.getFirst();
         assertEquals(1, tickets.size());
         assertEquals("firstName", savedTicket.getFirstName());
         assertEquals("lastName", savedTicket.getLastName());
@@ -435,8 +435,8 @@ class ReservationApiV1ControllerTest {
         var fieldValues = purchaseContextFieldRepository.findNameAndValue(savedTicket.getId());
         assertFalse(fieldValues.isEmpty());
         assertEquals(1, fieldValues.size());
-        assertEquals(FIELD_NAME, fieldValues.get(0).getName());
-        assertEquals("value1", fieldValues.get(0).getValue());
+        assertEquals(FIELD_NAME, fieldValues.getFirst().getName());
+        assertEquals("value1", fieldValues.getFirst().getValue());
 
         var createdUser = userManager.findOptionalEnabledUserByUsername("test@example.org");
         assertFalse(createdUser.isPresent());
@@ -492,20 +492,20 @@ class ReservationApiV1ControllerTest {
     @Test
     void createSubscriptionWithMetadataAndFields() {
         var reservationId = createAndValidateSubscription(new Owner(Map.of(FIELD_NAME, List.of("value1")), null, null, null, null, null));
-        var subscriptionId = subscriptionRepository.findSubscriptionsByReservationId(reservationId).get(0).getId();
+        var subscriptionId = subscriptionRepository.findSubscriptionsByReservationId(reservationId).getFirst().getId();
         var fieldValues = purchaseContextFieldRepository.findNameAndValue(subscriptionId);
         assertFalse(fieldValues.isEmpty());
-        assertEquals(FIELD_NAME, fieldValues.get(0).getName());
-        assertEquals("value1", fieldValues.get(0).getValue());
+        assertEquals(FIELD_NAME, fieldValues.getFirst().getName());
+        assertEquals("value1", fieldValues.getFirst().getValue());
     }
     @Test
     void createSubscriptionAndVerifyWithAPI() {
         var reservationId = createAndValidateSubscription(new Owner(Map.of(FIELD_NAME, List.of("value1")), null, null, null, null, null));
-        var subscriptionId = subscriptionRepository.findSubscriptionsByReservationId(reservationId).get(0).getId();
+        var subscriptionId = subscriptionRepository.findSubscriptionsByReservationId(reservationId).getFirst().getId();
         var fieldValues = purchaseContextFieldRepository.findNameAndValue(subscriptionId);
         assertFalse(fieldValues.isEmpty());
-        assertEquals(FIELD_NAME, fieldValues.get(0).getName());
-        assertEquals("value1", fieldValues.get(0).getValue());
+        assertEquals(FIELD_NAME, fieldValues.getFirst().getName());
+        assertEquals("value1", fieldValues.getFirst().getValue());
         var confirmationRequest = new ReservationConfirmationRequest(
             new TransactionDetails("TRID", new BigDecimal("100.00"), LocalDateTime.now(clockProvider.getClock()), "notes", PaymentProxy.ON_SITE),
             new Notification(true, true),
@@ -524,7 +524,7 @@ class ReservationApiV1ControllerTest {
         assertTrue(detailBody.tickets().isEmpty());
         assertFalse(detailBody.subscriptionOwners().isEmpty());
         assertEquals(1, detailBody.subscriptionOwners().size());
-        var owner = detailBody.subscriptionOwners().get(0);
+        var owner = detailBody.subscriptionOwners().getFirst();
         assertEquals("Test", owner.getFirstName());
         assertEquals("Test1", owner.getLastName());
         assertEquals("test@test.org", owner.getEmail());
@@ -629,7 +629,7 @@ class ReservationApiV1ControllerTest {
         assertEquals("test@test.org", reservation.getEmail());
         var subscriptions = subscriptionRepository.findSubscriptionsByReservationId(reservationId);
         assertEquals(1, subscriptions.size());
-        var subscriptionId = subscriptions.get(0).getId();
+        var subscriptionId = subscriptions.getFirst().getId();
         var subscriptionMetadata = subscriptionRepository.getSubscriptionMetadata(subscriptionId);
         assertNotNull(subscriptionMetadata);
         assertNotNull(subscriptionMetadata.getProperties());

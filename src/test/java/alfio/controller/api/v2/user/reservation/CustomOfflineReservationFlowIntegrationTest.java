@@ -71,7 +71,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.context.request.ServletWebRequest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -244,14 +244,14 @@ class CustomOfflineReservationFlowIntegrationTest extends BaseReservationFlowTes
 
     @Test
     void attemptPayWithUnavailablePaymentMethod() throws Exception {
-        testingPaymentMethod = paymentMethods.get(0);
+        testingPaymentMethod = paymentMethods.getFirst();
 
         var context = this.createContext();
         var form = new ReservationForm();
         var ticketReservation = new TicketReservationModification();
         ticketReservation.setQuantity(1);
         var ticketCategoriesResponse = eventApiV2Controller.getTicketCategories(context.event.getShortName(), null);
-        ticketReservation.setTicketCategoryId(ticketCategoriesResponse.getBody().ticketCategories().get(0).getId());
+        ticketReservation.setTicketCategoryId(ticketCategoriesResponse.getBody().ticketCategories().getFirst().getId());
         form.setReservation(Collections.singletonList(ticketReservation));
         if (context.applyDiscount) {
             form.setPromoCode(PROMO_CODE);

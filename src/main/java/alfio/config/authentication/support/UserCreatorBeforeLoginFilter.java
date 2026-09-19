@@ -20,7 +20,8 @@ import alfio.manager.user.UserManager;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.user.Role;
 import alfio.model.user.User;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.GenericFilterBean;
 
@@ -40,7 +41,7 @@ public class UserCreatorBeforeLoginFilter extends GenericFilterBean {
 
     public UserCreatorBeforeLoginFilter(UserManager userManager, String loginProcessingUrl) {
         this.userManager = userManager;
-        this.requestMatcher = new AntPathRequestMatcher(loginProcessingUrl, "POST");
+        this.requestMatcher = PathPatternRequestMatcher.pathPattern(HttpMethod.POST, loginProcessingUrl);
     }
 
 

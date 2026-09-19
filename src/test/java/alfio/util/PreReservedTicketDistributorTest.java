@@ -55,7 +55,7 @@ public class PreReservedTicketDistributorTest {
     void includeAllCategories42() {
         List<Pair<Integer, TicketCategoryStatisticView>> pairs = data.stream().collect(new PreReservedTicketDistributor(42));
         assertEquals(3, pairs.size());
-        assertEquals(Pair.of(cat1Capacity, cat1), pairs.get(0));
+        assertEquals(Pair.of(cat1Capacity, cat1), pairs.getFirst());
         assertEquals(Pair.of(cat2Capacity, cat2), pairs.get(1));
         assertEquals(Pair.of(cat3Capacity, cat3), pairs.get(2));
     }
@@ -65,7 +65,7 @@ public class PreReservedTicketDistributorTest {
     void includeAllCategories43() {
         List<Pair<Integer, TicketCategoryStatisticView>> pairs = data.stream().collect(new PreReservedTicketDistributor(43));
         assertEquals(3, pairs.size());
-        assertEquals(Pair.of(cat1Capacity, cat1), pairs.get(0));
+        assertEquals(Pair.of(cat1Capacity, cat1), pairs.getFirst());
         assertEquals(Pair.of(cat2Capacity, cat2), pairs.get(1));
         assertEquals(Pair.of(cat3Capacity, cat3), pairs.get(2));
     }
@@ -75,7 +75,7 @@ public class PreReservedTicketDistributorTest {
     void includeOnlyFirst() {
         List<Pair<Integer, TicketCategoryStatisticView>> pairs = data.stream().collect(new PreReservedTicketDistributor(1));
         assertEquals(1, pairs.size());
-        assertEquals(Pair.of(1, cat1), pairs.get(0));
+        assertEquals(Pair.of(1, cat1), pairs.getFirst());
     }
 
     @Test
@@ -83,7 +83,7 @@ public class PreReservedTicketDistributorTest {
     void includeFirstTwoCategories() {
         List<Pair<Integer, TicketCategoryStatisticView>> pairs = data.stream().collect(new PreReservedTicketDistributor(20));
         assertEquals(2, pairs.size());
-        assertEquals(Pair.of(cat1Capacity, cat1), pairs.get(0));
+        assertEquals(Pair.of(cat1Capacity, cat1), pairs.getFirst());
         assertEquals(Pair.of(10, cat2), pairs.get(1));
     }
 
@@ -92,7 +92,7 @@ public class PreReservedTicketDistributorTest {
     void includeAllCategories() {
         List<Pair<Integer, TicketCategoryStatisticView>> pairs = data.stream().collect(new PreReservedTicketDistributor(23));
         assertEquals(3, pairs.size());
-        assertEquals(Pair.of(cat1Capacity, cat1), pairs.get(0));
+        assertEquals(Pair.of(cat1Capacity, cat1), pairs.getFirst());
         assertEquals(Pair.of(cat2Capacity, cat2), pairs.get(1));
         assertEquals(Pair.of(1, cat3), pairs.get(2));
     }

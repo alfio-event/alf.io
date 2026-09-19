@@ -138,7 +138,7 @@ class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         Pair<String, Event> pair = initSoldOutEvent(true);
         Event event = pair.getRight();
         String reservationId = pair.getLeft();
-        Ticket firstTicket = ticketRepository.findTicketsInReservation(reservationId).get(0);
+        Ticket firstTicket = ticketRepository.findTicketsInReservation(reservationId).getFirst();
         ticketRepository.releaseTicket(reservationId, UUID.randomUUID().toString(), UUID.randomUUID(), event.getId(), firstTicket.getId());
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
         List<WaitingQueueSubscription> subscriptions =  waitingQueueRepository.loadAll(event.getId());
@@ -183,7 +183,7 @@ class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         assertEquals(0, subscriptions.stream().filter(w -> StringUtils.isNotBlank(w.getReservationId())).count());
 
         //explicitly expand the category
-        TicketCategory category = eventManager.loadTicketCategories(event).get(0);
+        TicketCategory category = eventManager.loadTicketCategories(event).getFirst();
         eventManager.updateCategory(category.getId(), event.getId(), new TicketCategoryModification(category.getId(), category.getName(), TicketCategory.TicketAccessType.INHERIT, category.getMaxTickets() + 1,
             fromZonedDateTime(category.getInception(event.getZoneId())), fromZonedDateTime(category.getExpiration(event.getZoneId())), emptyMap(), category.getPrice(),
             category.isAccessRestricted(), "", category.isBounded(), null, null, null, null, null, 0, null, null, AlfioMetadata.empty()), "admin");

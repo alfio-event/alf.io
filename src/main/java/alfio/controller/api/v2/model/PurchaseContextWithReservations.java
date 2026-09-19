@@ -54,7 +54,7 @@ public class PurchaseContextWithReservations {
     public static PurchaseContextWithReservations from(List<ReservationWithPurchaseContext> reservations,
                                                        Map<Locale, String> datePatternsMap) {
         Validate.isTrue(!reservations.isEmpty(), "Cannot build PurchaseContextWithReservation out of an empty list");
-        var first = reservations.get(0);
+        var first = reservations.getFirst();
         return new PurchaseContextWithReservations(first.getPurchaseContextTitle(),
             first.getPurchaseContextPublicIdentifier(),
             first.getPurchaseContextType(),

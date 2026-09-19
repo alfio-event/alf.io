@@ -19,8 +19,8 @@ package alfio.util;
 import ch.digitalfondue.basicxlsx.Cell;
 import ch.digitalfondue.basicxlsx.StreamingWorkbook;
 import ch.digitalfondue.basicxlsx.Style;
-import com.fasterxml.jackson.dataformat.csv.CsvMapper;
-import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import tools.jackson.dataformat.csv.CsvMapper;
+import tools.jackson.dataformat.csv.CsvSchema;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
@@ -105,11 +105,7 @@ public class ExportUtils {
                     var res = copy[i];
                     copy[i] = escapeFormulaChar(res);
                 }
-                try {
-                    writer.write(copy);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                writer.write(copy);
             });
             writer.flush();
             out.flush();

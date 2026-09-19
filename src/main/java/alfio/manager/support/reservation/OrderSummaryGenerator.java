@@ -163,7 +163,7 @@ public class OrderSummaryGenerator {
                 sorted = ticketsByCategory
                     .entrySet()
                     .stream()
-                    .sorted(Comparator.comparing((Map.Entry<Integer, List<TicketPriceContainer>> e) -> e.getValue().get(0).getVatStatus()).reversed())
+                    .sorted(Comparator.comparing((Map.Entry<Integer, List<TicketPriceContainer>> e) -> e.getValue().getFirst().getVatStatus()).reversed())
                     .toList();
             } else {
                 sorted = new ArrayList<>(ticketsByCategory.entrySet());
@@ -182,7 +182,7 @@ public class OrderSummaryGenerator {
                 var categoryTickets = categoryWithTickets.getValue();
                 final int subTotal = categoryTickets.stream().mapToInt(TicketPriceContainer::getSummarySrcPriceCts).sum();
                 final int subTotalBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(categoryTickets);
-                var firstTicket = categoryTickets.get(0);
+                var firstTicket = categoryTickets.getFirst();
                 final int ticketPriceCts = firstTicket.getSummarySrcPriceCts();
                 final int priceBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(firstTicket));
                 String categoryName = categoriesById.get(categoryWithTickets.getKey()).getName();
@@ -210,7 +210,7 @@ public class OrderSummaryGenerator {
                     log.debug("additional service {}: title not found for locale {}", title.getAdditionalServiceId(), language);
                 }
                 List<AdditionalServiceItemPriceContainer> prices = generateASIPriceContainers(purchaseContext, null).apply(entry).collect(toList());
-                AdditionalServiceItemPriceContainer first = prices.get(0);
+                AdditionalServiceItemPriceContainer first = prices.getFirst();
                 final int subtotal = prices.stream().mapToInt(AdditionalServiceItemPriceContainer::getSrcPriceCts).sum();
                 final int subtotalBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(prices);
                 return new SummaryRow(title.getValue(),
@@ -238,7 +238,7 @@ public class OrderSummaryGenerator {
         //
         if(purchaseContext instanceof SubscriptionDescriptor descriptor) {
             if(!subscriptionsToInclude.isEmpty()) {
-                var subscription = subscriptionsToInclude.get(0);
+                var subscription = subscriptionsToInclude.getFirst();
                 var priceContainer = new SubscriptionPriceContainer(subscription, promoCodeDiscount, descriptor);
                 var priceBeforeVat = formatUnit(priceContainer.getNetPrice(), currencyCode);
                 summary.add(new SummaryRow(purchaseContext.getTitle().get(locale.getLanguage()),
@@ -254,7 +254,7 @@ public class OrderSummaryGenerator {
             }
         } else if(CollectionUtils.isNotEmpty(subscriptionsToInclude)) {
             log.trace("subscriptions to include is not empty");
-            var subscription = subscriptionsToInclude.get(0);
+            var subscription = subscriptionsToInclude.getFirst();
             subscriptionRepository.findOne(subscription.getSubscriptionDescriptorId(), subscription.getOrganizationId()).ifPresent(subscriptionDescriptor -> {
                 log.trace("found subscriptionDescriptor with ID {}", subscriptionDescriptor.getId());
                 // find tickets with subscription applied

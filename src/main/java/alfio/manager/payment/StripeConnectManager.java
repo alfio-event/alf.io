@@ -26,7 +26,7 @@ import alfio.repository.system.ConfigurationRepository;
 import alfio.util.Json;
 import alfio.util.oauth2.AccessTokenResponseDetails;
 import alfio.util.oauth2.AuthorizationRequestDetails;
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 import com.github.scribejava.core.builder.ServiceBuilder;
 import com.github.scribejava.core.builder.api.DefaultApi20;
 import com.github.scribejava.core.oauth.OAuth20Service;

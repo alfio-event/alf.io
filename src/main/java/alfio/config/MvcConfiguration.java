@@ -18,7 +18,7 @@ package alfio.config;
 
 import alfio.config.support.HeaderPublisherFilter;
 import alfio.manager.system.ConfigurationManager;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,8 +36,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatchers;
 import org.springframework.session.FindByIndexNameSessionRepository;
@@ -59,7 +58,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static alfio.config.Initializer.API_V2_PUBLIC_PATH;
-import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
+import static org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.pathPattern;
 
 
 @Configuration(proxyBeanMethods = false)
@@ -70,11 +69,11 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
     private final Environment environment;
     private final String alfioVersion;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper objectMapper;
 
     public MvcConfiguration(Environment environment,
                             @Value("${alfio.version}") String alfioVersion,
-                            ObjectMapper objectMapper) {
+                            JsonMapper objectMapper) {
         this.environment = environment;
         this.alfioVersion = alfioVersion;
         this.objectMapper = objectMapper;
@@ -127,19 +126,19 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
         ExcludeSessionRepositoryFilter(String alfioVersion) {
             var methodMatcher = RequestMatchers.anyOf(
-                antMatcher(HttpMethod.GET),
-                antMatcher(HttpMethod.HEAD),
-                antMatcher(HttpMethod.TRACE),
-                antMatcher(HttpMethod.OPTIONS)
+                pathPattern(HttpMethod.GET, "/**"),
+                pathPattern(HttpMethod.HEAD, "/**"),
+                pathPattern(HttpMethod.TRACE, "/**"),
+                pathPattern(HttpMethod.OPTIONS, "/**")
             );
             var urlMatcher = RequestMatchers.anyOf(
-                antMatcher("/favicon.*"),
-                antMatcher("/resources/**"),
-                antMatcher("/" + alfioVersion + "/resources/**"),
-                antMatcher("/frontend-public/**"),
-                antMatcher("/" + alfioVersion + "/frontend-admin/**"),
-                antMatcher("/file/**"),
-                antMatcher("/payment/paypal/redirect/*")
+                pathPattern("/favicon.*"),
+                pathPattern("/resources/**"),
+                pathPattern("/" + alfioVersion + "/resources/**"),
+                pathPattern("/frontend-public/**"),
+                pathPattern("/" + alfioVersion + "/frontend-admin/**"),
+                pathPattern("/file/**"),
+                pathPattern("/payment/paypal/redirect/*")
             );
             this.staticContentToIgnore = RequestMatchers.allOf(methodMatcher, urlMatcher);
         }
@@ -167,10 +166,8 @@ public class MvcConfiguration implements WebMvcConfigurer {
         converters.add(converter);
     }
 
-    private MappingJackson2HttpMessageConverter jacksonMessageConverter(ObjectMapper objectMapper) {
-        final MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
-        converter.setObjectMapper(objectMapper);
-        return converter;
+    private JacksonJsonHttpMessageConverter jacksonMessageConverter(JsonMapper objectMapper) {
+        return new JacksonJsonHttpMessageConverter(objectMapper);
     }
 
     @Bean
@@ -192,7 +189,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
     @Bean
     public HttpSessionIdResolver httpSessionIdResolver(CookieSerializer cookieSerializer) {
-        var publicRequestMatcher = new AntPathRequestMatcher(API_V2_PUBLIC_PATH + "**");
+        var publicRequestMatcher = pathPattern(API_V2_PUBLIC_PATH + "**");
         var headerSessionIdResolver = HeaderHttpSessionIdResolver.xAuthToken();
         var cookieSessionIdResolver = new CookieHttpSessionIdResolver();
         cookieSessionIdResolver.setCookieSerializer(cookieSerializer);

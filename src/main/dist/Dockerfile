@@ -5,9 +5,9 @@
 # - https://august.nagro.us/small-java.html
 #
 
-FROM azul/zulu-openjdk-alpine:17 AS zulu
+FROM azul/zulu-openjdk-alpine:25 AS zulu
 COPY alfio-boot.jar .
-RUN "$JAVA_HOME/bin/jlink" --compress=2 --strip-java-debug-attributes --no-header-files --no-man-pages \
+RUN "$JAVA_HOME/bin/jlink" --compress=zip-6 --strip-java-debug-attributes --no-header-files --no-man-pages \
     --module-path "$JAVA_HOME/jmods" \
     # see https://docs.oracle.com/en/java/javase/11/security/oracle-providers.html#GUID-9224B90B-7B2F-41F9-BB96-C0A1B6A0FEAA
     --add-modules java.desktop,java.logging,java.sql,java.management,java.naming,jdk.unsupported,jdk.crypto.ec,java.net.http,jdk.localedata,java.instrument \

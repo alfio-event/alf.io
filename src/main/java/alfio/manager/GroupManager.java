@@ -33,9 +33,9 @@ import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -150,7 +150,7 @@ public class GroupManager {
         if(CollectionUtils.isEmpty(configurations)) {
             return true;
         }
-        LinkedGroup configuration = configurations.get(0);
+        LinkedGroup configuration = configurations.getFirst();
         return getMatchingMember(configuration, value).isPresent();
     }
 
@@ -180,7 +180,7 @@ public class GroupManager {
         if (CollectionUtils.isEmpty(configurations)) {
             return true;
         }
-        LinkedGroup configuration = configurations.get(0);
+        LinkedGroup configuration = configurations.getFirst();
         Optional<MatchingMember> optionalItem = getMatchingMember(configuration, ticket.getEmail());
         if (optionalItem.isEmpty()) {
             return false;

@@ -257,7 +257,7 @@ public class UsersApiController {
     public UserModification loadUser(@PathVariable("id") int userId, Principal principal) {
         User user = userManager.findUser(userId, principal);
         List<Organization> userOrganizations = userManager.findUserOrganizations(user.getUsername());
-        return new UserModification(user.getId(), userOrganizations.get(0).getId(), userManager.getUserRole(user).name(),
+        return new UserModification(user.getId(), userOrganizations.getFirst().getId(), userManager.getUserRole(user).name(),
             user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmailAddress(),
             user.getType(), user.getValidToEpochSecond(), user.getDescription());
     }

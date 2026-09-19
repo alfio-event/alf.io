@@ -241,7 +241,7 @@ class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
         var form = new ReservationForm();
         var first = new TicketReservationModification();
         first.setQuantity(2);
-        first.setTicketCategoryId(categories.get(0).getId());
+        first.setTicketCategoryId(categories.getFirst().getId());
 
         var second = new TicketReservationModification();
         second.setQuantity(2);

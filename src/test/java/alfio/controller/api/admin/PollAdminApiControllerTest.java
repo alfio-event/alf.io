@@ -121,7 +121,7 @@ class PollAdminApiControllerTest {
         assertNotNull(getResponse.getBody());
         var poll = getResponse.getBody();
         assertEquals(2, poll.getOptions().size());
-        assertEquals("Homer J. Simpson", poll.getOptions().get(0).getTitle().get("en"));
+        assertEquals("Homer J. Simpson", poll.getOptions().getFirst().getTitle().get("en"));
         assertEquals(Poll.PollStatus.DRAFT, poll.getStatus());
 
         // update poll status
@@ -139,7 +139,7 @@ class PollAdminApiControllerTest {
         assertNotNull(updatePollResponse.getBody());
         assertEquals(Poll.PollStatus.OPEN, updatePollResponse.getBody().getStatus());
         assertEquals(4, updatePollResponse.getBody().getOptions().size());
-        assertEquals("Homer J. Simpson", updatePollResponse.getBody().getOptions().get(0).getTitle().get("en"));
+        assertEquals("Homer J. Simpson", updatePollResponse.getBody().getOptions().getFirst().getTitle().get("en"));
     }
 
     @Test
@@ -157,7 +157,7 @@ class PollAdminApiControllerTest {
         var firstCategory = CollectionUtils.get(ticketCategoryRepository.findByEventIdAsMap(event.getId()), 0);
         int categoryId = firstCategory.getKey();
         var tickets = ticketRepository.findFreeByEventId(event.getId());
-        var firstTicket = tickets.get(0);
+        var firstTicket = tickets.getFirst();
         int ticketId = firstTicket.getId();
         ticketRepository.reserveTickets(reservationId, List.of(ticketId), firstCategory.getValue(), "en", event.getVatStatus(), i -> null);
         ticketReservationRepository.updateReservationStatus(reservationId, TicketReservation.TicketReservationStatus.COMPLETE.name());
@@ -169,7 +169,7 @@ class PollAdminApiControllerTest {
         assertTrue(res.getStatusCode().is2xxSuccessful());
         assertTrue(CollectionUtils.isNotEmpty(res.getBody()));
         assertEquals(1, res.getBody().size());
-        assertEquals(firstTicket.getId(), res.getBody().get(0).getId());
+        assertEquals(firstTicket.getId(), res.getBody().getFirst().getId());
 
         // allow tickets to vote
         var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
@@ -184,7 +184,7 @@ class PollAdminApiControllerTest {
         assertTrue(participantRes.getStatusCode().is2xxSuccessful());
         assertTrue(CollectionUtils.isNotEmpty(participantRes.getBody()));
         assertEquals(1, participantRes.getBody().size());
-        assertEquals(firstTicket.getId(), participantRes.getBody().get(0).getId());
+        assertEquals(firstTicket.getId(), participantRes.getBody().getFirst().getId());
 
         // now ticket should not be returned anymore
         res = controller.findAdditionalAttendees(event.getShortName(), pollId, "First", principal);
@@ -208,7 +208,7 @@ class PollAdminApiControllerTest {
         // remove option
         var pollWithOptions = controller.getPollDetail(event.getShortName(), pollId, principal).getBody();
         assertNotNull(pollWithOptions);
-        var firstOptionId = pollWithOptions.getOptions().get(0).getId();
+        var firstOptionId = pollWithOptions.getOptions().getFirst().getId();
         var removeOptionResponse = controller.removeOption(event.getShortName(), pollId, firstOptionId, principal);
         assertTrue(removeOptionResponse.getStatusCode().is2xxSuccessful());
         assertTrue(Objects.requireNonNull(removeOptionResponse.getBody()).getOptions().stream().noneMatch(po -> firstOptionId.equals(po.getId())));

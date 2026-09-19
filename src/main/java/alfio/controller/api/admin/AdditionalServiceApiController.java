@@ -185,7 +185,7 @@ public class AdditionalServiceApiController {
             "VAT",
             "Discount"
         );
-        var locale = event.getContentLanguages().get(0).getLanguage();
+        var locale = event.getContentLanguages().getFirst().getLanguage();
         var rows = additionalServiceManager.exportItemsForEvent(additionalServiceType, event.getId(), locale).stream()
             .map(item -> new String[] {
                 item.getUuid(),

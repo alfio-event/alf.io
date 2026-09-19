@@ -21,10 +21,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.PullPolicy;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.Map;
 
@@ -36,7 +36,7 @@ class MigrationValidatorTest {
 
     private static final Logger log = LoggerFactory.getLogger(MigrationValidatorTest.class);
     public static final String DB_ALIAS = "db";
-    private PostgreSQLContainer<?> postgres;
+    private PostgreSQLContainer postgres;
     private final Network network = Network.SHARED;
     private final Map<String, String> envVariables = Map.ofEntries(
         entry("POSTGRES_PORT_5432_TCP_PORT", "5432"),
@@ -54,7 +54,7 @@ class MigrationValidatorTest {
 
     @BeforeEach
     void setUp() {
-        postgres = new PostgreSQLContainer<>("postgres:10")
+        postgres = new PostgreSQLContainer("postgres:10")
             .withDatabaseName(POSTGRES_DB)
             .withNetwork(network)
             .withNetworkAliases(DB_ALIAS)

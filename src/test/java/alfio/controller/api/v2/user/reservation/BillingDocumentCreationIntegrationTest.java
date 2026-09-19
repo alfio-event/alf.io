@@ -174,7 +174,7 @@ class BillingDocumentCreationIntegrationTest extends BaseIntegrationTest {
 
         billingDocuments = billingDocumentRepository.findAllByReservationId(reservationId);
         assertEquals(1, billingDocuments.size());
-        assertEquals(BillingDocument.Type.RECEIPT, billingDocuments.get(0).getType());
+        assertEquals(BillingDocument.Type.RECEIPT, billingDocuments.getFirst().getType());
     }
 
     @Test
@@ -194,7 +194,7 @@ class BillingDocumentCreationIntegrationTest extends BaseIntegrationTest {
         assertEquals(3, billingDocuments.size());
         assertTrue(billingDocuments.stream().allMatch(bd -> bd.getStatus() == BillingDocument.Status.VALID));
 
-        assertEquals(BillingDocument.Type.CREDIT_NOTE, billingDocuments.get(0).getType());
+        assertEquals(BillingDocument.Type.CREDIT_NOTE, billingDocuments.getFirst().getType());
     }
 
     @Test
@@ -213,7 +213,7 @@ class BillingDocumentCreationIntegrationTest extends BaseIntegrationTest {
         assertEquals(2, billingDocuments.size());
         assertTrue(billingDocuments.stream().allMatch(bd -> bd.getStatus() == BillingDocument.Status.VALID));
 
-        assertEquals(BillingDocument.Type.CREDIT_NOTE, billingDocuments.get(0).getType());
+        assertEquals(BillingDocument.Type.CREDIT_NOTE, billingDocuments.getFirst().getType());
     }
 
     @Test
@@ -246,13 +246,13 @@ class BillingDocumentCreationIntegrationTest extends BaseIntegrationTest {
         //
         assertEquals(2, billingDocumentRepository.findByIdsAndEvent(billingDocuments.stream().map(BillingDocument::getId).collect(Collectors.toList()), event.getId()).size());
 
-        assertEquals(BillingDocument.Type.CREDIT_NOTE, billingDocuments.get(0).getType());
+        assertEquals(BillingDocument.Type.CREDIT_NOTE, billingDocuments.getFirst().getType());
     }
 
     private String createReservation(Consumer<ContactAndTicketsForm> formCustomizer) {
         var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         assertFalse(categories.isEmpty());
-        int categoryId = categories.get(0).getId();
+        int categoryId = categories.getFirst().getId();
         var form = new ReservationForm();
         var ticketReservation = new TicketReservationModification();
         ticketReservation.setQuantity(1);
@@ -273,8 +273,8 @@ class BillingDocumentCreationIntegrationTest extends BaseIntegrationTest {
         assertNotNull(resInfoRes.getBody());
         var ticketsByCat = resInfoRes.getBody().getTicketsByCategory();
         assertEquals(1, ticketsByCat.size());
-        assertEquals(1, ticketsByCat.get(0).getTickets().size());
-        var ticket = ticketsByCat.get(0).getTickets().get(0);
+        assertEquals(1, ticketsByCat.getFirst().getTickets().size());
+        var ticket = ticketsByCat.getFirst().getTickets().getFirst();
 
         var contactForm = new ContactAndTicketsForm();
 
@@ -317,7 +317,7 @@ class BillingDocumentCreationIntegrationTest extends BaseIntegrationTest {
         assertNotNull(reservationId);
         var billingDocuments = billingDocumentRepository.findAllByReservationId(reservationId);
         assertEquals(1, billingDocuments.size());
-        assertEquals(BillingDocument.Type.INVOICE, billingDocuments.get(0).getType());
+        assertEquals(BillingDocument.Type.INVOICE, billingDocuments.getFirst().getType());
 
         confirmPaymentForReservation(reservationId);
 
@@ -331,7 +331,7 @@ class BillingDocumentCreationIntegrationTest extends BaseIntegrationTest {
         assertNotNull(notActiveList);
         assertEquals(0, notActiveList.size());
 
-        var first = activeList.get(0);
+        var first = activeList.getFirst();
         var second = activeList.get(1);
 
         assertEquals(second.getModel().get("confirmationDate"), first.getModel().get("confirmationDate"));

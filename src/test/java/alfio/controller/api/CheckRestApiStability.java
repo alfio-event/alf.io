@@ -30,7 +30,7 @@ import org.springdoc.core.properties.SpringDocConfigProperties;
 import org.springdoc.core.utils.Constants;
 import org.springdoc.webmvc.core.configuration.SpringDocWebMvcConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,7 +46,7 @@ import java.io.FileReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.Base64;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -87,7 +87,7 @@ class TestCheckRestApiStability {
 
         // for generating the result
         if (updateDescriptor) {
-            try (var writer = Files.newBufferedWriter(Paths.get(DESCRIPTOR_JSON_PATH), StandardCharsets.UTF_8)) {
+            try (var writer = Files.newBufferedWriter(Path.of(DESCRIPTOR_JSON_PATH))) {
                 var formattedDescriptor = Json.OBJECT_MAPPER.readTree(descriptor).toPrettyString();
                 writer.write(formattedDescriptor);
             }

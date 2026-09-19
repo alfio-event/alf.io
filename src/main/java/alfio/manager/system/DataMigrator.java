@@ -162,7 +162,7 @@ public class DataMigrator {
             var reservationsToUpdate = byReservationId.values().stream()
                 .map(ticketsReservationAndTransactions -> {
                     var tickets = ticketsReservationAndTransactions.stream().map(TicketWithReservationAndTransaction::getTicket).collect(toList());
-                    var ticketReservation = ticketsReservationAndTransactions.get(0).getTicketReservation();
+                    var ticketReservation = ticketsReservationAndTransactions.getFirst().getTicketReservation();
                     var promoCodeDiscountId = ticketReservation.getPromoCodeDiscountId();
                     var discount = promoCodeDiscountId != null ? promoCodeDiscountRepository.findById(promoCodeDiscountId) : null;
                     var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(event.getId(), ticketReservation.getId());
