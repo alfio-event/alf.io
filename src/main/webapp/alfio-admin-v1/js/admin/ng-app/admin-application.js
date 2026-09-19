@@ -166,7 +166,7 @@
             })
             .state('events.single.promoCodes', {
                 url:'/promo-codes',
-                template:'<promo-codes for-event="true" event="$ctrl.loadEvent"></promo-codes>',
+                template:'<alfio-promo-code data-event-name="{{$ctrl.loadEvent.shortName}}" data-organization-id="{{$ctrl.loadEvent.organizationId}}" data-for-event="true"></alfio-promo-code>',
                 controller: loadEventCtrl,
                 controllerAs: '$ctrl',
                 resolve: loadEvent
