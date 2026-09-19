@@ -19,6 +19,12 @@ buildscript {
         classpath "ch.digitalfondue.jfiveparse:jfiveparse:1.1.4"
         // for processing the mjml templates at build time
         classpath "ch.digitalfondue.mjml4j:mjml4j:1.2.2"
+        // for the generateJooq task's doFirst hook: spin up DB and run Flyway migrations
+        classpath 'org.testcontainers:postgresql:1.20.4'
+        classpath 'org.testcontainers:testcontainers:1.20.4'
+        classpath 'org.flywaydb:flyway-core:10.22.0'
+        classpath 'org.flywaydb:flyway-database-postgresql:10.22.0'
+        classpath 'org.jooq:jooq-meta:3.19.38'
     }
 
 
@@ -43,12 +49,17 @@ plugins {
     id 'org.sonarqube' version '7.3.1.8318'
     // id 'net.ltgt.errorprone' version '3.1.0'
     id 'com.github.node-gradle.node' version '7.1.0'
+    id 'nu.studer.jooq' version '9.0'
 }
 
 apply plugin: 'java'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'project-report'
+
+// Keep the jOOQ version used by the nu.studer.jooq plugin in sync with
+// Spring Boot's dependency management so both pull in the same artifact.
+ext['jooq.version'] = '3.19.38'
 
 // MJML email templates translations to HTML
 node {
@@ -585,4 +596,103 @@ abstract class Mjml4jTransformTask extends DefaultTask {
             new File(outputDir.asFile, outputName).setText(templateOutput, "UTF-8")
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// jOOQ class generation via nu.studer.jooq plugin + Testcontainers + Flyway
+// ---------------------------------------------------------------------------
+// Usage:   ./gradlew generateJooq
+// Output:  build/generated-src/jooq/main  (wired into main sourceSet automatically)
+// ---------------------------------------------------------------------------
+
+// Keep the jOOQ version in sync with Spring Boot's managed version
+jooq {
+    version = '3.19.38'
+
+    configurations {
+        main {
+            // Do not wire generateJooq into the normal build lifecycle.
+            // Run it manually with:  ./gradlew generateJooq
+            generateSchemaSourceOnCompilation = false
+
+            generationTool {
+                logging = org.jooq.meta.jaxb.Logging.WARN
+                // JDBC block is populated at execution time by the doFirst hook below
+                generator {
+                    name = 'org.jooq.codegen.JavaGenerator'
+                    database {
+                        name = 'org.jooq.meta.postgres.PostgresDatabase'
+                        includes = '.*'
+                        excludes = 'flyway_schema_history'
+                        inputSchema = 'public'
+                    }
+                    generate {
+                        pojos = false
+                        daos = false
+                        records = true
+                        fluentSetters = true
+                        javaTimeTypes = true
+                    }
+                    target {
+                        packageName = 'alfio.model.jooq'
+                        // default directory: build/generated-src/jooq/main
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Wire Testcontainers + Flyway lifecycle around the plugin-provided generateJooq task
+tasks.named('generateJooq').configure {
+    // Declare migration scripts as inputs for up-to-date checks and build caching
+    inputs.files(fileTree('src/main/resources/alfio/db/PGSQL'))
+            .withPropertyName('migrations')
+            .withPathSensitivity(PathSensitivity.RELATIVE)
+    allInputsDeclared = true
+
+    // Spin up PostgreSQL, run Flyway, and inject JDBC coordinates before the task runs
+    doFirst {
+        def container = new org.testcontainers.containers.PostgreSQLContainer('postgres:16')
+        container.withDatabaseName('alfio_jooq')
+        container.withUsername('alfio')
+        container.withPassword('alfio')
+        container.start()
+        // Stash the container so doLast can stop it
+        ext.pgContainer = container
+
+        logger.lifecycle('jOOQ generator: PostgreSQL started at {}', container.jdbcUrl)
+
+        // Run Flyway migrations
+        def flyway = org.flywaydb.core.Flyway.configure()
+                .dataSource(container.jdbcUrl, container.username, container.password)
+                .locations("filesystem:${project.file('src/main/resources/alfio/db/PGSQL').absolutePath}")
+                .load()
+        flyway.migrate()
+        logger.lifecycle('jOOQ generator: Flyway migrations applied.')
+
+        // Inject JDBC coordinates into the configuration object.
+        // The JooqGenerate task serializes jooqConfiguration to XML in its @TaskAction
+        // (after all doFirst hooks have run), so this mutation is picked up in time.
+        def jooqCfg = project.extensions.getByName('jooq').configurations.getByName('main').jooqConfiguration
+        jooqCfg.setJdbc(new org.jooq.meta.jaxb.Jdbc()
+                .withDriver('org.postgresql.Driver')
+                .withUrl(container.jdbcUrl)
+                .withUser(container.username)
+                .withPassword(container.password))
+    }
+
+    doLast {
+        ext.pgContainer?.stop()
+        logger.lifecycle('jOOQ generator: PostgreSQL container stopped.')
+    }
+}
+
+// Add Testcontainers, Flyway and the PostgreSQL driver to the jooqGenerator classpath
+dependencies {
+    jooqGenerator 'org.testcontainers:postgresql:1.20.4'
+    jooqGenerator 'org.testcontainers:testcontainers:1.20.4'
+    jooqGenerator 'org.flywaydb:flyway-core:10.22.0'
+    jooqGenerator 'org.flywaydb:flyway-database-postgresql:10.22.0'
+    jooqGenerator 'org.postgresql:postgresql:42.7.11'
 }
