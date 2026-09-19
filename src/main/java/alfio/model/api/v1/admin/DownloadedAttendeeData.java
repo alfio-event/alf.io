@@ -27,6 +27,7 @@ public record DownloadedAttendeeData(
     @JsonProperty("firstName") String firstName,
     @JsonProperty("lastName") String lastName,
     @JsonProperty("email") String email,
+    @JsonProperty("reservationEmail") String reservationEmail,
     @JsonProperty("userLanguage") String userLanguage,
     @JsonProperty("metadata") Map<String, String> metadata,
     @JsonProperty("additional") Map<String, List<String>> additional,
