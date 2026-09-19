@@ -129,6 +129,7 @@ public class IndexController {
         "/o/*/events-all",
         "/events-all",
         "/event/{eventShortName}",
+        "/event/{eventShortName}/",
         "/event/{eventShortName}/reservation/{reservationId}/book",
         "/event/{eventShortName}/reservation/{reservationId}/overview",
         "/event/{eventShortName}/reservation/{reservationId}/waitingPayment",
