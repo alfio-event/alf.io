@@ -102,8 +102,15 @@ export function asNumber(value?: string): number | null {
     return value ?? null;
 }
 
+export function supportsOfflinePayments(allowedPaymentProxies: string[]): boolean {
+    return allowedPaymentProxies.includes('OFFLINE');
+}
+
 declare global {
     interface Window {
         SUPPORTED_LANGUAGES: string | null;
+        USER_IS_OWNER: boolean;
+        ALFIO_CONTEXT_PATH: string;
+        BASE_URL: string;
     }
 }
