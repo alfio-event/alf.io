@@ -30,25 +30,63 @@
             })
             .state('organizations', {
                 url: "/organizations/",
-                template: "<organizations></organizations>"
+                template: "<div organizations-page><alfio-organization-list></alfio-organization-list><alfio-organization-edit></alfio-organization-edit><ui-view></ui-view></div>"
             })
             .state('organizations.new', {
                 url: "new",
-                views: {
-                    "newOrganization": {
-                        template: "<organization-edit type='new'></organization-edit>"
-                    }
-                }
+                template: '',
+                controller: ['$state', '$timeout', '$scope', function($state, $timeout, $scope) {
+                    var timeoutId = $timeout(function() {
+                        if ($state.current.name !== 'organizations.new') {
+                            return;
+                        }
+                        var container = document.querySelector('div[organizations-page]');
+                        if (!container) {
+                            $state.go('organizations');
+                            return;
+                        }
+                        var editEl = container.querySelector('alfio-organization-edit');
+                        if (editEl && typeof editEl.open === 'function') {
+                            editEl.open({ type: 'new' });
+                        } else {
+                            $state.go('organizations');
+                        }
+                    });
+                    $scope.$on('$destroy', function() {
+                        $timeout.cancel(timeoutId);
+                    });
+                }]
             })
             .state('organizations.edit', {
                 url: ":organizationId/edit",
-                views: {
-                    "newOrganization": {
-                        template: "<organization-edit type='edit' organization-id='$ctrl.$state.params.organizationId'></organization-edit>",
-                        controller: ['$state', function($state) {this.$state = $state;}],
-                        controllerAs: '$ctrl'
+                template: '',
+                controller: ['$state', '$timeout', '$scope', function($state, $timeout, $scope) {
+                    var rawId = String($state.params.organizationId);
+                    var orgId = parseInt(rawId, 10);
+                    if (!/^\d+$/.test(rawId) || !Number.isSafeInteger(orgId) || orgId < 1 || orgId > 2147483647) {
+                        $state.go('organizations');
+                        return;
                     }
-                }
+                    var timeoutId = $timeout(function() {
+                        if ($state.current.name !== 'organizations.edit' || parseInt($state.params.organizationId, 10) !== orgId) {
+                            return;
+                        }
+                        var container = document.querySelector('div[organizations-page]');
+                        if (!container) {
+                            $state.go('organizations');
+                            return;
+                        }
+                        var editEl = container.querySelector('alfio-organization-edit');
+                        if (editEl && typeof editEl.open === 'function') {
+                            editEl.open({ type: 'edit', organizationId: orgId });
+                        } else {
+                            $state.go('organizations');
+                        }
+                    });
+                    $scope.$on('$destroy', function() {
+                        $timeout.cancel(timeoutId);
+                    });
+                }]
             })
             .state('system-edit-resources', {
                 url: '/show-resources/:resourceName/',
@@ -400,8 +438,65 @@
             }).state('extension.log', {
                 url: '/log',
                 template: '<extension-log></extension-log>'
-            });
-    });
+             });
+     });
+
+    admin.directive('organizationsPage', ['$state', '$rootScope', function($state, $rootScope) {
+        return {
+            restrict: 'A',
+            link: function(scope, element) {
+                var container = element[0];
+
+                var handleAction = function(e) {
+                    if (!e.detail) {
+                        return;
+                    }
+                    var targetState = e.detail.type === 'new' ? 'organizations.new'
+                                   : e.detail.type === 'edit' ? 'organizations.edit'
+                                   : null;
+                    if (targetState && $state.current.name !== targetState) {
+                        var params = e.detail.type === 'edit' ? { organizationId: e.detail.organizationId } : {};
+                        $state.go(targetState, params, { location: true });
+                    }
+                };
+
+                var handleDialogClosed = function(e) {
+                    var editEl = container.querySelector('alfio-organization-edit');
+                    if (editEl && typeof editEl.hide === 'function') {
+                        editEl.hide();
+                    }
+                    if (e.detail && e.detail.success) {
+                        var listEl = container.querySelector('alfio-organization-list');
+                        if (listEl && typeof listEl.refresh === 'function') {
+                            listEl.refresh();
+                        }
+                    }
+                    if ($state.current.name !== 'organizations') {
+                        $state.go('organizations', {}, { location: true });
+                    }
+                };
+
+                var handleStateChange = function(event, toState, toParams, fromState, fromParams) {
+                    if (fromState && (fromState.name === 'organizations.new' || fromState.name === 'organizations.edit') && toState && toState.name !== fromState.name) {
+                        var editEl = container.querySelector('alfio-organization-edit');
+                        if (editEl && typeof editEl.hide === 'function') {
+                            editEl.hide();
+                        }
+                    }
+                };
+
+                container.addEventListener('alfio-organization-action', handleAction);
+                container.addEventListener('alfio-dialog-closed', handleDialogClosed);
+                var deregisterStateChangeListener = $rootScope.$on('$stateChangeSuccess', handleStateChange);
+
+                scope.$on('$destroy', function() {
+                    container.removeEventListener('alfio-organization-action', handleAction);
+                    container.removeEventListener('alfio-dialog-closed', handleDialogClosed);
+                    deregisterStateChangeListener();
+                });
+            }
+        };
+    }]);
 
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 

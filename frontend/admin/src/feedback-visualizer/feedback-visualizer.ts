@@ -1,12 +1,12 @@
 import {customElement} from "lit/decorators.js";
-import {html, LitElement, TemplateResult} from "lit";
+import {html, LitElement, nothing, TemplateResult} from "lit";
 import {AlfioFeedbackEvent} from "../model/dom-events.ts";
 import {escapeHtml} from "../service/helpers.ts";
 
 @customElement('alfio-feedback-visualizer')
 export class FeedbackVisualizer extends LitElement {
 
-    private listener: EventListener = (e) => {
+    private readonly listener: EventListener = (e) => {
         const detail = (e as CustomEvent<AlfioFeedbackEvent>).detail;
         const alert = Object.assign(document.createElement('sl-alert'), {
             variant: detail.type,
@@ -36,13 +36,7 @@ export class FeedbackVisualizer extends LitElement {
     }
 
     protected render(): TemplateResult {
-        return html`
-            <sl-alert variant="danger" duration="3000" closable>
-                <sl-icon slot="icon" name="exclamation-octagon"></sl-icon>
-                <strong>Your account has been deleted</strong><br />
-                We're very sorry to see you go!
-            </sl-alert>
-        `;
+        return html`${nothing}`;
     }
 
     connectedCallback() {

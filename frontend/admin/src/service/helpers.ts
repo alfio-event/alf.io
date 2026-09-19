@@ -110,6 +110,8 @@ declare global {
     interface Window {
         SUPPORTED_LANGUAGES: string | null;
         USER_IS_OWNER: boolean;
+        isAdmin: boolean; // backwards compatibility
+        IS_ADMIN: boolean;
         ALFIO_CONTEXT_PATH: string;
         BASE_URL: string;
     }
