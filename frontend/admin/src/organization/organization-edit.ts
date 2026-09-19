@@ -130,7 +130,7 @@ static readonly styles = [dialogStyling, panelStyles, pageHeader, form, textColo
         .page-header h2 {
             font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: 30px;
-            font-weight: 500;
+            font-weight: 700;
             line-height: 1.1;
             margin-top: 0;
             margin-bottom: 10px;

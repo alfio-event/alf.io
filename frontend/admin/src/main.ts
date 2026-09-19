@@ -65,4 +65,7 @@ export { EventsList } from './event/events-list/events-list';
 export { EventsPage } from './event/events-page/events-page';
 export { OrganizationList } from './organization/organization-list.ts';
 export { OrganizationEdit } from './organization/organization-edit.ts';
+export { Users } from './users/users.ts';
+export { UserProfileEdit } from './users/user-profile-edit.ts';
 export { ExportReservationsButton } from './event/export-reservations/export-reservations-button';
+export { FileUpload } from './components/file-upload';
