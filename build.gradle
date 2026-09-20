@@ -3,6 +3,8 @@ import ch.digitalfondue.jfiveparse.NodeMatcher
 import ch.digitalfondue.jfiveparse.Parser
 import ch.digitalfondue.jfiveparse.Selector
 import ch.digitalfondue.mjml4j.Mjml4j
+import com.github.gradle.node.variant.VariantComputer
+import com.github.gradle.node.variant.VariantComputerKt
 import de.thetaphi.forbiddenapis.gradle.CheckForbiddenApis
 import org.apache.tools.ant.filters.ReplaceTokens
 
@@ -52,6 +54,11 @@ apply plugin: 'java'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'project-report'
+
+// Spring Boot 4.1.1 manages Flyway 12.4.0, whose plugin-based resolution of the schema history "type"
+// column no longer honours the legacy SPRING_JDBC alias, making existing instances unable to start
+// (FlywayUnknownMigrationTypeException). Fixed upstream in 12.11.0, see Flyway issue 4253.
+ext['flyway.version'] = '12.11.0'
 
 java {
     toolchain {
@@ -369,6 +376,7 @@ def killViteDevProcess = {
 
 bootRun {
     dependsOn 'copyFrontendDev', 'frontendAdminPnpmInstall'
+    finalizedBy 'killViteDevServer'
     def externalConfig = new File("./custom.jvmargs")
     def opts = []
     opts += [
@@ -388,29 +396,33 @@ bootRun {
     doFirst {
         logger.lifecycle("Starting Vite dev server in frontend/admin ...")
         def viteDir = file("${project.projectDir}/frontend/admin")
-        def pnpmExe = node.pnpmCommand.get()
-        def viteProcess = new ProcessBuilder(pnpmExe, "run", "dev")
+        // node.pnpmCommand is a bare command name, which ProcessBuilder can only resolve through the
+        // inherited PATH. That PATH is the one gradle was started with, so it works from a login shell
+        // but not from the IDE, where it fails with "Cannot run program pnpm". Use the toolchain the
+        // node plugin downloaded instead, and put node on the PATH of the spawned process, since the
+        // pnpm entry point is a "#!/usr/bin/env node" script and vite needs node as well.
+        def variantComputer = new VariantComputer()
+        def nodeBinDir = variantComputer.computeNodeBinDir(VariantComputerKt.computeNodeDir(node), node.resolvedPlatform).get().asFile
+        def pnpmBinDir = variantComputer.computePnpmBinDir(variantComputer.computePnpmDir(node), node.resolvedPlatform)
+        def pnpmExe = variantComputer.computePnpmExec(node, pnpmBinDir).get()
+
+        def viteProcessBuilder = new ProcessBuilder(pnpmExe, "run", "dev")
             .directory(viteDir)
             .redirectOutput(ProcessBuilder.Redirect.INHERIT)
             .redirectError(ProcessBuilder.Redirect.INHERIT)
             .redirectInput(ProcessBuilder.Redirect.PIPE)
-            .start()
+        def inheritedPath = System.getenv("PATH")
+        def absolutePath
+        if (inheritedPath == null || inheritedPath.isEmpty()) {
+            absolutePath = nodeBinDir.absolutePath
+        } else {
+            absolutePath = nodeBinDir.absolutePath + File.pathSeparator + inheritedPath
+        }
+        viteProcessBuilder.environment().put("PATH", absolutePath)
+        def viteProcess = viteProcessBuilder.start()
         project.ext.set("viteDevProcess", viteProcess)
     }
 }
-
-gradle.addListener(new TaskExecutionListener() {
-    @Override
-    void afterExecute(Task task, TaskState state) {
-        if (task.name == 'bootRun') {
-            killViteDevProcess.call()
-        }
-    }
-
-    @Override
-    void beforeExecute(Task task) {
-    }
-})
 
 tasks.register('killViteDevServer') {
     doLast {
