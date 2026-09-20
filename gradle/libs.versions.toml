@@ -1,0 +1,145 @@
+#
+# Single place for every version this build pins.
+#
+#
+
+[versions]
+# -- build plugins
+forbiddenapis = "3.10"
+gradle-node = "7.1.0"
+gradle-release = "3.1.0"
+gradle-versions = "0.64.0"
+hierynomus-license = "0.16.1"
+kordamp-jacoco = "0.54.0"
+lombok-plugin = "9.5.0"
+sonarqube = "7.5.0.8588"
+spring-boot = "4.1.1"
+spring-dependency-management = "1.1.7"
+
+# -- build-time only (buildscript classpath)
+license-maven-plugin = "4.1"
+mjml4j = "1.2.2"
+postgresql-driver = "42.7.13"
+
+# -- overrides applied to the Spring Boot BOM
+# Spring Boot 4.1.1 manages Flyway 12.4.0, whose plugin-based resolution of the schema history "type"
+# column no longer honours the legacy SPRING_JDBC alias, making existing instances unable to start
+# (FlywayUnknownMigrationTypeException). Fixed upstream in 12.11.0, see Flyway issue 4253.
+flyway = "12.11.0"
+
+# -- libraries
+basicxlsx = "0.7.1"
+biweekly = "0.6.8"
+bouncycastle = "1.86"
+commonmark = "0.17.0"
+commons-codec = "1.22.1"
+commons-collections4 = "4.6.0"
+commons-lang3 = "3.20.0"
+commons-text = "1.15.0"
+google-auth = "1.52.0"
+gson = "2.14.0"
+gson-javatime = "1.1.2"
+imgscalr = "4.2"
+java-jwt = "4.6.1"
+jfiveparse = "2.1.1"
+jmustache = "1.16"
+joda-money = "2.0.3"
+lat-long-to-timezone = "1.2"
+mockito = "5.23.0"
+npjt-extra = "2.0.4"
+openapi-diff = "2.1.7"
+openhtmltopdf = "1.1.86"
+passkit4j = "2.0.1"
+paypal-checkout = "2.0.0"
+rhino = "1.7.15.1"
+scribejava = "8.3.3"
+selenium = "4.49.0"
+springdoc-openapi = "3.1.1"
+stripe = "33.4.2"
+vatchecker = "1.6.0"
+wiremock = "3.13.2"
+zxing = "3.5.4"
+
+[libraries]
+# -- versioned by this catalog
+basicxlsx = { module = "ch.digitalfondue.basicxlsx:basicxlsx", version.ref = "basicxlsx" }
+biweekly = { module = "net.sf.biweekly:biweekly", version.ref = "biweekly" }
+bouncycastle-bcmail = { module = "org.bouncycastle:bcmail-jdk18on", version.ref = "bouncycastle" }
+bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+commonmark = { module = "com.atlassian.commonmark:commonmark", version.ref = "commonmark" }
+commonmark-ext-gfm-tables = { module = "com.atlassian.commonmark:commonmark-ext-gfm-tables", version.ref = "commonmark" }
+commons-codec = { module = "commons-codec:commons-codec", version.ref = "commons-codec" }
+commons-collections4 = { module = "org.apache.commons:commons-collections4", version.ref = "commons-collections4" }
+commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
+commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
+google-auth-oauth2-http = { module = "com.google.auth:google-auth-library-oauth2-http", version.ref = "google-auth" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+gson-javatime-serialisers = { module = "com.fatboyindustrial.gson-javatime-serialisers:gson-javatime-serialisers", version.ref = "gson-javatime" }
+imgscalr = { module = "org.imgscalr:imgscalr-lib", version.ref = "imgscalr" }
+java-jwt = { module = "com.auth0:java-jwt", version.ref = "java-jwt" }
+jfiveparse = { module = "ch.digitalfondue.jfiveparse:jfiveparse", version.ref = "jfiveparse" }
+jmustache = { module = "com.samskivert:jmustache", version.ref = "jmustache" }
+joda-money = { module = "org.joda:joda-money", version.ref = "joda-money" }
+lat-long-to-timezone = { module = "com.moodysalem:LatLongToTimezoneMaven", version.ref = "lat-long-to-timezone" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+npjt-extra = { module = "ch.digitalfondue.npjt-extra:npjt-extra", version.ref = "npjt-extra" }
+openapi-diff-core = { module = "org.openapitools.openapidiff:openapi-diff-core", version.ref = "openapi-diff" }
+openhtmltopdf-core = { module = "io.github.openhtmltopdf:openhtmltopdf-core", version.ref = "openhtmltopdf" }
+openhtmltopdf-pdfbox = { module = "io.github.openhtmltopdf:openhtmltopdf-pdfbox", version.ref = "openhtmltopdf" }
+passkit4j = { module = "com.ryantenney.passkit4j:passkit4j", version.ref = "passkit4j" }
+paypal-checkout-sdk = { module = "com.paypal.sdk:checkout-sdk", version.ref = "paypal-checkout" }
+rhino-runtime = { module = "org.mozilla:rhino-runtime", version.ref = "rhino" }
+scribejava-core = { module = "com.github.scribejava:scribejava-core", version.ref = "scribejava" }
+selenium-java = { module = "org.seleniumhq.selenium:selenium-java", version.ref = "selenium" }
+springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc-openapi" }
+stripe-java = { module = "com.stripe:stripe-java", version.ref = "stripe" }
+vatchecker = { module = "ch.digitalfondue.vatchecker:vatchecker", version.ref = "vatchecker" }
+wiremock-standalone = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
+zxing-javase = { module = "com.google.zxing:javase", version.ref = "zxing" }
+
+# -- build-time only (buildscript classpath)
+license-maven-plugin = { module = "com.mycila:license-maven-plugin", version.ref = "license-maven-plugin" }
+mjml4j = { module = "ch.digitalfondue.mjml4j:mjml4j", version.ref = "mjml4j" }
+postgresql-driver = { module = "org.postgresql:postgresql", version.ref = "postgresql-driver" }
+
+# -- versioned by the Spring Boot BOM
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine" }
+flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }
+hikaricp = { module = "com.zaxxer:HikariCP" }
+jackson-core = { module = "tools.jackson.core:jackson-core" }
+jackson-databind = { module = "tools.jackson.core:jackson-databind" }
+jackson-dataformat-csv = { module = "tools.jackson.dataformat:jackson-dataformat-csv" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
+junit-platform-engine = { module = "org.junit.platform:junit-platform-engine" }
+postgresql = { module = "org.postgresql:postgresql" }
+spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor" }
+spring-boot-properties-migrator = { module = "org.springframework.boot:spring-boot-properties-migrator" }
+spring-boot-starter-flyway = { module = "org.springframework.boot:spring-boot-starter-flyway" }
+spring-boot-starter-jetty = { module = "org.springframework.boot:spring-boot-starter-jetty" }
+spring-boot-starter-log4j2 = { module = "org.springframework.boot:spring-boot-starter-log4j2" }
+spring-boot-starter-mail = { module = "org.springframework.boot:spring-boot-starter-mail" }
+spring-boot-starter-restclient = { module = "org.springframework.boot:spring-boot-starter-restclient" }
+spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-starter-webmvc = { module = "org.springframework.boot:spring-boot-starter-webmvc" }
+spring-boot-starter-webmvc-test = { module = "org.springframework.boot:spring-boot-starter-webmvc-test" }
+spring-security-oauth2-client = { module = "org.springframework.security:spring-security-oauth2-client" }
+spring-security-oauth2-jose = { module = "org.springframework.security:spring-security-oauth2-jose" }
+spring-session-jdbc = { module = "org.springframework.session:spring-session-jdbc" }
+testcontainers = { module = "org.testcontainers:testcontainers" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:testcontainers-junit-jupiter" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql" }
+
+[plugins]
+forbiddenapis = { id = "de.thetaphi.forbiddenapis", version.ref = "forbiddenapis" }
+gradle-node = { id = "com.github.node-gradle.node", version.ref = "gradle-node" }
+gradle-release = { id = "net.researchgate.release", version.ref = "gradle-release" }
+gradle-versions = { id = "io.github.ben-manes.versions", version.ref = "gradle-versions" }
+hierynomus-license = { id = "com.github.hierynomus.license", version.ref = "hierynomus-license" }
+kordamp-jacoco = { id = "org.kordamp.gradle.jacoco", version.ref = "kordamp-jacoco" }
+lombok = { id = "io.freefair.lombok", version.ref = "lombok-plugin" }
+sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
