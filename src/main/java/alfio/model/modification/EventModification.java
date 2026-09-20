@@ -291,7 +291,6 @@ public class EventModification {
             this(id, price, fixPrice, ordinal, availableQuantity, maxQtyPerOrder, inception, expiration, vat, vatType, additionalServiceFields, title, description, null, null, type, supplementPolicy, minPrice, maxPrice);
         }
 
-        @JsonCreator
         private AdditionalService(Integer id,
                                   BigDecimal price,
                                   boolean fixPrice,

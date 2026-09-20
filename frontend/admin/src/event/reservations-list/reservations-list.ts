@@ -4,6 +4,7 @@ import { repeat } from 'lit/directives/repeat.js';
 import { Task, TaskStatus } from '@lit/task';
 import { AlfioEvent } from '../../model/event.ts';
 import { EventService } from '../../service/event.ts';
+import { ConfigurationService } from '../../service/configuration.ts';
 import { badges, base, modernLayout, modernTable, retroCompat, textColors } from '../../styles.ts';
 import type { SlInput } from '@shoelace-style/shoelace';
 
@@ -47,6 +48,7 @@ interface ReservationSection {
 }
 interface ReservationListData {
     event: AlfioEvent | null;
+    useInvoiceNumberAsId: boolean;
     sections: Record<TabName | 'stuck', PageAndContent<Reservation[]>>;
 }
 
@@ -124,10 +126,11 @@ export class ReservationsList extends LitElement {
     private readonly loadDataTask = new Task(this, {
         task: async ([eventName, purchaseContextType, search, pages]): Promise<ReservationListData> => {
             const baseUrl = `/admin/api/reservation/${purchaseContextType}/${encodeURIComponent(eventName)}/reservations/list`;
-            const [event, ...results] = await Promise.all([
+            const [event, useInvoiceNumberAsId, ...results] = await Promise.all([
                 purchaseContextType === 'event'
                     ? EventService.load(eventName).then((result) => result.event)
                     : Promise.resolve(null),
+                this.loadUseInvoiceNumberAsId(eventName, purchaseContextType),
                 ...sections.map((section) =>
                     this.loadReservations(baseUrl, pages[section.name], search, section.statuses),
                 ),
@@ -137,6 +140,7 @@ export class ReservationsList extends LitElement {
                 results as PageAndContent<Reservation[]>[];
             return {
                 event,
+                useInvoiceNumberAsId,
                 sections: {
                     completed: completedData,
                     'payment-pending': paymentPendingData,
@@ -371,14 +375,17 @@ export class ReservationsList extends LitElement {
     }
     render(): TemplateResult {
         if (this.completedOnly) {
-            return this.reservations.length === 0
+            // The host interpolates an empty attribute when it has no reservations yet,
+            // which Lit's Array converter turns into null.
+            const reservations = this.reservations ?? [];
+            return reservations.length === 0
                 ? html`
                       <div class="empty-state">
                           <sl-icon name="inbox"></sl-icon>
                           <span>No reservations completed so far</span>
                       </div>
                   `
-                : this.renderTable(this.reservations, null);
+                : this.renderTable(reservations, null);
         }
         const error =
             this.loadDataTask.status === TaskStatus.ERROR
@@ -672,8 +679,25 @@ export class ReservationsList extends LitElement {
             ? `${reservation.firstName} ${reservation.lastName}`
             : (reservation.fullName ?? '');
     }
+    private async loadUseInvoiceNumberAsId(
+        eventName: string,
+        purchaseContextType: 'event' | 'subscription',
+    ): Promise<boolean> {
+        if (purchaseContextType !== 'event') {
+            return false;
+        }
+        try {
+            return (await ConfigurationService.loadSingleConfig(eventName, 'USE_INVOICE_NUMBER_AS_ID')) === 'true';
+        } catch {
+            // ignore, fall back to the short reservation id
+            return false;
+        }
+    }
     private reservationIdentifier(reservation: Reservation): string {
-        return reservation.invoiceNumber?.trim() || 'N/A';
+        if (this.lastData?.useInvoiceNumberAsId) {
+            return reservation.invoiceNumber?.trim() || 'N/A';
+        }
+        return reservation.id.substring(0, 8).toUpperCase();
     }
     private paymentMethodIcon(paymentMethod: string): string | undefined {
         switch (paymentMethod.toUpperCase()) {

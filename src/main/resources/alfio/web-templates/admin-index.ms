@@ -86,7 +86,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/import/reservation-import.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/view/reservation-view.js"></script>
 
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservations-list/reservations-list.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/payments-list/payments-list.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/tickets-list/tickets-list.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/label-template/label-template.js"></script>
