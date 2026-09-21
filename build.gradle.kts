@@ -33,10 +33,10 @@ buildscript {
         classpath(libs.mjml4j)
         // for the generateJooq task's doFirst hook: spin up DB and run Flyway migrations
         classpath(libs.jooq.meta)
-        classpath("org.testcontainers:postgresql:${libs.versions.testcontainers.get()}")
-        classpath("org.testcontainers:testcontainers:${libs.versions.testcontainers.get()}")
-        classpath("org.flywaydb:flyway-core:${libs.versions.flyway.get()}")
-        classpath("org.flywaydb:flyway-database-postgresql:${libs.versions.flyway.get()}")
+        classpath(libs.testcontainers.postgresql.classpath)
+        classpath(libs.testcontainers.classpath)
+        classpath(libs.flyway.core.classpath)
+        classpath(libs.flyway.postgresql.classpath)
     }
 
 
@@ -236,14 +236,14 @@ dependencies {
 
     //errorprone("com.google.errorprone:error_prone_core:2.24.0")
 
-    // Add Testcontainers, Flyway and the PostgreSQL driver to the jooqGenerator classpath
-    // These must use explicit versions because the jooqGenerator classpath is separate
+    // Add Testcontainers, Flyway and the PostgreSQL driver to the jooqGenerator classpath.
+    // These use versioned catalog entries because the jooqGenerator classpath is separate
     // from the main compilation classpath and not covered by the Spring Boot BOM.
-    add("jooqGenerator", "org.testcontainers:postgresql:${libs.versions.testcontainers.get()}")
-    add("jooqGenerator", "org.testcontainers:testcontainers:${libs.versions.testcontainers.get()}")
-    add("jooqGenerator", "org.flywaydb:flyway-core:${libs.versions.flyway.get()}")
-    add("jooqGenerator", "org.flywaydb:flyway-database-postgresql:${libs.versions.flyway.get()}")
-    add("jooqGenerator", "org.postgresql:postgresql:${libs.versions.postgresql.driver.get()}")
+    add("jooqGenerator", libs.testcontainers.postgresql.classpath)
+    add("jooqGenerator", libs.testcontainers.classpath)
+    add("jooqGenerator", libs.flyway.core.classpath)
+    add("jooqGenerator", libs.flyway.postgresql.classpath)
+    add("jooqGenerator", libs.postgresql.driver)
     //
 }
 

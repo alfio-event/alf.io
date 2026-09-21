@@ -107,6 +107,12 @@ license-maven-plugin = { module = "com.mycila:license-maven-plugin", version.ref
 jooq-meta = { module = "org.jooq:jooq-meta", version.ref = "jooq" }
 mjml4j = { module = "ch.digitalfondue.mjml4j:mjml4j", version.ref = "mjml4j" }
 postgresql-driver = { module = "org.postgresql:postgresql", version.ref = "postgresql-driver" }
+# Versioned entries for classpaths that run before the Spring Boot BOM is applied
+# (buildscript block and jooqGenerator configuration).
+testcontainers-classpath = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-postgresql-classpath = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+flyway-core-classpath = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-postgresql-classpath = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 
 # -- versioned by the Spring Boot BOM
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine" }
