@@ -235,6 +235,16 @@ dependencies {
     testImplementation(libs.selenium.java)
 
     //errorprone("com.google.errorprone:error_prone_core:2.24.0")
+
+    // Add Testcontainers, Flyway and the PostgreSQL driver to the jooqGenerator classpath
+    // These must use explicit versions because the jooqGenerator classpath is separate
+    // from the main compilation classpath and not covered by the Spring Boot BOM.
+    add("jooqGenerator", "org.testcontainers:postgresql:${libs.versions.testcontainers.get()}")
+    add("jooqGenerator", "org.testcontainers:testcontainers:${libs.versions.testcontainers.get()}")
+    add("jooqGenerator", "org.flywaydb:flyway-core:${libs.versions.flyway.get()}")
+    add("jooqGenerator", "org.flywaydb:flyway-database-postgresql:${libs.versions.flyway.get()}")
+    add("jooqGenerator", "org.postgresql:postgresql:${libs.versions.postgresql.driver.get()}")
+    //
 }
 
 sourceSets {
@@ -736,15 +746,4 @@ tasks.named<nu.studer.gradle.jooq.JooqGenerate>("generateJooq") {
         pgContainer?.stop()
         logger.lifecycle("jOOQ generator: PostgreSQL container stopped.")
     }
-}
-
-// Add Testcontainers, Flyway and the PostgreSQL driver to the jooqGenerator classpath
-// These must use explicit versions because the jooqGenerator classpath is separate
-// from the main compilation classpath and not covered by the Spring Boot BOM.
-dependencies {
-    add("jooqGenerator", "org.testcontainers:postgresql:${libs.versions.testcontainers.get()}")
-    add("jooqGenerator", "org.testcontainers:testcontainers:${libs.versions.testcontainers.get()}")
-    add("jooqGenerator", "org.flywaydb:flyway-core:${libs.versions.flyway.get()}")
-    add("jooqGenerator", "org.flywaydb:flyway-database-postgresql:${libs.versions.flyway.get()}")
-    add("jooqGenerator", "org.postgresql:postgresql:${libs.versions.postgresql.driver.get()}")
 }
