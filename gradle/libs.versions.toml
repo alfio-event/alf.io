@@ -10,16 +10,20 @@ gradle-node = "7.1.0"
 gradle-release = "3.1.0"
 gradle-versions = "0.64.0"
 hierynomus-license = "0.16.1"
+jooq = "3.19.38"
 kordamp-jacoco = "0.54.0"
 lombok-plugin = "9.5.0"
 sonarqube = "7.5.0.8588"
 spring-boot = "4.1.1"
 spring-dependency-management = "1.1.7"
+studer-jooq = "9.0"
 
 # -- build-time only (buildscript classpath)
 license-maven-plugin = "4.1"
 mjml4j = "1.2.2"
 postgresql-driver = "42.7.13"
+# explicit version for the jooqGenerator classpath (separate from the Spring Boot BOM)
+testcontainers = "1.21.4"
 
 # -- overrides applied to the Spring Boot BOM
 # Spring Boot 4.1.1 manages Flyway 12.4.0, whose plugin-based resolution of the schema history "type"
@@ -100,6 +104,7 @@ zxing-javase = { module = "com.google.zxing:javase", version.ref = "zxing" }
 
 # -- build-time only (buildscript classpath)
 license-maven-plugin = { module = "com.mycila:license-maven-plugin", version.ref = "license-maven-plugin" }
+jooq-meta = { module = "org.jooq:jooq-meta", version.ref = "jooq" }
 mjml4j = { module = "ch.digitalfondue.mjml4j:mjml4j", version.ref = "mjml4j" }
 postgresql-driver = { module = "org.postgresql:postgresql", version.ref = "postgresql-driver" }
 
@@ -143,3 +148,4 @@ lombok = { id = "io.freefair.lombok", version.ref = "lombok-plugin" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+studer-jooq = { id = "nu.studer.jooq", version.ref = "studer-jooq" }
