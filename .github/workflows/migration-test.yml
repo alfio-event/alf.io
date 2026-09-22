@@ -9,7 +9,7 @@ jobs:
         if: github.repository == 'alfio-event/alf.io' && github.ref == 'refs/heads/main'
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
             -   name: Login to Container Registry (GitHub)
                 uses: docker/login-action@v2
                 with:
