@@ -7,7 +7,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                postgresql: ['10', '15', '16']
+                postgresql: ['15', '16', '17']
         steps:
             - uses: actions/checkout@v7
             - name: Set up JDK
