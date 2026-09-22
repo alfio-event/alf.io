@@ -29,7 +29,7 @@ jobs:
               with:
                   token: ${{ secrets.CODECOV_TOKEN }}
             - name: 'Upload Build'
-              if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '10'}}
+              if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '16'}}
               uses: actions/upload-artifact@v7
               with:
                   name: dist
