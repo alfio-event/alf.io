@@ -713,7 +713,7 @@ tasks.named<nu.studer.gradle.jooq.JooqGenerate>("generateJooq") {
 
     // Spin up PostgreSQL, run Flyway, and inject JDBC coordinates before the task runs
     doFirst {
-        val container = org.testcontainers.containers.PostgreSQLContainer("postgres:16")
+        val container = org.testcontainers.containers.PostgreSQLContainer("postgres:15")
         container.withDatabaseName("alfio_jooq")
         container.withUsername("alfio")
         container.withPassword("alfio")
