@@ -34,7 +34,7 @@ public class CheckInManagerInvoker {
             Pair<Cipher, SecretKeySpec> cipherAndSecret = getCypher(key);
             Cipher cipher = cipherAndSecret.getKey();
             String[] split = CYPHER_SPLITTER.split(payload);
-            byte[] iv = org.apache.commons.codec.binary.Base64.decodeBase64(split[0]);
+            byte[] iv = Base64.decodeBase64(split[0]);
             byte[] body = Base64.decodeBase64(split[1]);
             cipher.init(Cipher.DECRYPT_MODE, cipherAndSecret.getRight(), new IvParameterSpec(iv));
             byte[] decrypted = cipher.doFinal(body);
