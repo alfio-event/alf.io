@@ -23,6 +23,7 @@ import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import org.apache.commons.lang3.ObjectUtils;
@@ -151,6 +152,13 @@ public class EventModification {
     }
 
     public LocationDescriptor getGeolocation() {
+        return locationDescriptor;
+    }
+
+    // the "geolocation" creator parameter links this getter to the same property as getGeolocation().
+    // Ignore it, otherwise Jackson 3 fails with "Conflicting getter definitions"
+    @JsonIgnore
+    public LocationDescriptor getLocationDescriptor() {
         return locationDescriptor;
     }
 

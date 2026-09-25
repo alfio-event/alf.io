@@ -27,8 +27,10 @@ jobs:
             - name: Build with Gradle
               run: ./gradlew test --tests NormalFlowE2ETest -Pverbose
               env:
-                  E2E_SERVER_APIKEY: ${{ secrets.E2E_SERVER_APIKEY }}
                   E2E_SERVER_URL: ${{ secrets.E2E_SERVER_URL }}
+                  E2E_ADMIN_USERNAME: ${{ secrets.E2E_ADMIN_USERNAME }}
+                  E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+                  E2E_ORGANIZATION: ${{ secrets.E2E_ORGANIZATION }}
                   E2E_BROWSER: ${{matrix.browser}}
                   E2E_CI_RUN: true
                   ALFIO_RUN_E2E: true

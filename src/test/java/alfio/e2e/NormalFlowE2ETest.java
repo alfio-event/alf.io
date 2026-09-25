@@ -17,11 +17,7 @@
 package alfio.e2e;
 
 import alfio.config.Initializer;
-import alfio.test.util.TestUtil;
-import alfio.util.ClockProvider;
-import alfio.util.HttpUtils;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.openqa.selenium.*;
@@ -40,24 +36,16 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URI;
 import java.net.URL;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse.BodyHandlers;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static alfio.e2e.E2EUtils.*;
 import static java.util.Map.entry;
-import static java.util.Objects.requireNonNull;
 import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElementLocated;
 
 /**
@@ -67,10 +55,14 @@ import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElemen
  * BROWSERSTACK_ACCESS_KEY
  * BROWSERSTACK_PROJECT_NAME
  * BROWSERSTACK_BUILD_NAME
- * E2E_SERVER_APIKEY
  * E2E_SERVER_URL
+ * E2E_ADMIN_USERNAME
+ * E2E_ADMIN_PASSWORD
+ * E2E_ORGANIZATION (optional, defaults to the first organization available to the admin user)
  * E2E_BROWSER: chrome
  *
+ * The event is created, published and deleted through the admin console, using the same browser.
+ * The organization must have Stripe configured.
  */
 @ContextConfiguration(classes = { NormalFlowE2ETest.E2EConfiguration.class })
 @ActiveProfiles(value = {Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST, "e2e"})
@@ -80,75 +72,52 @@ class NormalFlowE2ETest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NormalFlowE2ETest.class);
     private static final boolean CI_RUN = "true".equals(System.getenv("E2E_CI_RUN"));
-    private static final String JSON_BODY;
+    private static final List<String> PAYMENT_METHODS = List.of("Stripe: Credit cards", "On site (cash) payment");
 
-    static {
-        try (var jsonStream = NormalFlowE2ETest.class.getResourceAsStream("/e2e/create-event-for-e2e.json")) {
-            JSON_BODY = String.join("\n", IOUtils.readLines(new InputStreamReader(requireNonNull(jsonStream), StandardCharsets.UTF_8)));
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
+    private String serverBaseUrl;
     private String eventUrl;
     private String slug;
 
     private final List<BrowserWebDriver> webDrivers;
     private final Environment environment;
-    private final ClockProvider clockProvider;
 
     @Autowired
     public NormalFlowE2ETest(List<BrowserWebDriver> webDrivers,
                              Environment environment) {
         this.webDrivers = webDrivers;
         this.environment = environment;
-        this.clockProvider = TestUtil.clockProvider();
     }
 
     @BeforeEach
-    void init() throws Exception {
-        var serverBaseUrl = environment.getRequiredProperty("e2e.server.url");
-        var serverApiKey = environment.getRequiredProperty("e2e.server.apikey");
-
-        slug = UUID.randomUUID().toString();
-        var now = LocalDateTime.now(clockProvider.getClock());
-        var requestBody = JSON_BODY.replace("--CATEGORY_START_SELLING--", now.minusDays(1).toString())
-            .replace("--SLUG--", slug)
-            .replace("--EVENT_START_DATE--", now.plusDays(2).toString())
-            .replace("--EVENT_END_DATE--", now.plusDays(2).plusHours(2).toString());
-        // create temporary event
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(serverBaseUrl + "/api/v1/admin/event/create"))
-            .header("Content-Type", "application/json")
-            .header("Authorization", "ApiKey " + serverApiKey)
-            .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-            .build();
-        var response = HTTP_CLIENT.send(request, BodyHandlers.ofString());
-        if(!HttpUtils.callSuccessful(response)) {
-            throw new IllegalStateException(response.statusCode() + ": "+response.body());
-        }
-        eventUrl = serverBaseUrl + "/event/"+slug;
+    void init() {
+        serverBaseUrl = environment.getRequiredProperty("e2e.server.url");
+        slug = "e2e-" + UUID.randomUUID();
+        eventUrl = serverBaseUrl + "/event/" + slug;
     }
 
-    @AfterEach
-    void destroy() throws Exception {
-        var serverBaseUrl = environment.getRequiredProperty("e2e.server.url");
-        var serverApiKey = environment.getRequiredProperty("e2e.server.apikey");
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(serverBaseUrl + "/api/v1/admin/event/"+slug))
-            .header("Content-Type", "application/json")
-            .header("Authorization", "ApiKey " + serverApiKey)
-            .DELETE()
-            .build();
-        var response = HTTP_CLIENT.send(request, BodyHandlers.ofString());
-        if(!HttpUtils.callSuccessful(response)) {
-            throw new IllegalStateException(response.body());
-        }
+    private AdminConsole adminConsole(BrowserWebDriver browserWebDriver) {
+        return new AdminConsole(browserWebDriver,
+            serverBaseUrl,
+            environment.getRequiredProperty("e2e.admin.username"),
+            environment.getRequiredProperty("e2e.admin.password"),
+            environment.getProperty("e2e.organization"));
     }
 
-    private static void clickWithJs(WebDriver driver, WebElement element) {
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
+    private AdminConsole.EventDefinition eventDefinition() {
+        return new AdminConsole.EventDefinition(slug,
+            "Event Name",
+            "Pollegio 6742 Switzerland",
+            "text description",
+            "https://alf.io",
+            "https://alf.io",
+            "https://alf.io",
+            10,
+            "10",
+            "CHF",
+            "7.7",
+            true,
+            PAYMENT_METHODS,
+            "Standard");
     }
 
     @Test
@@ -156,7 +125,18 @@ class NormalFlowE2ETest {
     void testFlow() throws InterruptedException {
         for(var browserWebDriver : webDrivers) {
             var driver = browserWebDriver.driver;
+            var adminConsole = adminConsole(browserWebDriver);
+            boolean eventSubmitted = false;
+            boolean completed = false;
             try {
+                // the organizer sets up the event
+                adminConsole.login();
+                eventSubmitted = true;
+                adminConsole.createEvent(eventDefinition());
+                adminConsole.publishEvent(slug);
+                adminConsole.logout();
+                //
+                // the attendee buys a ticket
                 driver.navigate().to(eventUrl);
                 WebDriverWait wait = new WebDriverWait(driver, Duration.of(30, ChronoUnit.SECONDS));
                 wait.until(presenceOfElementLocated(By.cssSelector("div.markdown-content")));
@@ -171,9 +151,29 @@ class NormalFlowE2ETest {
                 page3Payment(browserWebDriver, wait);
                 WebElement fourthPageElem = new WebDriverWait(driver, Duration.of(30, ChronoUnit.SECONDS)).until(presenceOfElementLocated(By.cssSelector("div.attendees-data")));
                 Assertions.assertNotNull(fourthPageElem);
+                completed = true;
             } finally {
-                driver.quit();
+                try {
+                    if (eventSubmitted) {
+                        deleteEvent(adminConsole, completed);
+                    }
+                } finally {
+                    driver.quit();
+                }
             }
+        }
+    }
+
+    private void deleteEvent(AdminConsole adminConsole, boolean flowCompleted) {
+        try {
+            adminConsole.login();
+            adminConsole.deleteEvent(slug);
+        } catch (RuntimeException e) {
+            if (flowCompleted) {
+                throw e;
+            }
+            // don't hide the original failure
+            LOGGER.error("cannot delete event {}", slug, e);
         }
     }
 
@@ -185,13 +185,6 @@ class NormalFlowE2ETest {
         // click continue button, submit form
         browserWebDriver.driver.findElement(By.id("show-event-continue")).sendKeys(Keys.RETURN);
 
-    }
-
-    private static WebElement scrollTo(WebDriver driver, WebElement element) {
-        if (driver instanceof JavascriptExecutor js) {
-            js.executeScript("arguments[0].scrollIntoView();", element);
-        }
-        return element;
     }
 
     private void page2ContactDetails(BrowserWebDriver browserWebDriver, WebDriverWait wait) {
@@ -268,19 +261,6 @@ class NormalFlowE2ETest {
         }
     }
 
-    private void selectElement(WebElement element, BrowserWebDriver driver) {
-        selectElement(element, driver, Keys.SPACE);
-    }
-
-    private void selectElement(WebElement element, BrowserWebDriver driver, Keys keyToSend) {
-        if(driver.browser == BrowserWebDriver.Browser.SAFARI) {
-            element.sendKeys(keyToSend);
-        } else {
-            // click with js...
-            clickWithJs(driver.driver, element);
-        }
-    }
-
     @Configuration(proxyBeanMethods = false)
     static class E2EConfiguration {
 
@@ -305,16 +285,12 @@ class NormalFlowE2ETest {
             return new RemoteWebDriver(url, caps);
         }
 
-        @Bean
-        String browserStackUrl(Environment env) {
-            if(CI_RUN) {
-                return "https://"
-                    + env.getRequiredProperty("browserstack.username")
-                    + ":"
-                    + env.getRequiredProperty("browserstack.access.key")
-                    + "@hub-cloud.browserstack.com/wd/hub";
-            }
-            return null;
+        private static String browserStackUrl(Environment env) {
+            return "https://"
+                + env.getRequiredProperty("browserstack.username")
+                + ":"
+                + env.getRequiredProperty("browserstack.access.key")
+                + "@hub-cloud.browserstack.com/wd/hub";
         }
 
 
@@ -331,11 +307,11 @@ class NormalFlowE2ETest {
         }
 
         @Bean
-        List<BrowserWebDriver> webDrivers(Environment env, String browserStackUrl) throws Exception {
+        List<BrowserWebDriver> webDrivers(Environment env) throws Exception {
             if(CI_RUN) {
                 var browser = env.getRequiredProperty("e2e.browser");
                 LOGGER.info("e2e profile detected, CI profile detected. Running full suite on BrowserStack");
-                var url = new URL(browserStackUrl);
+                var url = new URL(browserStackUrl(env));
                 var githubBuildNumber = "-" + env.getProperty("github.run.number", "NA");
                 return List.of(build(browser, url, githubBuildNumber));
             } else {
@@ -346,11 +322,11 @@ class NormalFlowE2ETest {
     }
 
     static class BrowserWebDriver {
-        private enum Browser {
+        enum Browser {
             IE, CHROME, FIREFOX, SAFARI
         }
-        private final Browser browser;
-        private final WebDriver driver;
+        final Browser browser;
+        final WebDriver driver;
 
         private BrowserWebDriver(Browser browser, WebDriver driver) {
             this.browser = browser;
