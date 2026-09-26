@@ -10344,6 +10344,17 @@
             "type" : "integer",
             "format" : "int32"
           }
+        }, {
+          "name" : "categoryIds",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int32"
+            }
+          }
         } ],
         "requestBody" : {
           "content" : {
@@ -10423,6 +10434,17 @@
           "schema" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }, {
+          "name" : "categoryIds",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int32"
+            }
           }
         } ],
         "requestBody" : {

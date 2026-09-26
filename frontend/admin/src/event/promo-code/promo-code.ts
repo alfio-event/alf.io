@@ -228,6 +228,7 @@ export class PromoCode extends LitElement {
 
             .code-section {
                 margin-bottom: var(--sl-spacing-x-large);
+                --alfio-section-body-padding: var(--sl-spacing-medium);
             }
 
             .section-heading {
@@ -299,10 +300,6 @@ export class PromoCode extends LitElement {
 
             .code-section .empty-state sl-icon {
                 font-size: var(--sl-font-size-3x-large);
-            }
-
-            .code-section > .section-body {
-                padding: var(--sl-spacing-medium);
             }
 
             .code-section .filter-toolbar, .code-section .filter-left, .code-section .filter-right {
@@ -420,53 +417,20 @@ export class PromoCode extends LitElement {
                 gap: var(--sl-spacing-2x-small);
             }
 
-            .promo-dialog-title {
-                display: flex;
-                align-items: flex-start;
-                gap: var(--sl-spacing-small);
-            }
-
             #usage-details-dialog {
-                --width: min(75rem, calc(100vw - (2 * var(--sl-spacing-large))));
+                --alfio-dialog-max-width: 75rem;
             }
 
-            #code-dialog {
-                --width: min(52rem, calc(100vw - (2 * var(--sl-spacing-large))));
-            }
-
-            .promo-dialog-title sl-icon,
             .dialog-section-header sl-icon {
                 color: var(--sl-color-primary-600);
             }
 
-            .promo-dialog-title sl-icon {
-                margin-top: var(--sl-spacing-2x-small);
-                font-size: var(--sl-font-size-x-large);
-            }
-
-            .promo-dialog-title strong,
-            .promo-dialog-title small {
-                display: block;
-            }
-
-            .promo-dialog-title small {
-                margin-top: var(--sl-spacing-2x-small);
-                color: var(--sl-color-gray-500);
-                font-size: var(--sl-font-size-small);
-                font-weight: normal;
-            }
-
             .promo-dialog-form {
-                display: grid;
-                gap: var(--sl-spacing-medium);
+                --alfio-section-body-padding: var(--sl-spacing-medium);
             }
 
             .promo-dialog-form .section-card {
                 margin-bottom: 0;
-            }
-
-            .promo-dialog-form .section-body {
-                padding: var(--sl-spacing-medium);
             }
 
             .dialog-section-header {
@@ -487,12 +451,6 @@ export class PromoCode extends LitElement {
                 margin-inline-start: auto;
                 letter-spacing: normal;
                 text-transform: none;
-            }
-
-            .promo-dialog-form sl-input,
-            .promo-dialog-form sl-select,
-            .promo-dialog-form sl-textarea {
-                margin-top: 0;
             }
 
         `
@@ -889,16 +847,16 @@ export class PromoCode extends LitElement {
         const save = () => this.saveCode(data);
 
         return html`
-            <sl-dialog id="code-dialog" label=${title} size="large" placement="bottom"
+            <sl-dialog id="code-dialog" class="responsive-dialog" label=${title} size="large" placement="bottom"
                 @sl-request-close=${(e: CustomEvent) => { if (this.saving) e.preventDefault(); }}>
-                <div slot="label" class="promo-dialog-title">
+                <div slot="label" class="dialog-title">
                     <sl-icon name=${isAccess ? 'unlock' : 'ticket-perforated'}></sl-icon>
                     <div>
                         <strong>${title}</strong>
                         <small>${editing ? 'Update validity, usage limits, and details. Code and discount cannot be changed.' : 'Fields marked * are required.'}</small>
                     </div>
                 </div>
-                <form class="promo-dialog-form" @submit=${(e: Event) => { e.preventDefault(); save(); }}>
+                <form class="promo-dialog-form form-stack" @submit=${(e: Event) => { e.preventDefault(); save(); }}>
                     <div class="section-card">
                         <div class="dialog-section-header"><sl-icon name="tag"></sl-icon>Code</div>
                         <div class="section-body row" style="--alfio-row-cols: 2">
@@ -1108,8 +1066,8 @@ export class PromoCode extends LitElement {
 
     private renderUsageDetailsDialog(): TemplateResult {
         return html`
-            <sl-dialog id="usage-details-dialog" label="Usage details" class="usage-details-dialog" size="large" placement="bottom">
-                <div slot="label" class="promo-dialog-title">
+            <sl-dialog id="usage-details-dialog" label="Usage details" class="usage-details-dialog responsive-dialog" size="large" placement="bottom">
+                <div slot="label" class="dialog-title">
                     <sl-icon name="ticket-perforated"></sl-icon>
                     <div>
                         <strong>Usage details - ${this.usageCode}</strong>

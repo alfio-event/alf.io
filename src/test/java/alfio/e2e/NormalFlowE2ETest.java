@@ -151,6 +151,12 @@ class NormalFlowE2ETest {
                 page3Payment(browserWebDriver, wait);
                 WebElement fourthPageElem = new WebDriverWait(driver, Duration.of(30, ChronoUnit.SECONDS)).until(presenceOfElementLocated(By.cssSelector("div.attendees-data")));
                 Assertions.assertNotNull(fourthPageElem);
+                //
+                // the organizer sends a message to the attendees
+                adminConsole.login();
+                var subject = "E2E message " + slug.substring(4, 12);
+                adminConsole.sendMessageToAttendees(slug, subject, "Hello {{fullName}}, this is a message for {{eventName}}", 1);
+                adminConsole.verifyMessageSent(slug, subject);
                 completed = true;
             } finally {
                 try {

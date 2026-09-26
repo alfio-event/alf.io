@@ -138,13 +138,6 @@ export class Users extends LitElement {
         modernTable,
         modernLayout,
         css`
-            .container {
-                width: 100%;
-                max-width: 1170px;
-                margin-right: auto;
-                margin-left: auto;
-            }
-
             .sr-only {
                 position: absolute;
                 clip: rect(0, 0, 0, 0);

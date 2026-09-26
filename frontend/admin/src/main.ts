@@ -36,6 +36,7 @@ import '@shoelace-style/shoelace/dist/components/progress-bar/progress-bar.js';
 import '@shoelace-style/shoelace/dist/components/drawer/drawer.js';
 import '@shoelace-style/shoelace/dist/components/details/details.js';
 import '@shoelace-style/shoelace/dist/components/switch/switch.js';
+import '@shoelace-style/shoelace/dist/components/copy-button/copy-button.js';
 
 
 
@@ -71,3 +72,4 @@ export { ExportReservationsButton } from './event/export-reservations/export-res
 export { FileUpload } from './components/file-upload';
 export { PromoCode } from './event/promo-code/promo-code';
 export { ReservationsList } from './event/reservations-list/reservations-list';
+export { ComposeMessage } from './event/compose-message/compose-message';

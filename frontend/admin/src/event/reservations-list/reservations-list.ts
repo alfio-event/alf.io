@@ -176,10 +176,6 @@ export class ReservationsList extends LitElement {
             .page-title-row {
                 margin-top: calc(var(--alfio-page-top-margin) + var(--sl-spacing-small));
             }
-            .page-title-row h1 {
-                font-size: var(--sl-font-size-2x-large);
-                font-weight: var(--sl-font-weight-normal);
-            }
             .page-title-row h1 i {
                 font-style: italic;
             }
@@ -414,7 +410,7 @@ export class ReservationsList extends LitElement {
         const stuck = data.sections.stuck;
         return html`
             <div class="container">
-                <div class="page-title-row">
+                <div class="page-title-row secondary">
                     <h1>
                         Reservations for
                         <i>

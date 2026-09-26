@@ -1023,27 +1023,6 @@
         }
     });
 
-    directives.directive('editMessages', function() {
-       return {
-           restrict: 'E',
-           scope: {
-               editMode: '=',
-               messages: '=',
-               online: '='
-           },
-           templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/custom-message/edit-messages.html',
-           controller: ['$scope', function($scope) {
-               $scope.attachTicketFlag = false;
-               $scope.updateTicketFlag = function() {
-                   $scope.messages.forEach(function(m) {
-                       m.attachTicket = !m.attachTicket;
-                   });
-               };
-               $scope.sendAttachmentMessage = $scope.online ? 'Append access information at the end of the email' : 'Send attendee\'s ticket along with this message';
-           }]
-       };
-    });
-
     directives.directive('waitingQueueDisplayCounter', function() {
         return {
             restrict: 'AE',

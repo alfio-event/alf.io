@@ -247,8 +247,10 @@
             })
             .state('events.single.compose-custom-message', {
                 url: '/compose-custom-message',
-                templateUrl: BASE_STATIC_URL + '/custom-message/index.html',
-                controller: 'ComposeCustomMessage',
+                template: '<alfio-compose-message data-event-name="{{$ctrl.loadEvent.shortName}}"></alfio-compose-message>',
+                controller: loadEventCtrl,
+                controllerAs: '$ctrl',
+                resolve: loadEvent,
                 data: {
                     view: 'CUSTOM_MESSAGE'
                 }
@@ -2198,93 +2200,6 @@
                 getPendingPayments(true);
             }, function() {
                 $scope.loading = false;
-            });
-        };
-    });
-
-    admin.controller('ComposeCustomMessage', function($scope, $stateParams, EventService, $uibModal, $state, $q) {
-
-
-        $q.all([EventService.getSelectedLanguages($stateParams.eventName),
-            EventService.getEvent($stateParams.eventName)])
-        .then(function(results) {
-                $scope.messages = _.map(results[0].data, function(r) {
-                    return {
-                        textExample: '{{organizationName}} <{{organizationEmail}}>',
-                        subjectExample: 'An important message from {{eventName}}',
-                        locale: r.language,
-                        text: '',
-                        subject: '',
-                        attachTicket: false
-                    };
-                });
-                $scope.fullName = 'John Doe';
-
-                $scope.categories = results[1].data.event.ticketCategories;
-                $scope.categoryId = undefined;
-
-                var eventDescriptor = results[1].data;
-                $scope.organization = eventDescriptor.organization;
-                $scope.eventName = eventDescriptor.event.shortName;
-                $scope.eventDisplayName = eventDescriptor.event.displayName;
-                $scope.onlineEvent = eventDescriptor.event.online;
-        });
-
-        $scope.cancel = function() {
-            $state.go('events.single.detail', {eventName: $stateParams.eventName});
-        };
-
-
-        $scope.showPreview = function(frm, eventName, categoryId, messages, categories, online) {
-            if(!frm.$valid) {
-                return;
-            }
-            var error = _.find(messages, function(m) {
-                return _.trim(m.text) === '' || _.trim(m.subject) === '';
-            });
-            if(angular.isDefined(error)) {
-                alert('please fill all the messages');
-                return;
-            }
-            EventService.getMessagesPreview(eventName, categoryId, messages).success(function(result) {
-                var preview = $uibModal.open({
-                    size:'lg',
-                    templateUrl:BASE_STATIC_URL + '/custom-message/preview.html',
-                    backdrop: 'static',
-                    controller: function($scope) {
-                        if(angular.isDefined(categoryId)) {
-                            var category = _.find(categories, function(c) {return c.id === categoryId});
-                            $scope.categoryName = angular.isDefined(category) ? category.name : "";
-                        }
-                        $scope.messages = result.preview;
-                        $scope.affectedUsers = result.affectedUsers;
-                        $scope.eventName = eventName;
-                        $scope.categoryId = categoryId;
-                        $scope.online = online;
-                        $scope.cancel = function() {
-                            $scope.$dismiss('canceled');
-                        };
-                        $scope.sendMessage = function(frm, eventName, categoryId, messages, affectedUsers) {
-                            if(!frm.$valid) {
-                                return;
-                            }
-                            if(affectedUsers === 0 && !confirm('No one will receive this message. Do you really want to continue?')) {
-                                return;
-                            }
-                            $scope.pending = true;
-                            EventService.sendMessages(eventName, categoryId, messages).success(function(result) {
-                                $scope.pending = false;
-                                alert(result + ' messages have been enqueued');
-                                $scope.$close(true);
-                            }).error(function(error) {
-                                $scope.pending = false;
-                                alert(error);
-                            });
-                        };
-                    }
-                });
-            }).error(function(resp) {
-                alert(resp);
             });
         };
     });

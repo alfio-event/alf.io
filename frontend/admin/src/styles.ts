@@ -213,6 +213,35 @@ export const dialog = css`
     :host {
         --sl-z-index-dialog: 1031; // bootstrap's navbar + 1
     }
+
+    /* set --alfio-dialog-max-width on the dialog to change the maximum width */
+    sl-dialog.responsive-dialog {
+        --width: min(var(--alfio-dialog-max-width, 52rem), calc(100vw - (2 * var(--sl-spacing-large))));
+    }
+
+    .dialog-title {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--sl-spacing-small);
+    }
+
+    .dialog-title sl-icon {
+        margin-top: var(--sl-spacing-2x-small);
+        font-size: var(--sl-font-size-x-large);
+        color: var(--sl-color-primary-600);
+    }
+
+    .dialog-title strong,
+    .dialog-title small {
+        display: block;
+    }
+
+    .dialog-title small {
+        margin-top: var(--sl-spacing-2x-small);
+        color: var(--sl-color-gray-500);
+        font-size: var(--sl-font-size-small);
+        font-weight: normal;
+    }
 `;
 
 export const form = css`
@@ -418,6 +447,30 @@ export const modernLayout = css`
         margin-bottom: 0;
     }
 
+    .page-title-row.secondary h1 {
+        font-size: var(--sl-font-size-2x-large);
+        font-weight: var(--sl-font-weight-normal);
+    }
+
+    .container {
+        width: 100%;
+        max-width: 1170px;
+        margin-right: auto;
+        margin-left: auto;
+    }
+
+    /* vertical stack of form controls, spaced by the gap instead of the controls' top margin */
+    .form-stack {
+        display: grid;
+        gap: var(--sl-spacing-medium);
+    }
+
+    .form-stack sl-input,
+    .form-stack sl-select,
+    .form-stack sl-textarea {
+        margin-top: 0;
+    }
+
     .page-separator {
         border: none;
         border-top: 1px solid var(--sl-color-gray-300);
@@ -494,7 +547,7 @@ export const modernLayout = css`
     }
 
     .section-body {
-        padding: var(--sl-spacing-small);
+        padding: var(--alfio-section-body-padding, var(--sl-spacing-small));
     }
 
     .empty-state {

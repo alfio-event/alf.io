@@ -282,14 +282,6 @@
             getSupportedLanguages: function() {
                 return $http['get']('/admin/api/events-supported-languages').error(HttpErrorHandler.handle);
             },
-            getMessagesPreview: function(eventName, categoryId, messages) {
-                var queryString = angular.isNumber(categoryId) ? '?categoryId='+categoryId : '';
-                return $http['post']('/admin/api/events/'+eventName+'/messages/preview'+queryString, messages).error(HttpErrorHandler.handle);
-            },
-            sendMessages: function(eventName, categoryId, messages) {
-                var queryString = angular.isDefined(categoryId) && categoryId !== "" && categoryId !== null ? '?categoryId='+categoryId : '';
-                return $http['post']('/admin/api/events/'+eventName+'/messages/send'+queryString, messages).error(HttpErrorHandler.handle);
-            },
             getFields : function(eventName) {
                 return $http['get']('/admin/api/events/'+eventName+'/fields');
             },

@@ -69,14 +69,13 @@ export class UserProfileEdit extends LitElement {
         dialog,
         modernLayout,
         css`
-            .container {
-                max-width: 640px;
-                margin: 0 auto;
-                padding: var(--sl-spacing-medium);
+            :host {
+                --alfio-section-body-padding: var(--sl-spacing-medium);
             }
 
-            .first-element {
-                margin-top: var(--alfio-page-top-margin, 2rem);
+            .container {
+                max-width: 640px;
+                padding: var(--sl-spacing-medium);
             }
 
             .form-group {
@@ -89,33 +88,6 @@ export class UserProfileEdit extends LitElement {
                 justify-content: flex-end;
                 gap: var(--sl-spacing-small);
                 margin-top: var(--sl-spacing-medium);
-            }
-
-            .section-card {
-                background: var(--sl-color-neutral-5);
-                border: 1px solid var(--sl-color-gray-200);
-                border-radius: var(--sl-input-border-radius-large);
-                margin-bottom: var(--sl-spacing-medium);
-                overflow: hidden;
-            }
-
-            .section-header {
-                display: flex;
-                align-items: center;
-                gap: var(--sl-spacing-small);
-                padding: var(--sl-spacing-medium);
-                background: var(--sl-color-gray-50);
-                border-bottom: 1px solid var(--sl-color-gray-200);
-            }
-
-            .section-header h3 {
-                margin-top: 0;
-                margin-bottom: 0;
-                font-size: var(--sl-font-size-large);
-            }
-
-            .section-body {
-                padding: var(--sl-spacing-medium);
             }
 
             .warning-admin {

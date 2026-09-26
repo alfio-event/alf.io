@@ -86,8 +86,8 @@ public interface TicketRepository {
     @Query("select id from ticket where status = 'FREE' and category_id = :categoryId and event_id = :eventId and tickets_reservation_id is null order by id desc limit :amount for update")
     List<Integer> lockTicketsToInvalidate(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId, @Bind("amount") int amount);
 
-    @Query("select count(*) from ticket where status in ("+CONFIRMED+") and category_id = :categoryId and event_id = :eventId and full_name is not null and email_address is not null")
-    Integer countAssignedTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
+    @Query("select count(*) from ticket where status in ("+CONFIRMED+") and category_id in (:categoryIds) and event_id = :eventId and full_name is not null and email_address is not null")
+    Integer countAssignedTicketsInCategories(@Bind("eventId") int eventId, @Bind("categoryIds") Collection<Integer> categoryIds);
 
 
     @Query("select count(*) from ticket where status in ("+CONFIRMED+", 'PENDING') and category_id = :categoryId and event_id = :eventId")
@@ -368,8 +368,8 @@ public interface TicketRepository {
     @Query("select a.*, b.confirmation_ts from ticket a, tickets_reservation b where a.event_id = :eventId and a.status in(" + CONFIRMED + ") and a.tickets_reservation_id = b.id order by b.confirmation_ts")
     List<Ticket> findAllConfirmed(@Bind("eventId") int eventId);
 
-    @Query("select * from ticket where event_id = :eventId and status in(" + CONFIRMED + ") and category_id = :categoryId")
-    List<Ticket> findConfirmedByCategoryId(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
+    @Query("select * from ticket where event_id = :eventId and status in(" + CONFIRMED + ") and category_id in (:categoryIds)")
+    List<Ticket> findConfirmedInCategories(@Bind("eventId") int eventId, @Bind("categoryIds") Collection<Integer> categoryIds);
 
     @Query("select count(*) from ticket where event_id = :eventId and status in(" + CONFIRMED + ") and full_name is not null and email_address is not null")
     Integer countAllAssigned(@Bind("eventId") int eventId);

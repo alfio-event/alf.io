@@ -137,6 +137,82 @@ class AdminConsole {
         LOGGER.info("event {} deleted", slug);
     }
 
+    /**
+     * Composes a message for all the attendees and sends it, after checking the preview.
+     */
+    void sendMessageToAttendees(String slug, String subject, String message, int expectedRecipients) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/compose-custom-message");
+        var composer = wait.until(presenceOfElementLocated(By.tagName("alfio-compose-message")));
+        // the editor has one tab for each language of the event
+        var tabs = wait.until(d -> {
+            var found = findAllInShadowRoot(composer, "#messages-editor sl-tab");
+            return found.isEmpty() ? null : found;
+        });
+        for (var tab : tabs) {
+            clickWithJs(driver, tab);
+            var locale = tab.getDomAttribute("panel");
+            typeInShoelaceControl(findInShadowRoot(composer, "sl-input[name='subject-" + locale + "']"), "input", subject);
+            typeInShoelaceControl(findInShadowRoot(composer, "sl-textarea[name='message-" + locale + "']"), "textarea", message);
+        }
+        clickWithJs(driver, findInShadowRoot(composer, "#preview-button"));
+
+        var previewDialog = findInShadowRoot(composer, "#preview-dialog");
+        wait.until(d -> previewDialog.getDomAttribute("open") != null);
+        var expectedText = "Potentially affected users: " + expectedRecipients;
+        wait.until(d -> String.valueOf(((JavascriptExecutor) d).executeScript("return arguments[0].textContent;", previewDialog)).contains(expectedText));
+        LOGGER.info("sending message \"{}\" to the attendees of {}", subject, slug);
+        clickWithJs(driver, findInShadowRoot(composer, "#send-button"));
+        // the dialog is closed once the messages have been enqueued
+        wait.until(d -> previewDialog.getDomAttribute("open") == null);
+    }
+
+    /**
+     * Checks on the E-mail log page that the message has been successfully sent to all recipients.
+     * Messages are sent asynchronously, so we reload the page until they have been processed.
+     */
+    void verifyMessageSent(String slug, String subject) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/email-log");
+        // columns: recipient, subject, message, status, ...
+        var statusLocator = By.xpath("//table//tr[td[2][contains(normalize-space(.), '" + subject + "')]]/td[4]");
+        new WebDriverWait(driver, Duration.ofMinutes(3), Duration.ofSeconds(5))
+            .ignoring(StaleElementReferenceException.class)
+            .withMessage(() -> "message \"" + subject + "\" has not been sent")
+            .until(d -> {
+                var statuses = d.findElements(statusLocator).stream()
+                    .map(e -> e.getText().trim())
+                    .toList();
+                if (statuses.contains("ERROR")) {
+                    throw new IllegalStateException("message \"" + subject + "\" could not be sent");
+                }
+                if (!statuses.isEmpty() && statuses.stream().allMatch("SENT"::equals)) {
+                    LOGGER.info("message \"{}\" has been sent to {} recipient(s)", subject, statuses.size());
+                    return true;
+                }
+                d.navigate().refresh();
+                return false;
+            });
+    }
+
+    /**
+     * Shoelace controls render the native input inside their shadow root, and so does the component hosting them.
+     * We resolve the elements with JavaScript, because not all the drivers support WebElement::getShadowRoot
+     */
+    private WebElement findInShadowRoot(WebElement host, String selector) {
+        return wait.until(d -> (WebElement) ((JavascriptExecutor) d).executeScript("return arguments[0].shadowRoot.querySelector(arguments[1]);", host, selector));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<WebElement> findAllInShadowRoot(WebElement host, String selector) {
+        return (List<WebElement>) ((JavascriptExecutor) driver).executeScript("return Array.from(arguments[0].shadowRoot.querySelectorAll(arguments[1]));", host, selector);
+    }
+
+    private void typeInShoelaceControl(WebElement control, String nativeElement, String text) {
+        var input = findInShadowRoot(control, nativeElement);
+        // the tab panel is displayed after the tab has been selected
+        wait.until(d -> input.isDisplayed());
+        input.sendKeys(text);
+    }
+
     private void openEventDetail(String slug) {
         driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/detail");
         wait.until(presenceOfElementLocated(By.id("actions-dpdwn")));

@@ -25,9 +25,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/admin/api/events/{eventName}/messages")
@@ -54,18 +56,34 @@ public class CustomMessagesApiController {
     @PostMapping("/preview")
     public Map<String, Object> preview(@PathVariable String eventName,
                                        @RequestParam(required = false, value = "categoryId") Integer categoryId,
+                                       @RequestParam(required = false, value = "categoryIds") List<Integer> categoryIds,
                                        @RequestBody List<MessageModification> messageModifications, Principal principal) {
         accessService.checkEventOwnership(principal, eventName);
-        return customMessageManager.generatePreview(eventName, Optional.ofNullable(categoryId), messageModifications, principal.getName());
+        return customMessageManager.generatePreview(eventName, selectedCategories(categoryId, categoryIds), messageModifications, principal.getName());
     }
 
     @PostMapping("/send")
     public void send(@PathVariable String eventName,
                     @RequestParam(required = false, value = "categoryId") Integer categoryId,
+                    @RequestParam(required = false, value = "categoryIds") List<Integer> categoryIds,
                     @RequestBody List<MessageModification> messageModifications,
                     Principal principal) {
         accessService.checkEventOwnership(principal, eventName);
-        customMessageManager.sendMessages(eventName, Optional.ofNullable(categoryId), messageModifications, principal.getName());
+        customMessageManager.sendMessages(eventName, selectedCategories(categoryId, categoryIds), messageModifications, principal.getName());
+    }
+
+    /**
+     * {@code categoryId} is kept for backwards compatibility. New clients should use {@code categoryIds}.
+     */
+    private static Set<Integer> selectedCategories(Integer categoryId, List<Integer> categoryIds) {
+        var result = new HashSet<Integer>();
+        if (categoryIds != null) {
+            result.addAll(categoryIds);
+        }
+        if (categoryId != null) {
+            result.add(categoryId);
+        }
+        return result;
     }
 
 }

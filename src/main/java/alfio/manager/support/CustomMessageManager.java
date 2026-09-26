@@ -62,15 +62,21 @@ public class CustomMessageManager {
     private final ExtensionManager extensionManager;
     private final EventRepository eventRepository;
 
-    public Map<String, Object> generatePreview(String eventName, Optional<Integer> categoryId, List<MessageModification> input, String username) {
+    /**
+     * @param categoryIds the categories whose attendees will receive the message. Empty means all the attendees.
+     */
+    public Map<String, Object> generatePreview(String eventName, Set<Integer> categoryIds, List<MessageModification> input, String username) {
         Map<String, Object> result = new HashMap<>();
         Event event = eventManager.getSingleEvent(eventName, username);
-        result.put("affectedUsers", categoryId.map(id -> ticketRepository.countAssignedTickets(event.getId(), id)).orElseGet(() -> ticketRepository.countAllAssigned(event.getId())));
+        result.put("affectedUsers", countRecipients(event.getId(), categoryIds));
         result.put("preview", preview(event, input, username));
         return result;
     }
 
-    public void sendMessages(String eventName, Optional<Integer> categoryId, List<MessageModification> input, String username) {
+    /**
+     * @param categoryIds the categories whose attendees will receive the message. Empty means all the attendees.
+     */
+    public void sendMessages(String eventName, Set<Integer> categoryIds, List<MessageModification> input, String username) {
 
         Event event = eventManager.getSingleEvent(eventName, username);
         preview(event, input, username); // dry run for checking the syntax
@@ -83,16 +89,29 @@ public class CustomMessageManager {
         boolean googleWalletEnabled = configuration.get(ConfigurationKeys.ENABLE_WALLET).getValueAsBooleanOrDefault();
         boolean appleWalletEnabled = configuration.get(ConfigurationKeys.ENABLE_PASS).getValueAsBooleanOrDefault();
 
-        sendMessagesExecutor.execute(() -> internalSendMessages(categoryId, new SendMessagesParams(event, organization, byLanguage,googleWalletEnabled, appleWalletEnabled, baseUrl), categoriesById, configuration));
+        sendMessagesExecutor.execute(() -> internalSendMessages(categoryIds, new SendMessagesParams(event, organization, byLanguage,googleWalletEnabled, appleWalletEnabled, baseUrl), categoriesById, configuration));
 
+    }
+
+    private int countRecipients(int eventId, Set<Integer> categoryIds) {
+        if (categoryIds.isEmpty()) {
+            return ticketRepository.countAllAssigned(eventId);
+        }
+        return ticketRepository.countAssignedTicketsInCategories(eventId, categoryIds);
+    }
+
+    private List<Ticket> findRecipients(int eventId, Set<Integer> categoryIds) {
+        if (categoryIds.isEmpty()) {
+            return ticketRepository.findAllConfirmed(eventId);
+        }
+        return ticketRepository.findConfirmedInCategories(eventId, categoryIds);
     }
 
     record SendMessagesParams(Event event, Organization organization, Map<String, List<MessageModification>> byLanguage, boolean googleWalletEnabled, boolean appleWalletEnabled, String baseUrl) {}
 
-    private void internalSendMessages(Optional<Integer> categoryId, SendMessagesParams params, Map<Integer, TicketCategory> categoriesById, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configuration) {
+    private void internalSendMessages(Set<Integer> categoryIds, SendMessagesParams params, Map<Integer, TicketCategory> categoriesById, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configuration) {
         var messageSource = messageSourceManager.getMessageSourceFor(params.event);
-        categoryId.map(id -> ticketRepository.findConfirmedByCategoryId(params.event.getId(), id))
-            .orElseGet(() -> ticketRepository.findAllConfirmed(params.event.getId()))
+        findRecipients(params.event.getId(), categoryIds)
             .stream()
             .filter(t -> isNotBlank(t.getFullName()) && Validator.isEmailValid(t.getEmail()))
             .map(t -> {
