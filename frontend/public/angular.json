@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
-  "newProjectRoot": "projects",
+  "newProjectRoot": "",
   "projects": {
     "public": {
       "projectType": "application",
@@ -10,8 +10,8 @@
           "style": "scss"
         }
       },
-      "root": "projects/public",
-      "sourceRoot": "projects/public/src",
+      "root": "",
+      "sourceRoot": "src",
       "prefix": "app",
       "architect": {
         "build": {
@@ -19,23 +19,23 @@
           "options": {
             "aot": true,
             "outputPath": "dist/alfio-public-frontend",
-            "index": "projects/public/src/index.html",
-            "main": "projects/public/src/main.ts",
+            "index": "src/index.html",
+            "main": "src/main.ts",
             "polyfills": [
               "zone.js"
             ],
-            "tsConfig": "projects/public/tsconfig.app.json",
+            "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
-              "projects/public/src/favicon.ico",
-              "projects/public/src/assets"
+              "src/favicon.ico",
+              "src/assets"
             ],
             "styles": [
-              "projects/public/src/styles.scss"
+              "src/styles.scss"
             ],
             "stylePreprocessorOptions": {
               "includePaths": [
-                "projects/public/node_modules"
+                "node_modules"
               ]
             },
             "scripts": []
@@ -56,8 +56,8 @@
               "outputHashing": "all",
 	            "fileReplacements": [
                 {
-                  "replace": "projects/public/src/environments/environment.ts",
-                  "with": "projects/public/src/environments/environment.prod.ts"
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
                 }
               ],
               "optimization": {
@@ -83,7 +83,7 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "proxyConfig": "projects/public/proxy.config.json"
+            "proxyConfig": "proxy.config.json"
           },
           "configurations": {
             "production": {
@@ -107,14 +107,14 @@
             "polyfills": [
               "zone.js"
             ],
-            "tsConfig": "projects/public/tsconfig.spec.json",
+            "tsConfig": "tsconfig.spec.json",
             "inlineStyleLanguage": "scss",
             "assets": [
-              "projects/public/src/favicon.ico",
-              "projects/public/src/assets"
+              "src/favicon.ico",
+              "src/assets"
             ],
             "styles": [
-              "projects/public/src/styles.scss"
+              "src/styles.scss"
             ],
             "scripts": []
           }
