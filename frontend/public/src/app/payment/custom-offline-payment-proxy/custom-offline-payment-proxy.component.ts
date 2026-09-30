@@ -5,7 +5,7 @@ import { UntypedFormGroup } from '@angular/forms';
 import { CustomOfflinePaymentProvider } from './custom-offline-payment-provider';
 import { CustomOfflinePayment, type PaymentMethodId } from '../../model/event';
 import { PaymentProxy } from '../../model/event';
-import { I18nService } from 'projects/public/src/app/shared/i18n.service';
+import { I18nService } from '../../shared/i18n.service';
 
 @Component({
   selector: 'app-custom-offline-payment-proxy',
