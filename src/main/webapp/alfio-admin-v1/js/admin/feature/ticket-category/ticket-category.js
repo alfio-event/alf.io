@@ -108,6 +108,46 @@
                     $scope.ticketCategory = category;
                     $scope.event = event;
                     $scope.editMode = true;
+                    $scope.reservationLinks = [];
+                    $scope.newLink = {quantity: 1, expiresAt: null};
+
+                    if (category.id && !category.tokenGenerationRequested) {
+                        EventService.listReservationLinks(event.shortName, category.id).then(function(res) {
+                            $scope.reservationLinks = res.data;
+                        });
+                    }
+
+                    $scope.generateReservationLink = function() {
+                        if (!$scope.newLink.quantity || $scope.newLink.quantity < 1 || !$scope.newLink.expiresAt) { return; }
+                        EventService.createReservationLink(event.shortName, category.id, $scope.newLink.quantity, $scope.newLink.expiresAt).then(function(res) {
+                            $scope.reservationLinks.unshift(res.data);
+                            $scope.newLink = {quantity: 1, expiresAt: null};
+                            NotificationHandler.showSuccess('Link generated');
+                        });
+                    };
+
+                    $scope.revokeReservationLink = function(link) {
+                        if (!confirm('Revoke this link? It will no longer work.')) { return; }
+                        EventService.revokeReservationLink(event.shortName, category.id, link.id).then(function() {
+                            link.status = 'REVOKED';
+                        });
+                    };
+
+                    $scope.reservationLinkUrl = function(token) {
+                        return window.location.origin + '/e/' + event.shortName + '/c/' + token;
+                    };
+
+                    $scope.copyToClipboard = function(text) {
+                        navigator.clipboard.writeText(text);
+                    };
+
+                    $scope.displayLinkStatus = function(link) {
+                        if (link.status === 'USED') { return 'Used'; }
+                        if (link.status === 'REVOKED') { return 'Revoked'; }
+                        if (new Date(link.expiresAt) < new Date()) { return 'Expired'; }
+                        return 'Active';
+                    };
+
                     $scope.cancel = function() {
                         $scope.$dismiss('canceled');
                     };
