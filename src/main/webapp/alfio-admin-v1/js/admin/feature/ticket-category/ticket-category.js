@@ -109,7 +109,7 @@
                     $scope.event = event;
                     $scope.editMode = true;
                     $scope.reservationLinks = [];
-                    $scope.newLink = {quantity: 1, expiresAt: null};
+                    $scope.newLink = {quantity: 1, expiresAtString: null, expiresAtModel: null};
 
                     if (category.id && !category.tokenGenerationRequested) {
                         EventService.listReservationLinks(event.shortName, category.id).then(function(res) {
@@ -118,10 +118,12 @@
                     }
 
                     $scope.generateReservationLink = function() {
-                        if (!$scope.newLink.quantity || $scope.newLink.quantity < 1 || !$scope.newLink.expiresAt) { return; }
-                        EventService.createReservationLink(event.shortName, category.id, $scope.newLink.quantity, $scope.newLink.expiresAt).then(function(res) {
+                        var model = $scope.newLink.expiresAtModel;
+                        if (!$scope.newLink.quantity || $scope.newLink.quantity < 1 || !(model && model.date && model.time)) { return; }
+                        var expiresAt = moment(model.date + 'T' + model.time).toDate();
+                        EventService.createReservationLink(event.shortName, category.id, $scope.newLink.quantity, expiresAt).then(function(res) {
                             $scope.reservationLinks.unshift(res.data);
-                            $scope.newLink = {quantity: 1, expiresAt: null};
+                            $scope.newLink = {quantity: 1, expiresAtString: null, expiresAtModel: null};
                             NotificationHandler.showSuccess('Link generated');
                         });
                     };

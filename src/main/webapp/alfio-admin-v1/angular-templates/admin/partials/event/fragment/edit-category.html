@@ -193,7 +193,7 @@
         <div class="col-xs-12 col-md-4">
             <div class="form-group">
                 <label>Expires at</label>
-                <input type="datetime-local" ng-model="newLink.expiresAt" class="form-control" />
+                <input ng-model="newLink.expiresAtString" single-date no-init-date="true" start-model="newLink.expiresAtModel" class="form-control" />
             </div>
         </div>
         <div class="col-xs-12 col-md-3">
