@@ -114,7 +114,7 @@
                     if (category.id && !category.tokenGenerationRequested) {
                         EventService.listReservationLinks(event.shortName, category.id).then(function(res) {
                             $scope.reservationLinks = res.data;
-                        });
+                        }).catch(angular.noop);
                     }
 
                     $scope.generateReservationLink = function() {
@@ -125,14 +125,14 @@
                             $scope.reservationLinks.unshift(res.data);
                             $scope.newLink = {quantity: 1, expiresAtString: null, expiresAtModel: null};
                             NotificationHandler.showSuccess('Link generated');
-                        });
+                        }).catch(angular.noop);
                     };
 
                     $scope.revokeReservationLink = function(link) {
                         if (!confirm('Revoke this link? It will no longer work.')) { return; }
                         EventService.revokeReservationLink(event.shortName, category.id, link.id).then(function() {
                             link.status = 'REVOKED';
-                        });
+                        }).catch(angular.noop);
                     };
 
                     $scope.reservationLinkUrl = function(token) {
@@ -140,7 +140,9 @@
                     };
 
                     $scope.copyToClipboard = function(text) {
-                        navigator.clipboard.writeText(text);
+                        navigator.clipboard.writeText(text).catch(function() {
+                            NotificationHandler.showError('Unable to copy the link to the clipboard');
+                        });
                     };
 
                     $scope.displayLinkStatus = function(link) {

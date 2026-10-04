@@ -186,20 +186,20 @@
     <div class="row">
         <div class="col-xs-12 col-md-3">
             <div class="form-group">
-                <label>Quantity</label>
-                <input type="number" min="1" ng-model="newLink.quantity" class="form-control" placeholder="1" />
+                <label for="reservationLinkQuantity">Quantity</label>
+                <input id="reservationLinkQuantity" type="number" min="1" ng-model="newLink.quantity" class="form-control" placeholder="1" />
             </div>
         </div>
         <div class="col-xs-12 col-md-4">
             <div class="form-group">
-                <label>Expires at</label>
-                <input ng-model="newLink.expiresAtString" single-date no-init-date="true" start-model="newLink.expiresAtModel" class="form-control" />
+                <label for="reservationLinkExpiresAt">Expires at</label>
+                <input id="reservationLinkExpiresAt" ng-model="newLink.expiresAtString" single-date no-init-date="true" start-model="newLink.expiresAtModel" class="form-control" />
             </div>
         </div>
         <div class="col-xs-12 col-md-3">
             <div class="form-group">
-                <label>&nbsp;</label>
-                <button type="button" class="btn btn-success form-control" ng-click="generateReservationLink()">Generate link</button>
+                <label for="reservationLinkGenerate">&nbsp;</label>
+                <button id="reservationLinkGenerate" type="button" class="btn btn-success form-control" ng-click="generateReservationLink()">Generate link</button>
             </div>
         </div>
     </div>
