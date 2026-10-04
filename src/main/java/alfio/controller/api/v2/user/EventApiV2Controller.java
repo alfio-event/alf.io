@@ -82,6 +82,7 @@ public class EventApiV2Controller {
     private final EventLoader eventLoader;
     private final ExtensionManager extensionManager;
     private final AdditionalServiceManager additionalServiceManager;
+    private final ReservationLinkManager reservationLinkManager;
 
     public EventApiV2Controller(EventManager eventManager,
                                 EventRepository eventRepository,
@@ -98,7 +99,8 @@ public class EventApiV2Controller {
                                 PromoCodeRequestManager promoCodeRequestManager,
                                 EventLoader eventLoader,
                                 ExtensionManager extensionManager,
-                                AdditionalServiceManager additionalServiceManager) {
+                                AdditionalServiceManager additionalServiceManager,
+                                ReservationLinkManager reservationLinkManager) {
         this.eventManager = eventManager;
         this.eventRepository = eventRepository;
         this.configurationManager = configurationManager;
@@ -115,6 +117,7 @@ public class EventApiV2Controller {
         this.eventLoader = eventLoader;
         this.extensionManager = extensionManager;
         this.additionalServiceManager = additionalServiceManager;
+        this.reservationLinkManager = reservationLinkManager;
     }
 
 
@@ -312,6 +315,32 @@ public class EventApiV2Controller {
     public ResponseEntity<Void> handleCode(@PathVariable String eventName, @PathVariable String code, ServletWebRequest request, Principal principal) {
         String trimmedCode = StringUtils.trimToNull(code);
         Map<String, String> queryStrings = new HashMap<>();
+
+        // reservation link check — runs before promo-code logic
+        if (trimmedCode != null) {
+            var maybeLink = reservationLinkManager.attemptUse(trimmedCode);
+            if (maybeLink.isPresent()) {
+                var link = maybeLink.get();
+                var maybeEvent = eventRepository.findOptionalByShortName(eventName);
+                if (maybeEvent.isPresent()) {
+                    var res = promoCodeRequestManager.makeReservationForLink(maybeEvent.get(), link.getCategoryId(), link.getQuantity(), request, principal);
+                    String url;
+                    if (res.getRight().hasErrors()) {
+                        var errors = res.getRight().getAllErrors().stream()
+                            .map(DefaultMessageSourceResolvable::getCode)
+                            .collect(Collectors.joining(","));
+                        url = UriComponentsBuilder.fromPath("/event/{eventShortName}")
+                            .queryParam("errors", errors)
+                            .build(Map.of("eventShortName", eventName)).toString();
+                    } else {
+                        var reservationId = res.getLeft().orElseThrow();
+                        url = UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}/book")
+                            .build(Map.of("eventShortName", eventName, "reservationId", reservationId)).toString();
+                    }
+                    return ResponseEntity.status(HttpStatus.TEMPORARY_REDIRECT).header(HttpHeaders.LOCATION, url).build();
+                }
+            }
+        }
 
         Function<Pair<Optional<String>, BindingResult>, Optional<String>> handleErrors = (res) -> {
             if (res.getRight().hasErrors()) {
