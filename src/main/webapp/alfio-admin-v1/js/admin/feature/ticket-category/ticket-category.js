@@ -111,6 +111,20 @@
                     $scope.reservationLinks = [];
                     $scope.newLink = {quantity: 1, expiresAtString: null, expiresAtModel: null};
 
+                    function onReservationLinkCreated(res) {
+                        $scope.reservationLinks.unshift(res.data);
+                        $scope.newLink = {quantity: 1, expiresAtString: null, expiresAtModel: null};
+                        NotificationHandler.showSuccess('Link generated');
+                    }
+
+                    function markLinkRevoked(link) {
+                        link.status = 'REVOKED';
+                    }
+
+                    function onCopyError() {
+                        NotificationHandler.showError('Unable to copy the link to the clipboard');
+                    }
+
                     if (category.id && !category.tokenGenerationRequested) {
                         EventService.listReservationLinks(event.shortName, category.id).then(function(res) {
                             $scope.reservationLinks = res.data;
@@ -119,20 +133,16 @@
 
                     $scope.generateReservationLink = function() {
                         var model = $scope.newLink.expiresAtModel;
-                        if (!$scope.newLink.quantity || $scope.newLink.quantity < 1 || !(model && model.date && model.time)) { return; }
+                        if (!$scope.newLink.quantity || $scope.newLink.quantity < 1 || !(model?.date && model.time)) { return; }
                         var expiresAt = moment(model.date + 'T' + model.time).toDate();
-                        EventService.createReservationLink(event.shortName, category.id, $scope.newLink.quantity, expiresAt).then(function(res) {
-                            $scope.reservationLinks.unshift(res.data);
-                            $scope.newLink = {quantity: 1, expiresAtString: null, expiresAtModel: null};
-                            NotificationHandler.showSuccess('Link generated');
-                        }).catch(angular.noop);
+                        EventService.createReservationLink(event.shortName, category.id, $scope.newLink.quantity, expiresAt)
+                            .then(onReservationLinkCreated).catch(angular.noop);
                     };
 
                     $scope.revokeReservationLink = function(link) {
                         if (!confirm('Revoke this link? It will no longer work.')) { return; }
-                        EventService.revokeReservationLink(event.shortName, category.id, link.id).then(function() {
-                            link.status = 'REVOKED';
-                        }).catch(angular.noop);
+                        EventService.revokeReservationLink(event.shortName, category.id, link.id)
+                            .then(markLinkRevoked.bind(null, link)).catch(angular.noop);
                     };
 
                     $scope.reservationLinkUrl = function(token) {
@@ -140,9 +150,7 @@
                     };
 
                     $scope.copyToClipboard = function(text) {
-                        navigator.clipboard.writeText(text).catch(function() {
-                            NotificationHandler.showError('Unable to copy the link to the clipboard');
-                        });
+                        navigator.clipboard.writeText(text).catch(onCopyError);
                     };
 
                     $scope.displayLinkStatus = function(link) {

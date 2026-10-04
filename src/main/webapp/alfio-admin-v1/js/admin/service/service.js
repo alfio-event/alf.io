@@ -1036,7 +1036,8 @@
 
                             if (resize) {
                                 createImageBitmap(img,{ resizeWidth: width, resizeHeight: height, resizeQuality: 'high' })
-                                    .then(imageBitmap => uploadImage(imageBitmap));
+                                    .then(imageBitmap => uploadImage(imageBitmap))
+                                    .catch(() => uploadImage(img));
                             } else {
                                 uploadImage(img);
                             }
