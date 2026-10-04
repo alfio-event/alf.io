@@ -59,6 +59,8 @@ public class BaseTestConfiguration {
 
     public static final int MAX_POOL_SIZE = 5;
     public static final String POSTGRES_DB = "alfio";
+    // must embed the same API version as the stripe-java SDK, see StripeMockVersionAlignmentTest
+    public static final String STRIPE_MOCK_IMAGE = "stripe/stripe-mock:v0.205.0";
     private static final Logger log = LoggerFactory.getLogger(BaseTestConfiguration.class);
 
     @Bean
@@ -141,7 +143,7 @@ public class BaseTestConfiguration {
     @PostConstruct
     public void initStripeMock() {
         if (stripeMock == null) {
-            stripeMock = new GenericContainer<>("stripe/stripe-mock:latest")
+            stripeMock = new GenericContainer<>(STRIPE_MOCK_IMAGE)
                 .withExposedPorts(12111, 12112);
             stripeMock.start();
             if ("true".equals(System.getenv().get("TESTCONTAINERS_RYUK_DISABLED"))) {
