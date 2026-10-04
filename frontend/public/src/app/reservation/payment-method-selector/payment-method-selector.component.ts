@@ -12,7 +12,7 @@ import {UntypedFormGroup} from '@angular/forms';
 import {ReservationInfo} from '../../model/reservation-info';
 import {PurchaseContext} from '../../model/purchase-context';
 import {ReservationService} from '../../shared/reservation.service';
-import {I18nService} from 'projects/public/src/app/shared/i18n.service';
+import {I18nService} from '../../shared/i18n.service';
 
 @Component({
     selector: 'app-payment-method-selector',

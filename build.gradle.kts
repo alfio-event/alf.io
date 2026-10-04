@@ -414,7 +414,7 @@ tasks.register<Copy>("copyFrontendDev") {
     group = FRONTEND_GROUP
     description = "Copies the public frontend bundle where bootRun can serve it from."
     dependsOn("publicFrontendIndexTransform")
-    from("frontend/dist/")
+    from("frontend/public/dist/")
     into(layout.buildDirectory.dir("frontend-dev/resources/"))
 }
 
@@ -454,15 +454,15 @@ tasks.register<Copy>("dockerize") {
 val frontendPnpmInstall = tasks.register<PnpmTask>("frontendPnpmInstall") {
     group = FRONTEND_GROUP
     description = "Installs the public frontend dependencies."
-    args = listOf("--prefix", "${project.projectDir}/frontend", "ci")
+    args = listOf("--prefix", "${project.projectDir}/frontend/public", "ci")
 }
 
 val frontendBuild = tasks.register<PnpmTask>("frontendBuild") {
     group = FRONTEND_GROUP
     description = "Builds the public (Angular) frontend."
     dependsOn(frontendPnpmInstall)
-    args = listOf("--prefix", "${project.projectDir}/frontend", "run", "build")
-    outputs.dir("${project.projectDir}/frontend/dist")
+    args = listOf("--prefix", "${project.projectDir}/frontend/public", "run", "build")
+    outputs.dir("${project.projectDir}/frontend/public/dist")
 }
 
 val frontendAdminPnpmInstall = tasks.register<PnpmTask>("frontendAdminPnpmInstall") {
@@ -481,7 +481,7 @@ val frontendAdminBuild = tasks.register<PnpmTask>("frontendAdminBuild") {
 
 tasks.clean {
     doFirst {
-        delete("${project.projectDir}/frontend/dist")
+        delete("${project.projectDir}/frontend/public/dist")
         delete("${project.projectDir}/frontend/admin/dist")
     }
 }
@@ -491,7 +491,7 @@ val publicFrontendIndexTransform = tasks.register<FrontendIndexTransformTask>("p
     description = "Rewrites the public frontend index.html so that its assets are served under frontend-public/."
     dependsOn(frontendBuild)
     basePath.set("frontend-public/")
-    indexHtml.set(layout.projectDirectory.file("frontend/dist/alfio-public-frontend/index.html"))
+    indexHtml.set(layout.projectDirectory.file("frontend/public/dist/alfio-public-frontend/index.html"))
     indexHtmlTransformed.set(layout.buildDirectory.file("index-transformed/alfio-public-frontend-index.html"))
 }
 
