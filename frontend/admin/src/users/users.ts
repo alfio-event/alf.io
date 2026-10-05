@@ -27,6 +27,7 @@ import Papa from 'papaparse';
 import type {SlDialog} from '@shoelace-style/shoelace';
 import {UtilService} from "../service/util.ts";
 import {FileUploadChangeEvent} from "../components/file-upload.ts";
+import {emptyState} from '../components/empty-state.ts';
 
 interface LoadResult {
     users: User[];
@@ -663,10 +664,7 @@ private countFilteredUsers(users: User[]): number {
 
         if (filtered.length === 0) {
             return html`
-                <div class="empty-state">
-                    <sl-icon name="inbox"></sl-icon>
-                    <span>No ${this.type === 'user' ? 'users' : 'API keys'} found</span>
-                </div>
+                ${emptyState(`No ${this.type === 'user' ? 'users' : 'API keys'} found`)}
             `;
         }
 

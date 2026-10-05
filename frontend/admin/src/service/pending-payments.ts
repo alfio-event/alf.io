@@ -8,6 +8,9 @@
  * - errors are never notified to the user: the last known value is kept, and the next attempt is delayed (backoff)
  */
 
+import {BulkConfirmationResult, PendingPayment} from '../model/reservation.ts';
+import {callDelete, fetchJson, postJson} from './helpers.ts';
+
 export type PendingPaymentsListener = (count: number | null) => void;
 
 const POLL_INTERVAL_MS = 30_000;
@@ -151,3 +154,67 @@ window.addEventListener(PENDING_PAYMENTS_CHANGED_EVENT, (e) => {
         refreshPendingPayments(eventName);
     }
 });
+
+/**
+ * Operations on the pending payments of an event. Successful changes refresh the pending payments count.
+ */
+export class PendingPaymentsService {
+
+    static load(eventName: string): Promise<PendingPayment[]> {
+        return fetchJson(baseUrl(eventName));
+    }
+
+    /**
+     * Deletes the reservation, or issues a credit note if "credit" is true
+     */
+    static cancel(eventName: string, reservationId: string, credit: boolean, notify: boolean): Promise<void> {
+        const params = new URLSearchParams({ credit: String(credit), notify: String(notify) });
+        return changed(eventName, callDelete(`${baseUrl(eventName)}/${reservationId}?${params}`));
+    }
+
+    /**
+     * Flags the transaction matched by the payment provider as not valid
+     */
+    static discardMatchingTransaction(eventName: string, reservationId: string, transactionId: number): Promise<void> {
+        const url = `/admin/api/events/${encodeURIComponent(eventName)}/reservation/${reservationId}/transaction/${transactionId}/discard`;
+        return changed(eventName, callDelete(url));
+    }
+
+    static async bulkConfirm(eventName: string, file: File): Promise<BulkConfirmationResult[]> {
+        const response = await postJson(`${baseUrl(eventName)}/bulk-confirmation`, {
+            file: await readAsBase64(file),
+            type: file.type,
+            name: file.name,
+        });
+        await ensureSuccess(response);
+        refreshPendingPayments(eventName);
+        return response.json();
+    }
+}
+
+function baseUrl(eventName: string): string {
+    return `/admin/api/events/${encodeURIComponent(eventName)}/pending-payments`;
+}
+
+async function changed(eventName: string, request: Promise<Response>): Promise<void> {
+    await ensureSuccess(await request);
+    refreshPendingPayments(eventName);
+}
+
+async function ensureSuccess(response: Response): Promise<void> {
+    if (!response.ok) {
+        throw new Error((await response.text()) || `unexpected status ${response.status}`);
+    }
+}
+
+function readAsBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const dataUrl = reader.result as string;
+            resolve(dataUrl.substring(dataUrl.indexOf('base64,') + 'base64,'.length));
+        };
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+    });
+}

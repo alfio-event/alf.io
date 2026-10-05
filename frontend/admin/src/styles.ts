@@ -446,6 +446,11 @@ export const modernTable = css`
         justify-content: flex-end;
     }
 
+    /* destructive entries of the row actions menu */
+    sl-menu-item.danger::part(base) {
+        color: var(--sl-color-danger-600);
+    }
+
     .username-link {
         color: var(--sl-color-primary-600);
         text-decoration: none;
@@ -594,7 +599,7 @@ export const modernLayout = css`
     }
 
     .empty-state sl-icon {
-        --sl-icon-size: var(--sl-font-size-4x-large);
+        font-size: var(--sl-font-size-4x-large);
         margin-bottom: var(--sl-spacing-small);
         color: var(--sl-color-gray-300);
     }
@@ -794,6 +799,36 @@ export const reservationTable = css`
         .hide-small {
             display: none;
         }
+    }
+`;
+
+/* headers rendered by sortableHeader() (service/table-sort.ts). Use with modernTable */
+export const sortableTable = css`
+    .sort-button {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--sl-spacing-2x-small);
+        padding: 0;
+        border: none;
+        background: none;
+        color: inherit;
+        font: inherit;
+        letter-spacing: inherit;
+        text-transform: inherit;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .sort-button:hover,
+    .sortable-header[aria-sort="ascending"] .sort-button,
+    .sortable-header[aria-sort="descending"] .sort-button {
+        color: var(--sl-color-primary-600);
+    }
+
+    .sort-button:focus-visible {
+        outline: var(--sl-focus-ring);
+        outline-offset: var(--sl-focus-ring-offset);
+        border-radius: var(--sl-border-radius-small);
     }
 `;
 

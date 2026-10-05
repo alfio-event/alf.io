@@ -46,7 +46,7 @@ export class FileUpload extends LitElement {
         }
 
         .drop-zone-icon sl-icon {
-            --sl-icon-size: var(--sl-font-size-4x-large);
+            font-size: var(--sl-font-size-4x-large);
         }
 
         .drop-zone-prompt {
@@ -109,7 +109,7 @@ export class FileUpload extends LitElement {
     private selectedFile: File | null = null;
 
     @state()
-    private error: string = '';
+    private error: TemplateResult | string = '';
 
     @state()
     private isDragOver: boolean = false;
@@ -156,7 +156,7 @@ export class FileUpload extends LitElement {
                 ${when(this.accept,
                     () => html`<p class="drop-zone-prompt">Accepted: ${this.accept}</p>`)}
                 ${when(this.maxSize > 0,
-                    () => html`<p class="drop-zone-prompt">Max size: ${this.formatBytes(this.maxSize)}</p>`)}
+                    () => html`<p class="drop-zone-prompt">Max size: <sl-format-bytes value=${this.maxSize}></sl-format-bytes></p>`)}
             </div>
         `;
     }
@@ -170,7 +170,7 @@ export class FileUpload extends LitElement {
                 <sl-icon class="file-info-icon" name="file-earmark-text"></sl-icon>
                 <div class="file-details">
                     <span class="file-name">${this.selectedFile.name}</span>
-                    <span class="file-size">${this.formatBytes(this.selectedFile.size)}</span>
+                    <span class="file-size"><sl-format-bytes value=${this.selectedFile.size}></sl-format-bytes></span>
                 </div>
                 <sl-icon-button
                     name="x-circle"
@@ -230,7 +230,7 @@ export class FileUpload extends LitElement {
         }
 
         if (this.maxSize > 0 && file.size > this.maxSize) {
-            this.error = `File exceeds maximum size of ${this.formatBytes(this.maxSize)}`;
+            this.error = html`File exceeds maximum size of <sl-format-bytes value=${this.maxSize}></sl-format-bytes>`;
             return;
         }
 
@@ -266,14 +266,6 @@ export class FileUpload extends LitElement {
             bubbles: false,
             composed: true,
         }));
-    }
-
-    private formatBytes(bytes: number): string {
-        if (bytes === 0) return '0 Bytes';
-        const units = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(1024));
-        const size = bytes / Math.pow(1024, i);
-        return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
     }
 }
 

@@ -76,6 +76,8 @@ class NormalFlowE2ETest {
     private static final List<String> PAYMENT_METHODS = List.of("Stripe: Credit cards", "On site (cash) payment", "Offline payment");
     private static final String CARD_CUSTOMER_LAST_NAME = "McTest";
     private static final String BANK_TRANSFER_CUSTOMER_LAST_NAME = "McTransfer";
+    private static final String BULK_CONFIRMATION_CUSTOMER_LAST_NAME = "McUpload";
+    private static final String DELETED_RESERVATION_CUSTOMER_LAST_NAME = "McDelete";
 
     private String serverBaseUrl;
     private String eventUrl;
@@ -165,9 +167,29 @@ class NormalFlowE2ETest {
                 // the organizer gets notified about the pending payment, and confirms it
                 adminConsole.login();
                 adminConsole.verifyPendingPaymentsCount(slug, 1);
+                adminConsole.filterPendingPayments(slug, BANK_TRANSFER_CUSTOMER_LAST_NAME);
                 adminConsole.confirmPendingPayment(slug, BANK_TRANSFER_CUSTOMER_LAST_NAME);
                 adminConsole.verifyPendingPaymentsCount(slug, 0);
                 adminConsole.verifyConfirmedPayments(slug, 2);
+                adminConsole.logout();
+                //
+                // the organizer confirms a bank transfer by uploading the list of received payments
+                buyTicket(browserWebDriver, wait, BULK_CONFIRMATION_CUSTOMER_LAST_NAME);
+                page3BankTransferPayment(browserWebDriver, wait);
+                adminConsole.login();
+                adminConsole.verifyPendingPaymentsCount(slug, 1);
+                adminConsole.bulkConfirmPendingPayment(slug, BULK_CONFIRMATION_CUSTOMER_LAST_NAME);
+                adminConsole.verifyConfirmedPayments(slug, 3);
+                adminConsole.logout();
+                //
+                // the organizer deletes a reservation which has not been paid
+                buyTicket(browserWebDriver, wait, DELETED_RESERVATION_CUSTOMER_LAST_NAME);
+                page3BankTransferPayment(browserWebDriver, wait);
+                adminConsole.login();
+                adminConsole.verifyPendingPaymentsCount(slug, 1);
+                adminConsole.deletePendingPayment(slug, DELETED_RESERVATION_CUSTOMER_LAST_NAME);
+                adminConsole.verifyPendingPaymentsCount(slug, 0);
+                adminConsole.verifyConfirmedPayments(slug, 3);
                 completed = true;
             } finally {
                 try {

@@ -28,6 +28,7 @@ import { AlfioPageChange } from '../../components/pagination-bar.ts';
 import '../../components/pagination-bar.ts';
 import '../../components/payment-method.ts';
 import '../../components/format-date.ts';
+import {emptyState} from '../../components/empty-state.ts';
 
 type ReservationStatus =
     | 'COMPLETE'
@@ -214,10 +215,6 @@ export class ReservationsList extends LitElement {
             .reservation-tabs .section-body {
                 padding: 0;
             }
-            .reservation-tabs .empty-state sl-icon {
-                --sl-icon-size: var(--sl-font-size-4x-large);
-                font-size: var(--sl-font-size-4x-large);
-            }
             .table > thead > tr > th:nth-child(1) {
                 width: 10%;
             }
@@ -268,10 +265,7 @@ export class ReservationsList extends LitElement {
             const reservations = this.reservations ?? [];
             return reservations.length === 0
                 ? html`
-                      <div class="empty-state">
-                          <sl-icon name="inbox"></sl-icon>
-                          <span>No reservations completed so far</span>
-                      </div>
+                      ${emptyState('No reservations completed so far')}
                   `
                 : this.renderTable(reservations, null);
         }
@@ -384,10 +378,7 @@ export class ReservationsList extends LitElement {
                 <div class="section-body">
                     ${data.right === 0
                         ? html`
-                              <div class="empty-state">
-                                  <sl-icon name="inbox"></sl-icon>
-                                  <span>${section.emptyMessage}</span>
-                              </div>
+                              ${emptyState(section.emptyMessage)}
                           `
                         : html`
                               ${this.renderTable(data.left, event)}
@@ -523,12 +514,7 @@ export class ReservationsList extends LitElement {
         if (purchaseContextType !== 'event') {
             return false;
         }
-        try {
-            return (await ConfigurationService.loadSingleConfig(eventName, 'USE_INVOICE_NUMBER_AS_ID')) === 'true';
-        } catch {
-            // ignore, fall back to the short reservation id
-            return false;
-        }
+        return ConfigurationService.useInvoiceNumberAsId(eventName);
     }
     private reservationHref(reservation: Reservation, event: AlfioEvent | null): string {
         return this.purchaseContextType === 'subscription' && !this.completedOnly

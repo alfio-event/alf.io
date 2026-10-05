@@ -32,6 +32,7 @@ import '../../components/pagination-bar.ts';
 import '../../components/payment-method.ts';
 import '../../components/format-date.ts';
 import './edit-payment-dialog.ts';
+import {emptyState} from '../../components/empty-state.ts';
 
 interface PaymentsListData {
     event: AlfioEvent;
@@ -58,7 +59,7 @@ export class PaymentsList extends LitElement {
             const params = new URLSearchParams({ page: String(page - 1), search });
             const [eventWithOrganization, useInvoiceNumberAsId, payments] = await Promise.all([
                 EventService.load(eventName),
-                this.loadUseInvoiceNumberAsId(eventName),
+                ConfigurationService.useInvoiceNumberAsId(eventName),
                 fetchJson<PageAndContent<ReservationPaymentDetail[]>>(`${this.baseUrl()}/list?${params}`),
             ]);
             return { event: eventWithOrganization.event, useInvoiceNumberAsId, payments };
@@ -181,10 +182,7 @@ export class PaymentsList extends LitElement {
                 ${when(payments.right === 0,
                     () => html`
                         <section class="section-card">
-                            <div class="empty-state">
-                                <sl-icon name="inbox"></sl-icon>
-                                <span>No payments found</span>
-                            </div>
+                            ${emptyState('No payments found')}
                         </section>
                     `,
                     () => html`
@@ -257,15 +255,6 @@ export class PaymentsList extends LitElement {
                 </table>
             </div>
         `;
-    }
-
-    private async loadUseInvoiceNumberAsId(eventName: string): Promise<boolean> {
-        try {
-            return (await ConfigurationService.loadSingleConfig(eventName, 'USE_INVOICE_NUMBER_AS_ID')) === 'true';
-        } catch {
-            // ignore, fall back to the short reservation id
-            return false;
-        }
     }
 
     private onSearchInput = (event: Event): void => {

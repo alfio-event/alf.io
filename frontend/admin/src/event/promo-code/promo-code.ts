@@ -23,14 +23,17 @@ import {
     modernTable,
     retroCompat,
     row,
+    sortableTable,
     spacing,
     textColors
 } from '../../styles.ts';
+import {nextSort, sortableHeader, sortItems, SortState, SortValue} from '../../service/table-sort.ts';
 import {dispatchFeedback} from '../../model/dom-events.ts';
 import {EventService} from '../../service/event.ts';
 import {fetchJson} from '../../service/helpers.ts';
 import '../../components/format-date.ts';
 import type {SlDialog, SlInput, SlSelect, SlSwitch, SlTextarea} from '@shoelace-style/shoelace';
+import {emptyState} from '../../components/empty-state.ts';
 
 interface PromoCodeWithUsage extends PromoCodeDiscount {
     useCount: number | undefined;
@@ -60,11 +63,8 @@ interface AvailableCurrency {
 }
 
 type SortKey = 'code' | 'status' | 'usage' | 'start' | 'end' | 'amount' | 'description';
-type SortDirection = 'asc' | 'desc';
-interface TableState {
+interface TableState extends SortState<SortKey> {
     page: number;
-    sortKey: SortKey;
-    sortDirection: SortDirection;
 }
 
 @customElement('alfio-promo-code')
@@ -216,6 +216,7 @@ export class PromoCode extends LitElement {
         modernLayout,
         row,
         spacing,
+        sortableTable,
         css`
             .promo-code-name {
                 font-family: var(--sl-font-mono);
@@ -359,11 +360,6 @@ export class PromoCode extends LitElement {
                 }
             }
 
-            .code-section sl-menu-item.danger::part(base) {
-                color: var(--sl-color-danger-600);
-            }
-
-
             .code-section alfio-format-date {
                 white-space: nowrap;
             }
@@ -390,19 +386,6 @@ export class PromoCode extends LitElement {
                 background-color: var(--sl-color-gray-50) !important;
                 background-clip: padding-box;
                 box-shadow: 0 2px 0 var(--sl-color-gray-300);
-            }
-
-            .sortable-header {
-                cursor: pointer;
-                user-select: none;
-            }
-
-            .sortable-header:hover {
-                color: var(--sl-color-primary-600);
-            }
-
-            .sort-icon {
-                margin-inline-start: var(--sl-spacing-2x-small);
             }
 
             .pagination-bar {
@@ -476,7 +459,7 @@ export class PromoCode extends LitElement {
             && (!filter.category || (isAccess ? code.hiddenCategoryId === Number(filter.category)
                 : !code.categories?.length || code.categories.includes(Number(filter.category)))));
         const state = this.tableState[filterKey];
-        const sortedCodes = this.sortCodes(matchedCodes, state.sortKey, state.sortDirection);
+        const sortedCodes = sortItems(matchedCodes, state, (code, key) => this.sortValue(code, key));
         const pageCount = Math.max(1, Math.ceil(sortedCodes.length / 25));
         const page = Math.min(state.page, pageCount);
         if (page !== state.page) {
@@ -487,8 +470,7 @@ export class PromoCode extends LitElement {
             this.setTablePage(filterKey, 1);
         };
         const setSort = (sortKey: SortKey) => {
-            const direction = state.sortKey === sortKey && state.sortDirection === 'asc' ? 'desc' : 'asc';
-            this.tableState = {...this.tableState, [filterKey]: {page: 1, sortKey, sortDirection: direction}};
+            this.tableState = {...this.tableState, [filterKey]: {page: 1, ...nextSort(state, sortKey)}};
         };
         return html`
             <div class="section-card code-section">
@@ -549,21 +531,16 @@ export class PromoCode extends LitElement {
         this.tableState = {...this.tableState, [filterKey]: {...this.tableState[filterKey], page}};
     }
 
-    private sortCodes(codes: PromoCodeWithUsage[], sortKey: SortKey, direction: SortDirection): PromoCodeWithUsage[] {
-        const multiplier = direction === 'asc' ? 1 : -1;
-        return [...codes].sort((a, b) => {
-            let left: string | number = '';
-            let right: string | number = '';
-            if (sortKey === 'code') { left = a.promoCode; right = b.promoCode; }
-            if (sortKey === 'status') { left = this.codeStatus(a).label; right = this.codeStatus(b).label; }
-            if (sortKey === 'usage') { left = a.useCount ?? -1; right = b.useCount ?? -1; }
-            if (sortKey === 'start') { left = a.formattedStart; right = b.formattedStart; }
-            if (sortKey === 'end') { left = a.formattedEnd; right = b.formattedEnd; }
-            if (sortKey === 'amount') { left = a.discountAmount; right = b.discountAmount; }
-            if (sortKey === 'description') { left = a.description ?? ''; right = b.description ?? ''; }
-            return (typeof left === 'number' && typeof right === 'number'
-                ? left - right : String(left).localeCompare(String(right), undefined, {numeric: true, sensitivity: 'base'})) * multiplier;
-        });
+    private sortValue(code: PromoCodeWithUsage, sortKey: SortKey): SortValue {
+        switch (sortKey) {
+            case 'code': return code.promoCode;
+            case 'status': return this.codeStatus(code).label;
+            case 'usage': return code.useCount ?? -1;
+            case 'start': return code.formattedStart;
+            case 'end': return code.formattedEnd;
+            case 'amount': return code.discountAmount;
+            case 'description': return code.description ?? '';
+        }
     }
 
     private canAddAccessCode(data: LoadData): boolean {
@@ -628,10 +605,7 @@ export class PromoCode extends LitElement {
                         setSort: (key: SortKey) => void, state: TableState): TemplateResult {
         if (codes.length === 0) {
             return html`
-                <div class="empty-state">
-                    <sl-icon name="inbox"></sl-icon>
-                    <p>No codes found. Adjust the filters or add a new code.</p>
-                </div>
+                ${emptyState('No codes found. Adjust the filters or add a new code.')}
             `;
         }
 
@@ -640,14 +614,14 @@ export class PromoCode extends LitElement {
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            ${this.renderSortHeader('Code', 'code', state, setSort)}
-                            ${this.renderSortHeader('Status', 'status', state, setSort)}
-                            ${this.renderSortHeader('Usage', 'usage', state, setSort)}
-                            ${this.renderSortHeader('Start', 'start', state, setSort)}
-                            ${this.renderSortHeader('End', 'end', state, setSort)}
-                            ${when(!isAccess, () => this.renderSortHeader('Amount', 'amount', state, setSort))}
+                            ${sortableHeader('Code', 'code', state, setSort)}
+                            ${sortableHeader('Status', 'status', state, setSort)}
+                            ${sortableHeader('Usage', 'usage', state, setSort)}
+                            ${sortableHeader('Start', 'start', state, setSort)}
+                            ${sortableHeader('End', 'end', state, setSort)}
+                            ${when(!isAccess, () => sortableHeader('Amount', 'amount', state, setSort))}
                             ${when(data.forEvent, () => html`<th>Categories</th>`)}
-                            ${this.renderSortHeader('Description', 'description', state, setSort)}
+                            ${sortableHeader('Description', 'description', state, setSort)}
                             <th style="text-align:right">Actions</th>
                         </tr>
                     </thead>
@@ -723,15 +697,6 @@ export class PromoCode extends LitElement {
                 </table>
             </div>
         `;
-    }
-
-    private renderSortHeader(label: string, key: SortKey, state: TableState,
-                             setSort: (key: SortKey) => void): TemplateResult {
-        const active = state.sortKey === key;
-        return html`<th class="sortable-header" aria-sort=${active ? (state.sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-                    @click=${() => setSort(key)}>
-            ${label}${when(active, () => html`<sl-icon class="sort-icon" name=${state.sortDirection === 'asc' ? 'caret-up-fill' : 'caret-down-fill'}></sl-icon>`)}
-        </th>`;
     }
 
     private renderDiscountAmount(code: PromoCodeDiscount): TemplateResult {

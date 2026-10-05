@@ -26,9 +26,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.List;
 
@@ -90,7 +90,9 @@ class AdminConsole {
         }
         logoutLink.click();
         // the page is reloaded after logout, and the user is sent back to the login page
-        wait.until(presenceOfElementLocated(By.id("username")));
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "login page not displayed after logout. Current URL: " + driver.getCurrentUrl())
+            .until(presenceOfElementLocated(By.id("username")));
     }
 
     private WebElement findDisplayed(By locator) {
@@ -245,24 +247,118 @@ class AdminConsole {
     }
 
     /**
+     * Filters the pending payments: an unknown term shows the empty state, the customer name shows only their payment.
+     */
+    void filterPendingPayments(String slug, String customerName) {
+        var pendingPayments = openPendingPayments(slug);
+        var search = findInShadowRoot(findInShadowRoot(pendingPayments, "sl-input.list-search"), "input");
+        wait.until(d -> search.isDisplayed());
+        search.sendKeys("no-match-" + slug);
+        waitForEmptyState(pendingPayments, "No pending payments match your filter");
+        clearInput(search);
+        search.sendKeys(customerName);
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .ignoring(StaleElementReferenceException.class)
+            .withMessage(() -> "expected only the pending payment of " + customerName)
+            .until(d -> {
+                var rows = shadowRows(pendingPayments);
+                return rows.size() == 1 && rows.getFirst().getText().contains(customerName);
+            });
+        clearInput(search);
+    }
+
+    /**
      * Confirms a pending payment, then checks that the counter in the sidebar is updated without leaving the page.
      */
     void confirmPendingPayment(String slug, String customerName) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/pending-payments/");
-        var confirmButton = wait.until(elementToBeClickable(By.xpath("//tr[td[contains(., '" + customerName + "')]]//button[contains(normalize-space(.), 'confirm')]")));
+        var pendingPayments = openPendingPayments(slug);
+        var confirmButton = findInRow(pendingPayments, customerName, ".actions-cell sl-button[variant='success']");
         LOGGER.info("confirming pending payment for {} on {}", customerName, slug);
         clickWithJs(driver, confirmButton);
         // the organizer can specify when the payment has been received
-        clickWithJs(driver, wait.until(elementToBeClickable(By.cssSelector(".modal-dialog button.btn-warning"))));
-        wait.until(invisibilityOfElementLocated(By.cssSelector(".modal-dialog")));
-        wait.until(presenceOfElementLocated(By.xpath("//h3[contains(., 'No pending payments found')]")));
+        submitDialog(pendingPayments, "alfio-edit-payment-dialog", "success");
+        waitForEmptyState(pendingPayments, "No pending payments found");
         waitForPendingPaymentsCount(slug, "badge", 0, badgeText(0));
     }
 
-    @SuppressWarnings("unchecked")
+    /**
+     * Confirms a pending payment by uploading a CSV file with the reservation ID and the paid amount.
+     */
+    void bulkConfirmPendingPayment(String slug, String customerName) {
+        var pendingPayments = openPendingPayments(slug);
+        var reservationId = findInRow(pendingPayments, customerName, "td.reservation-id a").getDomAttribute("href").replaceAll(".*/", "");
+        // amount is formatted as "<currency> <amount>"
+        var amount = findInRow(pendingPayments, customerName, "td.amount").getText().trim().replaceAll(".*\\s", "");
+        LOGGER.info("bulk confirming reservation {} ({}) on {}", reservationId, amount, slug);
+
+        var bulkConfirmation = findInShadowRoot(pendingPayments, "alfio-bulk-confirmation");
+        var fileInput = findInShadowRoot(findInShadowRoot(bulkConfirmation, "alfio-file-upload"), "#file-input");
+        uploadFile(fileInput, tempFile("e2e-payments", ".csv", (reservationId + "," + amount + "\n").getBytes(StandardCharsets.UTF_8)));
+        var uploadButton = findInShadowRoot(bulkConfirmation, "sl-button[variant='success']");
+        wait.until(d -> uploadButton.getDomAttribute("disabled") == null);
+        clickWithJs(driver, uploadButton);
+
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "reservation " + reservationId + " has not been confirmed by the upload")
+            .until(d -> findAllInShadowRoot(bulkConfirmation, ".results-summary sl-badge").stream()
+                .map(WebElement::getText)
+                .toList()
+                .equals(List.of("1 confirmed")));
+        waitForEmptyState(pendingPayments, "No pending payments found");
+        waitForPendingPaymentsCount(slug, "badge", 0, badgeText(0));
+    }
+
+    /**
+     * Deletes a pending payment, together with its reservation.
+     */
+    void deletePendingPayment(String slug, String customerName) {
+        var pendingPayments = openPendingPayments(slug);
+        clickWithJs(driver, findInRow(pendingPayments, customerName, ".actions-cell sl-dropdown sl-icon-button"));
+        LOGGER.info("deleting pending payment for {} on {}", customerName, slug);
+        clickWithJs(driver, findInRow(pendingPayments, customerName, "sl-menu-item[value='delete']"));
+        submitDialog(pendingPayments, "alfio-cancel-payment-dialog", "danger");
+        waitForEmptyState(pendingPayments, "No pending payments found");
+        waitForPendingPaymentsCount(slug, "badge", 0, badgeText(0));
+    }
+
+    private WebElement openPendingPayments(String slug) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/pending-payments/");
+        return wait.until(presenceOfElementLocated(By.tagName("alfio-pending-payments")));
+    }
+
+    private WebElement findInRow(WebElement host, String customerName, String selector) {
+        return wait.until(d -> shadowRows(host).stream()
+            .filter(row -> row.getText().contains(customerName))
+            .findFirst()
+            .map(row -> row.findElement(By.cssSelector(selector)))
+            .orElse(null));
+    }
+
+    /**
+     * Waits for the dialog to be open, clicks its main button and waits for the dialog to be closed
+     */
+    private void submitDialog(WebElement host, String dialogTagName, String buttonVariant) {
+        var dialogHost = findInShadowRoot(host, dialogTagName);
+        var dialog = findInShadowRoot(dialogHost, "sl-dialog");
+        wait.until(d -> dialog.getDomAttribute("open") != null);
+        clickWithJs(driver, findInShadowRoot(dialogHost, "sl-button[variant='" + buttonVariant + "']"));
+        wait.until(d -> dialog.getDomAttribute("open") == null);
+    }
+
+    private void waitForEmptyState(WebElement host, String message) {
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .ignoring(StaleElementReferenceException.class)
+            .withMessage(() -> "expected empty state \"" + message + "\"")
+            .until(d -> findAllInShadowRoot(host, ".empty-state").stream().anyMatch(e -> e.getText().contains(message)));
+    }
+
     private List<WebElement> confirmedPaymentRows() {
-        var paymentsList = driver.findElement(By.tagName("alfio-payments-list"));
-        return (List<WebElement>) ((JavascriptExecutor) driver).executeScript("return Array.from(arguments[0].shadowRoot?.querySelectorAll('tbody tr') ?? []);", paymentsList);
+        return shadowRows(driver.findElement(By.tagName("alfio-payments-list")));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<WebElement> shadowRows(WebElement host) {
+        return (List<WebElement>) ((JavascriptExecutor) driver).executeScript("return Array.from(arguments[0].shadowRoot?.querySelectorAll('tbody tr') ?? []);", host);
     }
 
     private void waitForPendingPaymentsCount(String slug, String display, int expectedCount, String expectedText) {
@@ -374,7 +470,7 @@ class AdminConsole {
         var shortName = driver.findElement(By.id("shortName"));
         try {
             new WebDriverWait(driver, Duration.ofSeconds(10)).until(d -> !shortName.getAttribute("value").isEmpty());
-        } catch (TimeoutException e) {
+        } catch (TimeoutException _) {
             LOGGER.warn("event URL was not generated automatically");
         }
         clearInput(shortName);
@@ -385,7 +481,7 @@ class AdminConsole {
     private void waitForGeolocation() {
         try {
             new WebDriverWait(driver, Duration.ofSeconds(15)).until(invisibilityOfElementLocated(By.cssSelector(".map-loading")));
-        } catch (TimeoutException e) {
+        } catch (TimeoutException _) {
             LOGGER.warn("geolocation did not complete in time, continuing anyway");
         }
     }
@@ -398,7 +494,7 @@ class AdminConsole {
         var timeZone = (String) ((JavascriptExecutor) driver).executeScript("return Intl.DateTimeFormat().resolvedOptions().timeZone;");
         try {
             new Select(driver.findElement(By.id("timeZone"))).selectByVisibleText(timeZone);
-        } catch (NoSuchElementException e) {
+        } catch (NoSuchElementException _) {
             LOGGER.warn("time zone {} not available, keeping the default one", timeZone);
         }
     }
@@ -420,21 +516,28 @@ class AdminConsole {
     }
 
     private void uploadLogo() {
+        try (var logo = AdminConsole.class.getResourceAsStream(LOGO_RESOURCE)) {
+            uploadFile(driver.findElement(By.cssSelector("input[type=file]")), tempFile("e2e-logo", ".png", requireNonNull(logo).readAllBytes()));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        wait.until(presenceOfElementLocated(By.cssSelector("img.event-logo")));
+    }
+
+    private void uploadFile(WebElement fileInput, Path file) {
         if (driver.getClass() == RemoteWebDriver.class) {
             // upload the local file to the remote browser (i.e. BrowserStack). Local drivers don't support it
             ((RemoteWebDriver) driver).setFileDetector(new LocalFileDetector());
         }
-        var fileInput = driver.findElement(By.cssSelector("input[type=file]"));
-        // ng-file-upload hides the input. Make it interactable
-        ((JavascriptExecutor) driver).executeScript("arguments[0].style.visibility = 'visible'; arguments[0].style.width = '1px'; arguments[0].style.height = '1px';", fileInput);
-        fileInput.sendKeys(logoFile().toAbsolutePath().toString());
-        wait.until(presenceOfElementLocated(By.cssSelector("img.event-logo")));
+        // file inputs are hidden by the upload components. Make it interactable
+        ((JavascriptExecutor) driver).executeScript("arguments[0].style.display = 'block'; arguments[0].style.visibility = 'visible'; arguments[0].style.width = '1px'; arguments[0].style.height = '1px';", fileInput);
+        fileInput.sendKeys(file.toAbsolutePath().toString());
     }
 
-    private static Path logoFile() {
-        try (var logo = AdminConsole.class.getResourceAsStream(LOGO_RESOURCE)) {
-            var file = Files.createTempFile("e2e-logo", ".png");
-            Files.copy(requireNonNull(logo), file, StandardCopyOption.REPLACE_EXISTING);
+    private static Path tempFile(String prefix, String suffix, byte[] content) {
+        try {
+            var file = Files.createTempFile(prefix, suffix);
+            Files.write(file, content);
             file.toFile().deleteOnExit();
             return file;
         } catch (IOException e) {

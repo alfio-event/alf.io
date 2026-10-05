@@ -239,8 +239,10 @@
             })
             .state('events.single.pending-payments', {
                 url: '/pending-payments/',
-                templateUrl: BASE_STATIC_URL + '/pending-payments/index.html',
-                controller: 'PendingPaymentsController',
+                template: '<alfio-pending-payments data-event-name="{{$ctrl.loadEvent.shortName}}"></alfio-pending-payments>',
+                controller: loadEventCtrl,
+                controllerAs: '$ctrl',
+                resolve: loadEvent,
                 data: {
                     view: 'PENDING_RESERVATIONS'
                 }
@@ -2072,138 +2074,6 @@
         $rootScope.$on('Message', function(m) {
             $scope.message = m;
         });
-    });
-
-    admin.controller('PendingPaymentsController', function($scope, EventService, $stateParams, $log, $window, $uibModal, ReservationIdentifierConfiguration) {
-
-        EventService.getEvent($stateParams.eventName).then(function(result) {
-            $scope.event = result.data.event;
-            getPendingPayments();
-        });
-
-        var getPendingPayments = function(force) {
-            EventService.getPendingPayments($stateParams.eventName, force).success(function(data) {
-                var pendingReservations = data.map(function(pending) {
-
-                    ReservationIdentifierConfiguration.getReservationIdentifier('event', $scope.event.shortName, pending.ticketReservation, false).then(function(result) {
-                        pending.publicId = result;
-                    });
-                    return pending;
-                });
-                $scope.pendingReservations = pendingReservations;
-                // keep the counters (sidebar, overview) in sync with the list
-                window.dispatchEvent(new CustomEvent('alfio-pending-payments-changed', { detail: { eventName: $stateParams.eventName } }));
-                $scope.orderByFieldDesc = {};
-
-                $scope.changeSorting = function(field) {
-                    $scope.orderByField = field;
-                    var sortDesc = false;
-                    if(angular.isDefined($scope.orderByFieldDesc[field])) {
-                        sortDesc = !$scope.orderByFieldDesc[field];
-                    }
-                    $scope.orderByFieldDesc[field]=sortDesc;
-                    var sorted = _.sortBy(pendingReservations, field);
-                    if(sortDesc) {
-                        sorted = _(sorted).reverse().value()
-                    }
-                    $scope.pendingReservations = sorted;
-                };
-
-                $scope.sortingIndicator = function(field) {
-                    if($scope.orderByField === field) {
-                        return $scope.orderByFieldDesc[field] ? 'fa-sort-desc' : 'fa-sort-asc';
-                    }
-                    return '';
-                };
-                $scope.loading = false;
-            });
-        };
-
-        var eventName = $stateParams.eventName;
-        $scope.eventName = eventName;
-        $scope.uploadSuccess = function(data) {
-            $scope.results = data;
-            getPendingPayments();
-        };
-
-        $scope.uploadUrl = '/admin/api/events/'+$stateParams.eventName+'/pending-payments/bulk-confirmation';
-
-        $scope.registerPayment = function(eventName, id) {
-            $scope.loading = true;
-            EventService.registerPayment(eventName, id).then(
-                function() {
-                    getPendingPayments(true);
-                },
-                function() {
-                    $scope.loading = false;
-                }
-            );
-        };
-
-        $scope.showTransactionDialog = function(pendingPaymentDescriptor) {
-            $uibModal.open({
-                size:'md',
-                templateUrl:BASE_STATIC_URL + '/pending-payments/show-transaction-modal.html',
-                backdrop: 'static',
-                controller: function($scope) {
-                    var ctrl = this;
-                    ctrl.paymentInfo = pendingPaymentDescriptor;
-                    ctrl.reservationId = pendingPaymentDescriptor.ticketReservation.id;
-                    ctrl.cancel = function() {
-                        $scope.$dismiss('cancelled');
-                    };
-                    ctrl.confirm = function() {
-                        $scope.$close('CONFIRM');
-                    };
-                    ctrl.discardPayment = function() {
-                        $scope.$close('DISCARD');
-                    };
-                },
-                controllerAs: '$ctrl'
-            }).result.then(function(command) {
-                if(command === 'CONFIRM') {
-                    $scope.loading = true;
-                    return EventService.registerPayment(eventName, pendingPaymentDescriptor.ticketReservation.id);
-                } else if (command === 'DISCARD') {
-                    $scope.loading = true;
-                    return EventService.cancelMatchingPayment(eventName, pendingPaymentDescriptor.ticketReservation.id, pendingPaymentDescriptor.transaction.id);
-                }
-                return null;
-            }).then(function() {
-                getPendingPayments(true);
-            }, function() {
-                $scope.loading = false;
-            });
-        };
-
-        $scope.deletePayment = function(eventName, id, credit) {
-            var confirmPromise = $uibModal.open({
-                size:'md',
-                templateUrl:BASE_STATIC_URL + '/pending-payments/delete-or-credit-modal.html',
-                backdrop: 'static',
-                controller: function($scope) {
-                    var ctrl = this;
-                    ctrl.credit = credit;
-                    ctrl.reservationId = id;
-                    ctrl.notify = !credit;
-                    ctrl.cancel = function() {
-                        $scope.$dismiss('canceled');
-                    };
-                    ctrl.confirm = function() {
-                        $scope.$close(ctrl.notify);
-                    };
-                },
-                controllerAs: '$ctrl'
-            }).result;
-
-            confirmPromise.then(function(notify) {
-                return EventService.cancelPayment(eventName, id, credit, notify);
-            }).then(function() {
-                getPendingPayments(true);
-            }, function() {
-                $scope.loading = false;
-            });
-        };
     });
 
     admin.controller('ShowWaitingQueue', ['WaitingQueueService', '$stateParams', '$state', function(WaitingQueueService, $stateParams, $state) {

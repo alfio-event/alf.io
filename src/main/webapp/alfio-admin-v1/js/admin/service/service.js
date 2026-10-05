@@ -156,20 +156,6 @@
             unbindTickets: function(event, category) {
                 return $http['put']('/admin/api/events/'+event.shortName+'/category/'+category.id+'/unbind-tickets').error(HttpErrorHandler.handle);
             },
-            getPendingPayments: function(eventName, forceReload) {
-                service.data.pendingPayments = service.data.pendingPayments || {};
-                var element = service.data.pendingPayments[eventName];
-                var now = moment();
-                if(!angular.isDefined(element) || now.subtract(20, 's').isAfter(element.ts) || forceReload) {
-                    var promise = $http.get('/admin/api/events/'+eventName+'/pending-payments').error(HttpErrorHandler.handle);
-                    element = {
-                        ts: moment(),
-                        payments: promise
-                    };
-                    service.data.pendingPayments[eventName] = element;
-                }
-                return element.payments;
-            },
             editTransactionModal: function(reservationId, type, transactionLoader, callback) {
                 var preloadPromise;
                 if (transactionLoader) {

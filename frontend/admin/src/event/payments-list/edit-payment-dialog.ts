@@ -4,11 +4,13 @@ import {when} from 'lit/directives/when.js';
 import type {SlDialog, SlInput, SlTextarea} from '@shoelace-style/shoelace';
 import {base, dialog, form, modernLayout, retroCompat, row} from '../../styles.ts';
 import {PaymentTransaction} from '../../model/reservation.ts';
+import {DateTimeModification} from '../../model/event.ts';
 import {PurchaseContextType} from '../../model/purchase-context.ts';
 import {dispatchFeedback} from '../../model/dom-events.ts';
-import {fetchJson, putJson, toDateTimeModification} from '../../service/helpers.ts';
+import {fetchJson, postJson, putJson, toDateTimeModification} from '../../service/helpers.ts';
 import {shortReservationId} from '../../service/reservation-format.ts';
 import {formatDate, toDateTimeLocal} from '../../service/date-format.ts';
+import {dialogTitle} from '../../components/prompt-dialog.ts';
 
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -17,9 +19,41 @@ interface PaymentInfoResult {
     data?: { transaction?: PaymentTransaction };
 }
 
+type DialogMode = 'edit' | 'confirm';
+
+interface DialogModeConfig {
+    title: string;
+    description: string;
+    action: string;
+    variant: 'warning' | 'success';
+    successMessage: string;
+    errorMessage: string;
+}
+
+const MODES: Record<DialogMode, DialogModeConfig> = {
+    edit: {
+        title: 'Edit payment for',
+        description: 'Update when the payment has been received and add internal notes.',
+        action: 'Save',
+        variant: 'warning',
+        successMessage: 'Payment updated successfully',
+        errorMessage: 'Failed to update payment',
+    },
+    confirm: {
+        title: 'Confirm payment for',
+        description: 'Register when the payment has been received. Tickets will be sent to the customer.',
+        action: 'Confirm',
+        variant: 'success',
+        successMessage: 'Payment confirmed successfully',
+        errorMessage: 'Failed to confirm payment',
+    },
+};
+
 /**
- * Edits the metadata (payment date and notes) of a confirmed payment.
- * Call open() to load and display the payment. Fires "alfio-dialog-closed" once the dialog is closed.
+ * Collects the metadata (payment date and notes) of a payment:
+ * - open() loads and edits a confirmed payment
+ * - openForConfirmation() confirms a pending (offline) payment. Events only.
+ * Fires "alfio-dialog-closed" once the dialog is closed.
  */
 @customElement('alfio-edit-payment-dialog')
 export class EditPaymentDialog extends LitElement {
@@ -27,6 +61,7 @@ export class EditPaymentDialog extends LitElement {
     @property({ type: String, attribute: 'public-identifier' }) publicIdentifier = '';
     @property({ type: String, attribute: 'time-zone' }) timeZone = 'UTC';
 
+    @state() private mode: DialogMode = 'edit';
     @state() private reservationId = '';
     @state() private transaction: PaymentTransaction | null = null;
     @state() private saving = false;
@@ -56,10 +91,7 @@ export class EditPaymentDialog extends LitElement {
     ];
 
     async open(reservationId: string): Promise<void> {
-        this.reservationId = reservationId;
-        this.transaction = null;
-        this.errorMessage = '';
-        this.saved = false;
+        this.reset('edit', reservationId, null);
         await this.dialog.show();
         try {
             const result = await fetchJson<PaymentInfoResult>(this.baseUrl(`/admin/api/reservation`, `${reservationId}/payment-info`));
@@ -73,18 +105,30 @@ export class EditPaymentDialog extends LitElement {
         }
     }
 
+    async openForConfirmation(reservationId: string): Promise<void> {
+        this.reset('confirm', reservationId, {
+            timestamp: new Date().toISOString(),
+            timestampEditable: true,
+            notes: '',
+        });
+        await this.dialog.show();
+    }
+
+    private reset(mode: DialogMode, reservationId: string, transaction: PaymentTransaction | null): void {
+        this.mode = mode;
+        this.reservationId = reservationId;
+        this.transaction = transaction;
+        this.errorMessage = '';
+        this.saved = false;
+    }
+
     render(): TemplateResult {
+        const config = MODES[this.mode];
         return html`
-            <sl-dialog class="responsive-dialog" label="Edit payment" placement="bottom"
+            <sl-dialog class="responsive-dialog" label="${config.title} ${shortReservationId(this.reservationId)}" placement="bottom"
                        @sl-request-close=${this.onRequestClose}
                        @sl-after-hide=${this.onAfterHide}>
-                <div slot="label" class="dialog-title">
-                    <sl-icon name="cash-coin"></sl-icon>
-                    <div>
-                        <strong>Edit payment for ${shortReservationId(this.reservationId)}</strong>
-                        <small>Update when the payment has been received and add internal notes.</small>
-                    </div>
-                </div>
+                ${dialogTitle('cash-coin', `${config.title} ${shortReservationId(this.reservationId)}`, config.description)}
                 ${when(this.transaction,
                     () => this.renderForm(this.transaction!),
                     () => html`<div class="loading"><sl-spinner></sl-spinner></div>`)}
@@ -94,12 +138,12 @@ export class EditPaymentDialog extends LitElement {
                         <sl-button variant="default" size="large" ?disabled=${this.saving}
                                    @click=${() => this.dialog.hide()}>Cancel</sl-button>
                         <div></div>
-                        <sl-button variant="warning" size="large" ?disabled=${this.saving || this.transaction == null}
+                        <sl-button variant=${config.variant} size="large" ?disabled=${this.saving || this.transaction == null}
                                    @click=${() => this.save()}>
                             ${when(this.saving,
                                 () => html`<sl-spinner slot="prefix"></sl-spinner>`,
                                 () => html`<sl-icon name="check2" slot="prefix"></sl-icon>`)}
-                            Save
+                            ${config.action}
                         </sl-button>
                     </div>
                 </div>
@@ -153,25 +197,31 @@ export class EditPaymentDialog extends LitElement {
         }
         const timestamp = this.form.querySelector<SlInput>('sl-input[name="timestamp"]')!.value;
         const notes = this.form.querySelector<SlTextarea>('sl-textarea[name="notes"]')!.value;
+        const config = MODES[this.mode];
         this.saving = true;
         this.errorMessage = '';
         try {
-            const response = await putJson(this.baseUrl('/admin/api/payments', `reservation/${this.reservationId}`), {
-                timestamp: this.editableTimestamp(timestamp),
-                notes,
-            });
+            const response = await this.submit({ timestamp: this.editableTimestamp(timestamp), notes });
             if (response.ok) {
                 this.saved = true;
                 await this.dialog.hide();
-                dispatchFeedback({ type: 'success', message: 'Payment updated successfully' }, this);
+                dispatchFeedback({ type: 'success', message: config.successMessage }, this);
             } else {
-                this.errorMessage = (await response.text()) || 'Failed to update payment';
+                this.errorMessage = (await response.text()) || config.errorMessage;
             }
         } catch {
-            this.errorMessage = 'Failed to update payment';
+            this.errorMessage = config.errorMessage;
         } finally {
             this.saving = false;
         }
+    }
+
+    private submit(metadata: { timestamp: DateTimeModification | null, notes: string }): Promise<Response> {
+        if (this.mode === 'confirm') {
+            const eventName = encodeURIComponent(this.publicIdentifier);
+            return postJson(`/admin/api/events/${eventName}/pending-payments/${this.reservationId}/confirm`, metadata);
+        }
+        return putJson(this.baseUrl('/admin/api/payments', `reservation/${this.reservationId}`), metadata);
     }
 
     // payments can be backdated up to one year, unless they have already been recorded before that

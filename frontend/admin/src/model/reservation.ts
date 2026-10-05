@@ -31,3 +31,34 @@ export interface PaymentTransaction {
     timestampEditable: boolean;
     notes?: string | null;
 }
+
+export interface PendingPaymentReservation extends ReservationSummary {
+    validity: string;
+    status: string;
+}
+
+export interface PendingPaymentTransaction {
+    id: number;
+    transactionId?: string | null;
+    timestamp: string;
+    priceInCents: number;
+    currency: string;
+    // already formatted by the backend
+    formattedAmount: string;
+    status: string;
+}
+
+export interface PendingPayment {
+    ticketReservation: PendingPaymentReservation;
+    transaction: PendingPaymentTransaction | null;
+    ticketsCount: number;
+}
+
+export interface BulkConfirmationResult {
+    // true if the payment has been confirmed
+    left: boolean;
+    // reservation ID, as written in the uploaded file
+    middle: string;
+    // error message
+    right: string;
+}
