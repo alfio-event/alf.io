@@ -11,6 +11,10 @@ import com.github.gradle.node.variant.VariantComputer
 import com.github.gradle.node.variant.computeNodeDir
 import de.thetaphi.forbiddenapis.gradle.CheckForbiddenApis
 import org.apache.tools.ant.filters.ReplaceTokens
+import org.cyclonedx.Version
+import org.cyclonedx.model.ExternalReference
+import org.cyclonedx.model.License
+import org.cyclonedx.model.LicenseChoice
 import org.gradle.api.plugins.ApplicationPlugin
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
@@ -57,6 +61,7 @@ plugins {
     // id("net.ltgt.errorprone") version "3.1.0"
     alias(libs.plugins.gradle.node)
     alias(libs.plugins.forbiddenapis)
+    alias(libs.plugins.cyclonedx.bom)
 }
 
 // see the comment next to "flyway" in gradle/libs.versions.toml
@@ -550,6 +555,33 @@ tasks.bootJar {
     val excludesFile = File("./lib_exclude")
     if (excludesFile.exists()) {
         exclude(excludesFile.readLines().map { bowerDir + it })
+    }
+}
+
+// use ./gradlew cyclonedxBom to generate it, see
+// https://github.com/CycloneDX/cyclonedx-gradle-plugin#advanced-recipes
+tasks.cyclonedxDirectBom {
+    includeBuildSystem = true
+    // include only runtime dependencies
+    includeConfigs = listOf("runtimeClasspath")
+
+    projectType = org.cyclonedx.model.Component.Type.APPLICATION
+    schemaVersion = Version.VERSION_17
+    componentName = "alf.io"
+    componentVersion = project.version.toString()
+
+    externalReferences = listOf(
+        ExternalReference().apply {
+            type = ExternalReference.Type.WEBSITE
+            url = "https://alf.io"
+        }
+    )
+
+    licenseChoice = LicenseChoice().apply {
+        addLicense(License().apply {
+            name = "GPL-3.0-only"
+            url = "https://www.gnu.org/licenses/gpl-3.0-standalone.html"
+        })
     }
 }
 
