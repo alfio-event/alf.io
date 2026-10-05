@@ -275,6 +275,49 @@ export const dialog = css`
         letter-spacing: normal;
         text-transform: none;
     }
+
+    /* placeholder shown while the dialog content is loading */
+    .dialog-loading {
+        display: grid;
+        place-items: center;
+        min-height: 8rem;
+    }
+`;
+
+/* read-only "label: value" pairs, e.g. the details of a record shown in a dialog */
+export const detailList = css`
+    .detail-list {
+        display: grid;
+        grid-template-columns: minmax(8rem, max-content) 1fr;
+        gap: var(--sl-spacing-x-small) var(--sl-spacing-large);
+        margin: 0;
+    }
+
+    .detail-list dt {
+        color: var(--sl-color-gray-600);
+        font-size: var(--sl-font-size-small);
+        font-weight: var(--sl-font-weight-semibold);
+    }
+
+    .detail-list dd {
+        margin: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .detail-list .monospace {
+        font-family: var(--sl-font-mono);
+        font-size: var(--sl-font-size-small);
+    }
+
+    @media (max-width: 700px) {
+        .detail-list {
+            grid-template-columns: 1fr;
+        }
+
+        .detail-list dd {
+            margin-bottom: var(--sl-spacing-x-small);
+        }
+    }
 `;
 
 export const form = css`
@@ -702,6 +745,11 @@ export const purchaseContextListPage = css`
 
     .page-title-row h1 i {
         font-style: italic;
+    }
+
+    /* one sentence below the title, explaining what the page is for */
+    .page-description {
+        margin: 0 0 var(--sl-spacing-medium);
     }
 
     .filter-toolbar {

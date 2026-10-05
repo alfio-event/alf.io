@@ -1,9 +1,8 @@
-import {css, html, LitElement, nothing, TemplateResult} from 'lit';
+import {css, html, LitElement, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
-import {Task, TaskStatus} from '@lit/task';
-import type {SlInput} from '@shoelace-style/shoelace';
+import {Task} from '@lit/task';
 import {AlfioEvent} from '../../model/event.ts';
 import {PageAndContent, ReservationPaymentDetail} from '../../model/reservation.ts';
 import {AlfioDialogClosed} from '../../model/dom-events.ts';
@@ -33,6 +32,8 @@ import '../../components/payment-method.ts';
 import '../../components/format-date.ts';
 import './edit-payment-dialog.ts';
 import {emptyState} from '../../components/empty-state.ts';
+import {ListSearchController} from '../../components/list-search.ts';
+import {taskContent} from '../../components/task-content.ts';
 
 interface PaymentsListData {
     event: AlfioEvent;
@@ -41,7 +42,6 @@ interface PaymentsListData {
 }
 
 const ITEMS_PER_PAGE = 50;
-const SEARCH_DELAY_MS = 250;
 
 @customElement('alfio-payments-list')
 export class PaymentsList extends LitElement {
@@ -49,10 +49,13 @@ export class PaymentsList extends LitElement {
     @state() private search = '';
     @state() private page = 1;
     @state() private lastData: PaymentsListData | null = null;
-    private searchInput = '';
-    private searchTimer: ReturnType<typeof setTimeout> | undefined;
-    @query('sl-input.list-search') private searchField!: SlInput;
     @query('alfio-edit-payment-dialog') private editDialog!: EditPaymentDialog;
+
+    private readonly searchController = new ListSearchController(this, (search) => {
+        this.search = search;
+        this.page = 1;
+        this.syncLocation();
+    });
 
     private readonly loadDataTask = new Task(this, {
         task: async ([eventName, search, page]): Promise<PaymentsListData> => {
@@ -118,34 +121,13 @@ export class PaymentsList extends LitElement {
         super.connectedCallback();
         const params = readRouteParams();
         this.search = params.get('search') ?? '';
-        this.searchInput = this.search;
+        this.searchController.init(this.search);
         this.page = toPageNumber(params.get('page'));
     }
 
-    disconnectedCallback(): void {
-        super.disconnectedCallback();
-        clearTimeout(this.searchTimer);
-    }
-
     render(): TemplateResult {
-        return html`
-            ${when(this.loadDataTask.status === TaskStatus.ERROR, () => html`
-                <sl-alert open variant="danger">
-                    <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                    Failed to load payments. Please try again.
-                </sl-alert>
-            `)}
-            ${when(this.lastData,
-                () => this.renderContent(this.lastData!),
-                () => this.renderLoading())}
-        `;
-    }
-
-    private renderLoading(): TemplateResult | typeof nothing {
-        if (this.loadDataTask.status === TaskStatus.ERROR) {
-            return nothing;
-        }
-        return html`<div class="loading"><sl-spinner></sl-spinner></div>`;
+        return taskContent(this.loadDataTask, this.lastData, 'Failed to load payments. Please try again.',
+            (data) => this.renderContent(data));
     }
 
     private renderContent(data: PaymentsListData): TemplateResult {
@@ -157,19 +139,7 @@ export class PaymentsList extends LitElement {
                 </div>
                 <hr class="page-separator" />
                 <div class="filter-toolbar">
-                    <div class="filter-left">
-                        <sl-input
-                            class="list-search"
-                            label="Filter payments"
-                            placeholder="Filter Payments"
-                            clearable
-                            .value=${this.searchInput}
-                            @sl-input=${this.onSearchInput}
-                            @sl-clear=${this.clearSearch}
-                        >
-                            <sl-icon slot="prefix" name="search"></sl-icon>
-                        </sl-input>
-                    </div>
+                    <div class="filter-left">${this.searchController.render('payments')}</div>
                     ${when(payments.right > 0, () => html`
                         <div class="filter-right">
                             <sl-button variant="default" href=${this.exportHref()} target="_blank" rel="noopener">
@@ -256,28 +226,6 @@ export class PaymentsList extends LitElement {
             </div>
         `;
     }
-
-    private onSearchInput = (event: Event): void => {
-        this.searchInput = (event.target as SlInput).value;
-        clearTimeout(this.searchTimer);
-        this.searchTimer = setTimeout(() => this.applySearch(), SEARCH_DELAY_MS);
-    };
-
-    private applySearch(): void {
-        clearTimeout(this.searchTimer);
-        if (this.search === this.searchInput) {
-            return;
-        }
-        this.search = this.searchInput;
-        this.page = 1;
-        this.syncLocation();
-    }
-
-    private clearSearch = (): void => {
-        this.searchInput = '';
-        this.applySearch();
-        this.searchField.focus();
-    };
 
     private onPageChange = (event: AlfioPageChange): void => {
         this.page = event.detail.page;

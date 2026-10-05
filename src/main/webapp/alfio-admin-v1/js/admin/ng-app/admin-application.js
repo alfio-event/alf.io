@@ -8,7 +8,7 @@
     var ERROR_CODES = { DUPLICATE:'duplicate', MAX_LENGTH:'maxlength', MIN_LENGTH:'minlength'};
 
     var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives',
-        'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-event-statistic',
+        'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-util', 'alfio-configuration', 'alfio-event-statistic',
         'ui.ace', 'checklist-model', 'group', 'subscriptions', angularDragula(angular)]);
 
     var loadEvent = {
@@ -224,6 +224,26 @@
                 reloadOnSearch: false,
                 template: '<alfio-payments-list data-event-name="{{$ctrl.loadEvent.shortName}}"></alfio-payments-list>',
                 controller: loadEventCtrl,
+                controllerAs: '$ctrl',
+                resolve: loadEvent
+            })
+            .state('events.single.email-log', {
+                url: '/email-log?search&page',
+                // The Lit component owns filtering; query changes must preserve its DOM.
+                reloadOnSearch: false,
+                template: '<alfio-email-log data-purchase-context-type="event" data-public-identifier="{{$ctrl.loadEvent.shortName}}"></alfio-email-log>',
+                controller: loadEventCtrl,
+                controllerAs: '$ctrl',
+                resolve: loadEvent
+            })
+            .state('events.single.email-log-detail', {
+                url: '/email-log/:messageId?search&page',
+                reloadOnSearch: false,
+                template: '<alfio-email-log data-purchase-context-type="event" data-public-identifier="{{$ctrl.loadEvent.shortName}}" data-message-id="{{$ctrl.messageId}}"></alfio-email-log>',
+                controller: ['loadEvent', '$stateParams', function(loadEvent, $stateParams) {
+                    this.loadEvent = loadEvent.data.event;
+                    this.messageId = $stateParams.messageId;
+                }],
                 controllerAs: '$ctrl',
                 resolve: loadEvent
             })

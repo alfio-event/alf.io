@@ -345,6 +345,41 @@ tasks.withType<Test>().configureEach {
     }
 }
 
+// E2E tests (src/test/java/alfio/e2e) run against a live server, so they are excluded from the regular build.
+// Run them with "./gradlew e2eTest" (see .github/workflows/e2e-test.yml for the required environment variables)
+val e2eTag = "e2e"
+
+tasks.test {
+    useJUnitPlatform {
+        excludeTags(e2eTag)
+    }
+}
+
+val e2eTest = tasks.register<Test>("e2eTest") {
+    description = "Runs the browser E2E tests against the server defined by E2E_SERVER_URL."
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform {
+        includeTags(e2eTag)
+    }
+    // the outcome depends on the remote server, not only on the sources
+    outputs.upToDateWhen { false }
+    shouldRunAfter(tasks.test)
+    // the tests drive a remote server: there's no coverage to measure
+    extensions.configure<JacocoTaskExtension> {
+        isEnabled = false
+    }
+}
+
+// The kordamp jacoco plugin creates a report task for each Test task, unless it already exists,
+// using an API that has been removed in Gradle 9 (reporting.baseDir). Register it upfront.
+tasks.register<JacocoReport>("jacocoE2eTestReport") {
+    group = "Reporting"
+    description = "Not used: E2E tests don't collect coverage."
+    executionData(e2eTest.get())
+}
+
 springBoot {
     mainClass = "alfio.config.SpringBootLauncher"
 }

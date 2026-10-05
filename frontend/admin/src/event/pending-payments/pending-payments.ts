@@ -1,8 +1,8 @@
-import {css, html, LitElement, nothing, TemplateResult} from 'lit';
+import {css, html, LitElement, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
-import {Task, TaskStatus} from '@lit/task';
+import {Task} from '@lit/task';
 import type {SlInput} from '@shoelace-style/shoelace';
 import {AlfioEvent} from '../../model/event.ts';
 import {PendingPayment} from '../../model/reservation.ts';
@@ -37,6 +37,7 @@ import './matching-transaction-dialog.ts';
 import './cancel-payment-dialog.ts';
 import './bulk-confirmation.ts';
 import {emptyState} from '../../components/empty-state.ts';
+import {taskContent} from '../../components/task-content.ts';
 
 interface PendingPaymentRow {
     payment: PendingPayment;
@@ -107,9 +108,6 @@ export class PendingPayments extends LitElement {
             alfio-bulk-confirmation {
                 margin-top: var(--sl-spacing-x-large);
             }
-            .page-description {
-                margin: 0 0 var(--sl-spacing-medium);
-            }
             .result-count {
                 color: var(--sl-color-gray-600);
                 font-size: var(--sl-font-size-small);
@@ -139,24 +137,8 @@ export class PendingPayments extends LitElement {
     ];
 
     render(): TemplateResult {
-        return html`
-            ${when(this.loadDataTask.status === TaskStatus.ERROR, () => html`
-                <sl-alert open variant="danger">
-                    <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                    Failed to load pending payments. Please try again.
-                </sl-alert>
-            `)}
-            ${when(this.lastData,
-                () => this.renderContent(this.lastData!),
-                () => this.renderLoading())}
-        `;
-    }
-
-    private renderLoading(): TemplateResult | typeof nothing {
-        if (this.loadDataTask.status === TaskStatus.ERROR) {
-            return nothing;
-        }
-        return html`<div class="loading"><sl-spinner></sl-spinner></div>`;
+        return taskContent(this.loadDataTask, this.lastData, 'Failed to load pending payments. Please try again.',
+            (data) => this.renderContent(data));
     }
 
     private renderContent(data: PendingPaymentsData): TemplateResult {

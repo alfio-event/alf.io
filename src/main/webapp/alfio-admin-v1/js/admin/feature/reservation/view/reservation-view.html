@@ -558,31 +558,12 @@
 
             <uib-tab data-ng-if="$ctrl.isOwner">
                 <uib-tab-heading>Emails sent <span class="badge" ng-bind="$ctrl.emails.length"></span></uib-tab-heading>
-                <div class="table-responsive wMarginTop10px" data-ng-if="$ctrl.emails.length > 0">
-                    <table class="table">
-                        <thead>
-                        <th>Recipient</th>
-                        <th>Subject</th>
-                        <th>Message</th>
-                        <th>Status</th>
-                        <th>Checksum</th>
-                        <th>Requested</th>
-                        <th>Sent</th>
-                        </thead>
-                        <tbody>
-                        <tr data-ng-repeat="email in $ctrl.emails" data-ng-class="{'text-success': email.status === 'SENT', 'text-danger': email.status === 'ERROR', 'text-warning': email.status === 'RETRY'}">
-                            <td data-ng-class-even="'active'" class="cell-wrap">{{::email.recipient}}</td>
-                            <td data-ng-class-even="'active'" class="cell-wrap">{{::email.subject | truncateString}}</td>
-                            <td data-ng-class-even="'active'" class="cell-wrap" data-ng-if="$ctrl.purchaseContextType === 'event'"><a href="#" target="_blank" data-ui-sref="events.single.email-log-detail({eventName: $ctrl.purchaseContext.publicIdentifier, messageId: email.id})">{{::email.message | truncateString:100}}</a></td>
-                            <td data-ng-class-even="'active'" class="cell-wrap" data-ng-if="$ctrl.purchaseContextType === 'subscription'"><a href="#" target="_blank" data-ui-sref="subscriptions.single.email-log-detail({eventName: $ctrl.purchaseContext.publicIdentifier, messageId: email.id})">{{::email.message | truncateString:100}}</a></td>
-                            <td data-ng-class-even="'active'" class="cell-wrap">{{::email.status}}</td>
-                            <td data-ng-class-even="'active'" class="cell-wrap">{{::email.checksum | truncateString:10}}</td>
-                            <td data-ng-class-even="'active'" class="cell-wrap">{{::email.requestTimestamp | formatDate}}</td>
-                            <td data-ng-class-even="'active'" class="cell-wrap">{{::email.sentTimestamp | formatDate}}</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <alfio-email-table class="wMarginTop10px"
+                                   data-messages="{{$ctrl.emails}}"
+                                   data-purchase-context-type="{{$ctrl.purchaseContextType}}"
+                                   data-public-identifier="{{$ctrl.purchaseContext.publicIdentifier}}"
+                                   data-time-zone="{{$ctrl.purchaseContext.timeZone}}"
+                                   data-empty-message="No e-mails have been sent for this reservation"></alfio-email-table>
             </uib-tab>
 
             <uib-tab data-ng-if="$ctrl.isOwner">

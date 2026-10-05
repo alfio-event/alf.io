@@ -82,6 +82,26 @@
                 this.subscriptionId = $stateParams.subscriptionId;
             }]
         })
+        .state('subscriptions.single.email-log', {
+            url: '/email-log?search&page',
+            // The Lit component owns filtering; query changes must preserve its DOM.
+            reloadOnSearch: false,
+            template: '<alfio-email-log data-purchase-context-type="subscription" data-public-identifier="{{ctrl.subscriptionDescriptor.publicIdentifier}}" data-title="{{ctrl.subscriptionDescriptor.title.en}}" data-time-zone="{{ctrl.subscriptionDescriptor.timeZone}}"></alfio-email-log>',
+            controller: ['loadSubscription', function(loadSubscription) {
+                this.subscriptionDescriptor = loadSubscription.data;
+            }],
+            controllerAs: 'ctrl'
+        })
+        .state('subscriptions.single.email-log-detail', {
+            url: '/email-log/:messageId?search&page',
+            reloadOnSearch: false,
+            template: '<alfio-email-log data-purchase-context-type="subscription" data-public-identifier="{{ctrl.subscriptionDescriptor.publicIdentifier}}" data-title="{{ctrl.subscriptionDescriptor.title.en}}" data-time-zone="{{ctrl.subscriptionDescriptor.timeZone}}" data-message-id="{{ctrl.messageId}}"></alfio-email-log>',
+            controller: ['loadSubscription', '$stateParams', function(loadSubscription, $stateParams) {
+                this.subscriptionDescriptor = loadSubscription.data;
+                this.messageId = $stateParams.messageId;
+            }],
+            controllerAs: 'ctrl'
+        })
         .state('subscriptions.single.additional-fields', {
             url:'/additional-fields',
             template: '<alfio-additional-field-list data-public-identifier="{{ctrl.subscriptionDescriptor.publicIdentifier}}" data-purchase-context-type="subscription" data-organization-id="{{ctrl.subscriptionDescriptor.organizationId}}"></alfio-additional-field-list>',

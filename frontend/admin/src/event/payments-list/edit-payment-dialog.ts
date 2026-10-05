@@ -82,11 +82,6 @@ export class EditPaymentDialog extends LitElement {
             sl-dialog {
                 --alfio-dialog-max-width: 40rem;
             }
-            .loading {
-                display: grid;
-                place-items: center;
-                min-height: 8rem;
-            }
         `,
     ];
 
@@ -131,7 +126,7 @@ export class EditPaymentDialog extends LitElement {
                 ${dialogTitle('cash-coin', `${config.title} ${shortReservationId(this.reservationId)}`, config.description)}
                 ${when(this.transaction,
                     () => this.renderForm(this.transaction!),
-                    () => html`<div class="loading"><sl-spinner></sl-spinner></div>`)}
+                    () => html`<div class="dialog-loading"><sl-spinner></sl-spinner></div>`)}
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">

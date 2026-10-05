@@ -1,7 +1,7 @@
 import { css, html, LitElement, nothing, TemplateResult } from 'lit';
-import { customElement, property, query, state } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
-import { Task, TaskStatus } from '@lit/task';
+import { Task } from '@lit/task';
 import { AlfioEvent } from '../../model/event.ts';
 import { EventService } from '../../service/event.ts';
 import { ConfigurationService } from '../../service/configuration.ts';
@@ -15,7 +15,6 @@ import {
     retroCompat,
     textColors,
 } from '../../styles.ts';
-import type { SlInput } from '@shoelace-style/shoelace';
 import { PageAndContent, ReservationSummary } from '../../model/reservation.ts';
 import { readRouteParams, replaceRouteParams, toPageNumber } from '../../service/helpers.ts';
 import {
@@ -29,6 +28,8 @@ import '../../components/pagination-bar.ts';
 import '../../components/payment-method.ts';
 import '../../components/format-date.ts';
 import {emptyState} from '../../components/empty-state.ts';
+import { ListSearchController } from '../../components/list-search.ts';
+import { taskContent } from '../../components/task-content.ts';
 
 type ReservationStatus =
     | 'COMPLETE'
@@ -62,7 +63,6 @@ interface ReservationListData {
 }
 
 const ITEMS_PER_PAGE = 50;
-const SEARCH_DELAY_MS = 250;
 const FIRST_PAGES: Record<TabName, number> = {
     completed: 1,
     'payment-pending': 1,
@@ -125,12 +125,15 @@ export class ReservationsList extends LitElement {
     @property({ type: Boolean, attribute: 'data-completed-only' }) completedOnly = false;
     @property({ type: Array, attribute: 'data-reservations' }) reservations: Reservation[] = [];
     @state() private search = '';
-    private searchInput = '';
     @state() private lastData: ReservationListData | null = null;
     @state() private selectedTab: TabName = 'completed';
     @state() private pages = { ...FIRST_PAGES };
-    private searchTimer: ReturnType<typeof setTimeout> | undefined;
-    @query('sl-input.list-search') private searchField!: SlInput;
+
+    private readonly searchController = new ListSearchController(this, (search) => {
+        this.search = search;
+        this.pages = { ...FIRST_PAGES };
+        this.syncLocation();
+    });
 
     private readonly loadDataTask = new Task(this, {
         task: async ([eventName, purchaseContextType, search, pages]): Promise<ReservationListData> => {
@@ -244,7 +247,7 @@ export class ReservationsList extends LitElement {
         this.loadDataTask.autoRun = !this.completedOnly;
         const params = readRouteParams();
         this.search = params.get('search') ?? '';
-        this.searchInput = this.search;
+        this.searchController.init(this.search);
         this.selectedTab = this.toTabName(params.get('t'));
         this.pages = {
             completed: toPageNumber(params.get('page')),
@@ -253,10 +256,6 @@ export class ReservationsList extends LitElement {
             credited: toPageNumber(params.get('creditedPage')),
             cancelled: toPageNumber(params.get('cancelledPage')),
         };
-    }
-    disconnectedCallback(): void {
-        super.disconnectedCallback();
-        if (this.searchTimer !== undefined) clearTimeout(this.searchTimer);
     }
     render(): TemplateResult {
         if (this.completedOnly) {
@@ -269,28 +268,9 @@ export class ReservationsList extends LitElement {
                   `
                 : this.renderTable(reservations, null);
         }
-        const error =
-            this.loadDataTask.status === TaskStatus.ERROR
-                ? html`
-                      <sl-alert open variant="danger">
-                          <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                          Failed to load reservations. Please try again.
-                      </sl-alert>
-                  `
-                : nothing;
-        return html`
-            ${error}
-            ${this.lastData
-                ? this.renderContent(this.lastData)
-                : this.loadDataTask.status === TaskStatus.ERROR
-                  ? nothing
-                  : this.renderLoading()}
-        `;
-    }
-    private renderLoading(): TemplateResult {
-        return html`
-            <div class="loading"><sl-spinner></sl-spinner></div>
-        `;
+        return taskContent(this.loadDataTask, this.lastData, 'Failed to load reservations. Please try again.', (data) =>
+            this.renderContent(data),
+        );
     }
     private renderContent(data: ReservationListData): TemplateResult {
         const stuck = data.sections.stuck;
@@ -307,19 +287,7 @@ export class ReservationsList extends LitElement {
                 </div>
                 <hr class="page-separator" />
                 <div class="filter-toolbar">
-                    <div class="filter-left">
-                        <sl-input
-                            class="list-search"
-                            label="Filter reservations"
-                            placeholder="Filter Reservations"
-                            clearable
-                            .value=${this.searchInput}
-                            @sl-input=${this.onSearchInput}
-                            @sl-clear=${this.clearSearch}
-                        >
-                            <sl-icon slot="prefix" name="search"></sl-icon>
-                        </sl-input>
-                    </div>
+                    <div class="filter-left">${this.searchController.render('reservations')}</div>
                     ${this.purchaseContextType === 'event' && !data.event?.expired
                         ? html`
                               <div class="filter-right">
@@ -468,25 +436,6 @@ export class ReservationsList extends LitElement {
         return response.json();
     }
 
-    private onSearchInput = (event: Event): void => {
-        this.searchInput = (event.target as SlInput).value;
-        clearTimeout(this.searchTimer);
-        this.searchTimer = setTimeout(() => this.applySearch(), SEARCH_DELAY_MS);
-    };
-
-    private applySearch(): void {
-        clearTimeout(this.searchTimer);
-        if (this.search === this.searchInput) return;
-        this.search = this.searchInput;
-        this.pages = { ...FIRST_PAGES };
-        this.syncLocation();
-    }
-
-    private clearSearch = (): void => {
-        this.searchInput = '';
-        this.applySearch();
-        this.searchField.focus();
-    };
     private onTabShow = (event: CustomEvent<{ name: string }>): void => {
         this.selectedTab = event.detail.name as TabName;
         this.syncLocation();

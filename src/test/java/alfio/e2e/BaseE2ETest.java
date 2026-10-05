@@ -19,9 +19,9 @@ package alfio.e2e;
 import alfio.config.Initializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.Timeout;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.Environment;
@@ -36,8 +36,8 @@ import java.util.concurrent.TimeUnit;
  * Each test runs on its own browser session, against its own event. The event is created and published
  * through the admin console before the test, and deleted afterwards.
  * <p>
+ * E2E tests are excluded from the regular build. Run them with "./gradlew e2eTest".
  * For testing with browserstack you need to set the following ENV Variables:
- * ALFIO_RUN_E2E: true
  * BROWSERSTACK_USERNAME
  * BROWSERSTACK_ACCESS_KEY
  * BROWSERSTACK_PROJECT_NAME
@@ -52,10 +52,13 @@ import java.util.concurrent.TimeUnit;
  */
 @ContextConfiguration(classes = { E2EConfiguration.class })
 @ActiveProfiles(value = {Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST, "e2e"})
-@EnabledIfEnvironmentVariable(named = "ALFIO_RUN_E2E", matches = "true")
+// @Tag is inherited by the subclasses: E2E tests run only through the "e2eTest" Gradle task
+@Tag(BaseE2ETest.E2E_TAG)
 @SpringBootTest
 @Timeout(value = 10L, unit = TimeUnit.MINUTES)
 abstract class BaseE2ETest {
+
+    static final String E2E_TAG = "e2e";
 
     static final boolean CI_RUN = "true".equals(System.getenv("E2E_CI_RUN"));
     private static final List<String> PAYMENT_METHODS = List.of("Stripe: Credit cards", "On site (cash) payment", "Offline payment");

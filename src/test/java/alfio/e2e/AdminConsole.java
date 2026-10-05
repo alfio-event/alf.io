@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static alfio.e2e.E2EUtils.*;
 import static java.util.Objects.requireNonNull;
@@ -174,14 +175,14 @@ class AdminConsole {
      */
     void verifyMessageSent(String slug, String subject) {
         driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/email-log");
-        // columns: recipient, subject, message, status, ...
-        var statusLocator = By.xpath("//table//tr[td[2][contains(normalize-space(.), '" + subject + "')]]/td[4]");
         new WebDriverWait(driver, Duration.ofMinutes(3), Duration.ofSeconds(5))
             .ignoring(StaleElementReferenceException.class)
+            .ignoring(NoSuchElementException.class)
             .withMessage(() -> "message \"" + subject + "\" has not been sent")
             .until(d -> {
-                var statuses = d.findElements(statusLocator).stream()
-                    .map(e -> e.getText().trim())
+                var statuses = emailLogRows().stream()
+                    .filter(row -> row.findElement(By.cssSelector(".subject")).getText().contains(subject))
+                    .map(row -> row.findElement(By.cssSelector(".email-status")).getDomAttribute("data-status"))
                     .toList();
                 if (statuses.contains("ERROR")) {
                     throw new IllegalStateException("message \"" + subject + "\" could not be sent");
@@ -193,6 +194,69 @@ class AdminConsole {
                 d.navigate().refresh();
                 return false;
             });
+    }
+
+    /**
+     * Filters the E-mail log: an unknown term shows the empty state, the customer name shows their e-mails.
+     * Then opens the first e-mail and checks that its content is displayed.
+     */
+    void viewEmail(String slug, String customerName) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/email-log");
+        var emailLog = wait.until(presenceOfElementLocated(By.tagName("alfio-email-log")));
+        var search = findInShadowRoot(findInShadowRoot(emailLog, "sl-input.list-search"), "input");
+        wait.until(d -> search.isDisplayed());
+        search.sendKeys("no-match-" + slug);
+        // the table is replaced when the results change, so it's looked up again every time
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .ignoring(StaleElementReferenceException.class)
+            .withMessage(() -> "expected empty state on the E-mail log")
+            .until(d -> findAllInShadowRoot(emailLogTable(), ".empty-state").stream().anyMatch(e -> e.getText().contains("No e-mails found")));
+        clearInput(search);
+        search.sendKeys(customerName);
+        viewFirstEmail(this::emailLogTable, customerName);
+    }
+
+    /**
+     * Opens the "Emails sent" tab of the customer's reservation, then opens the first e-mail and checks that its content is displayed.
+     */
+    void viewReservationEmail(String slug, String customerName) {
+        verifyConfirmedPayments(slug, 1);
+        var reservationLink = findInRow(driver.findElement(By.tagName("alfio-payments-list")), customerName, ".reservation-id a");
+        driver.navigate().to(reservationLink.getDomProperty("href"));
+        var emailsTab = wait.until(elementToBeClickable(By.xpath("//ul[contains(@class, 'nav-tabs')]//a[contains(normalize-space(.), 'Emails sent')]")));
+        clickWithJs(driver, emailsTab);
+        viewFirstEmail(() -> wait.until(visibilityOfElementLocated(By.tagName("alfio-email-table"))), customerName);
+    }
+
+    private WebElement emailLogTable() {
+        return findInShadowRoot(driver.findElement(By.tagName("alfio-email-log")), "alfio-email-table");
+    }
+
+    private List<WebElement> emailLogRows() {
+        return shadowRows(emailLogTable());
+    }
+
+    private void viewFirstEmail(Supplier<WebElement> emailTable, String customerName) {
+        var row = new WebDriverWait(driver, Duration.ofSeconds(30))
+            .ignoring(StaleElementReferenceException.class)
+            .withMessage(() -> "expected only the e-mails of " + customerName)
+            .until(d -> {
+                var rows = shadowRows(emailTable.get());
+                if (!rows.isEmpty() && rows.stream().allMatch(r -> r.getText().contains(customerName))) {
+                    return rows.getFirst();
+                }
+                return null;
+            });
+        LOGGER.info("viewing e-mail \"{}\"", row.findElement(By.cssSelector(".subject")).getText());
+        clickWithJs(driver, row.findElement(By.cssSelector(".actions-cell sl-button")));
+
+        var dialogHost = findInShadowRoot(emailTable.get(), "alfio-email-message-dialog");
+        var dialog = findInShadowRoot(dialogHost, "sl-dialog");
+        wait.until(d -> dialog.getDomAttribute("open") != null);
+        var body = findInShadowRoot(dialogHost, ".message-body");
+        wait.until(d -> body.getText().contains(customerName));
+        clickWithJs(driver, findInShadowRoot(dialogHost, "div[slot='footer'] sl-button"));
+        wait.until(d -> dialog.getDomAttribute("open") == null);
     }
 
     /**
