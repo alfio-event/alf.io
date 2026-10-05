@@ -194,6 +194,133 @@ class AdminConsole {
     }
 
     /**
+     * Checks that the "Confirmed payments" page lists the expected number of payments.
+     */
+    void verifyConfirmedPayments(String slug, int expectedPayments) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/transactions/");
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .ignoring(StaleElementReferenceException.class)
+            .withMessage(() -> "expected " + expectedPayments + " confirmed payment(s) for " + slug)
+            .until(d -> confirmedPaymentRows().size() == expectedPayments);
+    }
+
+    /**
+     * Edits the notes of a confirmed payment, then checks that the list has been updated.
+     */
+    void editConfirmedPaymentNotes(String slug, String customerName, String notes) {
+        var paymentsList = wait.until(presenceOfElementLocated(By.tagName("alfio-payments-list")));
+        var editButton = wait.until(d -> confirmedPaymentRows().stream()
+            .filter(row -> row.getText().contains(customerName))
+            .findFirst()
+            .map(row -> row.findElement(By.cssSelector("td.actions-cell sl-button")))
+            .orElse(null));
+        LOGGER.info("editing payment notes for {} on {}", customerName, slug);
+        clickWithJs(driver, editButton);
+
+        var dialogHost = findInShadowRoot(paymentsList, "alfio-edit-payment-dialog");
+        var dialog = findInShadowRoot(dialogHost, "sl-dialog");
+        wait.until(d -> dialog.getDomAttribute("open") != null);
+        // the form is rendered once the transaction has been loaded
+        typeInShoelaceControl(findInShadowRoot(dialogHost, "sl-textarea[name='notes']"), "textarea", notes);
+        clickWithJs(driver, findInShadowRoot(dialogHost, "sl-button[variant='warning']"));
+        wait.until(d -> dialog.getDomAttribute("open") == null);
+
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .ignoring(StaleElementReferenceException.class)
+            .withMessage(() -> "notes for " + customerName + " have not been updated")
+            .until(d -> confirmedPaymentRows().stream()
+                .filter(row -> row.getText().contains(customerName))
+                .anyMatch(row -> row.findElement(By.cssSelector("td.notes")).getText().contains(notes)));
+    }
+
+    /**
+     * Checks the pending payments count, both on the events list and on the event detail.
+     * Nothing is displayed when there are no pending payments.
+     */
+    void verifyPendingPaymentsCount(String slug, int expected) {
+        driver.navigate().to(serverBaseUrl + "/admin#/");
+        waitForPendingPaymentsCount(slug, "summary", expected, summaryText(expected));
+        openEventDetail(slug);
+        waitForPendingPaymentsCount(slug, "badge", expected, badgeText(expected));
+    }
+
+    /**
+     * Confirms a pending payment, then checks that the counter in the sidebar is updated without leaving the page.
+     */
+    void confirmPendingPayment(String slug, String customerName) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/pending-payments/");
+        var confirmButton = wait.until(elementToBeClickable(By.xpath("//tr[td[contains(., '" + customerName + "')]]//button[contains(normalize-space(.), 'confirm')]")));
+        LOGGER.info("confirming pending payment for {} on {}", customerName, slug);
+        clickWithJs(driver, confirmButton);
+        // the organizer can specify when the payment has been received
+        clickWithJs(driver, wait.until(elementToBeClickable(By.cssSelector(".modal-dialog button.btn-warning"))));
+        wait.until(invisibilityOfElementLocated(By.cssSelector(".modal-dialog")));
+        wait.until(presenceOfElementLocated(By.xpath("//h3[contains(., 'No pending payments found')]")));
+        waitForPendingPaymentsCount(slug, "badge", 0, badgeText(0));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<WebElement> confirmedPaymentRows() {
+        var paymentsList = driver.findElement(By.tagName("alfio-payments-list"));
+        return (List<WebElement>) ((JavascriptExecutor) driver).executeScript("return Array.from(arguments[0].shadowRoot?.querySelectorAll('tbody tr') ?? []);", paymentsList);
+    }
+
+    private void waitForPendingPaymentsCount(String slug, String display, int expectedCount, String expectedText) {
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "expected " + expectedCount + " pending payment(s) (" + display + ") for " + slug)
+            .until(d -> {
+                var state = (List<?>) ((JavascriptExecutor) d).executeScript(FIND_PENDING_PAYMENTS_COUNT, slug, display);
+                // state is [count, text], or null if the component has not been rendered or the count is not yet available
+                return state != null
+                    && ((Number) state.get(0)).intValue() == expectedCount
+                    && expectedText.equals(state.get(1));
+            });
+    }
+
+    private static String badgeText(int count) {
+        if (count == 0) {
+            return "";
+        }
+        return Integer.toString(count);
+    }
+
+    private static String summaryText(int count) {
+        if (count == 0) {
+            return "";
+        }
+        if (count == 1) {
+            return "1 payment pending";
+        }
+        return count + " payments pending";
+    }
+
+    /**
+     * Finds the first "alfio-pending-payments-count" for the given event and display, also inside shadow roots.
+     */
+    private static final String FIND_PENDING_PAYMENTS_COUNT = """
+        const [eventName, display] = arguments;
+        const find = (root) => {
+            for (const el of root.querySelectorAll('*')) {
+                if (el.tagName === 'ALFIO-PENDING-PAYMENTS-COUNT' && el.eventName === eventName && el.display === display) {
+                    return el;
+                }
+                if (el.shadowRoot) {
+                    const found = find(el.shadowRoot);
+                    if (found != null) {
+                        return found;
+                    }
+                }
+            }
+            return null;
+        };
+        const counter = find(document);
+        if (counter == null || counter.count == null) {
+            return null;
+        }
+        return [counter.count, counter.shadowRoot.textContent.trim().replace(/\\s+/g, ' ')];
+        """;
+
+    /**
      * Shoelace controls render the native input inside their shadow root, and so does the component hosting them.
      * We resolve the elements with JavaScript, because not all the drivers support WebElement::getShadowRoot
      */

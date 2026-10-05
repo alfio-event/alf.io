@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 import static alfio.e2e.E2EUtils.*;
 import static java.util.Map.entry;
 import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElementLocated;
+import static org.openqa.selenium.support.ui.ExpectedConditions.urlContains;
 
 /**
  * For testing with browserstack you need to set the following ENV Variables:
@@ -62,7 +63,7 @@ import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElemen
  * E2E_BROWSER: chrome
  *
  * The event is created, published and deleted through the admin console, using the same browser.
- * The organization must have Stripe configured.
+ * The organization must have Stripe and Bank Transfer configured.
  */
 @ContextConfiguration(classes = { NormalFlowE2ETest.E2EConfiguration.class })
 @ActiveProfiles(value = {Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST, "e2e"})
@@ -72,7 +73,9 @@ class NormalFlowE2ETest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NormalFlowE2ETest.class);
     private static final boolean CI_RUN = "true".equals(System.getenv("E2E_CI_RUN"));
-    private static final List<String> PAYMENT_METHODS = List.of("Stripe: Credit cards", "On site (cash) payment");
+    private static final List<String> PAYMENT_METHODS = List.of("Stripe: Credit cards", "On site (cash) payment", "Offline payment");
+    private static final String CARD_CUSTOMER_LAST_NAME = "McTest";
+    private static final String BANK_TRANSFER_CUSTOMER_LAST_NAME = "McTransfer";
 
     private String serverBaseUrl;
     private String eventUrl;
@@ -137,19 +140,10 @@ class NormalFlowE2ETest {
                 adminConsole.logout();
                 //
                 // the attendee buys a ticket
-                driver.navigate().to(eventUrl);
                 WebDriverWait wait = new WebDriverWait(driver, Duration.of(30, ChronoUnit.SECONDS));
-                wait.until(presenceOfElementLocated(By.cssSelector("div.markdown-content")));
-                page1TicketSelection(browserWebDriver);
-                //wait until page is loaded
-                wait.until(presenceOfElementLocated(By.cssSelector("h2[translate='reservation-page.your-details']")));
-                //
-                page2ContactDetails(browserWebDriver, wait);
-                //wait until page is loaded
-                wait.until(presenceOfElementLocated(By.cssSelector("h2[translate='reservation-page.title']")));
-                //
-                page3Payment(browserWebDriver, wait);
-                WebElement fourthPageElem = new WebDriverWait(driver, Duration.of(30, ChronoUnit.SECONDS)).until(presenceOfElementLocated(By.cssSelector("div.attendees-data")));
+                buyTicket(browserWebDriver, wait, CARD_CUSTOMER_LAST_NAME);
+                page3CreditCardPayment(browserWebDriver, wait);
+                WebElement fourthPageElem = waitForPaymentConfirmation(driver);
                 Assertions.assertNotNull(fourthPageElem);
                 //
                 // the organizer sends a message to the attendees
@@ -157,6 +151,23 @@ class NormalFlowE2ETest {
                 var subject = "E2E message " + slug.substring(4, 12);
                 adminConsole.sendMessageToAttendees(slug, subject, "Hello {{fullName}}, this is a message for {{eventName}}", 1);
                 adminConsole.verifyMessageSent(slug, subject);
+                //
+                // the organizer reviews the confirmed payment, and adds a note to it
+                adminConsole.verifyConfirmedPayments(slug, 1);
+                adminConsole.editConfirmedPaymentNotes(slug, CARD_CUSTOMER_LAST_NAME, "E2E note " + slug.substring(4, 12));
+                adminConsole.verifyPendingPaymentsCount(slug, 0);
+                adminConsole.logout();
+                //
+                // another attendee buys a ticket, and pays by bank transfer
+                buyTicket(browserWebDriver, wait, BANK_TRANSFER_CUSTOMER_LAST_NAME);
+                page3BankTransferPayment(browserWebDriver, wait);
+                //
+                // the organizer gets notified about the pending payment, and confirms it
+                adminConsole.login();
+                adminConsole.verifyPendingPaymentsCount(slug, 1);
+                adminConsole.confirmPendingPayment(slug, BANK_TRANSFER_CUSTOMER_LAST_NAME);
+                adminConsole.verifyPendingPaymentsCount(slug, 0);
+                adminConsole.verifyConfirmedPayments(slug, 2);
                 completed = true;
             } finally {
                 try {
@@ -183,6 +194,18 @@ class NormalFlowE2ETest {
         }
     }
 
+    private void buyTicket(BrowserWebDriver browserWebDriver, WebDriverWait wait, String lastName) {
+        browserWebDriver.driver.navigate().to(eventUrl);
+        wait.until(presenceOfElementLocated(By.cssSelector("div.markdown-content")));
+        page1TicketSelection(browserWebDriver);
+        //wait until page is loaded
+        wait.until(presenceOfElementLocated(By.cssSelector("h2[translate='reservation-page.your-details']")));
+        //
+        page2ContactDetails(browserWebDriver, wait, lastName);
+        //wait until page is loaded
+        wait.until(presenceOfElementLocated(By.cssSelector("h2[translate='reservation-page.title']")));
+    }
+
     private void page1TicketSelection(BrowserWebDriver browserWebDriver) {
         // select 1 ticket
         WebElement dropdown = browserWebDriver.driver.findElement(By.cssSelector("select[formcontrolname=amount]"));
@@ -193,10 +216,10 @@ class NormalFlowE2ETest {
 
     }
 
-    private void page2ContactDetails(BrowserWebDriver browserWebDriver, WebDriverWait wait) {
+    private void page2ContactDetails(BrowserWebDriver browserWebDriver, WebDriverWait wait, String lastName) {
         var driver = browserWebDriver.driver;
         driver.findElement(By.id("first-name")).sendKeys("Test");
-        driver.findElement(By.id("last-name")).sendKeys("McTest");
+        driver.findElement(By.id("last-name")).sendKeys(lastName);
         driver.findElement(By.id("email")).sendKeys(environment.getProperty("e2e.email", "noreply@example.org"));
 
         var invoiceRequested = driver.findElements(By.cssSelector("label[for=invoiceRequested]"));
@@ -234,7 +257,7 @@ class NormalFlowE2ETest {
     }
 
 
-    private void page3Payment(BrowserWebDriver browserWebDriver, WebDriverWait wait) throws InterruptedException {
+    private void page3CreditCardPayment(BrowserWebDriver browserWebDriver, WebDriverWait wait) throws InterruptedException {
         var driver = browserWebDriver.driver;
         selectElement(driver.findElement(By.id("CREDIT_CARD-label")), browserWebDriver);
         wait.until(presenceOfElementLocated(By.cssSelector("#card-element iframe")));
@@ -247,6 +270,45 @@ class NormalFlowE2ETest {
         driver.findElement(By.name("cvc")).sendKeys("123");
         //driver.findElement(By.name("postal")).sendKeys("65000");
         driver.switchTo().defaultContent();
+        acceptTermsAndSubmit(browserWebDriver);
+    }
+
+    /**
+     * Payment providers confirm the payment through a webhook, which might not reach the server
+     * (e.g. when running locally). In that case, we ask the server to check the payment status.
+     */
+    private WebElement waitForPaymentConfirmation(WebDriver driver) {
+        var forceCheckLocator = By.cssSelector("button[translate='reservation.payment-processing.force-check']");
+        return new WebDriverWait(driver, Duration.of(2, ChronoUnit.MINUTES), Duration.of(2, ChronoUnit.SECONDS))
+            .ignoring(StaleElementReferenceException.class)
+            .withMessage("payment has not been confirmed")
+            .until(d -> {
+                var confirmation = d.findElements(By.cssSelector("div.attendees-data"));
+                if (!confirmation.isEmpty()) {
+                    return confirmation.getFirst();
+                }
+                d.findElements(forceCheckLocator).stream()
+                    .filter(WebElement::isDisplayed)
+                    .findFirst()
+                    .ifPresent(button -> {
+                        LOGGER.info("payment confirmation is taking longer than expected, forcing check");
+                        clickWithJs(d, button);
+                    });
+                return null;
+            });
+    }
+
+    private void page3BankTransferPayment(BrowserWebDriver browserWebDriver, WebDriverWait wait) {
+        var driver = browserWebDriver.driver;
+        selectElement(driver.findElement(By.id("BANK_TRANSFER-label")), browserWebDriver);
+        acceptTermsAndSubmit(browserWebDriver);
+        // the reservation is now waiting for the payment
+        wait.until(urlContains("/waiting-payment"));
+        wait.until(presenceOfElementLocated(By.cssSelector(".alert-warning h2")));
+    }
+
+    private void acceptTermsAndSubmit(BrowserWebDriver browserWebDriver) {
+        var driver = browserWebDriver.driver;
         driver.findElements(By.id("privacy-policy-label")).forEach(e -> selectElement(e, browserWebDriver));
         selectElement(driver.findElement(By.id("terms-conditions-label")), browserWebDriver);
 
