@@ -46,6 +46,12 @@ const ONLINE_ACCESS_INFO: AttachmentTexts = {
     previewIcon: 'link-45deg'
 };
 
+/**
+ * Restricts what the e-mail preview can load: styles, fonts and images only. Scripts are already blocked by the iframe sandbox,
+ * this is an additional safety net in case the sandbox is relaxed in the future.
+ */
+const EMAIL_PREVIEW_CSP = "default-src 'none'; img-src http: https: data:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com";
+
 const TEMPLATE_VARIABLES: TemplateVariable[] = [
     {name: 'eventName', description: d => d.event.displayName, tooltip: 'the name of the event'},
     {name: 'fullName', description: () => 'John Doe', tooltip: 'Either the name of the attendee or the name of the reservation owner'},
@@ -203,6 +209,21 @@ export class ComposeMessage extends LitElement {
             .preview-text::part(textarea) {
                 white-space: pre-wrap;
             }
+
+            .preview-label {
+                display: block;
+                margin-bottom: var(--sl-spacing-3x-small);
+                font-size: var(--sl-input-label-font-size-medium);
+            }
+
+            .preview-html {
+                display: block;
+                width: 100%;
+                height: 32rem;
+                border: solid var(--sl-input-border-width) var(--sl-input-border-color);
+                border-radius: var(--sl-input-border-radius-medium);
+                background: white;
+            }
         `
     ];
 
@@ -345,7 +366,17 @@ export class ComposeMessage extends LitElement {
                             <sl-tab-panel name=${m.locale}>
                                 <div class="form-stack">
                                     <sl-input class="preview-subject" label="Subject" readonly filled .value=${m.subjectExample}></sl-input>
-                                    <sl-textarea class="preview-text" label="Message" readonly filled resize="auto" rows="3" .value=${m.textExample}></sl-textarea>
+                                    ${when(preview.htmlPreview?.[m.locale], htmlPreview => html`
+                                        <div>
+                                            <span class="preview-label">Message</span>
+                                            ${this.renderHtmlPreview(htmlPreview)}
+                                        </div>
+                                        <sl-details summary="Plain text version">
+                                            <sl-textarea class="preview-text" readonly filled resize="auto" rows="3" .value=${m.textExample}></sl-textarea>
+                                        </sl-details>
+                                    `, () => html`
+                                        <sl-textarea class="preview-text" label="Message" readonly filled resize="auto" rows="3" .value=${m.textExample}></sl-textarea>
+                                    `)}
                                     ${when(m.attachTicket, () => html`
                                         <sl-alert open variant="neutral">
                                             <sl-icon name=${attachment.previewIcon} slot="icon"></sl-icon>
@@ -371,6 +402,29 @@ export class ComposeMessage extends LitElement {
                 </div>
             </sl-dialog>
         `;
+    }
+
+    /**
+     * The e-mail is rendered in a sandboxed iframe with no permissions other than opening links in a new tab:
+     * it has an opaque origin, so it cannot access the admin session, and it cannot run scripts or submit forms.
+     */
+    private renderHtmlPreview(htmlPreview: string): TemplateResult {
+        return html`
+            <iframe class="preview-html" title="E-mail preview" referrerpolicy="no-referrer"
+                    sandbox="allow-popups allow-popups-to-escape-sandbox"
+                    .srcdoc=${this.withPreviewCsp(htmlPreview)}></iframe>
+        `;
+    }
+
+    private withPreviewCsp(htmlPreview: string): string {
+        const meta = `<meta http-equiv="Content-Security-Policy" content="${EMAIL_PREVIEW_CSP}">`;
+        const head = /<head(\s[^>]*)?>/i.exec(htmlPreview);
+        if (head == null) {
+            return meta + htmlPreview;
+        }
+        // the policy must be declared before any other resource
+        const index = head.index + head[0].length;
+        return htmlPreview.slice(0, index) + meta + htmlPreview.slice(index);
     }
 
     private languageName(locale: string): string {

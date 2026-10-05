@@ -69,7 +69,9 @@ public class CustomMessageManager {
         Map<String, Object> result = new HashMap<>();
         Event event = eventManager.getSingleEvent(eventName, username);
         result.put("affectedUsers", countRecipients(event.getId(), categoryIds));
-        result.put("preview", preview(event, input, username));
+        var preview = preview(event, input, username);
+        result.put("preview", preview);
+        result.put("htmlPreview", htmlPreview(event, preview));
         return result;
     }
 
@@ -163,18 +165,12 @@ public class CustomMessageManager {
                         boolean htmlEmailsEnabled = configuration.get(ConfigurationKeys.ENABLE_HTML_EMAILS).getValueAsBooleanOrDefault();
                         attachments.add(generateTicketAttachment(ticket, optionalReservation.get(), optionalTicketCategory.get(), params.organization, htmlEmailsEnabled));
                     }
-                    templateModel.put("googleWalletEnabled", params.googleWalletEnabled && !onlineTicket);
-                    templateModel.put("appleWalletEnabled", params.appleWalletEnabled && !onlineTicket);
-                    templateModel.put("walletEnabled", (params.googleWalletEnabled || params.appleWalletEnabled) && !onlineTicket);
+                    addTemplateAttributes(templateModel, params.event, params.baseUrl, text,
+                        params.googleWalletEnabled && !onlineTicket, params.appleWalletEnabled && !onlineTicket);
                 } else {
                     // ticket attachment was not requested. Do not display wallet
-                    templateModel.put("googleWalletEnabled", false);
-                    templateModel.put("appleWalletEnabled", false);
-                    templateModel.put("walletEnabled", false);
+                    addTemplateAttributes(templateModel, params.event, params.baseUrl, text, false, false);
                 }
-                templateModel.put("message", text);
-                templateModel.put("event", params.event);
-                templateModel.put("baseUrl", params.baseUrl);
                 notificationManager.sendSimpleEmail(params.event, ticket.getTicketsReservationId(), triple.getMiddle(), subject,
                     () -> templateManager.renderTemplate(params.event, TemplateResource.CUSTOM_MESSAGE, templateModel, Locale.forLanguageTag(ticket.getUserLanguage())), attachments);
             });
@@ -195,6 +191,49 @@ public class CustomMessageManager {
                 .map(m -> MessageModification.preview(m, renderResource(m.getSubject(), event, model, m.getLocale(), templateManager),
                     renderResource(m.getText(), event, model, m.getLocale(), templateManager), m.isAttachTicket()))
                 .toList();
+    }
+
+    /**
+     * Renders the HTML version of the e-mail, as the attendees would receive it, using the already rendered preview text.
+     * Locales whose message would be sent as plain text (HTML e-mails disabled or overridden template) are omitted.
+     *
+     * @return the rendered HTML, by locale
+     */
+    private Map<String, String> htmlPreview(Event event, List<MessageModification> preview) {
+        var configuration = configurationManager.getFor(EnumSet.of(ConfigurationKeys.BASE_URL,
+            ConfigurationKeys.ENABLE_WALLET, ConfigurationKeys.ENABLE_PASS), event.getConfigurationLevel());
+        var baseUrl = configuration.get(ConfigurationKeys.BASE_URL).getRequiredValue();
+        boolean googleWalletEnabled = configuration.get(ConfigurationKeys.ENABLE_WALLET).getValueAsBooleanOrDefault();
+        boolean appleWalletEnabled = configuration.get(ConfigurationKeys.ENABLE_PASS).getValueAsBooleanOrDefault();
+        Map<String, String> result = new HashMap<>();
+        for (MessageModification m : preview) {
+            // wallet passes are not available for online events. See internalSendMessages
+            boolean walletAllowed = m.isAttachTicket() && !event.isOnline();
+            Map<String, Object> templateModel = new HashMap<>();
+            // the wallet links refer to the ticket, which is available only when sending the actual message
+            templateModel.put("ticket", Map.of("publicUuid", "TICKETID"));
+            addTemplateAttributes(templateModel, event, baseUrl, m.getTextExample(),
+                googleWalletEnabled && walletAllowed, appleWalletEnabled && walletAllowed);
+            var htmlPart = templateManager.renderTemplate(event, TemplateResource.CUSTOM_MESSAGE, templateModel, m.getLocale()).getHtmlPart();
+            if (htmlPart != null) {
+                result.put(m.getLocale().toString(), htmlPart);
+            }
+        }
+        return result;
+    }
+
+    private static void addTemplateAttributes(Map<String, Object> templateModel,
+                                              Event event,
+                                              String baseUrl,
+                                              CharSequence message,
+                                              boolean googleWalletEnabled,
+                                              boolean appleWalletEnabled) {
+        templateModel.put("googleWalletEnabled", googleWalletEnabled);
+        templateModel.put("appleWalletEnabled", appleWalletEnabled);
+        templateModel.put("walletEnabled", googleWalletEnabled || appleWalletEnabled);
+        templateModel.put("message", message);
+        templateModel.put("event", event);
+        templateModel.put("baseUrl", baseUrl);
     }
 
     public static Mailer.Attachment generateTicketAttachment(Ticket ticket,

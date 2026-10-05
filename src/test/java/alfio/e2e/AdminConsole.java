@@ -163,6 +163,15 @@ class AdminConsole {
         wait.until(d -> previewDialog.getDomAttribute("open") != null);
         var expectedText = "Potentially affected users: " + expectedRecipients;
         wait.until(d -> String.valueOf(((JavascriptExecutor) d).executeScript("return arguments[0].textContent;", previewDialog)).contains(expectedText));
+        // HTML e-mails are enabled by default: the preview must be rendered in a sandboxed iframe, without scripts nor same-origin access
+        var htmlPreview = findInShadowRoot(composer, "#preview-dialog iframe.preview-html");
+        var sandbox = htmlPreview.getDomAttribute("sandbox");
+        if (sandbox == null || sandbox.contains("allow-scripts") || sandbox.contains("allow-same-origin")) {
+            throw new IllegalStateException("HTML preview is not properly sandboxed: " + sandbox);
+        }
+        if (!String.valueOf(htmlPreview.getDomProperty("srcdoc")).contains("Content-Security-Policy")) {
+            throw new IllegalStateException("HTML preview does not declare a Content-Security-Policy");
+        }
         LOGGER.info("sending message \"{}\" to the attendees of {}", subject, slug);
         clickWithJs(driver, findInShadowRoot(composer, "#send-button"));
         // the dialog is closed once the messages have been enqueued
