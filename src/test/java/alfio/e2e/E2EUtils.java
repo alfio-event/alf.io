@@ -37,12 +37,12 @@ final class E2EUtils {
         return element;
     }
 
-    static void selectElement(WebElement element, NormalFlowE2ETest.BrowserWebDriver driver) {
+    static void selectElement(WebElement element, BrowserWebDriver driver) {
         selectElement(element, driver, Keys.SPACE);
     }
 
-    static void selectElement(WebElement element, NormalFlowE2ETest.BrowserWebDriver driver, Keys keyToSend) {
-        if(driver.browser == NormalFlowE2ETest.BrowserWebDriver.Browser.SAFARI) {
+    static void selectElement(WebElement element, BrowserWebDriver driver, Keys keyToSend) {
+        if(driver.browser == BrowserWebDriver.Browser.SAFARI) {
             element.sendKeys(keyToSend);
         } else {
             // click with js...

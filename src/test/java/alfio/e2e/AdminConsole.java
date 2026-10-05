@@ -45,7 +45,7 @@ class AdminConsole {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminConsole.class);
     private static final String LOGO_RESOURCE = "/images/sample-logo.png";
 
-    private final NormalFlowE2ETest.BrowserWebDriver browserWebDriver;
+    private final BrowserWebDriver browserWebDriver;
     private final WebDriver driver;
     private final WebDriverWait wait;
     private final String serverBaseUrl;
@@ -53,7 +53,7 @@ class AdminConsole {
     private final String password;
     private final String organizationName;
 
-    AdminConsole(NormalFlowE2ETest.BrowserWebDriver browserWebDriver,
+    AdminConsole(BrowserWebDriver browserWebDriver,
                  String serverBaseUrl,
                  String username,
                  String password,

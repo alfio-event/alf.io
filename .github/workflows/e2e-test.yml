@@ -25,7 +25,7 @@ jobs:
                   username: ${{ secrets.BROWSERSTACK_USERNAME }}
                   access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
             - name: Build with Gradle
-              run: ./gradlew test --tests NormalFlowE2ETest -Pverbose
+              run: ./gradlew test --tests 'alfio.e2e.*' -Pverbose
               env:
                   E2E_SERVER_URL: ${{ secrets.E2E_SERVER_URL }}
                   E2E_ADMIN_USERNAME: ${{ secrets.E2E_ADMIN_USERNAME }}
