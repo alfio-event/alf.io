@@ -242,6 +242,39 @@ export const dialog = css`
         font-size: var(--sl-font-size-small);
         font-weight: normal;
     }
+
+    /* form split in .section-card blocks, each one introduced by a .dialog-section-header. Use with modernLayout */
+    .dialog-form {
+        --alfio-section-body-padding: var(--sl-spacing-medium);
+    }
+
+    .dialog-form .section-card {
+        margin-bottom: 0;
+    }
+
+    .dialog-section-header {
+        display: flex;
+        align-items: center;
+        gap: var(--sl-spacing-small);
+        padding: var(--sl-spacing-small) var(--sl-spacing-medium);
+        background: var(--sl-color-gray-50);
+        border-bottom: 1px solid var(--sl-color-gray-200);
+        color: var(--sl-color-gray-700);
+        font-size: var(--sl-font-size-small);
+        font-weight: 600;
+        letter-spacing: 0.025em;
+        text-transform: uppercase;
+    }
+
+    .dialog-section-header sl-icon {
+        color: var(--sl-color-primary-600);
+    }
+
+    .dialog-section-header sl-badge {
+        margin-inline-start: auto;
+        letter-spacing: normal;
+        text-transform: none;
+    }
 `;
 
 export const form = css`
@@ -644,6 +677,123 @@ export const modernLayout = css`
 
     .confirm-dialog-body strong {
         color: var(--sl-color-danger-600);
+    }
+`;
+
+/* layout for list pages hosted in the event/subscription detail (next to the AngularJS sidebar). Use with modernLayout */
+export const purchaseContextListPage = css`
+    :host {
+        display: block;
+    }
+
+    .container {
+        width: min(1140px, calc(100% - 2 * var(--sl-spacing-medium)));
+        margin-left: 122px;
+    }
+
+    .page-title-row {
+        margin-top: calc(var(--alfio-page-top-margin) + var(--sl-spacing-small));
+    }
+
+    .page-title-row h1 i {
+        font-style: italic;
+    }
+
+    .filter-toolbar {
+        align-items: center;
+        margin-bottom: var(--sl-spacing-large);
+    }
+
+    .filter-left,
+    .filter-right {
+        align-items: center;
+    }
+
+    .list-search {
+        flex: 1 1 20rem;
+        margin-top: 0;
+    }
+
+    /* the label is kept for screen readers only */
+    .list-search::part(form-control-label) {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+
+    .loading {
+        display: grid;
+        place-items: center;
+        min-height: 12rem;
+    }
+
+    @media (max-width: 1200px) {
+        .container {
+            margin-inline: auto;
+        }
+    }
+
+    @media (max-width: 700px) {
+        .section-body {
+            padding: var(--sl-spacing-x-small);
+        }
+    }
+`;
+
+/* common cells of reservation tables. Use with modernTable */
+export const reservationTable = css`
+    .table-responsive {
+        margin: 0;
+        width: 100%;
+    }
+
+    .table > thead > tr > th,
+    .table > tbody > tr > td {
+        padding: var(--sl-spacing-small);
+    }
+
+    .reservation-id {
+        font-family: var(--sl-font-mono);
+        font-size: var(--sl-font-size-small);
+    }
+
+    .reservation-id a {
+        color: var(--sl-color-primary-600);
+        text-decoration: none;
+        font-weight: var(--sl-font-weight-normal);
+    }
+
+    .reservation-id a:hover {
+        color: var(--sl-color-primary-700);
+        text-decoration: underline;
+    }
+
+    .email {
+        min-width: 16rem;
+        white-space: nowrap;
+    }
+
+    .amount,
+    .timestamp {
+        white-space: nowrap;
+    }
+
+    .amount {
+        font-weight: var(--sl-font-weight-semibold);
+        text-align: right;
+    }
+
+    .actions-cell {
+        justify-content: flex-end;
+    }
+
+    @media (max-width: 700px) {
+        .hide-small {
+            display: none;
+        }
     }
 `;
 

@@ -19,6 +19,7 @@ import {when} from "lit/directives/when.js";
 import {AlfioDialogClosed, dispatchFeedback} from "../../model/dom-events.ts";
 import {ConfirmationDialogService} from "../../service/confirmation-dialog.ts";
 import {ContentLanguage} from "../../model/purchase-context.ts";
+import "../../components/format-date.ts";
 
 interface Model {
     event: AlfioEvent;
@@ -247,11 +248,11 @@ export class AdditionalItemList extends LitElement {
                             <div class="info-container">
                                 <div class="info">
                                     <strong>Inception</strong>
-                                    <sl-format-date date=${item.inception.date + 'T' + item.inception.time} month="long" day="numeric" year="numeric" hour="numeric" minute="numeric"></sl-format-date>
+                                    <alfio-format-date .date=${item.inception}></alfio-format-date>
                                 </div>
                                 <div class="info">
                                     <strong>Expiration</strong>
-                                    <sl-format-date date=${item.expiration.date + 'T' + item.expiration.time} month="long" day="numeric" year="numeric" hour="numeric" minute="numeric"></sl-format-date>
+                                    <alfio-format-date .date=${item.expiration}></alfio-format-date>
                                 </div>
                                 <div class="info">
                                     <strong>Price</strong>

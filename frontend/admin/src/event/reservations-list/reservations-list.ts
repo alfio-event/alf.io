@@ -5,8 +5,29 @@ import { Task, TaskStatus } from '@lit/task';
 import { AlfioEvent } from '../../model/event.ts';
 import { EventService } from '../../service/event.ts';
 import { ConfigurationService } from '../../service/configuration.ts';
-import { badges, base, modernLayout, modernTable, retroCompat, textColors } from '../../styles.ts';
+import {
+    badges,
+    base,
+    modernLayout,
+    modernTable,
+    purchaseContextListPage,
+    reservationTable,
+    retroCompat,
+    textColors,
+} from '../../styles.ts';
 import type { SlInput } from '@shoelace-style/shoelace';
+import { PageAndContent, ReservationSummary } from '../../model/reservation.ts';
+import { readRouteParams, replaceRouteParams, toPageNumber } from '../../service/helpers.ts';
+import {
+    formatAmount,
+    formatFullName,
+    localizedTitle,
+    reservationIdentifier,
+} from '../../service/reservation-format.ts';
+import { AlfioPageChange } from '../../components/pagination-bar.ts';
+import '../../components/pagination-bar.ts';
+import '../../components/payment-method.ts';
+import '../../components/format-date.ts';
 
 type ReservationStatus =
     | 'COMPLETE'
@@ -21,23 +42,10 @@ type ReservationStatus =
     | 'CANCELLED'
     | 'STUCK';
 type TabName = 'completed' | 'payment-pending' | 'in-process' | 'credited' | 'cancelled';
-interface Reservation {
-    id: string;
-    invoiceNumber?: string;
-    firstName?: string;
-    lastName?: string;
-    fullName?: string;
-    email?: string;
-    paymentMethod?: string;
+interface Reservation extends ReservationSummary {
     paidAmount?: number;
     finalPriceCts: number;
-    currencyCode?: string;
     confirmationTimestamp?: string;
-    eventPublicIdentifier?: string;
-}
-interface PageAndContent<T> {
-    left: T;
-    right: number;
 }
 interface ReservationSection {
     name: TabName;
@@ -121,7 +129,7 @@ export class ReservationsList extends LitElement {
     @state() private selectedTab: TabName = 'completed';
     @state() private pages = { ...FIRST_PAGES };
     private searchTimer: ReturnType<typeof setTimeout> | undefined;
-    @query('sl-input.reservation-search') private searchField!: SlInput;
+    @query('sl-input.list-search') private searchField!: SlInput;
 
     private readonly loadDataTask = new Task(this, {
         task: async ([eventName, purchaseContextType, search, pages]): Promise<ReservationListData> => {
@@ -165,40 +173,9 @@ export class ReservationsList extends LitElement {
         badges,
         modernTable,
         modernLayout,
+        purchaseContextListPage,
+        reservationTable,
         css`
-            :host {
-                display: block;
-            }
-            .container {
-                width: min(1140px, calc(100% - 2 * var(--sl-spacing-medium)));
-                margin-left: 122px;
-            }
-            .page-title-row {
-                margin-top: calc(var(--alfio-page-top-margin) + var(--sl-spacing-small));
-            }
-            .page-title-row h1 i {
-                font-style: italic;
-            }
-            .filter-toolbar {
-                align-items: center;
-                margin-bottom: var(--sl-spacing-large);
-            }
-            .filter-left,
-            .filter-right {
-                align-items: center;
-            }
-            .reservation-search {
-                flex: 1 1 20rem;
-                margin-top: 0;
-            }
-            .reservation-search::part(form-control-label) {
-                position: absolute;
-                width: 1px;
-                height: 1px;
-                overflow: hidden;
-                clip: rect(0 0 0 0);
-                white-space: nowrap;
-            }
             .stuck-reservations {
                 border-color: var(--sl-color-warning-300);
             }
@@ -241,16 +218,6 @@ export class ReservationsList extends LitElement {
                 --sl-icon-size: var(--sl-font-size-4x-large);
                 font-size: var(--sl-font-size-4x-large);
             }
-            .table-responsive {
-                margin: 0;
-                width: 100%;
-            }
-            .table > thead > tr > th {
-                padding: var(--sl-spacing-small);
-            }
-            .table > tbody > tr > td {
-                padding: var(--sl-spacing-small);
-            }
             .table > thead > tr > th:nth-child(1) {
                 width: 10%;
             }
@@ -272,97 +239,22 @@ export class ReservationsList extends LitElement {
             .table > thead > tr > th:nth-child(7) {
                 width: 7%;
             }
-            .reservation-id {
-                font-family: var(--sl-font-mono);
-                font-size: var(--sl-font-size-small);
-            }
-            .reservation-id a {
-                color: var(--sl-color-primary-600);
-                text-decoration: none;
-                font-weight: var(--sl-font-weight-normal);
-            }
-            .reservation-id a:hover {
-                color: var(--sl-color-primary-700);
-                text-decoration: underline;
-            }
-            .email {
-                min-width: 16rem;
-                white-space: nowrap;
-            }
-            .amount,
-            .confirmation {
-                white-space: nowrap;
-            }
-            .amount {
-                font-weight: var(--sl-font-weight-semibold);
-                text-align: right;
-            }
-            .payment-method {
-                display: inline-flex;
-                align-items: center;
-                gap: var(--sl-spacing-2x-small);
-                font-size: var(--sl-font-size-small);
-                color: var(--sl-color-gray-600);
-            }
-            .payment-method sl-icon {
-                color: var(--sl-color-gray-500);
-            }
-            .actions-cell {
-                justify-content: flex-end;
-            }
-            .pagination-bar {
-                display: flex;
-                align-items: center;
-                justify-content: flex-end;
-                gap: var(--sl-spacing-2x-small);
-                padding-block: var(--sl-spacing-medium);
-            }
-            .pagination-summary {
-                flex: 1;
-                order: -1;
-                text-align: left;
-                color: var(--sl-color-neutral-600);
-                font-size: var(--sl-font-size-small);
-                margin: 0;
-            }
-            .pagination-ellipsis {
-                color: var(--sl-color-neutral-500);
-                padding-inline: var(--sl-spacing-x-small);
-            }
-            .loading {
-                display: grid;
-                place-items: center;
-                min-height: 12rem;
-            }
-            @media (max-width: 1200px) {
-                .container {
-                    margin-inline: auto;
-                }
-            }
-            @media (max-width: 700px) {
-                .hide-small {
-                    display: none;
-                }
-                .section-body {
-                    padding: var(--sl-spacing-x-small);
-                }
-            }
         `,
     ];
 
     connectedCallback(): void {
         super.connectedCallback();
         this.loadDataTask.autoRun = !this.completedOnly;
-        const params = new URLSearchParams(window.location.hash.split('?')[1] ?? '');
+        const params = readRouteParams();
         this.search = params.get('search') ?? '';
         this.searchInput = this.search;
         this.selectedTab = this.toTabName(params.get('t'));
         this.pages = {
-            completed: this.toPage(params.get('page')),
-            'payment-pending': this.toPage(params.get('pendingPaymentPage')),
-            'in-process': this.toPage(params.get('pendingPage')),
-            credited: this.toPage(params.get('creditedPage')),
-            cancelled: this.toPage(params.get('cancelledPage')),
+            completed: toPageNumber(params.get('page')),
+            'payment-pending': toPageNumber(params.get('pendingPaymentPage')),
+            'in-process': toPageNumber(params.get('pendingPage')),
+            credited: toPageNumber(params.get('creditedPage')),
+            cancelled: toPageNumber(params.get('cancelledPage')),
         };
     }
     disconnectedCallback(): void {
@@ -415,7 +307,7 @@ export class ReservationsList extends LitElement {
                         Reservations for
                         <i>
                             ${this.purchaseContextTitle ||
-                            (data.event ? this.localizedTitle(data.event) : this.eventName)}
+                            (data.event ? localizedTitle(data.event) : this.eventName)}
                         </i>
                     </h1>
                 </div>
@@ -423,7 +315,7 @@ export class ReservationsList extends LitElement {
                 <div class="filter-toolbar">
                     <div class="filter-left">
                         <sl-input
-                            class="reservation-search"
+                            class="list-search"
                             label="Filter reservations"
                             placeholder="Filter Reservations"
                             clearable
@@ -498,7 +390,14 @@ export class ReservationsList extends LitElement {
                               </div>
                           `
                         : html`
-                              ${this.renderTable(data.left, event)}${this.renderPagination(section.name, data.right)}
+                              ${this.renderTable(data.left, event)}
+                              <alfio-pagination-bar
+                                  .page=${this.pages[section.name]}
+                                  .total=${data.right}
+                                  page-size=${ITEMS_PER_PAGE}
+                                  item-label="${section.label.toLowerCase()} reservations"
+                                  @alfio-page-change=${(e: AlfioPageChange) => this.changePage(section.name, e.detail.page)}
+                              ></alfio-pagination-bar>
                           `}
                 </div>
             </section>
@@ -527,28 +426,24 @@ export class ReservationsList extends LitElement {
                                 <tr>
                                     <td class="reservation-id">
                                         <a href=${this.reservationHref(reservation, event)}>
-                                            ${this.reservationIdentifier(reservation)}
+                                            ${reservationIdentifier(reservation, this.lastData?.useInvoiceNumberAsId ?? false)}
                                         </a>
                                     </td>
-                                    <td>${this.fullName(reservation)}</td>
+                                    <td>${formatFullName(reservation)}</td>
                                     <td class="email hide-small">${reservation.email ?? ''}</td>
                                     <td class="hide-small">
-                                        ${reservation.paymentMethod
-                                            ? html`
-                                                  <span class="payment-method">
-                                                      ${this.paymentMethodIcon(reservation.paymentMethod)
-                                                          ? html`<sl-icon name=${this.paymentMethodIcon(reservation.paymentMethod)}></sl-icon>`
-                                                          : nothing}
-                                                      ${reservation.paymentMethod}
-                                                  </span>
-                                              `
-                                            : ''}
+                                        <alfio-payment-method method=${reservation.paymentMethod ?? ''}></alfio-payment-method>
                                     </td>
                                     <td class="amount">
-                                        ${reservation.finalPriceCts > 0 ? this.formatAmount(reservation) : ''}
+                                        ${reservation.finalPriceCts > 0
+                                            ? formatAmount(reservation.paidAmount, reservation.currencyCode)
+                                            : ''}
                                     </td>
-                                    <td class="confirmation hide-small">
-                                        ${this.formatDate(reservation.confirmationTimestamp, event?.timeZone ?? 'UTC')}
+                                    <td class="timestamp hide-small">
+                                        <alfio-format-date
+                                            date=${reservation.confirmationTimestamp ?? ''}
+                                            time-zone=${event?.timeZone ?? 'UTC'}
+                                        ></alfio-format-date>
                                     </td>
                                     <td class="actions-cell">
                                         <sl-button
@@ -567,54 +462,6 @@ export class ReservationsList extends LitElement {
                     </tbody>
                 </table>
             </div>
-        `;
-    }
-    private renderPagination(name: TabName, total: number): TemplateResult {
-        const page = this.pages[name];
-        const lastPage = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
-        const displayedReservations = Math.min(ITEMS_PER_PAGE, Math.max(0, total - (page - 1) * ITEMS_PER_PAGE));
-        const sectionLabel = sections.find((section) => section.name === name)?.label.toLowerCase() ?? 'reservations';
-        const visiblePages = Array.from({ length: lastPage }, (_, index) => index + 1)
-            .filter((number) => number === 1 || number === lastPage || Math.abs(number - page) <= 2);
-        return html`
-            <nav class="pagination-bar" aria-label="${name} reservations pages">
-                <span class="pagination-summary">
-                    ${lastPage === 1
-                        ? html`${displayedReservations.toLocaleString()} of ${total.toLocaleString()} ${sectionLabel} reservations`
-                        : html`Page ${page} of ${lastPage} · ${displayedReservations.toLocaleString()} of ${total.toLocaleString()} ${sectionLabel} reservations`}
-                </span>
-                <sl-button
-                    size="small"
-                    variant="default"
-                    outline
-                    ?disabled=${page === 1}
-                    @click=${() => this.changePage(name, page - 1)}
-                >
-                    Previous
-                </sl-button>
-                ${visiblePages.map((number, index) => html`
-                    ${index > 0 && number - visiblePages[index - 1] > 1
-                        ? html`<span class="pagination-ellipsis" aria-hidden="true">…</span>`
-                        : nothing}
-                    <sl-button
-                        size="small"
-                        variant=${number === page ? 'primary' : 'default'}
-                        ?outline=${number !== page}
-                        aria-label="Page ${number}"
-                        aria-current=${number === page ? 'page' : nothing}
-                        @click=${() => this.changePage(name, number)}
-                    >${number}</sl-button>
-                `)}
-                <sl-button
-                    size="small"
-                    variant="default"
-                    outline
-                    ?disabled=${page >= lastPage}
-                    @click=${() => this.changePage(name, page + 1)}
-                >
-                    Next
-                </sl-button>
-            </nav>
         `;
     }
     private async loadReservations(
@@ -667,13 +514,7 @@ export class ReservationsList extends LitElement {
             search: this.search,
             t: String(sections.findIndex((section) => section.name === this.selectedTab) + 1),
         });
-        const route = window.location.hash.split('?')[0];
-        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${route}?${params}`);
-    }
-    private fullName(reservation: Reservation): string {
-        return reservation.firstName && reservation.lastName
-            ? `${reservation.firstName} ${reservation.lastName}`
-            : (reservation.fullName ?? '');
+        replaceRouteParams(params);
     }
     private async loadUseInvoiceNumberAsId(
         eventName: string,
@@ -689,24 +530,6 @@ export class ReservationsList extends LitElement {
             return false;
         }
     }
-    private reservationIdentifier(reservation: Reservation): string {
-        if (this.lastData?.useInvoiceNumberAsId) {
-            return reservation.invoiceNumber?.trim() || 'N/A';
-        }
-        return reservation.id.substring(0, 8).toUpperCase();
-    }
-    private paymentMethodIcon(paymentMethod: string): string | undefined {
-        switch (paymentMethod.toUpperCase()) {
-            case 'STRIPE':
-            case 'MOLLIE':
-            case 'SAFERPAY':
-                return 'credit-card';
-            case 'OFFLINE':
-                return 'cash-stack';
-            default:
-                return undefined;
-        }
-    }
     private reservationHref(reservation: Reservation, event: AlfioEvent | null): string {
         return this.purchaseContextType === 'subscription' && !this.completedOnly
             ? `#/subscriptions/${this.organizationId}/${this.eventName}/reservation/${reservation.id}`
@@ -714,33 +537,6 @@ export class ReservationsList extends LitElement {
     }
     private newReservationHref(): string {
         return `#/events/${this.eventName}/reservation/new`;
-    }
-    private formatAmount(reservation: Reservation): string {
-        return reservation.paidAmount == null || reservation.currencyCode == null
-            ? ''
-            : `${reservation.currencyCode} ${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(reservation.paidAmount)}`;
-    }
-    private formatDate(value: string | undefined, timeZone: string): string {
-        if (!value) return '';
-        const normalized = /(?:Z|[+-]\d\d:\d\d)$/i.test(value) ? value : `${value.replace(' ', 'T')}Z`;
-        const parts = new Intl.DateTimeFormat('en-GB', {
-            timeZone,
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hourCycle: 'h23',
-        }).formatToParts(new Date(normalized));
-        const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value ?? '';
-        return `${part('day')}.${part('month')}.${part('year')} ${part('hour')}:${part('minute')}`;
-    }
-    private localizedTitle(event: AlfioEvent): string {
-        return Object.values(event.title)[0] ?? event.shortName;
-    }
-    private toPage(value: string | null): number {
-        const page = Number(value);
-        return Number.isInteger(page) && page > 0 ? page : 1;
     }
     private toTabName(value: string | null): TabName {
         return sections[Number(value) - 1]?.name ?? 'completed';

@@ -34,7 +34,7 @@
         };
     });
 
-    baseServices.service('PurchaseContextService', function(EventService, SubscriptionService, AdminReservationService, $http, HttpErrorHandler) {
+    baseServices.service('PurchaseContextService', function(EventService, SubscriptionService) {
         return {
             findAllReservations: function(type, contextName, page, search, status) {
                 if(type === 'event') {
@@ -42,16 +42,6 @@
                 } else {
                     return SubscriptionService.findAllReservations(contextName, page, search, status);
                 }
-            },
-            findAllPayments: function(type, contextName, page, search) {
-                return $http.get('/admin/api/payments/'+ type + '/' + contextName + '/list', {params: {page: page, search: search}});
-            },
-            editPaymentDetails: function(reservationId, purchaseContextType, publicIdentifier) {
-                var infoLoader = AdminReservationService.paymentInfo(purchaseContextType, publicIdentifier, reservationId);
-                return EventService.editTransactionModal(reservationId, 'edit', infoLoader, function(res) {
-                    return $http.put('/admin/api/payments/'+ purchaseContextType + '/' + publicIdentifier + '/reservation/' + reservationId, res)
-                        .error(HttpErrorHandler.handle);
-                });
             }
         };
     });

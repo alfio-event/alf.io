@@ -102,6 +102,30 @@ export function asNumber(value?: string): number | null {
     return value ?? null;
 }
 
+/**
+ * Reads the query parameters of the current AngularJS route (i.e. after the "?" in the location hash)
+ */
+export function readRouteParams(): URLSearchParams {
+    return <URLSearchParams>new URLSearchParams(window.location.hash.split('?')[1] ?? '');
+}
+
+/**
+ * Replaces the query parameters of the current AngularJS route without triggering a navigation.
+ * The hosting state must declare "reloadOnSearch: false"
+ */
+export function replaceRouteParams(params: URLSearchParams): void {
+    const route = window.location.hash.split('?')[0];
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${route}?${params}`);
+}
+
+export function toPageNumber(value: string | null): number {
+    const page = Number(value);
+    if (Number.isInteger(page) && page > 0) {
+        return page;
+    }
+    return 1;
+}
+
 export function supportsOfflinePayments(allowedPaymentProxies: string[]): boolean {
     return allowedPaymentProxies.includes('OFFLINE');
 }

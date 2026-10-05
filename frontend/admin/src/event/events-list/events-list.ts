@@ -6,6 +6,7 @@ import {Task, TaskStatus} from '@lit/task';
 import {fetchJson, supportsOfflinePayments} from '../../service/helpers.ts';
 import {EventStatistic} from '../../model/event.ts';
 import {badges} from '../../styles.ts';
+import '../../components/format-date.ts';
 
 let sharedActiveEventsPromise: Promise<EventStatistic[]> | null = null;
 
@@ -338,9 +339,7 @@ export class EventsList extends LitElement {
                                 </div>
                                 <div class="event-date">
                                     <sl-icon name="calendar-event" aria-hidden="true"></sl-icon>
-                                    <sl-format-date time-zone=${ev.timeZone} date=${ev.formattedBegin.replace(' ', 'T')} month="short" day="2-digit" year="numeric" hour="2-digit" minute="2-digit" hour-format="24"></sl-format-date>
-                                    <span aria-hidden="true">–</span>
-                                    <sl-format-date time-zone=${ev.timeZone} date=${ev.formattedEnd.replace(' ', 'T')} month="short" day="2-digit" year="numeric" hour="2-digit" minute="2-digit" hour-format="24"></sl-format-date>
+                                    <alfio-format-date date=${ev.formattedBegin} end=${ev.formattedEnd} time-zone=${ev.timeZone}></alfio-format-date>
                                 </div>
                                 <div class="sales-row">
                                     <div class="ticket-summary">

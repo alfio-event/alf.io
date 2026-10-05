@@ -29,6 +29,7 @@ import {
 import {dispatchFeedback} from '../../model/dom-events.ts';
 import {EventService} from '../../service/event.ts';
 import {fetchJson} from '../../service/helpers.ts';
+import '../../components/format-date.ts';
 import type {SlDialog, SlInput, SlSelect, SlSwitch, SlTextarea} from '@shoelace-style/shoelace';
 
 interface PromoCodeWithUsage extends PromoCodeDiscount {
@@ -363,7 +364,7 @@ export class PromoCode extends LitElement {
             }
 
 
-            .code-section sl-format-date {
+            .code-section alfio-format-date {
                 white-space: nowrap;
             }
 
@@ -419,38 +420,6 @@ export class PromoCode extends LitElement {
 
             #usage-details-dialog {
                 --alfio-dialog-max-width: 75rem;
-            }
-
-            .dialog-section-header sl-icon {
-                color: var(--sl-color-primary-600);
-            }
-
-            .promo-dialog-form {
-                --alfio-section-body-padding: var(--sl-spacing-medium);
-            }
-
-            .promo-dialog-form .section-card {
-                margin-bottom: 0;
-            }
-
-            .dialog-section-header {
-                display: flex;
-                align-items: center;
-                gap: var(--sl-spacing-small);
-                padding: var(--sl-spacing-small) var(--sl-spacing-medium);
-                background: var(--sl-color-gray-50);
-                border-bottom: 1px solid var(--sl-color-gray-200);
-                color: var(--sl-color-gray-700);
-                font-size: var(--sl-font-size-small);
-                font-weight: 600;
-                letter-spacing: 0.025em;
-                text-transform: uppercase;
-            }
-
-            .dialog-section-header sl-badge {
-                margin-inline-start: auto;
-                letter-spacing: normal;
-                text-transform: none;
             }
 
         `
@@ -705,18 +674,16 @@ export class PromoCode extends LitElement {
                                         `)}
                                     </td>
                                     <td>
-                                        <sl-format-date
+                                        <alfio-format-date
                                             time-zone=${data.event?.timeZone ?? 'UTC'}
-                                            date=${data.event ? code.formattedStart.replace(' ', 'T') : code.utcStart}
-                                            month="short" day="2-digit" year="numeric" hour="2-digit" minute="2-digit" hour-format="24"
-                                        ></sl-format-date>
+                                            date=${data.event ? code.formattedStart : code.utcStart}
+                                        ></alfio-format-date>
                                     </td>
                                     <td>
-                                        <sl-format-date
+                                        <alfio-format-date
                                             time-zone=${data.event?.timeZone ?? 'UTC'}
-                                            date=${data.event ? code.formattedEnd.replace(' ', 'T') : code.utcEnd}
-                                            month="short" day="2-digit" year="numeric" hour="2-digit" minute="2-digit" hour-format="24"
-                                        ></sl-format-date>
+                                            date=${data.event ? code.formattedEnd : code.utcEnd}
+                                        ></alfio-format-date>
                                     </td>
                                     ${when(!isAccess, () => this.renderDiscountAmount(code))}
                                     ${when(data.forEvent, () => this.renderCategories(code, data))}
@@ -856,7 +823,7 @@ export class PromoCode extends LitElement {
                         <small>${editing ? 'Update validity, usage limits, and details. Code and discount cannot be changed.' : 'Fields marked * are required.'}</small>
                     </div>
                 </div>
-                <form class="promo-dialog-form form-stack" @submit=${(e: Event) => { e.preventDefault(); save(); }}>
+                <form class="dialog-form form-stack" @submit=${(e: Event) => { e.preventDefault(); save(); }}>
                     <div class="section-card">
                         <div class="dialog-section-header"><sl-icon name="tag"></sl-icon>Code</div>
                         <div class="section-body row" style="--alfio-row-cols: 2">
@@ -1104,11 +1071,10 @@ export class PromoCode extends LitElement {
                                         </td>
                                         <td>
                                             ${when(reservation.confirmationTimestamp, () => html`
-                                                <sl-format-date
+                                                <alfio-format-date
                                                     time-zone=${this.usageTimeZone}
                                                     date=${this.asUtcDateTime(reservation.confirmationTimestamp!)}
-                                                    month="short" day="2-digit" year="numeric" hour="2-digit" minute="2-digit" hour-format="24"
-                                                ></sl-format-date>
+                                                ></alfio-format-date>
                                             `, () => html`<span class="text-muted">Not confirmed</span>`)}
                                         </td>
                                     </tr>
