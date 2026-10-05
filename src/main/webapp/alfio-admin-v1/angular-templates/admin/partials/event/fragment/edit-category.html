@@ -177,6 +177,68 @@
     </div>
 </div>
 
+<div ng-if="ticketCategory.id && !ticketCategory.tokenGenerationRequested">
+    <div class="page-header">
+        <h3>Limited-use reservation links</h3>
+        <small>Generate one-use links for this public category. Each link creates a reservation for N tickets when clicked.</small>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-12 col-md-3">
+            <div class="form-group">
+                <label for="reservationLinkQuantity">Quantity</label>
+                <input id="reservationLinkQuantity" type="number" min="1" ng-model="newLink.quantity" class="form-control" placeholder="1" />
+            </div>
+        </div>
+        <div class="col-xs-12 col-md-4">
+            <div class="form-group">
+                <label for="reservationLinkExpiresAt">Expires at</label>
+                <input id="reservationLinkExpiresAt" ng-model="newLink.expiresAtString" single-date no-init-date="true" start-model="newLink.expiresAtModel" class="form-control" />
+            </div>
+        </div>
+        <div class="col-xs-12 col-md-3">
+            <div class="form-group">
+                <label for="reservationLinkGenerate">&nbsp;</label>
+                <button id="reservationLinkGenerate" type="button" class="btn btn-success form-control" ng-click="generateReservationLink()">Generate link</button>
+            </div>
+        </div>
+    </div>
+
+    <table class="table table-condensed" ng-if="reservationLinks.length > 0">
+        <thead>
+            <tr>
+                <th>URL</th>
+                <th>Qty</th>
+                <th>Expires at</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr ng-repeat="link in reservationLinks">
+                <td>
+                    <code>{{reservationLinkUrl(link.token)}}</code>
+                    <button type="button" class="btn btn-xs btn-default" ng-click="copyToClipboard(reservationLinkUrl(link.token))" title="Copy">&#128203;</button>
+                </td>
+                <td>{{link.quantity}}</td>
+                <td>{{link.expiresAt | date:'yyyy-MM-dd HH:mm'}}</td>
+                <td>
+                    <span class="label"
+                          ng-class="{'label-success': displayLinkStatus(link) === 'Active', 'label-default': displayLinkStatus(link) !== 'Active'}">
+                        {{displayLinkStatus(link)}}
+                    </span>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-xs btn-danger"
+                            ng-if="link.status === 'ACTIVE'"
+                            ng-click="revokeReservationLink(link)">Revoke</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <p ng-if="reservationLinks.length === 0" class="text-muted">No links generated yet.</p>
+</div>
+
 <div class="page-header">
     <h3>Tickets validity</h3>
     <small>it will be reflected on Ticket PDF, Apple(tm) Pass, Calendar invitation</small>

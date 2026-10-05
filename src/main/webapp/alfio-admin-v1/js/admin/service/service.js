@@ -120,6 +120,15 @@
                 var url = angular.isDefined(ticketCategory.id) ? ('/admin/api/events/' + event.id + '/categories/' + ticketCategory.id + '/update') : ('/admin/api/events/' + event.id + '/categories/new');
                 return $http['post'](url, ticketCategory).error(HttpErrorHandler.handle);
             },
+            listReservationLinks: function(eventName, categoryId) {
+                return $http.get('/admin/api/events/' + eventName + '/categories/' + categoryId + '/reservation-links').error(HttpErrorHandler.handle);
+            },
+            createReservationLink: function(eventName, categoryId, quantity, expiresAt) {
+                return $http.post('/admin/api/events/' + eventName + '/categories/' + categoryId + '/reservation-links', {quantity: quantity, expiresAt: expiresAt}).error(HttpErrorHandler.handle);
+            },
+            revokeReservationLink: function(eventName, categoryId, linkId) {
+                return $http['delete']('/admin/api/events/' + eventName + '/categories/' + categoryId + '/reservation-links/' + linkId).error(HttpErrorHandler.handle);
+            },
             toggleTicketLocking: function(event, ticket, category) {
                 return $http['put']('/admin/api/events/' + event.shortName + '/categories/' + category.id + '/tickets/' + ticket.id +'/toggle-locking');
             },
@@ -1000,7 +1009,8 @@
 
                             if (resize) {
                                 createImageBitmap(img,{ resizeWidth: width, resizeHeight: height, resizeQuality: 'high' })
-                                    .then(imageBitmap => uploadImage(imageBitmap));
+                                    .then(imageBitmap => uploadImage(imageBitmap))
+                                    .catch(() => uploadImage(img));
                             } else {
                                 uploadImage(img);
                             }
