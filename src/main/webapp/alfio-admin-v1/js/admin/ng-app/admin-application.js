@@ -2091,6 +2091,8 @@
                     return pending;
                 });
                 $scope.pendingReservations = pendingReservations;
+                // keep the counters (sidebar, overview) in sync with the list
+                window.dispatchEvent(new CustomEvent('alfio-pending-payments-changed', { detail: { eventName: $stateParams.eventName } }));
                 $scope.orderByFieldDesc = {};
 
                 $scope.changeSorting = function(field) {

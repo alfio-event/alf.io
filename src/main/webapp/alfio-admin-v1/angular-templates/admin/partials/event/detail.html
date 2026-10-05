@@ -16,7 +16,7 @@
         <h3>Payments to be confirmed</h3>
         <h5>There are reservations for which a payment has not yet confirmed.</h5>
         <a class="btn btn-warning" data-ui-sref="events.single.pending-payments({eventName: event.shortName})">
-            <i class="fa fa-dollar"></i> Pending payments <pending-payments-badge data-event-name="{{event.shortName}}"></pending-payments-badge>
+            <i class="fa fa-dollar"></i> Pending payments <alfio-pending-payments-count event-name="{{event.shortName}}"></alfio-pending-payments-count>
         </a>
     </div>
 

@@ -170,9 +170,6 @@
                 }
                 return element.payments;
             },
-            getPendingPaymentsCount: function(eventName) {
-                return $http.get('/admin/api/events/'+eventName+'/pending-payments-count').error(HttpErrorHandler.handle).then(function(res) {var v = parseInt(res.data); return isNaN(v) ? 0 : v; });
-            },
             editTransactionModal: function(reservationId, type, transactionLoader, callback) {
                 var preloadPromise;
                 if (transactionLoader) {

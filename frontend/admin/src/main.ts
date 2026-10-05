@@ -73,6 +73,7 @@ export { FileUpload } from './components/file-upload';
 export { FormatDate } from './components/format-date';
 export { PaginationBar } from './components/pagination-bar';
 export { PaymentMethod } from './components/payment-method';
+export { PendingPaymentsCount } from './components/pending-payments-count';
 export { PromoCode } from './event/promo-code/promo-code';
 export { ReservationsList } from './event/reservations-list/reservations-list';
 export { ComposeMessage } from './event/compose-message/compose-message';

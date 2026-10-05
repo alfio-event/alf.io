@@ -2,11 +2,12 @@ import {css, html, LitElement, nothing, TemplateResult} from 'lit';
 import {customElement, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
-import {Task, TaskStatus} from '@lit/task';
+import {Task} from '@lit/task';
 import {fetchJson, supportsOfflinePayments} from '../../service/helpers.ts';
 import {EventStatistic} from '../../model/event.ts';
 import {badges} from '../../styles.ts';
 import '../../components/format-date.ts';
+import '../../components/pending-payments-count.ts';
 
 let sharedActiveEventsPromise: Promise<EventStatistic[]> | null = null;
 
@@ -29,11 +30,6 @@ export class EventsList extends LitElement {
     @state()
     isOwner: boolean = !!window.USER_IS_OWNER;
 
-    private readonly loadedCounts = new Set<string>();
-    private readonly retryAttempts = new Map<string, number>();
-    private readonly retryTimers = new Map<string, ReturnType<typeof setTimeout>>();
-    private _taskComplete: boolean = false;
-    private _connectionGeneration: number = 0;
     private readonly loadEventsTask = new Task(this,
         async () => {
             const all = await fetchActiveEvents();
@@ -159,8 +155,7 @@ export class EventsList extends LitElement {
 
         .event-date,
         .ticket-summary,
-        .sales-meta,
-        .payment-warning {
+        .sales-meta {
             display: flex;
             align-items: center;
             gap: var(--sl-spacing-2x-small);
@@ -203,15 +198,12 @@ export class EventsList extends LitElement {
         }
 
         .payment-warning {
-            align-self: center;
             color: var(--sl-color-warning-700);
             font-size: var(--sl-font-size-small);
         }
 
-        .pending-count:empty,
-        .pending-count:empty + .pending-label,
-        .payment-warning:has(.pending-count:empty) {
-            display: none;
+        alfio-pending-payments-count {
+            align-self: center;
         }
 
         .card-footer sl-button::part(base) {
@@ -352,13 +344,7 @@ export class EventsList extends LitElement {
                                         </div>
                                     </div>
                                     ${when(!expired && ev.visibleForCurrentUser && supportsOfflinePayments(ev.allowedPaymentProxies),
-                                        () => html`
-                                            <div class="payment-warning">
-                                                <sl-icon name="exclamation-circle" aria-hidden="true"></sl-icon>
-                                                <strong class="pending-count" data-event-name=${ev.shortName}></strong>
-                                                <span class="pending-label">payments pending</span>
-                                            </div>
-                                        `,
+                                        () => html`<alfio-pending-payments-count event-name=${ev.shortName} display="summary"></alfio-pending-payments-count>`,
                                         () => nothing)}
                                 </div>
                             </div>
@@ -391,95 +377,6 @@ export class EventsList extends LitElement {
         } finally {
             this.loading = false;
         }
-    }
-
-    // --- Lifecycle ---
-
-    connectedCallback(): void {
-        super.connectedCallback();
-        this._connectionGeneration++;
-        this._taskComplete = false;
-        for (const timer of this.retryTimers.values()) {
-            clearTimeout(timer);
-        }
-        this.retryTimers.clear();
-        this.retryAttempts.clear();
-        this.loadedCounts.clear();
-        if (this.loadEventsTask.status === TaskStatus.COMPLETE) {
-            this._taskComplete = true;
-            const gen = this._connectionGeneration;
-            this.updateComplete.then(() => { if (this.isConnected && this._connectionGeneration === gen) { this.loadPendingCounts(); } });
-        }
-    }
-
-    disconnectedCallback(): void {
-        super.disconnectedCallback();
-        this._connectionGeneration++;
-        for (const timer of this.retryTimers.values()) {
-            clearTimeout(timer);
-        }
-        this.retryTimers.clear();
-        this.loadedCounts.clear();
-        this._taskComplete = true;
-    }
-
-    updated(): void {
-        if (this.loadEventsTask.status === TaskStatus.COMPLETE && !this._taskComplete) {
-            this._taskComplete = true;
-            this.loadPendingCounts();
-        }
-    }
-
-    private async loadPendingCounts(): Promise<void> {
-        const events = this.loadEventsTask.value ?? [];
-        for (const ev of events) {
-            this.fetchPendingCount(ev.shortName);
-        }
-    }
-
-    private fetchPendingCount(shortName: string): void {
-        const gen = this._connectionGeneration;
-        if (this.loadedCounts.has(shortName)) {
-            return;
-        }
-        const attempt = this.retryAttempts.get(shortName) ?? 0;
-        if (attempt >= 3) {
-            return;
-        }
-        this.retryAttempts.set(shortName, attempt + 1);
-        const badgeEls = this.renderRoot?.querySelectorAll(`.pending-count[data-event-name="${shortName}"]`);
-        badgeEls?.forEach(async (badge) => {
-            try {
-                const count = await fetchJson<number>(`/admin/api/events/${shortName}/pending-payments-count`);
-                if (this._connectionGeneration === gen) {
-                    badge.textContent = String(count);
-                    this.loadedCounts.add(shortName);
-                    this.retryAttempts.delete(shortName);
-                }
-            } catch {
-                if (this.isConnected && this._connectionGeneration === gen) {
-                    this.scheduleRetry(shortName);
-                }
-            }
-        });
-    }
-
-    private scheduleRetry(shortName: string): void {
-        const gen = this._connectionGeneration;
-        const attempt = this.retryAttempts.get(shortName) ?? 0;
-        if (attempt >= 3) {
-            return;
-        }
-        const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
-        if (this.retryTimers.has(shortName)) {
-            clearTimeout(this.retryTimers.get(shortName));
-        }
-        this.retryTimers.set(shortName, setTimeout(() => {
-            this.retryTimers.delete(shortName);
-            if (this.isConnected && this._connectionGeneration === gen) {
-                this.fetchPendingCount(shortName);
-            }
-        }, delay));
     }
 }
 

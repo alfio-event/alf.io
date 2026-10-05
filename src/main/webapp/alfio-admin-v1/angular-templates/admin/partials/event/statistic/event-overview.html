@@ -44,7 +44,7 @@
                     <div class="panel-body text-info">
                         <div class="row">
                             <div class="col-xs-3 col-md-2"><span class="fa fa-dollar icon-overview"></span></div>
-                            <div class="col-xs-9 col-md-10 text-right"><a ui-sref="events.single.pending-payments({eventName: ctrl.event.shortName})" pending-payments-badge="" data-event-name="{{ctrl.event.shortName}}" data-style-class="event-statistic-highlighted"></a></div>
+                            <div class="col-xs-9 col-md-10 text-right"><a ui-sref="events.single.pending-payments({eventName: ctrl.event.shortName})"><alfio-pending-payments-count event-name="{{ctrl.event.shortName}}" display="summary" show-zero></alfio-pending-payments-count></a></div>
                         </div>
                     </div>
                 </div>

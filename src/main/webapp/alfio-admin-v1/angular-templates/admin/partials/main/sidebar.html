@@ -99,7 +99,7 @@
                         <waiting-queue-display-counter style-class="emulate-nav-pills-link" event-name="ctrl.event.shortName"></waiting-queue-display-counter>
                     </li>
                     <li role="presentation" data-ng-if="ctrl.event && ctrl.offlineEnabled" data-ui-sref-active="active">
-                        <pending-payments-link style-class="emulate-nav-pills-link" data-event="ctrl.event" data-event-name="ctrl.event.shortName"></pending-payments-link>
+                        <a class="emulate-nav-pills-link" data-ui-sref="events.single.pending-payments({eventName: ctrl.event.shortName})"><i class="fa fa-dollar"></i> Pending Payments <alfio-pending-payments-count event-name="{{ctrl.event.shortName}}"></alfio-pending-payments-count></a>
                     </li>
                 </ul>
             </li>
