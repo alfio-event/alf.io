@@ -15,6 +15,7 @@ import {
     formatFullName,
     localizedTitle,
     reservationIdentifier,
+    shortReservationId,
 } from '../../service/reservation-format.ts';
 import {nextSort, sortableHeader, sortItems, SortState, SortValue} from '../../service/table-sort.ts';
 import {
@@ -30,11 +31,11 @@ import {
 } from '../../styles.ts';
 import {EditPaymentDialog} from '../payments-list/edit-payment-dialog.ts';
 import {MatchingTransactionDialog} from './matching-transaction-dialog.ts';
-import {CancelPaymentDialog} from './cancel-payment-dialog.ts';
+import {CancellationDialog, CancellationRequest} from '../../components/cancellation-dialog.ts';
 import '../payments-list/edit-payment-dialog.ts';
 import '../../components/format-date.ts';
 import './matching-transaction-dialog.ts';
-import './cancel-payment-dialog.ts';
+import '../../components/cancellation-dialog.ts';
 import './bulk-confirmation.ts';
 import {emptyState} from '../../components/empty-state.ts';
 import {taskContent} from '../../components/task-content.ts';
@@ -55,9 +56,33 @@ interface PendingPaymentsData {
 type SortKey = 'id' | 'expiration' | 'customer' | 'email' | 'tickets' | 'amount';
 type CancelAction = 'credit' | 'delete';
 
-const CANCEL_FEEDBACK: Record<CancelAction, { success: string, error: string }> = {
-    credit: { success: 'Credit note issued successfully', error: 'Failed to issue the credit note' },
-    delete: { success: 'Reservation deleted successfully', error: 'Failed to delete the reservation' },
+const CANCEL_ACTIONS: Record<CancelAction, { request: (id: string) => CancellationRequest, success: string, error: string }> = {
+    credit: {
+        request: (id) => ({
+            icon: 'arrow-counterclockwise',
+            title: `Issue credit note for ${id}?`,
+            description: 'A credit note will be generated. The reservation will be listed under "Credit Note issued" in the reservations list.',
+            action: 'Proceed',
+            variant: 'warning',
+            options: { notify: 'Send the credit note to the reservation contact person' },
+            defaults: { refund: false, issueCreditNote: false, notify: false },
+        }),
+        success: 'Credit note issued successfully',
+        error: 'Failed to issue the credit note',
+    },
+    delete: {
+        request: (id) => ({
+            icon: 'trash',
+            title: `Delete reservation ${id}?`,
+            description: 'The payment will be discarded and the reservation deleted for good.',
+            action: 'Proceed',
+            variant: 'danger',
+            options: { notify: 'Send a notification email to the reservation contact person' },
+            defaults: { refund: false, issueCreditNote: false, notify: true },
+        }),
+        success: 'Reservation deleted successfully',
+        error: 'Failed to delete the reservation',
+    },
 };
 
 @customElement('alfio-pending-payments')
@@ -69,7 +94,7 @@ export class PendingPayments extends LitElement {
     @state() private lastData: PendingPaymentsData | null = null;
     @query('alfio-edit-payment-dialog') private confirmDialog!: EditPaymentDialog;
     @query('alfio-matching-transaction-dialog') private matchingDialog!: MatchingTransactionDialog;
-    @query('alfio-cancel-payment-dialog') private cancelDialog!: CancelPaymentDialog;
+    @query('alfio-cancellation-dialog') private cancelDialog!: CancellationDialog;
 
     private readonly loadDataTask = new Task(this, {
         task: async ([eventName]): Promise<PendingPaymentsData> => {
@@ -166,7 +191,7 @@ export class PendingPayments extends LitElement {
                 @alfio-dialog-closed=${this.onConfirmDialogClosed}
             ></alfio-edit-payment-dialog>
             <alfio-matching-transaction-dialog time-zone=${data.event.timeZone}></alfio-matching-transaction-dialog>
-            <alfio-cancel-payment-dialog></alfio-cancel-payment-dialog>
+            <alfio-cancellation-dialog></alfio-cancellation-dialog>
         `;
     }
 
@@ -176,7 +201,7 @@ export class PendingPayments extends LitElement {
             <div class="filter-toolbar">
                 <div class="filter-left">
                     <sl-input
-                        class="list-search"
+                        class="list-search label-hidden"
                         label="Filter payments"
                         placeholder="Filter Payments"
                         clearable
@@ -321,7 +346,7 @@ export class PendingPayments extends LitElement {
     }
 
     private async reviewMatchingTransaction(payment: PendingPayment): Promise<void> {
-        const choice = await this.matchingDialog.open(payment);
+        const choice = await this.matchingDialog.open(payment.ticketReservation.id, payment.transaction!);
         const reservationId = payment.ticketReservation.id;
         if (choice === 'confirm') {
             await this.confirmDialog.openForConfirmation(reservationId);
@@ -335,16 +360,15 @@ export class PendingPayments extends LitElement {
 
     private async cancel(payment: PendingPayment, action: CancelAction): Promise<void> {
         const reservationId = payment.ticketReservation.id;
-        const credit = action === 'credit';
-        const choice = await this.cancelDialog.open(reservationId, credit);
+        const config = CANCEL_ACTIONS[action];
+        const choice = await this.cancelDialog.open(config.request(shortReservationId(reservationId)));
         if (choice == null) {
             return;
         }
-        const feedback = CANCEL_FEEDBACK[action];
         await this.perform(
-            () => PendingPaymentsService.cancel(this.eventName, reservationId, credit, choice.notify),
-            feedback.success,
-            feedback.error);
+            () => PendingPaymentsService.cancel(this.eventName, reservationId, action === 'credit', choice.notify),
+            config.success,
+            config.error);
     }
 
     private async perform(action: () => Promise<void>, successMessage: string, errorMessage: string): Promise<void> {

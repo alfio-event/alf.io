@@ -7,6 +7,13 @@ export class UtilService {
         return fetchJson(`/admin/api/utils/render-commonmark?text=${encodeURIComponent(text)}`)
     }
 
+    /**
+     * Countries that can be selected for VAT purposes, as ISO code -> name
+     */
+    static countriesForVat(): Promise<Record<string, string>> {
+        return fetchJson('/admin/api/utils/countriesForVat');
+    }
+
     static async copyValueToClipboard(supplier: () => string, what: string, src: LitElement): Promise<void> {
         if (await UtilService.copyToClipboard(supplier())) {
             dispatchFeedback({type: 'success', message: `${what} copied to Clipboard!`}, src);

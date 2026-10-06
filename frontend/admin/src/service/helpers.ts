@@ -126,6 +126,14 @@ export function toPageNumber(value: string | null): number {
     return 1;
 }
 
+/**
+ * "SOME_CONSTANT" -> "Some constant"
+ */
+export function humanize(value: string): string {
+    const words = value.toLowerCase().replaceAll('_', ' ');
+    return words.charAt(0).toUpperCase() + words.substring(1);
+}
+
 export function supportsOfflinePayments(allowedPaymentProxies: string[]): boolean {
     return allowedPaymentProxies.includes('OFFLINE');
 }

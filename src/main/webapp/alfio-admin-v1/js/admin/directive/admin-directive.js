@@ -238,6 +238,31 @@
         };
     });
 
+    // binds the DOM events fired by a Lit component to scope functions, which receive the event detail:
+    // <alfio-x lit-events="{'alfio-x-changed': ctrl.onChange}"></alfio-x>
+    directives.directive('litEvents', function() {
+        return {
+            restrict: 'A',
+            link: function(scope, element, attrs) {
+                var handlers = scope.$eval(attrs.litEvents) || {};
+                var listeners = Object.keys(handlers).map(function(name) {
+                    var listener = function(e) {
+                        scope.$applyAsync(function() {
+                            handlers[name](e.detail);
+                        });
+                    };
+                    element[0].addEventListener(name, listener);
+                    return {name: name, listener: listener};
+                });
+                scope.$on('$destroy', function() {
+                    listeners.forEach(function(l) {
+                        element[0].removeEventListener(l.name, l.listener);
+                    });
+                });
+            }
+        };
+    });
+
     directives.directive('grabFocus', function() {
         return {
             restrict: 'A',

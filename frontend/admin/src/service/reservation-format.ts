@@ -1,11 +1,14 @@
 import {AlfioEvent} from "../model/event.ts";
 import {ReservationSummary} from "../model/reservation.ts";
 
-export function formatFullName(reservation: ReservationSummary): string {
-    if (reservation.firstName && reservation.lastName) {
-        return `${reservation.firstName} ${reservation.lastName}`;
+/**
+ * Full name of a person (customer, attendee…)
+ */
+export function formatFullName(person: { firstName?: string | null, lastName?: string | null, fullName?: string | null }): string {
+    if (person.firstName && person.lastName) {
+        return `${person.firstName} ${person.lastName}`;
     }
-    return reservation.fullName ?? '';
+    return person.fullName ?? '';
 }
 
 export function reservationIdentifier(reservation: ReservationSummary, useInvoiceNumberAsId: boolean): string {

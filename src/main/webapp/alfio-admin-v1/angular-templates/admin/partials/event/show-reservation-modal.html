@@ -1,3 +1,4 @@
 <div class="modal-body">
-    <div ng-if="ctrl.showReservation && !ctrl.resetReservationView"><reservation-view purchase-context="ctrl.event" purchase-context-type="ctrl.purchaseContextType" reservation-descriptor="ctrl.reservationDescriptor" on-update="ctrl.onUpdate" on-close="ctrl.onClose"></reservation-view></div>
+    <alfio-reservation-detail data-embedded data-purchase-context-type="event" data-public-identifier="{{ctrl.eventName}}" data-reservation-id="{{ctrl.reservationId}}"
+                              lit-events="{'alfio-reservation-changed': ctrl.onUpdate, 'alfio-reservation-close': ctrl.onClose}"></alfio-reservation-detail>
 </div>

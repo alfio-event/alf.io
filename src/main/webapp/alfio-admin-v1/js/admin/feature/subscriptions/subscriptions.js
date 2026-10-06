@@ -52,18 +52,12 @@
         })
         .state('subscriptions.single.view-reservation', {
             url:'/reservation/:reservationId?fromCreation',
-            template: '<reservation-view purchase-context="ctrl.subscriptionDescriptor" purchase-context-type="ctrl.purchaseContextType" reservation-descriptor="ctrl.reservationDescriptor"></reservation-view>',
-            controller: function(loadSubscription, getReservationDescriptor) {
+            template: '<alfio-reservation-detail data-purchase-context-type="subscription" data-public-identifier="{{ctrl.subscriptionDescriptor.publicIdentifier}}" data-organization-id="{{ctrl.subscriptionDescriptor.organizationId}}" data-reservation-id="{{ctrl.reservationId}}"></alfio-reservation-detail>',
+            controller: ['loadSubscription', '$stateParams', function(loadSubscription, $stateParams) {
                 this.subscriptionDescriptor = loadSubscription.data;
-                this.purchaseContextType = 'subscription';
-                this.reservationDescriptor = getReservationDescriptor.data.data;
-            },
-            controllerAs: 'ctrl',
-            resolve: {
-                'getReservationDescriptor': function(AdminReservationService, $stateParams) {
-                    return AdminReservationService.load('subscription', $stateParams.subscriptionId, $stateParams.reservationId);
-                }
-            }
+                this.reservationId = $stateParams.reservationId;
+            }],
+            controllerAs: 'ctrl'
         })
         .state('subscriptions.new', {
             url: '/:organizationId/create',

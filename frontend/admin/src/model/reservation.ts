@@ -1,3 +1,16 @@
+export type ReservationStatus =
+    | 'COMPLETE'
+    | 'IN_PAYMENT'
+    | 'EXTERNAL_PROCESSING_PAYMENT'
+    | 'WAITING_EXTERNAL_CONFIRMATION'
+    | 'OFFLINE_PAYMENT'
+    | 'CUSTOM_OFFLINE_PAYMENT'
+    | 'DEFERRED_OFFLINE_PAYMENT'
+    | 'PENDING'
+    | 'CREDIT_NOTE_ISSUED'
+    | 'CANCELLED'
+    | 'STUCK';
+
 export interface PageAndContent<T> {
     left: T;
     right: number;

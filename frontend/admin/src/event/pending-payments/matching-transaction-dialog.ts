@@ -1,13 +1,16 @@
 import {css, html, TemplateResult} from 'lit';
 import {customElement, property, state} from 'lit/decorators.js';
 import {when} from 'lit/directives/when.js';
-import {base, dialog, modernLayout, retroCompat, row} from '../../styles.ts';
-import {PendingPayment, PendingPaymentTransaction} from '../../model/reservation.ts';
+import {base, detailList, dialog, modernLayout, retroCompat, row} from '../../styles.ts';
+import {PendingPaymentTransaction} from '../../model/reservation.ts';
 import {formatAmount, shortReservationId} from '../../service/reservation-format.ts';
 import {dialogTitle, PromptDialog} from '../../components/prompt-dialog.ts';
+import {detailList as renderDetailList} from '../../components/detail-list.ts';
 import '../../components/format-date.ts';
 
 export type MatchingTransactionChoice = 'confirm' | 'discard';
+
+export type MatchingTransaction = Pick<PendingPaymentTransaction, 'transactionId' | 'timestamp' | 'priceInCents' | 'currency'>;
 
 /**
  * Displays the transaction that the payment provider has matched with a pending payment,
@@ -17,41 +20,25 @@ export type MatchingTransactionChoice = 'confirm' | 'discard';
 export class MatchingTransactionDialog extends PromptDialog<MatchingTransactionChoice> {
     @property({ type: String, attribute: 'time-zone' }) timeZone = 'UTC';
     @state() private reservationId = '';
-    @state() private transaction: PendingPaymentTransaction | null = null;
+    @state() private transaction: MatchingTransaction | null = null;
 
     static readonly styles = [
         base,
         retroCompat,
         dialog,
         modernLayout,
+        detailList,
         row,
         css`
             sl-dialog {
                 --alfio-dialog-max-width: 36rem;
             }
-            dl {
-                display: grid;
-                grid-template-columns: max-content 1fr;
-                gap: var(--sl-spacing-small) var(--sl-spacing-large);
-                margin: 0;
-            }
-            dt {
-                color: var(--sl-color-gray-600);
-                font-weight: var(--sl-font-weight-semibold);
-            }
-            dd {
-                margin: 0;
-                overflow-wrap: anywhere;
-            }
-            .amount {
-                font-weight: var(--sl-font-weight-semibold);
-            }
         `,
     ];
 
-    open(pending: PendingPayment): Promise<MatchingTransactionChoice | null> {
-        this.reservationId = pending.ticketReservation.id;
-        this.transaction = pending.transaction;
+    open(reservationId: string, transaction: MatchingTransaction): Promise<MatchingTransactionChoice | null> {
+        this.reservationId = reservationId;
+        this.transaction = transaction;
         return this.prompt();
     }
 
@@ -81,17 +68,12 @@ export class MatchingTransactionDialog extends PromptDialog<MatchingTransactionC
         `;
     }
 
-    private renderTransaction(transaction: PendingPaymentTransaction): TemplateResult {
-        return html`
-            <dl>
-                <dt>Payment ID</dt>
-                <dd>${transaction.transactionId ?? ''}</dd>
-                <dt>Received on</dt>
-                <dd><alfio-format-date date=${transaction.timestamp} time-zone=${this.timeZone}></alfio-format-date></dd>
-                <dt>Paid amount</dt>
-                <dd class="amount">${formatAmount(transaction.priceInCents / 100, transaction.currency)}</dd>
-            </dl>
-        `;
+    private renderTransaction(transaction: MatchingTransaction): TemplateResult {
+        return renderDetailList([
+            { label: 'Payment ID', value: transaction.transactionId ?? '', monospace: true },
+            { label: 'Received on', value: html`<alfio-format-date date=${transaction.timestamp} time-zone=${this.timeZone}></alfio-format-date>` },
+            { label: 'Paid amount', value: html`<strong>${formatAmount(transaction.priceInCents / 100, transaction.currency)}</strong>` },
+        ]);
     }
 }
 

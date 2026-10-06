@@ -226,15 +226,89 @@ class AdminConsole {
     }
 
     /**
-     * Opens the "Emails sent" tab of the customer's reservation, then opens the first e-mail and checks that its content is displayed.
+     * Opens the "E-mails" tab of the customer's reservation, then opens the first e-mail and checks that its content is displayed.
      */
     void viewReservationEmail(String slug, String customerName) {
         verifyConfirmedPayments(slug, 1);
-        var reservationLink = findInRow(driver.findElement(By.tagName("alfio-payments-list")), customerName, ".reservation-id a");
+        var reservationDetail = openReservationDetail(driver.findElement(By.tagName("alfio-payments-list")), customerName);
+        clickWithJs(driver, findInShadowRoot(reservationDetail, "sl-tab[panel='emails']"));
+        viewFirstEmail(() -> findInShadowRoot(reservationDetail, "alfio-email-table"), customerName);
+    }
+
+    /**
+     * Opens the detail of the customer's (confirmed) reservation, edits the first name of the contact person
+     * and waits for the change to be saved.
+     * @return the contact information displayed after the update
+     */
+    String editReservationContact(String slug, String customerName, String newFirstName) {
+        verifyConfirmedPayments(slug, 1);
+        var reservationDetail = openReservationDetail(driver.findElement(By.tagName("alfio-payments-list")), customerName);
+        clickWithJs(driver, findInShadowRoot(reservationDetail, "section.contact .section-actions sl-button"));
+        var firstName = findInShadowRoot(findInShadowRoot(reservationDetail, "section.contact sl-input[name='firstName']"), "input");
+        wait.until(d -> firstName.isDisplayed());
+        clearInput(firstName);
+        firstName.sendKeys(newFirstName);
+        LOGGER.info("updating contact of {} on {}", customerName, slug);
+        var saveButton = findInShadowRoot(reservationDetail, "sl-button[type='submit']");
+        wait.until(d -> saveButton.getDomAttribute("disabled") == null);
+        clickWithJs(driver, saveButton);
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .ignoring(StaleElementReferenceException.class)
+            .withMessage(() -> "contact of " + customerName + " has not been updated")
+            .until(d -> findInShadowRoot(reservationDetail, "section.contact dl.detail-list").getText().contains(newFirstName + " " + customerName));
+        return findInShadowRoot(reservationDetail, "section.contact dl.detail-list").getText();
+    }
+
+    /**
+     * Opens the customer's pending reservation from the pending payments page, and confirms the payment from its detail.
+     * @return the status of the reservation after the confirmation
+     */
+    String confirmPaymentFromReservationDetail(String slug, String customerName) {
+        var reservationDetail = openReservationDetail(openPendingPayments(slug), customerName);
+        waitForReservationStatus(reservationDetail, "OFFLINE_PAYMENT");
+        LOGGER.info("confirming payment of {} from the reservation detail", customerName);
+        clickWithJs(driver, findInShadowRoot(reservationDetail, ".filter-right sl-button[variant='success']"));
+        submitDialog(reservationDetail, "alfio-edit-payment-dialog", "success");
+        return waitForReservationStatus(reservationDetail, "COMPLETE");
+    }
+
+    /**
+     * Opens the customer's pending reservation from the pending payments page, and cancels it from its detail.
+     * @return the status of the reservation after the cancellation
+     */
+    String cancelReservationFromDetail(String slug, String customerName) {
+        var reservationDetail = openReservationDetail(openPendingPayments(slug), customerName);
+        waitForReservationStatus(reservationDetail, "OFFLINE_PAYMENT");
+        LOGGER.info("cancelling reservation of {} from the reservation detail", customerName);
+        clickWithJs(driver, findInShadowRoot(reservationDetail, ".filter-right sl-dropdown sl-icon-button"));
+        clickWithJs(driver, findInShadowRoot(reservationDetail, "sl-menu-item[value='cancel']"));
+        submitDialog(reservationDetail, "alfio-cancellation-dialog", "danger");
+        return waitForReservationStatus(reservationDetail, "CANCELLED");
+    }
+
+    /**
+     * Follows the link to the customer's reservation in a list (payments, pending payments)
+     */
+    private WebElement openReservationDetail(WebElement list, String customerName) {
+        var reservationLink = findInRow(list, customerName, ".reservation-id a");
         driver.navigate().to(reservationLink.getDomProperty("href"));
-        var emailsTab = wait.until(elementToBeClickable(By.xpath("//ul[contains(@class, 'nav-tabs')]//a[contains(normalize-space(.), 'Emails sent')]")));
-        clickWithJs(driver, emailsTab);
-        viewFirstEmail(() -> wait.until(visibilityOfElementLocated(By.tagName("alfio-email-table"))), customerName);
+        return wait.until(presenceOfElementLocated(By.tagName("alfio-reservation-detail")));
+    }
+
+    /**
+     * Waits until the reservation has the expected status (the page is reloaded asynchronously after each operation)
+     * @return the current status
+     */
+    private String waitForReservationStatus(WebElement reservationDetail, String expectedStatus) {
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .ignoring(StaleElementReferenceException.class)
+            .withMessage(() -> "expected reservation status " + expectedStatus)
+            .until(d -> expectedStatus.equals(reservationStatus(reservationDetail)));
+        return reservationStatus(reservationDetail);
+    }
+
+    private String reservationStatus(WebElement reservationDetail) {
+        return findInShadowRoot(reservationDetail, ".page-title-row .reservation-status").getDomAttribute("data-status");
     }
 
     private WebElement emailLogTable() {
@@ -389,7 +463,7 @@ class AdminConsole {
         clickWithJs(driver, findInRow(pendingPayments, customerName, ".actions-cell sl-dropdown sl-icon-button"));
         LOGGER.info("deleting pending payment for {} on {}", customerName, slug);
         clickWithJs(driver, findInRow(pendingPayments, customerName, "sl-menu-item[value='delete']"));
-        submitDialog(pendingPayments, "alfio-cancel-payment-dialog", "danger");
+        submitDialog(pendingPayments, "alfio-cancellation-dialog", "danger");
         waitForEmptyState(pendingPayments, "No pending payments found");
         waitForPendingPaymentsCount(slug, "badge", 0, badgeText(0));
     }

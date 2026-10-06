@@ -1,9 +1,9 @@
 import { callDelete, fetchJson, postJson, putJson } from "./helpers";
 
 export class CustomPaymentMethodsService {
-    async getPaymentMethodsForOrganization(organizationId: number) {
+    async getPaymentMethodsForOrganization(organizationId: number, includeDeleted = false) {
         const result = await fetchJson<CustomOfflinePayment[]>(
-            `/admin/api/configuration/organizations/${organizationId}/payment-method`
+            `/admin/api/configuration/organizations/${organizationId}/payment-method?includeDeleted=${includeDeleted}`
         );
         return result;
     }

@@ -8,7 +8,7 @@ import {EmailMessage} from '../model/email-message.ts';
 import {dispatchFeedback} from '../model/dom-events.ts';
 import {EmailLogService} from '../service/email-log.ts';
 import {dialogTitle} from '../components/prompt-dialog.ts';
-import {emailStatus, emailStatusBadge} from './email-status.ts';
+import {emailStatusBadge} from './email-status.ts';
 import '../components/format-date.ts';
 
 /**
@@ -28,7 +28,6 @@ export class EmailMessageDialog extends LitElement {
         base,
         retroCompat,
         badges,
-        emailStatus,
         modernLayout,
         detailList,
         dialog,

@@ -39,7 +39,7 @@ export class ListSearchController implements ReactiveController {
         return html`
             <sl-input
                 ${ref(this.field)}
-                class="list-search"
+                class="list-search label-hidden"
                 label="Filter ${itemLabel}"
                 placeholder="Filter ${capitalized}"
                 clearable

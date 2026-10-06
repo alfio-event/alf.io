@@ -73,9 +73,7 @@
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/additional-fields-to-collect/additional-fields-to-collect.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/tickets-remove/tickets-remove.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/ticket-full-data/ticket-full-data.js"></script>
 
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation-cancel/reservation-cancel.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/resources/show/resources-show.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/resources/edit/resources-edit.js"></script>
@@ -83,7 +81,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/reservation.service.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/import/reservation-import.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/view/reservation-view.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/tickets-list/tickets-list.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/label-template/label-template.js"></script>

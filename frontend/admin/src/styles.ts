@@ -56,6 +56,11 @@ export const badges = css`
     sl-badge::part(base) {
         border: unset;
     }
+
+    /* rendered by statusBadge() (components/status-badge.ts) */
+    .status-badge sl-icon {
+        margin-inline-end: var(--sl-spacing-3x-small);
+    }
 `;
 
 export const spacing = css`
@@ -627,6 +632,42 @@ export const modernLayout = css`
         font-size: var(--sl-font-size-large);
     }
 
+    /* form controls whose label is kept for screen readers only (e.g. the column header already describes them) */
+    .label-hidden::part(form-control-label) {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+
+    .section-header > sl-icon {
+        color: var(--sl-color-primary-600);
+    }
+
+    /* buttons on the right side of the header, rendered by sectionCard() */
+    .section-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sl-spacing-x-small);
+        margin-inline-start: auto;
+    }
+
+    /* .section-card highlighting settings that must be changed with care */
+    .section-card.danger-zone {
+        border-color: var(--sl-color-danger-300);
+    }
+
+    .section-card.danger-zone .section-header {
+        background: var(--sl-color-danger-50);
+        border-bottom-color: var(--sl-color-danger-200);
+    }
+
+    .section-card.danger-zone .section-header > sl-icon {
+        color: var(--sl-color-danger-600);
+    }
+
     .section-body {
         padding: var(--alfio-section-body-padding, var(--sl-spacing-small));
     }
@@ -767,15 +808,6 @@ export const purchaseContextListPage = css`
         margin-top: 0;
     }
 
-    /* the label is kept for screen readers only */
-    .list-search::part(form-control-label) {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip: rect(0 0 0 0);
-        white-space: nowrap;
-    }
 
     .loading {
         display: grid;

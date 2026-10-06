@@ -15,7 +15,7 @@ import {
     retroCompat,
     textColors,
 } from '../../styles.ts';
-import { PageAndContent, ReservationSummary } from '../../model/reservation.ts';
+import { PageAndContent, ReservationStatus, ReservationSummary } from '../../model/reservation.ts';
 import { readRouteParams, replaceRouteParams, toPageNumber } from '../../service/helpers.ts';
 import {
     formatAmount,
@@ -31,18 +31,6 @@ import {emptyState} from '../../components/empty-state.ts';
 import { ListSearchController } from '../../components/list-search.ts';
 import { taskContent } from '../../components/task-content.ts';
 
-type ReservationStatus =
-    | 'COMPLETE'
-    | 'IN_PAYMENT'
-    | 'EXTERNAL_PROCESSING_PAYMENT'
-    | 'WAITING_EXTERNAL_CONFIRMATION'
-    | 'OFFLINE_PAYMENT'
-    | 'CUSTOM_OFFLINE_PAYMENT'
-    | 'DEFERRED_OFFLINE_PAYMENT'
-    | 'PENDING'
-    | 'CREDIT_NOTE_ISSUED'
-    | 'CANCELLED'
-    | 'STUCK';
 type TabName = 'completed' | 'payment-pending' | 'in-process' | 'credited' | 'cancelled';
 interface Reservation extends ReservationSummary {
     paidAmount?: number;

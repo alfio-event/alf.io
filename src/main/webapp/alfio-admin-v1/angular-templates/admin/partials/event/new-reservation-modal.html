@@ -1,4 +1,5 @@
 <div class="modal-body">
-    <div ng-if="!ctrl.showReservation"><reservation-create event="ctrl.event" on-cancel="ctrl.close" on-creation="ctrl.onCreation" fast-creation="true"></reservation-create></div>
-    <div ng-if="ctrl.showReservation && !ctrl.resetReservationView"><reservation-view purchase-context="ctrl.event" purchase-context-type="ctrl.purchaseContextType" reservation-descriptor="ctrl.reservationDescriptor" on-update="ctrl.onUpdate" on-confirm="ctrl.onConfirm"></reservation-view></div>
+    <div ng-if="!ctrl.reservationId"><reservation-create event="ctrl.event" on-cancel="ctrl.close" on-creation="ctrl.onCreation" fast-creation="true"></reservation-create></div>
+    <alfio-reservation-detail ng-if="ctrl.reservationId" data-embedded data-purchase-context-type="event" data-public-identifier="{{ctrl.event.shortName}}" data-reservation-id="{{ctrl.reservationId}}"
+                              lit-events="{'alfio-reservation-changed': ctrl.onUpdate, 'alfio-reservation-close': ctrl.close}"></alfio-reservation-detail>
 </div>

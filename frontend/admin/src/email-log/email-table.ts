@@ -6,7 +6,7 @@ import {PurchaseContextType} from '../model/purchase-context.ts';
 import {EmailMessage} from '../model/email-message.ts';
 import {badges, base, modernLayout, modernTable, reservationTable, retroCompat} from '../styles.ts';
 import {emptyState} from '../components/empty-state.ts';
-import {emailStatus, emailStatusBadge} from './email-status.ts';
+import {emailStatusBadge} from './email-status.ts';
 import {EmailMessageDialog} from './email-message-dialog.ts';
 import '../components/format-date.ts';
 import './email-message-dialog.ts';
@@ -29,7 +29,6 @@ export class EmailTable extends LitElement {
         base,
         retroCompat,
         badges,
-        emailStatus,
         modernTable,
         modernLayout,
         reservationTable,

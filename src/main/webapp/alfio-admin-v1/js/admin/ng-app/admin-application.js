@@ -331,20 +331,15 @@
                 }
             }).state('events.single.view-reservation', {
                 url:'/reservation/:reservationId?fromCreation',
-                template: '<reservation-view purchase-context="ctrl.event" purchase-context-type="ctrl.purchaseContextType" reservation-descriptor="ctrl.reservationDescriptor"></reservation-view>',
-                controller: function(getEvent, getReservationDescriptor) {
-                    this.event = getEvent.data.event;
-                    this.purchaseContextType = 'event';
-                    this.reservationDescriptor = getReservationDescriptor.data.data;
+                template: '<alfio-reservation-detail data-purchase-context-type="event" data-public-identifier="{{ctrl.eventName}}" data-reservation-id="{{ctrl.reservationId}}" data-from-creation="{{ctrl.fromCreation}}"></alfio-reservation-detail>',
+                controller: function($stateParams) {
+                    this.eventName = $stateParams.eventName;
+                    this.reservationId = $stateParams.reservationId;
+                    this.fromCreation = $stateParams.fromCreation;
                 },
                 controllerAs: 'ctrl',
                 data: {
                     view: 'VIEW_RESERVATION'
-                },
-                resolve: {
-                    'getReservationDescriptor': function(AdminReservationService, $stateParams) {
-                        return AdminReservationService.load('event', $stateParams.eventName, $stateParams.reservationId);
-                    }
                 }
             }).state('events.single.polls-list', {
                 url:'/polls/list',
@@ -1712,30 +1707,16 @@
                 templateUrl: BASE_STATIC_URL + '/event/show-reservation-modal.html',
                 backdrop: 'static',
                 controllerAs: 'ctrl',
-                controller: function($scope) {
+                controller: function() {
                     var ctrl = this;
-                    ctrl.event = event;
-                    ctrl.purchaseContextType = 'event';
-                    ctrl.resetReservationView = false;
-                    ctrl.showReservation = false;
-                    var reservationInfo = {eventName: event.shortName, reservationId: ticket.ticketsReservationId}
-                    AdminReservationService.load('event', reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
-                        ctrl.reservationDescriptor = reservationDescriptor.data.data;
-                        ctrl.showReservation = true;
-                    });
-
+                    ctrl.eventName = event.shortName;
+                    ctrl.reservationId = ticket.ticketsReservationId;
                     ctrl.onClose = function() {
                         modal.close();
-                    }
-
-                    ctrl.onUpdate = function(reservationInfo) {
-                        ctrl.resetReservationView = true;
+                    };
+                    ctrl.onUpdate = function() {
                         reloadTickets();
-                        AdminReservationService.load('event', reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
-                            ctrl.reservationDescriptor = reservationDescriptor.data.data;
-                            ctrl.resetReservationView = false;
-                        })
-                    }
+                    };
                 }
             })
         };
@@ -1748,38 +1729,31 @@
                 templateUrl: BASE_STATIC_URL + '/event/new-reservation-modal.html',
                 backdrop: 'static',
                 controllerAs: 'ctrl',
-                controller: function($scope) {
+                controller: function() {
                     var ctrl = this;
-                    ctrl.resetReservationView = false;
-                    ctrl.showReservation = false;
+                    ctrl.reservationId = null;
                     ctrl.event = event;
-                    ctrl.purchaseContextType = 'event';
                     ctrl.close = function() {
                         modal.close();
                     };
-                    ctrl.onCreation = function(reservationInfo) {
-                        AdminReservationService.confirm('event', reservationInfo.eventName, reservationInfo.reservationId).then(function(reservationDescriptor) {
-                            ctrl.onConfirm(reservationInfo);
-                        }, function(err) {
-                            AdminReservationService.load('event', reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
-                                ctrl.reservationDescriptor = reservationDescriptor.data.data;
-                                ctrl.showReservation = true;
-                            });
-                        });
-                    };
-                    ctrl.onUpdate = function(reservationInfo) {
-                        ctrl.resetReservationView = true;
-                        AdminReservationService.load('event', reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
-                            ctrl.reservationDescriptor = reservationDescriptor.data.data;
-                            ctrl.resetReservationView = false;
-                        })
-                    };
-
-                    ctrl.onConfirm = function(reservationInfo) {
+                    var onConfirm = function(reservationId) {
                         reloadTickets();
                         modal.close();
-                        parentScope.selection.freeText = reservationInfo.reservationId;
-                    }
+                        parentScope.selection.freeText = reservationId;
+                    };
+                    ctrl.onCreation = function(reservationInfo) {
+                        AdminReservationService.confirm('event', reservationInfo.eventName, reservationInfo.reservationId).then(function() {
+                            onConfirm(reservationInfo.reservationId);
+                        }, function() {
+                            // let the user fix the reservation
+                            ctrl.reservationId = reservationInfo.reservationId;
+                        });
+                    };
+                    ctrl.onUpdate = function(detail) {
+                        if (detail.confirmed) {
+                            onConfirm(detail.reservationId);
+                        }
+                    };
                 }
             });
         };
