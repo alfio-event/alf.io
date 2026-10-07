@@ -85,7 +85,7 @@ class AdminConsole {
         if (logoutLink == null) {
             // on small screens the link is inside the collapsed menu
             driver.findElement(By.cssSelector("button.navbar-toggle")).click();
-            logoutLink = wait.until(d -> findDisplayed(logoutLinkLocator));
+            logoutLink = wait.until(_ -> findDisplayed(logoutLinkLocator));
         }
         logoutLink.click();
         // the page is reloaded after logout, and the user is sent back to the login page
@@ -145,7 +145,7 @@ class AdminConsole {
         driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/compose-custom-message");
         var composer = wait.until(presenceOfElementLocated(By.tagName("alfio-compose-message")));
         // the editor has one tab for each language of the event
-        var tabs = wait.until(d -> {
+        var tabs = wait.until(_ -> {
             var found = findAllInShadowRoot(composer, "#messages-editor sl-tab");
             return found.isEmpty() ? null : found;
         });
@@ -158,7 +158,7 @@ class AdminConsole {
         clickWithJs(driver, findInShadowRoot(composer, "#preview-button"));
 
         var previewDialog = findInShadowRoot(composer, "#preview-dialog");
-        wait.until(d -> previewDialog.getDomAttribute("open") != null);
+        wait.until(_ -> previewDialog.getDomAttribute("open") != null);
         var expectedText = "Potentially affected users: " + expectedRecipients;
         wait.until(d -> String.valueOf(((JavascriptExecutor) d).executeScript("return arguments[0].textContent;", previewDialog)).contains(expectedText));
         // HTML e-mails are enabled by default: the preview must be rendered in a sandboxed iframe, without scripts nor same-origin access
@@ -173,7 +173,7 @@ class AdminConsole {
         LOGGER.info("sending message \"{}\" to the attendees of {}", subject, slug);
         clickWithJs(driver, findInShadowRoot(composer, "#send-button"));
         // the dialog is closed once the messages have been enqueued
-        wait.until(d -> previewDialog.getDomAttribute("open") == null);
+        wait.until(_ -> previewDialog.getDomAttribute("open") == null);
     }
 
     /**
@@ -211,13 +211,13 @@ class AdminConsole {
         driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/email-log");
         var emailLog = wait.until(presenceOfElementLocated(By.tagName("alfio-email-log")));
         var search = findInShadowRoot(findInShadowRoot(emailLog, "sl-input.list-search"), "input");
-        wait.until(d -> search.isDisplayed());
+        wait.until(_ -> search.isDisplayed());
         search.sendKeys("no-match-" + slug);
         // the table is replaced when the results change, so it's looked up again every time
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .ignoring(StaleElementReferenceException.class)
             .withMessage(() -> "expected empty state on the E-mail log")
-            .until(d -> findAllInShadowRoot(emailLogTable(), ".empty-state").stream().anyMatch(e -> e.getText().contains("No e-mails found")));
+            .until(_ -> findAllInShadowRoot(emailLogTable(), ".empty-state").stream().anyMatch(e -> e.getText().contains("No e-mails found")));
         clearInput(search);
         search.sendKeys(customerName);
         viewFirstEmail(this::emailLogTable, customerName);
@@ -243,18 +243,54 @@ class AdminConsole {
         var reservationDetail = openReservationDetail(driver.findElement(By.tagName("alfio-payments-list")), customerName);
         clickWithJs(driver, findInShadowRoot(reservationDetail, "section.contact .section-actions sl-button"));
         var firstName = findInShadowRoot(findInShadowRoot(reservationDetail, "section.contact sl-input[name='firstName']"), "input");
-        wait.until(d -> firstName.isDisplayed());
+        wait.until(_ -> firstName.isDisplayed());
         clearInput(firstName);
         firstName.sendKeys(newFirstName);
         LOGGER.info("updating contact of {} on {}", customerName, slug);
         var saveButton = findInShadowRoot(reservationDetail, "sl-button[type='submit']");
-        wait.until(d -> saveButton.getDomAttribute("disabled") == null);
+        wait.until(_ -> saveButton.getDomAttribute("disabled") == null);
         clickWithJs(driver, saveButton);
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .ignoring(StaleElementReferenceException.class)
             .withMessage(() -> "contact of " + customerName + " has not been updated")
-            .until(d -> findInShadowRoot(reservationDetail, "section.contact dl.detail-list").getText().contains(newFirstName + " " + customerName));
+            .until(_ -> findInShadowRoot(reservationDetail, "section.contact dl.detail-list").getText().contains(newFirstName + " " + customerName));
         return findInShadowRoot(reservationDetail, "section.contact dl.detail-list").getText();
+    }
+
+    /**
+     * Turns the customer into a company and enters a new address, field by field.
+     * @return the contact information displayed after saving
+     */
+    String editReservationBillingDetails(String slug, String customerName, String companyName, String addressLine1, String zip, String city) {
+        verifyConfirmedPayments(slug, 1);
+        var reservationDetail = openReservationDetail(driver.findElement(By.tagName("alfio-payments-list")), customerName);
+        clickWithJs(driver, findInShadowRoot(reservationDetail, "section.contact .section-actions sl-button"));
+        clickWithJs(driver, findInShadowRoot(reservationDetail, "section.contact sl-radio-button[value='company']"));
+        replaceInShoelaceInput(reservationDetail, "companyName", companyName);
+        // a free text address can be converted to a structured one
+        var addressSwitch = findAllInShadowRoot(reservationDetail, "section.contact sl-button.address-switch");
+        if (!addressSwitch.isEmpty()) {
+            clickWithJs(driver, addressSwitch.getFirst());
+        }
+        replaceInShoelaceInput(reservationDetail, "addressLine1", addressLine1);
+        replaceInShoelaceInput(reservationDetail, "zip", zip);
+        replaceInShoelaceInput(reservationDetail, "city", city);
+        LOGGER.info("updating billing details of {} on {}", customerName, slug);
+        var saveButton = findInShadowRoot(reservationDetail, "sl-button[type='submit']");
+        wait.until(_ -> saveButton.getDomAttribute("disabled") == null);
+        clickWithJs(driver, saveButton);
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .ignoring(StaleElementReferenceException.class)
+            .withMessage(() -> "billing details of " + customerName + " have not been updated")
+            .until(_ -> findInShadowRoot(reservationDetail, "section.contact dl.detail-list").getText().contains(addressLine1));
+        return findInShadowRoot(reservationDetail, "section.contact dl.detail-list").getText();
+    }
+
+    private void replaceInShoelaceInput(WebElement host, String name, String text) {
+        var input = findInShadowRoot(findInShadowRoot(host, "section.contact sl-input[name='" + name + "']"), "input");
+        wait.until(_ -> input.isDisplayed());
+        clearInput(input);
+        input.sendKeys(text);
     }
 
     /**
@@ -301,7 +337,7 @@ class AdminConsole {
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .ignoring(StaleElementReferenceException.class)
             .withMessage(() -> "expected reservation status " + expectedStatus)
-            .until(d -> expectedStatus.equals(reservationStatus(reservationDetail)));
+            .until(_ -> expectedStatus.equals(reservationStatus(reservationDetail)));
         return reservationStatus(reservationDetail);
     }
 
@@ -321,7 +357,7 @@ class AdminConsole {
         var row = new WebDriverWait(driver, Duration.ofSeconds(30))
             .ignoring(StaleElementReferenceException.class)
             .withMessage(() -> "expected only the e-mails of " + customerName)
-            .until(d -> {
+            .until(_ -> {
                 var rows = shadowRows(emailTable.get());
                 if (!rows.isEmpty() && rows.stream().allMatch(r -> r.getText().contains(customerName))) {
                     return rows.getFirst();
@@ -333,11 +369,11 @@ class AdminConsole {
 
         var dialogHost = findInShadowRoot(emailTable.get(), "alfio-email-message-dialog");
         var dialog = findInShadowRoot(dialogHost, "sl-dialog");
-        wait.until(d -> dialog.getDomAttribute("open") != null);
+        wait.until(_ -> dialog.getDomAttribute("open") != null);
         var body = findInShadowRoot(dialogHost, ".message-body");
-        wait.until(d -> body.getText().contains(customerName));
+        wait.until(_ -> body.getText().contains(customerName));
         clickWithJs(driver, findInShadowRoot(dialogHost, "div[slot='footer'] sl-button"));
-        wait.until(d -> dialog.getDomAttribute("open") == null);
+        wait.until(_ -> dialog.getDomAttribute("open") == null);
     }
 
     /**
@@ -348,7 +384,7 @@ class AdminConsole {
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .ignoring(StaleElementReferenceException.class)
             .withMessage(() -> "expected " + expectedPayments + " confirmed payment(s) for " + slug)
-            .until(d -> confirmedPaymentRows().size() == expectedPayments);
+            .until(_ -> confirmedPaymentRows().size() == expectedPayments);
     }
 
     /**
@@ -356,7 +392,7 @@ class AdminConsole {
      */
     void editConfirmedPaymentNotes(String slug, String customerName, String notes) {
         var paymentsList = wait.until(presenceOfElementLocated(By.tagName("alfio-payments-list")));
-        var editButton = wait.until(d -> confirmedPaymentRows().stream()
+        var editButton = wait.until(_ -> confirmedPaymentRows().stream()
             .filter(row -> row.getText().contains(customerName))
             .findFirst()
             .map(row -> row.findElement(By.cssSelector("td.actions-cell sl-button")))
@@ -366,16 +402,16 @@ class AdminConsole {
 
         var dialogHost = findInShadowRoot(paymentsList, "alfio-edit-payment-dialog");
         var dialog = findInShadowRoot(dialogHost, "sl-dialog");
-        wait.until(d -> dialog.getDomAttribute("open") != null);
+        wait.until(_ -> dialog.getDomAttribute("open") != null);
         // the form is rendered once the transaction has been loaded
         typeInShoelaceControl(findInShadowRoot(dialogHost, "sl-textarea[name='notes']"), "textarea", notes);
         clickWithJs(driver, findInShadowRoot(dialogHost, "sl-button[variant='warning']"));
-        wait.until(d -> dialog.getDomAttribute("open") == null);
+        wait.until(_ -> dialog.getDomAttribute("open") == null);
 
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .ignoring(StaleElementReferenceException.class)
             .withMessage(() -> "notes for " + customerName + " have not been updated")
-            .until(d -> confirmedPaymentRows().stream()
+            .until(_ -> confirmedPaymentRows().stream()
                 .filter(row -> row.getText().contains(customerName))
                 .anyMatch(row -> row.findElement(By.cssSelector("td.notes")).getText().contains(notes)));
     }
@@ -397,7 +433,7 @@ class AdminConsole {
     void filterPendingPayments(String slug, String customerName) {
         var pendingPayments = openPendingPayments(slug);
         var search = findInShadowRoot(findInShadowRoot(pendingPayments, "sl-input.list-search"), "input");
-        wait.until(d -> search.isDisplayed());
+        wait.until(_ -> search.isDisplayed());
         search.sendKeys("no-match-" + slug);
         waitForEmptyState(pendingPayments, "No pending payments match your filter");
         clearInput(search);
@@ -405,7 +441,7 @@ class AdminConsole {
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .ignoring(StaleElementReferenceException.class)
             .withMessage(() -> "expected only the pending payment of " + customerName)
-            .until(d -> {
+            .until(_ -> {
                 var rows = shadowRows(pendingPayments);
                 return rows.size() == 1 && rows.getFirst().getText().contains(customerName);
             });
@@ -440,12 +476,12 @@ class AdminConsole {
         var fileInput = findInShadowRoot(findInShadowRoot(bulkConfirmation, "alfio-file-upload"), "#file-input");
         uploadFile(fileInput, tempFile("e2e-payments", ".csv", (reservationId + "," + amount + "\n").getBytes(StandardCharsets.UTF_8)));
         var uploadButton = findInShadowRoot(bulkConfirmation, "sl-button[variant='success']");
-        wait.until(d -> uploadButton.getDomAttribute("disabled") == null);
+        wait.until(_ -> uploadButton.getDomAttribute("disabled") == null);
         clickWithJs(driver, uploadButton);
 
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .withMessage(() -> "reservation " + reservationId + " has not been confirmed by the upload")
-            .until(d -> findAllInShadowRoot(bulkConfirmation, ".results-summary sl-badge").stream()
+            .until(_ -> findAllInShadowRoot(bulkConfirmation, ".results-summary sl-badge").stream()
                 .map(WebElement::getText)
                 .toList()
                 .equals(List.of("1 confirmed")));
@@ -472,7 +508,7 @@ class AdminConsole {
     }
 
     private WebElement findInRow(WebElement host, String customerName, String selector) {
-        return wait.until(d -> shadowRows(host).stream()
+        return wait.until(_ -> shadowRows(host).stream()
             .filter(row -> row.getText().contains(customerName))
             .findFirst()
             .map(row -> row.findElement(By.cssSelector(selector)))
@@ -485,16 +521,16 @@ class AdminConsole {
     private void submitDialog(WebElement host, String dialogTagName, String buttonVariant) {
         var dialogHost = findInShadowRoot(host, dialogTagName);
         var dialog = findInShadowRoot(dialogHost, "sl-dialog");
-        wait.until(d -> dialog.getDomAttribute("open") != null);
+        wait.until(_ -> dialog.getDomAttribute("open") != null);
         clickWithJs(driver, findInShadowRoot(dialogHost, "sl-button[variant='" + buttonVariant + "']"));
-        wait.until(d -> dialog.getDomAttribute("open") == null);
+        wait.until(_ -> dialog.getDomAttribute("open") == null);
     }
 
     private void waitForEmptyState(WebElement host, String message) {
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .ignoring(StaleElementReferenceException.class)
             .withMessage(() -> "expected empty state \"" + message + "\"")
-            .until(d -> findAllInShadowRoot(host, ".empty-state").stream().anyMatch(e -> e.getText().contains(message)));
+            .until(_ -> findAllInShadowRoot(host, ".empty-state").stream().anyMatch(e -> e.getText().contains(message)));
     }
 
     private List<WebElement> confirmedPaymentRows() {
@@ -577,7 +613,7 @@ class AdminConsole {
     private void typeInShoelaceControl(WebElement control, String nativeElement, String text) {
         var input = findInShadowRoot(control, nativeElement);
         // the tab panel is displayed after the tab has been selected
-        wait.until(d -> input.isDisplayed());
+        wait.until(_ -> input.isDisplayed());
         input.sendKeys(text);
     }
 
@@ -614,7 +650,7 @@ class AdminConsole {
         // the event URL is generated from the name. Wait for it, then replace it with our slug
         var shortName = driver.findElement(By.id("shortName"));
         try {
-            new WebDriverWait(driver, Duration.ofSeconds(10)).until(d -> !shortName.getAttribute("value").isEmpty());
+            new WebDriverWait(driver, Duration.ofSeconds(10)).until(_ -> !shortName.getAttribute("value").isEmpty());
         } catch (TimeoutException _) {
             LOGGER.warn("event URL was not generated automatically");
         }

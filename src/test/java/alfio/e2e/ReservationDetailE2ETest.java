@@ -34,6 +34,17 @@ class ReservationDetailE2ETest extends BaseE2ETest {
     }
 
     @Test
+    void editBillingDetails() throws InterruptedException {
+        reservationFlow.buyTicketWithCreditCard(CUSTOMER_LAST_NAME);
+        adminConsole.login();
+        var companyName = "Company " + uniqueId();
+        var contact = adminConsole.editReservationBillingDetails(slug, CUSTOMER_LAST_NAME, companyName, "Via Cantonale 2", "6900", "Lugano");
+        // the billing address is rebuilt from the structured fields, starting with the company name
+        assertTrue(contact.contains("Company\n" + companyName), () -> "company not displayed: " + contact);
+        assertTrue(contact.contains(companyName + "\nTest " + CUSTOMER_LAST_NAME + "\nVia Cantonale 2\n6900 Lugano"), () -> "unexpected billing address: " + contact);
+    }
+
+    @Test
     void confirmPayment() {
         reservationFlow.buyTicketWithBankTransfer(CUSTOMER_LAST_NAME);
         adminConsole.login();
