@@ -19,6 +19,7 @@ package alfio.e2e;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.LocalFileDetector;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +58,10 @@ class E2EConfiguration {
             entry("seleniumVersion", "4.16.1"),
             entry("idleTimeout", "180")
         ));
-        return new RemoteWebDriver(url, caps);
+        var driver = new RemoteWebDriver(url, caps);
+        // upload local files to the remote browser. Must be set before looking up elements, since they copy the detector
+        driver.setFileDetector(new LocalFileDetector());
+        return driver;
     }
 
     private static String browserStackUrl(Environment env) {

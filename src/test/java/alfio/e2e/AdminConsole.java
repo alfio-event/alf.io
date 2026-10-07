@@ -17,8 +17,6 @@
 package alfio.e2e;
 
 import org.openqa.selenium.*;
-import org.openqa.selenium.remote.LocalFileDetector;
-import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
@@ -672,10 +670,6 @@ class AdminConsole {
     }
 
     private void uploadFile(WebElement fileInput, Path file) {
-        if (driver.getClass() == RemoteWebDriver.class) {
-            // upload the local file to the remote browser (i.e. BrowserStack). Local drivers don't support it
-            ((RemoteWebDriver) driver).setFileDetector(new LocalFileDetector());
-        }
         // file inputs are hidden by the upload components. Make it interactable
         ((JavascriptExecutor) driver).executeScript("arguments[0].style.display = 'block'; arguments[0].style.visibility = 'visible'; arguments[0].style.width = '1px'; arguments[0].style.height = '1px';", fileInput);
         fileInput.sendKeys(file.toAbsolutePath().toString());
