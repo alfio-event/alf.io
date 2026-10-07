@@ -74,6 +74,21 @@ public interface TicketReservationRepository {
     int updateBillingAddress(@Bind("billingAddress") String billingAddress, @Bind("reservationId") String reservationId);
 
     @Query("""
+        update tickets_reservation set add_company_billing_details = :company, billing_address_company = :companyName, \
+         billing_address_line1 = :addressLine1, billing_address_line2 = :addressLine2, billing_address_zip = :zip, \
+         billing_address_city = :city, billing_address_state = :state \
+         where id = :reservationId\
+        """)
+    int updateBillingDetails(@Bind("reservationId") String reservationId,
+                             @Bind("company") boolean company,
+                             @Bind("companyName") String companyName,
+                             @Bind("addressLine1") String addressLine1,
+                             @Bind("addressLine2") String addressLine2,
+                             @Bind("zip") String zip,
+                             @Bind("city") String city,
+                             @Bind("state") String state);
+
+    @Query("""
         update tickets_reservation set status = :status, full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email,\
          user_language = :userLanguage, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod, customer_reference = :customerReference where id = :reservationId\
         """)

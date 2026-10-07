@@ -3,7 +3,7 @@ import {customElement, property, query, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
 import {Task} from '@lit/task';
-import type {SlInput, SlSwitch} from '@shoelace-style/shoelace';
+import type {SlInput, SlRadioGroup, SlSwitch} from '@shoelace-style/shoelace';
 import {PurchaseContextType} from '../model/purchase-context.ts';
 import {EmailMessage} from '../model/email-message.ts';
 import {AlfioDialogClosed, dispatchFeedback} from '../model/dom-events.ts';
@@ -12,6 +12,7 @@ import {
     AuditEntry,
     BillingDocument,
     BillingDocumentType,
+    CustomerBillingDetails,
     PaymentInfo,
     ReservationDescriptor,
     ReservationModification,
@@ -99,6 +100,15 @@ interface ContactDraft {
     userLanguage: string;
     vatNr: string;
     vatCountryCode: string;
+    customerType: CustomerType;
+    companyName: string;
+    // false: the address is a free text (e.g. entered by an administrator), true: it is entered field by field
+    structuredAddress: boolean;
+    addressLine1: string;
+    addressLine2: string;
+    zip: string;
+    city: string;
+    state: string;
     billingAddress: string;
     fiscalCode: string;
     referenceType: string;
@@ -128,6 +138,8 @@ interface Drafts {
     attendees: Map<number, Map<number, AttendeeDraft>>;
     subscription: SubscriptionDraft | null;
     vatApplied: boolean | null;
+    // the advanced invoice options are dangerous: they are displayed only on request
+    showAdvancedBilling: boolean;
 }
 
 export interface ReservationChangedDetail {
@@ -140,6 +152,8 @@ const BILLING_DOCUMENT_TYPES: Record<BillingDocumentType, string> = {
     INVOICE: 'Invoice',
     CREDIT_NOTE: 'Credit note',
 };
+
+type CustomerType = 'private' | 'company';
 
 const VAT_APPLIED_STATUSES = ['INCLUDED', 'NOT_INCLUDED'];
 const VAT_EXEMPT_STATUSES = ['INCLUDED_EXEMPT', 'NOT_INCLUDED_EXEMPT'];
@@ -237,20 +251,16 @@ export class ReservationDetailPage extends LitElement {
                 width: 100%;
                 margin-inline: 0;
             }
-            .page-title-row h1 .reservation-id {
-                font-family: var(--sl-font-mono);
-                font-size: var(--sl-font-size-x-large);
+            .page-title-row {
+                align-items: center;
+                gap: var(--sl-spacing-x-small);
             }
             .page-title-row .reservation-status {
-                align-self: center;
+                margin-inline-start: var(--sl-spacing-x-small);
             }
-            .page-description {
-                display: flex;
-                flex-wrap: wrap;
-                gap: var(--sl-spacing-large);
-            }
-            .page-description .monospace {
-                font-family: var(--sl-font-mono);
+            .page-title-row .reservation-status::part(base) {
+                padding: var(--sl-spacing-2x-small) var(--sl-spacing-x-small);
+                font-size: var(--sl-font-size-small);
             }
             .notices {
                 display: grid;
@@ -287,6 +297,24 @@ export class ReservationDetailPage extends LitElement {
             .refund-form sl-input {
                 flex: 1;
                 margin-top: 0;
+            }
+            /* forms inside the cards of the grid: never wider than their card */
+            .details-grid .form-stack {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            .details-grid .form-stack .row {
+                column-gap: var(--sl-spacing-medium);
+            }
+            @media only screen and (min-width: 768px) {
+                .details-grid .form-stack .row {
+                    grid-template-columns: repeat(var(--alfio-row-cols), minmax(0, 1fr));
+                }
+            }
+            .advanced-billing-toggle {
+                margin-bottom: var(--sl-spacing-medium);
+            }
+            .address-switch {
+                justify-self: start;
             }
             .billing-address {
                 margin: 0;
@@ -339,13 +367,11 @@ export class ReservationDetailPage extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row secondary">
-                    <h1>Reservation <span class="reservation-id">${shortReservationId(reservation.id)}</span> for <i>${data.context.title}</i></h1>
+                    <h1>Reservation ${shortReservationId(reservation.id)}</h1>
+                    <sl-copy-button hoist value=${reservation.id} copy-label="Copy the full reservation ID"></sl-copy-button>
                     ${reservationStatusBadge(reservation.status)}
                 </div>
-                <p class="page-description text-muted">
-                    <span>ID: <span class="monospace">${reservation.id}</span></span>
-                    ${when(reservation.hasInvoiceNumber, () => html`<span>Invoice number: <strong>${reservation.invoiceNumber}</strong></span>`)}
-                </p>
+                <p class="page-description text-muted">${data.context.title}</p>
                 <hr class="page-separator" />
                 ${this.renderNotices(data)}
                 ${this.renderToolbar(data)}
@@ -446,7 +472,7 @@ export class ReservationDetailPage extends LitElement {
                     <sl-input class="share-link" label="URL to share" readonly .value=${url}
                               help-text="The customer can see and manage the reservation at this address">
                         <sl-icon slot="prefix" name="link-45deg"></sl-icon>
-                        <sl-copy-button slot="suffix" value=${url} copy-label="Copy URL"></sl-copy-button>
+                        <sl-copy-button hoist slot="suffix" value=${url} copy-label="Copy URL"></sl-copy-button>
                         <sl-icon-button slot="suffix" name="box-arrow-up-right" label="Open" href=${url} target="_blank" rel="noopener"></sl-icon-button>
                     </sl-input>
                 </div>
@@ -509,7 +535,7 @@ export class ReservationDetailPage extends LitElement {
                 ${this.renderContactCard(data)}
                 ${when(this.displayPaymentInfo(data), () => html`<div class="wide">${this.renderPaymentCard(data)}</div>`)}
                 ${when(subscriptionDetails, () => html`<div class="wide">${this.renderSubscriptionCard(subscriptionDetails!)}</div>`)}
-                ${when(isNotPaid(reservation.status), () => html`<div class="wide">${this.renderAdvancedBillingCard()}</div>`)}
+                ${when(isNotPaid(reservation.status), () => html`<div class="wide">${this.renderAdvancedBilling(data)}</div>`)}
                 <div class="wide">
                     ${sectionCard({ icon: 'receipt', title: 'Order summary' },
                         orderSummaryTable(descriptor.orderSummary, reservation.currencyCode ?? data.context.currency))}
@@ -544,7 +570,6 @@ export class ReservationDetailPage extends LitElement {
         const expirationEditable = reservation.status !== 'COMPLETE' && reservation.status !== 'CANCELLED';
         return sectionCard({ icon: 'info-circle', title: 'Reservation' }, html`
             ${renderDetailList([
-                { label: 'Status', value: reservationStatusBadge(reservation.status) },
                 { label: 'Payment method', value: this.paymentMethod(data) },
                 reservation.hasInvoiceNumber && { label: 'Invoice number', value: reservation.invoiceNumber },
                 !expirationEditable && {
@@ -610,10 +635,12 @@ export class ReservationDetailPage extends LitElement {
         }, when(draft,
             () => this.renderContactForm(data, draft!),
             () => renderDetailList([
+                { label: 'Customer', value: this.customerTypeLabel(data.descriptor) },
+                isCompany(data.descriptor) && { label: 'Company', value: html`<strong>${data.descriptor.additionalInfo?.billingAddressCompany ?? ''}</strong>` },
                 { label: 'Name', value: formatFullName(reservation) },
                 { label: 'E-mail', value: reservation.email },
                 { label: 'Language', value: reservation.userLanguage },
-                reservation.invoiceRequested && { label: 'Tax ID (VAT / GST)', value: reservation.vatNr },
+                !!reservation.vatNr && { label: 'Tax ID (VAT / GST)', value: reservation.vatNr },
                 !!reservation.vatCountryCode && { label: 'Country', value: reservation.vatCountryCode },
                 !!eInvoicing?.referenceType && { label: 'Codice fiscale', value: eInvoicing.fiscalCode },
                 eInvoicing?.referenceType === 'ADDRESSEE_CODE' && { label: 'Codice destinatario', value: eInvoicing.addresseeCode },
@@ -628,6 +655,16 @@ export class ReservationDetailPage extends LitElement {
         const eInvoicing = data.descriptor.additionalInfo?.invoicingAdditionalInfo?.italianEInvoicing;
         return html`
             <div class="form-stack">
+                <sl-radio-group name="customerType" label="Customer" value=${draft.customerType}
+                                help-text="Invoices are issued to the company, if any"
+                                @sl-change=${(e: Event) => { draft.customerType = (e.target as SlRadioGroup).value as CustomerType; onChange(); }}>
+                    <sl-radio-button value="private"><sl-icon slot="prefix" name="person"></sl-icon>Private person</sl-radio-button>
+                    <sl-radio-button value="company"><sl-icon slot="prefix" name="building"></sl-icon>Company</sl-radio-button>
+                </sl-radio-group>
+                ${when(draft.customerType === 'company', () => html`
+                    ${formField(draft, 'companyName', { label: 'Company name', icon: 'building', required: true }, onChange)}
+                    ${formField(draft, 'vatNr', { label: 'Tax ID (VAT / GST)' }, onChange)}
+                `)}
                 <div class="row">
                     ${formField(draft, 'firstName', { label: 'First name', required: true }, onChange)}
                     ${formField(draft, 'lastName', { label: 'Last name', required: true }, onChange)}
@@ -637,17 +674,46 @@ export class ReservationDetailPage extends LitElement {
                     label: 'Language',
                     options: data.context.locales.map(locale => ({ value: locale, label: locale })),
                 }, onChange)}
-                ${formField(draft, 'vatNr', { label: 'Tax ID (VAT / GST)' }, onChange)}
-                ${when(data.descriptor.reservation.vatCountryCode, () => this.renderCountryField(draft, onChange))}
+                ${this.renderAddressFields(draft, onChange)}
                 ${when(eInvoicing?.referenceType, () => html`
                     ${formField(draft, 'fiscalCode', { label: 'Codice fiscale' }, onChange)}
                     ${selectField(draft, 'referenceType', { label: 'Italian e-invoicing', options: E_INVOICING_REFERENCE_TYPES }, onChange)}
                     ${when(draft.referenceType === 'ADDRESSEE_CODE', () => formField(draft, 'addresseeCode', { label: 'Codice destinatario' }, onChange))}
                     ${when(draft.referenceType === 'PEC', () => formField(draft, 'pec', { label: 'PEC', type: 'email' }, onChange))}
                 `)}
-                ${formField(draft, 'billingAddress', { label: 'Billing address', type: 'textarea' }, onChange)}
             </div>
         `;
+    }
+
+    private renderAddressFields(draft: ContactDraft, onChange: () => void): TemplateResult {
+        if (!draft.structuredAddress) {
+            return html`
+                ${formField(draft, 'billingAddress', { label: 'Billing address', type: 'textarea' }, onChange)}
+                <sl-button variant="text" size="small" class="address-switch"
+                           @click=${() => { draft.structuredAddress = true; onChange(); }}>
+                    <sl-icon slot="prefix" name="pencil"></sl-icon>
+                    Enter the address field by field
+                </sl-button>
+                ${this.renderCountryField(draft, onChange)}
+            `;
+        }
+        return html`
+            ${formField(draft, 'addressLine1', { label: 'Address' }, onChange)}
+            ${formField(draft, 'addressLine2', { label: 'Address (second line)' }, onChange)}
+            <div class="row" style="--alfio-row-cols: 3">
+                ${formField(draft, 'zip', { label: 'ZIP code' }, onChange)}
+                ${formField(draft, 'city', { label: 'City' }, onChange)}
+                ${formField(draft, 'state', { label: 'State / province' }, onChange)}
+            </div>
+            ${this.renderCountryField(draft, onChange)}
+        `;
+    }
+
+    private customerTypeLabel(descriptor: ReservationDescriptor): TemplateResult {
+        if (isCompany(descriptor)) {
+            return html`<sl-icon name="building" aria-hidden="true"></sl-icon> Company`;
+        }
+        return html`<sl-icon name="person" aria-hidden="true"></sl-icon> Private person`;
     }
 
     private renderCountryField(draft: ContactDraft, onChange: () => void): TemplateResult {
@@ -690,7 +756,7 @@ export class ReservationDetailPage extends LitElement {
                 </div>
             `,
             () => renderDetailList([
-                { label: 'PIN', value: html`<span class="monospace">${subscription.pin}</span> <sl-copy-button value=${subscription.pin} copy-label="Copy PIN"></sl-copy-button>` },
+                { label: 'PIN', value: html`<span class="monospace">${subscription.pin}</span> <sl-copy-button hoist value=${subscription.pin} copy-label="Copy PIN"></sl-copy-button>` },
                 { label: 'Owner', value: formatFullName(subscription) },
                 { label: 'E-mail', value: subscription.email },
                 { label: 'Usages', value: this.usages(details) },
@@ -701,9 +767,28 @@ export class ReservationDetailPage extends LitElement {
             ])));
     }
 
-    private renderAdvancedBillingCard(): TemplateResult {
+    /**
+     * Dangerous options are hidden behind a low-emphasis link: hiding them again discards their changes
+     */
+    private renderAdvancedBilling(data: ReservationData): TemplateResult {
+        if (!this.drafts.showAdvancedBilling) {
+            return html`
+                <sl-button variant="text" size="large" class="advanced-billing-toggle"
+                           @click=${() => this.updateDrafts({ showAdvancedBilling: true })}>
+                    <sl-icon slot="prefix" name="sliders"></sl-icon>
+                    Show advanced invoice options
+                </sl-button>
+            `;
+        }
         const vatApplied = this.drafts.vatApplied;
-        return sectionCard({ icon: 'exclamation-triangle', title: 'Advanced invoice data', className: 'danger-zone' }, html`
+        const hide = html`
+            <sl-button size="small" variant="default" outline
+                       @click=${() => this.updateDrafts({ showAdvancedBilling: false, vatApplied: initialDrafts(data).vatApplied })}>
+                <sl-icon slot="prefix" name="eye-slash"></sl-icon>
+                Hide
+            </sl-button>
+        `;
+        return sectionCard({ icon: 'exclamation-triangle', title: 'Advanced invoice data', className: 'danger-zone', actions: hide }, html`
             <p class="text-danger">Change these options with care: they might affect the total price of the reservation, or lead to inconsistencies.</p>
             ${when(vatApplied != null,
                 () => html`
@@ -1001,9 +1086,10 @@ export class ReservationDetailPage extends LitElement {
                 emailAddress: contact.emailAddress,
                 billingAddress: contact.billingAddress,
                 userLanguage: contact.userLanguage,
-                vatNr: contact.vatNr,
+                vatNr: vatNumber(contact),
                 vatCountryCode: contact.vatCountryCode,
                 invoicingAdditionalInfo: this.invoicingAdditionalInfo(descriptor, contact),
+                billingDetails: billingDetails(this.drafts.contact),
             },
             updateAdvancedBillingOptions: this.drafts.vatApplied !== initialDrafts(data).vatApplied,
             advancedBillingOptions: { vatApplied },
@@ -1322,7 +1408,7 @@ function attendeeNames(descriptor: ReservationDescriptor): Map<string, string> {
 }
 
 function emptyDrafts(): Drafts {
-    return { expiration: '', contact: null, attendees: new Map(), subscription: null, vatApplied: null };
+    return { expiration: '', contact: null, attendees: new Map(), subscription: null, vatApplied: null, showAdvancedBilling: false };
 }
 
 function initialDrafts(data: ReservationData): Drafts {
@@ -1340,9 +1426,60 @@ function initialDrafts(data: ReservationData): Drafts {
     };
 }
 
+function isCompany(descriptor: ReservationDescriptor): boolean {
+    const additionalInfo = descriptor.additionalInfo;
+    return additionalInfo?.addCompanyBillingDetails === true || !!additionalInfo?.billingAddressCompany;
+}
+
+function customerType(descriptor: ReservationDescriptor): CustomerType {
+    if (isCompany(descriptor)) {
+        return 'company';
+    }
+    return 'private';
+}
+
+/**
+ * The address has been entered field by field (checkout), or there is no address yet
+ */
+function hasStructuredAddress(descriptor: ReservationDescriptor): boolean {
+    const additionalInfo = descriptor.additionalInfo;
+    const structured = [additionalInfo?.billingAddressLine1, additionalInfo?.billingAddressZip, additionalInfo?.billingAddressCity]
+        .some(value => !!value);
+    return structured || !descriptor.reservation.billingAddress;
+}
+
+/**
+ * Private persons have no VAT number
+ */
+function vatNumber(contact: ContactDraft): string {
+    if (contact.customerType === 'company') {
+        return contact.vatNr;
+    }
+    return '';
+}
+
+/**
+ * Structured billing details, sent only when the contact has been edited
+ */
+function billingDetails(contact: ContactDraft | null): CustomerBillingDetails | null {
+    if (contact == null) {
+        return null;
+    }
+    let address = { addressLine1: '', addressLine2: '', zip: '', city: '', state: '' };
+    if (contact.structuredAddress) {
+        address = { addressLine1: contact.addressLine1, addressLine2: contact.addressLine2, zip: contact.zip, city: contact.city, state: contact.state };
+    }
+    return {
+        company: contact.customerType === 'company',
+        companyName: contact.companyName,
+        ...address,
+    };
+}
+
 function contactDraft(descriptor: ReservationDescriptor): ContactDraft {
     const reservation = descriptor.reservation;
-    const eInvoicing = descriptor.additionalInfo?.invoicingAdditionalInfo?.italianEInvoicing;
+    const additionalInfo = descriptor.additionalInfo;
+    const eInvoicing = additionalInfo?.invoicingAdditionalInfo?.italianEInvoicing;
     return {
         firstName: reservation.firstName ?? '',
         lastName: reservation.lastName ?? '',
@@ -1350,6 +1487,14 @@ function contactDraft(descriptor: ReservationDescriptor): ContactDraft {
         userLanguage: reservation.userLanguage ?? '',
         vatNr: reservation.vatNr ?? '',
         vatCountryCode: reservation.vatCountryCode ?? '',
+        customerType: customerType(descriptor),
+        companyName: additionalInfo?.billingAddressCompany ?? '',
+        structuredAddress: hasStructuredAddress(descriptor),
+        addressLine1: additionalInfo?.billingAddressLine1 ?? '',
+        addressLine2: additionalInfo?.billingAddressLine2 ?? '',
+        zip: additionalInfo?.billingAddressZip ?? '',
+        city: additionalInfo?.billingAddressCity ?? '',
+        state: additionalInfo?.billingAddressState ?? '',
         billingAddress: reservation.billingAddress ?? '',
         fiscalCode: eInvoicing?.fiscalCode ?? '',
         referenceType: eInvoicing?.referenceType ?? '',

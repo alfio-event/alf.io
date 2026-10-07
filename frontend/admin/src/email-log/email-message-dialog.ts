@@ -119,7 +119,7 @@ export class EmailMessageDialog extends LitElement {
                             <dt>Checksum</dt>
                             <dd class="checksum">
                                 <span class="monospace">${message.checksum}</span>
-                                <sl-copy-button value=${message.checksum} copy-label="Copy checksum"></sl-copy-button>
+                                <sl-copy-button hoist value=${message.checksum} copy-label="Copy checksum"></sl-copy-button>
                             </dd>
                         </dl>
                     </div>

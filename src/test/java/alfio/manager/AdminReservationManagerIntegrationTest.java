@@ -82,6 +82,8 @@ class AdminReservationManagerIntegrationTest extends BaseIntegrationTest {
     private EventRepository eventRepository;
     @Autowired
     private ConfigurationRepository configurationRepository;
+    @Autowired
+    private TicketReservationRepository ticketReservationRepository;
 
     @BeforeEach
     public void init() {
@@ -283,6 +285,50 @@ class AdminReservationManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals(attendees + 2, emailMessageRepository.findByEventId(eventId, 0, 50, null).size());
         ticketCategoryRepository.findAllTicketCategories(eventId).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.TAKEN)));
         assertFalse(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(eventId).contains(triple.getLeft().getId()));
+    }
+
+    @Test
+    void updateCustomerFromPrivateToCompanyAndBack() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 1,
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
+        var testResult = performExistingCategoryTest(categories, true, Collections.singletonList(1), false, true, 0, AVAILABLE_SEATS);
+        assertNotNull(testResult);
+        var event = testResult.getLeft();
+        var reservationId = testResult.getRight().getId();
+
+        // the customer becomes a company
+        var company = new CustomerBillingDetails(true, " ACME Inc. ", "Main Street 1", null, "8000", "Zurich", null);
+        var toCompany = updateCustomer(event, reservationId, testResult.getMiddle(), "CHE-123.456.789", company);
+        assertTrue(toCompany.isSuccess());
+        var companyInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
+        assertTrue(companyInfo.getAddCompanyBillingDetails());
+        assertEquals("ACME Inc.", companyInfo.getBillingAddressCompany());
+        assertEquals("Main Street 1", companyInfo.getBillingAddressLine1());
+        var companyReservation = ticketReservationRepository.findReservationById(reservationId);
+        assertEquals("CHE-123.456.789", companyReservation.getVatNr());
+        // the billing address is rebuilt from the structured fields, like the checkout does
+        assertTrue(companyReservation.getBillingAddress().startsWith("ACME Inc.\nIntegration Test\nMain Street 1"), companyReservation.getBillingAddress());
+
+        // and then back to a private customer: company name and VAT number are removed
+        var privateCustomer = new CustomerBillingDetails(false, "ACME Inc.", "Main Street 1", null, "8000", "Zurich", null);
+        assertTrue(updateCustomer(event, reservationId, testResult.getMiddle(), "", privateCustomer).isSuccess());
+        var privateInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
+        assertFalse(privateInfo.getAddCompanyBillingDetails());
+        assertNull(privateInfo.getBillingAddressCompany());
+        var privateReservation = ticketReservationRepository.findReservationById(reservationId);
+        assertNull(privateReservation.getVatNr());
+        assertFalse(privateReservation.getBillingAddress().contains("ACME"), privateReservation.getBillingAddress());
+    }
+
+    private Result<Boolean> updateCustomer(Event event, String reservationId, String username, String vatNr, CustomerBillingDetails billingDetails) {
+        var customerData = new CustomerData("Integration", "Test", "integration-test@test.ch", "free text address", "reference", "en",
+            vatNr, "CH", null, billingDetails);
+        var expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
+        var modification = new AdminReservationModification(expiration, customerData, List.of(), "en", true, false, null, null, null, null);
+        return adminReservationManager.updateReservation(PurchaseContextType.event, event.getShortName(), reservationId, modification, username);
     }
 
     private Triple<Event, String, TicketReservation> performExistingCategoryTest(List<TicketCategoryModification> categories, boolean bounded,

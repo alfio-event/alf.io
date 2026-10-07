@@ -327,7 +327,7 @@ export class ComposeMessage extends LitElement {
                                         () => html`<code>{{${v.name}}}</code>`)}
                                     <small>${v.description(data)}</small>
                                 </div>
-                                <sl-copy-button value="{{${v.name}}}" copy-label="Copy {{${v.name}}}"></sl-copy-button>
+                                <sl-copy-button hoist value="{{${v.name}}}" copy-label="Copy {{${v.name}}}"></sl-copy-button>
                             </li>
                         `)}
                     </ul>

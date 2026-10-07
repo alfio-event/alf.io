@@ -331,14 +331,20 @@ public class AdminReservationManager {
         ticketReservationRepository.updateValidity(reservationId, Date.from(arm.getExpiration().toZonedDateTime(purchaseContext.getZoneId()).toInstant()));
         if(arm.isUpdateContactData()) {
             AdminReservationModification.CustomerData customerData = arm.getCustomerData();
+            var billingDetails = customerData.getBillingDetails();
             ticketReservationRepository.updateTicketReservation(reservationId, r.getStatus().name(), customerData.getEmailAddress(),
                 customerData.getFullName(), customerData.getFirstName(), customerData.getLastName(), customerData.getUserLanguage(),
-                customerData.getBillingAddress(), r.getConfirmationTimestamp(),
+                completeBillingAddress(customerData, purchaseContext), r.getConfirmationTimestamp(),
                 Optional.ofNullable(r.getPaymentMethod()).map(PaymentProxy::name).orElse(null), customerData.getCustomerReference());
 
-            if(StringUtils.isNotBlank(customerData.getVatNr()) || StringUtils.isNotBlank(customerData.getVatCountryCode())) {
+            if(billingDetails != null) {
+                ticketReservationRepository.updateBillingDetails(reservationId, billingDetails.isCompany(), billingDetails.getEffectiveCompanyName(),
+                    billingDetails.getAddressLine1(), billingDetails.getAddressLine2(), billingDetails.getZip(), billingDetails.getCity(), billingDetails.getState());
+            }
+
+            if(billingDetails != null || StringUtils.isNotBlank(customerData.getVatNr()) || StringUtils.isNotBlank(customerData.getVatCountryCode())) {
                 ticketReservationRepository.updateBillingData(r.getVatStatus(), r.getSrcPriceCts(), r.getFinalPriceCts(), r.getVatCts(),
-                    r.getDiscountCts(), r.getCurrencyCode(), customerData.getVatNr(), customerData.getVatCountryCode(),
+                    r.getDiscountCts(), r.getCurrencyCode(), StringUtils.trimToNull(customerData.getVatNr()), customerData.getVatCountryCode(),
                     r.isInvoiceRequested(), reservationId);
             }
 
@@ -399,6 +405,22 @@ public class AdminReservationManager {
         }
 
         return Result.success(true);
+    }
+
+    /**
+     * The billing address printed on the documents: built like the checkout does when the address has been entered
+     * field by field, otherwise the free text sent by the client
+     */
+    private static String completeBillingAddress(AdminReservationModification.CustomerData customerData, PurchaseContext purchaseContext) {
+        var billingDetails = customerData.getBillingDetails();
+        if(billingDetails == null || !billingDetails.hasStructuredAddress()) {
+            return customerData.getBillingAddress();
+        }
+        var customerName = new CustomerName(customerData.getFullName(), customerData.getFirstName(), customerData.getLastName(), purchaseContext.mustUseFirstAndLastName(), false);
+        return TicketReservationManager.buildCompleteBillingAddress(customerName, billingDetails.getEffectiveCompanyName(),
+            billingDetails.getAddressLine1(), billingDetails.getAddressLine2(), billingDetails.getZip(), billingDetails.getCity(),
+            billingDetails.getState(), StringUtils.trimToNull(customerData.getVatCountryCode()),
+            LocaleUtil.forLanguageTag(Objects.requireNonNullElse(customerData.getUserLanguage(), "en")));
     }
 
     @Transactional

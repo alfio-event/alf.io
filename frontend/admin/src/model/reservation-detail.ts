@@ -37,6 +37,21 @@ export interface InvoicingAdditionalInfo {
     italianEInvoicing: ItalianEInvoicing | null;
 }
 
+/**
+ * Billing information collected by the checkout
+ */
+export interface AdditionalInfo {
+    // the customer is a company (otherwise a private person)
+    addCompanyBillingDetails: boolean | null;
+    billingAddressCompany: string | null;
+    billingAddressLine1: string | null;
+    billingAddressLine2: string | null;
+    billingAddressZip: string | null;
+    billingAddressCity: string | null;
+    billingAddressState: string | null;
+    invoicingAdditionalInfo: InvoicingAdditionalInfo | null;
+}
+
 export interface SummaryRow {
     name: string;
     price: string;
@@ -87,7 +102,7 @@ export interface SubscriptionWithUsageDetails {
  */
 export interface ReservationDescriptor {
     reservation: ReservationDetail;
-    additionalInfo: { invoicingAdditionalInfo: InvoicingAdditionalInfo | null };
+    additionalInfo: AdditionalInfo | null;
     orderSummary: OrderSummary;
     ticketsByCategory: { key: { id: number, name: string }, value: Ticket[] }[];
     subscriptionDetails: SubscriptionWithUsageDetails | null;
@@ -163,6 +178,18 @@ export interface CustomerData {
     vatNr: string;
     vatCountryCode: string;
     invoicingAdditionalInfo: InvoicingAdditionalInfo | null;
+    // null: only the free text "billingAddress" is updated
+    billingDetails: CustomerBillingDetails | null;
+}
+
+export interface CustomerBillingDetails {
+    company: boolean;
+    companyName: string;
+    addressLine1: string;
+    addressLine2: string;
+    zip: string;
+    city: string;
+    state: string;
 }
 
 export interface AttendeeModification {

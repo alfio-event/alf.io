@@ -84,6 +84,20 @@ public class AdminReservationModification implements Serializable {
         private final String vatNr;
         private final String vatCountryCode;
         private final TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo;
+        // null: only the free text "billingAddress" is updated
+        private final CustomerBillingDetails billingDetails;
+
+        public CustomerData(String firstName,
+                            String lastName,
+                            String emailAddress,
+                            String billingAddress,
+                            String userLanguage,
+                            String customerReference,
+                            String vatNr,
+                            String vatCountryCode,
+                            TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo) {
+            this(firstName, lastName, emailAddress, billingAddress, userLanguage, customerReference, vatNr, vatCountryCode, invoicingAdditionalInfo, null);
+        }
 
         @JsonCreator
         public CustomerData(@JsonProperty("firstName") String firstName,
@@ -94,7 +108,8 @@ public class AdminReservationModification implements Serializable {
                             @JsonProperty("customerReference") String customerReference,
                             @JsonProperty("vatNr") String vatNr,
                             @JsonProperty("vatCountryCode") String vatCountryCode,
-                            @JsonProperty("invoicingAdditionalInfo") TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo) {
+                            @JsonProperty("invoicingAdditionalInfo") TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo,
+                            @JsonProperty("billingDetails") CustomerBillingDetails billingDetails) {
             this.firstName = trimToEmpty(firstName);
             this.lastName = trimToEmpty(lastName);
             this.emailAddress = trimToEmpty(emailAddress);
@@ -104,10 +119,64 @@ public class AdminReservationModification implements Serializable {
             this.vatNr = vatNr;
             this.vatCountryCode = vatCountryCode;
             this.invoicingAdditionalInfo = invoicingAdditionalInfo;
+            this.billingDetails = billingDetails;
         }
 
         public String getFullName() {
             return firstName + " " + lastName;
+        }
+    }
+
+    /**
+     * Structured billing information, as collected by the checkout: whether the customer is a company, and its address
+     */
+    @Getter
+    public static class CustomerBillingDetails implements Serializable {
+        private final boolean company;
+        private final String companyName;
+        private final String addressLine1;
+        private final String addressLine2;
+        private final String zip;
+        private final String city;
+        private final String state;
+
+        @JsonCreator
+        public CustomerBillingDetails(@JsonProperty("company") boolean company,
+                              @JsonProperty("companyName") String companyName,
+                              @JsonProperty("addressLine1") String addressLine1,
+                              @JsonProperty("addressLine2") String addressLine2,
+                              @JsonProperty("zip") String zip,
+                              @JsonProperty("city") String city,
+                              @JsonProperty("state") String state) {
+            this.company = company;
+            this.companyName = StringUtils.trimToNull(companyName);
+            this.addressLine1 = StringUtils.trimToNull(addressLine1);
+            this.addressLine2 = StringUtils.trimToNull(addressLine2);
+            this.zip = StringUtils.trimToNull(zip);
+            this.city = StringUtils.trimToNull(city);
+            this.state = StringUtils.trimToNull(state);
+        }
+
+        /**
+         * @return the company name, only if the customer is a company
+         */
+        public String getEffectiveCompanyName() {
+            if (company) {
+                return companyName;
+            }
+            return null;
+        }
+
+        /**
+         * @return true if the address has been entered field by field (otherwise the free text "billingAddress" is used)
+         */
+        public boolean hasStructuredAddress() {
+            return StringUtils.isNotBlank(addressLine1) || StringUtils.isNotBlank(zip) || StringUtils.isNotBlank(city);
+        }
+
+        private CustomerBillingDetails summary() {
+            return new CustomerBillingDetails(company, placeholderIfNotEmpty(companyName), placeholderIfNotEmpty(addressLine1),
+                placeholderIfNotEmpty(addressLine2), placeholderIfNotEmpty(zip), placeholderIfNotEmpty(city), placeholderIfNotEmpty(state));
         }
     }
 
@@ -352,9 +421,17 @@ public class AdminReservationModification implements Serializable {
                 placeholderIfNotEmpty(in.customerReference),
                 placeholderIfNotEmpty(in.vatNr),
                 placeholderIfNotEmpty(in.vatCountryCode),
-                in.invoicingAdditionalInfo);
+                in.invoicingAdditionalInfo,
+                summaryForBillingDetails(in.billingDetails));
         }
         else return null;
+    }
+
+    private static CustomerBillingDetails summaryForBillingDetails(CustomerBillingDetails in) {
+        if (in == null) {
+            return null;
+        }
+        return in.summary();
     }
 
     private static String placeholderIfNotEmpty(String in) {
