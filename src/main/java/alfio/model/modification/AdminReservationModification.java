@@ -22,6 +22,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.util.ClockProvider;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -157,9 +158,7 @@ public class AdminReservationModification implements Serializable {
             this.state = StringUtils.trimToNull(state);
         }
 
-        /**
-         * @return the company name, only if the customer is a company
-         */
+        @JsonIgnore
         public String getEffectiveCompanyName() {
             if (company) {
                 return companyName;
