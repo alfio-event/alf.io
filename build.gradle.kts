@@ -122,6 +122,10 @@ configurations {
     }
 }
 
+// Mockito must be attached as a Java agent, since dynamic agent loading is going to be disallowed by the JDK
+// see https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+val mockitoAgent: Configuration = configurations.create("mockitoAgent")
+
 repositories {
     mavenCentral()
     mavenLocal()
@@ -215,7 +219,9 @@ dependencies {
     testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.junit.jupiter.engine)
     testImplementation(libs.junit.platform.engine)
-    testImplementation(libs.mockito.core)
+    mockitoAgent(libs.mockito.core) {
+        isTransitive = false
+    }
     testImplementation(libs.springdoc.openapi.starter.webmvc.ui)
     testImplementation(libs.openapi.diff.core) {
         exclude(group = "org.mozilla", module = "rhino")
@@ -328,6 +334,7 @@ tasks.compileJava {
 //propagate the system properties to the tests
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    jvmArgs("-javaagent:${mockitoAgent.asPath}")
     testLogging {
         events("failed")
         exceptionFormat = TestExceptionFormat.FULL
