@@ -53,7 +53,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
-@SpringBootTest
+@SpringBootTest(properties = "springdoc.writer-with-order-by-keys=true")
 @AutoConfigureMockMvc
 @ContextConfiguration(classes = {
     DataSourceConfiguration.class,
