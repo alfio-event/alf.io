@@ -48,19 +48,19 @@ public class EventFeedApiV2Controller {
     }
 
     @GetMapping("events/feed.ics")
-    public ResponseEntity<byte[]> globalICal(SearchOptions searchOptions,
+    public ResponseEntity<String> globalICal(SearchOptions searchOptions,
                                              @RequestParam(value = "lang", required = false) String lang) {
         return iCal(eventFeedManager.globalFeed(searchOptions, lang));
     }
 
     @GetMapping("events/feed.rss")
-    public ResponseEntity<byte[]> globalRss(SearchOptions searchOptions,
+    public ResponseEntity<String> globalRss(SearchOptions searchOptions,
                                             @RequestParam(value = "lang", required = false) String lang) {
         return rss(eventFeedManager.globalFeed(searchOptions, lang));
     }
 
     @GetMapping("organization/{slug}/events/feed.ics")
-    public ResponseEntity<byte[]> organizationICal(@PathVariable String slug,
+    public ResponseEntity<String> organizationICal(@PathVariable String slug,
                                                    @RequestParam(value = "lang", required = false) String lang) {
         return eventFeedManager.organizationFeed(slug, lang)
             .map(this::iCal)
@@ -68,25 +68,25 @@ public class EventFeedApiV2Controller {
     }
 
     @GetMapping("organization/{slug}/events/feed.rss")
-    public ResponseEntity<byte[]> organizationRss(@PathVariable String slug,
+    public ResponseEntity<String> organizationRss(@PathVariable String slug,
                                                   @RequestParam(value = "lang", required = false) String lang) {
         return eventFeedManager.organizationFeed(slug, lang)
             .map(this::rss)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    private ResponseEntity<byte[]> iCal(EventFeed feed) {
+    private ResponseEntity<String> iCal(EventFeed feed) {
         return EventFeedWriter.toICal(feed)
             .map(body -> ResponseEntity.ok()
                 .contentType(TEXT_CALENDAR)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"events.ics\"")
-                .body(body))
+                .body(new String(body, StandardCharsets.UTF_8)))
             .orElseGet(() -> ResponseEntity.internalServerError().build());
     }
 
-    private ResponseEntity<byte[]> rss(EventFeed feed) {
+    private ResponseEntity<String> rss(EventFeed feed) {
         return ResponseEntity.ok()
             .contentType(RSS)
-            .body(EventFeedWriter.toRss(feed));
+            .body(new String(EventFeedWriter.toRss(feed), StandardCharsets.UTF_8));
     }
 }

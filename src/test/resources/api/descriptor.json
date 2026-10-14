@@ -24759,8 +24759,7 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "type" : "string",
-                  "format" : "byte"
+                  "type" : "string"
                 }
               }
             },
@@ -24833,8 +24832,7 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "type" : "string",
-                  "format" : "byte"
+                  "type" : "string"
                 }
               }
             },
@@ -25252,8 +25250,7 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "type" : "string",
-                  "format" : "byte"
+                  "type" : "string"
                 }
               }
             },
@@ -25326,8 +25323,7 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "type" : "string",
-                  "format" : "byte"
+                  "type" : "string"
                 }
               }
             },

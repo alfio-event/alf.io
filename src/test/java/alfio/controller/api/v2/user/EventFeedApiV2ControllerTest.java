@@ -23,6 +23,8 @@ import alfio.model.EventFeed;
 import alfio.model.EventFeedEntry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -44,7 +46,12 @@ class EventFeedApiV2ControllerTest {
     @BeforeEach
     void setUp() {
         feedManager = mock(EventFeedManager.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new EventFeedApiV2Controller(feedManager)).build();
+        // same converters as alfio.config.MvcConfiguration: there is no ByteArrayHttpMessageConverter
+        var stringConverter = new StringHttpMessageConverter();
+        stringConverter.setSupportedMediaTypes(List.of(MediaType.ALL));
+        mockMvc = MockMvcBuilders.standaloneSetup(new EventFeedApiV2Controller(feedManager))
+            .setMessageConverters(stringConverter)
+            .build();
         var entry = new EventFeedEntry(mockEvent("conf", "Conf", "Zurich", Event.EventFormat.IN_PERSON), "", "https://tickets.example.org/event/conf/");
         var feed = new EventFeed("My Org", "https://tickets.example.org", List.of(entry));
         when(feedManager.globalFeed(any(SearchOptions.class), any())).thenReturn(feed);
