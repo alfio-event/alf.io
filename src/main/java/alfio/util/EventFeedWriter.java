@@ -73,7 +73,7 @@ public final class EventFeedWriter {
                 writeElement(writer, "link", entry.eventUrl());
                 writer.writeStartElement("guid");
                 writer.writeAttribute("isPermaLink", "true");
-                writer.writeCharacters(entry.eventUrl());
+                writer.writeCharacters(sanitize(entry.eventUrl()));
                 writer.writeEndElement();
                 writeElement(writer, "description", rssDescription(entry));
                 writer.writeEndElement();
@@ -90,8 +90,12 @@ public final class EventFeedWriter {
 
     private static void writeElement(XMLStreamWriter writer, String name, String value) throws XMLStreamException {
         writer.writeStartElement(name);
-        writer.writeCharacters(INVALID_XML_CHARS.matcher(StringUtils.defaultString(value)).replaceAll(""));
+        writer.writeCharacters(sanitize(value));
         writer.writeEndElement();
+    }
+
+    private static String sanitize(String value) {
+        return INVALID_XML_CHARS.matcher(StringUtils.defaultString(value)).replaceAll("");
     }
 
     private static String rssDescription(EventFeedEntry entry) {
