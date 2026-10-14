@@ -42,6 +42,7 @@ class EventFeedManagerTest {
     private EventManager eventManager;
     private EventDescriptionRepository eventDescriptionRepository;
     private OrganizationRepository organizationRepository;
+    private ConfigurationManager configurationManager;
     private EventFeedManager feedManager;
     private Event event;
 
@@ -50,9 +51,9 @@ class EventFeedManagerTest {
         eventManager = mock(EventManager.class);
         eventDescriptionRepository = mock(EventDescriptionRepository.class);
         organizationRepository = mock(OrganizationRepository.class);
-        var configurationManager = mock(ConfigurationManager.class);
+        configurationManager = mock(ConfigurationManager.class);
         var baseUrl = mock(ConfigurationManager.MaybeConfiguration.class);
-        when(baseUrl.getRequiredValue()).thenReturn("https://tickets.example.org/");
+        when(baseUrl.getValueOrDefault(anyString())).thenReturn("https://tickets.example.org/");
         when(configurationManager.getFor(eq(BASE_URL), any(ConfigurationLevel.class))).thenReturn(baseUrl);
 
         event = mockEvent("conf", "Conf", "Zurich", Event.EventFormat.IN_PERSON);
@@ -115,6 +116,18 @@ class EventFeedManagerTest {
         assertEquals("my-org", captor.getValue().getOrganizerSlug());
         assertEquals("My Org", feed.title());
         assertEquals(1, feed.entries().size());
+    }
+
+    @Test
+    void globalFeedWorksWhenBaseUrlIsNotConfigured() {
+        when(configurationManager.getFor(eq(BASE_URL), any(ConfigurationLevel.class)))
+            .thenReturn(new ConfigurationManager.MaybeConfiguration(BASE_URL));
+        when(eventManager.getPublishedEvents(any(SearchOptions.class))).thenReturn(List.of());
+
+        var feed = feedManager.globalFeed(SearchOptions.empty(), null);
+
+        assertEquals("", feed.link());
+        assertTrue(feed.entries().isEmpty());
     }
 
     @Test

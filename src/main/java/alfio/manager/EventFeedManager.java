@@ -87,6 +87,7 @@ public class EventFeedManager {
     }
 
     private String baseUrl(ConfigurationLevel level) {
-        return StringUtils.removeEnd(configurationManager.getFor(BASE_URL, level).getRequiredValue(), "/");
+        // BASE_URL is not yet configured on a fresh installation: the feed must still be served
+        return StringUtils.removeEnd(configurationManager.getFor(BASE_URL, level).getValueOrDefault(""), "/");
     }
 }
