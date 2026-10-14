@@ -72,7 +72,8 @@ public final class EventFeedWriter {
                 writeElement(writer, "title", entry.event().getDisplayName());
                 writeElement(writer, "link", entry.eventUrl());
                 writer.writeStartElement("guid");
-                writer.writeAttribute("isPermaLink", "true");
+                // without BASE_URL the event URL is relative, and RSS requires a permalink to be a full URL
+                writer.writeAttribute("isPermaLink", String.valueOf(StringUtils.startsWithAny(entry.eventUrl(), "http://", "https://")));
                 writer.writeCharacters(sanitize(entry.eventUrl()));
                 writer.writeEndElement();
                 writeElement(writer, "description", rssDescription(entry));

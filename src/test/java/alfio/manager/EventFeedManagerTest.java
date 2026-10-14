@@ -181,6 +181,17 @@ class EventFeedManagerTest {
     }
 
     @Test
+    void eventUrlIsRelativeWhenBaseUrlIsNotConfigured() {
+        when(configurationManager.getFor(eq(BASE_URL), any(ConfigurationLevel.class)))
+            .thenReturn(new ConfigurationManager.MaybeConfiguration(BASE_URL));
+        when(eventManager.getPublishedEvents(any(SearchOptions.class))).thenReturn(List.of(event));
+
+        var feed = feedManager.globalFeed(SearchOptions.empty(), "en");
+
+        assertEquals("/event/conf/", feed.entries().get(0).eventUrl());
+    }
+
+    @Test
     void unknownOrganizationReturnsEmpty() {
         when(organizationRepository.findBySlug("nope")).thenReturn(Optional.empty());
 

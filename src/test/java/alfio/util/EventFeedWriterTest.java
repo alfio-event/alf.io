@@ -170,4 +170,15 @@ class EventFeedWriterTest {
         assertEquals(BASE + "/event/ctrl/", xpath(doc, "/rss/channel/item[1]/link"));
         assertEquals(BASE + "/event/ctrl/", xpath(doc, "/rss/channel/item[1]/guid"));
     }
+
+    @Test
+    void rssRelativeEventUrlIsNotAPermaLink() throws Exception {
+        var entry = new EventFeedEntry(mockEvent("conf", "Conf", "Zurich", Event.EventFormat.IN_PERSON), "", "/event/conf/");
+        var feed = new EventFeed("Org", "", List.of(entry));
+
+        var doc = parseXml(EventFeedWriter.toRss(feed));
+
+        assertEquals("/event/conf/", xpath(doc, "/rss/channel/item[1]/guid"));
+        assertEquals("false", xpath(doc, "/rss/channel/item[1]/guid/@isPermaLink"));
+    }
 }
