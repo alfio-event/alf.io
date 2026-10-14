@@ -17,13 +17,25 @@
 package alfio.util;
 
 import alfio.model.EventFeed;
+import alfio.model.EventFeedEntry;
+import org.apache.commons.lang3.StringUtils;
 
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Serializes an {@link EventFeed} as iCalendar or RSS 2.0.
  */
 public final class EventFeedWriter {
+
+    private static final DateTimeFormatter RSS_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm z");
 
     private EventFeedWriter() {
     }
@@ -39,5 +51,51 @@ public final class EventFeedWriter {
             ical.addEvent(vEvent);
         }
         return EventUtil.writeCalendar(ical, "feed " + feed.title());
+    }
+
+    public static byte[] toRss(EventFeed feed) {
+        var out = new ByteArrayOutputStream();
+        try {
+            XMLStreamWriter writer = XMLOutputFactory.newFactory().createXMLStreamWriter(out, StandardCharsets.UTF_8.name());
+            writer.writeStartDocument(StandardCharsets.UTF_8.name(), "1.0");
+            writer.writeStartElement("rss");
+            writer.writeAttribute("version", "2.0");
+            writer.writeStartElement("channel");
+            writeElement(writer, "title", feed.title());
+            writeElement(writer, "link", feed.link());
+            writeElement(writer, "description", feed.title());
+            for (var entry : feed.entries()) {
+                writer.writeStartElement("item");
+                writeElement(writer, "title", entry.event().getDisplayName());
+                writeElement(writer, "link", entry.eventUrl());
+                writer.writeStartElement("guid");
+                writer.writeAttribute("isPermaLink", "true");
+                writer.writeCharacters(entry.eventUrl());
+                writer.writeEndElement();
+                writeElement(writer, "description", rssDescription(entry));
+                writer.writeEndElement();
+            }
+            writer.writeEndElement();
+            writer.writeEndElement();
+            writer.writeEndDocument();
+            writer.close();
+        } catch (XMLStreamException e) {
+            throw new IllegalStateException("was not able to generate RSS for feed " + feed.title(), e);
+        }
+        return out.toByteArray();
+    }
+
+    private static void writeElement(XMLStreamWriter writer, String name, String value) throws XMLStreamException {
+        writer.writeStartElement(name);
+        writer.writeCharacters(StringUtils.defaultString(value));
+        writer.writeEndElement();
+    }
+
+    private static String rssDescription(EventFeedEntry entry) {
+        var event = entry.event();
+        var dates = event.getBegin().format(RSS_DATE_FORMAT) + " - " + event.getEnd().format(RSS_DATE_FORMAT);
+        var location = EventUtil.isAccessOnline(null, event) ? null : StringUtils.trimToNull(event.getLocation());
+        var text = StringUtils.trimToNull(MustacheCustomTag.renderToTextCommonmark(entry.description()));
+        return String.join("\n\n", Stream.of(dates, location, text).filter(Objects::nonNull).toList());
     }
 }

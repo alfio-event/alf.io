@@ -22,7 +22,11 @@ import alfio.model.EventFeedEntry;
 import biweekly.Biweekly;
 import biweekly.ICalendar;
 import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPathFactory;
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -83,5 +87,63 @@ class EventFeedWriterTest {
         var vEvent = parseICal(EventFeedWriter.toICal(feed).orElseThrow()).getEvents().get(0);
 
         assertNull(vEvent.getLocation());
+    }
+
+    private static Document parseXml(byte[] bytes) throws Exception {
+        var factory = DocumentBuilderFactory.newInstance();
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        return factory.newDocumentBuilder().parse(new ByteArrayInputStream(bytes));
+    }
+
+    private static String xpath(Document doc, String expression) throws Exception {
+        return XPathFactory.newInstance().newXPath().evaluate(expression, doc);
+    }
+
+    @Test
+    void rssHasChannelAndOneItemPerEntry() throws Exception {
+        var feed = new EventFeed("My Org", BASE, List.of(
+            entry("conf-a", "Conf A", "Zurich", Event.EventFormat.IN_PERSON),
+            entry("conf-b", "Conf B", "Lugano", Event.EventFormat.IN_PERSON)));
+
+        var doc = parseXml(EventFeedWriter.toRss(feed));
+
+        assertEquals("2.0", xpath(doc, "/rss/@version"));
+        assertEquals("My Org", xpath(doc, "/rss/channel/title"));
+        assertEquals(BASE, xpath(doc, "/rss/channel/link"));
+        assertEquals("2", xpath(doc, "count(/rss/channel/item)"));
+        assertEquals("Conf A", xpath(doc, "/rss/channel/item[1]/title"));
+        assertEquals(BASE + "/event/conf-a/", xpath(doc, "/rss/channel/item[1]/link"));
+        assertEquals(BASE + "/event/conf-a/", xpath(doc, "/rss/channel/item[1]/guid"));
+        assertEquals("true", xpath(doc, "/rss/channel/item[1]/guid/@isPermaLink"));
+        assertTrue(xpath(doc, "/rss/channel/item[1]/description").contains("Zurich"));
+        assertTrue(xpath(doc, "/rss/channel/item[1]/description").contains("Description of Conf A"));
+    }
+
+    @Test
+    void rssEscapesSpecialCharactersAndKeepsUtf8() throws Exception {
+        var feed = new EventFeed("Org <&> \"quotes\"", BASE, List.of(
+            entry("special", "Rock & Roll <live> — Київ", "Main & 1st", Event.EventFormat.IN_PERSON)));
+
+        var doc = parseXml(EventFeedWriter.toRss(feed));
+
+        assertEquals("Org <&> \"quotes\"", xpath(doc, "/rss/channel/title"));
+        assertEquals("Rock & Roll <live> — Київ", xpath(doc, "/rss/channel/item[1]/title"));
+    }
+
+    @Test
+    void rssWithoutEntriesIsAValidEmptyChannel() throws Exception {
+        var doc = parseXml(EventFeedWriter.toRss(new EventFeed("Empty", BASE, List.of())));
+
+        assertEquals("Empty", xpath(doc, "/rss/channel/title"));
+        assertEquals("0", xpath(doc, "count(/rss/channel/item)"));
+    }
+
+    @Test
+    void rssOnlineEventWithoutLocationDoesNotFail() throws Exception {
+        var feed = new EventFeed("Org", BASE, List.of(entry("webinar", "Webinar", null, Event.EventFormat.ONLINE)));
+
+        var doc = parseXml(EventFeedWriter.toRss(feed));
+
+        assertFalse(xpath(doc, "/rss/channel/item[1]/description").contains("null"));
     }
 }
