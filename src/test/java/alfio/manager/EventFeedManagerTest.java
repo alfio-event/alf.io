@@ -115,6 +115,7 @@ class EventFeedManagerTest {
         verify(eventManager).getPublishedEvents(captor.capture());
         assertEquals("my-org", captor.getValue().getOrganizerSlug());
         assertEquals("My Org", feed.title());
+        assertEquals("https://tickets.example.org/o/my-org", feed.link());
         assertEquals(1, feed.entries().size());
     }
 

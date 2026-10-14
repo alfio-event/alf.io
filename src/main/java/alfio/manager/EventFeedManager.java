@@ -63,7 +63,9 @@ public class EventFeedManager {
             var searchOptions = SearchOptions.empty();
             searchOptions.setOrganizerSlug(slug);
             var events = eventManager.getPublishedEvents(searchOptions);
-            return new EventFeed(organization.getName(), baseUrl(ConfigurationLevel.organization(organization.getId())), toEntries(events, lang));
+            // link to the public organization page (see IndexController, "/o/*")
+            var link = baseUrl(ConfigurationLevel.organization(organization.getId())) + "/o/" + slug;
+            return new EventFeed(organization.getName(), link, toEntries(events, lang));
         });
     }
 
