@@ -31,6 +31,7 @@ import org.mockito.ArgumentCaptor;
 import java.util.List;
 import java.util.Optional;
 
+import static alfio.model.EventDescription.EventDescriptionType.DESCRIPTION;
 import static alfio.model.system.ConfigurationKeys.BASE_URL;
 import static alfio.util.EventFeedTestData.mockEvent;
 import static org.junit.jupiter.api.Assertions.*;
@@ -57,19 +58,22 @@ class EventFeedManagerTest {
         when(configurationManager.getFor(eq(BASE_URL), any(ConfigurationLevel.class))).thenReturn(baseUrl);
 
         event = mockEvent("conf", "Conf", "Zurich", Event.EventFormat.IN_PERSON);
-        when(eventManager.getEventUrl(event)).thenReturn("https://tickets.example.org/event/conf/");
-        when(eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(anyInt(), eq(EventDescription.EventDescriptionType.DESCRIPTION), anyString()))
-            .thenReturn(Optional.empty());
+        when(eventDescriptionRepository.findByEventIdsAndType(anyCollection(), eq(DESCRIPTION))).thenReturn(List.of());
 
         feedManager = new EventFeedManager(eventManager, eventDescriptionRepository, organizationRepository, configurationManager);
+    }
+
+    private static EventDescription description(Event event, String locale, String text) {
+        return new EventDescription(event.getId(), locale, DESCRIPTION, text);
     }
 
     @Test
     void globalFeedUsesPublishedEventsAndBaseUrl() {
         var options = SearchOptions.empty();
         when(eventManager.getPublishedEvents(options)).thenReturn(List.of(event));
-        when(eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, "en"))
-            .thenReturn(Optional.of("English description"));
+        var descriptions = List.of(description(event, "en", "English description"), description(event, "it", "Descrizione"));
+        when(eventDescriptionRepository.findByEventIdsAndType(List.of(event.getId()), DESCRIPTION))
+            .thenReturn(descriptions);
 
         var feed = feedManager.globalFeed(options, "en");
 
@@ -80,11 +84,25 @@ class EventFeedManagerTest {
     }
 
     @Test
+    void requestedLanguageIsUsedWhenAvailable() {
+        var options = SearchOptions.empty();
+        when(eventManager.getPublishedEvents(options)).thenReturn(List.of(event));
+        var descriptions = List.of(description(event, "en", "English description"), description(event, "it", "Descrizione"));
+        when(eventDescriptionRepository.findByEventIdsAndType(List.of(event.getId()), DESCRIPTION))
+            .thenReturn(descriptions);
+
+        var feed = feedManager.globalFeed(options, "it");
+
+        assertEquals("Descrizione", feed.entries().get(0).description());
+    }
+
+    @Test
     void unsupportedLanguageFallsBackToFirstEventLanguage() {
         var options = SearchOptions.empty();
         when(eventManager.getPublishedEvents(options)).thenReturn(List.of(event));
-        when(eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, "en"))
-            .thenReturn(Optional.of("English description"));
+        var descriptions = List.of(description(event, "en", "English description"));
+        when(eventDescriptionRepository.findByEventIdsAndType(List.of(event.getId()), DESCRIPTION))
+            .thenReturn(descriptions);
 
         var feed = feedManager.globalFeed(options, "xx");
 
@@ -99,6 +117,36 @@ class EventFeedManagerTest {
         var feed = feedManager.globalFeed(options, null);
 
         assertEquals("", feed.entries().get(0).description());
+    }
+
+    @Test
+    void descriptionsAndBaseUrlAreLoadedOnceForAllEvents() {
+        var other = mockEvent("other", "Other", "Lugano", Event.EventFormat.IN_PERSON);
+        var options = SearchOptions.empty();
+        when(eventManager.getPublishedEvents(options)).thenReturn(List.of(event, other));
+        var descriptions = List.of(description(event, "en", "Conf description"), description(other, "en", "Other description"));
+        when(eventDescriptionRepository.findByEventIdsAndType(List.of(event.getId(), other.getId()), DESCRIPTION))
+            .thenReturn(descriptions);
+
+        var feed = feedManager.globalFeed(options, "en");
+
+        assertEquals("Conf description", feed.entries().get(0).description());
+        assertEquals("Other description", feed.entries().get(1).description());
+        assertEquals("https://tickets.example.org/event/other/", feed.entries().get(1).eventUrl());
+        verify(eventDescriptionRepository, times(1)).findByEventIdsAndType(anyCollection(), eq(DESCRIPTION));
+        verify(eventDescriptionRepository, never()).findDescriptionByEventIdTypeAndLocale(anyInt(), any(), anyString());
+        verify(configurationManager, times(1)).getFor(eq(BASE_URL), any(ConfigurationLevel.class));
+        verify(eventManager, never()).getEventUrl(any());
+    }
+
+    @Test
+    void noDescriptionQueryWithoutEvents() {
+        when(eventManager.getPublishedEvents(any(SearchOptions.class))).thenReturn(List.of());
+
+        var feed = feedManager.globalFeed(SearchOptions.empty(), "en");
+
+        assertTrue(feed.entries().isEmpty());
+        verify(eventDescriptionRepository, never()).findByEventIdsAndType(anyCollection(), any());
     }
 
     @Test
@@ -117,6 +165,7 @@ class EventFeedManagerTest {
         assertEquals("My Org", feed.title());
         assertEquals("https://tickets.example.org/o/my-org", feed.link());
         assertEquals(1, feed.entries().size());
+        assertEquals("https://tickets.example.org/event/conf/", feed.entries().get(0).eventUrl());
     }
 
     @Test

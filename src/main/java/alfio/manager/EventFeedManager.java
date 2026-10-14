@@ -29,9 +29,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import static alfio.model.EventDescription.EventDescriptionType.DESCRIPTION;
 import static alfio.model.system.ConfigurationKeys.BASE_URL;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
 
 @Component
 public class EventFeedManager {
@@ -55,7 +59,8 @@ public class EventFeedManager {
 
     public EventFeed globalFeed(SearchOptions searchOptions, String lang) {
         var events = eventManager.getPublishedEvents(searchOptions);
-        return new EventFeed(GLOBAL_FEED_TITLE, baseUrl(ConfigurationLevel.system()), toEntries(events, lang));
+        var baseUrl = baseUrl();
+        return new EventFeed(GLOBAL_FEED_TITLE, baseUrl, toEntries(events, lang, baseUrl));
     }
 
     public Optional<EventFeed> organizationFeed(String slug, String lang) {
@@ -63,21 +68,24 @@ public class EventFeedManager {
             var searchOptions = SearchOptions.empty();
             searchOptions.setOrganizerSlug(slug);
             var events = eventManager.getPublishedEvents(searchOptions);
+            var baseUrl = baseUrl();
             // link to the public organization page (see IndexController, "/o/*")
-            var link = baseUrl(ConfigurationLevel.organization(organization.getId())) + "/o/" + slug;
-            return new EventFeed(organization.getName(), link, toEntries(events, lang));
+            return new EventFeed(organization.getName(), baseUrl + "/o/" + slug, toEntries(events, lang, baseUrl));
         });
     }
 
-    private List<EventFeedEntry> toEntries(List<Event> events, String lang) {
+    private List<EventFeedEntry> toEntries(List<Event> events, String lang, String baseUrl) {
+        if (events.isEmpty()) {
+            return List.of();
+        }
+        // load all the descriptions with a single query, to avoid N+1 queries
+        var descriptionsByEvent = eventDescriptionRepository.findByEventIdsAndType(events.stream().map(Event::getId).toList(), DESCRIPTION).stream()
+            .collect(groupingBy(EventDescription::getEventId, toMap(EventDescription::getLocale, EventDescription::getDescription)));
         return events.stream()
-            .map(event -> new EventFeedEntry(event, description(event, lang), eventManager.getEventUrl(event)))
+            .map(event -> new EventFeedEntry(event,
+                descriptionsByEvent.getOrDefault(event.getId(), Map.of()).getOrDefault(resolveLanguage(event, lang), ""),
+                EventManager.buildEventUrl(baseUrl, event)))
             .toList();
-    }
-
-    private String description(Event event, String lang) {
-        return eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, resolveLanguage(event, lang))
-            .orElse("");
     }
 
     private static String resolveLanguage(Event event, String lang) {
@@ -88,8 +96,9 @@ public class EventFeedManager {
         return languages.isEmpty() ? "en" : languages.get(0);
     }
 
-    private String baseUrl(ConfigurationLevel level) {
-        // BASE_URL is not yet configured on a fresh installation: the feed must still be served
-        return StringUtils.removeEnd(configurationManager.getFor(BASE_URL, level).getValueOrDefault(""), "/");
+    private String baseUrl() {
+        // BASE_URL can be defined only at system level, so it is read once for the whole feed.
+        // It is not yet configured on a fresh installation: the feed must still be served
+        return StringUtils.removeEnd(configurationManager.getFor(BASE_URL, ConfigurationLevel.system()).getValueOrDefault(""), "/");
     }
 }
