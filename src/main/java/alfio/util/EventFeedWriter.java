@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -36,6 +37,8 @@ import java.util.stream.Stream;
 public final class EventFeedWriter {
 
     private static final DateTimeFormatter RSS_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm z");
+    // characters not allowed by XML 1.0, e.g. control characters pasted from word processors
+    private static final Pattern INVALID_XML_CHARS = Pattern.compile("[^\\x09\\x0A\\x0D\\x20-\\x{D7FF}\\x{E000}-\\x{FFFD}\\x{10000}-\\x{10FFFF}]");
 
     private EventFeedWriter() {
     }
@@ -87,7 +90,7 @@ public final class EventFeedWriter {
 
     private static void writeElement(XMLStreamWriter writer, String name, String value) throws XMLStreamException {
         writer.writeStartElement(name);
-        writer.writeCharacters(StringUtils.defaultString(value));
+        writer.writeCharacters(INVALID_XML_CHARS.matcher(StringUtils.defaultString(value)).replaceAll(""));
         writer.writeEndElement();
     }
 

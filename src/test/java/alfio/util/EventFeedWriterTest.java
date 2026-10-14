@@ -146,4 +146,16 @@ class EventFeedWriterTest {
 
         assertFalse(xpath(doc, "/rss/channel/item[1]/description").contains("null"));
     }
+
+    @Test
+    void rssDropsCharactersNotAllowedInXml() throws Exception {
+        var entry = new EventFeedEntry(mockEvent("ctrl", "Bad\u000Btitle\u0000", "Zurich", Event.EventFormat.IN_PERSON),
+            "pasted\u000Cfrom\u0001Word", BASE + "/event/ctrl/");
+        var feed = new EventFeed("Org", BASE, List.of(entry));
+
+        var doc = parseXml(EventFeedWriter.toRss(feed));
+
+        assertEquals("Badtitle", xpath(doc, "/rss/channel/item[1]/title"));
+        assertTrue(xpath(doc, "/rss/channel/item[1]/description").contains("pastedfromWord"));
+    }
 }
