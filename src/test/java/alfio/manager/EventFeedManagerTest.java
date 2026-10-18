@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.controller.form.SearchOptions;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
@@ -27,8 +28,12 @@ import alfio.repository.user.OrganizationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.context.support.StaticMessageSource;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import static alfio.model.EventDescription.EventDescriptionType.DESCRIPTION;
@@ -60,7 +65,18 @@ class EventFeedManagerTest {
         event = mockEvent("conf", "Conf", "Zurich", Event.EventFormat.IN_PERSON);
         when(eventDescriptionRepository.findByEventIdsAndType(anyCollection(), eq(DESCRIPTION))).thenReturn(List.of());
 
-        feedManager = new EventFeedManager(eventManager, eventDescriptionRepository, organizationRepository, configurationManager);
+        // same setup as DataSourceConfiguration: the english messages are in the default file
+        var bundle = new ResourceBundleMessageSource();
+        bundle.setBasenames("alfio.i18n.public");
+        bundle.setDefaultEncoding(StandardCharsets.UTF_8.name());
+        bundle.setFallbackToSystemLocale(false);
+        var messageSource = new StaticMessageSource();
+        messageSource.setParentMessageSource(bundle);
+        messageSource.addMessage(EventFeedManager.GLOBAL_FEED_TITLE_KEY, Locale.ITALIAN, "Prossimi eventi");
+        var messageSourceManager = mock(MessageSourceManager.class);
+        when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
+
+        feedManager = new EventFeedManager(eventManager, eventDescriptionRepository, organizationRepository, configurationManager, messageSourceManager);
     }
 
     private static EventDescription description(Event event, String locale, String text) {
@@ -137,6 +153,15 @@ class EventFeedManagerTest {
         verify(eventDescriptionRepository, never()).findDescriptionByEventIdTypeAndLocale(anyInt(), any(), anyString());
         verify(configurationManager, times(1)).getFor(eq(BASE_URL), any(ConfigurationLevel.class));
         verify(eventManager, never()).getEventUrl(any());
+    }
+
+    @Test
+    void globalFeedTitleIsTranslated() {
+        when(eventManager.getPublishedEvents(any(SearchOptions.class))).thenReturn(List.of());
+
+        assertEquals("Prossimi eventi", feedManager.globalFeed(SearchOptions.empty(), "it").title());
+        assertEquals("Upcoming events", feedManager.globalFeed(SearchOptions.empty(), null).title());
+        assertEquals("Upcoming events", feedManager.globalFeed(SearchOptions.empty(), "xx").title());
     }
 
     @Test

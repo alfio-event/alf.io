@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.controller.form.SearchOptions;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
@@ -25,6 +26,7 @@ import alfio.model.EventFeed;
 import alfio.model.EventFeedEntry;
 import alfio.repository.EventDescriptionRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.LocaleUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -40,27 +42,31 @@ import static java.util.stream.Collectors.toMap;
 @Component
 public class EventFeedManager {
 
-    static final String GLOBAL_FEED_TITLE = "alf.io - upcoming events";
+    static final String GLOBAL_FEED_TITLE_KEY = "event-feed.title";
 
     private final EventManager eventManager;
     private final EventDescriptionRepository eventDescriptionRepository;
     private final OrganizationRepository organizationRepository;
     private final ConfigurationManager configurationManager;
+    private final MessageSourceManager messageSourceManager;
 
     public EventFeedManager(EventManager eventManager,
                             EventDescriptionRepository eventDescriptionRepository,
                             OrganizationRepository organizationRepository,
-                            ConfigurationManager configurationManager) {
+                            ConfigurationManager configurationManager,
+                            MessageSourceManager messageSourceManager) {
         this.eventManager = eventManager;
         this.eventDescriptionRepository = eventDescriptionRepository;
         this.organizationRepository = organizationRepository;
         this.configurationManager = configurationManager;
+        this.messageSourceManager = messageSourceManager;
     }
 
     public EventFeed globalFeed(SearchOptions searchOptions, String lang) {
         var events = eventManager.getPublishedEvents(searchOptions);
         var baseUrl = baseUrl();
-        return new EventFeed(GLOBAL_FEED_TITLE, baseUrl, toEntries(events, lang, baseUrl));
+        var title = messageSourceManager.getRootMessageSource().getMessage(GLOBAL_FEED_TITLE_KEY, null, LocaleUtil.forLanguageTag(lang));
+        return new EventFeed(title, baseUrl, toEntries(events, lang, baseUrl));
     }
 
     public Optional<EventFeed> organizationFeed(String slug, String lang) {
