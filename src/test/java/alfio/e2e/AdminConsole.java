@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static alfio.e2e.E2EUtils.*;
 import static java.util.Objects.requireNonNull;
@@ -283,7 +284,18 @@ class AdminConsole {
             .ignoring(StaleElementReferenceException.class)
             .withMessage(() -> "billing details of " + customerName + " have not been updated")
             .until(_ -> findInShadowRoot(reservationDetail, "section.contact dl.detail-list").getText().contains(addressLine1));
-        return findInShadowRoot(reservationDetail, "section.contact dl.detail-list").getText();
+        return normalizedText(findInShadowRoot(reservationDetail, "section.contact dl.detail-list"));
+    }
+
+    /**
+     * Safari returns the text of shadow DOM elements with the template indentation and blank lines:
+     * trim each line and drop the empty ones, so that the result is the same on every browser.
+     */
+    private static String normalizedText(WebElement element) {
+        return element.getText().lines()
+            .map(String::strip)
+            .filter(line -> !line.isEmpty())
+            .collect(Collectors.joining("\n"));
     }
 
     private void replaceInShoelaceInput(WebElement host, String name, String text) {
@@ -594,7 +606,16 @@ class AdminConsole {
         if (counter == null || counter.count == null) {
             return null;
         }
-        return [counter.count, counter.shadowRoot.textContent.trim().replace(/\\s+/g, ' ')];
+        // browsers without constructable stylesheets (e.g. Safari < 16.4) get the styles as <style> elements in the shadow root:
+        // skip them, otherwise the CSS ends up in the text
+        let text = '';
+        const walker = document.createTreeWalker(counter.shadowRoot, NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) {
+            if (walker.currentNode.parentElement?.tagName !== 'STYLE') {
+                text += walker.currentNode.textContent;
+            }
+        }
+        return [counter.count, text.trim().replace(/\\s+/g, ' ')];
         """;
 
     /**
