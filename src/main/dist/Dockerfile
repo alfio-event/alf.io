@@ -27,7 +27,7 @@ RUN "$JAVA_HOME/bin/java" -Djarmode=tools -jar alfio-boot.jar extract --destinat
         -Dspring.profiles.active=app-cds -Dspring.context.exit=onRefresh -jar alfio-boot.jar)
 
 
-FROM alpine:3.19
+FROM alpine:3.24
 ARG GC_OPTS
 LABEL org.opencontainers.image.source=https://github.com/alfio-event/alf.io
 
@@ -51,7 +51,6 @@ USER 1001
 # Define working directory.
 WORKDIR /home/alfio/app
 
-CMD /opt/jdk/bin/java $ALFIO_GC_OPTS $ALFIO_JAVA_OPTS $ALFIO_PERFORMANCE_OPTS -XX:+UseContainerSupport \
-    -XX:AOTCache=alfio.aot -jar alfio-boot.jar
+CMD /opt/jdk/bin/java $ALFIO_GC_OPTS $ALFIO_JAVA_OPTS $ALFIO_PERFORMANCE_OPTS -XX:AOTCache=alfio.aot -jar alfio-boot.jar
 
 EXPOSE 8080
