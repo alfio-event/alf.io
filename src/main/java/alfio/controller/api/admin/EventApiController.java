@@ -436,7 +436,8 @@ public class EventApiController {
 
     private static final String PAYMENT_METHOD = "Payment Method";
     private static final String EXTERNAL_REFERENCE = "External Reference";
-    static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Country Code", "Promo Code","Payment ID", PAYMENT_METHOD, EXTERNAL_REFERENCE);
+    private static final String RESERVATION_EMAIL_ADDRESS = "Reservation Email address";
+    static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", RESERVATION_EMAIL_ADDRESS, "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Country Code", "Promo Code","Payment ID", PAYMENT_METHOD, EXTERNAL_REFERENCE);
     private static final List<SerializablePair<String, String>> FIXED_PAIRS = FIXED_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList());
     private static final String FISCAL_CODE = "Fiscal Code";
     private static final String REFERENCE_TYPE = "Reference Type";
@@ -499,6 +500,7 @@ public class EventApiController {
             if(fields.contains("Discount")) {line.add(MonetaryUtil.centsToUnit(t.getDiscountCts(), currencyCode).toString());}
             if(fields.contains("VAT")) {line.add(MonetaryUtil.centsToUnit(t.getVatCts(), currencyCode).toString());}
             if(fields.contains("ReservationID")) {line.add(t.getTicketsReservationId());}
+            if(fields.contains(RESERVATION_EMAIL_ADDRESS)) {line.add(reservation.getEmail());}
             if(fields.contains("Full Name")) {line.add(t.getFullName());}
             if(fields.contains("First Name")) {line.add(t.getFirstName());}
             if(fields.contains("Last Name")) {line.add(t.getLastName());}
