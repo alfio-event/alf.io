@@ -15,6 +15,7 @@ lombok-plugin = "9.5.0"
 sonarqube = "7.5.0.8588"
 spring-boot = "4.1.1"
 spring-dependency-management = "1.1.7"
+cyclonedx-bom = "3.4.1"
 
 # -- build-time only (buildscript classpath)
 license-maven-plugin = "4.1"
@@ -143,3 +144,4 @@ lombok = { id = "io.freefair.lombok", version.ref = "lombok-plugin" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+cyclonedx-bom = { id = "org.cyclonedx.bom", version.ref = "cyclonedx-bom" }
