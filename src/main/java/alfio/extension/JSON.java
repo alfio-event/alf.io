@@ -46,6 +46,10 @@ public class JSON {
         return stringify(o);
     }
 
+    public static <T> T deserialize(String s, Class<T> type) {
+        return Json.fromJson(s, type);
+    }
+
     public static Map<String, ?> parse(String s) {
         try {
             return Json.GSON.fromJson(s, PARSE_RETURN_TYPE);

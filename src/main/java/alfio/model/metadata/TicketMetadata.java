@@ -18,6 +18,7 @@ package alfio.model.metadata;
 
 import alfio.model.LocalizedContent;
 import alfio.util.EventUtil;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -49,7 +50,7 @@ public class TicketMetadata {
 
     @JsonCreator
     public TicketMetadata(@JsonProperty("joinLink") JoinLink joinLink,
-                          @JsonProperty("joinMessages") Map<String, String> linkDescription,
+                          @JsonProperty("joinMessages") @JsonAlias("linkDescription") Map<String, String> linkDescription,
                           @JsonProperty("attributes") Map<String, String> attributes) {
         this.joinLink = joinLink;
         this.attributes = requireNonNullElse(attributes, Map.of());
