@@ -17,6 +17,8 @@
 package alfio.extension;
 
 import alfio.manager.support.extension.ExtensionCapability;
+import alfio.model.extension.PdfGenerationResult;
+import alfio.model.metadata.TicketMetadata;
 import alfio.manager.support.extension.ExtensionEvent;
 import alfio.manager.system.ExternalConfiguration;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +34,7 @@ import java.util.stream.Collectors;
 import static alfio.manager.support.extension.ExtensionCapability.CREATE_GUEST_LINK;
 import static alfio.manager.support.extension.ExtensionCapability.CREATE_VIRTUAL_ROOM;
 import static alfio.manager.support.extension.ExtensionEvent.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
@@ -42,6 +45,26 @@ class ExtensionServiceTest {
     @BeforeEach
     void setUp() {
         extensionService = new ExtensionService(null, null, null, mock(PlatformTransactionManager.class), mock(ExternalConfiguration.class), mock(NamedParameterJdbcTemplate.class));
+    }
+
+    @Test
+    void extensionResultsDeserializeThroughJacksonCreators() {
+        var metadata = JSON.deserialize("""
+            {"id":"test","displayName":"Test","version":1,"events":[],"capabilities":[]}
+            """, ExtensionMetadata.class);
+        assertEquals("Test", metadata.getDisplayName());
+
+        var ticketMetadata = JSON.deserialize("""
+            {"joinLink":{"link":"https://example.invalid","validFrom":null,"validTo":null,"linkText":{}},"linkDescription":{"en":"Join here"},"attributes":{"source":"extension"}}
+            """, TicketMetadata.class);
+        assertEquals("https://example.invalid", ticketMetadata.getJoinLink().getLink());
+        assertEquals("Join here", ticketMetadata.getLinkDescription().get("en"));
+        assertEquals("extension", ticketMetadata.getAttributes().get("source"));
+
+        var pdfResult = JSON.deserialize("""
+            {"tempFilePath":"/tmp/generated.pdf"}
+            """, PdfGenerationResult.class);
+        assertEquals("/tmp/generated.pdf", pdfResult.getTempFilePath());
     }
 
     @Test
