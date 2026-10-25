@@ -98,6 +98,8 @@ Add a new line with: `-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,addr
 
 
 ## Contributing to alf.io
+Before contributing, please read [CONTRIBUTING.md](CONTRIBUTING.md): it describes the process to follow, from picking an issue to getting a pull request merged.
+
 Importing the Gradle project into IntelliJ and Eclipse both work.
 
 **Notes**:

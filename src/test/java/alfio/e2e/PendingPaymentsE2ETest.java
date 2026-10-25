@@ -16,12 +16,20 @@
  */
 package alfio.e2e;
 
+import alfio.model.transaction.PaymentProxy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.EnumSet;
 
 class PendingPaymentsE2ETest extends BaseE2ETest {
 
     private static final String CUSTOMER_LAST_NAME = "McTransfer";
+
+    @Override
+    protected EnumSet<PaymentProxy> requiredPaymentProxies() {
+        return EnumSet.of(PaymentProxy.OFFLINE);
+    }
 
     /**
      * Runs after the event has been set up: the attendee buys a ticket and pays by bank transfer,
