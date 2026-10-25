@@ -84,3 +84,5 @@ export { PendingPayments } from './event/pending-payments/pending-payments';
 export { EmailLog } from './email-log/email-log';
 export { EmailTable } from './email-log/email-table';
 export { ReservationDetailPage } from './reservation-detail/reservation-detail';
+export { CheckIn } from './event/check-in/check-in';
+export { CheckInScan } from './event/check-in/check-in-scan';

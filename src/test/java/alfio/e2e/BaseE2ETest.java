@@ -62,6 +62,7 @@ abstract class BaseE2ETest {
     static final String E2E_TAG = "e2e";
 
     static final boolean CI_RUN = "true".equals(System.getenv("E2E_CI_RUN"));
+    static final String CATEGORY_NAME = "Standard";
 
     @Autowired
     private BrowserWebDriver.Factory browserWebDriverFactory;
@@ -129,6 +130,13 @@ abstract class BaseE2ETest {
      */
     protected abstract EnumSet<PaymentProxy> requiredPaymentProxies();
 
+    /**
+     * Number of seats of the event
+     */
+    protected int maxTickets() {
+        return 10;
+    }
+
     private AdminConsole.EventDefinition eventDefinition() {
         return new AdminConsole.EventDefinition(slug,
             "Event Name",
@@ -137,12 +145,12 @@ abstract class BaseE2ETest {
             "https://alf.io",
             "https://alf.io",
             "https://alf.io",
-            10,
+            maxTickets(),
             "10",
             "CHF",
             "7.7",
             true,
             requiredPaymentProxies(),
-            "Standard");
+            CATEGORY_NAME);
     }
 }

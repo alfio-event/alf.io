@@ -31,11 +31,13 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static alfio.e2e.E2EUtils.*;
 import static java.util.Objects.requireNonNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.openqa.selenium.support.ui.ExpectedConditions.*;
 
 /**
@@ -514,6 +516,214 @@ class AdminConsole {
         submitDialog(pendingPayments, "alfio-cancellation-dialog", "danger");
         waitForEmptyState(pendingPayments, "No pending payments found");
         waitForPendingPaymentsCount(slug, "badge", 0, badgeText(0));
+    }
+
+    /**
+     * Filters the attendees on the Check-in page: an unknown term shows the empty state, the attendee name shows only their ticket.
+     * Then displays the QR code of the ticket, and checks the attendee in.
+     */
+    void checkInAttendee(String slug, String attendeeName) {
+        var checkIn = openCheckIn(slug);
+        var search = findInShadowRoot(findInShadowRoot(checkIn, "sl-input.list-search"), "input");
+        wait.until(_ -> search.isDisplayed());
+        search.sendKeys("no-match-" + slug);
+        waitForEmptyState(checkIn, "No attendees match your filter");
+        clearInput(search);
+        search.sendKeys(attendeeName);
+        waitForCheckInCounts(checkIn, 1, 0);
+
+        clickWithJs(driver, findInRow(checkIn, attendeeName, "sl-button.qr-code-button"));
+        var qrCodeDialog = findInShadowRoot(checkIn, "#qr-code-dialog");
+        wait.until(_ -> qrCodeDialog.getDomAttribute("open") != null);
+        var qrCode = findInShadowRoot(checkIn, "#qr-code-dialog img.qr-code");
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "QR code of " + attendeeName + " not displayed")
+            .until(d -> Boolean.TRUE.equals(((JavascriptExecutor) d).executeScript("return arguments[0].complete && arguments[0].naturalWidth > 0;", qrCode)));
+        clickWithJs(driver, findInShadowRoot(checkIn, "#qr-code-dialog div[slot='footer'] sl-button"));
+        wait.until(_ -> qrCodeDialog.getDomAttribute("open") == null);
+
+        LOGGER.info("checking in {} on {}", attendeeName, slug);
+        clickWithJs(driver, findInRow(checkIn, attendeeName, "sl-button.check-in-button"));
+        waitForCheckInCounts(checkIn, 0, 1);
+        // the filter is kept, so that the operator can go on checking in the rest of a group
+        assertEquals(attendeeName, search.getDomProperty("value"));
+        findInRow(checkIn, attendeeName, "sl-button.revert-button");
+    }
+
+    /**
+     * Reloads the Check-in page, to make sure that the check-in has been saved, then reverts it.
+     */
+    void revertCheckIn(String slug, String attendeeName) {
+        openCheckIn(slug);
+        // the attendees are cached by the page, a reload discards them
+        driver.navigate().refresh();
+        var checkIn = wait.until(presenceOfElementLocated(By.tagName("alfio-check-in")));
+        waitForCheckInCounts(checkIn, 0, 1);
+        clickWithJs(driver, findInShadowRoot(checkIn, "sl-tab[panel='checked-in']"));
+        LOGGER.info("reverting check-in of {} on {}", attendeeName, slug);
+        clickWithJs(driver, findInRow(checkIn, attendeeName, "sl-button.revert-button"));
+        waitForCheckInCounts(checkIn, 1, 0);
+        findInRow(checkIn, attendeeName, "sl-button.check-in-button");
+    }
+
+    WebElement openCheckIn(String slug) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/check-in");
+        return wait.until(presenceOfElementLocated(By.tagName("alfio-check-in")));
+    }
+
+    private void waitForCheckInCounts(WebElement checkIn, int expectedPending, int expectedCheckedIn) {
+        waitForCheckInCounts(checkIn, expectedPending, expectedCheckedIn, Duration.ofSeconds(30));
+    }
+
+    /**
+     * Polls often, so that the time spent waiting is a good approximation of the time needed to update the page
+     */
+    void waitForCheckInCounts(WebElement checkIn, int expectedPending, int expectedCheckedIn, Duration timeout) {
+        var expected = List.of(Integer.toString(expectedPending), Integer.toString(expectedCheckedIn));
+        new WebDriverWait(driver, timeout, Duration.ofMillis(20))
+            .withMessage(() -> "expected " + expectedPending + " pending and " + expectedCheckedIn + " checked in attendee(s), got " + checkInCounts(checkIn))
+            .until(_ -> checkInCounts(checkIn).equals(expected));
+    }
+
+    /**
+     * @return the number of pending and checked in attendees, as displayed by the tabs
+     */
+    @SuppressWarnings("unchecked")
+    List<String> checkInCounts(WebElement checkIn) {
+        return (List<String>) ((JavascriptExecutor) driver).executeScript("return Array.from(arguments[0].shadowRoot?.querySelectorAll('sl-tab sl-badge') ?? []).map(b => b.textContent.trim());", checkIn);
+    }
+
+    void waitForAttendeesDisplayed(WebElement checkIn, Duration timeout) {
+        new WebDriverWait(driver, timeout, Duration.ofMillis(20))
+            .withMessage(() -> "no attendees displayed")
+            .until(_ -> checkInCounts(checkIn).stream().anyMatch(count -> !count.equals("0")));
+    }
+
+    void waitForAttendeesDownloaded(WebElement checkIn, Duration timeout) {
+        new WebDriverWait(driver, timeout, Duration.ofMillis(20))
+            .withMessage(() -> "attendees not downloaded")
+            .until(_ -> !isLoadingAttendees(checkIn));
+    }
+
+    /**
+     * The import completes before the tickets become ACQUIRED: refreshes the list until the displayed attendees can be checked in
+     */
+    void waitForAcquiredTickets(WebElement checkIn, Duration timeout) {
+        new WebDriverWait(driver, timeout, Duration.ofSeconds(5))
+            .withMessage(() -> "tickets not ACQUIRED")
+            .until(_ -> {
+                var acquired = Boolean.TRUE.equals(((JavascriptExecutor) driver).executeScript("""
+                    const statuses = Array.from(arguments[0].shadowRoot.querySelectorAll('table.pending-tickets .ticket-status')).map(i => i.dataset.status);
+                    return statuses.length > 0 && statuses.every(s => s === 'ACQUIRED');
+                    """, checkIn));
+                if (!acquired) {
+                    clickWithJs(driver, findInShadowRoot(checkIn, "#refresh-button"));
+                    new WebDriverWait(driver, Duration.ofMinutes(1)).until(_ -> findInShadowRoot(checkIn, "#refresh-button").getDomAttribute("loading") == null);
+                }
+                return acquired;
+            });
+    }
+
+    boolean isLoadingAttendees(WebElement checkIn) {
+        return Boolean.TRUE.equals(((JavascriptExecutor) driver).executeScript("return arguments[0].shadowRoot?.querySelector('sl-progress-bar.download-progress') != null;", checkIn));
+    }
+
+    /**
+     * Replaces the content of the search field of the Check-in page
+     */
+    void searchAttendees(WebElement checkIn, String text) {
+        var search = findInShadowRoot(findInShadowRoot(checkIn, "sl-input.list-search"), "input");
+        wait.until(_ -> search.isDisplayed());
+        clearInput(search);
+        search.sendKeys(text);
+    }
+
+    void checkInFirstPendingAttendee(WebElement checkIn) {
+        clickWithJs(driver, findInShadowRoot(checkIn, "table.pending-tickets sl-button.check-in-button:not([disabled])"));
+    }
+
+    /**
+     * Defines an attendee field, using the same API as the "Attendees data to collect" page
+     */
+    @SuppressWarnings("unchecked")
+    void addAttendeeField(String slug, String name, String type, List<String> values) {
+        openEventDetail(slug);
+        var field = Map.of(
+            "name", name,
+            "type", type,
+            "required", false,
+            "readOnly", false,
+            "displayAtCheckIn", false,
+            "restrictedValues", values.stream().map(v -> Map.of("value", v, "enabled", true)).toList(),
+            "description", Map.of("en", Map.of("label", name, "placeholder", name, "restrictedValues", values.stream().collect(Collectors.toMap(v -> v, v -> v)))));
+        var result = (Map<String, Object>) ((JavascriptExecutor) driver).executeAsyncScript("""
+            const [url, field, done] = arguments;
+            const csrfHeader = document.querySelector('meta[name=_csrf_header]').getAttribute('content');
+            const csrf = document.querySelector('meta[name=_csrf]').getAttribute('content');
+            fetch(url, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {'Content-Type': 'application/json', [csrfHeader]: csrf},
+                body: JSON.stringify(field)
+            }).then(r => r.json()).then(done, e => done({success: false, error: String(e)}));
+            """, serverBaseUrl + "/admin/api/event/" + slug + "/additional-field/new", field);
+        assertEquals(Boolean.TRUE, result.get("success"), () -> "cannot add field " + name + ": " + result);
+        LOGGER.info("added attendee field {} to {}", name, slug);
+    }
+
+    /**
+     * Uploads the CSV through the "Import attendees" page, creating one reservation per attendee,
+     * then waits for the server to process all of them
+     */
+    void importAttendees(String slug, String categoryName, Path csv, int expectedAttendees, Duration timeout) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/import");
+        wait.until(elementToBeClickable(By.id("customerFirstName"))).sendKeys("Import");
+        driver.findElement(By.id("customerLastName")).sendKeys("E2E");
+        driver.findElement(By.id("customerEmailAddress")).sendKeys("import-e2e@example.com");
+        var language = new Select(driver.findElement(By.id("language")));
+        language.getOptions().stream()
+            .filter(o -> !o.getAttribute("value").startsWith("?"))
+            .findFirst()
+            .ifPresent(o -> language.selectByVisibleText(o.getText()));
+
+        var start = System.nanoTime();
+        uploadFile(driver.findElement(By.cssSelector("input[type=file]")), csv);
+        // the label shows the number of parsed attendees once the browser has parsed and rendered the file
+        new WebDriverWait(driver, timeout, Duration.ofSeconds(1))
+            .withMessage(() -> "CSV not parsed")
+            .until(_ -> driver.findElement(By.xpath("//label[input[@id='ticketInfo-0-singleReservations']]")).getText().contains("a total of " + expectedAttendees + ")"));
+        LOGGER.info("{} attendees parsed and displayed in {} ms", expectedAttendees, elapsedMillis(start));
+
+        new Select(driver.findElement(By.id("ticketInfo-0-categoryType"))).selectByVisibleText(categoryName);
+        setChecked(driver.findElement(By.id("ticketInfo-0-singleReservations")), true);
+        setChecked(driver.findElement(By.id("ticketInfo-0-sendTicketsViaMail")), false);
+
+        var submitted = System.nanoTime();
+        clickWithJs(driver, driver.findElement(By.cssSelector("form[name=newReservation] control-buttons button.btn-warning")));
+        new WebDriverWait(driver, Duration.ofMinutes(5)).until(urlMatches("/reservation/import/[^/]+/status"));
+        LOGGER.info("import request submitted in {} ms", elapsedMillis(submitted));
+        var progress = By.xpath("//h3[starts-with(normalize-space(.), 'Processed:')]");
+        var lastLog = new long[] { System.nanoTime() };
+        new WebDriverWait(driver, timeout, Duration.ofSeconds(5))
+            .withMessage(() -> "import not completed: " + driver.findElements(progress).stream().map(WebElement::getText).findFirst().orElse("no progress displayed"))
+            .until(_ -> {
+                if (System.nanoTime() - lastLog[0] > Duration.ofMinutes(1).toNanos()) {
+                    lastLog[0] = System.nanoTime();
+                    driver.findElements(progress).stream().findFirst().ifPresent(p -> LOGGER.info("import in progress after {} s. {}", elapsedMillis(submitted) / 1000, p.getText()));
+                }
+                return !driver.findElements(By.xpath("//h2[contains(., 'Success!')]")).isEmpty();
+            });
+        LOGGER.info("{} attendees imported in {} s", expectedAttendees, elapsedMillis(submitted) / 1000);
+    }
+
+    private void setChecked(WebElement checkbox, boolean checked) {
+        if (checkbox.isSelected() != checked) {
+            selectElement(scrollTo(driver, checkbox), browserWebDriver);
+        }
+    }
+
+    static long elapsedMillis(long startNanos) {
+        return Duration.ofNanos(System.nanoTime() - startNanos).toMillis();
     }
 
     private WebElement openPendingPayments(String slug) {

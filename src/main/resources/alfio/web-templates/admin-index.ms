@@ -105,7 +105,6 @@
     <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
     <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/ace-builds/src-min-noconflict/ace.js"></script>
     <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/angular-ui-ace/ui-ace.js"></script>
-    <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/dexie/dist/dexie.min.js"></script>
     <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/papaparse/papaparse.min.js"></script>
     <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/checklist-model/checklist-model.js"></script>
     <title>Alf.io Admin</title>

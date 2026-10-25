@@ -139,17 +139,6 @@ export class Users extends LitElement {
         modernTable,
         modernLayout,
         css`
-            .sr-only {
-                position: absolute;
-                clip: rect(0, 0, 0, 0);
-                width: 1px;
-                height: 1px;
-                padding: 0;
-                margin: -1px;
-                overflow: hidden;
-                word-wrap: normal;
-                border: 0;
-            }
 
             .hidden { display: none !important; }
             .hidden-xs { display: none !important; }

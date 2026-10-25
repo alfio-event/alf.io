@@ -494,6 +494,19 @@ export const modernTable = css`
         justify-content: flex-end;
     }
 
+    /* content for screen readers only, e.g. the header of a column without a visible title */
+    .sr-only {
+        position: absolute;
+        clip: rect(0, 0, 0, 0);
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        word-wrap: normal;
+        border: 0;
+    }
+
     /* destructive entries of the row actions menu */
     sl-menu-item.danger::part(base) {
         color: var(--sl-color-danger-600);
@@ -825,6 +838,33 @@ export const purchaseContextListPage = css`
         .section-body {
             padding: var(--sl-spacing-x-small);
         }
+    }
+`;
+
+/* sl-tab-group splitting a list page in sections, each tab with an icon and a counter. Use with modernLayout */
+export const listTabs = css`
+    .list-tabs {
+        margin-top: 0;
+    }
+    .list-tabs::part(nav) {
+        border-bottom-color: var(--sl-color-gray-300);
+    }
+    .tab-label {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--sl-spacing-2x-small);
+    }
+    .tab-label sl-badge {
+        margin-inline-start: var(--sl-spacing-2x-small);
+    }
+    .list-tabs .section-card {
+        border: 0;
+        border-radius: 0;
+        margin: 0;
+        overflow: visible;
+    }
+    .list-tabs .section-body {
+        padding: 0;
     }
 `;
 

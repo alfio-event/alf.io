@@ -637,48 +637,6 @@
         return instance;
     });
 
-    baseServices.service("CheckInService", ['$http', 'HttpErrorHandler', '$window', function($http, HttpErrorHandler, $window) {
-        return {
-            findAllTicketIds : function(eventId) {
-                var sessionStorageKey = 'CHECK_IN_TIMESTAMP_'+eventId;
-                var since = $window.sessionStorage.getItem(sessionStorageKey);
-                var sinceParam = since ? '?changedSince='+since : '';
-                return $http.get('/admin/api/check-in/' + eventId + '/ticket-identifiers' + sinceParam)
-                    .then(function(resp) {
-                        $window.sessionStorage.setItem(sessionStorageKey, resp.headers('Alfio-TIME'));
-                        return resp;
-                    }, HttpErrorHandler.handle);
-            },
-
-            downloadTickets: function(eventId, ids) {
-                return $http.post('/admin/api/check-in/'+eventId+'/tickets', ids).error(HttpErrorHandler.handle);
-            },
-
-            getTicket: function(eventId, code) {
-                var ticketIdentifier = code.split('/')[0];
-                return $http.get('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier + "?qrCode=" + encodeURIComponent(code)).error(HttpErrorHandler.handle);
-            },
-
-            checkIn: function(eventId, ticket) {
-                var ticketIdentifier = ticket.code.split('/')[0];
-                return $http['post']('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier, ticket).error(HttpErrorHandler.handle);
-            },
-
-            manualCheckIn: function(ticket) {
-                return $http['post']('/admin/api/check-in/' + ticket.eventId + '/ticket/' + ticket.uuid + '/manual-check-in', ticket).error(HttpErrorHandler.handle);
-            },
-
-            revertCheckIn: function(ticket) {
-                return $http['post']('/admin/api/check-in/' + ticket.eventId + '/ticket/' + ticket.uuid + '/revert-check-in', ticket).error(HttpErrorHandler.handle);
-            },
-
-            confirmPayment: function(eventId, ticket) {
-                var ticketIdentifier = ticket.code.split('/')[0];
-                return $http['post']('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier + '/confirm-on-site-payment').error(HttpErrorHandler.handle);
-            }
-        };
-    }]);
-
     baseServices.service("FileUploadService", function($http, HttpErrorHandler) {
         return {
             upload : function(file) {

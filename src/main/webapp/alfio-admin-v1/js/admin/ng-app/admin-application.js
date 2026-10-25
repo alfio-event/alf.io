@@ -186,17 +186,23 @@
                 resolve: loadEvent
             })
             .state('events.single.checkIn', {
-                url: '/check-in',
-                templateUrl: BASE_STATIC_URL + '/event/check-in.html',
+                url: '/check-in?search&page&checkedInPage&t',
+                // The Lit component owns filtering and pagination; query changes must preserve its DOM.
+                reloadOnSearch: false,
+                template: '<alfio-check-in data-event-name="{{$ctrl.loadEvent.shortName}}" lit-events="{\'alfio-add-attendees\': $ctrl.addAttendees}"></alfio-check-in>',
                 controller: 'EventCheckInController',
+                controllerAs: '$ctrl',
+                resolve: loadEvent,
                 data: {
                     view: 'CHECK_IN'
                 }
             })
             .state('events.single.checkInScan', {
                 url: '/check-in/scan',
-                templateUrl: BASE_STATIC_URL + '/event/check-in-scan.html',
-                controller: 'EventCheckInScanController',
+                template: '<alfio-check-in-scan data-event-name="{{$ctrl.loadEvent.shortName}}"></alfio-check-in-scan>',
+                controller: loadEventCtrl,
+                controllerAs: '$ctrl',
+                resolve: loadEvent,
                 data: {
                     view: 'CHECK_IN_SCAN'
                 }
@@ -556,20 +562,20 @@
         ctrl.toggleCollapse = function(currentStatus) {
             ctrl.menuCollapsed = !currentStatus;
         };
-        var deleteCheckInDatabase = function () {
+        var clearSessionStorage = function () {
             try {
-                Dexie.delete('AlfioDatabase');
                 $window.sessionStorage.clear();
             } catch (e) {
             }
         };
 
-        $window.addEventListener("beforeunload", deleteCheckInDatabase);
+        $window.addEventListener("beforeunload", clearSessionStorage);
 
         ctrl.doLogout = function(idpLogoutRedirectionUrl) {
             UtilsService.logout().then(function() {
-                //delete alf.io IndexedDb
-                deleteCheckInDatabase();
+                clearSessionStorage();
+                // pages asking for confirmation before unload (e.g. check-in) must not block the logout
+                $window.dispatchEvent(new CustomEvent('alfio-logout'));
                 $window.location.reload();
                 if(!(idpLogoutRedirectionUrl === '')){
                     $window.location.replace(idpLogoutRedirectionUrl);
@@ -1617,113 +1623,12 @@
     });
 
 
-    admin.controller('EventCheckInController', function($scope, $stateParams, $timeout, $log,
-                                                        $state, EventService, CheckInService,
-                                                        AdminReservationService, $uibModal, $window, $q,
-                                                        NotificationHandler) {
-
-        $scope.selection = {};
-        $scope.checkedInSelection = {};
-        $scope.itemsPerPage = 10;
-        $scope.currentPage = 1;
-        $scope.currentPageCheckedIn = 1;
-        $scope.advancedSearch = {};
-        $scope.tickets = [];
-        $scope.checkedInTickets = [];
-        $scope.showAlert = true;
-
-        var db = new Dexie('AlfioDatabase', {autoOpen: false});
-        db.version(1).stores({
-            alfioCheckIn: "id, status, lastName"
-        });
-        db.open()['catch'](function(err) {
-            $scope.disabled = true;
-        });
-
-        $scope.resetAdvancedSearch = function() {
-            $scope.advancedSearch = {};
-        };
-
-        $scope.toggledAdvancedSearch = function(toggled) {
-            if(toggled) {
-                $scope.selection.freeText = undefined;
-            } else {
-                $scope.resetAdvancedSearch();
-            }
-        };
-
-        $scope.goToScanPage = function() {
-            $state.go('events.single.checkInScan', $stateParams);
-        };
-
-        $scope.hideAlert = function() {
-            $scope.showAlert = false;
-        };
-
-        EventService.getEvent($stateParams.eventName).success(function(result) {
-            $scope.event = result.event;
-            loadTickets(result.event.id);
-        });
-
-        function reloadTickets() {
-            loadTickets($scope.event.id);
-        }
-
-        function loadTickets(eventId) {
-            return CheckInService.findAllTicketIds(eventId).then(function(resp) {
-                var chain = $q.when([]);
-                var transactions = [];
-                if(resp.data.length > 0) {
-                    var chunks = _.chunk(resp.data, 200);
-                    $scope.chunks = chunks.length;
-                    $scope.loading = true;
-                    var completedChunks = 0;
-                    $scope.completedChunks = completedChunks;
-                    _.forEach(chunks, function(array) {
-                        chain = chain.then(function() {
-                            return CheckInService.downloadTickets(eventId, array)
-                                .then(function(resp) {
-                                    $scope.completedChunks = ++completedChunks;
-                                    transactions.push(db.transaction('rw', db.alfioCheckIn, function() {
-                                        return db.alfioCheckIn.bulkPut(resp.data);
-                                    }));
-                                });
-                        });
-                    });
-                }
-                return chain.then(function() {
-                    $q.all(transactions).then(function() {
-                        loadTicketsFromDB(db, $scope);
-                    });
-                });
-            });
-        }
-
-        $scope.reloadTickets = reloadTickets;
-
-        $scope.showReservationModal = function showReservationModal(event, ticket) {
-            var modal = $uibModal.open({
-                size:'min-1200',
-                templateUrl: BASE_STATIC_URL + '/event/show-reservation-modal.html',
-                backdrop: 'static',
-                controllerAs: 'ctrl',
-                controller: function() {
-                    var ctrl = this;
-                    ctrl.eventName = event.shortName;
-                    ctrl.reservationId = ticket.ticketsReservationId;
-                    ctrl.onClose = function() {
-                        modal.close();
-                    };
-                    ctrl.onUpdate = function() {
-                        reloadTickets();
-                    };
-                }
-            })
-        };
-
-        var parentScope = $scope;
-
-        $scope.newReservationsModal = function newReservationsModal(event) {
+    // the reservation is created with the "fast creation" flow (attendee = customer) and confirmed right away
+    admin.controller('EventCheckInController', function(loadEvent, $uibModal, AdminReservationService) {
+        var $ctrl = this;
+        $ctrl.loadEvent = loadEvent.data.event;
+        $ctrl.addAttendees = function(detail) {
+            var event = $ctrl.loadEvent;
             var modal = $uibModal.open({
                 size:'min-1200',
                 templateUrl: BASE_STATIC_URL + '/event/new-reservation-modal.html',
@@ -1737,9 +1642,8 @@
                         modal.close();
                     };
                     var onConfirm = function(reservationId) {
-                        reloadTickets();
                         modal.close();
-                        parentScope.selection.freeText = reservationId;
+                        detail.onAdded(reservationId);
                     };
                     ctrl.onCreation = function(reservationInfo) {
                         AdminReservationService.confirm('event', reservationInfo.eventName, reservationInfo.reservationId).then(function() {
@@ -1757,311 +1661,6 @@
                 }
             });
         };
-
-        $scope.manualCheckIn = function(ticket) {
-            CheckInService.manualCheckIn(ticket)
-                .then(function(result) {
-                    if(result.data) {
-                        return NotificationHandler.showSuccess(ticket.fullName+" checked in!")
-                    } else {
-                        return NotificationHandler.showWarning("Can't check-in "+ticket.fullName)
-                    }
-                })
-                .then($scope.reloadTickets).then(function() {
-                    $scope.selection = {};
-                });
-        };
-
-        $scope.showQrCode = function(ticket, event) {
-            var modal = $uibModal.open({
-                size:'sm',
-                templateUrl:BASE_STATIC_URL + '/event/qr-code.html',
-                backdrop: 'static',
-                controllerAs: 'ctrl',
-                controller: function($scope) {
-                    var ctrl = this;
-                    ctrl.event = event;
-                    ctrl.ticket = ticket;
-                    ctrl.close = function() {
-                        modal.close();
-                    }
-                }
-            });
-        };
-
-        $scope.revertCheckIn = function(ticket) {
-            CheckInService.revertCheckIn(ticket).then(function(result) {
-                if(result.data) {
-                    NotificationHandler.showSuccess("Reverted "+ticket.fullName);
-                }
-            }).then($scope.reloadTickets);
-        };
-
-        $scope.triggerSearch = function() {
-            loadTicketsFromDB(db, $scope);
-        };
-
-        $scope.updatePage = function(newPage) {
-            $scope.currentPage = newPage;
-            loadTicketsFromDB(db, $scope, newPage);
-        };
-
-        $scope.updatePageCheckedIn = function(newPage) {
-            $scope.currentPageCheckedIn = newPage;
-            loadTicketsFromDB(db, $scope, newPage);
-        };
-
-        var loadTicketsFromDB = function (db, $scope, newPage) {
-
-            var eventId = $scope.event.id;
-            var query = $scope.selection.freeText;
-            var pageNotCheckedIn = $scope.currentPage;
-            var offsetNotCheckedIn = $scope.itemsPerPage * (pageNotCheckedIn - 1);
-
-            var pageCheckedIn = $scope.currentPageCheckedIn;
-            var offsetCheckedIn = $scope.itemsPerPage * (pageCheckedIn - 1);
-
-            var filter = function(ticket) {
-                return ticket.eventId === eventId && (!query || query === '' ||
-                    ([ticket.fullName, ticket.email, ticket.ticketCategory.name, ticket.uuid, ticket.publicUuid, ticket.ticketsReservationId, ticket.extReference].join('/')).toLowerCase().indexOf(query.toLowerCase()) > -1);
-            };
-
-            var deferred1 = $q.defer();
-            var deferred2 = $q.defer();
-            db.alfioCheckIn
-                .where("status")
-                .notEqual('CHECKED_IN')
-                .and(filter)
-                .offset(offsetNotCheckedIn)
-                .limit($scope.itemsPerPage)
-                .toArray()
-                .then(function (tickets) {
-                    $timeout(function () {
-                        $scope.tickets = tickets;
-                        deferred1.resolve();
-                    }, 50);
-                });
-
-            db.alfioCheckIn
-                .where("status")
-                .equals('CHECKED_IN')
-                .and(filter)
-                .offset(offsetCheckedIn)
-                .limit($scope.itemsPerPage)
-                .toArray()
-                .then(function(tickets) {
-                    $timeout(function() {
-                        $scope.checkedInTickets = tickets;
-                        deferred2.resolve();
-                    }, 50);
-                });
-
-            db.alfioCheckIn
-                .where("status")
-                .notEqual('CHECKED_IN')
-                .and(filter)
-                .count()
-                .then(function (count) {
-                    $timeout(function () {
-                        $scope.count = count;
-                    }, 50);
-                });
-
-            db.alfioCheckIn
-                .where("status")
-                .equals('CHECKED_IN')
-                .and(filter)
-                .count()
-                .then(function(count) {
-                    $timeout(function() {
-                        $scope.checkedInCount = count;
-                    }, 50);
-                });
-
-            $q.all([deferred1.promise, deferred2.promise]).then(function() {
-                $scope.loading = false;
-            })
-        };
-    });
-
-    admin.controller('EventCheckInScanController', function($scope, $stateParams, $timeout, $log, $state, EventService, CheckInService) {
-
-        $scope.scanning = {visible : false, ticket : {}};
-
-
-        var canReadCamera = navigator.mediaDevices !== undefined;
-
-        $scope.goToScanPage = function() {
-            $state.go('events.single.checkInScan', $stateParams);
-        };
-
-        $scope.canReadCamera = canReadCamera;
-        if(canReadCamera) {
-
-            var processingScannedImage = false;
-
-            navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-            $scope.videos = [];
-            $scope.stream = null;
-
-            var timeoutPromise = null;
-            var worker = new Worker("../resources/js/jsqrcode/decode-worker.js");
-
-            worker.addEventListener('message', function(message) {
-                processingScannedImage = false;
-                var result = message.data;
-                $scope.scanning.loadingTicket = false;
-                if(result === 'error decoding QR Code') {
-                    $log.debug('error decoding qr code');
-                } else if ($scope.scanning.scannedResult == null) {
-                    $scope.$apply(function() {
-                        $scope.scanning.visible = false;
-                        $scope.scanning.ticket.code = result;
-                        $scope.scanning.loadingTicket = true;
-
-                        CheckInService.getTicket($scope.event.id, result).success(function(result) {
-                            $scope.scanning.scannedTicketInfo = result.ticket;
-                            $scope.scanning.scannedResult = result.result;
-                            $scope.scanning.loadingTicket = false;
-                        });
-                    });
-                } else {
-                    $log.debug('scanned result already present, skipping');
-                }
-            }, false);
-
-            var captureFrame = function() {
-                if($scope.scanning.visible && $scope.scanning.scannedResult == null && !processingScannedImage) {
-                    $log.debug('try to capture frame');
-                    try {
-                        var videoElement = document.getElementById('checkInVideoElement');
-                        var canvas = document.getElementById("checkInImageCanvas");
-                        canvas.height = videoElement.videoHeight;
-                        canvas.width = videoElement.videoWidth;
-
-                        canvas.getContext("2d").drawImage(videoElement, 0, 0);
-                        var imageData = canvas.getContext("2d").getImageData(0,0,canvas.width, canvas.height);
-                        worker.postMessage(imageData);
-                        processingScannedImage = true;
-                    } catch(e) {
-                        processingScannedImage = false;
-                        $log.debug('error', e)
-                    }
-                } else {
-                    $log.debug('skipping');
-                }
-
-                timeoutPromise = $timeout(function() {
-                    captureFrame();
-                }, 250);
-            }
-
-            var endVideoStream = function () {
-                processingScannedImage = false;
-                if (!!$scope.stream) {
-                    var stream = $scope.stream;
-                    if (stream.getVideoTracks) {
-                        var track = stream.getVideoTracks();
-                        if (track && track[0] && track[0].stop) {
-                            track[0].stop()
-                        } else if (stream.stop) {
-                            stream.stop()
-                        }
-                    }
-                }
-            }
-
-            var stopScanning = function () {
-                endVideoStream();
-                $scope.resetScanning();
-                $scope.scanning.visible = false;
-                $timeout.cancel(timeoutPromise);
-            }
-
-            $scope.$on('$destroy', function() {
-                worker.terminate();
-                endVideoStream();
-                stopScanning();
-            });
-
-            $scope.stopScanning = stopScanning;
-
-            $scope.selectSource = function(source) {
-                if(source == undefined) {
-                    return;
-                }
-
-                endVideoStream();
-                var videoElement = document.getElementById('checkInVideoElement');
-                videoElement.src = null;
-
-
-                var constraint = {video: {optional: [{sourceId: source.source.id}]}};
-
-                navigator.getUserMedia(constraint, function(stream) {
-                    $scope.stream = stream; // make stream available to console
-                    videoElement.src = window.URL.createObjectURL(stream);
-                    videoElement.play();
-                    $timeout.cancel(timeoutPromise);
-                    captureFrame();
-                }, function() {
-                    alert('error while loading camera');
-                    $timeout.cancel(timeoutPromise);
-                });
-            };
-
-            navigator.mediaDevices.enumerateDevices().then(function(sources) {
-                var videos = [];
-                angular.forEach(sources, function(v,i) {
-                    if(v.kind === 'videoinput') {
-                        videos.push({ source: v, label: (v.label || 'camera ' + i)});
-                    }
-                });
-                $scope.$apply(function() {
-                    $scope.videos = videos;
-                });
-            });
-        }
-
-        EventService.getEvent($stateParams.eventName).success(function(result) {
-            $scope.event = result.event;
-        });
-
-
-        $scope.checkIn = function(ticket) {
-            $scope.scanning.checkInInAction = true;
-            CheckInService.checkIn($scope.event.id, ticket).success(function(result) {
-                $scope.scanning.checkInInAction = false;
-                $scope.scanning.scannedTicketInfo = result.ticket;
-                $scope.scanning.scannedResult = result.result;
-
-
-                if(result.ticket.status === 'CHECKED_IN') {
-                    $scope.resetScanning();
-                }
-            });
-        };
-
-        $scope.resetScanning = function() {
-            $scope.scanning = {visible: $scope.scanning, ticket: {}};
-        };
-
-        $scope.resetForm = function(ticket) {
-            ticket.code = null;
-            $scope.resetScanning();
-        };
-
-        $scope.confirmPayment = function() {
-            $scope.scanning.confirmPaymentInAction = true;
-            CheckInService.confirmPayment($scope.event.id, $scope.scanning.ticket).then(function() {
-                CheckInService.getTicket($scope.event.id, $scope.scanning.ticket.code).success(function(result) {
-                    $scope.scanning.scannedTicketInfo = result.ticket;
-                    $scope.scanning.scannedResult = result.result;
-                    $scope.scanning.confirmPaymentInAction = false;
-                });
-            });
-        };
-
     });
 
     admin.controller('MessageBarController', function($scope, $rootScope) {

@@ -8,6 +8,7 @@ import { ConfigurationService } from '../../service/configuration.ts';
 import {
     badges,
     base,
+    listTabs,
     modernLayout,
     modernTable,
     purchaseContextListPage,
@@ -167,6 +168,7 @@ export class ReservationsList extends LitElement {
         modernLayout,
         purchaseContextListPage,
         reservationTable,
+        listTabs,
         css`
             .stuck-reservations {
                 border-color: var(--sl-color-warning-300);
@@ -182,29 +184,6 @@ export class ReservationsList extends LitElement {
                 margin: 0;
                 padding: var(--sl-spacing-medium);
                 color: var(--sl-color-gray-700);
-            }
-            .reservation-tabs {
-                margin-top: 0;
-            }
-            .reservation-tabs::part(nav) {
-                border-bottom-color: var(--sl-color-gray-300);
-            }
-            .tab-label {
-                display: inline-flex;
-                align-items: center;
-                gap: var(--sl-spacing-2x-small);
-            }
-            .tab-label sl-badge {
-                margin-inline-start: var(--sl-spacing-2x-small);
-            }
-            .reservation-tabs .section-card {
-                border: 0;
-                border-radius: 0;
-                margin: 0;
-                overflow: visible;
-            }
-            .reservation-tabs .section-body {
-                padding: 0;
             }
             .table > thead > tr > th:nth-child(1) {
                 width: 10%;
@@ -303,7 +282,7 @@ export class ReservationsList extends LitElement {
                           </section>
                       `
                     : nothing}
-                <sl-tab-group class="reservation-tabs" .activeTab=${this.selectedTab} @sl-tab-show=${this.onTabShow}>
+                <sl-tab-group class="list-tabs" .activeTab=${this.selectedTab} @sl-tab-show=${this.onTabShow}>
                     ${repeat(
                         sections,
                         (section) => section.name,
