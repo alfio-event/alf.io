@@ -16,7 +16,10 @@
  */
 package alfio.e2e;
 
+import alfio.model.transaction.PaymentProxy;
 import org.junit.jupiter.api.Test;
+
+import java.util.EnumSet;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,6 +27,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ReservationDetailE2ETest extends BaseE2ETest {
 
     private static final String CUSTOMER_LAST_NAME = "McDetail";
+
+    @Override
+    protected EnumSet<PaymentProxy> requiredPaymentProxies() {
+        return EnumSet.of(PaymentProxy.STRIPE, PaymentProxy.OFFLINE);
+    }
 
     @Test
     void editContactInformation() throws InterruptedException {

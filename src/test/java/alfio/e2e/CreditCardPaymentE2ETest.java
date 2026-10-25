@@ -16,11 +16,22 @@
  */
 package alfio.e2e;
 
+import alfio.model.transaction.PaymentProxy;
 import org.junit.jupiter.api.Test;
+
+import java.util.EnumSet;
 
 class CreditCardPaymentE2ETest extends BaseE2ETest {
 
     private static final String CUSTOMER_LAST_NAME = "McTest";
+
+    /**
+     * Offline payments are needed as well, since the pending payments are displayed only if the event supports them
+     */
+    @Override
+    protected EnumSet<PaymentProxy> requiredPaymentProxies() {
+        return EnumSet.of(PaymentProxy.STRIPE, PaymentProxy.OFFLINE);
+    }
 
     @Test
     void editConfirmedPaymentNotes() throws InterruptedException {

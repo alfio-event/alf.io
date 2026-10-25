@@ -132,7 +132,7 @@ class ReservationFlow {
 
 
     private void page3CreditCardPayment() throws InterruptedException {
-        selectElement(driver.findElement(By.id("CREDIT_CARD-label")), browserWebDriver);
+        selectPaymentMethod("CREDIT_CARD");
         wait.until(presenceOfElementLocated(By.cssSelector("#card-element iframe")));
         driver.findElement(By.id("card-name")).sendKeys("Test McTest");
         driver.switchTo().frame(By.cssSelector("#card-element iframe").findElement(driver));
@@ -171,11 +171,20 @@ class ReservationFlow {
     }
 
     private void page3BankTransferPayment() {
-        selectElement(driver.findElement(By.id("BANK_TRANSFER-label")), browserWebDriver);
+        selectPaymentMethod("BANK_TRANSFER");
         acceptTermsAndSubmit();
         // the reservation is now waiting for the payment
         wait.until(urlContains("/waiting-payment"));
         wait.until(presenceOfElementLocated(By.cssSelector(".alert-warning h2")));
+    }
+
+    /**
+     * The payment methods are displayed only if the event offers more than one
+     */
+    private void selectPaymentMethod(String paymentMethod) {
+        // wait until the payment page has been rendered, otherwise the payment methods would be skipped
+        wait.until(presenceOfElementLocated(By.id("terms-conditions-label")));
+        driver.findElements(By.id(paymentMethod + "-label")).forEach(e -> selectElement(e, browserWebDriver));
     }
 
     private void acceptTermsAndSubmit() {

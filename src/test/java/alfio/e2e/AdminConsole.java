@@ -16,6 +16,7 @@
  */
 package alfio.e2e;
 
+import alfio.model.transaction.PaymentProxy;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -28,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -756,12 +758,21 @@ class AdminConsole {
         if (vatIncluded.isSelected() != event.taxIncludedInPrice()) {
             selectElement(vatIncluded, browserWebDriver);
         }
-        for (var paymentMethod : event.paymentMethods()) {
-            var checkbox = driver.findElement(By.xpath("//form[@name='editEvent']//div[contains(@class, 'checkbox')]/label[contains(normalize-space(.), '" + paymentMethod + "')]/input"));
+        for (var paymentProxy : event.paymentMethods()) {
+            var checkbox = driver.findElement(By.xpath("//form[@name='editEvent']//div[contains(@class, 'checkbox')]/label[contains(normalize-space(.), '" + paymentMethodLabel(paymentProxy) + "')]/input"));
             if (!checkbox.isSelected()) {
                 selectElement(scrollTo(driver, checkbox), browserWebDriver);
             }
         }
+    }
+
+    private static String paymentMethodLabel(PaymentProxy paymentProxy) {
+        return switch (paymentProxy) {
+            case STRIPE -> "Stripe: Credit cards";
+            case ON_SITE -> "On site (cash) payment";
+            case OFFLINE -> "Offline payment";
+            default -> throw new IllegalArgumentException(paymentProxy + " is not supported in E2E tests");
+        };
     }
 
     private void addCategory(EventDefinition event) {
@@ -799,7 +810,7 @@ class AdminConsole {
                            String currency,
                            String taxPercentage,
                            boolean taxIncludedInPrice,
-                           List<String> paymentMethods,
+                           EnumSet<PaymentProxy> paymentMethods,
                            String categoryName) {
     }
 }

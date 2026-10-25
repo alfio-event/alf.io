@@ -17,6 +17,7 @@
 package alfio.e2e;
 
 import alfio.config.Initializer;
+import alfio.model.transaction.PaymentProxy;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -28,7 +29,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
-import java.util.List;
+import java.util.EnumSet;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -48,7 +49,7 @@ import java.util.concurrent.TimeUnit;
  * E2E_ORGANIZATION (optional, defaults to the first organization available to the admin user)
  * E2E_BROWSER: chrome
  * <p>
- * The organization must have Stripe and Bank Transfer configured.
+ * The organization must have the payment providers required by the tests configured (see {@link #requiredPaymentProxies()}).
  */
 @ContextConfiguration(classes = { E2EConfiguration.class })
 @ActiveProfiles(value = {Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST, "e2e"})
@@ -61,7 +62,6 @@ abstract class BaseE2ETest {
     static final String E2E_TAG = "e2e";
 
     static final boolean CI_RUN = "true".equals(System.getenv("E2E_CI_RUN"));
-    private static final List<String> PAYMENT_METHODS = List.of("Stripe: Credit cards", "On site (cash) payment", "Offline payment");
 
     @Autowired
     private BrowserWebDriver.Factory browserWebDriverFactory;
@@ -123,6 +123,12 @@ abstract class BaseE2ETest {
         return slug.substring(4, 12);
     }
 
+    /**
+     * Payment methods enabled on the event. Declare only the ones the test needs, so that it can run
+     * on an organization where the other payment providers are not configured.
+     */
+    protected abstract EnumSet<PaymentProxy> requiredPaymentProxies();
+
     private AdminConsole.EventDefinition eventDefinition() {
         return new AdminConsole.EventDefinition(slug,
             "Event Name",
@@ -136,7 +142,7 @@ abstract class BaseE2ETest {
             "CHF",
             "7.7",
             true,
-            PAYMENT_METHODS,
+            requiredPaymentProxies(),
             "Standard");
     }
 }
