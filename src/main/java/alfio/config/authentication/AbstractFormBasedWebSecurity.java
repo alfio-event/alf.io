@@ -37,11 +37,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -209,10 +208,28 @@ abstract class AbstractFormBasedWebSecurity {
     }
 
     // see https://stackoverflow.com/questions/75222930/spring-boot-3-0-2-adds-continue-query-parameter-to-request-url-after-login
-    private static void disableRequestCacheParameter(HttpSecurity http) throws Exception {
+    private static void disableRequestCacheParameter(HttpSecurity http) {
         HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
         requestCache.setMatchingRequestParameterName(null);
+        requestCache.setRequestMatcher(savedRequestMatcher());
         http.requestCache(cache -> cache.requestCache(requestCache));
+    }
+
+    /**
+     * A custom {@link HttpSessionRequestCache} saves every request by default, while we want to redirect the user
+     * only to pages after login. Otherwise, an API call fired by the admin right after logout would be saved,
+     * and the next successful login would redirect the user to it.
+     */
+    static RequestMatcher savedRequestMatcher() {
+        var json = new MediaTypeRequestMatcher(MediaType.APPLICATION_JSON);
+        json.setIgnoredMediaTypes(Set.of(MediaType.ALL));
+        return new AndRequestMatcher(
+            antStyleMatcher(HttpMethod.GET, "/**"),
+            new NegatedRequestMatcher(new RequestHeaderRequestMatcher(AuthenticationConstants.X_REQUESTED_WITH, XML_HTTP_REQUEST)),
+            new NegatedRequestMatcher(json),
+            new NegatedRequestMatcher(antStyleMatcher(ADMIN_API + "/**")),
+            new NegatedRequestMatcher(antStyleMatcher("/api/**"))
+        );
     }
 
     private OAuth2UserService<OidcUserRequest, OidcUser> publicOidcUserService(ConfigurationManager configurationManager) {
@@ -302,7 +319,7 @@ abstract class AbstractFormBasedWebSecurity {
         http.exceptionHandling(handling -> handling
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
                     if(!response.isCommitted()) {
-                        if("XMLHttpRequest".equals(request.getHeader(AuthenticationConstants.X_REQUESTED_WITH))) {
+                        if(XML_HTTP_REQUEST.equals(request.getHeader(AuthenticationConstants.X_REQUESTED_WITH))) {
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                         } else if(!response.isCommitted()) {
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -311,7 +328,7 @@ abstract class AbstractFormBasedWebSecurity {
                         }
                     }
                 })
-                .defaultAuthenticationEntryPointFor((request, response, ex) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED), new RequestHeaderRequestMatcher(AuthenticationConstants.X_REQUESTED_WITH, "XMLHttpRequest")))
+                .defaultAuthenticationEntryPointFor((request, response, ex) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED), new RequestHeaderRequestMatcher(AuthenticationConstants.X_REQUESTED_WITH, XML_HTTP_REQUEST)))
             .headers(headers -> headers.cacheControl(HeadersConfigurer.CacheControlConfig::disable));
     }
 
