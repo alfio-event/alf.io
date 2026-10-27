@@ -30,6 +30,21 @@ Fired **asynchronously** once a ticket has been assigned
                 <td>`Map<String, List<String>>`</td>
                 <td>Additional information provided by the ticket holder</td>
             </tr>
+            <tr>
+                <td>`eventMetadata`</td>
+                <td>[`AlfioMetadata`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/metadata/AlfioMetadata.java)</td>
+                <td>Metadata of the event</td>
+            </tr>
+            <tr>
+                <td>`onlineAccessTicket`</td>
+                <td>`boolean`</td>
+                <td>Whether the ticket grants access to the online event</td>
+            </tr>
+            <tr>
+                <td>`linkedAdditionalServices`</td>
+                <td>List of [`LinkedAdditionalService`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/extension/LinkedAdditionalService.java)</td>
+                <td>Confirmed additional services linked to the ticket. Each item contains the `additionalServiceId`, the `quantity` and the `additional` values (`Map<String, String>`, by field name) provided for them. Items having the same values are grouped together. Empty if the event does not support linked additional services</td>
+            </tr>
         </tbody>
     </table>
 </div>

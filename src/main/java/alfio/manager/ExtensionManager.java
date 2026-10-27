@@ -22,6 +22,7 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.extension.ExtensionService;
 import alfio.extension.exception.AlfioScriptingException;
 import alfio.manager.payment.PaymentSpecification;
+import alfio.manager.support.AdditionalServiceHelper;
 import alfio.manager.support.extension.ExtensionCapability;
 import alfio.manager.support.extension.ExtensionEvent;
 import alfio.manager.support.extension.ValidationErrorNotifier;
@@ -94,6 +95,7 @@ public class ExtensionManager {
     private final ConfigurationManager configurationManager;
     private final TransactionRepository transactionRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
+    private final AdditionalServiceHelper additionalServiceHelper;
 
 
     boolean isSupported(ExtensionCapability extensionCapability, PurchaseContext purchaseContext) {
@@ -222,7 +224,8 @@ public class ExtensionManager {
                 TICKET, ticket,
                 ADDITIONAL_INFO, Objects.requireNonNullElse(additionalInfo, Map.of()),
                 EVENT_METADATA, Objects.requireNonNullElseGet(eventRepository.getMetadataForEvent(event.getId()), AlfioMetadata::empty),
-                "onlineAccessTicket", EventUtil.isAccessOnline(category, event)
+                "onlineAccessTicket", EventUtil.isAccessOnline(category, event),
+                "linkedAdditionalServices", additionalServiceHelper.findLinkedAdditionalServices(ticket, event)
             ));
     }
 

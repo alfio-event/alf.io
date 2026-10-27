@@ -17,18 +17,23 @@
 package alfio.manager;
 
 import alfio.extension.ExtensionService;
+import alfio.manager.support.AdditionalServiceHelper;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
+import alfio.model.extension.LinkedAdditionalService;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.repository.EventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
+import java.util.List;
 import java.util.Map;
 
 import static alfio.manager.support.extension.ExtensionEvent.TICKET_ASSIGNED;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.*;
 
 class ExtensionManagerTest {
@@ -36,21 +41,24 @@ class ExtensionManagerTest {
     private ExtensionManager extensionManager;
     private EventRepository eventRepository;
     private ExtensionService extensionService;
+    private AdditionalServiceHelper additionalServiceHelper;
     private Ticket ticket;
+    private Event event;
 
     @BeforeEach
     void setUp() {
         ticket = mock(Ticket.class);
         when(ticket.getStatus()).thenReturn(Ticket.TicketStatus.ACQUIRED);
         when(ticket.getEventId()).thenReturn(1);
-        var event = mock(Event.class);
+        event = mock(Event.class);
         when(event.getId()).thenReturn(1);
         when(event.getShortName()).thenReturn("blabla");
         eventRepository = mock(EventRepository.class);
         when(eventRepository.findOrganizationIdByEventId(1)).thenReturn(1);
         when(eventRepository.findById(1)).thenReturn(event);
         extensionService = mock(ExtensionService.class);
-        extensionManager = new ExtensionManager(extensionService, eventRepository, null, null, mock(ConfigurationManager.class), null, null);
+        additionalServiceHelper = mock(AdditionalServiceHelper.class);
+        extensionManager = new ExtensionManager(extensionService, eventRepository, null, null, mock(ConfigurationManager.class), null, null, additionalServiceHelper);
     }
 
     @Test
@@ -61,6 +69,19 @@ class ExtensionManagerTest {
         verify(eventRepository, never()).findOrganizationIdByEventId(eq(1));
         verify(eventRepository).findById(eq(1));
         verify(extensionService).executeScriptAsync(eq(TICKET_ASSIGNED.name()), anyString(), any());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void handleTicketAssignmentIncludesLinkedAdditionalServices() {
+        when(ticket.hasBeenSold()).thenReturn(true);
+        when(eventRepository.getMetadataForEvent(eq(1))).thenReturn(AlfioMetadata.empty());
+        var linkedAdditionalServices = List.of(new LinkedAdditionalService(2, 1, Map.of("size", "M")));
+        when(additionalServiceHelper.findLinkedAdditionalServices(ticket, event)).thenReturn(linkedAdditionalServices);
+        extensionManager.handleTicketAssignment(ticket, mock(TicketCategory.class), Map.of());
+        ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(extensionService).executeScriptAsync(eq(TICKET_ASSIGNED.name()), anyString(), payloadCaptor.capture());
+        assertSame(linkedAdditionalServices, payloadCaptor.getValue().get("linkedAdditionalServices"));
     }
 
     @Test
