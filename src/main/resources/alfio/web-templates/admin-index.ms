@@ -80,7 +80,6 @@
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/reservation.service.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/import/reservation-import.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/tickets-list/tickets-list.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/label-template/label-template.js"></script>

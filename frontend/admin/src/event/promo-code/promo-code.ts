@@ -30,7 +30,7 @@ import {
 import {nextSort, sortableHeader, sortItems, SortState, SortValue} from '../../service/table-sort.ts';
 import {dispatchFeedback} from '../../model/dom-events.ts';
 import {EventService} from '../../service/event.ts';
-import {fetchJson} from '../../service/helpers.ts';
+import {downloadCsv, fetchJson} from '../../service/helpers.ts';
 import '../../components/format-date.ts';
 import type {SlDialog, SlInput, SlSelect, SlSwitch, SlTextarea} from '@shoelace-style/shoelace';
 import {emptyState} from '../../components/empty-state.ts';
@@ -583,12 +583,7 @@ export class PromoCode extends LitElement {
                 .map(id => data.ticketCategoriesById[id!]?.name ?? id).join(', '),
             Description: code.description, Contact: code.emailReference,
         })), {escapeFormulae: true});
-        const url = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8;'}));
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${isAccess ? 'access' : 'promo'}-codes.csv`;
-        link.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        downloadCsv(`${isAccess ? 'access' : 'promo'}-codes.csv`, csv);
     }
 
     private codeStatus(code: PromoCodeWithUsage) {

@@ -780,6 +780,27 @@ export const modernLayout = css`
     .confirm-dialog-body strong {
         color: var(--sl-color-danger-600);
     }
+
+    /* specification of a file to upload (e.g. CSV columns) */
+    .bulk-specs {
+        background: var(--sl-color-gray-50);
+        border: 1px solid var(--sl-color-gray-200);
+        border-radius: var(--sl-input-border-radius);
+        padding: var(--sl-spacing-medium);
+        /* lets the pre scroll instead of widening the grid column */
+        min-width: 0;
+    }
+
+    .bulk-specs pre {
+        background: var(--sl-color-neutral-5);
+        border: 1px solid var(--sl-color-gray-300);
+        border-radius: var(--sl-input-border-radius);
+        padding: var(--sl-spacing-small) var(--sl-spacing-medium);
+        font-size: var(--sl-font-size-small);
+        margin-top: var(--sl-spacing-small);
+        margin-bottom: 0;
+        overflow-x: auto;
+    }
 `;
 
 /* layout for list pages hosted in the event/subscription detail (next to the AngularJS sidebar). Use with modernLayout */

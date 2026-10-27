@@ -2,6 +2,7 @@ import {DateTimeModification} from "../model/event.ts";
 import {html, nothing, TemplateResult} from "lit";
 import {when} from "lit/directives/when.js";
 import {ContentLanguage} from "../model/purchase-context.ts";
+import {ApiResult} from "../model/reservation-detail.ts";
 
 export function postJson(url: string, payload: any): Promise<Response> {
     return performRequest(url, 'POST', payload);
@@ -45,6 +46,24 @@ export function fetchJson<T>(url: string) : Promise<T> {
         method: 'GET',
         credentials: 'include'
     }).then(r => r.json());
+}
+
+export async function ensureOk<T>(response: Response): Promise<T> {
+    if (!response.ok) {
+        throw new Error((await response.text()) || `unexpected status ${response.status}`);
+    }
+    return response.json();
+}
+
+/**
+ * Unwraps the data of a backend Result, or rejects with the errors it describes
+ */
+export async function result<T>(request: Promise<Response>): Promise<T> {
+    const body = await ensureOk<ApiResult<T>>(await request);
+    if (!body.success) {
+        throw new Error(body.errors?.map(e => e.description).join(', ') || 'An unexpected error has occurred');
+    }
+    return body.data;
 }
 
 export function renderIf(predicate: () => boolean, template: () => TemplateResult): TemplateResult {
@@ -132,6 +151,18 @@ export function toPageNumber(value: string | null): number {
 export function humanize(value: string): string {
     const words = value.toLowerCase().replaceAll('_', ' ');
     return words.charAt(0).toUpperCase() + words.substring(1);
+}
+
+/**
+ * Lets the browser save the CSV content as a UTF-8 file. The byte order mark makes spreadsheets (e.g. Excel) detect the encoding.
+ */
+export function downloadCsv(fileName: string, csv: string): void {
+    const url = URL.createObjectURL(new Blob(['\uFEFF', csv], {type: 'text/csv;charset=utf-8;'}));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export function supportsOfflinePayments(allowedPaymentProxies: string[]): boolean {

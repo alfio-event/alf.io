@@ -86,3 +86,5 @@ export { EmailTable } from './email-log/email-table';
 export { ReservationDetailPage } from './reservation-detail/reservation-detail';
 export { CheckIn } from './event/check-in/check-in';
 export { CheckInScan } from './event/check-in/check-in-scan';
+export { AttendeesImport } from './event/attendees-import/attendees-import';
+export { AttendeesImportStatus } from './event/attendees-import/attendees-import-status';

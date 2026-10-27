@@ -317,21 +317,22 @@
                 }
             }).state('events.single.import-reservation', {
                 url:'/reservation/import',
-                template: '<reservation-import event="ctrl.event"></reservation-import>',
-                controller: function(getEvent) {
-                    this.event = getEvent.data.event;
-                },
-                controllerAs: 'ctrl',
+                template: '<alfio-attendees-import data-event-name="{{$ctrl.loadEvent.shortName}}"></alfio-attendees-import>',
+                controller: loadEventCtrl,
+                controllerAs: '$ctrl',
+                resolve: loadEvent,
                 data: {
                     view: 'IMPORT_RESERVATION'
                 }
             }).state('events.single.import-status', {
                 url:'/reservation/import/:requestId/status',
-                template: '<reservation-import-progress event="ctrl.event"></reservation-import-progress>',
-                controller: function(getEvent) {
-                    this.event = getEvent.data.event;
-                },
-                controllerAs: 'ctrl',
+                template: '<alfio-attendees-import-status data-event-name="{{$ctrl.loadEvent.shortName}}" data-request-id="{{$ctrl.requestId}}"></alfio-attendees-import-status>',
+                controller: ['loadEvent', '$stateParams', function(loadEvent, $stateParams) {
+                    this.loadEvent = loadEvent.data.event;
+                    this.requestId = $stateParams.requestId;
+                }],
+                controllerAs: '$ctrl',
+                resolve: loadEvent,
                 data: {
                     view: 'IMPORT_STATUS'
                 }

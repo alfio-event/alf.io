@@ -17,21 +17,7 @@
                     return $http.get('/admin/api/reservation/event/'+publicIdentifier+'/'+reservationId+'/ticket/'+ticketId).error(HttpErrorHandler.handle);
                 }
             }
-        }]).service('AdminImportService', ['$http', 'HttpErrorHandler', function($http, HttpErrorHandler) {
-            return {
-                importAttendees: function(eventName, descriptor, singleReservations) {
-                    var url = '/admin/api/event/'+eventName+'/attendees/import';
-                    if(singleReservations) {
-                        url += '?oneReservationPerAttendee=true'
-                    }
-                    return $http.post(url, descriptor).error(HttpErrorHandler.handle);
-                },
-                retrieveStats: function(eventName, requestId) {
-                    return $http.get('/admin/api/event/'+eventName+'/attendees/import/'+requestId+'/status').error(HttpErrorHandler.handle);
-                }
-            }
-        }])
-        ;
+        }]);
 
 
 })();

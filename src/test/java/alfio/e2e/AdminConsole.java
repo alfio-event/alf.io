@@ -547,6 +547,7 @@ class AdminConsole {
         waitForCheckInCounts(checkIn, 0, 1);
         // the filter is kept, so that the operator can go on checking in the rest of a group
         assertEquals(attendeeName, search.getDomProperty("value"));
+        clickWithJs(driver, findInShadowRoot(checkIn, "sl-tab[panel='checked-in']"));
         findInRow(checkIn, attendeeName, "sl-button.revert-button");
     }
 
@@ -563,6 +564,8 @@ class AdminConsole {
         LOGGER.info("reverting check-in of {} on {}", attendeeName, slug);
         clickWithJs(driver, findInRow(checkIn, attendeeName, "sl-button.revert-button"));
         waitForCheckInCounts(checkIn, 1, 0);
+        // rows of the inactive tab are hidden
+        clickWithJs(driver, findInShadowRoot(checkIn, "sl-tab[panel='pending']"));
         findInRow(checkIn, attendeeName, "sl-button.check-in-button");
     }
 
@@ -676,49 +679,108 @@ class AdminConsole {
      * then waits for the server to process all of them
      */
     void importAttendees(String slug, String categoryName, Path csv, int expectedAttendees, Duration timeout) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/import");
-        wait.until(elementToBeClickable(By.id("customerFirstName"))).sendKeys("Import");
-        driver.findElement(By.id("customerLastName")).sendKeys("E2E");
-        driver.findElement(By.id("customerEmailAddress")).sendKeys("import-e2e@example.com");
-        var language = new Select(driver.findElement(By.id("language")));
-        language.getOptions().stream()
-            .filter(o -> !o.getAttribute("value").startsWith("?"))
-            .findFirst()
-            .ifPresent(o -> language.selectByVisibleText(o.getText()));
+        importAttendees(slug, categoryName, csv, expectedAttendees, null, timeout);
+    }
 
+    /**
+     * Imports the attendees of the CSV file in an existing category, and waits for the import to be completed.
+     * @param contact the contact person of the reservation including all the attendees, or null to create one reservation per attendee
+     */
+    void importAttendees(String slug, String categoryName, Path csv, int expectedAttendees, ReservationContact contact, Duration timeout) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/import");
+        var importPage = wait.until(presenceOfElementLocated(By.tagName("alfio-attendees-import")));
         var start = System.nanoTime();
-        uploadFile(driver.findElement(By.cssSelector("input[type=file]")), csv);
-        // the label shows the number of parsed attendees once the browser has parsed and rendered the file
-        new WebDriverWait(driver, timeout, Duration.ofSeconds(1))
+        uploadFile(findInShadowRoot(findInShadowRoot(importPage, "#attendees-file"), "#file-input"), csv);
+        new WebDriverWait(driver, timeout, Duration.ofMillis(200))
             .withMessage(() -> "CSV not parsed")
-            .until(_ -> driver.findElement(By.xpath("//label[input[@id='ticketInfo-0-singleReservations']]")).getText().contains("a total of " + expectedAttendees + ")"));
+            .until(_ -> findAllInShadowRoot(importPage, "#attendees-count").stream().anyMatch(badge -> badge.getText().equals(Integer.toString(expectedAttendees))));
         LOGGER.info("{} attendees parsed and displayed in {} ms", expectedAttendees, elapsedMillis(start));
 
-        new Select(driver.findElement(By.id("ticketInfo-0-categoryType"))).selectByVisibleText(categoryName);
-        setChecked(driver.findElement(By.id("ticketInfo-0-singleReservations")), true);
-        setChecked(driver.findElement(By.id("ticketInfo-0-sendTicketsViaMail")), false);
+        selectShoelaceOption(findInShadowRoot(importPage, "#existing-category"), categoryName);
+        setShoelaceSwitch(findInShadowRoot(importPage, "#one-reservation-per-attendee"), contact == null);
+        setShoelaceSwitch(findInShadowRoot(importPage, "#send-tickets"), false);
+        if (contact != null) {
+            typeInShoelaceControl(findInShadowRoot(importPage, "#contact-first-name"), "input", contact.firstName());
+            typeInShoelaceControl(findInShadowRoot(importPage, "#contact-last-name"), "input", contact.lastName());
+            typeInShoelaceControl(findInShadowRoot(importPage, "#contact-email"), "input", contact.email());
+        }
 
         var submitted = System.nanoTime();
-        clickWithJs(driver, driver.findElement(By.cssSelector("form[name=newReservation] control-buttons button.btn-warning")));
-        new WebDriverWait(driver, Duration.ofMinutes(5)).until(urlMatches("/reservation/import/[^/]+/status"));
+        clickWithJs(driver, findInShadowRoot(importPage, "#import-button"));
+        new WebDriverWait(driver, Duration.ofMinutes(5))
+            .withMessage(() -> "import not submitted: " + findAllInShadowRoot(importPage, "#submit-error").stream().map(WebElement::getText).findFirst().orElse("no error displayed"))
+            .until(urlMatches("/reservation/import/[^/]+/status"));
         LOGGER.info("import request submitted in {} ms", elapsedMillis(submitted));
-        var progress = By.xpath("//h3[starts-with(normalize-space(.), 'Processed:')]");
+
+        var status = wait.until(presenceOfElementLocated(By.tagName("alfio-attendees-import-status")));
         var lastLog = new long[] { System.nanoTime() };
-        new WebDriverWait(driver, timeout, Duration.ofSeconds(5))
-            .withMessage(() -> "import not completed: " + driver.findElements(progress).stream().map(WebElement::getText).findFirst().orElse("no progress displayed"))
+        new WebDriverWait(driver, timeout, Duration.ofSeconds(1))
+            .withMessage(() -> "import not completed: " + importProgress(status))
             .until(_ -> {
                 if (System.nanoTime() - lastLog[0] > Duration.ofMinutes(1).toNanos()) {
                     lastLog[0] = System.nanoTime();
-                    driver.findElements(progress).stream().findFirst().ifPresent(p -> LOGGER.info("import in progress after {} s. {}", elapsedMillis(submitted) / 1000, p.getText()));
+                    LOGGER.info("import in progress after {} s: {}", elapsedMillis(submitted) / 1000, importProgress(status));
                 }
-                return !driver.findElements(By.xpath("//h2[contains(., 'Success!')]")).isEmpty();
+                return !findAllInShadowRoot(status, "#import-result").isEmpty();
             });
+        assertEquals("All the reservations have been created.", findInShadowRoot(status, "#import-result").getText().trim());
+        var expectedReservations = contact == null ? expectedAttendees : 1;
+        assertEquals(expectedReservations + " created", findInShadowRoot(status, "#imported-count").getText().trim());
         LOGGER.info("{} attendees imported in {} s", expectedAttendees, elapsedMillis(submitted) / 1000);
     }
 
-    private void setChecked(WebElement checkbox, boolean checked) {
-        if (checkbox.isSelected() != checked) {
-            selectElement(scrollTo(driver, checkbox), browserWebDriver);
+    /**
+     * Clicks "Download template" in the import page and returns the content of the generated file, byte order mark included.
+     * The file is not saved: the download is intercepted in the page.
+     */
+    String downloadAttendeesImportTemplate(String slug) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/import");
+        var importPage = wait.until(presenceOfElementLocated(By.tagName("alfio-attendees-import")));
+        var button = findInShadowRoot(importPage, "#download-template");
+        return (String) ((JavascriptExecutor) driver).executeAsyncScript("""
+            const [button, done] = arguments;
+            const createObjectURL = URL.createObjectURL;
+            const click = HTMLAnchorElement.prototype.click;
+            let blob;
+            URL.createObjectURL = b => { blob = b; return createObjectURL.call(URL, b); };
+            HTMLAnchorElement.prototype.click = function () { if (!this.download) { click.call(this); } };
+            try {
+                button.click();
+            } finally {
+                URL.createObjectURL = createObjectURL;
+                HTMLAnchorElement.prototype.click = click;
+            }
+            // keeps the byte order mark, which Blob.text() would drop
+            blob ? blob.arrayBuffer().then(content => done(new TextDecoder('utf-8', { ignoreBOM: true }).decode(content))) : done(null);
+            """, button);
+    }
+
+    record ReservationContact(String firstName, String lastName, String email) {}
+
+    private String importProgress(WebElement status) {
+        return findAllInShadowRoot(status, "sl-progress-bar").stream().map(WebElement::getText).findFirst().orElse("no progress displayed");
+    }
+
+    /**
+     * Opens the dropdown of a sl-select and clicks the option. Options react to mouse events, not to a scripted click
+     */
+    @SuppressWarnings("unchecked")
+    private void selectShoelaceOption(WebElement select, String label) {
+        scrollToCenter(select).click();
+        var option = wait.until(d -> ((List<WebElement>) ((JavascriptExecutor) d).executeScript("return Array.from(arguments[0].querySelectorAll('sl-option'));", select))
+            .stream()
+            .filter(o -> o.isDisplayed() && o.getText().trim().equals(label))
+            .findFirst()
+            .orElse(null));
+        option.click();
+        wait.until(_ -> !String.valueOf(select.getDomProperty("value")).isEmpty());
+    }
+
+    private void setShoelaceSwitch(WebElement shoelaceSwitch, boolean checked) {
+        wait.until(_ -> shoelaceSwitch.getDomAttribute("disabled") == null);
+        if (Boolean.parseBoolean(shoelaceSwitch.getDomProperty("checked")) != checked) {
+            clickWithJs(driver, shoelaceSwitch);
+            wait.until(_ -> Boolean.parseBoolean(shoelaceSwitch.getDomProperty("checked")) == checked);
         }
     }
 

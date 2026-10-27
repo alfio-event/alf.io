@@ -174,23 +174,6 @@ export class Users extends LitElement {
                 font-size: var(--sl-font-size-small);
                 color: var(--sl-color-gray-600);
             }
-
-            .bulk-specs {
-                background: var(--sl-color-gray-50);
-                border: 1px solid var(--sl-color-gray-200);
-                border-radius: var(--sl-input-border-radius);
-                padding: var(--sl-spacing-medium);
-            }
-
-            .bulk-specs pre {
-                background: var(--sl-color-neutral-5);
-                border: 1px solid var(--sl-color-gray-300);
-                border-radius: var(--sl-input-border-radius);
-                padding: var(--sl-spacing-small) var(--sl-spacing-medium);
-                font-size: var(--sl-font-size-small);
-                margin-top: var(--sl-spacing-small);
-                margin-bottom: 0;
-            }
         `
     ];
 

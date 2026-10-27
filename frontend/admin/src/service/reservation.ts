@@ -1,7 +1,6 @@
 import {PurchaseContextType} from '../model/purchase-context.ts';
 import {EmailMessage} from '../model/email-message.ts';
 import {
-    ApiResult,
     AuditEntry,
     BillingDocument,
     FullTicketData,
@@ -9,7 +8,7 @@ import {
     ReservationDescriptor,
     ReservationModification,
 } from '../model/reservation-detail.ts';
-import {fetchJson, postJson, putJson, callDelete} from './helpers.ts';
+import {callDelete, ensureOk, fetchJson, postJson, putJson, result} from './helpers.ts';
 
 export interface CancelReservationOptions {
     // true: issue a credit note, false: cancel the reservation
@@ -138,17 +137,3 @@ export class ReservationService {
     }
 }
 
-async function ensureOk<T>(response: Response): Promise<T> {
-    if (!response.ok) {
-        throw new Error((await response.text()) || `unexpected status ${response.status}`);
-    }
-    return response.json();
-}
-
-async function result<T>(request: Promise<Response>): Promise<T> {
-    const body = await ensureOk<ApiResult<T>>(await request);
-    if (!body.success) {
-        throw new Error(body.errors?.map(e => e.description).join(', ') || 'An unexpected error has occurred');
-    }
-    return body.data;
-}
