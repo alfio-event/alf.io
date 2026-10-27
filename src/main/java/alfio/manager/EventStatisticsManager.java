@@ -59,6 +59,8 @@ public class EventStatisticsManager {
     private final SubscriptionRepository subscriptionRepository;
     private final ExtensionManager extensionManager;
     private final PurchaseContextFieldManager purchaseContextFieldManager;
+    private final AdditionalServiceRepository additionalServiceRepository;
+    private final AdditionalServiceTextRepository additionalServiceTextRepository;
 
     public EventStatisticsManager(EventRepository eventRepository,
                                   EventDescriptionRepository eventDescriptionRepository,
@@ -71,7 +73,9 @@ public class EventStatisticsManager {
                                   UserManager userManager,
                                   SubscriptionRepository subscriptionRepository,
                                   ExtensionManager extensionManager,
-                                  PurchaseContextFieldManager purchaseContextFieldManager) {
+                                  PurchaseContextFieldManager purchaseContextFieldManager,
+                                  AdditionalServiceRepository additionalServiceRepository,
+                                  AdditionalServiceTextRepository additionalServiceTextRepository) {
         this.eventRepository = eventRepository;
         this.eventDescriptionRepository = eventDescriptionRepository;
         this.ticketSearchRepository = ticketSearchRepository;
@@ -84,6 +88,8 @@ public class EventStatisticsManager {
         this.subscriptionRepository = subscriptionRepository;
         this.extensionManager = extensionManager;
         this.purchaseContextFieldManager = purchaseContextFieldManager;
+        this.additionalServiceRepository = additionalServiceRepository;
+        this.additionalServiceTextRepository = additionalServiceTextRepository;
     }
 
     private List<Event> getAllEvents(String username) {
@@ -125,16 +131,21 @@ public class EventStatisticsManager {
     public List<EventWithAdditionalInfo> getAllEventsWithAdditionalInfo(String username) {
         List<Integer> organizations = userManager.findUserOrganizations(username).stream().map(Organization::getId).toList();
         return eventRepository.findByOrganizationIds(organizations).stream()
-            .map(e -> getEventWithAdditionalInfo(username, e))
+            .map(e -> getEventWithAdditionalInfo(username, e, false))
             .toList();
     }
 
     public EventWithAdditionalInfo getEventWithAdditionalInfo(String eventName, String username) {
         Event event = getEventAndCheckOwnership(eventName, username);
-        return getEventWithAdditionalInfo(username, event);
+        return getEventWithAdditionalInfo(username, event, false);
     }
 
-    private EventWithAdditionalInfo getEventWithAdditionalInfo(String username, Event event) {
+    public EventWithAdditionalInfo getEventWithAdditionalInfoAndAdditionalServices(String eventName, String username) {
+        Event event = getEventAndCheckOwnership(eventName, username);
+        return getEventWithAdditionalInfo(username, event, true);
+    }
+
+    private EventWithAdditionalInfo getEventWithAdditionalInfo(String username, Event event, boolean includeAdditionalServices) {
         Map<String, String> description = eventDescriptionRepository.findByEventIdAsMap(event.getId());
         boolean owner = userManager.isOwner(userManager.findUserByUsername(username));
         EventStatisticView statistics = owner ? eventRepository.findStatisticsFor(event.getId()) : EventStatisticView.empty(event.getId());
@@ -166,8 +177,24 @@ public class EventStatisticsManager {
             eventRepository.getMetadataForEvent(event.getId()),
             subscriptionRepository.findLinkedSubscriptionIds(event.getId(), event.getOrganizationId()),
             supportedCapabilities,
-            purchaseContextFieldManager.findAdditionalFields(event)
+            purchaseContextFieldManager.findAdditionalFields(event),
+            includeAdditionalServices ? loadAdditionalServicesWithStatistics(event, owner) : null
         );
+    }
+
+    private List<AdditionalServiceWithStatistics> loadAdditionalServicesWithStatistics(Event event, boolean owner) {
+        var additionalServices = additionalServiceRepository.loadAllForEvent(event.getId());
+        if (additionalServices.isEmpty()) {
+            return List.of();
+        }
+        var texts = additionalServiceTextRepository.getDescriptionsByAdditionalServiceIds(additionalServices.stream().map(AdditionalService::id).toList());
+        var countByService = owner ? additionalServiceRepository.getCount(event.getId()) : Map.<Integer, Map<AdditionalServiceItem.AdditionalServiceItemStatus, Integer>>of();
+        return additionalServices.stream()
+            .map(as -> AdditionalServiceWithStatistics.from(as,
+                event,
+                texts.getOrDefault(as.id(), Map.of()).getOrDefault(AdditionalServiceText.TextType.TITLE, Map.of()),
+                countByService.getOrDefault(as.id(), Map.of())))
+            .toList();
     }
 
     private Event getEventAndCheckOwnership(String eventName, String username) {

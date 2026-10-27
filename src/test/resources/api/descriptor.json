@@ -27423,6 +27423,78 @@
           }
         }
       },
+      "AdditionalServiceWithStatistics_AdminPublicApi" : {
+        "type" : "object",
+        "properties" : {
+          "acquired" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "availableQuantity" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "checkedIn" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "finalPrice" : {
+            "type" : "number"
+          },
+          "fixPrice" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "netPrice" : {
+            "type" : "number"
+          },
+          "pending" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "regularPrice" : {
+            "type" : "number"
+          },
+          "remaining" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "sold" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "taxablePrice" : {
+            "type" : "number"
+          },
+          "title" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          },
+          "toBePaid" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "DONATION", "SUPPLEMENT" ]
+          },
+          "vat" : {
+            "type" : "number"
+          },
+          "vatPercentage" : {
+            "type" : "number"
+          },
+          "vatStatus" : {
+            "type" : "string",
+            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+          }
+        }
+      },
       "AdminReservationModification" : {
         "type" : "object",
         "properties" : {
@@ -29905,6 +29977,12 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/PurchaseContextFieldConfiguration_AdminPublicApi"
+            }
+          },
+          "additionalServices" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdditionalServiceWithStatistics_AdminPublicApi"
             }
           },
           "allowedPaymentProxies" : {

@@ -21,15 +21,22 @@ import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
 import alfio.controller.api.v1.admin.EventApiV1Controller;
+import alfio.manager.AdditionalServiceManager;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
 import alfio.manager.user.UserManager;
+import alfio.model.AdditionalService;
+import alfio.model.AdditionalServiceItem.AdditionalServiceItemStatus;
+import alfio.model.AdditionalServiceText;
+import alfio.model.AdditionalServiceWithStatistics;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
 import alfio.model.TicketCategoryWithAdditionalInfo;
 import alfio.model.api.v1.admin.AdditionalInfoRequest;
 import alfio.model.api.v1.admin.DescriptionRequest;
 import alfio.model.api.v1.admin.EventCreationRequest;
+import alfio.model.modification.DateTimeModification;
+import alfio.model.modification.EventModification;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
@@ -47,15 +54,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static java.util.Objects.requireNonNull;
@@ -94,6 +105,12 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private TicketCategoryRepository ticketCategoryRepository;
+
+    @Autowired
+    private AdditionalServiceManager additionalServiceManager;
+
+    @Autowired
+    private NamedParameterJdbcTemplate jdbcTemplate;
 
 
     private String organizationName;
@@ -217,6 +234,102 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
             assertTrue(ticketCategory.getOrdinal() > 0);
             assertTrue(ticketCategory.getOrdinal() > lastOrdinal);
             lastOrdinal = ticketCategory.getOrdinal();
+        }
+    }
+
+    @Test
+    void statsWithAdditionalServices() {
+        controller.create(creationRequest(defaultSlug), mockPrincipal);
+        var event = eventManager.getSingleEvent(defaultSlug, username);
+        var supplement = additionalServiceManager.insertAdditionalService(event,
+            additionalServiceRequest(1, BigDecimal.TEN, true, 10, AdditionalService.AdditionalServiceType.SUPPLEMENT, "supplement"));
+        var donation = additionalServiceManager.insertAdditionalService(event,
+            additionalServiceRequest(2, null, false, -1, AdditionalService.AdditionalServiceType.DONATION, "donation"));
+
+        // limited supplement: 10 pre-generated items
+        assignFreeItems(supplement.getId(), AdditionalServiceItemStatus.ACQUIRED, 2);
+        assignFreeItems(supplement.getId(), AdditionalServiceItemStatus.CHECKED_IN, 1);
+        assignFreeItems(supplement.getId(), AdditionalServiceItemStatus.TO_BE_PAID, 1);
+        assignFreeItems(supplement.getId(), AdditionalServiceItemStatus.PENDING, 1);
+        // unlimited donation: items are created on demand
+        insertItems(event, donation.getId(), AdditionalServiceItemStatus.ACQUIRED, 2);
+        insertItems(event, donation.getId(), AdditionalServiceItemStatus.PENDING, 1);
+
+        var stats = requireNonNull(controller.stats(defaultSlug, mockPrincipal).getBody());
+        var additionalServices = stats.getAdditionalServices();
+        assertEquals(2, additionalServices.size());
+
+        AdditionalServiceWithStatistics supplementStats = additionalServices.get(0);
+        assertEquals(supplement.getId(), supplementStats.id());
+        assertEquals(AdditionalService.AdditionalServiceType.SUPPLEMENT, supplementStats.type());
+        assertEquals(Map.of("en", "supplement"), supplementStats.title());
+        assertTrue(supplementStats.fixPrice());
+        assertEquals(0, new BigDecimal("10.00").compareTo(supplementStats.regularPrice()));
+        assertEquals(0, new BigDecimal("10.00").compareTo(supplementStats.finalPrice()));
+        assertEquals(stats.getVatStatus(), supplementStats.vatStatus());
+        assertEquals(0, new BigDecimal("10.00").compareTo(supplementStats.taxablePrice()));
+        assertTrue(supplementStats.vat().signum() > 0);
+        assertTrue(supplementStats.netPrice().compareTo(supplementStats.finalPrice()) < 0);
+        assertEquals(10, supplementStats.availableQuantity());
+        assertEquals(4, supplementStats.sold());
+        assertEquals(2, supplementStats.acquired());
+        assertEquals(1, supplementStats.checkedIn());
+        assertEquals(1, supplementStats.toBePaid());
+        assertEquals(1, supplementStats.pending());
+        assertEquals(5, supplementStats.remaining());
+
+        AdditionalServiceWithStatistics donationStats = additionalServices.get(1);
+        assertEquals(donation.getId(), donationStats.id());
+        assertEquals(AdditionalService.AdditionalServiceType.DONATION, donationStats.type());
+        assertFalse(donationStats.fixPrice());
+        assertNull(donationStats.regularPrice());
+        assertNull(donationStats.finalPrice());
+        assertNull(donationStats.netPrice());
+        assertNull(donationStats.vatStatus());
+        assertNull(donationStats.availableQuantity());
+        assertEquals(2, donationStats.sold());
+        assertEquals(1, donationStats.pending());
+        assertNull(donationStats.remaining());
+
+        // additional services are loaded only for the stats endpoint
+        assertNull(eventStatisticsManager.getEventWithAdditionalInfo(defaultSlug, username).getAdditionalServices());
+    }
+
+    private static EventModification.AdditionalService additionalServiceRequest(int ordinal,
+                                                                                BigDecimal price,
+                                                                                boolean fixPrice,
+                                                                                int availableQuantity,
+                                                                                AdditionalService.AdditionalServiceType type,
+                                                                                String title) {
+        return new EventModification.AdditionalService(
+            null,
+            price,
+            fixPrice,
+            ordinal,
+            availableQuantity,
+            2,
+            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(ClockProvider.clock()).minusDays(1)),
+            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(ClockProvider.clock()).plusDays(1)),
+            BigDecimal.ZERO,
+            AdditionalService.VatType.INHERITED,
+            List.of(),
+            List.of(new EventModification.AdditionalServiceText(null, "en", title, AdditionalServiceText.TextType.TITLE)),
+            List.of(new EventModification.AdditionalServiceText(null, "en", "description", AdditionalServiceText.TextType.DESCRIPTION)),
+            type,
+            AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT, null, null
+        );
+    }
+
+    private void assignFreeItems(int additionalServiceId, AdditionalServiceItemStatus status, int count) {
+        int updated = jdbcTemplate.update("update additional_service_item set status = :status where id in (select id from additional_service_item where additional_service_id_fk = :id and status = 'FREE' limit :count)",
+            new MapSqlParameterSource("status", status.name()).addValue("id", additionalServiceId).addValue("count", count));
+        assertEquals(count, updated);
+    }
+
+    private void insertItems(Event event, int additionalServiceId, AdditionalServiceItemStatus status, int count) {
+        for (int i = 0; i < count; i++) {
+            jdbcTemplate.update("insert into additional_service_item (uuid, creation, additional_service_id_fk, status, event_id_fk) values(:uuid, now(), :id, :status, :eventId)",
+                new MapSqlParameterSource("uuid", UUID.randomUUID().toString()).addValue("id", additionalServiceId).addValue("status", status.name()).addValue("eventId", event.getId()));
         }
     }
 

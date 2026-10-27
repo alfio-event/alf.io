@@ -19,6 +19,7 @@ package alfio.model;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.StatisticsContainer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Delegate;
@@ -49,6 +50,10 @@ public class EventWithAdditionalInfo implements StatisticsContainer, PriceContai
     private final Set<ExtensionCapabilitySummary> supportedCapabilities;
 
     private final List<PurchaseContextFieldConfiguration> additionalFields;
+
+    // populated only for the single-event statistics endpoint
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private final List<AdditionalServiceWithStatistics> additionalServices;
 
     @JsonIgnore
     public Event getEvent() {

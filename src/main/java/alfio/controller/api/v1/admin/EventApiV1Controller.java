@@ -181,7 +181,7 @@ public class EventApiV1Controller {
     public ResponseEntity<EventWithAdditionalInfo> stats(@PathVariable String slug, Principal user) {
         accessService.checkEventOwnership(user, slug);
         Result<EventWithAdditionalInfo> result = new Result.Builder<EventWithAdditionalInfo>()
-            .build(() -> eventStatisticsManager.getEventWithAdditionalInfo(slug,user.getName()));
+            .build(() -> eventStatisticsManager.getEventWithAdditionalInfoAndAdditionalServices(slug,user.getName()));
 
         if(result.isSuccess()) {
             return ResponseEntity.ok(result.getData());
