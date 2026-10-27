@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 import static alfio.manager.support.extension.ExtensionEvent.TICKET_ASSIGNED;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.*;
 
@@ -50,9 +51,11 @@ class ExtensionManagerTest {
         ticket = mock(Ticket.class);
         when(ticket.getStatus()).thenReturn(Ticket.TicketStatus.ACQUIRED);
         when(ticket.getEventId()).thenReturn(1);
+        when(ticket.ticketCode("privateKey", false)).thenReturn("ticketCode");
         event = mock(Event.class);
         when(event.getId()).thenReturn(1);
         when(event.getShortName()).thenReturn("blabla");
+        when(event.getPrivateKey()).thenReturn("privateKey");
         eventRepository = mock(EventRepository.class);
         when(eventRepository.findOrganizationIdByEventId(1)).thenReturn(1);
         when(eventRepository.findById(1)).thenReturn(event);
@@ -82,6 +85,17 @@ class ExtensionManagerTest {
         ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
         verify(extensionService).executeScriptAsync(eq(TICKET_ASSIGNED.name()), anyString(), payloadCaptor.capture());
         assertSame(linkedAdditionalServices, payloadCaptor.getValue().get("linkedAdditionalServices"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void handleTicketAssignmentIncludesTicketQrCode() {
+        when(ticket.hasBeenSold()).thenReturn(true);
+        when(eventRepository.getMetadataForEvent(eq(1))).thenReturn(AlfioMetadata.empty());
+        extensionManager.handleTicketAssignment(ticket, mock(TicketCategory.class), Map.of());
+        ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(extensionService).executeScriptAsync(eq(TICKET_ASSIGNED.name()), anyString(), payloadCaptor.capture());
+        assertEquals("ticketCode", payloadCaptor.getValue().get("ticketQrCode"));
     }
 
     @Test

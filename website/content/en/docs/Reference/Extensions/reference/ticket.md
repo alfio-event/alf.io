@@ -45,6 +45,11 @@ Fired **asynchronously** once a ticket has been assigned
                 <td>List of [`LinkedAdditionalService`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/extension/LinkedAdditionalService.java)</td>
                 <td>Confirmed additional services linked to the ticket. Each item contains the `additionalServiceId`, the `quantity` and the `additional` values (`Map<String, String>`, by field name) provided for them. Items having the same values are grouped together. Empty if the event does not support linked additional services</td>
             </tr>
+            <tr>
+                <td>`ticketQrCode`</td>
+                <td>`String`</td>
+                <td>Content of the ticket QR code, i.e. the value scanned at check-in</td>
+            </tr>
         </tbody>
     </table>
 </div>

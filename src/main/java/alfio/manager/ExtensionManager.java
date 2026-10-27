@@ -225,7 +225,8 @@ public class ExtensionManager {
                 ADDITIONAL_INFO, Objects.requireNonNullElse(additionalInfo, Map.of()),
                 EVENT_METADATA, Objects.requireNonNullElseGet(eventRepository.getMetadataForEvent(event.getId()), AlfioMetadata::empty),
                 "onlineAccessTicket", EventUtil.isAccessOnline(category, event),
-                "linkedAdditionalServices", additionalServiceHelper.findLinkedAdditionalServices(ticket, event)
+                "linkedAdditionalServices", additionalServiceHelper.findLinkedAdditionalServices(ticket, event),
+                "ticketQrCode", ticket.ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive())
             ));
     }
 
