@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -737,7 +738,7 @@ class AdminConsole {
         driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/import");
         var importPage = wait.until(presenceOfElementLocated(By.tagName("alfio-attendees-import")));
         var button = findInShadowRoot(importPage, "#download-template");
-        return (String) ((JavascriptExecutor) driver).executeAsyncScript("""
+        var content = (String) ((JavascriptExecutor) driver).executeAsyncScript("""
             const [button, done] = arguments;
             const createObjectURL = URL.createObjectURL;
             const click = HTMLAnchorElement.prototype.click;
@@ -750,9 +751,14 @@ class AdminConsole {
                 URL.createObjectURL = createObjectURL;
                 HTMLAnchorElement.prototype.click = click;
             }
-            // keeps the byte order mark, which Blob.text() would drop
-            blob ? blob.arrayBuffer().then(content => done(new TextDecoder('utf-8', { ignoreBOM: true }).decode(content))) : done(null);
+            // returns the raw bytes: a decoded string may lose the byte order mark on the way back (e.g. on Safari)
+            if (blob) {
+                blob.arrayBuffer().then(content => done(btoa(String.fromCharCode(...new Uint8Array(content)))));
+            } else {
+                done(null);
+            }
             """, button);
+        return new String(Base64.getDecoder().decode(requireNonNull(content, "the template has not been downloaded")), StandardCharsets.UTF_8);
     }
 
     record ReservationContact(String firstName, String lastName, String email) {}

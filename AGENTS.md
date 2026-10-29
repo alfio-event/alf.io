@@ -16,6 +16,12 @@ Commits are authored by the human contributor. Write commit messages without `Co
 - `src/main/webapp/alfio-admin-v1`: legacy AngularJS admin. Build new admin screens in `frontend/admin`.
 - `src/main/resources/alfio/templates`: email and PDF templates. A change here counts as a backend change.
 
+## Code style
+
+Code is read far more often than it is written, so prefer the readable form over the compact one, in every language (Java, TypeScript, JavaScript embedded in tests).
+
+- **No ternary operator** (`a ? b : c`): write an `if`/`else` instead, even when the ternary would fit on one line.
+
 ## Backend conventions
 
 - **Database access** goes through `ch.digitalfondue.npjt` interfaces: an `@QueryRepository` interface with SQL in `@Query` annotations and parameters bound with `@Bind`. Follow the existing repositories in `alfio.repository`.
