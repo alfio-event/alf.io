@@ -12,7 +12,7 @@ description: >
 
 Fired when someone subscribes to a waiting list
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -22,8 +22,8 @@ Fired when someone subscribes to a waiting list
         </thead>
         <tbody>
             <tr>
-                <td>`waitingQueueSubscription`</td>
-                <td>[`WaitingQueueSubscription`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/WaitingQueueSubscription.java)</td>
+                <td><code>waitingQueueSubscription</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/WaitingQueueSubscription.java" target="_blank" rel="noopener"><code>WaitingQueueSubscription</code></a></td>
                 <td>Details about the subscription</td>
             </tr>
         </tbody>
@@ -40,7 +40,7 @@ Script is expected to save the result in a temporary file (e.g. by using the `po
 This is a **synchronous** call. 
 A result of type [`PdfGenerationResult`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/extension/PdfGenerationResult.java) is expected. Return `null` if the generation was not successful. 
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -50,18 +50,18 @@ A result of type [`PdfGenerationResult`](https://github.com/alfio-event/alf.io/b
         </thead>
         <tbody>
             <tr>
-                <td>`event`</td>
-                <td>[`Event`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java)</td>
+                <td><code>event</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java" target="_blank" rel="noopener"><code>Event</code></a></td>
                 <td>The event</td>
             </tr>
             <tr>
-                <td>`html`</td>
-                <td>`String`</td>
+                <td><code>html</code></td>
+                <td><code>String</code></td>
                 <td>HTML to be converted to PDF</td>
             </tr>
             <tr>
-                <td>`outputStream`</td>
-                <td>[`OutputStream`](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/io/OutputStream.html)</td>
+                <td><code>outputStream</code></td>
+                <td><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/io/OutputStream.html" target="_blank" rel="noopener"><code>OutputStream</code></a></td>
                 <td>OutputStream used to save the produced PDF</td>
             </tr>
         </tbody>
@@ -75,7 +75,7 @@ Fired when an an OAuth2 [state parameter](https://www.oauth.com/oauth2-servers/a
 
 This is a **synchronous** call. A `String` containing a valid URL must be returned, or `null` to proceed with the default settings. 
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -85,13 +85,13 @@ This is a **synchronous** call. A `String` containing a valid URL must be return
         </thead>
         <tbody>
             <tr>
-                <td>`baseUrl`</td>
+                <td><code>baseUrl</code></td>
                 <td>String</td>
                 <td>The configured "Base URL" for the current organizer</td>
             </tr>
             <tr>
-                <td>`organizationId`</td>
-                <td>`int`</td>
+                <td><code>organizationId</code></td>
+                <td><code>int</code></td>
                 <td>Organizer ID</td>
             </tr>
         </tbody>

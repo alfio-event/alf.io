@@ -1,0 +1,13 @@
+{{ $col_id := .Get "color" | default .Ordinal -}}
+{{ $height := .Get "height" | default "auto" -}}
+{{/* Height can be one of: auto, min, med, max, full. */ -}}
+<div><a id="td-block-{{ .Ordinal }}" class="td-anchor-no-extra-offset"></a></div>
+<section class="row td-box td-box--{{ $col_id }} position-relative td-box--height-{{ $height }}">
+<div class="col-12">
+<div class="container td-arrow-down">
+{{/* Do NOT remove this comment! It ends the HTML block above. See https://spec.commonmark.org/0.30/#html-blocks, 7. */}}
+{{ .Inner }}
+</div>
+</div>
+</section>
+{{/**/ -}}

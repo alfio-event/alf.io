@@ -1,0 +1,94 @@
+/*
+
+Add styles from the theme here.
+
+*/
+
+// flat orange navbar showing the logo only, as with the previous Docsy version
+.td-navbar {
+    --td-navbar-border-bottom: none;
+    background-image: none;
+
+    .navbar-brand__name {
+        display: none;
+    }
+
+    // bold links, spaced as in the previous Docsy version
+    .navbar-nav {
+        --bs-nav-link-color: rgba(255, 255, 255, 0.75);
+    }
+
+    .nav-link {
+        font-weight: $font-weight-bold;
+    }
+
+    .nav-item {
+        padding-inline-end: 0;
+        margin-right: 1.5rem;
+    }
+
+    // borderless, rounded search box
+    .td-search__input {
+        border: none;
+        border-radius: 1rem;
+        width: 184px;
+
+        &::placeholder {
+            color: rgba(255, 255, 255, 0.75);
+        }
+    }
+
+    // fully transparent while over the cover image of the home page, orange once scrolled past it
+    &.td-navbar-cover.td-navbar-transparent {
+        @include media-breakpoint-up(md) {
+            --bs-bg-opacity: 0;
+            --td-navbar-backdrop-filter: none;
+
+            .nav-link {
+                text-shadow: 1px 1px 2px $dark;
+            }
+        }
+    }
+}
+
+.td-content img {
+    margin: 30px;
+    box-shadow: 0 0.3rem 0.5rem rgba(0, 0, 0, 0.15) !important;
+}
+
+table, td, th {
+    border: 1px solid grey;
+    text-align: left;
+    table-layout: auto;
+}
+th,
+.table > :not(caption) > * > th {
+    --bs-table-bg: #{$primary};
+    --bs-table-color: white;
+    background-color: $primary;
+    color: white;
+}
+
+// pageinfo boxes keep the look of the previous Docsy version: light background with a colored border
+.pageinfo {
+    background: var(--bs-tertiary-bg);
+    border-radius: 0;
+    margin: 2rem;
+
+    @each $color, $value in $theme-colors {
+        &-#{$color} {
+            border: medium solid $value;
+        }
+    }
+}
+
+// alerts keep the look of the previous Docsy version: no background, heading in the alert color
+.alert {
+    background: var(--bs-body-bg);
+
+    @each $color, $value in $theme-colors {
+        &-#{$color} .alert-heading {
+            color: $value;
+        }
+    }
+}

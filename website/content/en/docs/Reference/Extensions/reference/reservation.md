@@ -11,7 +11,7 @@ description: >
 
 Fired **asynchronously** once a reservation has been confirmed.
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -21,13 +21,13 @@ Fired **asynchronously** once a reservation has been confirmed.
         </thead>
         <tbody>
             <tr>
-                <td>`reservation`</td>
-                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java)</td>
+                <td><code>reservation</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java" target="_blank" rel="noopener"><code>TicketReservation</code></a></td>
                 <td>Details about the reservation</td>
             </tr>
             <tr>
-                <td>`billingDetails`</td>
-                <td>[`BillingDetails`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/BillingDetails.java)</td>
+                <td><code>billingDetails</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/BillingDetails.java" target="_blank" rel="noopener"><code>BillingDetails</code></a></td>
                 <td>Billing info for the reservation</td>
             </tr>
         </tbody>
@@ -39,7 +39,7 @@ Fired **asynchronously** once a reservation has been confirmed.
 
 Fired **synchronously** once one or more reservations have been cancelled.
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -49,13 +49,13 @@ Fired **synchronously** once one or more reservations have been cancelled.
         </thead>
         <tbody>
             <tr>
-                <td>`reservationIds`</td>
-                <td>`Collection<String>`</td>
+                <td><code>reservationIds</code></td>
+                <td><code>Collection&lt;String&gt;</code></td>
                 <td>Cancelled reservation IDs</td>
             </tr>
             <tr>
-                <td>`reservations`</td>
-                <td>`List<`[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java)`>`</td>
+                <td><code>reservations</code></td>
+                <td><code>List&lt;</code><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java" target="_blank" rel="noopener"><code>TicketReservation</code></a><code>&gt;</code></td>
                 <td>Cancelled reservations</td>
             </tr>
         </tbody>
@@ -67,7 +67,7 @@ Fired **synchronously** once one or more reservations have been cancelled.
 
 Fired **synchronously** once one or more reservations have expired.
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -77,13 +77,13 @@ Fired **synchronously** once one or more reservations have expired.
         </thead>
         <tbody>
             <tr>
-                <td>`reservationIds`</td>
-                <td>`Collection<String>`</td>
+                <td><code>reservationIds</code></td>
+                <td><code>Collection&lt;String&gt;</code></td>
                 <td>Cancelled reservation IDs</td>
             </tr>
             <tr>
-                <td>`reservations`</td>
-                <td>`List<`[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java)`>`</td>
+                <td><code>reservations</code></td>
+                <td><code>List&lt;</code><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java" target="_blank" rel="noopener"><code>TicketReservation</code></a><code>&gt;</code></td>
                 <td>Cancelled reservations</td>
             </tr>
         </tbody>
@@ -95,7 +95,7 @@ Fired **synchronously** once one or more reservations have expired.
 
 Fired **synchronously** when a reservation needs to be validated. No result expected, use the input [`BindingResult`](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/validation/BindingResult.html) to add any validation errors
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -105,28 +105,28 @@ Fired **synchronously** when a reservation needs to be validated. No result expe
         </thead>
         <tbody>
             <tr>
-                <td>`reservationId`</td>
-                <td>`String`</td>
+                <td><code>reservationId</code></td>
+                <td><code>String</code></td>
                 <td>Reservation ID</td>
             </tr>
             <tr>
-                <td>`reservation`</td>
-                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java)</td>
+                <td><code>reservation</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java" target="_blank" rel="noopener"><code>TicketReservation</code></a></td>
                 <td>Reservation to validate</td>
             </tr>
             <tr>
-                <td>`form`</td>
-                <td>[`ContactAndTicketsForm`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/controller/form/ContactAndTicketsForm.java) or [`PaymentForm`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/controller/form/PaymentForm.java)</td>
+                <td><code>form</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/controller/form/ContactAndTicketsForm.java" target="_blank" rel="noopener"><code>ContactAndTicketsForm</code></a> or <a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/controller/form/PaymentForm.java" target="_blank" rel="noopener"><code>PaymentForm</code></a></td>
                 <td>Customer provided input values</td>
             </tr>
             <tr>
-                <td>`reservation`</td>
-                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java)</td>
+                <td><code>reservation</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java" target="_blank" rel="noopener"><code>TicketReservation</code></a></td>
                 <td>Reservation to validate</td>
             </tr>
             <tr>
-                <td>`bindingResult`</td>
-                <td>[`BindingResult`](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/validation/BindingResult.html)</td>
+                <td><code>bindingResult</code></td>
+                <td><a href="https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/validation/BindingResult.html" target="_blank" rel="noopener"><code>BindingResult</code></a></td>
                 <td>Binding result to register any validation errors</td>
             </tr>
         </tbody>
@@ -140,7 +140,7 @@ Fired **synchronously** when a Tax ID (VAT/GST) number has to be validated. Plea
 
 Expected return type is `boolean`
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -150,13 +150,13 @@ Expected return type is `boolean`
         </thead>
         <tbody>
             <tr>
-                <td>`taxIdNumber`</td>
-                <td>`String`</td>
+                <td><code>taxIdNumber</code></td>
+                <td><code>String</code></td>
                 <td>TAX ID number to validate</td>
             </tr>
             <tr>
-                <td>`countryCode`</td>
-                <td>`String`</td>
+                <td><code>countryCode</code></td>
+                <td><code>String</code></td>
                 <td>ISO 3166 2-letters country code</td>
             </tr>
         </tbody>
@@ -170,7 +170,7 @@ Fired **synchronously** when generating an invoice. This allows for an integrati
 
 Expected result is [`InvoiceGeneration`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/extension/InvoiceGeneration.java) or `null`
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -180,63 +180,63 @@ Expected result is [`InvoiceGeneration`](https://github.com/alfio-event/alf.io/b
         </thead>
         <tbody>
             <tr>
-                <td>`reservationId`</td>
-                <td>`String`</td>
+                <td><code>reservationId</code></td>
+                <td><code>String</code></td>
                 <td>Reservation ID</td>
             </tr>
             <tr>
-                <td>`email`</td>
-                <td>`String`</td>
+                <td><code>email</code></td>
+                <td><code>String</code></td>
                 <td>Customer email</td>
             </tr>
             <tr>
-                <td>`customerName`</td>
-                <td>[`CustomerName`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/CustomerName.java)</td>
+                <td><code>customerName</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/CustomerName.java" target="_blank" rel="noopener"><code>CustomerName</code></a></td>
                 <td>Customer first/last name</td>
             </tr>
             <tr>
-                <td>`userLanguage`</td>
-                <td>`String`</td>
+                <td><code>userLanguage</code></td>
+                <td><code>String</code></td>
                 <td>ISO 639-1 2-letters language code</td>
             </tr>
             <tr>
-                <td>`billingAddress`</td>
-                <td>`String`</td>
+                <td><code>billingAddress</code></td>
+                <td><code>String</code></td>
                 <td>multi-line billing address</td>
             </tr>
             <tr>
-                <td>`billingDetails`</td>
-                <td>[`BillingDetails`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/BillingDetails.java)</td>
+                <td><code>billingDetails</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/BillingDetails.java" target="_blank" rel="noopener"><code>BillingDetails</code></a></td>
                 <td>Billing data</td>
             </tr>
             <tr>
-                <td>`customerReference`</td>
-                <td>`String`</td>
+                <td><code>customerReference</code></td>
+                <td><code>String</code></td>
                 <td>Customer reference (PO number)</td>
             </tr>
             <tr>
-                <td>`reservationCost`</td>
-                <td>[`TotalPrice`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TotalPrice.java)</td>
+                <td><code>reservationCost</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TotalPrice.java" target="_blank" rel="noopener"><code>TotalPrice</code></a></td>
                 <td>Reservation price details</td>
             </tr>
             <tr>
-                <td>`invoiceRequested`</td>
-                <td>`boolean`</td>
+                <td><code>invoiceRequested</code></td>
+                <td><code>boolean</code></td>
                 <td>Wether customer has requested an invoice</td>
             </tr>
             <tr>
-                <td>`vatCountryCode`</td>
-                <td>`String`</td>
+                <td><code>vatCountryCode</code></td>
+                <td><code>String</code></td>
                 <td>2-digit TAX ID Country code</td>
             </tr>
             <tr>
-                <td>`vatNr`</td>
-                <td>`String`</td>
+                <td><code>vatNr</code></td>
+                <td><code>String</code></td>
                 <td>TAX ID</td>
             </tr>
             <tr>
-                <td>`vatStatus`</td>
-                <td>[`PriceContainer.VatStatus`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/PriceContainer.java#L36)</td>
+                <td><code>vatStatus</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/PriceContainer.java#L36" target="_blank" rel="noopener"><code>PriceContainer.VatStatus</code></a></td>
                 <td>Tax application details</td>
             </tr>
         </tbody>
@@ -250,7 +250,7 @@ Fired **synchronously** when generating a credit note. This allows for an integr
 
 Expected result is [`CreditNoteGeneration`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/extension/CreditNoteGeneration.java) or `null`
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -260,18 +260,18 @@ Expected result is [`CreditNoteGeneration`](https://github.com/alfio-event/alf.i
         </thead>
         <tbody>
             <tr>
-                <td>`reservationId`</td>
-                <td>`String`</td>
+                <td><code>reservationId</code></td>
+                <td><code>String</code></td>
                 <td>Reservation ID</td>
             </tr>
             <tr>
-                <td>`invoiceNumber`</td>
-                <td>`String`</td>
+                <td><code>invoiceNumber</code></td>
+                <td><code>String</code></td>
                 <td>Invoice Number</td>
             </tr>
             <tr>
-                <td>`organization`</td>
-                <td>[`Organization`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Organization.java)</td>
+                <td><code>organization</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Organization.java" target="_blank" rel="noopener"><code>Organization</code></a></td>
                 <td>Organizer details</td>
             </tr>
         </tbody>
@@ -283,7 +283,7 @@ Expected result is [`CreditNoteGeneration`](https://github.com/alfio-event/alf.i
 
 Fired **asynchronously** after generating a credit note. This allows for an integration with external billing systems.
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -293,28 +293,28 @@ Fired **asynchronously** after generating a credit note. This allows for an inte
         </thead>
         <tbody>
             <tr>
-                <td>`reservationId`</td>
-                <td>`String`</td>
+                <td><code>reservationId</code></td>
+                <td><code>String</code></td>
                 <td>Reservation ID</td>
             </tr>
             <tr>
-                <td>`reservation`</td>
-                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java)</td>
+                <td><code>reservation</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java" target="_blank" rel="noopener"><code>TicketReservation</code></a></td>
                 <td>Reservation details</td>
             </tr>
             <tr>
-                <td>`billingDetails`</td>
-                <td>[`BillingDetails`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/BillingDetails.java)</td>
+                <td><code>billingDetails</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/BillingDetails.java" target="_blank" rel="noopener"><code>BillingDetails</code></a></td>
                 <td>Billing data</td>
             </tr>
             <tr>
-                <td>`reservationCost`</td>
-                <td>[`TotalPrice`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TotalPrice.java)</td>
+                <td><code>reservationCost</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TotalPrice.java" target="_blank" rel="noopener"><code>TotalPrice</code></a></td>
                 <td>Reservation price details</td>
             </tr>
             <tr>
-                <td>`billingDocumentId`</td>
-                <td>`long`</td>
+                <td><code>billingDocumentId</code></td>
+                <td><code>long</code></td>
                 <td>Internal Billing Document ID</td>
             </tr>
         </tbody>
@@ -326,7 +326,7 @@ Fired **asynchronously** after generating a credit note. This allows for an inte
 
 Fired **asynchronously** when one or more "stuck" reservations are detected. A reservation is considered to be "stuck" if it's expired while waiting for a confirmation from the payment provider
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -336,8 +336,8 @@ Fired **asynchronously** when one or more "stuck" reservations are detected. A r
         </thead>
         <tbody>
             <tr>
-                <td>`stuckReservationsId`</td>
-                <td>`List<String>`</td>
+                <td><code>stuckReservationsId</code></td>
+                <td><code>List&lt;String&gt;</code></td>
                 <td>Stuck reservations IDs</td>
             </tr>
         </tbody>
@@ -349,7 +349,7 @@ Fired **asynchronously** when one or more "stuck" reservations are detected. A r
 
 Fired **asynchronously** when one or more offline payments are going to expire.
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -359,8 +359,8 @@ Fired **asynchronously** when one or more offline payments are going to expire.
         </thead>
         <tbody>
             <tr>
-                <td>`reservations`</td>
-                <td>`List<`[`TicketReservationInfo`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservationInfo.java)`>`</td>
+                <td><code>reservations</code></td>
+                <td><code>List&lt;</code><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservationInfo.java" target="_blank" rel="noopener"><code>TicketReservationInfo</code></a><code>&gt;</code></td>
                 <td>Reservation details</td>
             </tr>
         </tbody>
@@ -372,7 +372,7 @@ Fired **asynchronously** when one or more offline payments are going to expire.
 
 Fired **asynchronously** after a refund has been issued.
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -382,18 +382,18 @@ Fired **asynchronously** after a refund has been issued.
         </thead>
         <tbody>
             <tr>
-                <td>`reservation`</td>
-                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java)</td>
+                <td><code>reservation</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java" target="_blank" rel="noopener"><code>TicketReservation</code></a></td>
                 <td>Reservation details</td>
             </tr>
             <tr>
-                <td>`transaction`</td>
-                <td>[`Transaction`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Transaction.java)</td>
+                <td><code>transaction</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Transaction.java" target="_blank" rel="noopener"><code>Transaction</code></a></td>
                 <td>Transaction details</td>
             </tr>
             <tr>
-                <td>`paymentInfo`</td>
-                <td>[`PaymentInformation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/PaymentInformation.java)</td>
+                <td><code>paymentInfo</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/PaymentInformation.java" target="_blank" rel="noopener"><code>PaymentInformation</code></a></td>
                 <td>Payment information</td>
             </tr>
         </tbody>
@@ -407,7 +407,7 @@ Fired **synchronously** when customer selects ticket categories in the event pag
 
 Expected result type: [`PromoCodeDiscount`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/PromoCodeDiscount.java) or `null`
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -417,14 +417,14 @@ Expected result type: [`PromoCodeDiscount`](https://github.com/alfio-event/alf.i
         </thead>
         <tbody>
             <tr>
-                <td>`quantityByCategory`</td>
-                <td>`Map<Integer, Long>`</td>
+                <td><code>quantityByCategory</code></td>
+                <td><code>Map&lt;Integer, Long&gt;</code></td>
                 <td>How many tickets are being purchased for each category</td>
             </tr>
             <tr>
-                <td>`reservationId`</td>
-                <td>`String`</td>
-                <td>Reservation ID - **may be undefined**</td>
+                <td><code>reservationId</code></td>
+                <td><code>String</code></td>
+                <td>Reservation ID - <strong>may be undefined</strong></td>
             </tr>
         </tbody>
     </table>

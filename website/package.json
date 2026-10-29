@@ -1,24 +1,20 @@
 {
-  "name": "tech-doc-hugo",
+  "name": "alfio-website",
   "version": "0.0.1",
-  "description": "Hugo theme for technical documentation.",
-  "main": "none.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "description": "The alf.io website, built with Hugo and the Docsy theme.",
+  "private": true,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bep/tech-doc-hugo.git"
+    "url": "git+https://github.com/alfio-event/alf.io.git",
+    "directory": "website"
   },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/bep/tech-doc-hugo/issues"
+  "license": "GPL-3.0",
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "7.3.1",
+    "bootstrap": "5.3.8"
   },
-  "homepage": "https://github.com/bep/tech-doc-hugo#readme",
-  "dependencies": {},
   "devDependencies": {
-    "autoprefixer": "^9.4.6",
-    "postcss-cli": "^5.0.1"
+    "autoprefixer": "10.6.1",
+    "postcss-cli": "12.0.0"
   }
 }

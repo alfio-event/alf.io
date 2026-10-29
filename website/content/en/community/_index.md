@@ -14,36 +14,50 @@ menu:
   </div>
 </div>
 
-<div class="d-none col-xs-6 col-md-4" id="contributors-template">
-    <div class="media mb-4">
-        <a href="#" class="contributor-link">
-            <img class="media-object img-thumbnail contributor-avatar" style="max-height: 120px" src="" alt="">
-        </a>
-        <div class="media-body ml-2">
-            <h4 class="media-heading"><span class="contributor-name"></span></h4>
-            <p><i class="fas fa-code-branch"></i> contributions: <span class="contributor-contributions"></span></p>
-            <p><i class="fab fa-github"></i> <a class="contributor-link"><span class="contributor-nickname"></span></a></p>
+<template id="contributor-template">
+    <div class="col-xs-6 col-md-4">
+        <div class="d-flex mb-4">
+            <a href="#" class="contributor-link flex-shrink-0">
+                <img class="img-thumbnail contributor-avatar" style="max-height: 120px" src="" alt="">
+            </a>
+            <div class="flex-grow-1 ms-2">
+                <h4><span class="contributor-name"></span></h4>
+                <p><i class="fas fa-code-branch"></i> contributions: <span class="contributor-contributions"></span></p>
+                <p><i class="fab fa-github"></i> <a class="contributor-link"><span class="contributor-nickname"></span></a></p>
+            </div>
         </div>
     </div>
-</div>
+</template>
 
 <script>
-    $(document).ready(function(){
-        $.getJSON('https://api.github.com/repos/alfio-event/alf.io/contributors', function(list) {
-            list.forEach(function(contributor) {
-                var element = $('#contributors-template').clone();
-                element.find('.contributor-link').attr('href', contributor.html_url);
-                element.find('.contributor-avatar').attr('src', contributor.avatar_url);
-                element.find('.contributor-nickname').html(contributor.login);
-                element.find('.contributor-contributions').html(contributor.contributions);
-                element.appendTo('#contributors');
-                $.getJSON(contributor.url, function(details) {
-                    var name = details.name && details.name.length > 0 ? details.name : contributor.login;
-                    element.find('.contributor-name').html(name);
-                    element.find('.contributor-avatar').attr('alt', name);
-                    element.removeClass('d-none');
+    (function() {
+        var template = document.getElementById('contributor-template');
+        var container = document.getElementById('contributors');
+        fetch('https://api.github.com/repos/alfio-event/alf.io/contributors')
+            .then(function(response) { return response.json(); })
+            .then(function(list) {
+                list.forEach(function(contributor) {
+                    var element = template.content.firstElementChild.cloneNode(true);
+                    element.querySelectorAll('.contributor-link').forEach(function(link) {
+                        link.href = contributor.html_url;
+                    });
+                    var avatar = element.querySelector('.contributor-avatar');
+                    avatar.src = contributor.avatar_url;
+                    element.querySelector('.contributor-nickname').textContent = contributor.login;
+                    element.querySelector('.contributor-name').textContent = contributor.login;
+                    element.querySelector('.contributor-contributions').textContent = contributor.contributions;
+                    container.appendChild(element);
+                    fetch(contributor.url)
+                        .then(function(response) { return response.json(); })
+                        .then(function(details) {
+                            var name = contributor.login;
+                            if (details.name && details.name.length > 0) {
+                                name = details.name;
+                            }
+                            element.querySelector('.contributor-name').textContent = name;
+                            avatar.alt = name;
+                        });
                 });
             });
-        });
-    });
+    })();
 </script>

@@ -17,9 +17,9 @@ menu:
 </p>
 
 <form name="contact" method="POST" data-netlify="true" action="/usage-form/thank-you">
-    <div class="form-group">
-        <label class="font-weight-bold" for="country">Your Country <sup>*</sup></label>
-        <select class="form-control" name="country" id="country" required>
+    <div class="mb-3">
+        <label class="fw-bold" for="country">Your Country <sup>*</sup></label>
+        <select class="form-select" name="country" id="country" required>
             <option value="" selected></option>
             <option value="AF">Afghanistan</option>
             <option value="AL">Albania</option>
@@ -272,8 +272,8 @@ menu:
             <option value="ZW">Zimbabwe</option>
         </select>
     </div>
-    <div class="form-group mt-3">
-        <label class="font-weight-bold" for="story">Please share your story with us. What do you do? How is alf.io helping you? <sup>*</sup></label>
+    <div class="mb-3 mt-3">
+        <label class="fw-bold" for="story">Please share your story with us. What do you do? How is alf.io helping you? <sup>*</sup></label>
         <textarea class="form-control" name="story" id="story" required="true"></textarea>
     </div>
 
@@ -281,25 +281,23 @@ menu:
 
     <h3>Optional data</h3>
 
-    <div class="form-group mt-3">
+    <div class="mb-3 mt-3">
         <label for="events">How many events do you organize per year?</label>
-        <select class="form-control" name="eventsPerYear" id="events">
+        <select class="form-select" name="eventsPerYear" id="events">
             <option value="" selected>I prefer not to share this information</option>
             <option value="1-5">1 to 5</option>
             <option value="5-10">5 to 10</option>
             <option value="10+">more than 10</option>
         </select>
     </div>
-    <div class="form-group mt-3">
+    <div class="mb-3 mt-3">
         <label for="fullName">Your Name</label>
         <input class="form-control" name="fullName" id="fullName">
     </div>
-    <div class="form-group mt-3">
+    <div class="mb-3 mt-3">
         <label for="twitterHandle">Your Twitter Handle</label>
         <div class="input-group mb-3">
-            <div class="input-group-prepend">
-                <span class="input-group-text" id="basic-addon1">@</span>
-            </div>
+            <span class="input-group-text" id="basic-addon1">@</span>
             <input type="text" name="twitterHandle" id="twitterHandle" class="form-control" placeholder="twitterHandle" aria-label="Twitter Handle" aria-describedby="basic-addon1">
         </div>
         <small id="passwordHelpBlock" class="form-text text-muted">
@@ -309,7 +307,7 @@ menu:
     </div>
     <div class="row mt-5 mb-5">
         <div class="col-12 col-lg-4 offset-lg-4">
-            <button class="btn btn-success btn-lg btn-block">Send</button>
+            <button class="btn btn-success btn-lg w-100">Send</button>
         </div>
     </div>
 </form>

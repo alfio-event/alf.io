@@ -10,25 +10,25 @@ linkTitle = "Alf.io"
 	<h2 class="m-lg-5 m-3">The open source ticket reservation system</h2>
     <div class="row">
         <div class="col-8 col-lg-3 offset-2 offset-lg-3">
-            <a class="btn btn-lg btn-secondary mr-3 mb-4 btn-block" href="https://demo.alf.io/admin/" target="_blank" rel="noopener">
-                Try it! <i class="fas fa-play-circle ml-2"></i>
+            <a class="btn btn-lg btn-secondary mb-4 w-100" href="https://demo.alf.io/admin/" target="_blank" rel="noopener">
+                Try it! <i class="fas fa-play-circle ms-2"></i>
             </a>
         </div>
         <div class="col-8 col-lg-3 offset-2 offset-lg-0">
-            <a class="btn btn-lg btn-success mr-3 mb-4 btn-block" href="https://github.com/alfio-event/alf.io/releases/latest" target="_blank" rel="noopener">
-                Download <i class="fas fa-download ml-2"></i>
+            <a class="btn btn-lg btn-success mb-4 w-100" href="https://github.com/alfio-event/alf.io/releases/latest" target="_blank" rel="noopener">
+                Download <i class="fas fa-download ms-2"></i>
             </a>
         </div>
     </div>
     <div class="row">
         <div class="col-8 col-lg-3 offset-2 offset-lg-3">
-            <a class="btn btn-lg btn-primary mr-3 mb-4 btn-block" href="{{< relref "/docs" >}}">
-                Documentation <i class="fas fa-arrow-alt-circle-right ml-2"></i>
+            <a class="btn btn-lg btn-primary mb-4 w-100" href="{{< relref "/docs" >}}">
+                Documentation <i class="fas fa-arrow-alt-circle-right ms-2"></i>
             </a>
         </div>
         <div class="col-8 col-lg-3 offset-2 offset-lg-0">
-            <a class="btn btn-lg btn-dark mr-3 mb-4 btn-block" href="https://github.com/alfio-event/alf.io">
-                View on GitHub <i class="fab fa-github ml-2 "></i>
+            <a class="btn btn-lg btn-dark mb-4 w-100" href="https://github.com/alfio-event/alf.io">
+                View on GitHub <i class="fab fa-github ms-2 "></i>
             </a>
         </div>
     </div>
@@ -41,7 +41,7 @@ linkTitle = "Alf.io"
 
 {{% blocks/alfio-lead color="white" %}}
 <div>
-	<div class="text-left">
+	<div class="text-start">
         <div class="mt-2 h4">Alf.io <small><a href="https://en.m.wikipedia.org/wiki/Alfio" target="_blank" rel="noopener" title="Alf.io pronunciation">[ˈalfjo]</a></small> is a <strong>free and open source</strong> event attendance management system, developed for event organizers who care about privacy, security and fair pricing policy for their customers.</div>
 		<div class="mt-2 h4">It features an ecosystem of tools to cover the lifecycle of an event from ticket distribution, to event management, to reporting.</div>
 		<div class="mt-2">
@@ -49,7 +49,7 @@ linkTitle = "Alf.io"
 				<li class="list-group-item pt-5">
 					<div class="w-100 mb-3">
 						<h4>Alf.io web application</h4>
-						<p><span class="text-muted mr-2">GPLv3</span> <i class="fab fa-github"></i> <a href="https://github.com/alfio-event/alf.io">GitHub repository</a></p>
+						<p><span class="text-muted me-2">GPLv3</span> <i class="fab fa-github"></i> <a href="https://github.com/alfio-event/alf.io">GitHub repository</a></p>
 					</div>
 					<p><strong>Public</strong>, the ticket shop, where people can reserve/buy their tickets
 					<p>Alf.io supports payments through Stripe (Credit Cards), Mollie (Credit Cards, iDEAL, Bancontact, ING Home Pay, Belfius, KBC/CBC, Przelewy24), Revolut, Paypal, Bank Transfer, as well as on-site payments. It is possible to integrate it with 3rd party tools (eg. a CRM system) through Extensions.</p>
@@ -59,7 +59,7 @@ linkTitle = "Alf.io"
 				<li class="list-group-item pt-5">
 					<div class="w-100 mb-3">
 						<h4>Alf.io Scan</h4>
-						<p><span class="text-muted mr-2">Apache2</span> <i class="fab fa-github"></i> <a href="https://github.com/alfio-event/Alf.ioBackoffice">GitHub repository</a></p>
+						<p><span class="text-muted me-2">Apache2</span> <i class="fab fa-github"></i> <a href="https://github.com/alfio-event/Alf.ioBackoffice">GitHub repository</a></p>
 					</div>
 					<p>Mobile app available for iOS and Android, which can be used by:</p>
 					<ul class="mb-3">
@@ -70,7 +70,7 @@ linkTitle = "Alf.io"
 				<li class="list-group-item pt-5">
 					<div class="w-100 mb-3">
 						<h4>Alf.io-PI</h4>
-						<p><span class="text-muted mr-2">GPLv3</span> <i class="fab fa-github"></i> <a href="https://github.com/alfio-event/alf.io-PI">GitHub repository</a></p>
+						<p><span class="text-muted me-2">GPLv3</span> <i class="fab fa-github"></i> <a href="https://github.com/alfio-event/alf.io-PI">GitHub repository</a></p>
 					</div>
 					<p>RaspberryPI-powered, touchscreen, offline-capable, high throughput check-in station for performing check-in for big events and printing attendees’ badges on-site.</p>
 					<p>Upon first startup, stations form a cluster and download an encrypted list of attendees from the Alf.io instance. Data related to an attendee can be decrypted only upon scanning their ticket.<br>
@@ -95,7 +95,7 @@ linkTitle = "Alf.io"
 
 
 
-{{< blocks/section color="light" >}}
+{{< blocks/section color="light" type="row" >}}
 
 {{% blocks/feature icon="fa-hand-spock" title="Free, *as in Freedom*" %}}
 Alf.io is <a href="http://www.gnu.org/copyleft/gpl.html" class="link-success" target="_blank" rel="noopener">free software</a>. You can use it whenever and wherever you want. You can also modify and redistribute it.
@@ -113,7 +113,7 @@ The GUI has been built upon the wonderful [Twitter Bootstrap](https://getbootstr
 {{% /blocks/feature %}}
 
 {{< /blocks/section >}}
-{{< blocks/section color="white" >}}
+{{< blocks/section color="white" type="row" >}}
 
 {{% blocks/feature icon="far fa-handshake" title="Fair" %}}
 Keep control of your event and keep attendees data away from big players. Don't annoy them with additional fees and pay only what is really needed!
@@ -129,7 +129,7 @@ Alf.io supports [Stripe](https://stripe.com/) and [Mollie](https://mollie.com) a
 
 {{< /blocks/section >}}
 
-{{< blocks/section color="light" >}}
+{{< blocks/section color="light" type="row" >}}
 
 {{% blocks/feature icon="far fa-lightbulb" title="Flexible" %}}
 You can define free-of-charge as well as paid events.
@@ -148,12 +148,12 @@ Anonymous statistics and IP-Address scrambling are enabled by default, so you ar
 Already tested and deployed on:
 <div>
 	<ul class="list-unstyled">
-        <li>[Heroku](https://www.heroku.com/) ([tutorial](/docs/getting-started/deployment/heroku/))
-		<li>[Openshift](https://www.openshift.com/) ([tutorial](/docs/getting-started/deployment/openshift/))
-		<li>[Pivotal Cloud Foundry](https://run.pivotal.io/) ([tutorial](/docs/getting-started/deployment/cloudfoundry/))
-		<li>[SAP Cloud Platform](https://www.sap.com/community/topic/cloud-platform.html) ([tutorial](https://blogs.sap.com/2017/05/20/deploying-alf.io-oss-event-ticketing-app-on-cloud-foundry/))
-		<li>[Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine/) ([tutorial](https://github.com/stephanj/alfio-k8s))
-		<li>[Clever Cloud](https://www.clever-cloud.com/) (tutorial soon)
+        <li><a href="https://www.heroku.com/" target="_blank" rel="noopener">Heroku</a> (<a href="/docs/getting-started/deployment/heroku/">tutorial</a>)
+		<li><a href="https://www.openshift.com/" target="_blank" rel="noopener">Openshift</a> (<a href="/docs/getting-started/deployment/openshift/">tutorial</a>)
+		<li><a href="https://run.pivotal.io/" target="_blank" rel="noopener">Pivotal Cloud Foundry</a> (<a href="/docs/getting-started/deployment/cloudfoundry/">tutorial</a>)
+		<li><a href="https://www.sap.com/community/topic/cloud-platform.html" target="_blank" rel="noopener">SAP Cloud Platform</a> (<a href="https://blogs.sap.com/2017/05/20/deploying-alf.io-oss-event-ticketing-app-on-cloud-foundry/" target="_blank" rel="noopener">tutorial</a>)
+		<li><a href="https://cloud.google.com/kubernetes-engine/" target="_blank" rel="noopener">Google Kubernetes Engine (GKE)</a> (<a href="https://github.com/stephanj/alfio-k8s" target="_blank" rel="noopener">tutorial</a>)
+		<li><a href="https://www.clever-cloud.com/" target="_blank" rel="noopener">Clever Cloud</a> (tutorial soon)
 	</ul>
 </div>
 
@@ -200,7 +200,7 @@ Already tested and deployed on:
 		</div>
 	</div>
 	<div class="d-block d-md-none">
-        <table class="table table-striped text-left">
+        <table class="table table-striped text-start">
             <thead>
             <tr>
                 <th>Country</th>
@@ -234,22 +234,22 @@ Already tested and deployed on:
                 <div>
                     <img class="media-object" style="max-width: 180px;margin-bottom:15px;margin-left:20px;" src="/img/logos/exteso_logo.jpg">
                 </div>
-                <div class="mt-4 mt-md-0 ml-md-4">
+                <div class="mt-4 mt-md-0 ms-md-4">
                     <a href="https://www.starplane.it" target="_blank" rel="noopener">
                         <img class="media-object" src="/img/logos/starplane.png">
                     </a>
                 </div>
-                <div class="mt-4 mt-md-0 ml-md-4">
+                <div class="mt-4 mt-md-0 ms-md-4">
                     <a href="https://offbeattickets.com" target="_blank" rel="noopener">
                         <img class="media-object" src="/img/logos/offbeat-tickets.png">
                     </a>
                 </div>
-                <div class="mt-4 mt-md-0 ml-md-4">
+                <div class="mt-4 mt-md-0 ms-md-4">
                     <a href="https://www.amicidelticino.ch" target="_blank" rel="noopener">
                         <img class="media-object" src="/img/logos/amicidelticino-logo.png" style="max-height: 60px;">
                     </a>
                 </div>
-                <div class="mt-4 mt-md-0 ml-md-4">
+                <div class="mt-4 mt-md-0 ms-md-4">
                     <a href="https://www.netlify.com" class="text-center" rel="noopener">
                         <img src="https://www.netlify.com/img/global/badges/netlify-color-accent.svg"/>
                     </a>
@@ -312,34 +312,26 @@ Already tested and deployed on:
 
             ];
 
-    	var mapEl = $('#regions_container');
-		mapEl.ready(function() {
-			var data = [['Country', 'Organizers']];
-			organizersPerRegion.sort(function(a,b) {
-			    return b[1] - a[1];
-            });
-			organizersPerRegion.forEach(function(v) {data.push(v)});
-			google.charts.load('current', {'packages':['geochart']});
-			google.charts.setOnLoadCallback(drawRegionsMap(data));
-
-			function drawRegionsMap(stats) {
-				return function() {
-					var data = google.visualization.arrayToDataTable(stats);
-					var options = {legend:'none'};
-					var chart = new google.visualization.GeoChart(document.getElementById('regions_div'));
-					chart.draw(data, options);
-				}
-			}
+		var data = [['Country', 'Organizers']];
+		organizersPerRegion.sort(function(a,b) {
+			return b[1] - a[1];
+		});
+		organizersPerRegion.forEach(function(v) {data.push(v)});
+		google.charts.load('current', {'packages':['geochart']});
+		google.charts.setOnLoadCallback(function() {
+			var chartData = google.visualization.arrayToDataTable(data);
+			var options = {legend:'none'};
+			var chart = new google.visualization.GeoChart(document.getElementById('regions_div'));
+			chart.draw(chartData, options);
 		});
 
-		$('#regions_txt').ready(function() {
-			var textEl = $('#regions_txt')
-			var template = '<tr><td>country</td><td class="text-center">organizers</td></tr>';
-			organizersPerRegion.map(function(opr) {
-				return template.replace('country', opr[0]).replace('organizers', opr[1]);
-			}).forEach(function(t) {
-				$(t).appendTo(textEl);
-			});
+		var textEl = document.getElementById('regions_txt');
+		organizersPerRegion.forEach(function(opr) {
+			var row = textEl.insertRow();
+			row.insertCell().textContent = opr[0];
+			var organizersCell = row.insertCell();
+			organizersCell.className = 'text-center';
+			organizersCell.textContent = opr[1];
 		});
 
 	})();

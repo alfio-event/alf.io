@@ -11,7 +11,7 @@ description: >
 
 Fired both **asynchronously** and **synchronously** when an Event is created 
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -21,8 +21,8 @@ Fired both **asynchronously** and **synchronously** when an Event is created
         </thead>
         <tbody>
             <tr>
-                <td>`event`</td>
-                <td>[`Event`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java)</td>
+                <td><code>event</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java" target="_blank" rel="noopener"><code>Event</code></a></td>
                 <td>The created Event</td>
             </tr>
         </tbody>
@@ -34,7 +34,7 @@ Fired both **asynchronously** and **synchronously** when an Event is created
 
 Fired **synchronously** before creating an Event. Useful to perform custom validations
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -44,8 +44,8 @@ Fired **synchronously** before creating an Event. Useful to perform custom valid
         </thead>
         <tbody>
             <tr>
-                <td>`request`</td>
-                <td>[`EventModification`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/modification/EventModification.java)</td>
+                <td><code>request</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/modification/EventModification.java" target="_blank" rel="noopener"><code>EventModification</code></a></td>
                 <td>Creation request</td>
             </tr>
         </tbody>
@@ -57,7 +57,7 @@ Fired **synchronously** before creating an Event. Useful to perform custom valid
 
 Fired both **asynchronously** and **synchronously** when an Event status changes 
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -67,13 +67,13 @@ Fired both **asynchronously** and **synchronously** when an Event status changes
         </thead>
         <tbody>
             <tr>
-                <td>`event`</td>
-                <td>[`Event`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java)</td>
+                <td><code>event</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java" target="_blank" rel="noopener"><code>Event</code></a></td>
                 <td>The Event</td>
             </tr>
             <tr>
-                <td>`status`</td>
-                <td>[`Event.Status`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java#L45)</td>
+                <td><code>status</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java#L45" target="_blank" rel="noopener"><code>Event.Status</code></a></td>
                 <td>updated Status</td>
             </tr>
         </tbody>
@@ -85,7 +85,7 @@ Fired both **asynchronously** and **synchronously** when an Event status changes
 
 Fired **synchronously** when a modification to prices and/or seats number is requested for an Event
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -95,13 +95,13 @@ Fired **synchronously** when a modification to prices and/or seats number is req
         </thead>
         <tbody>
             <tr>
-                <td>`event`</td>
-                <td>[`Event`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java)</td>
+                <td><code>event</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java" target="_blank" rel="noopener"><code>Event</code></a></td>
                 <td>The Event</td>
             </tr>
             <tr>
-                <td>`request`</td>
-                <td>[`EventModification`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/modification/EventModification.java)</td>
+                <td><code>request</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/modification/EventModification.java" target="_blank" rel="noopener"><code>EventModification</code></a></td>
                 <td>Modification request</td>
             </tr>
         </tbody>
@@ -115,7 +115,7 @@ Fired **synchronously** when the organizer updates the metadata of an Event.
 
 A result of type [`AlfioMetadata`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/metadata/AlfioMetadata.java) is expected. Return `null` if you want to fall back to default settings. 
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -125,22 +125,22 @@ A result of type [`AlfioMetadata`](https://github.com/alfio-event/alf.io/blob/ma
         </thead>
         <tbody>
             <tr>
-                <td>`event`</td>
-                <td>[`Event`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java)</td>
+                <td><code>event</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java" target="_blank" rel="noopener"><code>Event</code></a></td>
                 <td>The Event</td>
             </tr>
             <tr>
-                <td>`metadata`</td>
-                <td>[`AlfioMetadata`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/metadata/AlfioMetadata.java)</td>
-                <td>existing metadata. **Might be `null`**</td>
+                <td><code>metadata</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/metadata/AlfioMetadata.java" target="_blank" rel="noopener"><code>AlfioMetadata</code></a></td>
+                <td>existing metadata. <strong>Might be <code>null</code></strong></td>
             </tr>
             <tr>
-                <td>`organization`</td>
-                <td>[`Organization`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/user/Organization.java)</td>
+                <td><code>organization</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/user/Organization.java" target="_blank" rel="noopener"><code>Organization</code></a></td>
                 <td>organizer details</td>
             </tr>
             <tr>
-                <td>`baseUrl`</td>
+                <td><code>baseUrl</code></td>
                 <td>String</td>
                 <td>The configured "Base URL" for the current organizer</td>
             </tr>

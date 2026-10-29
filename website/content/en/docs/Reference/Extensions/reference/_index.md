@@ -34,7 +34,7 @@ You can find some sample code in the [introduction](https://alf.io/docs/referenc
 
 Alf.io provides some objects and properties to the script in the script scope:
 <div class="table-responsive table-hover">
-    <table class="table table-sm">
+    <table class="table table-sm td-initial">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -44,59 +44,59 @@ Alf.io provides some objects and properties to the script in the script scope:
         </thead>
         <tbody>
             <tr>
-                <td>`log`</td>
-                <td>`Log4j`</td>
+                <td><code>log</code></td>
+                <td><code>Log4j</code></td>
                 <td>Logging utility</td>
             </tr>
             <tr>
-                <td>`extensionLogger`</td>
-                <td>[`ExtensionLogger`] ( https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/extension/ExtensionLogger.java)</td>
+                <td><code>extensionLogger</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/extension/ExtensionLogger.java" target="_blank" rel="noopener"><code>ExtensionLogger</code></a></td>
                 <td>A logger that writes in the extension_log table.</td>
             </tr>
             <tr>
-                <td>`simpleHttpClient`</td>
-                <td>[`SimpleHttpClient`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/extension/SimpleHttpClient.java)</td>
+                <td><code>simpleHttpClient</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/extension/SimpleHttpClient.java" target="_blank" rel="noopener"><code>SimpleHttpClient</code></a></td>
                 <td>A simplified version created by Alf.io for calling external services</td>
             </tr>
             <tr>
-                <td>`GSON`</td>
-                <td>[`GSON`](https://github.com/google/gson)</td>
+                <td><code>GSON</code></td>
+                <td><a href="https://github.com/google/gson" target="_blank" rel="noopener"><code>GSON</code></a></td>
                 <td>JSON parser/generator</td>
             </tr>
             <tr>
-                <td>`returnClass`</td>
-                <td>`java.lang.Class<?>`</td>
+                <td><code>returnClass</code></td>
+                <td><code>java.lang.Class&lt;?&gt;</code></td>
                 <td>The return class of the methods</td>
             </tr>
             <tr>
-                <td>`extensionParameters`</td>
-                <td>`Map<String, Object>`</td>
+                <td><code>extensionParameters</code></td>
+                <td><code>Map&lt;String, Object&gt;</code></td>
                 <td>Defined parameters as in the script metadata</td>
             </tr>
             <tr>
-                <td>`event`</td>
-                <td>[`Event`]( https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java)</td>
+                <td><code>event</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java" target="_blank" rel="noopener"><code>Event</code></a></td>
                 <td>Alf.io's implementation of a general event</td>
             </tr>
             <tr>
-                <td>`eventId`</td>
-                <td>`int`</td>
+                <td><code>eventId</code></td>
+                <td><code>int</code></td>
                 <td>The id of the event</td>
             </tr>
             <tr>
-                <td>`organizationId`</td>
-                <td>`int`</td>
+                <td><code>organizationId</code></td>
+                <td><code>int</code></td>
                 <td>The id of the organization that organized the event </td>
             </tr>
             <tr>
-                <td>`Utils`</td>
-                <td>[`ExtensionUtils`]( https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/extension/ExtensionUtils.java)</td>
+                <td><code>Utils</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/extension/ExtensionUtils.java" target="_blank" rel="noopener"><code>ExtensionUtils</code></a></td>
                 <td>A collection of utilities</td>
             </tr>
             <tr>
-                <td>`executionKey`</td>
-                <td>`String`</td>
-                <td>An identifier for the execution, which can be treated as an [idempotency key](https://stripe.com/blog/idempotency).</td>
+                <td><code>executionKey</code></td>
+                <td><code>String</code></td>
+                <td>An identifier for the execution, which can be treated as an <a href="https://stripe.com/blog/idempotency" target="_blank" rel="noopener">idempotency key</a>.</td>
             </tr>
         </tbody>
     </table>

@@ -1,12 +1,11 @@
 /*
 
-Add styles or override variables from the theme here.
+Override variables from the theme here.
 
 */
-$google_font_name: "Source Sans Pro";
-$google_font_family: "Source+Sans+Pro";
-$web-font-path: "https://fonts.googleapis.com/css?family=#{$google_font_family}&display=swap";
 $td-enable-google-fonts: true;
+$td-google-font-name: "Source Sans Pro";
+$td-google-font-family: "Source+Sans+Pro:300,300i,400,400i,700,700i";
 
 // Theme colors
 
@@ -19,19 +18,30 @@ $warning:       #ffc107;
 $danger:        #dc3545;
 $light:         #f8f9fa;
 $dark:          #343a40;
-$primary-light: lighten($primary, 75%);
 
-.alfio-docs img {
-    margin: 30px;
-    box-shadow: 0 0.3rem 0.5rem rgba(0, 0, 0, 0.15) !important;
-}
+// links stay blue, as with the previous Docsy version
+$link-color: #3176d9;
 
-table, td, th {
-    border: 1px solid grey;
-    text-align: left;
-    table-layout: auto;
-}
-th {
-    background-color: $primary;
-    color: white;
-}
+// orange navbar, as with the previous Docsy version (see also params.ui.navbar_theme)
+// the opacity variable lets the navbar turn transparent over the cover image
+$td-navbar-bg-color: rgba(var(--bs-primary-rgb), var(--bs-bg-opacity));
+
+// Bootstrap 4 look, as with the previous Docsy version:
+// gradients and shadows on buttons
+$enable-gradients: true;
+$enable-shadows: true;
+// rounded buttons
+$btn-border-radius: 1rem;
+$btn-border-radius-sm: 1rem;
+$btn-border-radius-lg: 2rem;
+// white text on primary (orange) and success (green) backgrounds. Bootstrap 5 requires 4.5:1 and would switch to black
+$min-contrast-ratio: 2.3;
+// no wider container on xxl screens: the xl width applies from 1200px up
+$container-max-widths: (
+    sm: 540px,
+    md: 720px,
+    lg: 960px,
+    xl: 1140px
+);
+// Bootstrap 4 column gutter
+$grid-gutter-width: 30px;
