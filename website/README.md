@@ -10,7 +10,7 @@ This website uses
 - [Hugo **extended**](https://gohugo.io/installation/), version 0.160.1 or later. Netlify builds the site with the version set in [`netlify.toml`](netlify.toml).
 - [Dart Sass](https://gohugo.io/functions/css/sass/#dart-sass), available on the `PATH` as `sass`.
 - [Go](https://go.dev/dl/): Docsy is imported as a [Hugo module](https://gohugo.io/hugo-modules/), and Hugo needs Go to download it.
-- [Node.js](https://nodejs.org/): Bootstrap, Font Awesome and PostCSS are installed with npm.
+- [Node.js](https://nodejs.org/) 22 or later: Bootstrap, Font Awesome and PostCSS are installed with npm.
 
 ## Running the website locally
 

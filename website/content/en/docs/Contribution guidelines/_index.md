@@ -7,7 +7,7 @@ description: >
 ---
 
 We use [Hugo](https://gohugo.io/) to format and generate our website, the
-[Docsy](https://github.com/google/docsy) theme for styling and site structure, 
+[Docsy](https://www.docsy.dev) theme for styling and site structure, 
 and [Netlify](https://www.netlify.com/) to manage the deployment of the site. 
 Hugo is an open-source static site generator that provides us with templates, 
 content organisation in a standard directory structure, and a website generation 
@@ -49,15 +49,22 @@ If you've just spotted something you'd like to change while using the docs, Docs
 
 If you want to run your own local Hugo server to preview your changes as you work:
 
-1. Follow the instructions in [Docsy's Getting started](https://www.docsy.dev/docs/getting-started/) to install Hugo and any other tools you need. You'll need at least **Hugo version 0.45** (we recommend using the most recent available version), and it must be the **extended** version, which supports SCSS.
-1. Fork the [Alf.io repo](https://github.com/alfio-event/alf.io) repo into your own project, then create a local copy using `git clone`. Don’t forget to use `--recurse-submodules` or you won’t pull down some of the code you need to generate a working site.
+1. Install the tools needed to build the site:
+    * [Hugo](https://gohugo.io/installation/), version **0.160.1** or later. It must be the **extended** edition.
+    * [Dart Sass](https://gohugo.io/functions/css/sass/#dart-sass), available on your `PATH` as `sass`.
+    * [Go](https://go.dev/dl/): Hugo uses it to download the Docsy theme, which is imported as a [Hugo module](https://gohugo.io/hugo-modules/).
+    * [Node.js](https://nodejs.org/) 22 or later, to install the npm dependencies.
+
+    Netlify builds the site with the versions declared in `website/netlify.toml`.
+1. Fork the [Alf.io repo](https://github.com/alfio-event/alf.io) into your own project, then create a local copy using `git clone`.
 
     ```
-    git clone --recurse-submodules --depth 1 https://github.com/alfio-event/alf.io.git
+    git clone https://github.com/<your-username>/alf.io.git
     ```
-1. navigate to the "website" directory
+1. Navigate to the "website" directory and install the npm dependencies:
     ```
     cd website
+    npm install
     ```
 
 1. Run `hugo server` in the `website` directory. By default your site will be available at http://localhost:1313/. Now that you're serving your site locally, Hugo will watch for changes to the content and automatically refresh your site.
@@ -66,7 +73,7 @@ If you want to run your own local Hugo server to preview your changes as you wor
 
 ## Creating an issue
 
-If you've found a problem in the docs, but you're not sure how to fix it yourself, please create an issue in the [Alf.io repo](https://github.com/alfio-event/alf.io/issues). You can also create an issue about a specific page by clicking the **Create Issue** button in the top right hand corner of the page.
+If you've found a problem in the docs, but you're not sure how to fix it yourself, please create an issue in the [Alf.io repo](https://github.com/alfio-event/alf.io/issues). You can also create an issue about a specific page by clicking **Create documentation issue** in the top right hand corner of the page.
 
 ## Useful resources
 
@@ -76,4 +83,4 @@ If you've found a problem in the docs, but you're not sure how to fix it yoursel
 
 ## Credits
 
-this page is based on the [Docsy's example project](https://github.com/google/docsy-example) contribution guidelines
+this page is based on the [Docsy's example project](https://github.com/docsy/docsy-example) contribution guidelines
