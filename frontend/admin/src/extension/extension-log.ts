@@ -9,7 +9,7 @@ import type {Organization} from '../model/organization.ts';
 import {PageAndContent} from '../model/reservation.ts';
 import {ExtensionService} from '../service/extension.ts';
 import {humanize, readRouteParams, replaceRouteParams, toPageNumber} from '../service/helpers.ts';
-import {base, badges, modernLayout, modernTable, retroCompat, textColors} from '../styles.ts';
+import {base, badges, modernLayout, modernTable, reservationTable, retroCompat, textColors} from '../styles.ts';
 import {AlfioPageChange} from '../components/pagination-bar.ts';
 import {ListSearchController} from '../components/list-search.ts';
 import {taskContent} from '../components/task-content.ts';
@@ -66,9 +66,28 @@ export class ExtensionLogPage extends LitElement {
         textColors,
         modernLayout,
         modernTable,
+        reservationTable,
         css`
             :host {
                 display: block;
+            }
+            .page-description {
+                margin: 0 0 var(--sl-spacing-medium);
+            }
+            .filter-toolbar,
+            .filter-left {
+                align-items: center;
+            }
+            .type-filter {
+                flex: 0 0 170px;
+            }
+            .scope {
+                font-size: var(--sl-font-size-small);
+            }
+            .script-name {
+                font-family: var(--sl-font-mono);
+                font-size: var(--sl-font-size-small);
+                white-space: nowrap;
             }
             .description {
                 overflow-wrap: anywhere;
@@ -94,13 +113,13 @@ export class ExtensionLogPage extends LitElement {
                 <div class="page-title-row">
                     <h1>Extension logs</h1>
                 </div>
+                <p class="page-description text-muted">Messages written by the extension scripts while they run, newest first.</p>
                 <hr class="page-separator"/>
                 <div class="filter-toolbar">
                     <div class="filter-left">
                         ${this.searchController.render('logs')}
-                    </div>
-                    <div class="filter-right">
-                        <sl-select class="filter-select" label="Type" placeholder="All types" clearable
+                        <sl-select class="filter-select type-filter label-hidden" label="Filter by type"
+                                   placeholder="All types" clearable hoist
                                    .value=${this.type ?? ''}
                                    @sl-change=${(e: Event) => this.onTypeChange(String((e.target as SlSelect).value))}>
                             ${repeat(LOG_TYPES, (type) => type, (type) => html`
@@ -121,7 +140,7 @@ export class ExtensionLogPage extends LitElement {
             ${when(logs.right === 0,
                 () => html`
                     <section class="section-card">
-                        ${emptyState('No log entries found')}
+                        ${emptyState(this.emptyMessage())}
                     </section>
                 `,
                 () => html`
@@ -143,7 +162,7 @@ export class ExtensionLogPage extends LitElement {
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <th>Path</th>
+                            <th class="hide-small">Path</th>
                             <th>Name</th>
                             <th>Type</th>
                             <th>Description</th>
@@ -153,11 +172,11 @@ export class ExtensionLogPage extends LitElement {
                     <tbody>
                         ${repeat(data.logs.left, (log) => log.id, (log) => html`
                             <tr>
-                                <td>${renderScope(log.effectivePath, data.organizations, data.events)}</td>
-                                <td>${log.name}</td>
+                                <td class="scope hide-small">${renderScope(log.effectivePath, data.organizations, data.events)}</td>
+                                <td class="script-name">${log.name}</td>
                                 <td>${this.logBadge(log.type)}</td>
                                 <td class="description">${log.description}</td>
-                                <td>
+                                <td class="timestamp">
                                     <alfio-format-date date=${log.timestamp}></alfio-format-date>
                                 </td>
                             </tr>
@@ -166,6 +185,13 @@ export class ExtensionLogPage extends LitElement {
                 </table>
             </div>
         `;
+    }
+
+    private emptyMessage(): string {
+        if (this.search !== '' || this.type != null) {
+            return 'No log entries match your filters';
+        }
+        return 'No log entries found';
     }
 
     private logBadge(type: ExtensionLogType): TemplateResult {

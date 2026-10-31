@@ -145,9 +145,9 @@ export class ExtensionList extends LitElement {
 
     private renderEnabledIcon(ext: ExtensionSupport): TemplateResult {
         if (ext.enabled) {
-            return html`<sl-icon class="enabled-icon text-success" name="check-circle" label="enabled"></sl-icon>`;
+            return html`<sl-badge pill variant="success">enabled</sl-badge>`;
         }
-        return html`<sl-icon class="enabled-icon disabled" name="eye-slash" label="disabled"></sl-icon>`;
+        return html``;
     }
 
     private renderDeleteDialog(): TemplateResult {
