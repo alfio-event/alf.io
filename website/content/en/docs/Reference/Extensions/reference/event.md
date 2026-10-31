@@ -29,7 +29,7 @@ Fired both **asynchronously** and **synchronously** when an Event is created
     </table>
 </div>
 
-### Event created
+### Validate event creation
 `EVENT_VALIDATE_CREATION`
 
 Fired **synchronously** before creating an Event. Useful to perform custom validations
@@ -108,7 +108,7 @@ Fired **synchronously** when a modification to prices and/or seats number is req
     </table>
 </div>
 
-### Event status change
+### Event metadata update
 `EVENT_METADATA_UPDATE`
 
 Fired **synchronously** when the organizer updates the metadata of an Event.
@@ -136,13 +136,41 @@ A result of type [`AlfioMetadata`](https://github.com/alfio-event/alf.io/blob/ma
             </tr>
             <tr>
                 <td><code>organization</code></td>
-                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/user/Organization.java" target="_blank" rel="noopener"><code>Organization</code></a></td>
+                <td><a href="../#organization"><code>Organization</code></a></td>
                 <td>organizer details</td>
             </tr>
             <tr>
                 <td><code>baseUrl</code></td>
                 <td>String</td>
                 <td>The configured "Base URL" for the current organizer</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+### Event header updated
+`EVENT_HEADER_UPDATED`
+
+Fired **asynchronously** after the organizer has updated the main details of an Event (name, dates, location, format, …). The updated Event is available in the `event` variable.
+<div class="table-responsive table-hover">
+    <table class="table table-sm td-initial">
+        <thead>
+            <tr>
+                <th>Variable</th>
+                <th>Type</th>
+                <th>About</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>eventMetadata</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/metadata/AlfioMetadata.java" target="_blank" rel="noopener"><code>AlfioMetadata</code></a></td>
+                <td>The metadata of the Event</td>
+            </tr>
+            <tr>
+                <td><code>organization</code></td>
+                <td><a href="../#organization"><code>Organization</code></a></td>
+                <td>Organizer details</td>
             </tr>
         </tbody>
     </table>

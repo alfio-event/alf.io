@@ -163,7 +163,7 @@ public class BillingDocumentManager {
 
         String reservationId = spec.getReservationId();
         var billingDetails = ticketReservationRepository.getBillingDetailsForReservation(reservationId);
-        var optionalInvoiceNumber = extensionManager.handleInvoiceGeneration(spec, reservationCost, billingDetails, Map.of("organization", organizationRepository.getById(spec.getPurchaseContext().getOrganizationId())))
+        var optionalInvoiceNumber = extensionManager.handleInvoiceGeneration(spec, reservationCost, billingDetails, organizationRepository.getById(spec.getPurchaseContext().getOrganizationId()))
             .flatMap(invoiceGeneration -> Optional.ofNullable(trimToNull(invoiceGeneration.getInvoiceNumber())));
 
         optionalInvoiceNumber.ifPresent(invoiceNumber -> {

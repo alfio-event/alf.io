@@ -30,6 +30,16 @@ Fired **asynchronously** once a reservation has been confirmed.
                 <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/BillingDetails.java" target="_blank" rel="noopener"><code>BillingDetails</code></a></td>
                 <td>Billing info for the reservation</td>
             </tr>
+            <tr>
+                <td><code>organization</code></td>
+                <td><a href="../#organization"><code>Organization</code></a></td>
+                <td>Organizer details</td>
+            </tr>
+            <tr>
+                <td><code>transaction</code></td>
+                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/transaction/Transaction.java" target="_blank" rel="noopener"><code>Transaction</code></a></td>
+                <td>The payment transaction of the reservation. <strong>Not defined</strong> if the reservation has no valid transaction</td>
+            </tr>
         </tbody>
     </table>
 </div>
@@ -239,6 +249,11 @@ Expected result is [`InvoiceGeneration`](https://github.com/alfio-event/alf.io/b
                 <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/PriceContainer.java#L36" target="_blank" rel="noopener"><code>PriceContainer.VatStatus</code></a></td>
                 <td>Tax application details</td>
             </tr>
+            <tr>
+                <td><code>organization</code></td>
+                <td><a href="../#organization"><code>Organization</code></a></td>
+                <td>Organizer details</td>
+            </tr>
         </tbody>
     </table>
 </div>
@@ -271,7 +286,7 @@ Expected result is [`CreditNoteGeneration`](https://github.com/alfio-event/alf.i
             </tr>
             <tr>
                 <td><code>organization</code></td>
-                <td><a href="https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Organization.java" target="_blank" rel="noopener"><code>Organization</code></a></td>
+                <td><a href="../#organization"><code>Organization</code></a></td>
                 <td>Organizer details</td>
             </tr>
         </tbody>

@@ -39,6 +39,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.Transaction;
 import alfio.repository.*;
 import alfio.repository.system.AdminJobQueueRepository;
+import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.ClockProvider;
 import alfio.util.Json;
@@ -100,6 +101,7 @@ public class ReservationFinalizer {
     private final AdminJobQueueRepository adminJobQueueRepository;
     private final PurchaseContextManager purchaseContextManager;
     private final Json json;
+    private final OrganizationRepository organizationRepository;
 
 
     public ReservationFinalizer(PlatformTransactionManager transactionManager,
@@ -122,7 +124,8 @@ public class ReservationFinalizer {
                                 TransactionRepository transactionRepository,
                                 AdminJobQueueRepository adminJobQueueRepository,
                                 PurchaseContextManager purchaseContextManager,
-                                Json json) {
+                                Json json,
+                                OrganizationRepository organizationRepository) {
         this.ticketReservationRepository = ticketReservationRepository;
         this.userRepository = userRepository;
         this.extensionManager = extensionManager;
@@ -147,6 +150,7 @@ public class ReservationFinalizer {
         this.adminJobQueueRepository = adminJobQueueRepository;
         this.purchaseContextManager = purchaseContextManager;
         this.json = json;
+        this.organizationRepository = organizationRepository;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -251,7 +255,7 @@ public class ReservationFinalizer {
         if(paymentProxy != PaymentProxy.OFFLINE && paymentProxy != PaymentProxy.CUSTOM_OFFLINE) {
             ticketReservationRepository.updateReservationStatus(reservationId, COMPLETE.name());
             tickets = acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getPurchaseContext(), finalizeReservation.isSendTickets());
-            extensionManager.handleReservationConfirmation(reservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), spec.getPurchaseContext());
+            extensionManager.handleReservationConfirmation(reservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), spec.getPurchaseContext(), organizationRepository.getById(spec.getPurchaseContext().getOrganizationId()));
         } else {
             // if paymentProxy is offline, we set the appropriate status to wait for payment
             ticketReservationRepository.updateReservationStatus(reservationId, finalizeReservation.getOriginalStatus().name());
@@ -459,7 +463,8 @@ public class ReservationFinalizer {
         if(!configuration.get(DEFERRED_BANK_TRANSFER_ENABLED).getValueAsBooleanOrDefault() || configuration.get(DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL).getValueAsBooleanOrDefault()) {
             reservationHelper.sendConfirmationEmail(event, findById(reservationId).orElseThrow(IllegalArgumentException::new), language, username);
         }
-        extensionManager.handleReservationConfirmation(finalReservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), event);
+        var organization = organizationRepository.getById(event.getOrganizationId());
+        extensionManager.handleReservationConfirmation(finalReservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), event, organization);
     }
 
     public void registerAlfioTransaction(Event event,

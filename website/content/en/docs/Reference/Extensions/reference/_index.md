@@ -120,6 +120,48 @@ It **must** return a `JSON` object with the following properties:
 The actual event handling. Return types are event-dependent. Will always receive a single parameter (`scriptEvent`) 
 which is the event that triggered the script.
 
+## Organization
+
+Some events provide the details of the organizer in the `organization` variable. It is an object with the following properties:
+<div class="table-responsive table-hover">
+    <table class="table table-sm td-initial">
+        <thead>
+            <tr>
+                <th>Property</th>
+                <th>Type</th>
+                <th>About</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>id</code></td>
+                <td><code>int</code></td>
+                <td>The id of the organization</td>
+            </tr>
+            <tr>
+                <td><code>name</code></td>
+                <td><code>String</code></td>
+                <td>The name of the organization</td>
+            </tr>
+            <tr>
+                <td><code>description</code></td>
+                <td><code>String</code></td>
+                <td>The description of the organization</td>
+            </tr>
+            <tr>
+                <td><code>externalId</code></td>
+                <td><code>String</code></td>
+                <td>The id of the organization in an external system. Empty string if not set</td>
+            </tr>
+            <tr>
+                <td><code>slug</code></td>
+                <td><code>String</code></td>
+                <td>The slug of the organization, used in its public address. Empty string if not set</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
 ## Application Events by entity
 
 Below is a list of all the supported Application Events by related entity, with some additional global variables, expected result type and a short explanation.

@@ -69,6 +69,7 @@ import static alfio.extension.ExtensionService.toPath;
 import static alfio.manager.support.extension.ExtensionEvent.*;
 import static alfio.model.PromoCodeDiscount.DiscountType.PERCENTAGE;
 import static alfio.model.system.ConfigurationKeys.*;
+import static java.util.Map.entry;
 
 @Component
 @AllArgsConstructor
@@ -194,13 +195,14 @@ public class ExtensionManager {
     private Map<String, Object> buildMetadataUpdatePayload(Organization organization, AlfioMetadata metadata) {
         Map<String, Object> payload = new HashMap<>();
         payload.put(METADATA, metadata);
-        payload.put(ORGANIZATION, organization);
+        payload.put(ORGANIZATION, writeOrganization(organization));
         payload.put("baseUrl", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.organization(organization.getId())).getRequiredValue());
         return payload;
     }
 
-    void handleReservationConfirmation(TicketReservation reservation, BillingDetails billingDetails, PurchaseContext purchaseContext) {
+    void handleReservationConfirmation(TicketReservation reservation, BillingDetails billingDetails, PurchaseContext purchaseContext, Organization organization) {
         Map<String, Object> payload = new HashMap<>();
+        payload.put(ORGANIZATION, writeOrganization(organization));
         payload.put(RESERVATION, reservation);
         payload.put(BILLING_DETAILS, billingDetails);
         payload.put(ADDITIONAL_INFO, Map.of());
@@ -209,6 +211,20 @@ public class ExtensionManager {
         asyncCall(ExtensionEvent.RESERVATION_CONFIRMED,
             purchaseContext,
             payload);
+    }
+
+    private static Map<String, Object> writeOrganization(Organization value) {
+        if (value == null) {
+            return Map.of();
+        }
+
+        return Map.ofEntries(
+            entry("id", value.getId()),
+            entry("name", value.getName()),
+            entry("description", value.getDescription()),
+            entry("externalId", Objects.requireNonNullElse(value.getExternalId(), "")),
+            entry("slug", Objects.requireNonNullElse(value.getSlug(), ""))
+        );
     }
 
     public void handleTicketAssignment(Ticket ticket,
@@ -312,8 +328,9 @@ public class ExtensionManager {
         asyncCall(ExtensionEvent.CREDIT_NOTE_GENERATED, purchaseContext, payload);
     }
 
-    public Optional<InvoiceGeneration> handleInvoiceGeneration(PaymentSpecification spec, TotalPrice reservationCost, BillingDetails billingDetails, Map<String, Object> contextData) {
-        Map<String, Object> payload = new HashMap<>(contextData);
+    public Optional<InvoiceGeneration> handleInvoiceGeneration(PaymentSpecification spec, TotalPrice reservationCost, BillingDetails billingDetails, Organization organization) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put(ORGANIZATION, writeOrganization(organization));
         payload.put(RESERVATION_ID, spec.getReservationId());
         payload.put("email", spec.getEmail());
         payload.put("customerName", spec.getCustomerName());
@@ -337,7 +354,7 @@ public class ExtensionManager {
         return Optional.ofNullable(syncCall(ExtensionEvent.CREDIT_NOTE_GENERATION, purchaseContext, Map.of(
             RESERVATION_ID, reservationId,
             "invoiceNumber", invoiceNumber,
-            ORGANIZATION, organization
+            ORGANIZATION, writeOrganization(organization)
         ), CreditNoteGeneration.class));
     }
 
@@ -412,7 +429,7 @@ public class ExtensionManager {
     void handleEventHeaderUpdate(Event event, Organization organization) {
         Map<String, Object> payload = Map.of(
             EVENT_METADATA, eventRepository.getMetadataForEvent(event.getId()),
-            ORGANIZATION, organization
+            ORGANIZATION, writeOrganization(organization)
         );
         asyncCall(ExtensionEvent.EVENT_HEADER_UPDATED, event, payload);
     }

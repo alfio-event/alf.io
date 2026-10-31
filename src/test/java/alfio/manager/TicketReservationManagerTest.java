@@ -230,7 +230,7 @@ class TicketReservationManagerTest {
             ticketReservationRepository, userRepository, extensionManager, auditingRepository, TestUtil.clockProvider(),
             configurationManager, null, ticketRepository, reservationHelper, specialPriceRepository,
             waitingQueueManager, ticketCategoryRepository, reservationCostCalculator, billingDocumentManager, additionalServiceItemRepository,
-            osm, transactionRepository, mock(AdminJobQueueRepository.class), purchaseContextManager, mock(Json.class));
+            osm, transactionRepository, mock(AdminJobQueueRepository.class), purchaseContextManager, mock(Json.class), organizationRepository);
         trm = new TicketReservationManager(eventRepository,
             organizationRepository,
             ticketRepository,
@@ -297,7 +297,7 @@ class TicketReservationManagerTest {
         when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         when(event.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED);
         when(userRepository.findIdByUserName(anyString())).thenReturn(Optional.empty());
-        when(extensionManager.handleInvoiceGeneration(any(), any(), any(), anyMap())).thenReturn(Optional.empty());
+        when(extensionManager.handleInvoiceGeneration(any(), any(), any(), any())).thenReturn(Optional.empty());
         when(messageSource.getMessage(eq("ticket-has-changed-owner-subject"), any(), any())).thenReturn("subject");
         when(messageSource.getMessage(eq("reminder.ticket-not-assigned.subject"), any(), any())).thenReturn("subject");
         when(billingDocumentRepository.insert(anyInt(), anyString(), anyString(), any(), anyString(), any(), anyInt())).thenReturn(new AffectedRowCountAndKey<>(1, 1L));
@@ -1598,7 +1598,7 @@ class TicketReservationManagerTest {
                 ticketReservationRepository, userRepository, mock(ExtensionManager.class), auditingRepository, mock(ClockProvider.class), configurationManager,
                 mock(SubscriptionRepository.class), ticketRepository, reservationHelper, mock(SpecialPriceRepository.class),
                 waitingQueueManager, ticketCategoryRepository, mock(ReservationCostCalculator.class), billingDocumentManager, mock(AdditionalServiceItemRepository.class),
-                mock(OrderSummaryGenerator.class), transactionRepository, mock(AdminJobQueueRepository.class), purchaseContextManager, mock(Json.class));
+                mock(OrderSummaryGenerator.class), transactionRepository, mock(AdminJobQueueRepository.class), purchaseContextManager, mock(Json.class), organizationRepository);
             sendReservationEmailIfNecessary = mock(MaybeConfiguration.class);
             sendTickets = mock(MaybeConfiguration.class);
             when(ticketReservation.getSrcPriceCts()).thenReturn(0);
