@@ -6,7 +6,7 @@ const SEARCH_DELAY_MS = 250;
 
 /**
  * Search field of server-side filtered list pages: debounces the input and notifies the host
- * (onSearch) only when the search term actually changes. Use with the "purchaseContextListPage" styles.
+ * (onSearch) only when the search term actually changes. Use with the "modernLayout" styles.
  */
 export class ListSearchController implements ReactiveController {
     // last term notified to the host

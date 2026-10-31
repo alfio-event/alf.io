@@ -51,7 +51,7 @@ openapi-diff = "2.1.7"
 openhtmltopdf = "1.1.86"
 passkit4j = "2.0.1"
 paypal-checkout = "2.0.0"
-rhino = "1.7.15.1"
+rhino = "1.9.2"
 scribejava = "8.3.3"
 selenium = "4.49.0"
 springdoc-openapi = "3.1.1"
@@ -88,7 +88,7 @@ openhtmltopdf-core = { module = "io.github.openhtmltopdf:openhtmltopdf-core", ve
 openhtmltopdf-pdfbox = { module = "io.github.openhtmltopdf:openhtmltopdf-pdfbox", version.ref = "openhtmltopdf" }
 passkit4j = { module = "com.ryantenney.passkit4j:passkit4j", version.ref = "passkit4j" }
 paypal-checkout-sdk = { module = "com.paypal.sdk:checkout-sdk", version.ref = "paypal-checkout" }
-rhino-runtime = { module = "org.mozilla:rhino-runtime", version.ref = "rhino" }
+rhino = { module = "org.mozilla:rhino", version.ref = "rhino" }
 scribejava-core = { module = "com.github.scribejava:scribejava-core", version.ref = "scribejava" }
 selenium-java = { module = "org.seleniumhq.selenium:selenium-java", version.ref = "selenium" }
 springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc-openapi" }

@@ -40,6 +40,15 @@ class JSNodeVisitor implements NodeVisitor {
             return false;
         }
         checkNode(node);
+        if (node instanceof CatchClause catchClause && catchClause.getVarName() == null) {
+            // Rhino's CatchClause.visit fails on a catch without binding ("catch { }"): visit its children here,
+            // so that the body is still validated, and stop Rhino from visiting them
+            if (catchClause.getCatchCondition() != null) {
+                catchClause.getCatchCondition().visit(this);
+            }
+            catchClause.getBody().visit(this);
+            return false;
+        }
         return true;
     }
 

@@ -49,6 +49,7 @@ import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -511,6 +512,7 @@ public class ExtensionManager {
     }
 
     private void asyncCall(ExtensionEvent extensionEvent, PurchaseContext event, Map<String, Object> payload) {
+        Validate.isTrue(extensionEvent.isDispatchedAsynchronously(), "Incompatible "+ extensionEvent);
         extensionService.executeScriptAsync(extensionEvent.name(),
             toPath(event),
             fillWithBasicInfo(payload, event));
@@ -521,6 +523,7 @@ public class ExtensionManager {
     }
 
     private <T> T syncCall(ExtensionEvent extensionEvent, PurchaseContext purchaseContext, Map<String, Object> payload, Class<T> clazz, boolean ignoreErrors) {
+        Validate.isTrue(extensionEvent.isDispatchedSynchronously(), "Incompatible "+ extensionEvent);
         try {
             return extensionService.executeScriptsForEvent(extensionEvent.name(),
                 toPath(purchaseContext),

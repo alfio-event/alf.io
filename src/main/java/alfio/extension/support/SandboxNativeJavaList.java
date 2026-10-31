@@ -19,10 +19,11 @@ package alfio.extension.support;
 import alfio.extension.exception.OutOfBoundariesException;
 import org.mozilla.javascript.NativeJavaList;
 import org.mozilla.javascript.Scriptable;
+import org.mozilla.javascript.lc.type.TypeInfo;
 
 public class SandboxNativeJavaList extends NativeJavaList {
-    public SandboxNativeJavaList(Scriptable scope, Object map) {
-        super(scope, map);
+    public SandboxNativeJavaList(Scriptable scope, Object list, TypeInfo staticType) {
+        super(scope, list, staticType);
     }
 
     @Override

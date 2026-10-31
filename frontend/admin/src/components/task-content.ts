@@ -7,7 +7,7 @@ import {Task, TaskStatus} from '@lit/task';
  * - an error alert if the last load failed
  * - the last loaded data, which stays mounted while a refresh is running
  * - a spinner on first load
- * Use with the "purchaseContextListPage" styles.
+ * Use with the "modernLayout" styles.
  */
 export function taskContent<T>(task: Task<any, any>,
                                lastData: T | null,

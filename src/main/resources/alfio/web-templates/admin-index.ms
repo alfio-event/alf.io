@@ -84,10 +84,7 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/tickets-list/tickets-list.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/label-template/label-template.js"></script>
 
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/extension/extension.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/extension/extension.service.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/extension/add-update/extension-add-update.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/extension/log/extension-log.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/ticket-category/ticket-category.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/group/groups.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/subscriptions/subscriptions.js"></script>

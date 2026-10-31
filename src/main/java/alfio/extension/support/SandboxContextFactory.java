@@ -20,6 +20,7 @@ import alfio.extension.exception.ExecutionTimeoutException;
 import org.mozilla.javascript.Callable;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.Script;
 import org.mozilla.javascript.Scriptable;
 
 // source: https://codeutopia.net/blog/2009/01/02/sandboxing-rhino-in-java/
@@ -41,7 +42,7 @@ public class SandboxContextFactory extends ContextFactory {
         MyContext cx = new MyContext(ContextFactory.getGlobal());
         cx.setWrapFactory(new SandboxWrapFactory());
         // Use pure interpreter mode to allow for observeInstructionCount(Context, int) to work
-        cx.setOptimizationLevel(-1);
+        cx.setInterpretedMode(true);
         // Make Rhino runtime to call observeInstructionCount each 10000 bytecode instructions
         cx.setInstructionObserverThreshold(10000);
         return cx;
@@ -63,9 +64,21 @@ public class SandboxContextFactory extends ContextFactory {
 
     @Override
     protected Object doTopCall(Callable callable, Context cx, Scriptable scope, Scriptable thisObj, Object[] args) {
+        startTimer(cx);
+        return super.doTopCall(callable, cx, scope, thisObj, args);
+    }
+
+    // Since Rhino 1.9, scripts (e.g. Context.evaluateString) start here instead of the Callable variant:
+    // without this override the start time would stay 0, and every script would time out immediately
+    @Override
+    protected Object doTopCall(Script script, Context cx, Scriptable scope, Scriptable thisObj) {
+        startTimer(cx);
+        return super.doTopCall(script, cx, scope, thisObj);
+    }
+
+    private static void startTimer(Context cx) {
         MyContext mcx = (MyContext) cx;
         mcx.startTime = System.currentTimeMillis();
-        return super.doTopCall(callable, cx, scope, thisObj, args);
     }
 
     @Override

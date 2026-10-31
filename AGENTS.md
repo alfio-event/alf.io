@@ -50,6 +50,14 @@ The integration tests use TestContainers, so they need a working Docker (or Podm
 
 Both frontends use pnpm. Gradle installs Node and pnpm itself, so `./gradlew build` works without a local Node setup.
 
+## Admin frontend design
+
+All style conventions for the admin frontend are documented in
+`docs/admin-style-guide.md`. Before starting any admin frontend work, review
+that guide for established conventions on dialog footers, form fields, CSV bulk
+import, API key creation, icons, dates, Shoelace-native components, and style
+imports.
+
 ## Translations
 
 Translations (`src/main/resources/alfio/i18n`) are managed on POEditor. When adding a feature, add the new keys to the English files (`admin.properties`, `public.properties`) and leave the other languages to POEditor.

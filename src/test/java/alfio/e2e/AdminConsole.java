@@ -145,6 +145,101 @@ class AdminConsole {
     }
 
     /**
+     * Creates an extension with the given name and script, from the extensions list.
+     */
+    void createExtension(String name, String script) {
+        var list = openExtensionList();
+        clickWithJs(driver, findInShadowRoot(list, "sl-button[variant='success']"));
+        var edit = wait.until(presenceOfElementLocated(By.tagName("alfio-extension-edit")));
+        waitForExtensionEditorReady(edit);
+        typeInShoelaceControl(findInShadowRoot(edit, "sl-input[name='name']"), "input", name);
+        // the editor is pre-filled with the sample script: replace it
+        replaceScript(edit, script);
+        LOGGER.info("creating extension {}", name);
+        clickWithJs(driver, findInShadowRoot(edit, "sl-button[type='submit']"));
+        wait.until(urlContains("/extension/list"));
+    }
+
+    /**
+     * Checks that the given extension is displayed in the list with the expected enabled state.
+     */
+    void verifyExtension(String name, boolean enabled) {
+        var list = openExtensionList();
+        var expectedLabel = enabled ? "enabled" : "disabled";
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .ignoring(StaleElementReferenceException.class)
+            .withMessage(() -> "extension " + name + " is not displayed with the expected state")
+            .until(_ -> {
+                var row = extensionRow(list, name);
+                if (row == null) {
+                    return false;
+                }
+                var icon = (WebElement) ((JavascriptExecutor) driver).executeScript(
+                    "return arguments[0].querySelector('sl-icon[aria-label]');", row);
+                return icon != null && expectedLabel.equals(icon.getDomAttribute("aria-label"));
+            });
+    }
+
+    /**
+     * Opens the editor of the given extension, checks the script content, sets the enabled state and saves.
+     */
+    void editExtension(String name, boolean enabled, String expectedScriptFragment) {
+        var list = openExtensionList();
+        var row = wait.until(_ -> extensionRow(list, name));
+        clickWithJs(driver, rowButton(row, "Edit"));
+        var edit = wait.until(presenceOfElementLocated(By.tagName("alfio-extension-edit")));
+        waitForExtensionEditorReady(edit);
+        var code = findInShadowRoot(findInShadowRoot(edit, "alfio-code-editor"), ".cm-content");
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the script of extension " + name + " does not contain the expected content")
+            .until(_ -> code.getText().contains(expectedScriptFragment));
+        setShoelaceSwitch(findInShadowRoot(edit, "sl-switch"), enabled);
+        LOGGER.info("saving extension {} as {}", name, enabled ? "enabled" : "disabled");
+        clickWithJs(driver, findInShadowRoot(edit, "sl-button[type='submit']"));
+        wait.until(urlContains("/extension/list"));
+    }
+
+    /**
+     * Deletes the given extension from the list, after confirming the dialog.
+     */
+    void deleteExtension(String name) {
+        var list = openExtensionList();
+        var row = wait.until(_ -> extensionRow(list, name));
+        clickWithJs(driver, rowButton(row, "Delete"));
+        var dialog = findInShadowRoot(list, "sl-dialog#deleteDialog");
+        wait.until(_ -> dialog.getDomAttribute("open") != null);
+        // the footer buttons are slotted content of the dialog: they belong to the list, not to the dialog's shadow root
+        clickWithJs(driver, findInShadowRoot(list, "sl-dialog#deleteDialog sl-button[variant='warning']"));
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .ignoring(StaleElementReferenceException.class)
+            .until(_ -> extensionRow(list, name) == null && dialog.getDomAttribute("open") == null);
+        LOGGER.info("extension {} deleted", name);
+    }
+
+    /**
+     * Best effort cleanup: deletes the extension if it is still present (e.g. after a failed test)
+     */
+    void deleteExtensionIfPresent(String name) {
+        var list = openExtensionList();
+        if (extensionRow(list, name) != null) {
+            deleteExtension(name);
+        }
+    }
+
+    /**
+     * Opens the extensions log page and waits for the table (or the empty state) to be displayed.
+     */
+    void verifyExtensionLogs() {
+        driver.navigate().to(serverBaseUrl + "/admin#/extension/log");
+        var log = wait.until(presenceOfElementLocated(By.tagName("alfio-extension-log")));
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .ignoring(StaleElementReferenceException.class)
+            .withMessage(() -> "the extensions log page has not been displayed")
+            .until(_ -> !findAllInShadowRoot(log, "tbody tr").isEmpty()
+                || findAllInShadowRoot(log, ".empty-state").stream().anyMatch(e -> e.getText().contains("No log entries found")));
+    }
+
+    /**
      * Composes a message for all the attendees and sends it, after checking the preview.
      */
     void sendMessageToAttendees(String slug, String subject, String message, int expectedRecipients) {
@@ -921,6 +1016,51 @@ class AdminConsole {
     private void openEventDetail(String slug) {
         driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/detail");
         wait.until(presenceOfElementLocated(By.id("actions-dpdwn")));
+    }
+
+    private WebElement openExtensionList() {
+        driver.navigate().to(serverBaseUrl + "/admin#/extension/list");
+        return wait.until(presenceOfElementLocated(By.tagName("alfio-extension-list")));
+    }
+
+    /**
+     * The table row of the given extension, or null if it is not displayed
+     */
+    private WebElement extensionRow(WebElement list, String name) {
+        return findAllInShadowRoot(list, "tbody tr").stream()
+            .filter(row -> row.getText().contains(name))
+            .findFirst()
+            .orElse(null);
+    }
+
+    /**
+     * Replaces the content of the script editor, like pasting the script.
+     * Typing it is not an option: the editor closes the brackets and indents the lines, which would change the script
+     */
+    private void replaceScript(WebElement edit, String script) {
+        var codeEditor = findInShadowRoot(edit, "alfio-code-editor");
+        ((JavascriptExecutor) driver).executeScript("arguments[0].value = arguments[1];", codeEditor, script);
+        var code = findInShadowRoot(codeEditor, ".cm-content");
+        var firstLine = script.strip().lines().findFirst().orElseThrow();
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the script has not been set in the editor")
+            .until(_ -> code.getText().strip().startsWith(firstLine));
+    }
+
+    /**
+     * The button of the given row with the given label, e.g. "Edit".
+     * The text also contains the item name, hidden for screen readers ("Edit myExtension")
+     */
+    private WebElement rowButton(WebElement row, String label) {
+        return row.findElements(By.cssSelector("sl-button")).stream()
+            .filter(button -> button.getText().strip().startsWith(label))
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("button " + label + " not found in row " + row.getText()));
+    }
+
+    private void waitForExtensionEditorReady(WebElement edit) {
+        // the form is displayed once the extension (or the sample script) has been loaded
+        wait.until(elementToBeClickable(findInShadowRoot(edit, "sl-input[name='name']")));
     }
 
     private void fillBasicInfo(EventDefinition event) {

@@ -179,7 +179,7 @@ dependencies {
     implementation(libs.vatchecker)
     implementation(libs.basicxlsx)
     implementation(libs.imgscalr)
-    implementation(libs.rhino.runtime)
+    implementation(libs.rhino)
     implementation(libs.google.auth.oauth2.http)
     implementation(libs.spring.boot.starter.webmvc) {
         exclude(module = "spring-boot-starter-logging")

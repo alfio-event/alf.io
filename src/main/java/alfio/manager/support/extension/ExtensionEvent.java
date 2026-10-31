@@ -16,49 +16,74 @@
  */
 package alfio.manager.support.extension;
 
+/**
+ * Events that can trigger an extension script.
+ * <p>
+ * Each event declares how it is dispatched: scripts run only for the events matching their "async" metadata flag
+ * (see {@code ExtensionRepository.findActive}). The admin script editor reads this declaration at build time
+ * to suggest the events a script can handle, so keep it in sync with the calls in {@code ExtensionManager},
+ * which verify it at runtime.
+ */
 public enum ExtensionEvent {
-    RESERVATION_CONFIRMED,
-    RESERVATION_CANCELLED,
-    RESERVATION_CREDIT_NOTE_ISSUED,
-    TICKET_CANCELLED,
-    RESERVATION_EXPIRED,
-    TICKET_ASSIGNED,
-    TICKET_ASSIGNED_GENERATE_METADATA,
-    WAITING_QUEUE_SUBSCRIBED,
-    INVOICE_GENERATION,
-    CREDIT_NOTE_GENERATION,
-    CREDIT_NOTE_GENERATED,
-    TAX_ID_NUMBER_VALIDATION,
-    CUSTOM_TAX_POLICY_APPLICATION,
-    RESERVATION_VALIDATION,
-    TICKET_UPDATE_VALIDATION,
-    EVENT_METADATA_UPDATE,
-    //
-    STUCK_RESERVATIONS,
-    OFFLINE_RESERVATIONS_WILL_EXPIRE,
-    EVENT_VALIDATE_CREATION,
-    EVENT_CREATED,
-    EVENT_HEADER_UPDATED,
-    EVENT_STATUS_CHANGE,
-    EVENT_VALIDATE_SEATS_PRICES_UPDATE,
-    TICKET_CHECKED_IN,
-    TICKET_REVERT_CHECKED_IN,
-    PDF_GENERATION,
-    OAUTH2_STATE_GENERATION,
-    USER_ADDITIONAL_INFO_FILTER,
+    RESERVATION_CONFIRMED(Dispatch.ASYNC),
+    RESERVATION_CANCELLED(Dispatch.SYNC),
+    RESERVATION_CREDIT_NOTE_ISSUED(Dispatch.SYNC),
+    TICKET_CANCELLED(Dispatch.SYNC),
+    RESERVATION_EXPIRED(Dispatch.SYNC),
+    TICKET_ASSIGNED(Dispatch.ASYNC),
+    TICKET_ASSIGNED_GENERATE_METADATA(Dispatch.SYNC),
+    WAITING_QUEUE_SUBSCRIBED(Dispatch.ASYNC),
+    INVOICE_GENERATION(Dispatch.SYNC),
+    CREDIT_NOTE_GENERATION(Dispatch.SYNC),
+    CREDIT_NOTE_GENERATED(Dispatch.ASYNC),
+    TAX_ID_NUMBER_VALIDATION(Dispatch.SYNC),
+    CUSTOM_TAX_POLICY_APPLICATION(Dispatch.SYNC),
+    RESERVATION_VALIDATION(Dispatch.SYNC),
+    TICKET_UPDATE_VALIDATION(Dispatch.SYNC),
+    EVENT_METADATA_UPDATE(Dispatch.SYNC),
+    STUCK_RESERVATIONS(Dispatch.ASYNC),
+    OFFLINE_RESERVATIONS_WILL_EXPIRE(Dispatch.ASYNC),
+    EVENT_VALIDATE_CREATION(Dispatch.SYNC),
+    EVENT_CREATED(Dispatch.ALL),
+    EVENT_HEADER_UPDATED(Dispatch.ASYNC),
+    EVENT_STATUS_CHANGE(Dispatch.ALL),
+    EVENT_VALIDATE_SEATS_PRICES_UPDATE(Dispatch.SYNC),
+    TICKET_CHECKED_IN(Dispatch.ASYNC),
+    TICKET_REVERT_CHECKED_IN(Dispatch.ASYNC),
+    PDF_GENERATION(Dispatch.SYNC),
+    OAUTH2_STATE_GENERATION(Dispatch.SYNC),
+    USER_ADDITIONAL_INFO_FILTER(Dispatch.SYNC),
+    CONFIRMATION_MAIL_CUSTOM_TEXT(Dispatch.SYNC),
+    TICKET_MAIL_CUSTOM_TEXT(Dispatch.SYNC),
+    REFUND_ISSUED(Dispatch.ASYNC),
+    DYNAMIC_DISCOUNT_APPLICATION(Dispatch.SYNC),
+    SUBSCRIPTION_ASSIGNED_GENERATE_METADATA(Dispatch.SYNC),
+    ONLINE_CHECK_IN_REDIRECT(Dispatch.SYNC),
+    CUSTOM_ONLINE_JOIN_URL(Dispatch.SYNC),
+    PUBLIC_USER_SIGN_UP(Dispatch.ASYNC),
+    PUBLIC_USER_DELETE(Dispatch.SYNC),
+    PUBLIC_USER_PROFILE_VALIDATION(Dispatch.SYNC);
 
-    CONFIRMATION_MAIL_CUSTOM_TEXT,
-    TICKET_MAIL_CUSTOM_TEXT,
-    REFUND_ISSUED,
+    private final Dispatch dispatch;
 
-    DYNAMIC_DISCOUNT_APPLICATION,
+    ExtensionEvent(Dispatch dispatch) {
+        this.dispatch = dispatch;
+    }
 
-    SUBSCRIPTION_ASSIGNED_GENERATE_METADATA,
+    public boolean isDispatchedSynchronously() {
+        return dispatch != Dispatch.ASYNC;
+    }
 
-    ONLINE_CHECK_IN_REDIRECT,
-    CUSTOM_ONLINE_JOIN_URL,
+    public boolean isDispatchedAsynchronously() {
+        return dispatch != Dispatch.SYNC;
+    }
 
-    PUBLIC_USER_SIGN_UP,
-    PUBLIC_USER_DELETE,
-    PUBLIC_USER_PROFILE_VALIDATION
+    public enum Dispatch {
+        // scripts with "async: false" handle the event, and can return a result
+        SYNC,
+        // scripts with "async: true" handle the event, without blocking the caller
+        ASYNC,
+        // fired twice: first to the synchronous scripts, then to the asynchronous ones
+        ALL
+    }
 }

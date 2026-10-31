@@ -576,6 +576,19 @@ export const modernLayout = css`
         margin: 0 0 1.5rem;
     }
 
+    /* spinner shown by taskContent() on first load */
+    .loading {
+        display: grid;
+        place-items: center;
+        min-height: 12rem;
+    }
+
+    /* search field rendered by ListSearchController */
+    .list-search {
+        flex: 1 1 20rem;
+        margin-top: 0;
+    }
+
     .filter-toolbar {
         display: flex;
         flex-wrap: wrap;
@@ -837,17 +850,6 @@ export const purchaseContextListPage = css`
         align-items: center;
     }
 
-    .list-search {
-        flex: 1 1 20rem;
-        margin-top: 0;
-    }
-
-
-    .loading {
-        display: grid;
-        place-items: center;
-        min-height: 12rem;
-    }
 
     @media (max-width: 1200px) {
         .container {

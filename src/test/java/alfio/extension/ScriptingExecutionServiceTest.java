@@ -103,6 +103,55 @@ public class ScriptingExecutionServiceTest {
         }
     }
 
+    // the sandbox (SandboxWrapFactory) must wrap every Java object passed to the scripts: maps, lists and plain objects
+    @Test
+    void sandboxBlocksGetClassOnMaps() {
+        assertOutOfBoundaries("var hash = new HashMap(); hash.getClass();", Map.of());
+    }
+
+    @Test
+    void sandboxBlocksGetClassOnLists() {
+        assertOutOfBoundaries("list.getClass();", Map.of("list", List.of(1, 2)));
+    }
+
+    @Test
+    void sandboxBlocksGetClassOnObjects() {
+        assertOutOfBoundaries("extensionLogger.getClass();", Map.of());
+    }
+
+    // the timeout is measured from the start of the script (SandboxContextFactory.doTopCall):
+    // a legitimate script running for more than one instruction check must complete
+    @Test
+    void longRunningScriptWithinTimeoutCompletes() {
+        String script = """
+            function executeScript(scriptEvent) {
+                var sum = 0;
+                for (var i = 0; i < 200000; i++) {
+                    sum += i;
+                }
+                extensionLogger.logInfo('sum ' + sum);
+            }
+            executeScript(extensionEvent);
+            """;
+        scriptingExecutionService.executeScript("name", script, Map.of("extensionEvent", "test"), Void.class, extensionLogger);
+        verify(extensionLogger).logInfo("sum 19999900000");
+    }
+
+    private void assertOutOfBoundaries(String statement, Map<String, Object> params) {
+        String script = "function executeScript(scriptEvent) { " + statement + " extensionLogger.logInfo('reached'); }\n"
+            + "executeScript(extensionEvent);";
+        var allParams = new java.util.HashMap<String, Object>(params);
+        allParams.put("extensionEvent", "test");
+        var exception = assertThrows(Exception.class,
+            () -> scriptingExecutionService.executeScript("name", script, allParams, Void.class, extensionLogger));
+        Throwable cause = exception;
+        while (cause != null && !(cause instanceof OutOfBoundariesException)) {
+            cause = cause.getCause();
+        }
+        assertNotNull(cause, "expected OutOfBoundariesException, got " + exception);
+        verify(extensionLogger, never()).logInfo("reached");
+    }
+
     @Test
     void extensionThrowsError() throws Exception {
         try {

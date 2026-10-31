@@ -406,20 +406,22 @@
                 template: '<div><div data-ui-view></div></div>'
             }).state('extension.list', {
                 url: '/list',
-                template: '<extension></extension>'
+                template: '<alfio-extension-list></alfio-extension-list>'
             }).state('extension.new', {
                 url: '/new',
-                template: '<extension-add-update></extension-add-update>'
+                template: '<alfio-extension-edit></alfio-extension-edit>'
             }).state('extension.edit', {
                 url: '/:path/:name/edit',
-                template: '<extension-add-update to-update="ctrl.toUpdate" close="ctrl.close($script)" dismiss="ctrl.dismiss()"></extension-add-update>',
+                template: '<alfio-extension-edit data-path="{{ctrl.toUpdate.path}}" data-name="{{ctrl.toUpdate.name}}"></alfio-extension-edit>',
                 controllerAs: 'ctrl',
                 controller: ['$stateParams', function($stateParams) {
                     this.toUpdate = {path: $stateParams.path, name: $stateParams.name};
                 }]
             }).state('extension.log', {
-                url: '/log',
-                template: '<extension-log></extension-log>'
+                url: '/log?search&page&type',
+                // The Lit component owns filtering and pagination; query changes must preserve its DOM.
+                reloadOnSearch: false,
+                template: '<alfio-extension-log></alfio-extension-log>'
              });
      });
 
