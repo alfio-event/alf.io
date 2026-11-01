@@ -14,7 +14,10 @@ export class AttendeesImportService {
      * @return the identifier of the import request
      */
     static submit(eventName: string, request: AttendeesImportRequest, oneReservationPerAttendee: boolean): Promise<string> {
-        const query = oneReservationPerAttendee ? '?oneReservationPerAttendee=true' : '';
+        let query = '';
+        if (oneReservationPerAttendee) {
+            query = '?oneReservationPerAttendee=true';
+        }
         return result(postJson(`/admin/api/event/${encodeURIComponent(eventName)}/attendees/import${query}`, request));
     }
 

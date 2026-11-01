@@ -3,18 +3,28 @@ import {customElement, property, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
 import {Task} from '@lit/task';
-import type {SlInput, SlRadioGroup, SlSelect, SlSwitch} from '@shoelace-style/shoelace';
-import {AlfioEvent, DateTimeModification} from '../../model/event.ts';
-import {AttendeesImportRequest, ImportCategory, ParsedAttendees} from '../../model/attendees-import.ts';
+import type {SlInput, SlSelect, SlSwitch} from '@shoelace-style/shoelace';
+import {AlfioEvent} from '../../model/event.ts';
+import {AttendeesImportRequest, ParsedAttendees} from '../../model/attendees-import.ts';
+import {CategoryType} from '../../model/admin-reservation.ts';
 import {AdditionalField} from '../../model/additional-field.ts';
 import {EventService} from '../../service/event.ts';
 import {AdditionalFieldService} from '../../service/additional-field.ts';
 import {ConfigurationService} from '../../service/configuration.ts';
 import {AttendeesImportService, REFERENCE_COLUMN, REQUIRED_COLUMNS} from '../../service/attendees-import.ts';
-import {formatAmount, localizedTitle} from '../../service/reservation-format.ts';
-import {downloadCsv} from '../../service/helpers.ts';
-import {badges, base, form, modernLayout, modernTable, purchaseContextListPage, retroCompat, row, textColors} from '../../styles.ts';
+import {localizedTitle} from '../../service/reservation-format.ts';
+import {downloadCsv, errorMessage} from '../../service/helpers.ts';
+import {
+    buildCategory,
+    CATEGORY_TYPE_CHOICES,
+    reservationExpiration,
+    formatFinalPrice,
+    vatDescription,
+} from '../../service/admin-reservation.ts';
+import {badges, base, choiceCards as choiceCardsStyles, form, modernLayout, modernTable, purchaseContextListPage, retroCompat, row, textColors} from '../../styles.ts';
 import {sectionCard} from '../../components/section-card.ts';
+import {choiceCards} from '../../components/choice-cards.ts';
+import {TicketCategoriesController, ticketCategorySelect} from '../../components/ticket-category-select.ts';
 import {taskContent} from '../../components/task-content.ts';
 import {FileUploadChangeEvent} from '../../components/file-upload.ts';
 import '../../components/file-upload.ts';
@@ -23,8 +33,6 @@ import '../../components/file-upload.ts';
 const MAX_ATTENDEES_PER_RESERVATION = 100;
 // rendering all the rows of a big file would make the page unresponsive
 const PREVIEW_ROWS = 100;
-
-type CategoryType = 'existing' | 'new';
 
 interface LoadData {
     event: AlfioEvent;
@@ -59,6 +67,7 @@ export class AttendeesImport extends LitElement {
     @state() private language = '';
     @state() private submitting = false;
     @state() private submitError: string | null = null;
+    private readonly categories = new TicketCategoriesController(this);
 
     private readonly loadDataTask = new Task(this, {
         task: async ([eventName]): Promise<LoadData> => {
@@ -67,6 +76,7 @@ export class AttendeesImport extends LitElement {
                 booleanConfig(eventName, 'SEND_TICKETS_AFTER_IMPORT_ATTENDEE'),
                 booleanConfig(eventName, 'CREATE_RESERVATION_FOR_EACH_IMPORTED_ATTENDEE'),
             ]);
+            this.categories.set(event.ticketCategories);
             this.sendTickets = sendTickets;
             this.oneReservationPerAttendee = oneReservationPerAttendee;
             this.language = event.contentLanguages[0]?.locale ?? '';
@@ -88,6 +98,7 @@ export class AttendeesImport extends LitElement {
         modernLayout,
         modernTable,
         purchaseContextListPage,
+        choiceCardsStyles,
         css`
             :host {
                 --alfio-section-body-padding: var(--sl-spacing-large);
@@ -214,10 +225,14 @@ export class AttendeesImport extends LitElement {
 
     private renderAttendees(event: AlfioEvent, fields: AdditionalField[]): TemplateResult {
         const count = this.parsed?.attendees.length ?? 0;
+        let badge: TemplateResult | undefined;
+        if (count > 0) {
+            badge = html`<sl-badge id="attendees-count" variant="primary" pill>${count}</sl-badge>`;
+        }
         return sectionCard({
             icon: 'file-earmark-spreadsheet',
             title: 'Attendees',
-            badge: count > 0 ? html`<sl-badge id="attendees-count" variant="primary" pill>${count}</sl-badge>` : undefined,
+            badge,
         }, html`
             <div class="import-steps">
                 <div class="import-step featured-card">
@@ -225,9 +240,9 @@ export class AttendeesImport extends LitElement {
                     <div class="template-download">
                         <sl-icon name="file-earmark-spreadsheet"></sl-icon>
                         <p class="text-muted">
-                            ${fields.length > 0
-                                ? html`It has a column for each of the ${fieldsLink(event)} of this event, so that you don't miss any of them.`
-                                : html`It has all the columns that the import needs.`}
+                            ${when(fields.length > 0,
+                                () => html`It has a column for each of the ${fieldsLink(event)} of this event, so that you don't miss any of them.`,
+                                () => html`It has all the columns that the import needs.`)}
                         </p>
                         <sl-button id="download-template" variant="primary" size="large"
                                    @click=${() => downloadCsv(`${event.shortName}-attendees.csv`, AttendeesImportService.template(fields.map(field => field.name)))}>
@@ -276,10 +291,10 @@ export class AttendeesImport extends LitElement {
 
 ${requiredColumns(', ')}: required, in this order
 ${REFERENCE_COLUMN}: optional, the attendee ID in your system
-${fieldNames.length > 0
-    ? html`${fieldNames.join(', ')}: optional, the ${fieldsLink(event)}${fields.filter(hasRestrictedValues).map(field => html`
-${field.name}: one of ${allowedValues(field).join(', ')}`)}`
-    : html`There are no ${fieldsLink(event)} for this event`}</pre>
+${when(fieldNames.length > 0,
+    () => html`${fieldNames.join(', ')}: optional, the ${fieldsLink(event)}${fields.filter(hasRestrictedValues).map(field => html`
+${field.name}: one of ${allowedValues(field).join(', ')}`)}`,
+    () => html`There are no ${fieldsLink(event)} for this event`)}</pre>
             </div>
         `;
     }
@@ -320,37 +335,23 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`
 
     private renderCategory(event: AlfioEvent): TemplateResult {
         return sectionCard({ icon: 'tags', title: 'Ticket category' }, html`
-            <div class="form-stack">
-                <sl-radio-group id="category-type" label="Assign the attendees to" value=${this.categoryType}
-                                @sl-change=${this.onCategoryTypeChange}>
-                    <sl-radio-button value="existing">
-                        <sl-icon slot="prefix" name="paperclip"></sl-icon>
-                        An existing category
-                    </sl-radio-button>
-                    <sl-radio-button value="new">
-                        <sl-icon slot="prefix" name="plus-square"></sl-icon>
-                        A new restricted category
-                    </sl-radio-button>
-                </sl-radio-group>
-                ${when(this.categoryType === 'existing',
-                    () => html`
-                        <sl-select id="existing-category" label="Category" placeholder="Select a category" required
-                                   .value=${this.existingCategoryId}
-                                   @sl-change=${(e: Event) => { this.existingCategoryId = String((e.target as SlSelect).value); }}>
-                            ${repeat(event.ticketCategories, category => category.id, category => html`
-                                <sl-option value=${String(category.id)}>${category.name}</sl-option>
-                            `)}
-                        </sl-select>
-                    `,
-                    () => this.renderNewCategory(event))}
-                <sl-details summary="How are the seats assigned?">
-                    <p><strong>Existing category</strong>: the attendees get seats of the category. If there aren't enough seats in the category,
-                        it's extended with seats not allocated to other categories, or with extra seats if "Add extra seats" is enabled.</p>
-                    <p><strong>New restricted category</strong>: a category is created for these attendees only. If there aren't enough seats in the event,
-                        extra seats are added if "Add extra seats" is enabled.</p>
-                    <p>Otherwise, the reservation is not created.</p>
-                </sl-details>
-            </div>
+            ${choiceCards({
+                name: 'category-type',
+                className: 'category-type',
+                label: 'Assign the attendees to',
+                value: this.categoryType,
+                options: CATEGORY_TYPE_CHOICES,
+                panel: html`
+                    ${when(this.categoryType === 'existing',
+                        () => ticketCategorySelect(this.categories, {
+                            id: 'existing-category',
+                            value: this.existingCategoryId,
+                            onChange: existingCategoryId => { this.existingCategoryId = existingCategoryId; },
+                            onRefresh: () => this.refreshCategories(event),
+                        }),
+                        () => this.renderNewCategory(event))}
+                `,
+            }, this.onCategoryTypeChange)}
         `);
     }
 
@@ -362,7 +363,6 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`
         if (event.freeOfCharge) {
             return nameInput;
         }
-        const price = Number.parseFloat(this.newCategoryPrice);
         return html`
             <div class="row" style="--alfio-row-cols: 3">
                 ${nameInput}
@@ -371,8 +371,8 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`
                     <span slot="suffix">${event.currency}</span>
                 </sl-input>
                 <sl-input label="Final price" readonly
-                          help-text=${event.vatIncluded ? 'VAT included' : `Including ${event.vatPercentage}% VAT`}
-                          .value=${Number.isNaN(price) ? '' : formatAmount(finalPrice(event, price), event.currency)}></sl-input>
+                          help-text=${vatDescription(event)}
+                          .value=${formatFinalPrice(event, this.newCategoryPrice)}></sl-input>
             </div>
         `;
     }
@@ -381,10 +381,16 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`
         const count = this.parsed?.attendees.length ?? 0;
         const newCategory = this.categoryType === 'new';
         const tooManyAttendees = !this.oneReservationPerAttendee && count > MAX_ATTENDEES_PER_RESERVATION;
+        let oneReservationHelp = 'Each attendee is the contact person of their reservation';
+        let tooManyAttendeesHint = 'Create one reservation per attendee instead.';
+        if (newCategory) {
+            oneReservationHelp = 'Not available for a new category';
+            tooManyAttendeesHint = 'Import the attendees in smaller files.';
+        }
         return sectionCard({ icon: 'sliders', title: 'Options' }, html`
             <div class="form-stack options">
                 <sl-switch id="one-reservation-per-attendee" .checked=${this.oneReservationPerAttendee} ?disabled=${newCategory}
-                           help-text=${newCategory ? 'Not available for a new category' : 'Each attendee is the contact person of their reservation'}
+                           help-text=${oneReservationHelp}
                            @sl-change=${(e: Event) => { this.oneReservationPerAttendee = (e.target as SlSwitch).checked; }}>
                     Create one reservation per attendee
                 </sl-switch>
@@ -392,7 +398,7 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`
                     <sl-alert variant="warning" open>
                         <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
                         A reservation can contain at most ${MAX_ATTENDEES_PER_RESERVATION} attendees.
-                        ${newCategory ? 'Import the attendees in smaller files.' : 'Create one reservation per attendee instead.'}
+                        ${tooManyAttendeesHint}
                     </sl-alert>
                 `)}
                 <sl-switch id="forbid-reassignment" .checked=${this.forbidReassignment}
@@ -405,7 +411,7 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`
                     Send tickets via email
                 </sl-switch>
                 <sl-switch id="add-seats" .checked=${this.addSeats}
-                           help-text="Increases the number of seats of the event if there aren't enough"
+                           help-text="Increases the number of seats of the event if there aren't enough. Otherwise, the reservation is not created."
                            @sl-change=${(e: Event) => { this.addSeats = (e.target as SlSwitch).checked; }}>
                     Add extra seats if needed
                 </sl-switch>
@@ -425,7 +431,11 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`
         if (!singleReservation && !multipleLanguages) {
             return html``;
         }
-        return sectionCard({ icon: 'person-vcard', title: singleReservation ? 'Reservation contact' : 'Language' }, html`
+        let title = 'Language';
+        if (singleReservation) {
+            title = 'Reservation contact';
+        }
+        return sectionCard({ icon: 'person-vcard', title }, html`
             <div class="form-stack">
                 ${when(singleReservation, () => html`
                     <div class="row">
@@ -460,8 +470,16 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`
         this.contact = { ...this.contact, ...change };
     }
 
-    private onCategoryTypeChange = (e: Event): void => {
-        this.categoryType = (e.target as SlRadioGroup).value as CategoryType;
+    private async refreshCategories(event: AlfioEvent): Promise<void> {
+        await this.categories.refresh(event.shortName);
+        // the selected category could have been removed in the meantime
+        if (this.existingCategoryId !== '' && !this.categories.contains(this.existingCategoryId)) {
+            this.existingCategoryId = '';
+        }
+    }
+
+    private onCategoryTypeChange = (categoryType: CategoryType): void => {
+        this.categoryType = categoryType;
         if (this.categoryType === 'new') {
             // a new category for each attendee doesn't make sense
             this.oneReservationPerAttendee = false;
@@ -494,7 +512,7 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`
                 this.oneReservationPerAttendee = true;
             }
         } catch (error) {
-            this.parseError = error instanceof Error ? error.message : 'The file cannot be read.';
+            this.parseError = errorMessage(error, 'The file cannot be read.');
         }
     }
 
@@ -517,20 +535,27 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`
             const requestId = await AttendeesImportService.submit(event.shortName, this.buildRequest(event, this.parsed), this.oneReservationPerAttendee);
             window.location.hash = `#/events/${event.shortName}/reservation/import/${requestId}/status`;
         } catch (error) {
-            this.submitError = error instanceof Error ? error.message : 'Unexpected error. Please retry and/or check the logs.';
+            this.submitError = errorMessage(error, 'Unexpected error. Please retry and/or check the logs.');
         } finally {
             this.submitting = false;
         }
     }
 
     private buildRequest(event: AlfioEvent, parsed: ParsedAttendees): AttendeesImportRequest {
-        const category: ImportCategory = this.categoryType === 'existing'
-            ? { existingCategoryId: Number(this.existingCategoryId) }
-            : { name: this.newCategoryName, price: event.freeOfCharge ? undefined : Number.parseFloat(this.newCategoryPrice) };
-        return {
-            expiration: endOfTomorrow(),
+        const category = buildCategory(event, {
+            categoryType: this.categoryType,
+            existingCategoryId: this.existingCategoryId,
+            name: this.newCategoryName,
+            price: this.newCategoryPrice,
+        });
+        let customerData = this.contact;
+        if (this.oneReservationPerAttendee) {
             // each attendee is the contact of their own reservation
-            customerData: this.oneReservationPerAttendee ? { firstName: '', lastName: '', emailAddress: '' } : this.contact,
+            customerData = { firstName: '', lastName: '', emailAddress: '' };
+        }
+        return {
+            expiration: reservationExpiration(event),
+            customerData,
             language: this.language,
             ticketsInfo: [{
                 category,
@@ -556,7 +581,7 @@ function fieldsLink(event: AlfioEvent): TemplateResult {
 }
 
 function requiredColumns(separator: string, format: (column: string) => string = column => column): TemplateResult[] {
-    return REQUIRED_COLUMNS.map((column, i) => html`${i > 0 ? separator : ''}<span class="text-success">${format(column)}</span>`);
+    return REQUIRED_COLUMNS.map((column, i) => html`${when(i > 0, () => separator)}<span class="text-success">${format(column)}</span>`);
 }
 
 function hasRestrictedValues(field: AdditionalField): boolean {
@@ -565,23 +590,6 @@ function hasRestrictedValues(field: AdditionalField): boolean {
 
 function allowedValues(field: AdditionalField): string[] {
     return (field.restrictedValues ?? []).filter(value => !(field.disabledValues ?? []).includes(value));
-}
-
-function finalPrice(event: AlfioEvent, price: number): number {
-    return event.vatIncluded ? price : price * (1 + event.vatPercentage / 100);
-}
-
-/**
- * The import creates reservations that expire at the end of the next day
- */
-function endOfTomorrow(): DateTimeModification {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return {
-        date: `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}`,
-        time: '23:59',
-    };
 }
 
 declare global {

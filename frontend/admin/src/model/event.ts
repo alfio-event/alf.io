@@ -30,6 +30,8 @@ export interface AlfioEvent extends PurchaseContext {
     freeOfCharge:                      boolean;
     sameDay:                           boolean;
     end:                               string;
+    // wall-clock time in the event time zone (yyyy-MM-dd HH:mm)
+    formattedEnd:                      string;
     online:                            boolean;
     organizationId:                    number;
     regularPrice:                      number;

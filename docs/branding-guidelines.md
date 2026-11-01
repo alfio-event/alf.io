@@ -1,6 +1,6 @@
 # Admin Branding Guidelines
 
-Established conventions for the admin frontend introduced during the Users / API Keys redesign. Use this guide when building or migrating new pages to ensure visual consistency across the application.
+Visual reference for the admin frontend: layout patterns, tables, cards, color and spacing tokens, and the index of the CSS classes in `src/styles.ts`. The rules for forms, buttons and dialogs are in [`admin-style-guide.md`](admin-style-guide.md), which takes precedence over this document.
 
 All styling relies exclusively on Shoelace CSS custom properties (`--sl-*`) and shared style blocks from `src/styles.ts`. No new color palettes or fonts.
 
@@ -19,12 +19,13 @@ import {badges, base, dialog, form, modernLayout, modernTable, pageHeader, panel
 | `panelStyles` | `.panel`, `.list-group-item`, `.btn` compat, responsive `.col` grid |
 | `spacing` | `.wMarginTop10px` |
 | `pageHeader` | `.page-header`, `.border-bottom` |
-| `form` | Label weight, error border colors, `.error-text` |
-| `dialog` | Dialog z-index |
+| `form` | Label weight, error border colors, `.error-text`, `.input-with-action` |
+| `dialog` | Dialog z-index, `.responsive-dialog` width, dialog titles and sections, loading placeholder |
 | `row` | `.row` CSS-grid with `--alfio-row-cols` |
 | `badges` | `sl-badge::part(base) { border: unset; }` |
 | `textColors` | `.text-success`, `.text-muted`, `.text-danger` |
-| `modernLayout` | Page title, filter toolbar, section cards, featured card, dialogs, empty state |
+| `modernLayout` | Page title, filter toolbar, section cards, "add another" card button, form stack, featured card, dialogs, empty state |
+| `choiceCards` | Choice cards and the panel of the selected choice, see `choiceCards()` |
 | `modernTable` | Table, striped variant, headers, row hover, actions cell, username link |
 
 ## 1. Page layout
@@ -75,7 +76,7 @@ When no filters apply, collapse to a right-aligned toolbar:
 
 ## 3. Section cards
 
-Import `modernLayout` and use `section-card` to group sections (e.g. Enabled / Disabled lists). Each card has a header bar with icon + title + optional count badge, and a body area.
+Import `modernLayout` and use `section-card` to group sections (e.g. Enabled / Disabled lists). Each card has a header bar with icon + title + optional count badge, and a body area. Render it with `sectionCard()` (`components/section-card.ts`), which produces this markup:
 
 ```html
 <div class="section-card">
@@ -168,10 +169,9 @@ Import `modernLayout` from `styles.ts` for credential card, confirmation dialog,
 
 ### Form dialogs
 
-- Use `<sl-dialog>` with `size="large"` and `placement="bottom"`
+- Structure, width, close button and footer: see the Dialogs section of `admin-style-guide.md`
 - Two-column layout for side-by-side fields via `row` (`--alfio-row-cols: 2`)
 - Icon prefixes on inputs: `person` for usernames, `envelope` for email, `card-text` for descriptions
-- Footer follows the established 3-column grid convention (see `admin-style-guide.md`)
 
 ### Credential display
 
@@ -210,18 +210,7 @@ Use `class="bulk-specs"` for styled specification blocks with nested `<pre>` ele
 
 ## 7. Buttons
 
-Button conventions are defined in `admin-style-guide.md`. This guide follows those conventions:
-
-- **"Add new"** buttons: `variant="success"`, `size="large"`, icon `plus-circle`
-- **"Save"** buttons: `variant="warning"` per `admin-style-guide.md`
-- **"Cancel" / "Close"** buttons: `variant="default"`
-- **"Delete"**: `variant="danger"`
-- **Secondary actions** (Bulk creation, etc.): `variant="primary"`
-- **Destructive confirmations** (Rotate, Disable): `variant="warning"`
-
-Dialog and toolbar inline action buttons may use `size="small"`. Footer action buttons follow the style guide convention: `size="large"`.
-
-Prefix icons on all action buttons: `plus-circle` for add, `pencil` for edit, `trash` for delete, `clipboard` for copy, `qr-code` for QR, `x-circle` for clear, `check2` for confirm.
+Variants, sizes, icons and placement of buttons are defined in the Buttons section of `admin-style-guide.md`.
 
 ## 8. Color palette (Shoelace tokens only)
 
@@ -260,6 +249,9 @@ Classes from `modernLayout` (import `modernLayout` from `styles.ts`):
 | `section-card` | Card with header bar + body |
 | `section-header` | Header with icon, title, badge |
 | `section-body` | Content body wrapper |
+| `section-card-add` | Dashed, full-width button that adds one more section card |
+| `form-stack` | Vertical stack of form controls, spaced by the gap |
+| `label-hidden` | Keeps the label of a control for screen readers only |
 | `empty-state` | Zero-results placeholder |
 | `featured-card` | Prominent card with primary tint |
 | `secret-display` | Monospaced secret/key field |
@@ -289,5 +281,8 @@ Classes from other shared blocks:
 | `retroCompat` | `.hidden-xs`, `.hidden-sm` | Responsive visibility |
 | `panelStyles` | `.panel`, `.panel-heading`, `.panel-body` | Bootstrap panel compat |
 | `row` | `.row` | CSS-grid with `--alfio-row-cols` |
+| `form` | `.input-with-action` | Control with a button beside it (e.g. select + Refresh) |
+| `choiceCards` | `.choice-cards`, `.choice-card`, `.choice-panel` | Rendered by `choiceCards()` |
+| `dialog` | `.responsive-dialog` | Dialog width, with `--alfio-dialog-max-width` |
 | `badges` | `sl-badge::part(base)` | Remove badge border |
 | `textColors` | `.text-muted`, `.text-success`, `.text-danger` | Semantic text color |

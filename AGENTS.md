@@ -52,11 +52,10 @@ Both frontends use pnpm. Gradle installs Node and pnpm itself, so `./gradlew bui
 
 ## Admin frontend design
 
-All style conventions for the admin frontend are documented in
-`docs/admin-style-guide.md`. Before starting any admin frontend work, review
-that guide for established conventions on dialog footers, form fields, CSV bulk
-import, API key creation, icons, dates, Shoelace-native components, and style
-imports.
+Before any work in `frontend/admin`, read `docs/admin-style-guide.md`: its
+principles, the reusable building blocks, and the rules for forms, choices,
+buttons, dialogs, dates, CSV import and AngularJS migrations. Review your result
+against it before reporting.
 
 ## Translations
 

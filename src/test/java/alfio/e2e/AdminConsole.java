@@ -858,6 +858,132 @@ class AdminConsole {
 
     record ReservationContact(String firstName, String lastName, String email) {}
 
+    record NewAttendee(String firstName, String lastName, String email) {
+        String fullName() {
+            return firstName + " " + lastName;
+        }
+    }
+
+    /**
+     * Tickets of a reservation, grouped by category
+     */
+    record ReservationTickets(String status, Map<String, List<String>> attendeesByCategory) {}
+
+    /**
+     * Creates a reservation from the "Create reservation" page, with two blocks of tickets:
+     * the attendee in an existing category, and empty seats in a new restricted category.
+     * @return the ID of the new reservation, once the page has moved to its detail
+     */
+    String createReservation(String slug,
+                             ReservationContact contact,
+                             NewAttendee attendee,
+                             String existingCategoryName,
+                             String newCategoryName,
+                             int emptySeats) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/new");
+        var page = wait.until(presenceOfElementLocated(By.tagName("alfio-reservation-create")));
+        typeInShoelaceControl(findInShadowRoot(page, "#contact-first-name"), "input", contact.firstName());
+        typeInShoelaceControl(findInShadowRoot(page, "#contact-last-name"), "input", contact.lastName());
+        typeInShoelaceControl(findInShadowRoot(page, "#contact-email"), "input", contact.email());
+        selectLanguageIfRequested(page);
+        //
+        // first block: the attendee, in an existing category
+        fillNewAttendee(page, ".tickets-block[data-index='0']", attendee);
+        selectShoelaceOption(findInShadowRoot(page, ".tickets-block[data-index='0'] .existing-category"), existingCategoryName);
+        //
+        // second block: empty seats, in a new restricted category
+        clickWithJs(driver, findInShadowRoot(page, "#add-category"));
+        var secondBlock = ".tickets-block[data-index='1']";
+        chooseCard(page, secondBlock + " .attendee-strategy", "empty");
+        var seats = findInShadowRoot(findInShadowRoot(page, secondBlock + " sl-input.seats"), "input");
+        wait.until(_ -> seats.isDisplayed());
+        clearInput(seats);
+        seats.sendKeys(Integer.toString(emptySeats));
+        chooseCard(page, secondBlock + " .category-type", "new");
+        typeInShoelaceControl(findInShadowRoot(page, secondBlock + " .new-category-name"), "input", newCategoryName);
+        typeInShoelaceControl(findInShadowRoot(page, secondBlock + " .new-category-price"), "input", "5");
+        // the restricted category doesn't depend on the seats left unallocated by the existing ones
+        setShoelaceSwitch(findInShadowRoot(page, secondBlock + " .add-seats"), true);
+
+        LOGGER.info("creating a reservation for {} on {}", contact.lastName(), slug);
+        clickWithJs(driver, findInShadowRoot(page, "#save-button"));
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "reservation not created: " + findAllInShadowRoot(page, "#submit-error").stream().map(WebElement::getText).findFirst().orElse("no error displayed"))
+            .until(urlMatches("/reservation/[^/?]+\\?fromCreation=true"));
+        var reservationDetail = wait.until(presenceOfElementLocated(By.tagName("alfio-reservation-detail")));
+        // the new reservation waits for the payment
+        waitForReservationStatus(reservationDetail, "PENDING");
+        var url = requireNonNull(driver.getCurrentUrl());
+        return url.substring(url.lastIndexOf('/') + 1, url.indexOf('?', url.lastIndexOf('/')));
+    }
+
+    /**
+     * Adds an attendee from the "Add new attendees" button of the Check-in page: the reservation is created
+     * in a dialog (the attendee is also the contact person) and confirmed right away
+     */
+    void addAttendeeFromCheckIn(String slug, NewAttendee attendee, String categoryName) {
+        var checkIn = openCheckIn(slug);
+        clickWithJs(driver, findInShadowRoot(checkIn, "#add-attendees-button"));
+        var dialog = findInShadowRoot(checkIn, "alfio-add-attendees-dialog");
+        var form = findInShadowRoot(dialog, "alfio-reservation-create");
+        selectLanguageIfRequested(form);
+        fillNewAttendee(form, ".tickets-block[data-index='0']", attendee);
+        selectShoelaceOption(findInShadowRoot(form, ".tickets-block[data-index='0'] .existing-category"), categoryName);
+        LOGGER.info("adding {} from the Check-in page of {}", attendee.fullName(), slug);
+        clickWithJs(driver, findInShadowRoot(form, "#save-button"));
+        // the dialog closes once the reservation has been confirmed
+        var slDialog = findInShadowRoot(dialog, "sl-dialog");
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "attendee not added: " + findAllInShadowRoot(form, "#submit-error").stream().map(WebElement::getText).findFirst().orElse("dialog still open"))
+            .until(_ -> !Boolean.TRUE.equals(slDialog.getDomProperty("open")));
+    }
+
+    /**
+     * Reads a reservation through the same API used by the reservation detail
+     */
+    @SuppressWarnings("unchecked")
+    ReservationTickets reservationTickets(String slug, String reservationId) {
+        var result = (Map<String, Object>) ((JavascriptExecutor) driver).executeAsyncScript("""
+            const [url, done] = arguments;
+            fetch(url, { credentials: 'include' })
+                .then(r => r.json())
+                .then(r => done({
+                    status: r.data.reservation.status,
+                    attendeesByCategory: Object.fromEntries(r.data.ticketsByCategory.map(entry => [
+                        entry.key.name,
+                        entry.value.map(t => [t.firstName, t.lastName].filter(Boolean).join(' '))
+                    ]))
+                }), e => done({ error: String(e) }));
+            """, serverBaseUrl + "/admin/api/reservation/event/" + slug + "/" + reservationId);
+        assertEquals(null, result.get("error"), () -> "cannot load reservation " + reservationId);
+        return new ReservationTickets((String) result.get("status"), (Map<String, List<String>>) result.get("attendeesByCategory"));
+    }
+
+    private void fillNewAttendee(WebElement host, String block, NewAttendee attendee) {
+        typeInShoelaceControl(findInShadowRoot(host, block + " .attendee-first-name"), "input", attendee.firstName());
+        typeInShoelaceControl(findInShadowRoot(host, block + " .attendee-last-name"), "input", attendee.lastName());
+        typeInShoelaceControl(findInShadowRoot(host, block + " .attendee-email"), "input", attendee.email());
+    }
+
+    /**
+     * The language is asked only if the event has more than one
+     */
+    private void selectLanguageIfRequested(WebElement host) {
+        var language = findAllInShadowRoot(host, "#language");
+        if (!language.isEmpty()) {
+            var firstOption = (String) ((JavascriptExecutor) driver).executeScript("return arguments[0].querySelector('sl-option').textContent.trim();", language.getFirst());
+            selectShoelaceOption(language.getFirst(), firstOption);
+        }
+    }
+
+    /**
+     * Selects one of the cards rendered by choiceCards() (components/choice-cards.ts)
+     */
+    private void chooseCard(WebElement host, String group, String value) {
+        clickWithJs(driver, findInShadowRoot(host, group + " .choice-card[data-value='" + value + "']"));
+        wait.until(_ -> Boolean.parseBoolean(findInShadowRoot(host, group + " input[value='" + value + "']").getDomProperty("checked")));
+    }
+
     private String importProgress(WebElement status) {
         return findAllInShadowRoot(status, "sl-progress-bar").stream().map(WebElement::getText).findFirst().orElse("no progress displayed");
     }
@@ -894,12 +1020,21 @@ class AdminConsole {
         return wait.until(presenceOfElementLocated(By.tagName("alfio-pending-payments")));
     }
 
+    /**
+     * Matches the rows on their textContent: ChromeDriver's getText() of a row containing a component with a shadow root
+     * (e.g. alfio-payment-method) returns only the text of that shadow root.
+     * Since textContent includes the rows of hidden tabs too, the row must also contain the element we are looking for.
+     */
     private WebElement findInRow(WebElement host, String customerName, String selector) {
-        return wait.until(_ -> shadowRows(host).stream()
-            .filter(row -> row.getText().contains(customerName))
-            .findFirst()
-            .map(row -> row.findElement(By.cssSelector(selector)))
-            .orElse(null));
+        return new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "no row containing \"" + customerName + "\" and " + selector)
+            .until(_ -> shadowRows(host).stream()
+                .filter(row -> String.valueOf(row.getDomProperty("textContent")).contains(customerName))
+                .map(row -> row.findElements(By.cssSelector(selector)))
+                .filter(elements -> !elements.isEmpty())
+                .findFirst()
+                .map(List::getFirst)
+                .orElse(null));
     }
 
     /**

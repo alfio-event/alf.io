@@ -1,4 +1,4 @@
-import {DateTimeModification} from './event.ts';
+import {AdminReservationRequest} from './admin-reservation.ts';
 
 export interface ImportedAttendee {
     firstName: string;
@@ -19,33 +19,7 @@ export interface ParsedAttendees {
     skippedRows: number;
 }
 
-export interface ImportCategory {
-    existingCategoryId?: number;
-    name?: string;
-    price?: number;
-}
-
-/**
- * see AdminReservationModification
- */
-export interface AttendeesImportRequest {
-    expiration: DateTimeModification;
-    customerData: {
-        firstName: string;
-        lastName: string;
-        emailAddress: string;
-    };
-    language?: string;
-    ticketsInfo: {
-        category: ImportCategory;
-        attendees: ImportedAttendee[];
-        addSeatsIfNotAvailable: boolean;
-    }[];
-    notification: {
-        customer: boolean;
-        attendees: boolean;
-    };
-}
+export type AttendeesImportRequest = AdminReservationRequest<ImportedAttendee>;
 
 export interface AttendeesImportStats {
     requestId: string;

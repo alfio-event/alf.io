@@ -79,7 +79,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/resources/edit/resources-edit.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/reservation.service.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/tickets-list/tickets-list.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/label-template/label-template.js"></script>
@@ -96,7 +95,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/open-generated-link/open-generated-link.js"></script>
 
 
-    <link rel="stylesheet" href="{{contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.css" />
 
     <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
     <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/ace-builds/src-min-noconflict/ace.js"></script>

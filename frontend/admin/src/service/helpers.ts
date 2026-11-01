@@ -66,6 +66,16 @@ export async function result<T>(request: Promise<Response>): Promise<T> {
     return body.data;
 }
 
+/**
+ * Message of a caught error, or the fallback if the error doesn't describe itself
+ */
+export function errorMessage(error: unknown, fallback: string): string {
+    if (error instanceof Error) {
+        return error.message;
+    }
+    return fallback;
+}
+
 export function renderIf(predicate: () => boolean, template: () => TemplateResult): TemplateResult {
     return html`${when(predicate(), template, () => nothing)}`;
 }

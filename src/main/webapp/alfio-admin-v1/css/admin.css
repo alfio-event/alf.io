@@ -433,10 +433,6 @@ a.emulate-nav-pills-link {
     height: 500px;
 }
 
-.modal-min-1200 {
-    min-width:1200px;
-}
-
 .event-list-logo {
     max-width: 64px;
     height: auto;

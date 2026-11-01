@@ -347,6 +347,19 @@ export const form = css`
         display: none;
     }
 
+    /* input followed by a button acting on it, e.g. a select with a "Refresh" button */
+    .input-with-action {
+        display: flex;
+        align-items: flex-end;
+        gap: var(--sl-spacing-x-small);
+    }
+
+    .input-with-action > sl-input,
+    .input-with-action > sl-select {
+        flex: 1;
+        min-width: 0;
+    }
+
     sl-input.error .error-text, sl-textarea.error .error-text, sl-select.error .error-text {
         display: inline-block;
     }
@@ -698,6 +711,26 @@ export const modernLayout = css`
         padding: var(--alfio-section-body-padding, var(--sl-spacing-small));
     }
 
+    /* sl-button that adds one more .section-card to a form: an empty, dashed card where the new one will appear */
+    .section-card-add {
+        display: block;
+        margin-bottom: var(--sl-spacing-medium);
+    }
+
+    .section-card-add::part(base) {
+        width: 100%;
+        border: 1px dashed var(--sl-color-gray-400);
+        border-radius: var(--sl-input-border-radius-large);
+        background: transparent;
+        color: var(--sl-color-primary-600);
+    }
+
+    .section-card-add::part(base):hover {
+        border-color: var(--sl-color-primary-600);
+        background: var(--sl-color-primary-50);
+        color: var(--sl-color-primary-700);
+    }
+
     .empty-state {
         display: flex;
         flex-direction: column;
@@ -942,6 +975,158 @@ export const reservationTable = css`
         .hide-small {
             display: none;
         }
+    }
+`;
+
+/* single choice rendered by choiceCards() (components/choice-cards.ts) */
+export const choiceCards = css`
+    /* legend, cards and the panel of the selected card form one group */
+    .choice-cards {
+        display: grid;
+        /* without it, the grid column grows with the content of the panel, e.g. a row of inputs */
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--sl-spacing-small);
+        margin: 0;
+        padding: 0;
+        border: 0;
+        min-width: 0;
+    }
+
+    .choice-cards legend {
+        padding: 0;
+        margin-bottom: var(--sl-spacing-x-small);
+        color: var(--sl-input-label-color);
+        font-size: var(--sl-input-label-font-size-medium);
+        font-weight: bold;
+    }
+
+    .choice-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+        gap: var(--sl-spacing-small);
+    }
+
+    .choice-card {
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: var(--sl-spacing-small);
+        padding: var(--sl-spacing-small) var(--sl-spacing-medium);
+        background: var(--sl-color-neutral-0);
+        border: 1px solid var(--sl-color-gray-300);
+        border-radius: var(--sl-input-border-radius-large);
+        cursor: pointer;
+        transition: border-color var(--sl-transition-fast), background-color var(--sl-transition-fast);
+    }
+
+    .choice-card:hover {
+        border-color: var(--sl-color-primary-300);
+    }
+
+    /* the radio stays focusable and readable by screen readers, the card shows its state */
+    .choice-card input {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+        margin: 0;
+        pointer-events: none;
+    }
+
+    .choice-card:has(input:focus-visible) {
+        outline: var(--sl-focus-ring);
+        outline-offset: var(--sl-focus-ring-offset);
+    }
+
+    .choice-card:has(input:checked) {
+        border-color: var(--sl-color-primary-600);
+        background: var(--sl-color-primary-50);
+        box-shadow: inset 0 0 0 1px var(--sl-color-primary-600);
+    }
+
+    /* a plain icon: only the selected card is colored */
+    .choice-card-icon {
+        display: inline-flex;
+        flex: none;
+        margin-top: var(--sl-spacing-2x-small);
+        color: var(--sl-color-gray-500);
+        font-size: var(--sl-font-size-large);
+        transition: color var(--sl-transition-fast);
+    }
+
+    .choice-card:has(input:checked) .choice-card-icon {
+        color: var(--sl-color-primary-600);
+    }
+
+    .choice-card-text {
+        display: grid;
+        gap: var(--sl-spacing-2x-small);
+        /* leaves room for the check mark */
+        padding-inline-end: var(--sl-spacing-large);
+    }
+
+    .choice-card-title {
+        font-weight: var(--sl-font-weight-semibold);
+        color: var(--sl-color-gray-900);
+    }
+
+    .choice-card-description {
+        color: var(--sl-color-gray-600);
+        font-size: var(--sl-font-size-small);
+        line-height: var(--sl-line-height-dense);
+    }
+
+    .choice-card-check {
+        position: absolute;
+        top: var(--sl-spacing-small);
+        right: var(--sl-spacing-small);
+        color: var(--sl-color-primary-600);
+        opacity: 0;
+        transform: scale(0.6);
+        transition: opacity var(--sl-transition-fast), transform var(--sl-transition-fast);
+    }
+
+    .choice-card:has(input:checked) .choice-card-check {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    /* inputs of the selected choice, right below the cards: the tint sets them apart and makes the inputs stand out */
+    .choice-panel {
+        display: grid;
+        gap: var(--sl-spacing-medium);
+        padding: var(--sl-spacing-medium) var(--sl-spacing-large);
+        background: var(--sl-color-gray-50);
+        border-radius: var(--sl-input-border-radius-large);
+    }
+
+    .choice-panel sl-input,
+    .choice-panel sl-select {
+        margin-top: 0;
+        --sl-input-border-color: var(--sl-color-gray-400);
+    }
+
+    .choice-panel sl-switch {
+        min-height: 0;
+        padding-bottom: 0;
+    }
+
+    /* the panel is narrower than the page: the columns may shrink below the width of their inputs, with a smaller gap */
+    @media only screen and (min-width: 768px) {
+        .choice-panel .row:not(.custom) {
+            grid-template-columns: repeat(var(--alfio-row-cols), minmax(0, 1fr));
+            column-gap: var(--sl-spacing-medium);
+        }
+    }
+
+    .choice-panel .bulk-specs,
+    .choice-panel alfio-file-upload {
+        background: var(--sl-color-neutral-0);
+        border-radius: var(--sl-input-border-radius);
+    }
+
+    .choice-panel .bulk-specs p {
+        margin-top: 0;
     }
 `;
 

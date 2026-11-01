@@ -189,8 +189,8 @@
                 url: '/check-in?search&page&checkedInPage&t',
                 // The Lit component owns filtering and pagination; query changes must preserve its DOM.
                 reloadOnSearch: false,
-                template: '<alfio-check-in data-event-name="{{$ctrl.loadEvent.shortName}}" lit-events="{\'alfio-add-attendees\': $ctrl.addAttendees}"></alfio-check-in>',
-                controller: 'EventCheckInController',
+                template: '<alfio-check-in data-event-name="{{$ctrl.loadEvent.shortName}}"></alfio-check-in>',
+                controller: loadEventCtrl,
                 controllerAs: '$ctrl',
                 resolve: loadEvent,
                 data: {
@@ -307,11 +307,10 @@
                 controllerAs: 'ctrl'
             }).state('events.single.create-reservation', {
                 url:'/reservation/new',
-                template: '<reservation-create event="ctrl.event"></reservation-create>',
-                controller: function(getEvent) {
-                    this.event = getEvent.data.event;
-                },
-                controllerAs: 'ctrl',
+                template: '<alfio-reservation-create data-event-name="{{$ctrl.loadEvent.shortName}}"></alfio-reservation-create>',
+                controller: loadEventCtrl,
+                controllerAs: '$ctrl',
+                resolve: loadEvent,
                 data: {
                     view: 'CREATE_RESERVATION'
                 }
@@ -1625,46 +1624,6 @@
         $scope.uploadUrl = '/admin/api/events/'+$stateParams.eventName+'/categories/'+$stateParams.categoryId+'/link-codes';
     });
 
-
-    // the reservation is created with the "fast creation" flow (attendee = customer) and confirmed right away
-    admin.controller('EventCheckInController', function(loadEvent, $uibModal, AdminReservationService) {
-        var $ctrl = this;
-        $ctrl.loadEvent = loadEvent.data.event;
-        $ctrl.addAttendees = function(detail) {
-            var event = $ctrl.loadEvent;
-            var modal = $uibModal.open({
-                size:'min-1200',
-                templateUrl: BASE_STATIC_URL + '/event/new-reservation-modal.html',
-                backdrop: 'static',
-                controllerAs: 'ctrl',
-                controller: function() {
-                    var ctrl = this;
-                    ctrl.reservationId = null;
-                    ctrl.event = event;
-                    ctrl.close = function() {
-                        modal.close();
-                    };
-                    var onConfirm = function(reservationId) {
-                        modal.close();
-                        detail.onAdded(reservationId);
-                    };
-                    ctrl.onCreation = function(reservationInfo) {
-                        AdminReservationService.confirm('event', reservationInfo.eventName, reservationInfo.reservationId).then(function() {
-                            onConfirm(reservationInfo.reservationId);
-                        }, function() {
-                            // let the user fix the reservation
-                            ctrl.reservationId = reservationInfo.reservationId;
-                        });
-                    };
-                    ctrl.onUpdate = function(detail) {
-                        if (detail.confirmed) {
-                            onConfirm(detail.reservationId);
-                        }
-                    };
-                }
-            });
-        };
-    });
 
     admin.controller('MessageBarController', function($scope, $rootScope) {
         $rootScope.$on('Message', function(m) {

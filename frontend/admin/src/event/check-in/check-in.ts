@@ -29,6 +29,8 @@ import '../../components/payment-method.ts';
 import {emptyState} from '../../components/empty-state.ts';
 import {ListSearchController} from '../../components/list-search.ts';
 import {taskContent} from '../../components/task-content.ts';
+import {AddAttendeesDialog, AttendeesAddedDetail} from './add-attendees-dialog.ts';
+import './add-attendees-dialog.ts';
 
 type TabName = 'pending' | 'checked-in';
 
@@ -65,6 +67,7 @@ export class CheckIn extends LitElement {
     @state() private busyTicketId: number | null = null;
     @state() private qrCodeTicket: CheckInTicket | null = null;
     @query('#qr-code-dialog') private qrCodeDialog!: SlDialog;
+    @query('alfio-add-attendees-dialog') private addAttendeesDialog!: AddAttendeesDialog;
 
     private readonly searchController = new ListSearchController(this, (search) => {
         this.search = search;
@@ -276,6 +279,7 @@ export class CheckIn extends LitElement {
                     <sl-button variant="default" size="large" @click=${() => this.qrCodeDialog.hide()}>Close</sl-button>
                 </div>
             </sl-dialog>
+            <alfio-add-attendees-dialog data-event-name=${this.eventName} @alfio-attendees-added=${this.onAttendeesAdded}></alfio-add-attendees-dialog>
         `;
     }
 
@@ -465,25 +469,19 @@ export class CheckIn extends LitElement {
         `;
     }
 
-    /**
-     * The reservation is created by the hosting (AngularJS) page, which then invokes "onAdded"
-     */
     private addAttendees = (): void => {
-        this.dispatchEvent(new CustomEvent<AlfioAddAttendeesDetail>('alfio-add-attendees', {
-            detail: {
-                onAdded: (reservationId) => {
-                    // show only the new attendees, ready to be checked in
-                    this.searchController.init(reservationId);
-                    this.search = reservationId;
-                    this.selectedTab = 'pending';
-                    this.pages = { ...FIRST_PAGES };
-                    this.syncLocation();
-                    this.loadDataTask.run();
-                },
-            },
-            bubbles: true,
-            composed: true,
-        }));
+        void this.addAttendeesDialog.show();
+    };
+
+    // shows only the new attendees, ready to be checked in
+    private onAttendeesAdded = (event: CustomEvent<AttendeesAddedDetail>): void => {
+        const reservationId = event.detail.reservationId;
+        this.searchController.init(reservationId);
+        this.search = reservationId;
+        this.selectedTab = 'pending';
+        this.pages = { ...FIRST_PAGES };
+        this.syncLocation();
+        this.loadDataTask.run();
     };
 
     private showQrCode(ticket: CheckInTicket): void {
@@ -540,16 +538,9 @@ export class CheckIn extends LitElement {
     }
 }
 
-export interface AlfioAddAttendeesDetail {
-    onAdded: (reservationId: string) => void;
-}
-
 declare global {
     interface HTMLElementTagNameMap {
         'alfio-check-in': CheckIn;
-    }
-    interface GlobalEventHandlersEventMap {
-        'alfio-add-attendees': CustomEvent<AlfioAddAttendeesDetail>;
     }
 }
 
