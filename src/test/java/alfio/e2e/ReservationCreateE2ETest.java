@@ -58,6 +58,78 @@ class ReservationCreateE2ETest extends BaseE2ETest {
     }
 
     @Test
+    void createAndEditReservationWithAttendeeFields() {
+        adminConsole.login();
+        adminConsole.addAttendeeField(slug, "company", "input:text", List.of());
+        adminConsole.addAttendeeField(slug, "diet", "select", List.of("vegan", "standard"));
+        var attendee = new NewAttendee("Katherine", "Johnson", "katherine-" + uniqueId() + "@example.org");
+        var reservationId = adminConsole.createReservationWithAttendeeFields(slug,
+            new ReservationContact("Fields", "Contact", "fields-contact@example.org"),
+            attendee,
+            CATEGORY_NAME,
+            "ACME",
+            "vegan");
+        //
+        // the values have been saved with the ticket
+        var values = adminConsole.attendeeFieldValues(slug, reservationId);
+        assertEquals(List.of("ACME"), values.get("company"));
+        assertEquals(List.of("vegan"), values.get("diet"));
+        //
+        // and can be changed from the "Full data" dialog of the reservation detail
+        adminConsole.editAttendeeFields(slug, reservationId, "Initech", "standard");
+    }
+
+    @Test
+    void createReservationFromCsvWithAttendeeFields() {
+        adminConsole.login();
+        adminConsole.addAttendeeField(slug, "company", "input:text", List.of());
+        adminConsole.addAttendeeField(slug, "diet", "select", List.of("vegan", "standard"));
+        // the template has a header: the first three columns are positional, the additional fields are matched by name
+        var csv = """
+            "firstName","lastName","email","diet","company"
+            "Grace","Hopper","grace-%s@example.org","Vegan","ACME, Inc."
+            """.formatted(uniqueId());
+        var reservationId = adminConsole.createReservationFromCsv(slug,
+            new ReservationContact("Csv", "Contact", "csv-contact@example.org"),
+            CATEGORY_NAME,
+            csv,
+            1);
+        var tickets = adminConsole.reservationTickets(slug, reservationId);
+        assertEquals(List.of("Grace Hopper"), tickets.attendeesByCategory().get(CATEGORY_NAME));
+        var values = adminConsole.attendeeFieldValues(slug, reservationId);
+        assertEquals(List.of("ACME, Inc."), values.get("company"));
+        // the option is saved as configured, whatever the case in the file
+        assertEquals(List.of("vegan"), values.get("diet"));
+    }
+
+    @Test
+    void refuseToSaveIncompleteReservation() {
+        adminConsole.login();
+        var errors = adminConsole.saveEmptyReservation(slug);
+        assertEquals("Please fill in this field", errors.get("contact-first-name"), () -> "unexpected errors: " + errors);
+        assertEquals("Please fill in this field", errors.get("contact-email"), () -> "unexpected errors: " + errors);
+        assertEquals("Please fill in this field", errors.get("attendee-first-name"), () -> "unexpected errors: " + errors);
+        assertEquals("Please select a category", errors.get("existing-category"), () -> "unexpected errors: " + errors);
+    }
+
+    @Test
+    void createReservationWithDiscountCode() {
+        adminConsole.login();
+        adminConsole.addDiscountCode(slug, "E2E_HALF_PRICE", 50);
+        var attendee = new NewAttendee("Alan", "Turing", "alan-" + uniqueId() + "@example.org");
+        var reservationId = adminConsole.createReservationWithDiscount(slug,
+            new ReservationContact("Discount", "Contact", "discount-contact@example.org"),
+            attendee,
+            CATEGORY_NAME,
+            "E2E_HALF_PRICE (-50%)");
+        //
+        // the ticket costs 10.00, VAT included
+        var summary = adminConsole.orderSummary(slug, reservationId);
+        assertEquals(List.of("E2E_HALF_PRICE"), summary.get("promoCodeRows"), () -> "unexpected summary: " + summary);
+        assertEquals("5.00", summary.get("totalPrice"), () -> "unexpected summary: " + summary);
+    }
+
+    @Test
     void addAttendeeFromCheckIn() {
         adminConsole.login();
         var attendee = new NewAttendee("Grace", "Hopper", "grace-" + uniqueId() + "@example.org");

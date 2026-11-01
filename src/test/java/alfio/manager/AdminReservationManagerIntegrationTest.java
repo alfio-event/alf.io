@@ -84,6 +84,14 @@ class AdminReservationManagerIntegrationTest extends BaseIntegrationTest {
     private ConfigurationRepository configurationRepository;
     @Autowired
     private TicketReservationRepository ticketReservationRepository;
+    @Autowired
+    private PurchaseContextFieldManager purchaseContextFieldManager;
+    @Autowired
+    private PurchaseContextFieldRepository purchaseContextFieldRepository;
+    @Autowired
+    private AuditingRepository auditingRepository;
+    @Autowired
+    private PromoCodeDiscountRepository promoCodeDiscountRepository;
 
     @BeforeEach
     public void init() {
@@ -323,6 +331,177 @@ class AdminReservationManagerIntegrationTest extends BaseIntegrationTest {
         assertFalse(privateReservation.getBillingAddress().contains("ACME"), privateReservation.getBillingAddress());
     }
 
+    @Test
+    void createAndUpdateAttendeeAdditionalFields() {
+        var eventWithUsername = initEvent(singleCategory(), organizationRepository, userManager, eventManager, eventRepository);
+        var event = eventWithUsername.getLeft();
+        var username = eventWithUsername.getRight();
+        addAttendeeFields(event);
+
+        // the names of the fields can be written in any case, and the organizer can set the read-only fields
+        var created = createReservation(event, username, Map.of(
+            "Company", List.of("ACME"),
+            "diet", List.of("vegan"),
+            "badge", List.of("B-1")));
+        assertTrue(created.isSuccess(), created.getFormattedErrors());
+        var reservationId = created.getData().getLeft().getId();
+        var ticket = created.getData().getRight().getFirst();
+        assertEquals(Map.of("company", List.of("ACME"), "diet", List.of("vegan"), "badge", List.of("B-1")),
+            purchaseContextFieldRepository.findAllValuesForTicketId(ticket.getId()));
+        assertEquals(Optional.of(Map.of("company", List.of("ACME"), "diet", List.of("vegan"), "badge", List.of("B-1"))),
+            adminReservationManager.loadAttendeeFieldValues(event.getShortName(), reservationId, ticket.getUuid()));
+
+        // an empty value removes the field
+        var updated = updateAttendee(event, reservationId, username, ticket.getId(), Map.of(
+            "company", List.of("Initech"),
+            "diet", List.of(""),
+            "badge", List.of("B-2")));
+        assertTrue(updated.isSuccess(), updated.getFormattedErrors());
+        assertEquals(Map.of("company", List.of("Initech"), "badge", List.of("B-2")),
+            purchaseContextFieldRepository.findAllValuesForTicketId(ticket.getId()));
+        var updatedTicket = ticketRepository.findById(ticket.getId(), ticket.getCategoryId());
+        assertEquals("Updated", updatedTicket.getFirstName());
+
+        // the changes are in the history of the reservation
+        var audit = auditingRepository.findAllForReservation(reservationId).stream()
+            .filter(a -> a.getEventType() == Audit.EventType.UPDATE_TICKET)
+            .findFirst()
+            .orElseThrow();
+        var changedFields = audit.getModifications().stream()
+            .map(m -> m.get("propertyName"))
+            .filter(Objects::nonNull)
+            .collect(toList());
+        assertEquals(List.of("/{badge}", "/{company}", "/{diet}"), changedFields.stream().sorted().toList());
+    }
+
+    @Test
+    void updateAdditionalFieldsOfSingleTicket() {
+        var eventWithUsername = initEvent(singleCategory(), organizationRepository, userManager, eventManager, eventRepository);
+        var event = eventWithUsername.getLeft();
+        var username = eventWithUsername.getRight();
+        addAttendeeFields(event);
+        var first = createReservation(event, username, Map.of("company", List.of("ACME"), "diet", List.of("vegan"), "badge", List.of("B-1")));
+        var second = createReservation(event, username, Map.of("company", List.of("Globex")));
+        assertTrue(first.isSuccess());
+        assertTrue(second.isSuccess());
+        var reservationId = first.getData().getLeft().getId();
+        var ticket = first.getData().getRight().getFirst();
+
+        // the fields not included are not modified, the read-only ones can be changed, an empty value removes the field
+        var updated = adminReservationManager.updateAttendeeFields(event.getShortName(), reservationId, ticket.getUuid(),
+            Map.of("Company", List.of("Initech"), "badge", List.of("B-2"), "diet", List.of("")), username);
+        assertTrue(updated.isSuccess(), updated.getFormattedErrors());
+        assertEquals(Map.of("company", List.of("Initech"), "badge", List.of("B-2")),
+            purchaseContextFieldRepository.findAllValuesForTicketId(ticket.getId()));
+        var audit = auditingRepository.findAllForReservation(reservationId).stream()
+            .filter(a -> a.getEventType() == Audit.EventType.UPDATE_TICKET)
+            .findFirst()
+            .orElseThrow();
+        assertEquals(List.of("/{badge}", "/{company}", "/{diet}"), audit.getModifications().stream()
+            .map(m -> String.valueOf(m.get("propertyName")))
+            .sorted()
+            .toList());
+
+        // invalid values are rejected
+        assertFalse(adminReservationManager.updateAttendeeFields(event.getShortName(), reservationId, ticket.getUuid(),
+            Map.of("diet", List.of("meat")), username).isSuccess());
+        assertEquals(Map.of("company", List.of("Initech"), "badge", List.of("B-2")),
+            purchaseContextFieldRepository.findAllValuesForTicketId(ticket.getId()));
+
+        // the tickets of other reservations can't be read or changed
+        var otherTicket = second.getData().getRight().getFirst();
+        assertTrue(adminReservationManager.loadAttendeeFieldValues(event.getShortName(), reservationId, otherTicket.getUuid()).isEmpty());
+        assertFalse(adminReservationManager.updateAttendeeFields(event.getShortName(), reservationId, otherTicket.getUuid(),
+            Map.of("company", List.of("Initech")), username).isSuccess());
+        assertEquals(Map.of("company", List.of("Globex")), purchaseContextFieldRepository.findAllValuesForTicketId(otherTicket.getId()));
+    }
+
+    @Test
+    void rejectInvalidAttendeeAdditionalFields() {
+        var eventWithUsername = initEvent(singleCategory(), organizationRepository, userManager, eventManager, eventRepository);
+        var event = eventWithUsername.getLeft();
+        var username = eventWithUsername.getRight();
+        addAttendeeFields(event);
+
+        assertFalse(createReservation(event, username, Map.of("diet", List.of("meat"))).isSuccess());
+        assertFalse(createReservation(event, username, Map.of("unknown", List.of("value"))).isSuccess());
+
+        var created = createReservation(event, username, Map.of("diet", List.of("vegan")));
+        assertTrue(created.isSuccess());
+        var reservationId = created.getData().getLeft().getId();
+        var ticket = created.getData().getRight().getFirst();
+        var updated = updateAttendee(event, reservationId, username, ticket.getId(), Map.of("diet", List.of("meat")));
+        assertFalse(updated.isSuccess());
+        // nothing has been modified
+        assertEquals(Map.of("diet", List.of("vegan")), purchaseContextFieldRepository.findAllValuesForTicketId(ticket.getId()));
+        assertEquals("Attendee", ticketRepository.findById(ticket.getId(), ticket.getCategoryId()).getFirstName());
+    }
+
+    @Test
+    void attendeesOfOtherReservationsCannotBeUpdated() {
+        var eventWithUsername = initEvent(singleCategory(), organizationRepository, userManager, eventManager, eventRepository);
+        var event = eventWithUsername.getLeft();
+        var username = eventWithUsername.getRight();
+        addAttendeeFields(event);
+
+        var first = createReservation(event, username, Map.of());
+        var second = createReservation(event, username, Map.of("company", List.of("ACME")));
+        assertTrue(first.isSuccess());
+        assertTrue(second.isSuccess());
+        var otherTicket = second.getData().getRight().getFirst();
+
+        var updated = updateAttendee(event, first.getData().getLeft().getId(), username, otherTicket.getId(), Map.of("company", List.of("Initech")));
+        assertFalse(updated.isSuccess());
+        assertEquals("Attendee", ticketRepository.findById(otherTicket.getId(), otherTicket.getCategoryId()).getFirstName());
+        assertEquals(Map.of("company", List.of("ACME")), purchaseContextFieldRepository.findAllValuesForTicketId(otherTicket.getId()));
+    }
+
+    private static List<TicketCategoryModification> singleCategory() {
+        return Collections.singletonList(
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
+    }
+
+    /**
+     * "company" (text), "diet" (select: vegan, standard) and "badge" (read-only text)
+     */
+    private void addAttendeeFields(Event event) {
+        var description = Map.of("en", new EventModification.Description("label", "", null));
+        purchaseContextFieldManager.addAdditionalField(event, new AdditionalFieldRequest(0, true, "company", "input:text", false, false,
+            null, 50, null, description, null, null, false));
+        var options = List.of(new EventModification.RestrictedValue("vegan", true), new EventModification.RestrictedValue("standard", true));
+        purchaseContextFieldManager.addAdditionalField(event, new AdditionalFieldRequest(1, true, "diet", "select", true, false,
+            null, null, options, Map.of("en", new EventModification.Description("diet", "", Map.of("vegan", "Vegan", "standard", "Standard"))), null, null, false));
+        purchaseContextFieldManager.addAdditionalField(event, new AdditionalFieldRequest(2, true, "badge", "input:text", false, false,
+            null, null, null, description, null, null, false));
+        var badge = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.getId()).stream()
+            .filter(f -> f.getName().equals("badge"))
+            .findFirst()
+            .orElseThrow();
+        purchaseContextFieldRepository.updateField(badge.getId(), false, false, null, null, null, false);
+    }
+
+    private Result<Pair<TicketReservation, List<Ticket>>> createReservation(Event event, String username, Map<String, List<String>> additionalInfo) {
+        var category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
+        var attendee = new Attendee(null, "Attendee", "Test", "attendee@test.ch", "en", false, null, null, additionalInfo, null);
+        var ticketsInfo = new TicketsInfo(new Category(category.getId(), category.getName(), category.getPrice(), null), List.of(attendee), true, false);
+        var customerData = new CustomerData("Integration", "Test", "integration-test@test.ch", "Billing Address", "reference", "en", null, null, null);
+        var expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
+        var modification = new AdminReservationModification(expiration, customerData, List.of(ticketsInfo), "en", false, false, null, null, null, null);
+        return adminReservationManager.createReservation(modification, event.getShortName(), username);
+    }
+
+    private Result<Boolean> updateAttendee(Event event, String reservationId, String username, int ticketId, Map<String, List<String>> additionalInfo) {
+        var category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
+        var attendee = new Attendee(ticketId, "Updated", "Test", "attendee@test.ch", "en", false, null, null, additionalInfo, null);
+        var ticketsInfo = new TicketsInfo(new Category(category.getId(), category.getName(), category.getPrice(), null), List.of(attendee), false, true);
+        var expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
+        var modification = new AdminReservationModification(expiration, null, List.of(ticketsInfo), "en", false, false, null, null, null, null);
+        return adminReservationManager.updateReservation(PurchaseContextType.event, event.getShortName(), reservationId, modification, username);
+    }
+
     private Result<Boolean> updateCustomer(Event event, String reservationId, String username, String vatNr, CustomerBillingDetails billingDetails) {
         var customerData = new CustomerData("Integration", "Test", "integration-test@test.ch", "free text address", "reference", "en",
             vatNr, "CH", null, billingDetails);
@@ -402,6 +581,79 @@ class AdminReservationManagerIntegrationTest extends BaseIntegrationTest {
         }
         ticketCategoryRepository.findAllTicketCategories(modified.getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.PENDING)));
         assertFalse(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(event.getId()).contains(data.getLeft().getId()));
+    }
+
+    @Test
+    void createReservationWithDiscountCode() {
+        var eventWithUsername = initEvent(discountTestCategories(), organizationRepository, userManager, eventManager, eventRepository);
+        Event event = eventWithUsername.getKey();
+        String username = eventWithUsername.getValue();
+        var category = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst();
+        addDiscountCode(event, "TEN_PERCENT", PromoCodeDiscount.CodeType.DISCOUNT, null, 3);
+
+        var result = adminReservationManager.createReservation(discountModification(category, 2, "  TEN_PERCENT "), event.getShortName(), username);
+
+        assertTrue(result.isSuccess(), () -> result.getFormattedErrors());
+        var reservation = ticketReservationRepository.findReservationById(result.getData().getLeft().getId());
+        var discount = promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), "TEN_PERCENT").orElseThrow();
+        assertEquals(discount.getId(), reservation.getPromoCodeDiscountId());
+        // 10% of 10.00
+        result.getData().getRight().forEach(ticket -> assertEquals(100, ticketRepository.findById(ticket.getId(), category.getId()).getDiscountCts()));
+    }
+
+    @Test
+    void refuseDiscountCodeNotApplicable() {
+        var eventWithUsername = initEvent(discountTestCategories(), organizationRepository, userManager, eventManager, eventRepository);
+        Event event = eventWithUsername.getKey();
+        String username = eventWithUsername.getValue();
+        var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+        var category = categories.getFirst();
+        addDiscountCode(event, "ACCESS_CODE", PromoCodeDiscount.CodeType.ACCESS, null, null);
+        addDiscountCode(event, "ONLY_ONCE", PromoCodeDiscount.CodeType.DISCOUNT, null, 1);
+        addDiscountCode(event, "OTHER_CATEGORY", PromoCodeDiscount.CodeType.DISCOUNT, List.of(categories.get(1).getId()), null);
+
+        assertDiscountRefused(event, username, discountModification(category, 1, "MISSING_CODE"), "error.promoCode.notfound");
+        assertDiscountRefused(event, username, discountModification(category, 1, "ACCESS_CODE"), "error.promoCode.notfound");
+        assertDiscountRefused(event, username, discountModification(category, 2, "ONLY_ONCE"), "error.promoCode.maxUsage");
+        assertDiscountRefused(event, username, discountModification(category, 1, "OTHER_CATEGORY"), "error.promoCode.categories");
+        // nothing has been reserved
+        assertTrue(ticketRepository.findPendingTicketsInCategories(categories.stream().map(TicketCategory::getId).toList()).isEmpty());
+    }
+
+    private void assertDiscountRefused(Event event, String username, AdminReservationModification modification, String expectedCode) {
+        var result = adminReservationManager.createReservation(modification, event.getShortName(), username);
+        assertFalse(result.isSuccess());
+        assertEquals(expectedCode, result.getErrors().getFirst().getCode());
+    }
+
+    private List<TicketCategoryModification> discountTestCategories() {
+        return List.of("first", "second").stream()
+            .map(name -> new TicketCategoryModification(null, name, TicketCategory.TicketAccessType.INHERIT, 5,
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()))
+            .toList();
+    }
+
+    private void addDiscountCode(Event event, String code, PromoCodeDiscount.CodeType codeType, List<Integer> categories, Integer maxUsage) {
+        var now = ZonedDateTime.now(ClockProvider.clock());
+        String categoriesJson = "[]";
+        if(categories != null) {
+            categoriesJson = categories.toString();
+        }
+        Integer hiddenCategoryId = null;
+        if(codeType == PromoCodeDiscount.CodeType.ACCESS) {
+            hiddenCategoryId = ticketCategoryRepository.findAllTicketCategories(event.getId()).getFirst().getId();
+        }
+        promoCodeDiscountRepository.addPromoCode(code, event.getId(), event.getOrganizationId(), now.minusDays(1), now.plusDays(1), 10,
+            PromoCodeDiscount.DiscountType.PERCENTAGE, categoriesJson, maxUsage, code, null, codeType, hiddenCategoryId, null);
+    }
+
+    private AdminReservationModification discountModification(TicketCategory category, int attendees, String promoCode) {
+        var expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
+        var customerData = new CustomerData("Integration", "Test", "integration-test@test.ch", null, "en", null, null, null, null);
+        var ticketsInfo = new TicketsInfo(new Category(category.getId(), "", category.getPrice(), null), generateAttendees(attendees), false, false);
+        return new AdminReservationModification(expiration, customerData, List.of(ticketsInfo), "en", false, false, null, null, null, null, promoCode);
     }
 
     private List<Attendee> generateAttendees(int count) {

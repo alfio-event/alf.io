@@ -299,6 +299,40 @@ public class AdminReservationApiController {
         return adminReservationManager.getEmailsForReservation(purchaseContextType, publicIdentifier, reservationId, principal.getName());
     }
 
+    /**
+     * The values of the additional fields of a ticket, to be edited: field name -> values
+     */
+    @GetMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/ticket/{ticketId}/additional-fields")
+    public ResponseEntity<Map<String, List<String>>> loadAttendeeFieldValues(@PathVariable PurchaseContextType purchaseContextType,
+                                                                             @PathVariable String publicIdentifier,
+                                                                             @PathVariable String reservationId,
+                                                                             @PathVariable("ticketId") String ticketUUID,
+                                                                             Principal principal) {
+        if(purchaseContextType != PurchaseContextType.event) {
+            return ResponseEntity.notFound().build();
+        }
+        // same access as the full data of the ticket
+        accessService.checkReservationOwnership(principal, purchaseContextType, publicIdentifier, reservationId);
+        return ResponseEntity.of(adminReservationManager.loadAttendeeFieldValues(publicIdentifier, reservationId, ticketUUID));
+    }
+
+    /**
+     * Saves the values of the additional fields of a ticket: field name -> values. The fields not included are not modified
+     */
+    @PostMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/ticket/{ticketId}/additional-fields")
+    public ResponseEntity<Result<Boolean>> updateAttendeeFieldValues(@PathVariable PurchaseContextType purchaseContextType,
+                                                                     @PathVariable String publicIdentifier,
+                                                                     @PathVariable String reservationId,
+                                                                     @PathVariable("ticketId") String ticketUUID,
+                                                                     @RequestBody Map<String, List<String>> values,
+                                                                     Principal principal) {
+        if(purchaseContextType != PurchaseContextType.event) {
+            return ResponseEntity.notFound().build();
+        }
+        accessService.checkReservationOwnership(principal, purchaseContextType, publicIdentifier, reservationId);
+        return ResponseEntity.ok(adminReservationManager.updateAttendeeFields(publicIdentifier, reservationId, ticketUUID, values, principal.getName()));
+    }
+
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/ticket/{ticketId}/full-data")
     public ResponseEntity<BookingInfoTicket> loadFullTicketData(@PathVariable PurchaseContextType purchaseContextType,
                                                                 @PathVariable String publicIdentifier,

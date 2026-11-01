@@ -156,6 +156,15 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     List<PurchaseContextFieldValue> findAllValuesBySubscriptionIds(@Bind("subscriptionIds") Collection<UUID> subscriptionIds);
 
     default void updateOrInsert(Map<String, List<String>> values, PurchaseContext purchaseContext, Integer ticketId, UUID subscriptionId) {
+        updateOrInsert(values, purchaseContext, ticketId, subscriptionId, false);
+    }
+
+    /**
+     * Saves the values of the additional fields, removing the ones that have been emptied.
+     *
+     * @param overwriteReadOnly true to change also the values of the read-only fields, which only the organizer can do
+     */
+    default void updateOrInsert(Map<String, List<String>> values, PurchaseContext purchaseContext, Integer ticketId, UUID subscriptionId, boolean overwriteReadOnly) {
         Map<String, PurchaseContextFieldValue> toUpdate;
         values = Optional.ofNullable(values).orElseGet(Collections::emptyMap);
         List<PurchaseContextFieldConfiguration> additionalFields;
@@ -174,7 +183,7 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
 
             boolean isNotBlank = StringUtils.isNotBlank(fieldValue);
             if(toUpdate.containsKey(fieldName)) {
-                if(!readOnlyFields.contains(fieldName)) {
+                if(overwriteReadOnly || !readOnlyFields.contains(fieldName)) {
                     PurchaseContextFieldValue field = toUpdate.get(fieldName);
                     if(isNotBlank) {
                         updateValue(field.getTicketId(), field.getSubscriptionId(), field.getFieldConfigurationId(), fieldValue);

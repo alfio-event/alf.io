@@ -8,6 +8,7 @@ import {
     ReservationDescriptor,
     ReservationModification,
 } from '../model/reservation-detail.ts';
+import {AttendeeFieldValues} from '../components/attendee-fields.ts';
 import {callDelete, ensureOk, fetchJson, postJson, putJson, result} from './helpers.ts';
 
 export interface CancelReservationOptions {
@@ -57,6 +58,20 @@ export class ReservationService {
 
     ticketsWithAdditionalData(): Promise<number[]> {
         return fetchJson(this.url('/tickets-with-additional-data'));
+    }
+
+    /**
+     * The values of the additional fields of a ticket. Events only
+     */
+    attendeeFieldValues(ticketUuid: string): Promise<AttendeeFieldValues> {
+        return fetchJson(this.url(`/ticket/${ticketUuid}/additional-fields`));
+    }
+
+    /**
+     * Saves the values of the additional fields of a ticket; the fields not included are not modified. Events only
+     */
+    updateAttendeeFields(ticketUuid: string, values: AttendeeFieldValues): Promise<boolean> {
+        return result(postJson(this.url(`/ticket/${ticketUuid}/additional-fields`), values));
     }
 
     async fullTicketData(ticketUuid: string): Promise<FullTicketData> {

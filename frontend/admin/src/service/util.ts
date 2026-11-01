@@ -1,6 +1,7 @@
 import {fetchJson} from "./helpers.ts";
 import {dispatchFeedback} from "../model/dom-events.ts";
 import {LitElement} from "lit";
+import {Country} from "../components/attendee-fields.ts";
 
 export class UtilService {
     static renderMarkdown(text: string): Promise<string> {
@@ -12,6 +13,13 @@ export class UtilService {
      */
     static countriesForVat(): Promise<Record<string, string>> {
         return fetchJson('/admin/api/utils/countriesForVat');
+    }
+
+    /**
+     * All the countries, sorted by their name in the given language
+     */
+    static countries(language: string): Promise<Country[]> {
+        return fetchJson(`/api/v2/public/i18n/countries/${encodeURIComponent(language)}`);
     }
 
     static async copyValueToClipboard(supplier: () => string, what: string, src: LitElement): Promise<void> {

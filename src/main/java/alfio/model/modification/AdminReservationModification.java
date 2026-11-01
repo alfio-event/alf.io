@@ -50,6 +50,22 @@ public class AdminReservationModification implements Serializable {
     private final Notification notification;
     private final SubscriptionDetails subscriptionDetails;
     private final UUID linkedSubscriptionId;
+    // discount code applied to the tickets of a new reservation, optional
+    private final String promoCode;
+
+    public AdminReservationModification(DateTimeModification expiration,
+                                        CustomerData customerData,
+                                        List<TicketsInfo> ticketsInfo,
+                                        String language,
+                                        Boolean updateContactData,
+                                        Boolean updateAdvancedBillingOptions,
+                                        AdvancedBillingOptions advancedBillingOptions,
+                                        Notification notification,
+                                        SubscriptionDetails subscriptionDetails,
+                                        UUID linkedSubscriptionId) {
+        this(expiration, customerData, ticketsInfo, language, updateContactData, updateAdvancedBillingOptions,
+            advancedBillingOptions, notification, subscriptionDetails, linkedSubscriptionId, null);
+    }
 
     @JsonCreator
     public AdminReservationModification(@JsonProperty("expiration") DateTimeModification expiration,
@@ -61,7 +77,8 @@ public class AdminReservationModification implements Serializable {
                                         @JsonProperty("advancedBillingOptions") AdvancedBillingOptions advancedBillingOptions,
                                         @JsonProperty("notification") Notification notification,
                                         @JsonProperty("subscriptionDetails") SubscriptionDetails subscriptionDetails,
-                                        @JsonProperty("linkedSubscriptionId") UUID linkedSubscriptionId) {
+                                        @JsonProperty("linkedSubscriptionId") UUID linkedSubscriptionId,
+                                        @JsonProperty("promoCode") String promoCode) {
         this.expiration = expiration;
         this.customerData = customerData;
         this.ticketsInfo = ticketsInfo;
@@ -72,6 +89,7 @@ public class AdminReservationModification implements Serializable {
         this.notification = notification;
         this.subscriptionDetails = subscriptionDetails;
         this.linkedSubscriptionId = linkedSubscriptionId;
+        this.promoCode = StringUtils.trimToNull(promoCode);
     }
 
     @Getter
@@ -391,7 +409,7 @@ public class AdminReservationModification implements Serializable {
                         a.reassignmentForbidden,
                         a.reference,
                         a.subscriptionId,
-                        singletonMap("hasAdditionalInfo", singletonList(String.valueOf(a.additionalInfo.isEmpty()))),
+                        singletonMap("hasAdditionalInfo", singletonList(String.valueOf(!a.additionalInfo.isEmpty()))),
                         Map.of())).collect(toList());
                 return new TicketsInfo(ti.getCategory(), attendees, ti.isAddSeatsIfNotAvailable(), ti.isUpdateAttendees());
             }).collect(toList());
@@ -404,7 +422,8 @@ public class AdminReservationModification implements Serializable {
                 src.advancedBillingOptions,
                 src.notification,
                 src.subscriptionDetails,
-                src.linkedSubscriptionId));
+                src.linkedSubscriptionId,
+                src.promoCode));
         } catch(Exception e) {
             return e.toString();
         }

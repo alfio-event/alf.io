@@ -343,6 +343,13 @@ export const form = css`
         --sl-input-focus-ring-color: var(--sl-color-danger-200);
     }
 
+    /* the validation message, shown as help text (see fieldError() in components/form-validation.ts) */
+    sl-input.error::part(form-control-help-text),
+    sl-textarea.error::part(form-control-help-text),
+    sl-select.error::part(form-control-help-text) {
+        color: var(--sl-color-danger-600);
+    }
+
     .error-text {
         display: none;
     }
@@ -1127,6 +1134,116 @@ export const choiceCards = css`
 
     .choice-panel .bulk-specs p {
         margin-top: 0;
+    }
+`;
+
+/* CSV import in two steps, rendered by csvImport() (components/csv-import.ts). Use with modernLayout */
+export const csvImport = css`
+    .import-steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+        gap: var(--sl-spacing-large);
+    }
+
+    .import-step {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        gap: var(--sl-spacing-medium);
+        margin: 0;
+        padding: var(--sl-spacing-large);
+        border-radius: var(--sl-input-border-radius-large);
+    }
+
+    .import-step.upload {
+        /* the alerts go below the drop zone */
+        grid-template-rows: auto;
+        align-content: start;
+        border: 1px solid var(--sl-color-gray-200);
+        background: var(--sl-color-neutral-0);
+    }
+
+    /* centered like the content of the drop zone next to it */
+    .template-download {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--sl-spacing-medium);
+        text-align: center;
+    }
+
+    .template-download > sl-icon {
+        font-size: var(--sl-font-size-4x-large);
+        color: var(--sl-color-primary-600);
+    }
+
+    .import-step h4 {
+        display: flex;
+        align-items: center;
+        gap: var(--sl-spacing-small);
+        margin: 0;
+    }
+
+    .import-step p {
+        margin: 0;
+    }
+
+    .step-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        width: var(--sl-spacing-x-large);
+        height: var(--sl-spacing-x-large);
+        border-radius: var(--sl-border-radius-circle);
+        background: var(--sl-color-primary-600);
+        color: var(--sl-color-neutral-0);
+        font-size: var(--sl-font-size-small);
+    }
+
+    .file-specs {
+        display: block;
+    }
+
+    .file-specs .bulk-specs p {
+        margin: 0 0 var(--sl-spacing-x-small);
+    }
+`;
+
+/* additional fields of an attendee, rendered by attendeeFields() (components/attendee-fields.ts) */
+export const attendeeFields = css`
+    .attendee-fields {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+        gap: var(--sl-spacing-small) var(--sl-spacing-small);
+    }
+
+    .attendee-fields sl-input,
+    .attendee-fields sl-select,
+    .attendee-fields sl-textarea {
+        margin-top: 0;
+    }
+
+    .attendee-fields .wide {
+        grid-column: 1 / -1;
+    }
+
+    .attendee-fields fieldset {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sl-spacing-2x-small) var(--sl-spacing-large);
+        margin: 0;
+        padding: 0;
+        border: 0;
+        min-width: 0;
+    }
+
+    .attendee-fields legend {
+        width: 100%;
+        margin-bottom: var(--sl-spacing-3x-small);
+        padding: 0;
+        font-weight: bold;
+        font-size: var(--sl-input-label-font-size-medium);
     }
 `;
 

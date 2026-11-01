@@ -61,6 +61,8 @@ export interface SummaryRow {
 }
 
 export interface OrderSummary {
+    // nothing to pay: no payment, no invoice
+    free: boolean;
     summary: SummaryRow[];
     totalPrice: string;
     totalVAT: string;

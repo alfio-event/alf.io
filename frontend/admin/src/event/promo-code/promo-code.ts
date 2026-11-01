@@ -2,7 +2,9 @@ import {css, html, LitElement, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
+import {classMap} from 'lit/directives/class-map.js';
 import {Task} from '@lit/task';
+import {TanStackFormController} from '@tanstack/lit-form';
 import Papa from 'papaparse';
 import {AlfioEvent, TicketCategory} from '../../model/event.ts';
 import {
@@ -34,6 +36,43 @@ import {downloadCsv, fetchJson} from '../../service/helpers.ts';
 import '../../components/format-date.ts';
 import type {SlDialog, SlInput, SlSelect, SlSwitch, SlTextarea} from '@shoelace-style/shoelace';
 import {emptyState} from '../../components/empty-state.ts';
+import {
+    BoundField,
+    emailAddress,
+    fieldError,
+    focusFirstError,
+    FormMountController,
+    requiredValue,
+    setServerError,
+    submitValidated,
+    validatedInput,
+    ValidatedInputOptions,
+    validatedSelect,
+    validateWith,
+} from '../../components/form-validation.ts';
+
+const PROMO_CODE_PATTERN = /^[A-Za-z0-9_\-:@!$*,;]*$/;
+
+/**
+ * The values of the code dialog
+ */
+interface CodeFormValues {
+    promoCode: string;
+    // empty for unlimited uses
+    maxUsage: string;
+    // datetime-local values
+    start: string;
+    end: string;
+    discountType: DiscountType;
+    discountAmount: string;
+    currencyCode: string;
+    // the categories a discount applies to, if not all of them
+    categories: string[];
+    // the category unlocked by an access code
+    hiddenCategoryId: string;
+    description: string;
+    emailReference: string;
+}
 
 interface PromoCodeWithUsage extends PromoCodeDiscount {
     useCount: number | undefined;
@@ -67,6 +106,41 @@ interface TableState extends SortState<SortKey> {
     page: number;
 }
 
+function emptyCodeForm(): CodeFormValues {
+    return {
+        promoCode: '',
+        maxUsage: '',
+        start: '',
+        end: '',
+        discountType: 'PERCENTAGE',
+        discountAmount: '',
+        currencyCode: 'USD',
+        categories: [],
+        hiddenCategoryId: '',
+        description: '',
+        emailReference: '',
+    };
+}
+
+function validateMaxUsage(value: unknown): string | undefined {
+    const text = String(value ?? '').trim();
+    if (text === '') {
+        return undefined;
+    }
+    const maxUsage = Number(text);
+    if (!Number.isInteger(maxUsage) || maxUsage < 1) {
+        return 'Please enter a number, at least 1, or leave it empty for unlimited uses';
+    }
+    return undefined;
+}
+
+function optionalEmail(value: unknown): string | undefined {
+    if (String(value ?? '').trim() === '') {
+        return undefined;
+    }
+    return emailAddress(value);
+}
+
 @customElement('alfio-promo-code')
 export class PromoCode extends LitElement {
 
@@ -85,8 +159,21 @@ export class PromoCode extends LitElement {
     @query('sl-dialog#usage-details-dialog')
     usageDetailsDialog!: SlDialog;
 
+    // errors returned by the server that don't belong to a field of the dialog
     @state()
     private validationErrors: Record<string, string> = {};
+
+    readonly #codeForm = new TanStackFormController(this, {
+        defaultValues: emptyCodeForm(),
+        onSubmit: async ({value}) => {
+            await this.saveCode(value);
+        },
+    });
+
+    constructor() {
+        super();
+        new FormMountController(this, this.#codeForm.api);
+    }
 
     @state()
     private usageData: UsageDetailEvent[] = [];
@@ -107,13 +194,7 @@ export class PromoCode extends LitElement {
     private pendingCodeType: PromoCodeType = 'DISCOUNT';
 
     @state()
-    private selectedDiscountType: DiscountType = 'PERCENTAGE';
-
-    @state()
     private allCategories = true;
-
-    @state()
-    private selectedCategories: string[] = [];
 
     @state()
     private filters = {promo: {search: '', category: ''}, access: {search: '', category: ''}};
@@ -737,32 +818,40 @@ export class PromoCode extends LitElement {
     private async openCodeDialog(data: LoadData, codeType: PromoCodeType, code?: PromoCodeDiscount): Promise<void> {
         if (this.saving) return;
         this.validationErrors = {};
-        this.editingState = code ? {code, data} : null;
+        this.editingState = null;
+        if (code) {
+            this.editingState = {code, data};
+        }
         this.pendingCodeType = codeType;
-        this.selectedDiscountType = code?.discountType ?? 'PERCENTAGE';
-        this.selectedCategories = (code?.categories ?? []).map(String);
-        this.allCategories = this.selectedCategories.length === 0;
-        await this.updateComplete;
-
-        const form = this.codeDialog.querySelector('form')!;
+        const categories = (code?.categories ?? []).map(String);
+        this.allCategories = categories.length === 0;
         const localDate = (date: Date) => new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-        const values: Record<string, string> = {
+        let maxUsage = '';
+        if (code?.maxUsage != null) {
+            maxUsage = String(code.maxUsage);
+        }
+        let discountAmount = '';
+        if (code) {
+            discountAmount = String(code.formattedDiscountAmount ?? code.discountAmount);
+        }
+        let hiddenCategoryId = '';
+        if (code?.hiddenCategoryId != null) {
+            hiddenCategoryId = String(code.hiddenCategoryId);
+        }
+        this.#codeForm.api.reset({
             promoCode: code?.promoCode ?? '',
+            maxUsage,
             start: code?.formattedStart.replace(' ', 'T') ?? localDate(new Date()),
             end: code?.formattedEnd.replace(' ', 'T') ?? (data.event?.formattedBegin.replace(' ', 'T') ?? localDate(new Date(Date.now() + 86400000))),
-            maxUsage: code?.maxUsage == null ? '' : String(code.maxUsage),
             discountType: code?.discountType ?? 'PERCENTAGE',
-            discountAmount: code ? String(code.formattedDiscountAmount ?? code.discountAmount) : '',
+            discountAmount,
             currencyCode: code?.currencyCode ?? 'USD',
+            categories,
+            hiddenCategoryId,
             description: code?.description ?? '',
             emailReference: code?.emailReference ?? '',
-            hiddenCategoryId: code?.hiddenCategoryId == null ? '' : String(code.hiddenCategoryId),
-        };
-        form.reset();
-        const allCategoriesSwitch = form.querySelector<SlSwitch>('sl-switch');
-        if (allCategoriesSwitch) allCategoriesSwitch.checked = this.allCategories;
-        form.querySelectorAll<SlInput | SlSelect | SlTextarea>('sl-input, sl-select, sl-textarea')
-            .forEach(control => { control.value = control.name === 'categories' ? this.selectedCategories : values[control.name] ?? ''; });
+        });
+        await this.updateComplete;
         await this.codeDialog.show();
     }
 
@@ -771,8 +860,9 @@ export class PromoCode extends LitElement {
         const isDiscount = this.pendingCodeType === 'DISCOUNT';
         const editing = this.editingState != null;
         const title = `${editing ? 'Edit' : 'Insert new'} ${isAccess ? 'Access' : data.promoCodeDescription} Code`;
-        const save = () => this.saveCode(data);
-
+        const save = () => this.submitCode();
+        const submitted = this.#codeForm.api.state.submissionAttempts > 0;
+        const input = (field: BoundField<string>, options: ValidatedInputOptions) => validatedInput(field, submitted, options);
         return html`
             <sl-dialog id="code-dialog" class="responsive-dialog" label=${title} size="large" placement="bottom"
                 @sl-request-close=${(e: CustomEvent) => { if (this.saving) e.preventDefault(); }}>
@@ -783,19 +873,17 @@ export class PromoCode extends LitElement {
                         <small>${editing ? 'Update validity, usage limits, and details. Code and discount cannot be changed.' : 'Fields marked * are required.'}</small>
                     </div>
                 </div>
-                <form class="dialog-form form-stack" @submit=${(e: Event) => { e.preventDefault(); save(); }}>
+                <form class="dialog-form form-stack" novalidate @submit=${(e: Event) => { e.preventDefault(); void save(); }}>
                     <div class="section-card">
                         <div class="dialog-section-header"><sl-icon name="tag"></sl-icon>Code</div>
                         <div class="section-body row" style="--alfio-row-cols: 2">
-                            <sl-input name="promoCode" label="Code name" ?readonly=${editing} helper-text="Min 7 characters. Letters, numbers, and -:_@!$*,;" required minlength="7" pattern="[A-Za-z0-9_\\-:@!$*,;]*" clearable @sl-input=${(e: Event) => {
-                                const input = e.target as SlInput;
-                                input.value = input.value.toUpperCase();
-                            }}>
-                                <sl-icon name="tag" slot="prefix"></sl-icon>
-                            </sl-input>
-                            <sl-input name="maxUsage" type="number" label="Limit usage to" helper-text="Leave empty for unlimited uses" min="0">
-                                <sl-icon name="hash" slot="prefix"></sl-icon>
-                            </sl-input>
+                            ${this.#codeForm.field({ name: 'promoCode', validators: validateWith(value => this.validatePromoCode(value)) }, field => input({
+                                state: field.state,
+                                handleChange: (value: string) => field.handleChange(value.toUpperCase()),
+                                handleBlur: () => field.handleBlur(),
+                            }, { name: 'promoCode', label: 'Code name', prefixIcon: 'tag', readonly: editing, helpText: 'Min 7 characters. Letters, numbers, and -:_@!$*,;' }))}
+                            ${this.#codeForm.field({ name: 'maxUsage', validators: validateWith(value => validateMaxUsage(value)) },
+                                field => input(field, { name: 'maxUsage', label: 'Limit usage to', type: 'number', prefixIcon: 'hash', optional: true, helpText: 'Leave empty for unlimited uses' }))}
                         </div>
                     </div>
 
@@ -805,8 +893,13 @@ export class PromoCode extends LitElement {
                             ${when(data.forEvent && data.event, () => html`<sl-badge variant="primary" pill>${data.event!.timeZone}</sl-badge>`)}
                         </div>
                         <div class="section-body row" style="--alfio-row-cols: 2">
-                            <sl-input type="datetime-local" name="start" label="Valid from" required></sl-input>
-                            <sl-input type="datetime-local" name="end" label="Valid until" required></sl-input>
+                            ${this.#codeForm.field({ name: 'start', validators: validateWith(value => requiredValue(value)) },
+                                field => input(field, { name: 'start', label: 'Valid from', type: 'datetime-local' }))}
+                            ${this.#codeForm.field({
+                                name: 'end',
+                                // checked again when the start changes
+                                validators: { ...validateWith(value => this.validateEnd(value)), onChangeListenTo: ['start'] },
+                            }, field => input(field, { name: 'end', label: 'Valid until', type: 'datetime-local' }))}
                         </div>
                     </div>
 
@@ -814,20 +907,35 @@ export class PromoCode extends LitElement {
                         <div class="section-card">
                             <div class="dialog-section-header"><sl-icon name="percent"></sl-icon>Discount</div>
                             <div class="section-body row" style="--alfio-row-cols: ${data.forEvent ? 2 : 3}">
-                                <sl-select name="discountType" label="Discount type" ?disabled=${editing} value="PERCENTAGE" required
-                                    @sl-change=${(e: Event) => { this.selectedDiscountType = (e.target as SlSelect).value as DiscountType; }}>
-                                    <sl-option value="PERCENTAGE">Percentage</sl-option>
-                                    <sl-option value="FIXED_AMOUNT_RESERVATION">Fixed amount, per reservation</sl-option>
-                                    <sl-option value="FIXED_AMOUNT">Fixed amount, per ticket</sl-option>
-                                </sl-select>
-                                <sl-input name="discountAmount" ?readonly=${editing} type="number" label="Discount amount" min="0" required>
-                                    ${when(this.selectedDiscountType === 'PERCENTAGE', () => html`<sl-icon name="percent" slot="suffix"></sl-icon>`)}
-                                </sl-input>
-                                ${when(!data.forEvent, () => html`
-                                    <sl-select name="currencyCode" label="Currency" ?disabled=${editing} value="USD">
-                                        ${repeat(data.currencies, (c) => c.code, (c) => html`<sl-option value=${c.code}>${c.name}</sl-option>`)}
+                                ${this.#codeForm.field({ name: 'discountType' }, field => html`
+                                    <sl-select name="discountType" label="Discount type" ?disabled=${editing} required hoist
+                                        .value=${field.state.value}
+                                        @sl-change=${(e: Event) => field.handleChange((e.target as SlSelect).value as DiscountType)}>
+                                        <sl-option value="PERCENTAGE">Percentage</sl-option>
+                                        <sl-option value="FIXED_AMOUNT_RESERVATION">Fixed amount, per reservation</sl-option>
+                                        <sl-option value="FIXED_AMOUNT">Fixed amount, per ticket</sl-option>
                                     </sl-select>
                                 `)}
+                                ${this.#codeForm.field({
+                                    name: 'discountAmount',
+                                    validators: { ...validateWith(value => this.validateDiscountAmount(value)), onChangeListenTo: ['discountType'] },
+                                }, field => input(field, {
+                                    name: 'discountAmount',
+                                    label: 'Discount amount',
+                                    type: 'number',
+                                    readonly: editing,
+                                    suffixIcon: this.percentageSuffix(),
+                                }))}
+                                ${when(!data.forEvent, () => this.#codeForm.field({
+                                    name: 'currencyCode',
+                                    validators: { ...validateWith(value => this.validateCurrency(value, data)), onChangeListenTo: ['discountType'] },
+                                }, field => html`
+                                    ${when(editing,
+                                        () => html`<sl-input name="currencyCode" label="Currency" readonly .value=${field.state.value}></sl-input>`,
+                                        () => validatedSelect(field, submitted, { className: 'currency-code', label: 'Currency' }, html`
+                                            ${repeat(data.currencies, (c) => c.code, (c) => html`<sl-option value=${c.code}>${c.name}</sl-option>`)}
+                                        `))}
+                                `))}
                             </div>
                         </div>
                     `)}
@@ -841,24 +949,13 @@ export class PromoCode extends LitElement {
                                         .checked=${this.allCategories}
                                         @sl-change=${(e: Event) => {
                                             this.allCategories = (e.target as SlSwitch).checked;
-                                            if (this.allCategories) this.selectedCategories = [];
+                                            if (this.allCategories) {
+                                                this.#codeForm.api.setFieldValue('categories', [], { dontUpdateMeta: true });
+                                            }
                                         }}>Apply to all ticket categories</sl-switch>
                                 `)}
-                                ${when(isAccess || !this.allCategories, () => html`
-                                    <sl-select name=${isAccess ? 'hiddenCategoryId' : 'categories'}
-                                        label=${isAccess ? 'Select Category' : 'Select Categories'}
-                                        placeholder=${isAccess ? 'Select a category' : 'Select categories'}
-                                        ?multiple=${!isAccess} ?required=${!isAccess || !editing} ?disabled=${isAccess && editing}
-                                        .value=${isAccess ? String(this.editingState?.code.hiddenCategoryId ?? '') : this.selectedCategories}
-                                        @sl-change=${(e: Event) => {
-                                            if (!isAccess) this.selectedCategories = (e.target as SlSelect).value as string[];
-                                        }}>
-                                        ${repeat(isAccess
-                                            ? [...new Set([...data.restrictedCategories.map(cat => cat.id), ...(this.editingState?.code.hiddenCategoryId != null ? [this.editingState.code.hiddenCategoryId] : [])])]
-                                            : [...new Set([...data.validCategories.map(cat => cat.id), ...(this.editingState?.code.categories ?? [])])], id => id,
-                                            id => html`<sl-option value=${String(id)}>${data.ticketCategoriesById[id]?.name ?? id}</sl-option>`)}
-                                    </sl-select>
-                                `)}
+                                ${when(isAccess, () => this.renderHiddenCategory(data, editing, submitted))}
+                                ${when(isDiscount && !this.allCategories, () => this.renderDiscountCategories(data, submitted))}
                             </div>
                         </div>
                     `)}
@@ -866,10 +963,13 @@ export class PromoCode extends LitElement {
                     <div class="section-card">
                         <div class="dialog-section-header"><sl-icon name="card-text"></sl-icon>Details</div>
                         <div class="section-body row" style="--alfio-row-cols: 2">
-                            <sl-textarea name="description" label="Description" maxlength="1024" rows="2" resize="auto"></sl-textarea>
-                            <sl-input name="emailReference" type="email" label="Contact" maxlength="256">
-                                <sl-icon name="envelope" slot="prefix"></sl-icon>
-                            </sl-input>
+                            ${this.#codeForm.field({ name: 'description' }, field => html`
+                                <sl-textarea name="description" label="Description" maxlength="1024" rows="2" resize="auto"
+                                             .value=${field.state.value}
+                                             @sl-input=${(e: Event) => field.handleChange((e.target as SlTextarea).value)}></sl-textarea>
+                            `)}
+                            ${this.#codeForm.field({ name: 'emailReference', validators: validateWith(value => optionalEmail(value)) },
+                                field => input(field, { name: 'emailReference', label: 'Contact', type: 'email', prefixIcon: 'envelope', maxlength: 256, optional: true }))}
                         </div>
                     </div>
 
@@ -887,9 +987,7 @@ export class PromoCode extends LitElement {
                     <div class="row" style="--alfio-row-cols: 3">
                         <sl-button variant="default" size="large" @click=${() => this.codeDialog.hide()} ?disabled=${this.saving}>Cancel</sl-button>
                         <div></div>
-                        <sl-button variant="warning" size="large" @click=${() => save()} ?disabled=${this.saving}>
-                            ${when(this.saving, () => html`<sl-spinner slot="prefix"></sl-spinner>`)}
-                            ${when(!this.saving, () => html`<sl-icon name="check2" slot="prefix"></sl-icon>`)}
+                        <sl-button variant="warning" size="large" @click=${() => save()} ?loading=${this.saving} ?disabled=${this.saving}>
                             Save
                         </sl-button>
                     </div>
@@ -898,72 +996,214 @@ export class PromoCode extends LitElement {
         `;
     }
 
-    private async saveCode(data: LoadData): Promise<void> {
-        if (this.saving) return;
-        const code = this.editingState?.code;
-        data = this.editingState?.data ?? data;
-        const form = this.codeDialog.querySelector('form')!;
-        if (!form.reportValidity()) return;
-        const value = (name: string): string => {
-            const control = form.querySelector<SlInput | SlSelect | SlTextarea>(`[name="${name}"]`);
-            return typeof control?.value === 'string' ? control.value : '';
-        };
-        const selectedCategories = this.allCategories ? [] : this.selectedCategories.map(Number);
-        const maxUsage = value('maxUsage');
-        const common = {
-            start: this.parseDateTime(value('start')),
-            end: this.parseDateTime(value('end')),
-            maxUsage: maxUsage ? Number.parseInt(maxUsage, 10) : null,
-            description: value('description'),
-            emailReference: value('emailReference'),
-        };
-        const promoCode = value('promoCode').toUpperCase();
-        const discountType = (value('discountType') || 'PERCENTAGE') as DiscountType;
-        const currencyCode = data.event?.currency ?? value('currencyCode');
-        if (!code) {
-            if (promoCode.length < 7 || !/^[A-Za-z0-9_\-:@!$*,;]*$/.test(promoCode)) {
-                this.validationErrors = {promoCode: 'Use at least 7 characters: letters, numbers, and -:_@!$*,;'};
-                return;
-            }
-            if (!data.forEvent && discountType.startsWith('FIXED_AMOUNT') && !currencyCode) {
-                this.validationErrors = {currencyCode: 'Currency is required for fixed-amount discounts.'};
-                return;
-            }
+    private renderHiddenCategory(data: LoadData, editing: boolean, submitted: boolean): TemplateResult {
+        const hiddenCategoryId = this.editingState?.code.hiddenCategoryId;
+        let categoryIds = data.restrictedCategories.map(cat => cat.id);
+        if (hiddenCategoryId != null && !categoryIds.includes(hiddenCategoryId)) {
+            categoryIds = [...categoryIds, hiddenCategoryId];
         }
-        this.saving = true;
+        return html`${this.#codeForm.field({ name: 'hiddenCategoryId', validators: validateWith(value => this.validateHiddenCategory(value)) }, field => html`
+            ${when(editing,
+                () => html`
+                    <sl-input name="hiddenCategoryId" label="Category" readonly
+                              .value=${data.ticketCategoriesById[Number(field.state.value)]?.name ?? field.state.value}></sl-input>
+                `,
+                () => validatedSelect(field, submitted, { className: 'hidden-category', label: 'Select Category', placeholder: 'Select a category' }, html`
+                    ${repeat(categoryIds, id => id, id => html`<sl-option value=${String(id)}>${data.ticketCategoriesById[id]?.name ?? id}</sl-option>`)}
+                `))}
+        `)}`;
+    }
+
+    private renderDiscountCategories(data: LoadData, submitted: boolean): TemplateResult {
+        const categoryIds = [...new Set([...data.validCategories.map(cat => cat.id), ...(this.editingState?.code.categories ?? [])])];
+        return html`${this.#codeForm.field({ name: 'categories', validators: validateWith(value => this.validateCategories(value)) }, field => {
+            const error = fieldError(field.state.meta, submitted);
+            return html`
+                <sl-select name="categories" label="Select Categories" placeholder="Select categories" multiple required hoist
+                           class=${classMap({ error: error != null })} help-text=${error ?? ''}
+                           .value=${field.state.value}
+                           @sl-change=${(e: Event) => field.handleChange([...(e.target as SlSelect).value as string[]])}
+                           @sl-blur=${() => field.handleBlur()}>
+                    ${repeat(categoryIds, id => id, id => html`<sl-option value=${String(id)}>${data.ticketCategoriesById[id]?.name ?? id}</sl-option>`)}
+                </sl-select>
+            `;
+        })}`;
+    }
+
+    private percentageSuffix(): string | undefined {
+        if (this.#codeForm.api.state.values.discountType === 'PERCENTAGE') {
+            return 'percent';
+        }
+        return undefined;
+    }
+
+    // the code, the discount and the access category can't be changed once saved
+    private get creating(): boolean {
+        return this.editingState == null;
+    }
+
+    private validatePromoCode(value: unknown): string | undefined {
+        if (!this.creating) {
+            return undefined;
+        }
+        const code = String(value ?? '').trim();
+        if (code.length < 7 || !PROMO_CODE_PATTERN.test(code)) {
+            return 'Use at least 7 characters: letters, numbers, and -:_@!$*,;';
+        }
+        return undefined;
+    }
+
+    private validateEnd(value: unknown): string | undefined {
+        const missing = requiredValue(value);
+        if (missing != null) {
+            return missing;
+        }
+        const start = this.#codeForm.api.state.values.start;
+        // datetime-local values (yyyy-MM-ddTHH:mm) sort as strings
+        if (start !== '' && String(value) <= start) {
+            return 'Please choose a date after "Valid from"';
+        }
+        return undefined;
+    }
+
+    private validateDiscountAmount(value: unknown): string | undefined {
+        if (!this.creating || this.pendingCodeType !== 'DISCOUNT') {
+            return undefined;
+        }
+        const amount = Number(value);
+        if (String(value ?? '').trim() === '' || Number.isNaN(amount) || amount < 0) {
+            return 'Please enter an amount, 0 or more';
+        }
+        if (this.#codeForm.api.state.values.discountType === 'PERCENTAGE' && amount > 100) {
+            return 'A percentage cannot be more than 100';
+        }
+        return undefined;
+    }
+
+    private validateCurrency(value: unknown, data: LoadData): string | undefined {
+        const fixedAmount = this.#codeForm.api.state.values.discountType.startsWith('FIXED_AMOUNT');
+        if (!this.creating || data.forEvent || this.pendingCodeType !== 'DISCOUNT' || !fixedAmount) {
+            return undefined;
+        }
+        if (requiredValue(value) != null) {
+            return 'Please select the currency of the discount';
+        }
+        return undefined;
+    }
+
+    private validateCategories(value: unknown): string | undefined {
+        if (this.pendingCodeType !== 'DISCOUNT' || this.allCategories) {
+            return undefined;
+        }
+        if (!Array.isArray(value) || value.length === 0) {
+            return 'Please select at least one category';
+        }
+        return undefined;
+    }
+
+    private validateHiddenCategory(value: unknown): string | undefined {
+        if (!this.creating || this.pendingCodeType !== 'ACCESS') {
+            return undefined;
+        }
+        if (requiredValue(value) != null) {
+            return 'Please select the category that the code unlocks';
+        }
+        return undefined;
+    }
+
+    private async submitCode(): Promise<void> {
+        if (this.saving) return;
         this.validationErrors = {};
-        const failureMessage = code ? 'Failed to update code' : 'Failed to create promo code';
+        if (!await submitValidated(this.#codeForm.api)) {
+            await this.updateComplete;
+            focusFirstError(this.codeDialog);
+        }
+    }
+
+    /**
+     * Called by the code form once all the fields are valid
+     */
+    private async saveCode(values: CodeFormValues): Promise<void> {
+        const code = this.editingState?.code;
+        const data = this.editingState?.data ?? this.loadDataTask.value;
+        if (data == null) return;
+        let selectedCategories: number[] = [];
+        if (!this.allCategories) {
+            selectedCategories = values.categories.map(Number);
+        }
+        let maxUsage: number | null = null;
+        if (values.maxUsage.trim() !== '') {
+            maxUsage = Number.parseInt(values.maxUsage, 10);
+        }
+        const common = {
+            start: this.parseDateTime(values.start),
+            end: this.parseDateTime(values.end),
+            maxUsage,
+            description: values.description,
+            emailReference: values.emailReference.trim(),
+        };
+        const currencyCode = data.event?.currency ?? values.currencyCode;
+        this.saving = true;
+        let failureMessage = 'Failed to create promo code';
+        if (code) {
+            failureMessage = 'Failed to update code';
+        }
         try {
-            const response = code
-                ? await PromoCodeService.update(code.id, {
+            let response: Response;
+            if (code) {
+                let categories = code.categories;
+                if (data.forEvent && code.codeType === 'DISCOUNT') {
+                    categories = selectedCategories;
+                }
+                response = await PromoCodeService.update(code.id, {
                     ...common,
-                    categories: data.forEvent && code.codeType === 'DISCOUNT'
-                        ? selectedCategories
-                        : code.categories,
+                    categories,
                     hiddenCategoryId: code.hiddenCategoryId,
                     eventId: code.eventId,
                     organizationId: code.organizationId!,
-                })
-                : await PromoCodeService.add({
+                });
+            } else {
+                let discountAmount: number | null = null;
+                if (values.discountAmount.trim() !== '') {
+                    discountAmount = Number(values.discountAmount);
+                }
+                let hiddenCategoryId: number | null = null;
+                if (this.pendingCodeType === 'ACCESS') {
+                    hiddenCategoryId = Number(values.hiddenCategoryId);
+                }
+                let categories: number[] = [];
+                if (data.forEvent) {
+                    categories = selectedCategories;
+                }
+                let organizationId: number | null = data.organizationId;
+                if (data.forEvent) {
+                    organizationId = null;
+                }
+                response = await PromoCodeService.add({
                     ...common,
-                    promoCode,
-                    discountAmount: value('discountAmount') ? Number(value('discountAmount')) : null,
-                    discountType,
-                    categories: data.forEvent ? selectedCategories : [],
+                    promoCode: values.promoCode.trim().toUpperCase(),
+                    discountAmount,
+                    discountType: values.discountType,
+                    categories,
                     codeType: this.pendingCodeType,
-                    hiddenCategoryId: this.pendingCodeType === 'ACCESS' ? Number(value('hiddenCategoryId')) : null,
+                    hiddenCategoryId,
                     currencyCode,
                     eventId: data.event?.id ?? null,
-                    organizationId: data.forEvent ? null : data.organizationId,
+                    organizationId,
                 });
+            }
             if (response.ok) {
                 await this.codeDialog.hide();
                 this.loadDataTask.run();
-                dispatchFeedback({type: 'success', message: code ? 'Code updated successfully' : 'Promo code created successfully'}, this);
+                let message = 'Promo code created successfully';
+                if (code) {
+                    message = 'Code updated successfully';
+                }
+                dispatchFeedback({type: 'success', message}, this);
             } else {
                 const body = await response.json();
                 if (body.validationErrors) {
-                    this.validationErrors = this.extractValidationErrors(body.validationErrors);
+                    this.showServerErrors(this.extractValidationErrors(body.validationErrors));
                 } else {
                     dispatchFeedback({type: 'danger', message: failureMessage}, this);
                 }
@@ -973,6 +1213,22 @@ export class PromoCode extends LitElement {
         } finally {
             this.saving = false;
         }
+    }
+
+    /**
+     * The errors of a field are displayed on it, the others above the buttons
+     */
+    private showServerErrors(errors: Record<string, string>): void {
+        const fields = Object.keys(this.#codeForm.api.fieldInfo);
+        const others: Record<string, string> = {};
+        Object.entries(errors).forEach(([field, message]) => {
+            if (fields.includes(field)) {
+                setServerError(this.#codeForm.api, field, message);
+            } else {
+                others[field] = message;
+            }
+        });
+        this.validationErrors = others;
     }
 
     private async showUsageDetails(code: PromoCodeDiscount, data: LoadData): Promise<void> {
@@ -1074,7 +1330,7 @@ export class PromoCode extends LitElement {
                     <div class="row" style="--alfio-row-cols: 3">
                         <div></div>
                         <div></div>
-                        <sl-button variant="default" size="large" @click=${() => this.usageDetailsDialog.hide()}><sl-icon name="x-circle" slot="prefix"></sl-icon>Close</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.usageDetailsDialog.hide()}>Close</sl-button>
                     </div>
                 </div>
             </sl-dialog>

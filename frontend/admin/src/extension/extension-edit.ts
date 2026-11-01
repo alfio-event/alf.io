@@ -4,7 +4,8 @@ import {classMap} from 'lit/directives/class-map.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
 import {Task} from '@lit/task';
-import {SlInput, SlSelect, SlSwitch} from '@shoelace-style/shoelace';
+import {TanStackFormController} from '@tanstack/lit-form';
+import {SlSelect, SlSwitch} from '@shoelace-style/shoelace';
 import {ExtensionEvent, ExtensionModification, ExtensionSupport} from '../model/extension.ts';
 import type {Organization} from '../model/organization.ts';
 import {ExtensionService} from '../service/extension.ts';
@@ -15,8 +16,23 @@ import {parseScope} from './extension-scope.ts';
 import {extensionScriptLanguage} from './script-completions.ts';
 import {syncMetadataId} from './script-metadata.ts';
 import '../components/code-editor.ts';
+import {
+    fieldError,
+    focusFirstError,
+    FormMountController,
+    INVALID_FORM_MESSAGE,
+    requiredValue,
+    submitValidated,
+    validatedInput,
+    validateWith,
+} from '../components/form-validation.ts';
 
 const NAME_PATTERN = /^[A-Za-z0-9]+$/;
+
+interface ExtensionFormValues {
+    name: string;
+    script: string;
+}
 
 interface EditData {
     extension: ExtensionSupport;
@@ -35,14 +51,23 @@ export class ExtensionEdit extends LitElement {
     @property({ type: String, attribute: 'data-path' }) editPath = '';
     @property({ type: String, attribute: 'data-name' }) editName = '';
 
-    @state() private name = '';
     @state() private enabled = false;
-    @state() private script = '';
     @state() private organizationId: number | null = null;
     @state() private eventId: number | null = null;
     @state() private busy = false;
     @state() private errorMessage: string | null = null;
-    @state() private nameInvalid = false;
+
+    readonly #form = new TanStackFormController(this, {
+        defaultValues: { name: '', script: '' } as ExtensionFormValues,
+        onSubmit: async ({value}) => {
+            await this.save(value);
+        },
+    });
+
+    constructor() {
+        super();
+        new FormMountController(this, this.#form.api);
+    }
 
     @state() private data: EditData | null = null;
     // the name the metadata id was last copied from, see syncMetadataId
@@ -69,10 +94,9 @@ export class ExtensionEdit extends LitElement {
         args: () => [this.editPath, this.editName] as const,
         onComplete: (data) => {
             this.data = data;
-            this.name = data.extension.name;
+            this.#form.api.reset({ name: data.extension.name, script: data.extension.script ?? '' });
             this.idSource = data.extension.name;
             this.enabled = data.extension.enabled;
-            this.script = data.extension.script ?? '';
             const scope = parseScope(data.extension.path);
             this.organizationId = scope.organizationId;
             this.eventId = scope.eventId;
@@ -145,7 +169,7 @@ export class ExtensionEdit extends LitElement {
                 </sl-alert>
             `)}
 
-            <form @submit=${this.save}>
+            <form novalidate @submit=${this.submit}>
                 <section class="section-card">
                     <div class="section-header">
                         <sl-icon name="diagram-3" aria-hidden="true"></sl-icon>
@@ -184,13 +208,12 @@ export class ExtensionEdit extends LitElement {
                                     `)}
                                 </sl-select>
                             `)}
-                            <sl-input
-                                label="Name"
-                                name="name"
-                                placeholder="Letters and numbers only"
-                                class=${classMap({error: this.nameInvalid})}
-                                .value=${this.name}
-                                @sl-input=${(e: Event) => this.onNameInput(String((e.target as SlInput).value))}></sl-input>
+                            ${this.#form.field({ name: 'name', validators: validateWith(validateName) }, field => validatedInput({
+                                state: field.state,
+                                // the metadata id of the script follows the name
+                                handleChange: (name: string) => this.onNameInput(name, value => field.handleChange(value)),
+                                handleBlur: () => field.handleBlur(),
+                            }, this.submitted, { id: 'extension-name', name: 'name', label: 'Name', placeholder: 'Letters and numbers only' }))}
                         </div>
                     </div>
                 </section>
@@ -201,13 +224,19 @@ export class ExtensionEdit extends LitElement {
                         <h3>Script</h3>
                     </div>
                     <div class="section-body">
-                        <alfio-code-editor
-                            .language=${extensionScriptLanguage}
-                            help-text="The script must define a getScriptMetadata() function, see the sample. In the events array, press Ctrl+Space or type a quote to list the supported events."
-                            .value=${this.script}
-                            @value-changed=${(e: CustomEvent<string>) => {
-                                this.script = e.detail;
-                            }}></alfio-code-editor>
+                        ${this.#form.field({ name: 'script', validators: validateWith(value => requiredValue(value)) }, field => {
+                            const error = fieldError(field.state.meta, this.submitted);
+                            return html`
+                                <!-- "error" marks the first invalid control, see focusFirstError() -->
+                                <alfio-code-editor
+                                    class=${classMap({ error: error != null })}
+                                    ?invalid=${error != null}
+                                    .language=${extensionScriptLanguage}
+                                    help-text=${error ?? 'The script must define a getScriptMetadata() function, see the sample. In the events array, press Ctrl+Space or type a quote to list the supported events.'}
+                                    .value=${field.state.value}
+                                    @value-changed=${(e: CustomEvent<string>) => field.handleChange(e.detail)}></alfio-code-editor>
+                            `;
+                        })}
                     </div>
                 </section>
 
@@ -216,8 +245,7 @@ export class ExtensionEdit extends LitElement {
                                @click=${() => this.cancel()}>
                         Cancel
                     </sl-button>
-                    <sl-button type="submit" variant="warning" size="large" ?disabled=${this.busy}>
-                        ${when(this.busy, () => html`<sl-spinner slot="prefix" size="small"></sl-spinner>`)}
+                    <sl-button type="submit" variant="warning" size="large" ?loading=${this.busy} ?disabled=${this.busy}>
                         Save
                     </sl-button>
                 </div>
@@ -225,14 +253,17 @@ export class ExtensionEdit extends LitElement {
         `;
     }
 
-    private onNameInput(name: string): void {
-        this.name = name;
-        this.nameInvalid = false;
+    private get submitted(): boolean {
+        return this.#form.api.state.submissionAttempts > 0;
+    }
+
+    private onNameInput(name: string, handleChange: (name: string) => void): void {
+        handleChange(name);
         // an invalid name would break the script, e.g. with a quote: the id keeps following the last valid one
         if (name !== '' && !NAME_PATTERN.test(name)) {
             return;
         }
-        this.script = syncMetadataId(this.script, this.idSource, name);
+        this.#form.api.setFieldValue('script', syncMetadataId(this.#form.api.state.values.script, this.idSource, name), { dontUpdateMeta: true });
         this.idSource = name;
     }
 
@@ -279,18 +310,27 @@ export class ExtensionEdit extends LitElement {
         return `-${this.organizationId}-${this.eventId}`;
     }
 
-    private save = (event: SubmitEvent): void => {
+    private submit = async (event: SubmitEvent): Promise<void> => {
         event.preventDefault();
-        if (!NAME_PATTERN.test(this.name)) {
-            this.nameInvalid = true;
-            this.errorMessage = 'Name is mandatory and can only contain letters and numbers';
-            this.scrollToTop();
+        if (this.busy) {
             return;
         }
+        this.errorMessage = null;
+        if (!await submitValidated(this.#form.api)) {
+            this.errorMessage = INVALID_FORM_MESSAGE;
+            await this.updateComplete;
+            focusFirstError(this.renderRoot);
+        }
+    };
+
+    /**
+     * Called by the form once all the fields are valid
+     */
+    private save = async ({ name, script }: ExtensionFormValues): Promise<void> => {
         const payload: ExtensionModification = {
             path: this.path(),
-            name: this.name,
-            script: this.script,
+            name,
+            script,
             enabled: this.enabled,
         };
         this.busy = true;
@@ -299,7 +339,7 @@ export class ExtensionEdit extends LitElement {
         if (this.isEdit) {
             previous = { path: this.editPath, name: this.editName };
         }
-        ExtensionService.save(payload, previous)
+        await ExtensionService.save(payload, previous)
             .then((result) => {
                 if (result.success) {
                     dispatchFeedback({type: 'success', message: 'Extension has been saved'}, this);
@@ -328,6 +368,17 @@ export class ExtensionEdit extends LitElement {
     private scrollToTop(): void {
         window.scrollTo(0, 0);
     }
+}
+
+function validateName(value: unknown): string | undefined {
+    const missing = requiredValue(value);
+    if (missing != null) {
+        return missing;
+    }
+    if (!NAME_PATTERN.test(String(value))) {
+        return 'Use only letters and numbers';
+    }
+    return undefined;
 }
 
 declare global {

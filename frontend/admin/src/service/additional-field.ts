@@ -14,7 +14,7 @@ export class AdditionalFieldService {
         return fetchJson(`/admin/api/${purchaseContext.type}/${purchaseContext.publicIdentifier}/additional-field/${id}/stats`);
     }
 
-    static loadAllByPurchaseContext(purchaseContext: PurchaseContext): Promise<ReadonlyArray<AdditionalField>> {
+    static loadAllByPurchaseContext(purchaseContext: Pick<PurchaseContext, 'type' | 'publicIdentifier'>): Promise<ReadonlyArray<AdditionalField>> {
         return fetchJson(`/admin/api/${purchaseContext.type}/${purchaseContext.publicIdentifier}/additional-field`);
     }
 

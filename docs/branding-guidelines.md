@@ -26,6 +26,8 @@ import {badges, base, dialog, form, modernLayout, modernTable, pageHeader, panel
 | `textColors` | `.text-success`, `.text-muted`, `.text-danger` |
 | `modernLayout` | Page title, filter toolbar, section cards, "add another" card button, form stack, featured card, dialogs, empty state |
 | `choiceCards` | Choice cards and the panel of the selected choice, see `choiceCards()` |
+| `attendeeFields` | Grid of the additional fields of an attendee, see `attendeeFields()` |
+| `csvImport` | Steps of a CSV import and its file specifications, see `csvImport()` |
 | `modernTable` | Table, striped variant, headers, row hover, actions cell, username link |
 
 ## 1. Page layout
@@ -283,6 +285,8 @@ Classes from other shared blocks:
 | `row` | `.row` | CSS-grid with `--alfio-row-cols` |
 | `form` | `.input-with-action` | Control with a button beside it (e.g. select + Refresh) |
 | `choiceCards` | `.choice-cards`, `.choice-card`, `.choice-panel` | Rendered by `choiceCards()` |
+| `attendeeFields` | `.attendee-fields` | Rendered by `attendeeFields()` |
+| `csvImport` | `.import-steps`, `.import-step`, `.step-number`, `.file-specs` | Rendered by `csvImport()` |
 | `dialog` | `.responsive-dialog` | Dialog width, with `--alfio-dialog-max-width` |
 | `badges` | `sl-badge::part(base)` | Remove badge border |
 | `textColors` | `.text-muted`, `.text-success`, `.text-danger` | Semantic text color |

@@ -1,4 +1,5 @@
 import {DateTimeModification} from './event.ts';
+import {AttendeeFieldValues} from '../components/attendee-fields.ts';
 
 export type TicketAccessType = 'IN_PERSON' | 'ONLINE';
 
@@ -20,6 +21,8 @@ export interface ReservationAttendee {
     firstName: string;
     lastName: string;
     emailAddress: string;
+    // values of the additional fields, by field name
+    additionalInfo?: AttendeeFieldValues;
 }
 
 /**
@@ -34,6 +37,8 @@ export interface AdminReservationRequest<A extends ReservationAttendee = Reserva
         attendees: A[];
         addSeatsIfNotAvailable: boolean;
     }[];
+    // discount code applied to the tickets
+    promoCode?: string;
     notification?: {
         customer: boolean;
         attendees: boolean;

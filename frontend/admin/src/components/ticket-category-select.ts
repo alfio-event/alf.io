@@ -1,4 +1,5 @@
 import {html, ReactiveController, ReactiveControllerHost, TemplateResult} from 'lit';
+import {classMap} from 'lit/directives/class-map.js';
 import {ifDefined} from 'lit/directives/if-defined.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
@@ -58,7 +59,10 @@ export interface TicketCategorySelectOptions {
     id?: string;
     className?: string;
     value: string;
+    // validation error to display, see fieldError()
+    error?: string;
     onChange: (categoryId: string) => void;
+    onBlur?: () => void;
     onRefresh: () => void;
 }
 
@@ -68,9 +72,12 @@ export interface TicketCategorySelectOptions {
 export function ticketCategorySelect(controller: TicketCategoriesController, options: TicketCategorySelectOptions): TemplateResult {
     return html`
         <div class="input-with-action">
-            <sl-select id=${ifDefined(options.id)} class=${options.className ?? ''} label="Category" placeholder="Select a category" required hoist
+            <sl-select id=${ifDefined(options.id)} class=${classMap({ [options.className ?? '']: options.className != null, error: options.error != null })}
+                       label="Category" placeholder="Select a category" required hoist
+                       help-text=${options.error ?? ''}
                        .value=${options.value}
-                       @sl-change=${(e: Event) => options.onChange(String((e.target as SlSelect).value))}>
+                       @sl-change=${(e: Event) => options.onChange(String((e.target as SlSelect).value))}
+                       @sl-blur=${() => options.onBlur?.()}>
                 ${repeat(controller.categories, category => category.id, category => html`
                     <sl-option value=${String(category.id)}>${category.name}</sl-option>
                 `)}

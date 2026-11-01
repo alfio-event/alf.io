@@ -3,6 +3,7 @@ import {customElement, property, query, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
 import {Task} from '@lit/task';
+import {TanStackFormController} from '@tanstack/lit-form';
 import type {SlInput, SlRadioGroup, SlSwitch} from '@shoelace-style/shoelace';
 import {PurchaseContextType} from '../model/purchase-context.ts';
 import {EmailMessage} from '../model/email-message.ts';
@@ -25,6 +26,9 @@ import {PendingPaymentsService} from '../service/pending-payments.ts';
 import {CustomPaymentMethodsService} from '../service/custom-payment-methods.ts';
 import {ConfirmationDialogService} from '../service/confirmation-dialog.ts';
 import {UtilService} from '../service/util.ts';
+import {AdditionalFieldService} from '../service/additional-field.ts';
+import {AdditionalField} from '../model/additional-field.ts';
+import {fieldsForCategory} from '../components/attendee-fields.ts';
 import {toDateTimeModification} from '../service/helpers.ts';
 import {toDateTimeLocal} from '../service/date-format.ts';
 import {formatAmount, formatFullName, localizedTitle, shortReservationId} from '../service/reservation-format.ts';
@@ -46,11 +50,23 @@ import {emptyState} from '../components/empty-state.ts';
 import {sectionCard} from '../components/section-card.ts';
 import {detailList as renderDetailList} from '../components/detail-list.ts';
 import {formField, selectField} from '../components/form-field.ts';
+import {
+    emailAddress,
+    focusFirstError,
+    FormMountController,
+    requiredValue,
+    submitValidated,
+    TextField,
+    validatedInput,
+    ValidatedInputOptions,
+    validateWith,
+} from '../components/form-validation.ts';
 import {CancellationDialog} from '../components/cancellation-dialog.ts';
 import {InfoDialog} from '../components/info-dialog.ts';
 import {EditPaymentDialog} from '../event/payments-list/edit-payment-dialog.ts';
 import {MatchingTransactionDialog} from '../event/pending-payments/matching-transaction-dialog.ts';
 import {NotifyAttendeesDialog} from './notify-attendees-dialog.ts';
+import {AttendeeDataDialog} from './attendee-data-dialog.ts';
 import {isNotPaid, isOfflinePayment, reservationStatusBadge} from './reservation-status.ts';
 import {orderSummary, orderSummaryTable} from './order-summary.ts';
 import {checkInLog} from './activity-log.ts';
@@ -69,6 +85,7 @@ import '../event/payments-list/edit-payment-dialog.ts';
 import '../event/pending-payments/matching-transaction-dialog.ts';
 import '../event/reservations-list/reservations-list.ts';
 import './notify-attendees-dialog.ts';
+import './attendee-data-dialog.ts';
 import './activity-log.ts';
 
 interface PurchaseContextInfo {
@@ -88,6 +105,8 @@ interface ReservationData {
     // name of the custom offline payment method selected by the customer, if any
     customPaymentMethod: string | null;
     ticketsWithAdditionalData: Set<number>;
+    // additional fields of the event, if the user can edit their values (owners only)
+    attendeeFields: readonly AdditionalField[];
     audit: AuditEntry[];
     billingDocuments: BillingDocument[];
     emails: EmailMessage[];
@@ -131,11 +150,14 @@ interface SubscriptionDraft {
     validityTo: string;
 }
 
+/**
+ * The values being edited, managed by TanStackFormController. A section is edited when its draft is not null.
+ */
 interface Drafts {
     expiration: string;
     contact: ContactDraft | null;
-    // by category ID
-    attendees: Map<number, Map<number, AttendeeDraft>>;
+    // category ID -> ticket ID -> draft, for the categories being edited
+    attendees: Record<string, Record<string, AttendeeDraft>>;
     subscription: SubscriptionDraft | null;
     vatApplied: boolean | null;
     // the advanced invoice options are dangerous: they are displayed only on request
@@ -182,17 +204,36 @@ export class ReservationDetailPage extends LitElement {
     @property({ type: Boolean, attribute: 'data-embedded', reflect: true }) embedded = false;
 
     @state() private lastData: ReservationData | null = null;
-    @state() private drafts: Drafts = emptyDrafts();
+    // each validator checks first whether its section is being edited: a field keeps its validators after its
+    // control has been hidden
+    readonly #form = new TanStackFormController(this, {
+        defaultValues: emptyDrafts(),
+        onSubmit: async ({value}) => {
+            await this.save(value);
+        },
+    });
+
+    private get drafts(): Drafts {
+        return this.#form.api.state.values;
+    }
+
+    constructor() {
+        super();
+        new FormMountController(this, this.#form.api);
+    }
     @state() private countries: Record<string, string> = {};
     @state() private creationNoticeVisible = true;
     @state() private refundAmount = '';
     @state() private busy = false;
+    // tickets invalidated by the last save: their owners must receive the new ticket
+    @state() private ticketsToResend: number[] = [];
 
     @query('alfio-cancellation-dialog') private cancellationDialog!: CancellationDialog;
     @query('alfio-info-dialog') private infoDialog!: InfoDialog;
     @query('alfio-edit-payment-dialog') private confirmPaymentDialog!: EditPaymentDialog;
     @query('alfio-matching-transaction-dialog') private matchingDialog!: MatchingTransactionDialog;
     @query('alfio-notify-attendees-dialog') private notifyAttendeesDialog!: NotifyAttendeesDialog;
+    @query('alfio-attendee-data-dialog') private attendeeDataDialog!: AttendeeDataDialog;
 
     private readonly isOwner = window.USER_IS_OWNER;
 
@@ -207,12 +248,14 @@ export class ReservationDetailPage extends LitElement {
                 return emptyData(context, descriptor);
             }
             const ownerData = this.isOwner;
-            const [paymentInfo, ticketsWithAdditionalData, audit, billingDocuments, emails] = await Promise.all([
+            const [paymentInfo, ticketsWithAdditionalData, audit, billingDocuments, emails, attendeeFields] = await Promise.all([
                 optional(service.paymentInfo(), null),
                 optional(service.ticketsWithAdditionalData(), []),
                 optional(service.audit(), []),
                 ownerOnly(ownerData, () => service.billingDocuments()),
                 ownerOnly(ownerData, () => service.emails()),
+                // as the full data of the tickets, the additional fields can be edited by the owners only
+                ownerOnly(ownerData && type === 'event', async () => [...await AdditionalFieldService.loadAllByPurchaseContext({ type, publicIdentifier })]),
             ]);
             return {
                 context,
@@ -220,6 +263,7 @@ export class ReservationDetailPage extends LitElement {
                 paymentInfo,
                 customPaymentMethod: await this.loadCustomPaymentMethod(context.organizationId, paymentInfo),
                 ticketsWithAdditionalData: new Set(ticketsWithAdditionalData),
+                attendeeFields,
                 audit,
                 billingDocuments,
                 emails,
@@ -229,7 +273,7 @@ export class ReservationDetailPage extends LitElement {
         // Keep results mounted during refreshes.
         onComplete: (data) => {
             this.lastData = data;
-            this.drafts = initialDrafts(data);
+            this.#form.api.reset(initialDrafts(data));
         },
     });
 
@@ -313,6 +357,10 @@ export class ReservationDetailPage extends LitElement {
             .advanced-billing-toggle {
                 margin-bottom: var(--sl-spacing-medium);
             }
+            .invalidation-warning {
+                display: block;
+                margin-top: var(--sl-spacing-medium);
+            }
             .address-switch {
                 justify-self: start;
             }
@@ -378,13 +426,13 @@ export class ReservationDetailPage extends LitElement {
                 <sl-tab-group>
                     ${this.renderTab('details', 'Details', 'card-text', null)}
                     ${when(this.isOwner && data.context.visible, () => html`
-                        ${this.renderTab('billing-documents', 'Billing documents', 'receipt', data.billingDocuments.length)}
+                        ${when(this.displayBillingDocuments(data), () => this.renderTab('billing-documents', 'Billing documents', 'receipt', data.billingDocuments.length))}
                         ${this.renderTab('emails', 'E-mails', 'envelope', data.emails.length)}
                         ${this.renderTab('history', 'History', 'clock-history', null)}
                     `)}
                     <sl-tab-panel name="details">${this.renderDetails(data)}</sl-tab-panel>
                     ${when(this.isOwner && data.context.visible, () => html`
-                        <sl-tab-panel name="billing-documents">${this.renderBillingDocuments(data)}</sl-tab-panel>
+                        ${when(this.displayBillingDocuments(data), () => html`<sl-tab-panel name="billing-documents">${this.renderBillingDocuments(data)}</sl-tab-panel>`)}
                         <sl-tab-panel name="emails">
                             <alfio-email-table .messages=${data.emails}
                                                data-purchase-context-type=${this.purchaseContextType}
@@ -399,6 +447,7 @@ export class ReservationDetailPage extends LitElement {
             <alfio-cancellation-dialog></alfio-cancellation-dialog>
             <alfio-info-dialog></alfio-info-dialog>
             <alfio-notify-attendees-dialog></alfio-notify-attendees-dialog>
+            <alfio-attendee-data-dialog></alfio-attendee-data-dialog>
             <alfio-matching-transaction-dialog time-zone=${data.context.timeZone}></alfio-matching-transaction-dialog>
             <alfio-edit-payment-dialog purchase-context-type=${this.purchaseContextType}
                                        public-identifier=${this.publicIdentifier}
@@ -443,6 +492,18 @@ export class ReservationDetailPage extends LitElement {
                         <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
                         This reservation is in an unknown state. This could happen when there are troubles after receiving a response
                         from the payment gateway. Please check the payment status on the payment gateway's dashboard, then confirm or cancel this reservation.
+                    </sl-alert>
+                `)}
+                ${when(this.ticketsToResend.length > 0, () => html`
+                    <sl-alert open closable variant="warning" class="resend-tickets" @sl-after-hide=${() => { this.ticketsToResend = []; }}>
+                        <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+                        <strong>The tickets you have modified are no longer valid.</strong>
+                        Send the new tickets to their attendees.
+                        <sl-button size="small" variant="primary" outline ?disabled=${this.busy}
+                                   @click=${() => this.resendTickets(data)}>
+                            <sl-icon slot="prefix" name="envelope"></sl-icon>
+                            Send tickets…
+                        </sl-button>
                     </sl-alert>
                 `)}
                 ${when(transaction?.potentialMatch, () => html`
@@ -530,12 +591,12 @@ export class ReservationDetailPage extends LitElement {
         const reservation = descriptor.reservation;
         const subscriptionDetails = this.subscriptionDetails(data);
         return html`
-            <form class="details-grid" @submit=${(e: Event) => { e.preventDefault(); void this.save(data); }}>
+            <form class="details-grid" novalidate @submit=${(e: Event) => { e.preventDefault(); void this.submit(); }}>
                 ${this.renderReservationCard(data)}
                 ${this.renderContactCard(data)}
                 ${when(this.displayPaymentInfo(data), () => html`<div class="wide">${this.renderPaymentCard(data)}</div>`)}
                 ${when(subscriptionDetails, () => html`<div class="wide">${this.renderSubscriptionCard(subscriptionDetails!)}</div>`)}
-                ${when(isNotPaid(reservation.status), () => html`<div class="wide">${this.renderAdvancedBilling(data)}</div>`)}
+                ${when(isNotPaid(reservation.status) && !isFree(data), () => html`<div class="wide">${this.renderAdvancedBilling(data)}</div>`)}
                 <div class="wide">
                     ${sectionCard({ icon: 'receipt', title: 'Order summary' },
                         orderSummaryTable(descriptor.orderSummary, reservation.currencyCode ?? data.context.currency))}
@@ -551,13 +612,10 @@ export class ReservationDetailPage extends LitElement {
                         ${when(this.embedded,
                             () => html`<sl-button variant="default" size="large" @click=${this.close}>Close</sl-button>`,
                             () => html`<sl-button variant="default" size="large" ?disabled=${!this.dirty(data) || this.busy}
-                                                  @click=${() => { this.drafts = initialDrafts(data); }}>Discard changes</sl-button>`)}
+                                                  @click=${() => this.#form.api.reset(initialDrafts(data))}>Cancel</sl-button>`)}
                         <div></div>
-                        <sl-button type="submit" variant="warning" size="large" ?disabled=${!this.dirty(data) || this.busy}>
-                            ${when(this.busy,
-                                () => html`<sl-spinner slot="prefix"></sl-spinner>`,
-                                () => html`<sl-icon name="check2" slot="prefix"></sl-icon>`)}
-                            Save changes
+                        <sl-button type="submit" variant="warning" size="large" ?loading=${this.busy} ?disabled=${!this.dirty(data) || this.busy}>
+                            Save
                         </sl-button>
                     </div>
                 </div>
@@ -570,7 +628,7 @@ export class ReservationDetailPage extends LitElement {
         const expirationEditable = reservation.status !== 'COMPLETE' && reservation.status !== 'CANCELLED';
         return sectionCard({ icon: 'info-circle', title: 'Reservation' }, html`
             ${renderDetailList([
-                { label: 'Payment method', value: this.paymentMethod(data) },
+                !isFree(data) && { label: 'Payment method', value: this.paymentMethod(data) },
                 reservation.hasInvoiceNumber && { label: 'Invoice number', value: reservation.invoiceNumber },
                 !expirationEditable && {
                     label: 'Expiration',
@@ -578,12 +636,13 @@ export class ReservationDetailPage extends LitElement {
                 },
             ])}
             ${when(expirationEditable, () => html`
-                <sl-input type="datetime-local" name="expiration" label="Expiration" required
-                          help-text="Time zone: ${data.context.timeZone}"
-                          .value=${this.drafts.expiration}
-                          @sl-input=${(e: Event) => this.updateDrafts({ expiration: (e.target as SlInput).value })}>
-                    <sl-icon slot="prefix" name="calendar-event"></sl-icon>
-                </sl-input>
+                ${this.#form.field({ name: 'expiration', validators: validateWith(value => requiredValue(value)) }, field => this.input(field, {
+                    name: 'expiration',
+                    label: 'Expiration',
+                    type: 'datetime-local',
+                    prefixIcon: 'calendar-event',
+                    helpText: `Time zone: ${data.context.timeZone}`,
+                }))}
             `)}
         `);
     }
@@ -651,25 +710,43 @@ export class ReservationDetailPage extends LitElement {
     }
 
     private renderContactForm(data: ReservationData, draft: ContactDraft): TemplateResult {
-        const onChange = () => this.requestUpdate();
+        // the fields without validation change the draft: the copy notifies the form
+        const onChange = () => this.#form.api.setFieldValue('contact', { ...draft }, { dontUpdateMeta: true });
+        const ifContact = (validate: () => string | undefined) => {
+            if (this.drafts.contact == null) {
+                return undefined;
+            }
+            return validate();
+        };
         const eInvoicing = data.descriptor.additionalInfo?.invoicingAdditionalInfo?.italianEInvoicing;
         return html`
             <div class="form-stack">
                 <sl-radio-group name="customerType" label="Customer" value=${draft.customerType}
                                 help-text="Invoices are issued to the company, if any"
-                                @sl-change=${(e: Event) => { draft.customerType = (e.target as SlRadioGroup).value as CustomerType; onChange(); }}>
+                                @sl-change=${(e: Event) => this.#form.api.setFieldValue('contact.customerType', (e.target as SlRadioGroup).value as CustomerType)}>
                     <sl-radio-button value="private"><sl-icon slot="prefix" name="person"></sl-icon>Private person</sl-radio-button>
                     <sl-radio-button value="company"><sl-icon slot="prefix" name="building"></sl-icon>Company</sl-radio-button>
                 </sl-radio-group>
                 ${when(draft.customerType === 'company', () => html`
-                    ${formField(draft, 'companyName', { label: 'Company name', icon: 'building', required: true }, onChange)}
+                    ${this.#form.field({
+                        name: 'contact.companyName',
+                        validators: validateWith(value => ifContact(() => {
+                            if (this.drafts.contact?.customerType !== 'company') {
+                                return undefined;
+                            }
+                            return requiredValue(value);
+                        })),
+                    }, field => this.input(field, { name: 'companyName', label: 'Company name', prefixIcon: 'building' }))}
                     ${formField(draft, 'vatNr', { label: 'Tax ID (VAT / GST)' }, onChange)}
                 `)}
                 <div class="row">
-                    ${formField(draft, 'firstName', { label: 'First name', required: true }, onChange)}
-                    ${formField(draft, 'lastName', { label: 'Last name', required: true }, onChange)}
+                    ${this.#form.field({ name: 'contact.firstName', validators: validateWith(value => ifContact(() => requiredValue(value))) },
+                        field => this.input(field, { name: 'firstName', label: 'First name' }))}
+                    ${this.#form.field({ name: 'contact.lastName', validators: validateWith(value => ifContact(() => requiredValue(value))) },
+                        field => this.input(field, { name: 'lastName', label: 'Last name' }))}
                 </div>
-                ${formField(draft, 'emailAddress', { label: 'E-mail', type: 'email', icon: 'envelope', required: true }, onChange)}
+                ${this.#form.field({ name: 'contact.emailAddress', validators: validateWith(value => ifContact(() => emailAddress(value))) },
+                    field => this.input(field, { name: 'emailAddress', label: 'E-mail', type: 'email', prefixIcon: 'envelope' }))}
                 ${selectField(draft, 'userLanguage', {
                     label: 'Language',
                     options: data.context.locales.map(locale => ({ value: locale, label: locale })),
@@ -679,7 +756,15 @@ export class ReservationDetailPage extends LitElement {
                     ${formField(draft, 'fiscalCode', { label: 'Codice fiscale' }, onChange)}
                     ${selectField(draft, 'referenceType', { label: 'Italian e-invoicing', options: E_INVOICING_REFERENCE_TYPES }, onChange)}
                     ${when(draft.referenceType === 'ADDRESSEE_CODE', () => formField(draft, 'addresseeCode', { label: 'Codice destinatario' }, onChange))}
-                    ${when(draft.referenceType === 'PEC', () => formField(draft, 'pec', { label: 'PEC', type: 'email' }, onChange))}
+                    ${when(draft.referenceType === 'PEC', () => this.#form.field({
+                        name: 'contact.pec',
+                        validators: validateWith(value => ifContact(() => {
+                            if (this.drafts.contact?.referenceType !== 'PEC' || String(value ?? '').trim() === '') {
+                                return undefined;
+                            }
+                            return emailAddress(value);
+                        })),
+                    }, field => this.input(field, { name: 'pec', label: 'PEC', type: 'email', optional: true })))}
                 `)}
             </div>
         `;
@@ -734,8 +819,14 @@ export class ReservationDetailPage extends LitElement {
         const subscription = details.subscription;
         const draft = this.drafts.subscription;
         const timeZone = this.lastData!.context.timeZone;
-        const onChange = () => this.requestUpdate();
+        const onChange = () => this.#form.api.setFieldValue('subscription', { ...draft! }, { dontUpdateMeta: true });
         const maxAllowed = details.usageDetails.total;
+        const ifSubscription = (validate: () => string | undefined) => {
+            if (this.drafts.subscription == null) {
+                return undefined;
+            }
+            return validate();
+        };
         return sectionCard({
             icon: 'card-checklist',
             title: 'Subscription',
@@ -744,14 +835,23 @@ export class ReservationDetailPage extends LitElement {
             () => html`
                 <div class="form-stack">
                     <div class="row">
-                        ${formField(draft!, 'firstName', { label: "Owner's first name", required: true }, onChange)}
-                        ${formField(draft!, 'lastName', { label: "Owner's last name", required: true }, onChange)}
+                        ${this.#form.field({ name: 'subscription.firstName', validators: validateWith(value => ifSubscription(() => requiredValue(value))) },
+                            field => this.input(field, { name: 'firstName', label: "Owner's first name" }))}
+                        ${this.#form.field({ name: 'subscription.lastName', validators: validateWith(value => ifSubscription(() => requiredValue(value))) },
+                            field => this.input(field, { name: 'lastName', label: "Owner's last name" }))}
                     </div>
-                    ${formField(draft!, 'email', { label: 'E-mail', type: 'email', icon: 'envelope', required: true }, onChange)}
+                    ${this.#form.field({ name: 'subscription.email', validators: validateWith(value => ifSubscription(() => emailAddress(value))) },
+                        field => this.input(field, { name: 'email', label: 'E-mail', type: 'email', prefixIcon: 'envelope' }))}
                     ${when(maxAllowed != null && maxAllowed > 0, () => formField(draft!, 'maxAllowed', { label: 'Max allowed usages', type: 'number', icon: 'hash' }, onChange))}
                     <div class="row">
-                        ${when(subscription.validityFrom, () => formField(draft!, 'validityFrom', { label: 'Valid from', type: 'datetime-local', required: true, helpText: `Time zone: ${timeZone}` }, onChange))}
-                        ${when(subscription.validityTo, () => formField(draft!, 'validityTo', { label: 'Valid to', type: 'datetime-local', required: true, helpText: `Time zone: ${timeZone}` }, onChange))}
+                        ${when(subscription.validityFrom, () => this.#form.field({
+                            name: 'subscription.validityFrom',
+                            validators: validateWith(value => ifSubscription(() => requiredValue(value))),
+                        }, field => this.input(field, { name: 'validityFrom', label: 'Valid from', type: 'datetime-local', helpText: `Time zone: ${timeZone}` })))}
+                        ${when(subscription.validityTo, () => this.#form.field({
+                            name: 'subscription.validityTo',
+                            validators: validateWith(value => ifSubscription(() => requiredValue(value))),
+                        }, field => this.input(field, { name: 'validityTo', label: 'Valid to', type: 'datetime-local', helpText: `Time zone: ${timeZone}` })))}
                     </div>
                 </div>
             `,
@@ -801,8 +901,9 @@ export class ReservationDetailPage extends LitElement {
     }
 
     private renderAttendeesCard(data: ReservationData, category: { id: number, name: string }, tickets: Ticket[]): TemplateResult {
-        const drafts = this.drafts.attendees.get(category.id);
+        const drafts = this.drafts.attendees[String(category.id)];
         const checkIns = checkInLog(data.audit);
+        const fields = fieldsForCategory(data.attendeeFields, category.id);
         return sectionCard({
             icon: 'people',
             title: `Attendees for ${category.name}`,
@@ -823,21 +924,22 @@ export class ReservationDetailPage extends LitElement {
                     </thead>
                     <tbody>
                         ${repeat(tickets, (ticket) => ticket.id, (ticket, index) => {
-                            const draft = drafts?.get(ticket.id);
+                            const draft = drafts?.[String(ticket.id)];
                             const log = checkIns.get(String(ticket.id));
                             return html`
                                 <tr data-ticket-id=${ticket.id}>
                                     <td>${index + 1}</td>
-                                    ${this.attendeeCell(draft, 'firstName', ticket.firstName, 'First name')}
-                                    ${this.attendeeCell(draft, 'lastName', ticket.lastName, 'Last name')}
-                                    ${this.attendeeCell(draft, 'emailAddress', ticket.email, 'E-mail')}
+                                    ${this.attendeeCell(category.id, ticket.id, draft, 'firstName', ticket.firstName, 'First name')}
+                                    ${this.attendeeCell(category.id, ticket.id, draft, 'lastName', ticket.lastName, 'Last name')}
+                                    ${this.attendeeCell(category.id, ticket.id, draft, 'emailAddress', ticket.email, 'E-mail')}
                                     <td class="hide-small">
                                         ${when(ticket.status === 'CHECKED_IN', () => html`<sl-badge variant="success">Checked in</sl-badge>`)}
                                     </td>
                                     <td>
                                         <div class="actions-cell">
-                                            ${when(data.ticketsWithAdditionalData.has(ticket.id), () => html`
-                                                <sl-button size="small" variant="default" outline @click=${() => this.showFullData(ticket)}>
+                                            ${when(data.ticketsWithAdditionalData.has(ticket.id) || fields.length > 0, () => html`
+                                                <sl-button class="full-data" size="small" variant="default" outline
+                                                           @click=${() => this.showFullData(data, ticket, fields)}>
                                                     <sl-icon slot="prefix" name="card-list"></sl-icon>
                                                     Full data
                                                 </sl-button>
@@ -863,19 +965,62 @@ export class ReservationDetailPage extends LitElement {
                     </tbody>
                 </table>
             </div>
+            ${when(drafts != null && this.ticketsToInvalidate(tickets, drafts).length > 0, () => html`
+                <sl-alert open variant="warning" class="invalidation-warning">
+                    <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+                    <strong>Changing the name or the e-mail invalidates the ticket</strong> of
+                    ${this.ticketsToInvalidate(tickets, drafts!).map(ticket => formatFullName(ticket) || ticket.email).join(', ')}:
+                    the QR code they have received will no longer work. After saving, send them the new ticket.
+                </sl-alert>
+            `)}
         `);
     }
 
-    private attendeeCell(draft: AttendeeDraft | undefined, key: keyof AttendeeDraft, value: string | null, label: string): TemplateResult {
+    /**
+     * Tickets already sent whose QR code changes with the draft: the code depends on the name and the e-mail,
+     * but not on their case
+     */
+    private ticketsToInvalidate(tickets: Ticket[], drafts: Record<string, AttendeeDraft>): Ticket[] {
+        return tickets.filter(ticket => {
+            const draft = drafts[String(ticket.id)];
+            if (ticket.status !== 'ACQUIRED' || draft == null) {
+                return false;
+            }
+            return changed(ticket.firstName, draft.firstName)
+                || changed(ticket.lastName, draft.lastName)
+                || changed(ticket.email, draft.emailAddress);
+        });
+    }
+
+    private attendeeCell(categoryId: number, ticketId: number, draft: AttendeeDraft | undefined, key: keyof AttendeeDraft,
+                         value: string | null, label: string): TemplateResult {
         if (draft == null) {
             return html`<td>${value ?? ''}</td>`;
         }
+        // only the attendees of the categories being edited are checked
+        const validate = (fieldValue: unknown) => {
+            if (this.drafts.attendees[String(categoryId)]?.[String(ticketId)] == null) {
+                return undefined;
+            }
+            if (key === 'emailAddress') {
+                return emailAddress(fieldValue);
+            }
+            return requiredValue(fieldValue);
+        };
+        let type = 'text';
+        if (key === 'emailAddress') {
+            type = 'email';
+        }
         return html`
             <td class="attendee-cell">
-                <sl-input class="label-hidden" size="small" name=${key} label=${label} required .value=${draft[key]}
-                          @sl-input=${(e: Event) => { draft[key] = (e.target as SlInput).value; this.requestUpdate(); }}></sl-input>
+                ${this.#form.field({ name: `attendees.${categoryId}.${ticketId}.${key}`, validators: validateWith(validate) },
+                    field => this.input(field, { name: key, label, type, className: 'label-hidden' }))}
             </td>
         `;
+    }
+
+    private input(field: TextField, options: ValidatedInputOptions): TemplateResult {
+        return validatedInput(field, this.#form.api.state.submissionAttempts > 0, options);
     }
 
     private renderSubscriptionReservations(data: ReservationData): TemplateResult {
@@ -977,7 +1122,6 @@ export class ReservationDetailPage extends LitElement {
         if (editing) {
             return html`
                 <sl-button size="small" variant="default" outline @click=${toggle}>
-                    <sl-icon slot="prefix" name="x-circle"></sl-icon>
                     Cancel
                 </sl-button>
             `;
@@ -997,7 +1141,9 @@ export class ReservationDetailPage extends LitElement {
     }
 
     private updateDrafts(update: Partial<Drafts>): void {
-        this.drafts = { ...this.drafts, ...update };
+        for (const [key, value] of Object.entries(update)) {
+            this.#form.api.setFieldValue(key as keyof Drafts, value as never, { dontUpdateMeta: true });
+        }
     }
 
     private dirty(data: ReservationData): boolean {
@@ -1005,7 +1151,7 @@ export class ReservationDetailPage extends LitElement {
         const drafts = this.drafts;
         return drafts.expiration !== initial.expiration
             || drafts.contact != null
-            || drafts.attendees.size > 0
+            || Object.keys(drafts.attendees).length > 0
             || drafts.subscription != null
             || drafts.vatApplied !== initial.vatApplied;
     }
@@ -1022,15 +1168,16 @@ export class ReservationDetailPage extends LitElement {
     }
 
     private toggleAttendees(categoryId: number, tickets: Ticket[]): void {
-        const attendees = new Map(this.drafts.attendees);
-        if (attendees.has(categoryId)) {
-            attendees.delete(categoryId);
+        const attendees = { ...this.drafts.attendees };
+        const key = String(categoryId);
+        if (attendees[key] != null) {
+            delete attendees[key];
         } else {
-            attendees.set(categoryId, new Map(tickets.map(ticket => [ticket.id, {
+            attendees[key] = Object.fromEntries(tickets.map(ticket => [String(ticket.id), {
                 firstName: ticket.firstName ?? '',
                 lastName: ticket.lastName ?? '',
                 emailAddress: ticket.email ?? '',
-            }])));
+            }]));
         }
         this.updateDrafts({ attendees });
     }
@@ -1057,29 +1204,52 @@ export class ReservationDetailPage extends LitElement {
 
     // ---------- actions ----------
 
-    private async save(data: ReservationData): Promise<void> {
-        const form = this.renderRoot.querySelector('form.details-grid') as HTMLFormElement;
-        if (!form.reportValidity()) {
+    private async submit(): Promise<void> {
+        if (this.busy) {
             return;
         }
-        await this.perform(() => this.service().update(this.toModification(data)), 'Reservation updated successfully', 'Failed to update the reservation');
+        if (!await submitValidated(this.#form.api)) {
+            await this.updateComplete;
+            focusFirstError(this.renderRoot);
+        }
     }
 
-    private toModification(data: ReservationData): ReservationModification {
+    /**
+     * Called by the form once all the fields are valid
+     */
+    private async save(drafts: Drafts): Promise<void> {
+        const data = this.lastData;
+        if (data == null) {
+            return;
+        }
+        const invalidated = data.descriptor.ticketsByCategory.flatMap(entry => {
+            const drafts = this.drafts.attendees[String(entry.key.id)];
+            if (drafts == null) {
+                return [];
+            }
+            return this.ticketsToInvalidate(entry.value, drafts).map(ticket => ticket.id);
+        });
+        const saved = await this.perform(() => this.service().update(this.toModification(data, drafts)), 'Reservation updated successfully', 'Failed to update the reservation');
+        if (saved && invalidated.length > 0) {
+            this.ticketsToResend = [...new Set([...this.ticketsToResend, ...invalidated])];
+        }
+    }
+
+    private toModification(data: ReservationData, drafts: Drafts): ReservationModification {
         const descriptor = data.descriptor;
         const reservation = descriptor.reservation;
-        const contact = this.drafts.contact ?? contactDraft(descriptor);
-        const subscription = this.drafts.subscription;
+        const contact = drafts.contact ?? contactDraft(descriptor);
+        const subscription = drafts.subscription;
         let vatApplied: 'Y' | 'N' | null = null;
-        if (this.drafts.vatApplied === true) {
+        if (drafts.vatApplied === true) {
             vatApplied = 'Y';
-        } else if (this.drafts.vatApplied === false) {
+        } else if (drafts.vatApplied === false) {
             vatApplied = 'N';
         }
         return {
-            expiration: toDateTimeModification(this.drafts.expiration || toDateTimeLocal(reservation.validity, data.context.timeZone)),
+            expiration: toDateTimeModification(drafts.expiration || toDateTimeLocal(reservation.validity, data.context.timeZone)),
             language: reservation.userLanguage ?? '',
-            updateContactData: this.drafts.contact != null,
+            updateContactData: drafts.contact != null,
             customerData: {
                 firstName: contact.firstName,
                 lastName: contact.lastName,
@@ -1089,18 +1259,18 @@ export class ReservationDetailPage extends LitElement {
                 vatNr: vatNumber(contact),
                 vatCountryCode: contact.vatCountryCode,
                 invoicingAdditionalInfo: this.invoicingAdditionalInfo(descriptor, contact),
-                billingDetails: billingDetails(this.drafts.contact),
+                billingDetails: billingDetails(drafts.contact),
             },
-            updateAdvancedBillingOptions: this.drafts.vatApplied !== initialDrafts(data).vatApplied,
+            updateAdvancedBillingOptions: drafts.vatApplied !== initialDrafts(data).vatApplied,
             advancedBillingOptions: { vatApplied },
             ticketsInfo: descriptor.ticketsByCategory.map(entry => {
-                const drafts = this.drafts.attendees.get(entry.key.id);
+                const attendees = drafts.attendees[String(entry.key.id)];
                 return {
                     category: { existingCategoryId: entry.key.id, name: entry.key.name },
-                    updateAttendees: drafts != null,
+                    updateAttendees: attendees != null,
                     attendees: entry.value.map(ticket => ({
                         ticketId: ticket.id,
-                        ...(drafts?.get(ticket.id) ?? { firstName: ticket.firstName ?? '', lastName: ticket.lastName ?? '', emailAddress: ticket.email ?? '' }),
+                        ...(attendees?.[String(ticket.id)] ?? { firstName: ticket.firstName ?? '', lastName: ticket.lastName ?? '', emailAddress: ticket.email ?? '' }),
                     })),
                 };
             }),
@@ -1159,12 +1329,24 @@ export class ReservationDetailPage extends LitElement {
             await this.perform(() => service.notifyCustomer(), 'E-mail sent to the contact person', 'Failed to send the e-mail', false, false);
             return;
         }
+        await this.notifyAttendees(data);
+    }
+
+    private async resendTickets(data: ReservationData): Promise<void> {
+        await this.notifyAttendees(data, this.ticketsToResend);
+    }
+
+    private async notifyAttendees(data: ReservationData, preselected?: number[]): Promise<void> {
         const ticketIds = await this.notifyAttendeesDialog.open(data.descriptor.ticketsByCategory.map(entry => ({
             name: entry.key.name,
             tickets: entry.value,
-        })));
-        if (ticketIds != null && ticketIds.length > 0) {
-            await this.perform(() => service.notifyAttendees(ticketIds), 'Tickets sent to the attendees', 'Failed to send the tickets', false, false);
+        })), preselected);
+        if (ticketIds == null || ticketIds.length === 0) {
+            return;
+        }
+        const sent = await this.perform(() => this.service().notifyAttendees(ticketIds), 'Tickets sent to the attendees', 'Failed to send the tickets', false, false);
+        if (sent) {
+            this.ticketsToResend = this.ticketsToResend.filter(id => !ticketIds.includes(id));
         }
     }
 
@@ -1221,8 +1403,25 @@ export class ReservationDetailPage extends LitElement {
         await this.perform(() => this.service().invalidateBillingDocument(document.id), 'Billing document invalidated', 'Failed to invalidate the billing document');
     }
 
-    private showFullData(ticket: Ticket): void {
+    /**
+     * The data of the attendee: the values of the additional fields can be edited, if there are any
+     */
+    private async showFullData(data: ReservationData, ticket: Ticket, fields: readonly AdditionalField[]): Promise<void> {
         const locale = this.lastData?.context.locales[0] ?? 'en';
+        if (fields.length > 0) {
+            const saved = await this.attendeeDataDialog.open({
+                service: this.service(),
+                ticket,
+                fields,
+                language: data.descriptor.reservation.userLanguage || locale,
+            });
+            if (saved === true) {
+                dispatchFeedback({ type: 'success', message: 'Attendee data updated' }, this);
+                this.notifyChange(false);
+                void this.loadDataTask.run();
+            }
+            return;
+        }
         void this.infoDialog.open({
             icon: 'card-list',
             title: `Data of ${formatFullName(ticket)}`,
@@ -1264,7 +1463,7 @@ export class ReservationDetailPage extends LitElement {
                           successMessage: string,
                           errorMessage: string,
                           confirmed = false,
-                          changed = true): Promise<void> {
+                          changed = true): Promise<boolean> {
         this.busy = true;
         try {
             await action();
@@ -1272,8 +1471,10 @@ export class ReservationDetailPage extends LitElement {
             if (changed) {
                 this.notifyChange(confirmed);
             }
+            return true;
         } catch (e) {
             dispatchFeedback({ type: 'danger', message: errorDescription(e, errorMessage) }, this);
+            return false;
         } finally {
             this.busy = false;
             void this.loadDataTask.run();
@@ -1322,8 +1523,14 @@ export class ReservationDetailPage extends LitElement {
 
     private displayPaymentInfo(data: ReservationData): boolean {
         return data.context.visible
+            && !isFree(data)
             && data.paymentInfo?.transaction?.potentialMatch !== true
             && !isNotPaid(data.descriptor.reservation.status);
+    }
+
+    // a free reservation has no billing documents, unless they have been generated before it became free
+    private displayBillingDocuments(data: ReservationData): boolean {
+        return !isFree(data) || data.billingDocuments.length > 0;
     }
 
     private subscriptionDetails(data: ReservationData): SubscriptionWithUsageDetails | null {
@@ -1408,7 +1615,7 @@ function attendeeNames(descriptor: ReservationDescriptor): Map<string, string> {
 }
 
 function emptyDrafts(): Drafts {
-    return { expiration: '', contact: null, attendees: new Map(), subscription: null, vatApplied: null, showAdvancedBilling: false };
+    return { expiration: '', contact: null, attendees: {}, subscription: null, vatApplied: null, showAdvancedBilling: false };
 }
 
 function initialDrafts(data: ReservationData): Drafts {
@@ -1510,6 +1717,7 @@ function emptyData(context: PurchaseContextInfo, descriptor: ReservationDescript
         paymentInfo: null,
         customPaymentMethod: null,
         ticketsWithAdditionalData: new Set(),
+        attendeeFields: [],
         audit: [],
         billingDocuments: [],
         emails: [],
@@ -1556,4 +1764,13 @@ declare global {
         'alfio-reservation-changed': CustomEvent<ReservationChangedDetail>;
         'alfio-reservation-close': CustomEvent<void>;
     }
+}
+
+function isFree(data: ReservationData): boolean {
+    return data.descriptor.orderSummary.free;
+}
+
+// the ticket code ignores the case of the name and of the e-mail, and the values are trimmed when saved
+function changed(current: string | null, draft: string): boolean {
+    return (current ?? '').trim().toLowerCase() !== draft.trim().toLowerCase();
 }

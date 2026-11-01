@@ -118,3 +118,10 @@ export function supportsMinMaxLength(fieldType: AdditionalFieldType): boolean {
         || fieldType === 'textarea'
         || fieldType === 'input:dateOfBirth';
 }
+
+/**
+ * The options of a field that can be chosen, without the disabled ones. Empty for a field without options.
+ */
+export function allowedValues(field: AdditionalField): string[] {
+    return (field.restrictedValues ?? []).filter(value => !(field.disabledValues ?? []).includes(value));
+}

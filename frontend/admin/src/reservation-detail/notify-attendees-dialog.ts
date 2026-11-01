@@ -43,9 +43,17 @@ export class NotifyAttendeesDialog extends PromptDialog<number[]> {
         `,
     ];
 
-    open(categories: AttendeesByCategory[]): Promise<number[] | null> {
+    /**
+     * @param categories the attendees who can receive their ticket
+     * @param preselected the tickets selected at the beginning; when missing, all the tickets are selected
+     */
+    open(categories: AttendeesByCategory[], preselected?: number[]): Promise<number[] | null> {
         this.categories = categories;
-        this.selectAll(true);
+        if (preselected != null) {
+            this.selected = new Set(preselected);
+        } else {
+            this.selectAll(true);
+        }
         return this.prompt();
     }
 

@@ -22,6 +22,8 @@ export class CodeEditor extends LitElement {
     @property({ type: String }) label = '';
     // hint displayed below the editor
     @property({ type: String, attribute: 'help-text' }) helpText = '';
+    // the value is not valid: red border, and the help text is the error message
+    @property({ type: Boolean, reflect: true }) invalid = false;
     @property({ attribute: false }) language: LanguageSupport = javascript();
     @query('#editor-host') private editorHost!: HTMLDivElement | null;
 
@@ -59,6 +61,14 @@ export class CodeEditor extends LitElement {
             margin-top: var(--sl-spacing-2x-small);
             font-size: var(--sl-font-size-x-small);
             color: var(--sl-color-gray-600);
+        }
+
+        :host([invalid]) .editor-frame {
+            border-color: var(--sl-color-danger-600);
+        }
+
+        :host([invalid]) .help-text {
+            color: var(--sl-color-danger-600);
         }
     `;
 

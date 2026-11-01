@@ -8,14 +8,24 @@ import {
     TicketAccessType,
 } from '../model/admin-reservation.ts';
 import {ChoiceCardOption} from '../components/choice-cards.ts';
+import type {AttendeeFieldValues} from '../components/attendee-fields.ts';
+import {AdditionalField, allowedValues} from '../model/additional-field.ts';
 import {postJson, result} from './helpers.ts';
 import {formatAmount} from './reservation-format.ts';
 
 export interface ParsedReservationAttendees {
     attendees: ReservationAttendee[];
+    // the names of the additional fields in the file
+    additionalFields: string[];
     // rows without first name, last name and e-mail
     skippedRows: number;
 }
+
+// the first columns of the CSV file of the attendees, see parseAttendees()
+export const RESERVATION_ATTENDEE_COLUMNS = ['firstName', 'lastName', 'email'];
+// separates the options of a checkbox field in a CSV cell
+export const CHECKBOX_OPTIONS_SEPARATOR = ';';
+const MAX_REPORTED_ERRORS = 5;
 
 /**
  * Where the attendees of a new reservation get their seats, see choiceCards()
@@ -48,31 +58,83 @@ export class AdminReservationService {
     }
 
     /**
-     * Parses a CSV file without header: first name, last name, e-mail.
-     * Separator: comma, quote character: double quote, escape character: backslash
+     * An empty file with the columns of the attendees: first name, last name, e-mail and the given additional fields
      */
-    static parseAttendees(content: string): ParsedReservationAttendees {
-        const parsed = Papa.parse<string[]>(content.trim(), {
+    static attendeesTemplate(fields: readonly AdditionalField[]): string {
+        return Papa.unparse([[...RESERVATION_ATTENDEE_COLUMNS, ...fields.map(field => field.name)]], { quotes: true }) + '\r\n';
+    }
+
+    /**
+     * Parses a CSV file with header, as the template: the first three columns are first name, last name and e-mail,
+     * whatever their name; the other ones are additional fields, by name.
+     * Separator: comma, quote character: double quote, escaped by doubling it.
+     *
+     * @param fields the additional fields that can be imported
+     * @throws Error if the file has no header, a column that is not an additional field, or invalid values
+     */
+    static parseAttendees(content: string, fields: readonly AdditionalField[]): ParsedReservationAttendees {
+        const parsed = Papa.parse<string[]>(content.replace(/^\uFEFF/, '').trim(), {
             header: false,
             skipEmptyLines: true,
             delimiter: ',',
             quoteChar: '"',
-            escapeChar: '\\',
         });
+        const [header = [], ...rows] = parsed.data;
+        const fixedColumns = RESERVATION_ATTENDEE_COLUMNS.length;
+        if (header.length < fixedColumns || header[2].includes('@')) {
+            throw new Error(`The first row must contain the names of the columns: ${RESERVATION_ATTENDEE_COLUMNS.join(', ')} and the additional fields. Please use the template.`);
+        }
+        const fieldsByName = new Map(fields.map(field => [field.name.toLowerCase(), field]));
+        const columns = header.slice(fixedColumns).map(name => fieldsByName.get(name.trim().toLowerCase()));
+        const unknownColumns = header.slice(fixedColumns).filter((_, i) => columns[i] == null);
+        if (unknownColumns.length > 0) {
+            throw new Error(`These columns are not attendees' data to collect of this event: ${unknownColumns.join(', ')}. Please use the template.`);
+        }
         const attendees: ReservationAttendee[] = [];
+        const invalidValues: string[] = [];
         let skippedRows = 0;
-        for (const row of parsed.data) {
-            if (row.length < 3) {
+        rows.forEach((row, rowIndex) => {
+            if (row.length < fixedColumns || row.slice(0, fixedColumns).some(value => value.trim() === '')) {
                 skippedRows++;
-                continue;
+                return;
             }
-            attendees.push({
+            const additionalInfo: AttendeeFieldValues = {};
+            columns.forEach((field, i) => {
+                const value = (row[fixedColumns + i] ?? '').trim();
+                if (field == null || value === '') {
+                    return;
+                }
+                const values = fieldValues(field, value);
+                if (values == null) {
+                    // the header is the first row of the file
+                    invalidValues.push(`row ${rowIndex + 2}, ${field.name}: "${value}"`);
+                    return;
+                }
+                additionalInfo[field.name] = values;
+            });
+            const attendee: ReservationAttendee = {
                 firstName: row[0].trim(),
                 lastName: row[1].trim(),
                 emailAddress: row[2].trim(),
-            });
+            };
+            if (Object.keys(additionalInfo).length > 0) {
+                attendee.additionalInfo = additionalInfo;
+            }
+            attendees.push(attendee);
+        });
+        if (invalidValues.length > 0) {
+            const shown = invalidValues.slice(0, MAX_REPORTED_ERRORS).join('; ');
+            let more = '';
+            if (invalidValues.length > MAX_REPORTED_ERRORS) {
+                more = ` and ${invalidValues.length - MAX_REPORTED_ERRORS} more`;
+            }
+            throw new Error(`These values are not options of their field: ${shown}${more}. See the file specifications.`);
         }
-        return { attendees, skippedRows };
+        return {
+            attendees,
+            additionalFields: columns.filter(field => field != null).map(field => field.name),
+            skippedRows,
+        };
     }
 }
 
@@ -166,4 +228,45 @@ function pad(n: number): string {
 function toDateTimeModification(wallClock: string): DateTimeModification {
     const [date, time] = wallClock.split(' ');
     return { date, time };
+}
+
+/**
+ * The values of an additional field, as stored by attendeeFields(), from the content of a CSV cell
+ *
+ * @return null if the value is not one of the options of the field
+ */
+function fieldValues(field: AdditionalField, value: string): (string | null)[] | null {
+    const options = allowedValues(field);
+    const findOption = (candidate: string) => options.find(option => option.toLowerCase() === candidate.toLowerCase());
+    switch (field.type) {
+        case 'select':
+        case 'radio': {
+            const option = findOption(value);
+            if (option == null) {
+                return null;
+            }
+            return [option];
+        }
+        case 'checkbox': {
+            // a value can contain the separator, if it is an option
+            let selected = [value];
+            if (findOption(value) == null) {
+                selected = value.split(CHECKBOX_OPTIONS_SEPARATOR).map(v => v.trim()).filter(v => v !== '');
+            }
+            const chosen = selected.map(findOption);
+            if (chosen.some(option => option == null)) {
+                return null;
+            }
+            // one value for each option, by position
+            return (field.restrictedValues ?? []).map(option => {
+                if (chosen.includes(option)) {
+                    return option;
+                }
+                return null;
+            });
+        }
+        case 'country':
+            return [value.toUpperCase()];
+    }
+    return [value];
 }

@@ -2,8 +2,10 @@ import {css, html, LitElement, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
+import {classMap} from 'lit/directives/class-map.js';
 import {Task} from '@lit/task';
-import type {SlDialog, SlInput, SlSelect, SlSwitch, SlTabGroup, SlTextarea} from '@shoelace-style/shoelace';
+import {TanStackFormController} from '@tanstack/lit-form';
+import type {SlDialog, SlSelect, SlSwitch, SlTabGroup, SlTextarea} from '@shoelace-style/shoelace';
 import {AlfioEvent} from '../../model/event.ts';
 import {Organization} from '../../model/organization.ts';
 import {MessageModification, MessagePreview} from '../../model/custom-message.ts';
@@ -13,6 +15,23 @@ import {ConfirmationDialogService} from '../../service/confirmation-dialog.ts';
 import {dispatchFeedback} from '../../model/dom-events.ts';
 import {ContentLanguage} from '../../model/purchase-context.ts';
 import {base, dialog, form, listGroup, modernLayout, retroCompat, row, textColors} from '../../styles.ts';
+import {
+    fieldError,
+    focusFirstError,
+    FormMountController,
+    INVALID_FORM_MESSAGE,
+    requiredValue,
+    submitValidated,
+    validatedInput,
+    validateWith,
+} from '../../components/form-validation.ts';
+
+interface ComposeFormValues {
+    // the selected categories, if the message is not for all the attendees
+    categoryIds: string[];
+    // one for each language of the event
+    messages: MessageModification[];
+}
 
 interface LoadData {
     event: AlfioEvent;
@@ -75,22 +94,26 @@ export class ComposeMessage extends LitElement {
     @query('sl-tab-group#messages-editor')
     messagesEditor!: SlTabGroup;
 
-    @query('sl-select[name=categories]')
-    categoriesSelect?: SlSelect;
+    readonly #form = new TanStackFormController(this, {
+        defaultValues: { categoryIds: [], messages: [] } as ComposeFormValues,
+        onSubmit: async ({value}) => {
+            await this.showPreview(value);
+        },
+    });
+
+    constructor() {
+        super();
+        new FormMountController(this, this.#form.api);
+    }
 
     @state()
-    private messages: MessageModification[] = [];
+    private submitError: string | null = null;
 
     private languages: ContentLanguage[] = [];
 
     @state()
     private allAttendees = true;
 
-    /**
-     * the selected categories, if the message is not for all the attendees. Empty means all the attendees.
-     */
-    @state()
-    private categoryIds: number[] = [];
 
     @state()
     private attachTicket = false;
@@ -111,16 +134,18 @@ export class ComposeMessage extends LitElement {
                 CustomMessageService.loadLanguages(eventName)
             ]);
             this.languages = languages;
-            this.messages = languages.map(l => ({
-                locale: l.language,
-                subject: '',
-                text: '',
-                subjectExample: 'An important message from {{eventName}}',
-                textExample: '{{organizationName}} <{{organizationEmail}}>',
-                attachTicket: false
-            }));
+            this.#form.api.reset({
+                categoryIds: [],
+                messages: languages.map(l => ({
+                    locale: l.language,
+                    subject: '',
+                    text: '',
+                    subjectExample: 'An important message from {{eventName}}',
+                    textExample: '{{organizationName}} <{{organizationEmail}}>',
+                    attachTicket: false
+                })),
+            });
             this.allAttendees = true;
-            this.categoryIds = [];
             this.attachTicket = false;
             return eventWithOrganization;
         },
@@ -137,6 +162,10 @@ export class ComposeMessage extends LitElement {
         listGroup,
         modernLayout,
         css`
+            /* a language whose fields have errors, see messageHasError() */
+            sl-tab.has-error::part(base) {
+                color: var(--sl-color-danger-600);
+            }
             :host {
                 display: block;
                 --alfio-section-body-padding: var(--sl-spacing-medium);
@@ -251,32 +280,49 @@ export class ComposeMessage extends LitElement {
                             <h3>Message</h3>
                         </div>
                         <div class="section-body">
-                            <form class="compose-form form-stack" @submit=${(e: Event) => { e.preventDefault(); this.showPreview(); }}>
+                            <form class="compose-form form-stack" novalidate @submit=${(e: Event) => { e.preventDefault(); void this.submit(); }}>
                                 <sl-switch name="allAttendees" help-text="Or select specific categories" .checked=${this.allAttendees}
                                            @sl-change=${(e: Event) => this.toggleAllAttendees((e.target as SlSwitch).checked)}>
                                     Send to all attendees
                                 </sl-switch>
-                                ${when(!this.allAttendees, () => html`
-                                    <sl-select name="categories" label="Categories" placeholder="Select categories" multiple clearable required max-options-visible="3"
-                                               .value=${this.categoryIds.map(String)}
-                                               @sl-change=${(e: Event) => {
-                                                   this.categoryIds = ((e.target as SlSelect).value as string[]).map(Number);
-                                               }}>
-                                        <sl-icon name="people" slot="prefix"></sl-icon>
-                                        ${repeat(data.event.ticketCategories, c => c.id, c => html`<sl-option value=${String(c.id)}>${c.name}</sl-option>`)}
-                                    </sl-select>
-                                `)}
+                                ${when(!this.allAttendees, () => this.#form.field({
+                                    name: 'categoryIds',
+                                    validators: validateWith(value => this.validateCategories(value)),
+                                }, field => {
+                                    const error = fieldError(field.state.meta, this.submitted);
+                                    return html`
+                                        <sl-select name="categories" label="Categories" placeholder="Select categories" multiple clearable required max-options-visible="3"
+                                                   class=${classMap({ error: error != null })}
+                                                   help-text=${error ?? ''}
+                                                   .value=${field.state.value}
+                                                   @sl-change=${(e: Event) => field.handleChange([...(e.target as SlSelect).value as string[]])}
+                                                   @sl-blur=${() => field.handleBlur()}>
+                                            <sl-icon name="people" slot="prefix"></sl-icon>
+                                            ${repeat(data.event.ticketCategories, c => c.id, c => html`<sl-option value=${String(c.id)}>${c.name}</sl-option>`)}
+                                        </sl-select>
+                                    `;
+                                }))}
+                                <!-- keyed by index: the names of the validated fields contain the index of the message -->
                                 <sl-tab-group id="messages-editor">
-                                    ${repeat(this.messages, m => m.locale, m => html`<sl-tab slot="nav" panel=${m.locale}>${this.languageName(m.locale)}</sl-tab>`)}
-                                    ${repeat(this.messages, m => m.locale, (m, index) => html`
+                                    ${repeat(this.messages, (_, index) => index, (m, index) => html`
+                                        <sl-tab slot="nav" panel=${m.locale} class=${classMap({ 'has-error': this.messageHasError(index) })}>${this.languageName(m.locale)}</sl-tab>
+                                    `)}
+                                    ${repeat(this.messages, (_, index) => index, (m, index) => html`
                                         <sl-tab-panel name=${m.locale}>
                                             <div class="form-stack">
-                                                <sl-input label="Subject" name="subject-${m.locale}"
-                                                          placeholder=${m.subjectExample} .value=${m.subject}
-                                                          @sl-input=${(e: Event) => this.updateMessage(index, {subject: (e.target as SlInput).value})}></sl-input>
-                                                <sl-textarea label="Message" name="message-${m.locale}" rows="15" resize="auto"
-                                                             placeholder=${m.textExample} .value=${m.text}
-                                                             @sl-input=${(e: Event) => this.updateMessage(index, {text: (e.target as SlTextarea).value})}></sl-textarea>
+                                                ${this.#form.field({ name: `messages[${index}].subject`, validators: validateWith(value => requiredValue(value)) },
+                                                    field => validatedInput(field, this.submitted, { name: `subject-${m.locale}`, label: 'Subject', placeholder: m.subjectExample }))}
+                                                ${this.#form.field({ name: `messages[${index}].text`, validators: validateWith(value => requiredValue(value)) }, field => {
+                                                    const error = fieldError(field.state.meta, this.submitted);
+                                                    return html`
+                                                        <sl-textarea label="Message" name="message-${m.locale}" rows="15" resize="auto" required
+                                                                     class=${classMap({ error: error != null })}
+                                                                     help-text=${error ?? ''}
+                                                                     placeholder=${m.textExample} .value=${field.state.value}
+                                                                     @sl-input=${(e: Event) => field.handleChange((e.target as SlTextarea).value)}
+                                                                     @sl-blur=${() => field.handleBlur()}></sl-textarea>
+                                                    `;
+                                                })}
                                             </div>
                                         </sl-tab-panel>
                                     `)}
@@ -286,10 +332,16 @@ export class ComposeMessage extends LitElement {
                                            @sl-change=${(e: Event) => { this.attachTicket = (e.target as SlSwitch).checked; }}>
                                     ${attachment.label}
                                 </sl-switch>
+                                ${when(this.submitError, () => html`
+                                    <sl-alert id="submit-error" variant="danger" open>
+                                        <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+                                        ${this.submitError}
+                                    </sl-alert>
+                                `)}
                                 <sl-divider></sl-divider>
                                 <div class="row" style="--alfio-row-cols: 3">
                                     <sl-button variant="default" size="large" href="#/events/${data.event.shortName}/detail">
-                                        <sl-icon name="x-circle" slot="prefix"></sl-icon>Cancel
+                                        Cancel
                                     </sl-button>
                                     <div></div>
                                     <sl-button id="preview-button" type="submit" variant="warning" size="large" ?loading=${this.loadingPreview}>
@@ -392,7 +444,7 @@ export class ComposeMessage extends LitElement {
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
                         <sl-button variant="default" size="large" ?disabled=${this.sending} @click=${() => this.previewDialog.hide()}>
-                            <sl-icon name="x-circle" slot="prefix"></sl-icon>Cancel
+                            Cancel
                         </sl-button>
                         <div></div>
                         <sl-button id="send-button" variant="warning" size="large" ?loading=${this.sending} @click=${() => this.send()}>
@@ -452,41 +504,75 @@ export class ComposeMessage extends LitElement {
         return 'category';
     }
 
-    private toggleAllAttendees(allAttendees: boolean): void {
-        this.allAttendees = allAttendees;
-        if (allAttendees) {
-            this.categoryIds = [];
-        }
+    private get messages(): MessageModification[] {
+        return this.#form.api.state.values.messages;
     }
 
-    private updateMessage(index: number, change: Partial<MessageModification>): void {
-        this.messages = this.messages.map((m, i) => {
-            if (i === index) {
-                return {...m, ...change};
-            }
-            return m;
+    /**
+     * The selected categories, empty if the message is for all the attendees
+     */
+    private get categoryIds(): number[] {
+        if (this.allAttendees) {
+            return [];
+        }
+        return this.#form.api.state.values.categoryIds.map(Number);
+    }
+
+    private get submitted(): boolean {
+        return this.#form.api.state.submissionAttempts > 0;
+    }
+
+    private validateCategories(value: unknown): string | undefined {
+        // an empty selection would send the message to all the attendees
+        if (!this.allAttendees && (!Array.isArray(value) || value.length === 0)) {
+            return 'Please select at least one category';
+        }
+        return undefined;
+    }
+
+    // the tab of a language with an error is highlighted, since its fields may be hidden
+    private messageHasError(index: number): boolean {
+        return ['subject', 'text'].some(name => {
+            const meta = this.#form.api.getFieldMeta(`messages[${index}].${name}` as `messages[${number}].subject`);
+            return meta != null && fieldError(meta, this.submitted) != null;
         });
     }
 
-    private async showPreview(): Promise<void> {
-        if (this.loadingPreview || this.eventName == null) {
+    private toggleAllAttendees(allAttendees: boolean): void {
+        this.allAttendees = allAttendees;
+        if (allAttendees) {
+            this.#form.api.setFieldValue('categoryIds', [], { dontUpdateMeta: true });
+        }
+    }
+
+    private async submit(): Promise<void> {
+        if (this.loadingPreview) {
             return;
         }
-        if (!this.allAttendees && this.categoryIds.length === 0) {
-            // an empty selection would send the message to all the attendees
-            this.categoriesSelect?.reportValidity();
-            dispatchFeedback({type: 'warning', message: 'Please select at least one category'}, this);
+        this.submitError = null;
+        if (await submitValidated(this.#form.api)) {
             return;
         }
-        const incomplete = this.messages.find(m => m.subject.trim() === '' || m.text.trim() === '');
-        if (incomplete != null) {
-            this.messagesEditor.show(incomplete.locale);
-            dispatchFeedback({type: 'warning', message: 'Please fill all the messages'}, this);
+        this.submitError = INVALID_FORM_MESSAGE;
+        // shows the first language with an error: its fields are hidden in the other tabs
+        const invalid = this.messages.findIndex((_, index) => this.messageHasError(index));
+        if (invalid >= 0) {
+            this.messagesEditor.show(this.messages[invalid].locale);
+        }
+        await this.updateComplete;
+        focusFirstError(this.renderRoot);
+    }
+
+    /**
+     * Called by the form once all the fields are valid
+     */
+    private async showPreview(values: ComposeFormValues): Promise<void> {
+        if (this.eventName == null) {
             return;
         }
         this.loadingPreview = true;
         try {
-            const messages = this.messages.map(m => ({...m, attachTicket: this.attachTicket}));
+            const messages = values.messages.map(m => ({...m, attachTicket: this.attachTicket}));
             const response = await CustomMessageService.preview(this.eventName, this.categoryIds, messages);
             if (response.ok) {
                 this.preview = await response.json();

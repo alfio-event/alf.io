@@ -15476,6 +15476,202 @@
         "tags" : [ "admin-reservation-api-controller" ]
       }
     },
+    "/admin/api/reservation/{purchaseContextType}/{publicIdentifier}/{reservationId}/ticket/{ticketId}/additional-fields" : {
+      "get" : {
+        "operationId" : "loadAttendeeFieldValues",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "purchaseContextType",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "subscription", "event" ]
+          }
+        }, {
+          "in" : "path",
+          "name" : "publicIdentifier",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "reservationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "ticketId",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "type" : "array",
+                    "items" : {
+                      "type" : "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Internal Server Error"
+          }
+        },
+        "tags" : [ "admin-reservation-api-controller" ]
+      },
+      "post" : {
+        "operationId" : "updateAttendeeFieldValues",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "purchaseContextType",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "subscription", "event" ]
+          }
+        }, {
+          "in" : "path",
+          "name" : "publicIdentifier",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "reservationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "ticketId",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "additionalProperties" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  }
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResultBoolean"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Internal Server Error"
+          }
+        },
+        "tags" : [ "admin-reservation-api-controller" ]
+      }
+    },
     "/admin/api/reservation/{purchaseContextType}/{publicIdentifier}/{reservationId}/ticket/{ticketId}/full-data" : {
       "get" : {
         "operationId" : "loadFullTicketData",
@@ -27516,6 +27712,9 @@
           },
           "notification" : {
             "$ref" : "#/components/schemas/Notification"
+          },
+          "promoCode" : {
+            "type" : "string"
           },
           "subscriptionDetails" : {
             "$ref" : "#/components/schemas/SubscriptionDetails"

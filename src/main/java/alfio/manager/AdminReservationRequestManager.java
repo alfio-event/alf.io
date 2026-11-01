@@ -274,7 +274,8 @@ public class AdminReservationRequestManager {
                     null,
                     src.getNotification(),
                     null,
-                    attendee.getSubscriptionId());
+                    attendee.getSubscriptionId(),
+                    src.getPromoCode());
             });
     }
 

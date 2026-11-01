@@ -29,16 +29,20 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.Base64;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static alfio.e2e.E2EUtils.*;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.openqa.selenium.support.ui.ExpectedConditions.*;
 
 /**
@@ -165,7 +169,6 @@ class AdminConsole {
      */
     void verifyExtension(String name, boolean enabled) {
         var list = openExtensionList();
-        var expectedLabel = enabled ? "enabled" : "disabled";
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .ignoring(StaleElementReferenceException.class)
             .withMessage(() -> "extension " + name + " is not displayed with the expected state")
@@ -174,9 +177,11 @@ class AdminConsole {
                 if (row == null) {
                     return false;
                 }
-                var icon = (WebElement) ((JavascriptExecutor) driver).executeScript(
-                    "return arguments[0].querySelector('sl-icon[aria-label]');", row);
-                return icon != null && expectedLabel.equals(icon.getDomAttribute("aria-label"));
+                // an enabled extension has an "enabled" badge, a disabled one has none
+                var badge = (WebElement) ((JavascriptExecutor) driver).executeScript(
+                    "return arguments[0].querySelector('sl-badge');", row);
+                var displayedAsEnabled = badge != null && "enabled".equals(badge.getText().strip());
+                return displayedAsEnabled == enabled;
             });
     }
 
@@ -786,7 +791,7 @@ class AdminConsole {
         driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/import");
         var importPage = wait.until(presenceOfElementLocated(By.tagName("alfio-attendees-import")));
         var start = System.nanoTime();
-        uploadFile(findInShadowRoot(findInShadowRoot(importPage, "#attendees-file"), "#file-input"), csv);
+        uploadFile(findInShadowRoot(findInShadowRoot(importPage, ".attendees-file"), "#file-input"), csv);
         new WebDriverWait(driver, timeout, Duration.ofMillis(200))
             .withMessage(() -> "CSV not parsed")
             .until(_ -> findAllInShadowRoot(importPage, "#attendees-count").stream().anyMatch(badge -> badge.getText().equals(Integer.toString(expectedAttendees))));
@@ -832,7 +837,7 @@ class AdminConsole {
     String downloadAttendeesImportTemplate(String slug) {
         driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/import");
         var importPage = wait.until(presenceOfElementLocated(By.tagName("alfio-attendees-import")));
-        var button = findInShadowRoot(importPage, "#download-template");
+        var button = findInShadowRoot(importPage, ".download-template");
         var content = (String) ((JavascriptExecutor) driver).executeAsyncScript("""
             const [button, done] = arguments;
             const createObjectURL = URL.createObjectURL;
@@ -906,6 +911,218 @@ class AdminConsole {
         setShoelaceSwitch(findInShadowRoot(page, secondBlock + " .add-seats"), true);
 
         LOGGER.info("creating a reservation for {} on {}", contact.lastName(), slug);
+        return saveNewReservation(page);
+    }
+
+    /**
+     * Creates a reservation from the "Create reservation" page, for an attendee of an existing category,
+     * filling in the additional fields "company" (text) and "diet" (select)
+     * @return the ID of the new reservation, once the page has moved to its detail
+     */
+    String createReservationWithAttendeeFields(String slug,
+                                               ReservationContact contact,
+                                               NewAttendee attendee,
+                                               String categoryName,
+                                               String company,
+                                               String diet) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/new");
+        var page = wait.until(presenceOfElementLocated(By.tagName("alfio-reservation-create")));
+        typeInShoelaceControl(findInShadowRoot(page, "#contact-first-name"), "input", contact.firstName());
+        typeInShoelaceControl(findInShadowRoot(page, "#contact-last-name"), "input", contact.lastName());
+        typeInShoelaceControl(findInShadowRoot(page, "#contact-email"), "input", contact.email());
+        selectLanguageIfRequested(page);
+        var block = ".tickets-block[data-index='0']";
+        fillNewAttendee(page, block, attendee);
+        selectShoelaceOption(findInShadowRoot(page, block + " .existing-category"), categoryName);
+        setShoelaceSwitch(findInShadowRoot(page, block + " .show-fields"), true);
+        typeInShoelaceControl(findInShadowRoot(page, block + " .attendee-fields sl-input[data-field='company']"), "input", company);
+        selectShoelaceOption(findInShadowRoot(page, block + " .attendee-fields sl-select[data-field='diet']"), diet);
+        LOGGER.info("creating a reservation with additional fields for {} on {}", contact.lastName(), slug);
+        return saveNewReservation(page);
+    }
+
+    /**
+     * Creates a reservation from the "Create reservation" page, uploading the attendees and their additional fields
+     * with the CSV template
+     * @param csv the content of the file, header included
+     * @param expectedAttendees the attendees displayed for review once the file has been read
+     * @return the ID of the new reservation, once the page has moved to its detail
+     */
+    String createReservationFromCsv(String slug, ReservationContact contact, String categoryName, String csv, int expectedAttendees) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/new");
+        var page = wait.until(presenceOfElementLocated(By.tagName("alfio-reservation-create")));
+        typeInShoelaceControl(findInShadowRoot(page, "#contact-first-name"), "input", contact.firstName());
+        typeInShoelaceControl(findInShadowRoot(page, "#contact-last-name"), "input", contact.lastName());
+        typeInShoelaceControl(findInShadowRoot(page, "#contact-email"), "input", contact.email());
+        selectLanguageIfRequested(page);
+        var block = ".tickets-block[data-index='0']";
+        selectShoelaceOption(findInShadowRoot(page, block + " .existing-category"), categoryName);
+        chooseCard(page, block + " .attendee-strategy", "csv");
+        var upload = wait.until(_ -> findAllInShadowRoot(page, block + " .attendees-file").stream().findFirst().orElse(null));
+        uploadFile(findInShadowRoot(upload, "#file-input"), tempFile("e2e-reservation-attendees", ".csv", csv.getBytes(StandardCharsets.UTF_8)));
+        // once read, the attendees can be reviewed as if they had been inserted manually
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "CSV not imported: " + findAllInShadowRoot(page, block + " .csv-error").stream().map(WebElement::getText).findFirst().orElse("no error displayed"))
+            .until(_ -> findAllInShadowRoot(page, block + " .attendee-first-name").size() == expectedAttendees);
+        LOGGER.info("creating a reservation from CSV for {} on {}", contact.lastName(), slug);
+        return saveNewReservation(page);
+    }
+
+    /**
+     * Adds a percentage discount code to the event, valid from yesterday to the day after tomorrow, through the API
+     * used by the promo codes page
+     */
+    @SuppressWarnings("unchecked")
+    void addDiscountCode(String slug, String code, int percentage) {
+        openEventDetail(slug);
+        var today = LocalDate.now();
+        var result = (Map<String, Object>) ((JavascriptExecutor) driver).executeAsyncScript("""
+            const [eventUrl, url, code, percentage, start, end, done] = arguments;
+            const csrfHeader = document.querySelector('meta[name=_csrf_header]').getAttribute('content');
+            const csrf = document.querySelector('meta[name=_csrf]').getAttribute('content');
+            fetch(eventUrl, { credentials: 'include' })
+                .then(r => r.json())
+                .then(({ event }) => fetch(url, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {'Content-Type': 'application/json', [csrfHeader]: csrf},
+                    body: JSON.stringify({
+                        promoCode: code,
+                        // a code belongs either to the event or to the organization, as on the promo codes page
+                        eventId: event.id,
+                        organizationId: null,
+                        currencyCode: event.currency,
+                        start: { date: start, time: '00:00' },
+                        end: { date: end, time: '23:59' },
+                        discountAmount: percentage,
+                        discountType: 'PERCENTAGE',
+                        categories: [],
+                        codeType: 'DISCOUNT',
+                        description: code,
+                        emailReference: ''
+                    })
+                }))
+                .then(r => done({ status: r.status, body: r.ok ? '' : 'error' }), e => done({ status: 0, body: String(e) }));
+            """, serverBaseUrl + "/admin/api/events/" + slug, serverBaseUrl + "/admin/api/promo-code", code, percentage,
+            today.minusDays(1).toString(), today.plusDays(2).toString());
+        assertEquals(200L, result.get("status"), () -> "cannot add discount code " + code + ": " + result);
+        LOGGER.info("added discount code {} to {}", code, slug);
+    }
+
+    /**
+     * Creates a reservation from the "Create reservation" page, for an attendee of an existing category, choosing
+     * a discount code
+     * @param discountOption the label of the discount code in the select
+     * @return the ID of the new reservation, once the page has moved to its detail
+     */
+    String createReservationWithDiscount(String slug, ReservationContact contact, NewAttendee attendee, String categoryName, String discountOption) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/new");
+        var page = wait.until(presenceOfElementLocated(By.tagName("alfio-reservation-create")));
+        typeInShoelaceControl(findInShadowRoot(page, "#contact-first-name"), "input", contact.firstName());
+        typeInShoelaceControl(findInShadowRoot(page, "#contact-last-name"), "input", contact.lastName());
+        typeInShoelaceControl(findInShadowRoot(page, "#contact-email"), "input", contact.email());
+        selectLanguageIfRequested(page);
+        var block = ".tickets-block[data-index='0']";
+        fillNewAttendee(page, block, attendee);
+        selectShoelaceOption(findInShadowRoot(page, block + " .existing-category"), categoryName);
+        selectShoelaceOption(findInShadowRoot(page, "#discount-code"), discountOption);
+        LOGGER.info("creating a reservation with discount for {} on {}", contact.lastName(), slug);
+        return saveNewReservation(page);
+    }
+
+    /**
+     * The order summary of the reservation, as returned by the API used by the reservation detail
+     * @return the total price, and the names of the summary rows by type
+     */
+    @SuppressWarnings("unchecked")
+    Map<String, Object> orderSummary(String slug, String reservationId) {
+        var result = (Map<String, Object>) ((JavascriptExecutor) driver).executeAsyncScript("""
+            const [url, done] = arguments;
+            fetch(url, { credentials: 'include' })
+                .then(r => r.json())
+                .then(r => done({
+                    totalPrice: r.data.orderSummary.totalPrice,
+                    promoCodeRows: r.data.orderSummary.summary.filter(row => row.type === 'PROMOTION_CODE').map(row => row.name)
+                }), e => done({ error: String(e) }));
+            """, serverBaseUrl + "/admin/api/reservation/event/" + slug + "/" + reservationId);
+        assertEquals(null, result.get("error"), () -> "cannot load reservation " + reservationId);
+        return result;
+    }
+
+    /**
+     * Changes the additional fields "company" and "diet" of the only attendee of the reservation,
+     * from the "Full data" dialog of the reservation detail
+     */
+    void editAttendeeFields(String slug, String reservationId, String company, String diet) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/" + reservationId);
+        var reservationDetail = wait.until(presenceOfElementLocated(By.tagName("alfio-reservation-detail")));
+        clickWithJs(driver, findInShadowRoot(reservationDetail, "tr[data-ticket-id] sl-button.full-data"));
+        var dataDialog = findInShadowRoot(reservationDetail, "alfio-attendee-data-dialog");
+        var slDialog = findInShadowRoot(dataDialog, "sl-dialog");
+        wait.until(_ -> slDialog.getDomAttribute("open") != null);
+        var companyInput = findInShadowRoot(findInShadowRoot(dataDialog, "sl-input[data-field='company']"), "input");
+        wait.until(_ -> companyInput.isDisplayed());
+        clearInput(companyInput);
+        companyInput.sendKeys(company);
+        selectShoelaceOption(findInShadowRoot(dataDialog, "sl-select[data-field='diet']"), diet);
+        LOGGER.info("updating the additional fields of reservation {} on {}", reservationId, slug);
+        clickWithJs(driver, findInShadowRoot(dataDialog, "#save-attendee-data"));
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "attendee data not saved: " + findAllInShadowRoot(dataDialog, ".save-error").stream().map(WebElement::getText).findFirst().orElse("dialog still open"))
+            .until(_ -> slDialog.getDomAttribute("open") == null);
+        var values = attendeeFieldValues(slug, reservationId);
+        assertEquals(List.of(company), values.get("company"), () -> "unexpected values: " + values);
+        assertEquals(List.of(diet), values.get("diet"), () -> "unexpected values: " + values);
+    }
+
+    /**
+     * Reads the values of the additional fields of the first ticket of the reservation, through the API used by
+     * the reservation detail
+     * @return field name -> values
+     */
+    @SuppressWarnings("unchecked")
+    Map<String, List<String>> attendeeFieldValues(String slug, String reservationId) {
+        var reservationUrl = serverBaseUrl + "/admin/api/reservation/event/" + slug + "/" + reservationId;
+        var result = (Map<String, Object>) ((JavascriptExecutor) driver).executeAsyncScript("""
+            const [url, done] = arguments;
+            fetch(url, { credentials: 'include' })
+                .then(r => r.json())
+                .then(r => fetch(url + '/ticket/' + r.data.ticketsByCategory[0].value[0].uuid + '/additional-fields', { credentials: 'include' }))
+                .then(r => r.json())
+                .then(values => done({ values }), e => done({ error: String(e) }));
+            """, reservationUrl);
+        assertEquals(null, result.get("error"), () -> "cannot load the additional fields of reservation " + reservationId);
+        return (Map<String, List<String>>) result.get("values");
+    }
+
+    /**
+     * Clicks Save in the empty "Create reservation" form
+     * @return the validation errors displayed by the form, by control, once the form has refused to save
+     */
+    Map<String, String> saveEmptyReservation(String slug) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/new");
+        var page = wait.until(presenceOfElementLocated(By.tagName("alfio-reservation-create")));
+        clickWithJs(driver, findInShadowRoot(page, "#save-button"));
+        var submitError = wait.until(_ -> findAllInShadowRoot(page, "#submit-error").stream().findFirst().orElse(null));
+        assertEquals("Please fill in the fields highlighted in red.", submitError.getText().trim());
+        // still on the form: nothing has been created
+        assertTrue(requireNonNull(driver.getCurrentUrl()).endsWith("/reservation/new"), () -> "unexpected page: " + driver.getCurrentUrl());
+        var errors = new LinkedHashMap<String, String>();
+        findAllInShadowRoot(page, ".error").forEach(control -> {
+            var name = Objects.requireNonNullElse(control.getDomAttribute("id"), "");
+            if (name.isEmpty()) {
+                name = Objects.requireNonNullElse(control.getDomAttribute("class"), "").replace("error", "").trim();
+            }
+            errors.put(name, Objects.requireNonNullElse(control.getDomAttribute("help-text"), ""));
+        });
+        return errors;
+    }
+
+    /**
+     * Saves the "Create reservation" form and waits for the detail of the new reservation
+     * @return the ID of the new reservation
+     */
+    private String saveNewReservation(WebElement page) {
         clickWithJs(driver, findInShadowRoot(page, "#save-button"));
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .withMessage(() -> "reservation not created: " + findAllInShadowRoot(page, "#submit-error").stream().map(WebElement::getText).findFirst().orElse("no error displayed"))

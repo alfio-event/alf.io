@@ -19,8 +19,10 @@ package alfio.manager;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.PaymentSpecification;
+import alfio.manager.support.AdminAttendeeFields;
 import alfio.manager.support.DuplicateReferenceException;
 import alfio.manager.support.IncompatibleStateException;
+import alfio.manager.support.reservation.ReservationAuditingHelper;
 import alfio.manager.support.reservation.ReservationEmailContentHelper;
 import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
@@ -327,6 +329,11 @@ public class AdminReservationManager {
     }
 
     private Result<Boolean> performUpdate(String reservationId, PurchaseContext purchaseContext, TicketReservation r, AdminReservationModification arm, String username) {
+        // checked before any modification: the attendees can only belong to this reservation
+        var attendeesValidation = validateAttendeesUpdate(reservationId, purchaseContext, arm);
+        if(!attendeesValidation.isSuccess()) {
+            return Result.error(attendeesValidation.getErrors());
+        }
         billingDocumentManager.ensureBillingDocumentIsPresent(purchaseContext, r, username, () -> ticketReservationManager.orderSummaryForReservationId(reservationId, purchaseContext));
         ticketReservationRepository.updateValidity(reservationId, Date.from(arm.getExpiration().toZonedDateTime(purchaseContext.getZoneId()).toInstant()));
         if(arm.isUpdateContactData()) {
@@ -373,22 +380,24 @@ public class AdminReservationManager {
         }
 
         Date d = new Date();
-        arm.getTicketsInfo().stream()
-            .filter(TicketsInfo::isUpdateAttendees)
-            .flatMap(ti -> ti.getAttendees().stream())
-            .forEach(a -> {
-                String email = trimToNull(a.getEmailAddress());
-                String firstName = trimToNull(a.getFirstName());
-                String lastName = trimToNull(a.getLastName());
-                String fullName = trimToNull(a.getFullName());
-                ticketRepository.updateTicketOwnerById(a.getTicketId(), email, fullName, firstName, lastName);
-                Integer userId = userRepository.findByUsername(username).map(User::getId).orElse(null);
-                Map<String, Object> modifications = new HashMap<>();
-                modifications.put("firstName", firstName);
-                modifications.put("lastName", lastName);
-                modifications.put("fullName", fullName);
-                auditingRepository.insert(reservationId, userId, purchaseContext, UPDATE_TICKET, d, TICKET, Integer.toString(a.getTicketId()), singletonList(modifications));
-            });
+        Integer userId = userRepository.findByUsername(username).map(User::getId).orElse(null);
+        attendeesValidation.getData().forEach(update -> {
+            var a = update.attendee();
+            int ticketId = update.ticket().getId();
+            String email = trimToNull(a.getEmailAddress());
+            String firstName = trimToNull(a.getFirstName());
+            String lastName = trimToNull(a.getLastName());
+            String fullName = trimToNull(a.getFullName());
+            ticketRepository.updateTicketOwnerById(ticketId, email, fullName, firstName, lastName);
+            Map<String, Object> ownerModifications = new HashMap<>();
+            ownerModifications.put("firstName", firstName);
+            ownerModifications.put("lastName", lastName);
+            ownerModifications.put("fullName", fullName);
+            List<Map<String, Object>> modifications = new ArrayList<>();
+            modifications.add(ownerModifications);
+            modifications.addAll(saveAttendeeFields(purchaseContext, ticketId, update.additionalInfo()));
+            auditingRepository.insert(reservationId, userId, purchaseContext, UPDATE_TICKET, d, TICKET, Integer.toString(ticketId), modifications);
+        });
 
         if(purchaseContext.getType() == PurchaseContextType.subscription && arm.getSubscriptionDetails() != null) {
             var subscriptionDetailsModification = arm.getSubscriptionDetails();
@@ -405,6 +414,133 @@ public class AdminReservationManager {
         }
 
         return Result.success(true);
+    }
+
+    /**
+     * Data of an attendee to be updated, with the values of the additional fields by configured field name
+     */
+    private record AttendeeUpdate(Ticket ticket, Attendee attendee, Map<String, List<String>> additionalInfo) {
+    }
+
+    private Result<List<AttendeeUpdate>> validateAttendeesUpdate(String reservationId, PurchaseContext purchaseContext, AdminReservationModification arm) {
+        List<Attendee> attendees = arm.getTicketsInfo().stream()
+            .filter(TicketsInfo::isUpdateAttendees)
+            .flatMap(ti -> ti.getAttendees().stream())
+            .toList();
+        if(attendees.isEmpty()) {
+            return Result.success(List.of());
+        }
+        Map<Integer, Ticket> ticketsById = ticketRepository.findTicketsInReservation(reservationId).stream()
+            .collect(toMap(Ticket::getId, Function.identity()));
+        List<PurchaseContextFieldConfiguration> fields = List.of();
+        if(attendees.stream().anyMatch(a -> !a.getAdditionalInfo().isEmpty())) {
+            var event = purchaseContext.event();
+            if(event.isEmpty()) {
+                return Result.error(ErrorCode.custom("error.additionalInfo", "Additional fields can be set only for tickets"));
+            }
+            fields = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.get().getId());
+        }
+        List<AttendeeUpdate> updates = new ArrayList<>();
+        List<ErrorCode> errors = new ArrayList<>();
+        for(Attendee attendee : attendees) {
+            Ticket ticket = null;
+            if(attendee.getTicketId() != null) {
+                ticket = ticketsById.get(attendee.getTicketId());
+            }
+            if(ticket == null) {
+                errors.add(ErrorCode.custom("error.ticket.notfound", "Ticket " + attendee.getTicketId() + " does not belong to the reservation"));
+                continue;
+            }
+            Map<String, List<String>> additionalInfo = Map.of();
+            if(!attendee.getAdditionalInfo().isEmpty()) {
+                var resolved = AdminAttendeeFields.resolve(attendee.getAdditionalInfo(), fields, ticket.getCategoryId());
+                if(!resolved.isSuccess()) {
+                    errors.addAll(resolved.getErrors());
+                    continue;
+                }
+                additionalInfo = resolved.getData();
+            }
+            updates.add(new AttendeeUpdate(ticket, attendee, additionalInfo));
+        }
+        if(errors.isEmpty()) {
+            return Result.success(updates);
+        }
+        return Result.error(errors);
+    }
+
+    /**
+     * The values of the additional fields of a ticket, as edited by the organizer: field name -> values.
+     * Checkboxes have one value for each option, null if not selected.
+     *
+     * @return empty if the ticket doesn't belong to the reservation
+     */
+    @Transactional
+    public Optional<Map<String, List<String>>> loadAttendeeFieldValues(String eventName, String reservationId, String ticketUuid) {
+        return eventRepository.findOptionalByShortName(eventName)
+            .flatMap(event -> findTicketInReservation(reservationId, ticketUuid)
+                .map(ticket -> {
+                    Map<Long, PurchaseContextFieldConfiguration> fieldsById = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.getId()).stream()
+                        .filter(AdminAttendeeFields::isAttendeeField)
+                        .collect(toMap(PurchaseContextFieldConfiguration::getId, Function.identity()));
+                    Map<String, List<String>> result = new HashMap<>();
+                    for(PurchaseContextFieldValue value : purchaseContextFieldRepository.findAllValuesByTicketIds(List.of(ticket.getId()))) {
+                        var field = fieldsById.get(value.getFieldConfigurationId());
+                        if(field != null) {
+                            result.put(field.getName(), AdminAttendeeFields.decode(field, value.getValue()));
+                        }
+                    }
+                    return result;
+                }));
+    }
+
+    /**
+     * Saves the values of the additional fields of a ticket, entered by the organizer, who can also change the
+     * read-only fields. An empty value removes the stored one; the fields not included are not modified.
+     */
+    @Transactional
+    public Result<Boolean> updateAttendeeFields(String eventName, String reservationId, String ticketUuid,
+                                                Map<String, List<String>> values, String username) {
+        var event = eventRepository.findOptionalByShortName(eventName);
+        if(event.isEmpty()) {
+            return Result.error(ErrorCode.EventError.NOT_FOUND);
+        }
+        var ticket = findTicketInReservation(reservationId, ticketUuid);
+        if(ticket.isEmpty()) {
+            return Result.error(ErrorCode.custom("error.ticket.notfound", "The ticket does not belong to the reservation"));
+        }
+        var fields = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.get().getId());
+        var resolved = AdminAttendeeFields.resolve(Objects.requireNonNullElse(values, Map.of()), fields, ticket.get().getCategoryId());
+        if(!resolved.isSuccess()) {
+            return Result.error(resolved.getErrors());
+        }
+        var changes = saveAttendeeFields(event.get(), ticket.get().getId(), resolved.getData());
+        if(!changes.isEmpty()) {
+            Integer userId = userRepository.findByUsername(username).map(User::getId).orElse(null);
+            auditingRepository.insert(reservationId, userId, event.get(), UPDATE_TICKET, new Date(), TICKET, Integer.toString(ticket.get().getId()), changes);
+        }
+        return Result.success(true);
+    }
+
+    private Optional<Ticket> findTicketInReservation(String reservationId, String ticketUuid) {
+        return ticketRepository.findTicketsInReservation(reservationId).stream()
+            .filter(t -> t.getUuid().equals(ticketUuid))
+            .findFirst();
+    }
+
+    /**
+     * Writes the values, already validated by {@link AdminAttendeeFields#resolve}
+     *
+     * @return the changes, to be recorded in the history of the reservation
+     */
+    private List<Map<String, Object>> saveAttendeeFields(PurchaseContext purchaseContext, int ticketId, Map<String, List<String>> values) {
+        if(values.isEmpty()) {
+            return List.of();
+        }
+        var before = purchaseContextFieldRepository.findAllValuesForTicketId(ticketId);
+        // the organizer can change also the read-only fields
+        purchaseContextFieldRepository.updateOrInsert(values, purchaseContext, ticketId, null, true);
+        var after = purchaseContextFieldRepository.findAllValuesForTicketId(ticketId);
+        return ReservationAuditingHelper.describeFieldChanges(before, after);
     }
 
     /**
@@ -550,24 +686,25 @@ public class AdminReservationManager {
 
     @Transactional
     Result<Pair<Event, AdminReservationModification>> validateTickets(AdminReservationModification input, Event event) {
-        Set<String> keys = input.getTicketsInfo().stream().flatMap(ti -> ti.getAttendees().stream())
-            .flatMap(a -> a.getAdditionalInfo().keySet().stream())
-            .map(String::toLowerCase)
-            .collect(toSet());
-
-        if(keys.isEmpty()) {
+        boolean hasAdditionalInfo = input.getTicketsInfo().stream()
+            .flatMap(ti -> ti.getAttendees().stream())
+            .anyMatch(a -> !a.getAdditionalInfo().isEmpty());
+        if(!hasAdditionalInfo) {
             return Result.success(Pair.of(event, input));
         }
 
-        List<String> existing = purchaseContextFieldRepository.getExistingFields(event.getId(), keys);
-        if(existing.size() == keys.size()) {
+        var fields = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.getId());
+        // a new category has no ID yet: only the fields available for all the categories apply
+        Map<String, ErrorCode> errorsByCode = input.getTicketsInfo().stream()
+            .flatMap(ti -> ti.getAttendees().stream()
+                .map(a -> AdminAttendeeFields.resolve(a.getAdditionalInfo(), fields, ti.getCategory().getExistingCategoryId())))
+            .flatMap(r -> r.getErrors().stream())
+            // the same error is reported once, even if it affects more attendees
+            .collect(toMap(ErrorCode::getCode, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
+        if(errorsByCode.isEmpty()) {
             return Result.success(Pair.of(event, input));
         }
-
-        return Result.error(keys.stream()
-                     .filter(k -> !existing.contains(k))
-                     .map(k -> ErrorCode.custom("error.notfound."+k, k+" not found"))
-                     .collect(toList()));
+        return Result.error(new ArrayList<>(errorsByCode.values()));
     }
 
     private Result<Pair<TicketReservation, List<Ticket>>> transactionalCreateReservation(AdminReservationModification input, Event event, String username) {
@@ -579,11 +716,58 @@ public class AdminReservationManager {
     }
 
     private Result<Pair<TicketReservation, List<Ticket>>> processReservation(AdminReservationModification input, String username, Event event) {
+        // checked before the new categories are created
+        var discount = resolveDiscount(input, event);
+        if(!discount.isSuccess()) {
+            return Result.error(discount.getErrors());
+        }
+        var promoCodeDiscount = discount.getData().orElse(null);
         return input.getTicketsInfo().stream()
             .map(ti -> checkCategoryCapacity(ti, event, input, username))
             .reduce((r1, r2) -> reduceResults(r1, r2, this::joinData))
-            .map(r -> createReservation(r, event, input))
+            .map(r -> createReservation(r, event, input, promoCodeDiscount))
             .orElseGet(() -> Result.error(singletonList(ErrorCode.custom("", "something went wrong..."))));
+    }
+
+    /**
+     * The discount code to apply to a new reservation, if requested: a discount code of the event or of its
+     * organization, valid now, in the currency of the event, which applies to some of the tickets and has not been
+     * used more than allowed. The access codes are not accepted: the categories are chosen by the organizer.
+     */
+    private Result<Optional<PromoCodeDiscount>> resolveDiscount(AdminReservationModification input, Event event) {
+        String code = input.getPromoCode();
+        if(code == null) {
+            return Result.success(Optional.empty());
+        }
+        var optionalDiscount = promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), code)
+            .filter(d -> d.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT);
+        if(optionalDiscount.isEmpty()) {
+            return Result.error(ErrorCode.custom("error.promoCode.notfound", "The discount code " + code + " does not exist"));
+        }
+        var discount = optionalDiscount.get();
+        if(!discount.isCurrentlyValid(event.getZoneId(), event.now(clockProvider))) {
+            return Result.error(ErrorCode.custom("error.promoCode.validity", "The discount code " + code + " is not valid now"));
+        }
+        if(discount.hasCurrencyCode() && !discount.getCurrencyCode().equals(event.getCurrency())) {
+            return Result.error(ErrorCode.custom("error.promoCode.currency", "The discount code " + code + " is not in the currency of the event"));
+        }
+        // the new categories are not among the discounted ones, since they don't exist yet
+        long discountedTickets = input.getTicketsInfo().stream()
+            .filter(ti -> discount.getCategories().isEmpty() || discount.getCategories().contains(ti.getCategory().getExistingCategoryId()))
+            .mapToLong(ti -> ti.getAttendees().size())
+            .sum();
+        if(discountedTickets == 0) {
+            return Result.error(ErrorCode.custom("error.promoCode.categories", "The discount code " + code + " does not apply to the categories of the tickets"));
+        }
+        if(discount.getMaxUsage() != null) {
+            promoCodeDiscountRepository.lockForCount(discount.getId());
+            int used = Objects.requireNonNullElse(promoCodeDiscountRepository.countUsedPromoCode(discount.getId()), 0);
+            if(discount.getMaxUsage() < used + discountedTickets) {
+                return Result.error(ErrorCode.custom("error.promoCode.maxUsage", "The discount code " + code + " can be used for "
+                    + Math.max(0, discount.getMaxUsage() - used) + " more tickets"));
+            }
+        }
+        return Result.success(Optional.of(discount));
     }
 
     private List<TicketsInfo> joinData(List<TicketsInfo> t1, List<TicketsInfo> t2) {
@@ -593,12 +777,16 @@ public class AdminReservationManager {
         return join;
     }
 
-    private Result<Pair<TicketReservation, List<Ticket>>> createReservation(Result<List<TicketsInfo>> input, Event event, AdminReservationModification arm) {
+    private Result<Pair<TicketReservation, List<Ticket>>> createReservation(Result<List<TicketsInfo>> input, Event event, AdminReservationModification arm, PromoCodeDiscount discount) {
         final TicketsInfo empty = new TicketsInfo(null, null, false, false);
         return input.flatMap(t -> {
             String reservationId = UUID.randomUUID().toString();
             Date validity = Date.from(arm.getExpiration().toZonedDateTime(event.getZoneId()).toInstant());
-            ticketReservationRepository.createNewReservation(reservationId, event.now(clockProvider), validity, null,
+            Integer discountId = null;
+            if(discount != null) {
+                discountId = discount.getId();
+            }
+            ticketReservationRepository.createNewReservation(reservationId, event.now(clockProvider), validity, discountId,
                 arm.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency(), event.getOrganizationId(), null);
             AdminReservationModification.CustomerData customerData = arm.getCustomerData();
             ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.PENDING.name(), customerData.getEmailAddress(),
@@ -606,7 +794,7 @@ public class AdminReservationManager {
                 customerData.getBillingAddress(), null, null, customerData.getCustomerReference());
 
             Result<List<Ticket>> result = flattenTicketsInfo(event, empty, t)
-                .map(pair -> reserveForTicketsInfo(event, arm, reservationId, pair))
+                .map(pair -> reserveForTicketsInfo(event, arm, reservationId, pair, discount))
                 .reduce(this::reduceReservationResults)
                 .orElseGet(() -> Result.error(ErrorCode.custom("", "unknown error")));
 
@@ -614,7 +802,7 @@ public class AdminReservationManager {
         });
     }
 
-    private Result<List<Ticket>> reserveForTicketsInfo(Event event, AdminReservationModification arm, String reservationId, Pair<TicketCategory, TicketsInfo> pair) {
+    private Result<List<Ticket>> reserveForTicketsInfo(Event event, AdminReservationModification arm, String reservationId, Pair<TicketCategory, TicketsInfo> pair, PromoCodeDiscount discount) {
         TicketCategory category = pair.getLeft();
         TicketsInfo ticketsInfo = pair.getRight();
         int categoryId = category.getId();
@@ -626,7 +814,8 @@ public class AdminReservationManager {
         var currencyCode = category.getCurrencyCode();
         ticketRepository.reserveTickets(reservationId, reservedForUpdate, category, arm.getLanguage(), event.getVatStatus(), i -> null);
         Ticket ticket = ticketRepository.findById(reservedForUpdate.getFirst(), categoryId);
-        TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event.getVat(), event.getVatStatus(), null);
+        // the discount applies only to its categories, see TicketPriceContainer
+        TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event.getVat(), event.getVatStatus(), discount);
         ticketRepository.updateTicketPrice(reservedForUpdate,
             categoryId,
             event.getId(),
@@ -703,6 +892,10 @@ public class AdminReservationManager {
                                int srcPriceCts) {
 
         Optional<Iterator<SpecialPrice>> specialPriceIterator = Optional.of(codes).filter(c -> !c.isEmpty()).map(Collection::iterator);
+        List<PurchaseContextFieldConfiguration> fields = List.of();
+        if(attendees.stream().anyMatch(a -> !a.getAdditionalInfo().isEmpty())) {
+            fields = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.getId());
+        }
         for(int i=0; i<reservedForUpdate.size(); i++) {
             Attendee attendee = attendees.get(i);
             Integer ticketId = reservedForUpdate.get(i);
@@ -712,7 +905,10 @@ public class AdminReservationManager {
                     updateExtRefAndLocking(categoryId, attendee, ticketId);
                 }
                 if(!attendee.getAdditionalInfo().isEmpty()) {
-                    purchaseContextFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), event, ticketId, null);
+                    // already validated by validateTickets
+                    var values = AdminAttendeeFields.resolve(attendee.getAdditionalInfo(), fields, categoryId);
+                    Validate.isTrue(values.isSuccess(), "Invalid additional fields: %s", values.getFormattedErrors());
+                    purchaseContextFieldRepository.updateOrInsert(values.getData(), event, ticketId, null, true);
                 }
                 if (!attendee.getMetadata().isEmpty()) {
                     var ticketMetadata = new TicketMetadata(null, null, attendee.getMetadata());

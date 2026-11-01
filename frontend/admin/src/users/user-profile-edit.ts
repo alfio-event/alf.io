@@ -2,11 +2,24 @@ import {customElement, query, state} from "lit/decorators.js";
 import {css, html, LitElement, nothing, TemplateResult} from "lit";
 import {SlButton, SlDialog} from "@shoelace-style/shoelace";
 import {when} from "lit/directives/when.js";
-import {classMap} from "lit/directives/class-map.js";
+import {TanStackFormController} from "@tanstack/lit-form";
 import {badges, base, dialog, form, modernLayout, pageHeader, panelStyles, retroCompat, row, spacing, textColors} from "../styles.ts";
 import {UsersService} from "./users-service.ts";
 import {dispatchFeedback} from "../model/dom-events.ts";
 import {ErrorDescriptor} from "../model/validation.ts";
+import {
+    BoundField,
+    emailAddress,
+    focusFirstError,
+    FormMountController,
+    minLength,
+    requiredValue,
+    setServerError,
+    submitValidated,
+    validatedInput,
+    ValidatedInputOptions,
+    validateWith,
+} from "../components/form-validation.ts";
 
 const PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E])(?!.*\s).{10,}$/;
 
@@ -37,24 +50,22 @@ export class UserProfileEdit extends LitElement {
     @state() isAdminProfile: boolean = false;
     @state() passwordSuccess: boolean = false;
 
-    @state() profileValidationErrors: Record<string, string> = {};
-    @state() passwordValidationErrors: Record<string, string> = {};
+    readonly #profileForm = new TanStackFormController(this, {
+        defaultValues: { firstName: '', lastName: '', emailAddress: '' } as ProfileForm,
+        onSubmit: async ({value}) => {
+            await this.saveProfile(value);
+        },
+    });
 
-    @state() profileForm: ProfileForm = {
-        firstName: '',
-        lastName: '',
-        emailAddress: ''
-    };
-
-    @state() passwordForm: PasswordForm = {
-        oldPassword: '',
-        newPassword: '',
-        newPasswordConfirm: ''
-    };
+    readonly #passwordForm = new TanStackFormController(this, {
+        defaultValues: { oldPassword: '', newPassword: '', newPasswordConfirm: '' } as PasswordForm,
+        onSubmit: async ({value}) => {
+            await this.changePassword(value);
+        },
+    });
 
     @state() saving: boolean = false;
     @state() changingPassword: boolean = false;
-    @state() passwordFormSubmitted: boolean = false;
 
     static readonly styles = [
         base,
@@ -99,6 +110,8 @@ export class UserProfileEdit extends LitElement {
 
     constructor() {
         super();
+        new FormMountController(this, this.#profileForm.api);
+        new FormMountController(this, this.#passwordForm.api);
         void this.loadProfile();
     }
 
@@ -134,8 +147,8 @@ export class UserProfileEdit extends LitElement {
                                         () => html`<sl-spinner></sl-spinner>`,
                                         () => html`
                                             <sl-button variant="default" size="large" @click=${this.resetProfileForm}>Cancel</sl-button>
-                                            <sl-button id="save-profile" variant="warning" size="large" @click=${this.saveProfile}>
-                                                <sl-icon slot="prefix" name="check2"></sl-icon> Save
+                                            <sl-button id="save-profile" variant="warning" size="large" @click=${this.submitProfile}>
+                                                Save
                                             </sl-button>
                                         `)}
                                 </div>
@@ -175,72 +188,72 @@ export class UserProfileEdit extends LitElement {
     }
 
     private renderProfileForm(): TemplateResult {
-        const errorFor = (field: string) =>
-            this.profileValidationErrors[field]
-                ? html`<sl-alert variant="danger" open class="mt-2"><sl-icon slot="icon" name="exclamation-triangle"></sl-icon> ${this.profileValidationErrors[field]}</sl-alert>`
-                : nothing;
-
+        const submitted = this.#profileForm.api.state.submissionAttempts > 0;
+        const input = (field: BoundField<string>, options: ValidatedInputOptions) => validatedInput(field, submitted, options);
         return html`
             <div class="row" style="--alfio-row-cols: 2">
                 <div class="form-group">
-                    <sl-input
-                        id="firstName"
-                        label="First Name"
-                        required
-                        minlength="2"
-                        class=${classMap({error: this.profileValidationErrors['firstName'] != null})}
-                        .value=${this.profileForm.firstName}
-                        @sl-input=${(e: InputEvent) => {
-                            this.profileForm.firstName = (e.target as HTMLInputElement).value;
-                            this.clearProfileError('firstName');
-                        }}>
-                        <sl-icon name="person" slot="prefix"></sl-icon>
-                    </sl-input>
-                    ${errorFor('firstName')}
+                    ${this.#profileForm.field({ name: 'firstName', validators: validateWith(value => minLength(value, 2)) },
+                        field => input(field, { id: 'firstName', label: 'First Name', prefixIcon: 'person' }))}
                 </div>
                 <div class="form-group">
-                    <sl-input
-                        id="lastName"
-                        label="Last Name"
-                        required
-                        minlength="2"
-                        class=${classMap({error: this.profileValidationErrors['lastName'] != null})}
-                        .value=${this.profileForm.lastName}
-                        @sl-input=${(e: InputEvent) => {
-                            this.profileForm.lastName = (e.target as HTMLInputElement).value;
-                            this.clearProfileError('lastName');
-                        }}>
-                        <sl-icon name="person" slot="prefix"></sl-icon>
-                    </sl-input>
-                    ${errorFor('lastName')}
+                    ${this.#profileForm.field({ name: 'lastName', validators: validateWith(value => minLength(value, 2)) },
+                        field => input(field, { id: 'lastName', label: 'Last Name', prefixIcon: 'person' }))}
                 </div>
             </div>
             <div class="form-group">
-                <sl-input
-                    id="emailAddress"
-                    label="Email Address"
-                    type="email"
-                    required
-                    class=${classMap({error: this.profileValidationErrors['emailAddress'] != null})}
-                    .value=${this.profileForm.emailAddress}
-                    @sl-input=${(e: InputEvent) => {
-                        this.profileForm.emailAddress = (e.target as HTMLInputElement).value;
-                        this.clearProfileError('emailAddress');
-                    }}>
-                    <sl-icon name="envelope" slot="prefix"></sl-icon>
-                </sl-input>
-                ${errorFor('emailAddress')}
+                ${this.#profileForm.field({ name: 'emailAddress', validators: validateWith(value => emailAddress(value)) },
+                    field => input(field, { id: 'emailAddress', label: 'Email Address', type: 'email', prefixIcon: 'envelope' }))}
+            </div>
+        `;
+    }
+
+    private renderPasswordFields(): TemplateResult {
+        const submitted = this.#passwordForm.api.state.submissionAttempts > 0;
+        const input = (field: BoundField<string>, options: ValidatedInputOptions) => validatedInput({
+            state: field.state,
+            handleChange: (value: string) => {
+                field.handleChange(value);
+                this.passwordSuccess = false;
+            },
+            handleBlur: () => field.handleBlur(),
+        }, submitted, { ...options, type: 'password' });
+        const validateNewPassword = (value: unknown) => {
+            const missing = requiredValue(value);
+            if (missing != null) {
+                return missing;
+            }
+            if (!PASSWORD_REGEX.test(String(value))) {
+                return 'The new password does not meet the requirements listed above.';
+            }
+            return undefined;
+        };
+        const validateConfirmation = (value: unknown) => {
+            if (value !== this.#passwordForm.api.state.values.newPassword) {
+                return '"New password" and "Confirm new password" do not match.';
+            }
+            return undefined;
+        };
+        return html`
+            <div class="form-group">
+                ${this.#passwordForm.field({ name: 'oldPassword', validators: validateWith(value => requiredValue(value)) },
+                    field => input(field, { id: 'oldPassword', label: 'Current Password', prefixIcon: 'lock' }))}
+            </div>
+            <div class="form-group">
+                ${this.#passwordForm.field({ name: 'newPassword', validators: validateWith(validateNewPassword) },
+                    field => input(field, { id: 'newPassword', label: 'New Password', prefixIcon: 'lock-fill' }))}
+            </div>
+            <div class="form-group">
+                ${this.#passwordForm.field({
+                    name: 'newPasswordConfirm',
+                    // checked again when the new password changes
+                    validators: { ...validateWith(validateConfirmation), onChangeListenTo: ['newPassword'] },
+                }, field => input(field, { id: 'newPasswordConfirm', label: 'Confirm New Password', prefixIcon: 'lock-fill' }))}
             </div>
         `;
     }
 
     private renderChangePasswordDialog(): TemplateResult | typeof nothing {
-        const errorFor = (field: string) => {
-            if (!this.passwordValidationErrors[field]) return nothing;
-            const msg = this.getPasswordErrorMessage(this.passwordValidationErrors[field] ?? '');
-            return html`<sl-alert variant="danger" open class="mt-2"><sl-icon slot="icon" name="exclamation-triangle"></sl-icon> ${msg}</sl-alert>`;
-        };
-
         return html`
             <sl-dialog
                 id="change-password"
@@ -276,62 +289,7 @@ export class UserProfileEdit extends LitElement {
                     </div>
                 </sl-alert>
 
-                <div class="form-group">
-                    <sl-input
-                        id="oldPassword"
-                        label="Current Password"
-                        type="password"
-                        required
-                        class=${classMap({error: this.passwordValidationErrors['oldPassword'] != null})}
-                        .value=${this.passwordForm.oldPassword}
-                        @sl-input=${(e: InputEvent) => {
-                            this.passwordForm.oldPassword = (e.target as HTMLInputElement).value;
-                            this.clearPasswordError('oldPassword');
-                            this.passwordSuccess = false;
-                        }}
-                        @sl-clear=${() => this.clearPasswordError('oldPassword')}>
-                        <sl-icon name="lock" slot="prefix"></sl-icon>
-                    </sl-input>
-                    ${errorFor('oldPassword')}
-                </div>
-
-                <div class="form-group">
-                    <sl-input
-                        id="newPassword"
-                        label="New Password"
-                        type="password"
-                        required
-                        class=${classMap({error: this.passwordValidationErrors['newPassword'] != null})}
-                        .value=${this.passwordForm.newPassword}
-                        @sl-input=${(e: InputEvent) => {
-                            this.passwordForm.newPassword = (e.target as HTMLInputElement).value;
-                            this.clearPasswordError('newPassword');
-                            this.passwordSuccess = false;
-                        }}
-                        @sl-clear=${() => this.clearPasswordError('newPassword')}>
-                        <sl-icon name="lock-fill" slot="prefix"></sl-icon>
-                    </sl-input>
-                    ${errorFor('newPassword')}
-                </div>
-
-                <div class="form-group">
-                    <sl-input
-                        id="newPasswordConfirm"
-                        label="Confirm New Password"
-                        type="password"
-                        required
-                        class=${classMap({error: this.passwordValidationErrors['newPasswordConfirm'] != null})}
-                        .value=${this.passwordForm.newPasswordConfirm}
-                        @sl-input=${(e: InputEvent) => {
-                            this.passwordForm.newPasswordConfirm = (e.target as HTMLInputElement).value;
-                            this.clearPasswordError('newPasswordConfirm');
-                            this.passwordSuccess = false;
-                        }}
-                        @sl-clear=${() => this.clearPasswordError('newPasswordConfirm')}>
-                        <sl-icon name="lock-fill" slot="prefix"></sl-icon>
-                    </sl-input>
-                    ${errorFor('newPasswordConfirm')}
-                </div>
+                ${this.renderPasswordFields()}
 
                 <div slot="footer">
                     <sl-divider></sl-divider>
@@ -342,11 +300,11 @@ export class UserProfileEdit extends LitElement {
                             variant="success"
                             size="large"
                             ?disabled=${this.changingPassword}
-                            @click=${this.changePassword}>
+                            @click=${this.submitPassword}>
                             ${when(this.changingPassword,
                                 () => nothing,
                                 () => html`<sl-icon slot="prefix" name="check2"></sl-icon>`)}
-                            ${this.changingPassword ? '' : 'Update'}
+                            ${when(!this.changingPassword, () => 'Update')}
                         </sl-button>
                         ${when(this.changingPassword,
                             () => html`<sl-spinner style="--sl-spinner-size: 1.5rem;"></sl-spinner>`,
@@ -382,11 +340,11 @@ export class UserProfileEdit extends LitElement {
             const user = await UsersService.loadCurrentUser();
             this.profileUsername = user.username ?? '';
             this.isAdminProfile = this.profileUsername === 'admin';
-            this.profileForm = {
+            this.#profileForm.api.reset({
                 firstName: user.firstName ?? '',
                 lastName: user.lastName ?? '',
                 emailAddress: user.emailAddress ?? ''
-            };
+            });
         } catch {
             dispatchFeedback({type: 'danger', message: 'Failed to load profile.'}, this);
         } finally {
@@ -395,63 +353,60 @@ export class UserProfileEdit extends LitElement {
     }
 
     private resetProfileForm(): void {
-        this.profileValidationErrors = {};
         this.loadProfile();
-    }
-
-    private clearProfileError(field: keyof ProfileForm): void {
-        if (this.profileValidationErrors[field]) {
-            this.profileValidationErrors = {...this.profileValidationErrors};
-            delete this.profileValidationErrors[field];
-        }
-    }
-
-    private clearPasswordError(field: keyof PasswordForm): void {
-        if (this.passwordValidationErrors[field]) {
-            this.passwordValidationErrors = {...this.passwordValidationErrors};
-            delete this.passwordValidationErrors[field];
-        }
     }
 
     private openChangePasswordDialog(): void {
         this.passwordSuccess = false;
-        this.passwordFormSubmitted = false;
-        this.passwordValidationErrors = {};
-        this.passwordForm = {oldPassword: '', newPassword: '', newPasswordConfirm: ''};
+        this.#passwordForm.api.reset({oldPassword: '', newPassword: '', newPasswordConfirm: ''});
         this.changePasswordDialog?.show();
     }
 
     private closeChangePasswordDialog(): void {
         this.passwordSuccess = false;
-        this.passwordFormSubmitted = false;
-        this.passwordValidationErrors = {};
         this.changingPassword = false;
-        this.passwordForm = {oldPassword: '', newPassword: '', newPasswordConfirm: ''};
+        this.#passwordForm.api.reset({oldPassword: '', newPassword: '', newPasswordConfirm: ''});
         this.changePasswordDialog?.hide();
     }
 
-    private async saveProfile(): Promise<void> {
-        this.profileValidationErrors = {};
-
-        const clientErrors = this.validateProfileForm();
-        if (Object.keys(clientErrors).length > 0) {
-            this.profileValidationErrors = clientErrors;
+    private submitProfile = async (): Promise<void> => {
+        if (this.saving) {
             return;
         }
+        if (!await submitValidated(this.#profileForm.api)) {
+            await this.updateComplete;
+            focusFirstError(this.renderRoot);
+        }
+    };
 
+    private submitPassword = async (): Promise<void> => {
+        if (this.changingPassword) {
+            return;
+        }
+        this.passwordSuccess = false;
+        if (!await submitValidated(this.#passwordForm.api)) {
+            await this.updateComplete;
+            focusFirstError(this.renderRoot.querySelector('#change-password') ?? this.renderRoot);
+        }
+    };
+
+    /**
+     * Called by the profile form once all the fields are valid
+     */
+    private async saveProfile(profile: ProfileForm): Promise<void> {
         this.saving = true;
         try {
             const checkResult = await UsersService.check({
                 id: null,
                 organizationId: 0,
                 role: '',
-                firstName: this.profileForm.firstName,
-                lastName: this.profileForm.lastName,
-                emailAddress: this.profileForm.emailAddress
+                firstName: profile.firstName,
+                lastName: profile.lastName,
+                emailAddress: profile.emailAddress
             });
 
             if (!checkResult.success) {
-                this.profileValidationErrors = this.mapValidationErrors(checkResult.validationErrors);
+                this.showServerErrors(this.#profileForm.api, this.mapValidationErrors(checkResult.validationErrors));
                 return;
             }
 
@@ -459,9 +414,9 @@ export class UserProfileEdit extends LitElement {
                 id: null,
                 organizationId: 0,
                 role: '',
-                firstName: this.profileForm.firstName,
-                lastName: this.profileForm.lastName,
-                emailAddress: this.profileForm.emailAddress
+                firstName: profile.firstName,
+                lastName: profile.lastName,
+                emailAddress: profile.emailAddress
             });
 
             this.profileUsername = this.profileUsername;
@@ -473,32 +428,25 @@ export class UserProfileEdit extends LitElement {
         }
     }
 
-    private async changePassword(): Promise<void> {
-        this.passwordSuccess = false;
-        this.passwordValidationErrors = {};
-        this.passwordFormSubmitted = true;
-
-        const clientErrors = this.validatePasswordForm();
-        if (Object.keys(clientErrors).length > 0) {
-            this.passwordValidationErrors = clientErrors;
-            return;
-        }
-
+    /**
+     * Called by the password form once all the fields are valid
+     */
+    private async changePassword(passwords: PasswordForm): Promise<void> {
         this.changingPassword = true;
         try {
-            const result = await UsersService.updateCurrentUserPassword({
-                oldPassword: this.passwordForm.oldPassword,
-                newPassword: this.passwordForm.newPassword,
-                newPasswordConfirm: this.passwordForm.newPasswordConfirm
-            });
+            const result = await UsersService.updateCurrentUserPassword(passwords);
 
             if (result.success) {
                 this.passwordSuccess = true;
-                this.passwordForm = {oldPassword: '', newPassword: '', newPasswordConfirm: ''};
-                this.passwordValidationErrors = {};
+                this.#passwordForm.api.reset({oldPassword: '', newPassword: '', newPasswordConfirm: ''});
                 dispatchFeedback({type: 'success', message: 'Password changed successfully.'}, this);
             } else {
-                this.passwordValidationErrors = this.mapPasswordValidationErrors(result.validationErrors);
+                const errors = this.mapPasswordValidationErrors(result.validationErrors);
+                const messages: Record<string, string> = {};
+                Object.entries(errors).forEach(([field, code]) => {
+                    messages[field] = this.getPasswordErrorMessage(code);
+                });
+                this.showServerErrors(this.#passwordForm.api, messages);
             }
         } catch {
             dispatchFeedback({type: 'danger', message: 'Failed to change password. Please try again.'}, this);
@@ -507,34 +455,22 @@ export class UserProfileEdit extends LitElement {
         }
     }
 
-    private validateProfileForm(): Record<string, string> {
-        const errors: Record<string, string> = {};
-        if (!this.profileForm.firstName || this.profileForm.firstName.length < 2) {
-            errors.firstName = 'First name must be at least 2 characters.';
+    /**
+     * Displays the errors returned by the server on their fields, the others as feedback
+     */
+    private showServerErrors(api: Parameters<typeof setServerError>[0], errors: Record<string, string>): void {
+        const fields = Object.keys(api.fieldInfo);
+        const others: string[] = [];
+        Object.entries(errors).forEach(([field, message]) => {
+            if (fields.includes(field)) {
+                setServerError(api, field, message);
+            } else {
+                others.push(message);
+            }
+        });
+        if (others.length > 0) {
+            dispatchFeedback({type: 'danger', message: others.join(' ')}, this);
         }
-        if (!this.profileForm.lastName || this.profileForm.lastName.length < 2) {
-            errors.lastName = 'Last name must be at least 2 characters.';
-        }
-        if (!this.profileForm.emailAddress || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.profileForm.emailAddress)) {
-            errors.emailAddress = 'A valid email address is required.';
-        }
-        return errors;
-    }
-
-    private validatePasswordForm(): Record<string, string> {
-        const errors: Record<string, string> = {};
-        if (!this.passwordForm.oldPassword) {
-            errors.oldPassword = 'Current password is required.';
-        }
-        if (!this.passwordForm.newPassword || this.passwordForm.newPassword.length < 10) {
-            errors.newPassword = 'New password must be at least 10 characters.';
-        } else if (!PASSWORD_REGEX.test(this.passwordForm.newPassword)) {
-            errors.newPassword = 'New password does not meet the requirements.';
-        }
-        if (this.passwordForm.newPassword !== this.passwordForm.newPasswordConfirm) {
-            errors.newPasswordConfirm = 'Passwords do not match.';
-        }
-        return errors;
     }
 
     private mapValidationErrors(errors: ErrorDescriptor[]): Record<string, string> {

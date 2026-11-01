@@ -41,7 +41,11 @@ export class ExtensionService {
     }
 
     static async delete(path: string, name: string): Promise<void> {
-        await callDelete(`${ExtensionService.baseUrl()}/${encodeURIComponent(path)}/${encodeURIComponent(name)}`);
+        // the endpoint answers with an empty body, so we check the status instead of using ensureOk (which parses JSON)
+        const response = await callDelete(`${ExtensionService.baseUrl()}/${encodeURIComponent(path)}/${encodeURIComponent(name)}`);
+        if (!response.ok) {
+            throw new Error((await response.text()) || `unexpected status ${response.status}`);
+        }
     }
 
     /**

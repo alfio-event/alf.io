@@ -1,7 +1,8 @@
 import {css, html, LitElement, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
 import {when} from 'lit/directives/when.js';
-import type {SlDialog, SlInput, SlTextarea} from '@shoelace-style/shoelace';
+import {TanStackFormController} from '@tanstack/lit-form';
+import type {SlDialog, SlTextarea} from '@shoelace-style/shoelace';
 import {base, dialog, form, modernLayout, retroCompat, row} from '../../styles.ts';
 import {PaymentTransaction} from '../../model/reservation.ts';
 import {DateTimeModification} from '../../model/event.ts';
@@ -11,6 +12,7 @@ import {fetchJson, postJson, putJson, toDateTimeModification} from '../../servic
 import {shortReservationId} from '../../service/reservation-format.ts';
 import {formatDate, toDateTimeLocal} from '../../service/date-format.ts';
 import {dialogTitle} from '../../components/prompt-dialog.ts';
+import {FormMountController, requiredValue, submitValidated, validatedInput, validateWith} from '../../components/form-validation.ts';
 
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -20,6 +22,12 @@ interface PaymentInfoResult {
 }
 
 type DialogMode = 'edit' | 'confirm';
+
+interface PaymentFormValues {
+    // datetime-local value, in the time zone of the dialog
+    timestamp: string;
+    notes: string;
+}
 
 interface DialogModeConfig {
     title: string;
@@ -69,7 +77,18 @@ export class EditPaymentDialog extends LitElement {
     private saved = false;
 
     @query('sl-dialog') private dialog!: SlDialog;
-    @query('form') private form!: HTMLFormElement;
+
+    readonly #form = new TanStackFormController(this, {
+        defaultValues: { timestamp: '', notes: '' } as PaymentFormValues,
+        onSubmit: async ({value}) => {
+            await this.save(value);
+        },
+    });
+
+    constructor() {
+        super();
+        new FormMountController(this, this.#form.api);
+    }
 
     static readonly styles = [
         base,
@@ -94,6 +113,7 @@ export class EditPaymentDialog extends LitElement {
                 throw new Error('payment info not found');
             }
             this.transaction = result.data.transaction;
+            this.resetForm(this.transaction);
         } catch {
             dispatchFeedback({ type: 'danger', message: 'Failed to load payment details' }, this);
             await this.dialog.hide();
@@ -101,12 +121,21 @@ export class EditPaymentDialog extends LitElement {
     }
 
     async openForConfirmation(reservationId: string): Promise<void> {
-        this.reset('confirm', reservationId, {
+        const transaction = {
             timestamp: new Date().toISOString(),
             timestampEditable: true,
             notes: '',
-        });
+        };
+        this.reset('confirm', reservationId, transaction);
+        this.resetForm(transaction);
         await this.dialog.show();
+    }
+
+    private resetForm(transaction: PaymentTransaction): void {
+        this.#form.api.reset({
+            timestamp: toDateTimeLocal(transaction.timestamp, this.timeZone),
+            notes: transaction.notes ?? '',
+        });
     }
 
     private reset(mode: DialogMode, reservationId: string, transaction: PaymentTransaction | null): void {
@@ -133,8 +162,8 @@ export class EditPaymentDialog extends LitElement {
                         <sl-button variant="default" size="large" ?disabled=${this.saving}
                                    @click=${() => this.dialog.hide()}>Cancel</sl-button>
                         <div></div>
-                        <sl-button variant=${config.variant} size="large" ?disabled=${this.saving || this.transaction == null}
-                                   @click=${() => this.save()}>
+                        <sl-button id="save-payment" variant=${config.variant} size="large" ?disabled=${this.saving || this.transaction == null}
+                                   @click=${() => this.submit()}>
                             ${when(this.saving,
                                 () => html`<sl-spinner slot="prefix"></sl-spinner>`,
                                 () => html`<sl-icon name="check2" slot="prefix"></sl-icon>`)}
@@ -148,7 +177,7 @@ export class EditPaymentDialog extends LitElement {
 
     private renderForm(transaction: PaymentTransaction): TemplateResult {
         return html`
-            <form class="dialog-form form-stack" @submit=${(e: Event) => { e.preventDefault(); this.save(); }}>
+            <form class="dialog-form form-stack" novalidate @submit=${(e: Event) => { e.preventDefault(); void this.submit(); }}>
                 <div class="section-card">
                     <div class="dialog-section-header">
                         <sl-icon name="calendar-event"></sl-icon>Payment received on
@@ -156,10 +185,13 @@ export class EditPaymentDialog extends LitElement {
                     </div>
                     <div class="section-body">
                         ${when(transaction.timestampEditable,
-                            () => html`
-                                <sl-input type="datetime-local" name="timestamp" label="Date and time" required
-                                          min=${this.minTimestamp(transaction)}
-                                          value=${toDateTimeLocal(transaction.timestamp, this.timeZone)}></sl-input>`,
+                            () => this.#form.field({ name: 'timestamp', validators: validateWith(value => this.validateTimestamp(value)) },
+                                field => validatedInput(field, this.#form.api.state.submissionAttempts > 0, {
+                                    className: 'payment-timestamp',
+                                    label: 'Date and time',
+                                    type: 'datetime-local',
+                                    min: this.minTimestamp(transaction),
+                                })),
                             () => html`
                                 <sl-input name="timestamp" label="Date and time" readonly
                                           help-text="Recorded by the payment provider, it cannot be changed."
@@ -171,9 +203,12 @@ export class EditPaymentDialog extends LitElement {
                 <div class="section-card">
                     <div class="dialog-section-header"><sl-icon name="card-text"></sl-icon>Notes</div>
                     <div class="section-body">
-                        <sl-textarea name="notes" label="Internal notes" rows="3" resize="auto"
-                                     help-text="Visible only to administrators."
-                                     value=${transaction.notes ?? ''}></sl-textarea>
+                        ${this.#form.field({ name: 'notes' }, field => html`
+                            <sl-textarea name="notes" label="Internal notes" rows="3" resize="auto"
+                                         help-text="Visible only to administrators."
+                                         .value=${field.state.value}
+                                         @sl-input=${(e: Event) => field.handleChange((e.target as SlTextarea).value)}></sl-textarea>
+                        `)}
                     </div>
                 </div>
                 ${when(this.errorMessage, () => html`
@@ -186,17 +221,39 @@ export class EditPaymentDialog extends LitElement {
         `;
     }
 
-    private async save(): Promise<void> {
-        if (this.saving || this.transaction == null || !this.form.reportValidity()) {
+    private async submit(): Promise<void> {
+        if (this.saving || this.transaction == null) {
             return;
         }
-        const timestamp = this.form.querySelector<SlInput>('sl-input[name="timestamp"]')!.value;
-        const notes = this.form.querySelector<SlTextarea>('sl-textarea[name="notes"]')!.value;
+        this.errorMessage = '';
+        await submitValidated(this.#form.api);
+    }
+
+    private validateTimestamp(value: unknown): string | undefined {
+        const transaction = this.transaction;
+        if (transaction == null || !transaction.timestampEditable) {
+            return undefined;
+        }
+        const missing = requiredValue(value);
+        if (missing != null) {
+            return missing;
+        }
+        // datetime-local values (yyyy-MM-ddTHH:mm) sort as strings
+        if (String(value) < this.minTimestamp(transaction)) {
+            return 'The payment cannot be older than one year';
+        }
+        return undefined;
+    }
+
+    /**
+     * Called by the form once all the fields are valid
+     */
+    private async save({ timestamp, notes }: PaymentFormValues): Promise<void> {
         const config = MODES[this.mode];
         this.saving = true;
         this.errorMessage = '';
         try {
-            const response = await this.submit({ timestamp: this.editableTimestamp(timestamp), notes });
+            const response = await this.send({ timestamp: this.editableTimestamp(timestamp), notes });
             if (response.ok) {
                 this.saved = true;
                 await this.dialog.hide();
@@ -211,7 +268,7 @@ export class EditPaymentDialog extends LitElement {
         }
     }
 
-    private submit(metadata: { timestamp: DateTimeModification | null, notes: string }): Promise<Response> {
+    private send(metadata: { timestamp: DateTimeModification | null, notes: string }): Promise<Response> {
         if (this.mode === 'confirm') {
             const eventName = encodeURIComponent(this.publicIdentifier);
             return postJson(`/admin/api/events/${eventName}/pending-payments/${this.reservationId}/confirm`, metadata);

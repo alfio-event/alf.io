@@ -45,7 +45,7 @@ public class ReservationAuditingHelper {
                                      TicketMetadataContainer newMetadata,
                                      TicketMetadataContainer oldMetadata) {
         List<Map<String, Object>> changes = ObjectDiffUtil.diff(oldMetadata, newMetadata, TicketMetadataContainer.class).stream()
-            .map(this::processChange)
+            .map(ReservationAuditingHelper::processChange)
             .collect(Collectors.toList());
 
         auditingRepository.insert(reservationId, null, eventId, Audit.EventType.UPDATE_TICKET_METADATA, new Date(),
@@ -57,14 +57,23 @@ public class ReservationAuditingHelper {
         List<ObjectDiffUtil.Change> diffTicketFields = ObjectDiffUtil.diff(preUpdateTicketFields, postUpdateTicketFields);
 
         List<Map<String, Object>> changes = Stream.concat(diffTicket.stream(), diffTicketFields.stream())
-            .map(this::processChange)
+            .map(ReservationAuditingHelper::processChange)
             .collect(Collectors.toList());
 
         auditingRepository.insert(preUpdateTicket.getTicketsReservationId(), null, eventId,
             Audit.EventType.UPDATE_TICKET, new Date(), TICKET, Integer.toString(preUpdateTicket.getId()), changes);
     }
 
-    private HashMap<String, Object> processChange(ObjectDiffUtil.Change change) {
+    /**
+     * Changes of the additional fields of a ticket, described as in {@link #auditUpdateTicket}
+     */
+    public static List<Map<String, Object>> describeFieldChanges(Map<String, List<String>> before, Map<String, List<String>> after) {
+        return ObjectDiffUtil.diff(before, after).stream()
+            .map(ReservationAuditingHelper::processChange)
+            .collect(Collectors.toList());
+    }
+
+    private static HashMap<String, Object> processChange(ObjectDiffUtil.Change change) {
         var v = new HashMap<String, Object>();
         v.put("propertyName", change.getPropertyName());
         v.put("state", change.getState());

@@ -39,9 +39,12 @@ Background on 2 and on the placement of form actions:
 | Data loaded by a `@lit/task` Task: spinner, error, refresh    | `taskContent()`, `components/task-content.ts`                                  |
 | An empty list                                                 | `emptyState()`, `components/empty-state.ts`                                    |
 | An input or select bound to a draft object                    | `formField()`, `selectField()`, `components/form-field.ts`                     |
+| Validation of a form: validators, error display               | `TanStackFormController` + `components/form-validation.ts`, see [Validation](#validation) |
 | A choice between options that need a short explanation       | `choiceCards()`, `components/choice-cards.ts`, see [Choices](#choices)         |
 | An existing ticket category, with a Refresh button            | `ticketCategorySelect()`, `components/ticket-category-select.ts`               |
+| The additional fields of an attendee                          | `attendeeFields()`, `components/attendee-fields.ts`                            |
 | A file picked or dropped by the user                          | `<alfio-file-upload>`, `components/file-upload.ts`                             |
+| A CSV import: template download, upload, file specifications  | `csvImport()`, `components/csv-import.ts`, see [CSV import](#9-csv-import)     |
 | A date or a date interval                                     | `<alfio-format-date>`, see [Dates](#8-dates)                                   |
 | Read-only "label: value" pairs                                | `detailList()`, `components/detail-list.ts`                                    |
 | A status shown as a badge                                     | `statusBadge()`, `components/status-badge.ts`                                  |
@@ -52,8 +55,8 @@ Background on 2 and on the placement of form actions:
 Check `components/` for anything not listed here.
 
 Each component adds the shared CSS blocks it uses to its `static styles`: `modernLayout` for section cards,
-`form` for form controls, `dialog` for dialogs, `choiceCards` for choice cards, `badges` for badges, `row` for
-grids. [`branding-guidelines.md`](branding-guidelines.md) lists which block defines each class.
+`form` for form controls, `dialog` for dialogs, `choiceCards` for choice cards, `attendeeFields` for the
+attendees' additional fields, `csvImport` for CSV imports, `badges` for badges, `row` for grids. [`branding-guidelines.md`](branding-guidelines.md) lists which block defines each class.
 
 Complete examples: `event/reservation-create/reservation-create.ts` (form with repeated groups and choices),
 `event/check-in/add-attendees-dialog.ts` (dialog), `event/attendees-import/attendees-import.ts` (CSV import).
@@ -88,6 +91,36 @@ Complete examples: `event/reservation-create/reservation-create.ts` (form with r
 - When the user may have created the options of a select in another tab (e.g. ticket categories), put a
   "Refresh" button next to the select, in an `.input-with-action` wrapper (from the `form` block).
   `ticketCategorySelect()` does this for categories.
+
+### Validation
+
+Every form validates its fields before saving: Save never sends a request with missing or wrong data. Shoelace's
+`required` attribute alone does not stop the submit of a Lit form, and `form.reportValidity()` shows the browser's
+tooltips instead of our messages: don't rely on either.
+
+- Manage the values with `TanStackFormController` (`@tanstack/lit-form`), and register a `FormMountController` in the
+  constructor (`new FormMountController(this, this.#form.api)`): lit-form doesn't mount the form, and its values are
+  stale until a field is rendered.
+- Render each validated control with `this.#form.field({ name, validators }, field => …)`, using
+  `validatedInput()` and `validatedSelect()` from `components/form-validation.ts`: they add the `error` class (red
+  border) and show the message as `help-text`, once the user has left the field or has tried to save (`fieldError()`).
+- Register the same check as `onChange` and `onSubmit` validator with `validateWith()`, using the validators of
+  `components/form-validation.ts` (`requiredValue`, `emailAddress`, `minLength`) when they fit. A validator returns
+  the message to display, or `undefined`. A field that depends on another one lists it in `onChangeListenTo`
+  (e.g. "Confirm password").
+- Submit with `submitValidated(this.#form.api)`: it validates all the fields again, so that an error of a control
+  that has been hidden in the meantime doesn't block the form, and calls the form's `onSubmit` only if they are valid.
+  When it returns false, say so next to the Save button ("Please fill in the fields highlighted in red.") and call
+  `focusFirstError()`.
+- A field keeps its validators after its control has been hidden (e.g. by a choice or an "Edit" toggle): each
+  validator checks first whether its control still applies.
+- Show the errors returned by the server on their fields with `setServerError()`; the next submit removes them.
+- In repeated groups, the field names contain the index (`tickets[0].attendees[1].firstName`): key the groups by
+  index in `repeat()`, and add or remove them with `pushFieldValue()` / `removeFieldValue()`, which also move the
+  state of the fields.
+
+Examples: `event/reservation-create/reservation-create.ts` (repeated groups, choices),
+`users/user-profile-edit.ts` (two forms, server errors), `event/promo-code/promo-code.ts` (dialog).
 
 ### Choices
 
@@ -138,12 +171,15 @@ Name the thing being added in the label. The bottom right of the form belongs to
 
 ## 5. Buttons
 
-Use `<sl-button>` for every button, with its icon in `slot="prefix"`.
+Use `<sl-button>` for every button. When the table gives an icon, put it in `slot="prefix"`. Save, Cancel and
+Close never have an icon: the label and the position in the footer are enough. Their labels are always exactly
+"Save", "Cancel" and "Close", never variants such as "Save changes", "Save and continue" or "Discard changes".
+While Save is saving, use its `loading` attribute.
 
 | Action                                                      | Variant                        | Size    | Icon          | Where                                                   |
 |-------------------------------------------------------------|--------------------------------|---------|---------------|---------------------------------------------------------|
 | Save, or any action that completes the form                 | `warning`                      | `large` |               | footer, right                                           |
-| Cancel, Close                                               | `default`                      | `large` | `x-circle`    | footer, left                                            |
+| Cancel, Close                                               | `default`                      | `large` |               | footer, left                                            |
 | Add new: creates an entity (an event, a user, a promo code) | `success`                      | `large` | `plus-circle` | page header or list toolbar                             |
 | Add another: one more group in a form                       | `text`, or `.section-card-add` |         | `plus-circle` | below the last group, see [Forms](#add-another-buttons) |
 | Delete                                                      | `danger`                       |         | `trash`       |                                                         |
@@ -151,7 +187,7 @@ Use `<sl-button>` for every button, with its icon in `slot="prefix"`.
 | Secondary action (bulk creation)                            | `primary`                      |         |               | list toolbar                                            |
 | Action in a table row, a toolbar or a section card header   | as above                       | `small` |               | next to what it applies to                              |
 
-Other icons: `pencil` edit, `clipboard` copy, `qr-code` QR code, `x-circle` clear, `check2` confirm,
+Other icons: `pencil` edit, `clipboard` copy, `qr-code` QR code, `x-circle` clear (a field or a filter), `check2` confirm,
 `arrow-clockwise` refresh.
 
 Footer of a page form or of a dialog:
@@ -236,9 +272,13 @@ Example: `event/check-in/add-attendees-dialog.ts`.
 
 ## 9. CSV import
 
-- Let the user pick or drop the file in `<alfio-file-upload accept=".csv,text/csv">`. Above it, describe the
-  expected file in a `.bulk-specs` block: header or not, separator, quote and escape characters, and a sample row
-  in a `<pre>`.
+- Render the import with `csvImport()`: step 1 downloads a template, step 2 takes the filled-in file
+  (`<alfio-file-upload>`), and a collapsed "File specifications" block describes the expected file for those who
+  generate it with another system.
+- The template has a header, with a column for each of the attendees' data to collect, and the file is read by
+  column name: the user doesn't need to know the names of the fields.
+- In the specifications (a `.bulk-specs` block), describe separator, quote and escape characters, the header in a
+  `<pre>`, and the allowed values of the fields with options.
 - Parse it with papaparse (`Papa.parse`): quoted fields can contain separators and newlines, so the file can't be
   split by lines.
 - Show the parsed rows before saving (a table with a total, or editable rows), and say how many rows were skipped

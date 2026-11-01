@@ -2,12 +2,14 @@ import {css, html, LitElement, TemplateResult} from 'lit';
 import {customElement, property, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
+import {classMap} from 'lit/directives/class-map.js';
 import {Task} from '@lit/task';
-import type {SlInput, SlSelect, SlSwitch} from '@shoelace-style/shoelace';
+import {TanStackFormController} from '@tanstack/lit-form';
+import type {SlSelect, SlSwitch} from '@shoelace-style/shoelace';
 import {AlfioEvent} from '../../model/event.ts';
 import {AttendeesImportRequest, ParsedAttendees} from '../../model/attendees-import.ts';
 import {CategoryType} from '../../model/admin-reservation.ts';
-import {AdditionalField} from '../../model/additional-field.ts';
+import {AdditionalField, allowedValues} from '../../model/additional-field.ts';
 import {EventService} from '../../service/event.ts';
 import {AdditionalFieldService} from '../../service/additional-field.ts';
 import {ConfigurationService} from '../../service/configuration.ts';
@@ -21,13 +23,27 @@ import {
     formatFinalPrice,
     vatDescription,
 } from '../../service/admin-reservation.ts';
-import {badges, base, choiceCards as choiceCardsStyles, form, modernLayout, modernTable, purchaseContextListPage, retroCompat, row, textColors} from '../../styles.ts';
+import {badges, base, choiceCards as choiceCardsStyles, csvImport as csvImportStyles, form, modernLayout, modernTable, purchaseContextListPage, retroCompat, row, textColors} from '../../styles.ts';
 import {sectionCard} from '../../components/section-card.ts';
 import {choiceCards} from '../../components/choice-cards.ts';
 import {TicketCategoriesController, ticketCategorySelect} from '../../components/ticket-category-select.ts';
 import {taskContent} from '../../components/task-content.ts';
 import {FileUploadChangeEvent} from '../../components/file-upload.ts';
-import '../../components/file-upload.ts';
+import {attendeeFieldsLink, csvImport} from '../../components/csv-import.ts';
+import {
+    BoundField,
+    emailAddress,
+    fieldError,
+    requiredValue,
+    ValidatedFieldMeta,
+    validatedInput,
+    ValidatedInputOptions,
+    validateWith,
+    FormMountController,
+    submitValidated,
+    focusFirstError,
+    INVALID_FORM_MESSAGE,
+} from '../../components/form-validation.ts';
 
 // the backend refuses a single reservation with more attendees (see AdminReservationRequestManager)
 const MAX_ATTENDEES_PER_RESERVATION = 100;
@@ -47,6 +63,19 @@ interface Contact {
 }
 
 /**
+ * The validated values of the form, managed by TanStackFormController. The switches are plain state.
+ */
+interface ImportFormValues {
+    // attendees read from the uploaded file
+    attendeesCount: number;
+    existingCategoryId: string;
+    newCategoryName: string;
+    newCategoryPrice: string;
+    contact: Contact;
+    language: string;
+}
+
+/**
  * Imports the attendees listed in a CSV file. The reservations are created in the background:
  * once the request has been accepted, the page moves to the import status.
  */
@@ -56,18 +85,35 @@ export class AttendeesImport extends LitElement {
     @state() private parsed: ParsedAttendees | null = null;
     @state() private parseError: string | null = null;
     @state() private categoryType: CategoryType = 'existing';
-    @state() private existingCategoryId = '';
-    @state() private newCategoryName = '';
-    @state() private newCategoryPrice = '';
     @state() private oneReservationPerAttendee = false;
     @state() private forbidReassignment = false;
     @state() private sendTickets = false;
     @state() private addSeats = false;
-    @state() private contact: Contact = { firstName: '', lastName: '', emailAddress: '' };
-    @state() private language = '';
     @state() private submitting = false;
     @state() private submitError: string | null = null;
     private readonly categories = new TicketCategoriesController(this);
+
+    // each validator checks first whether its control applies (e.g. the contact, for a single reservation):
+    // a field keeps its validators after its control has been hidden
+    readonly #form = new TanStackFormController(this, {
+        defaultValues: {
+            attendeesCount: 0,
+            existingCategoryId: '',
+            newCategoryName: '',
+            newCategoryPrice: '',
+            contact: { firstName: '', lastName: '', emailAddress: '' },
+            language: '',
+        } as ImportFormValues,
+        onSubmit: async ({value}) => {
+            await this.save(value);
+        },
+    });
+
+    constructor() {
+        super();
+        // see FormMountController: e.g. in "fast creation" mode, the first fields appear only after the reset
+        new FormMountController(this, this.#form.api);
+    }
 
     private readonly loadDataTask = new Task(this, {
         task: async ([eventName]): Promise<LoadData> => {
@@ -79,7 +125,7 @@ export class AttendeesImport extends LitElement {
             this.categories.set(event.ticketCategories);
             this.sendTickets = sendTickets;
             this.oneReservationPerAttendee = oneReservationPerAttendee;
-            this.language = event.contentLanguages[0]?.locale ?? '';
+            this.#form.api.setFieldValue('language', event.contentLanguages[0]?.locale ?? '', { dontUpdateMeta: true });
             const fields = (await AdditionalFieldService.loadAllByPurchaseContext(event))
                 .filter(field => field.context === 'ATTENDEE')
                 .sort((a, b) => a.order - b.order);
@@ -99,69 +145,13 @@ export class AttendeesImport extends LitElement {
         modernTable,
         purchaseContextListPage,
         choiceCardsStyles,
+        csvImportStyles,
         css`
             :host {
                 --alfio-section-body-padding: var(--sl-spacing-large);
             }
-            .import-steps {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-                gap: var(--sl-spacing-large);
-            }
-            .import-step {
-                display: grid;
-                grid-template-rows: auto 1fr;
-                gap: var(--sl-spacing-medium);
-                margin: 0;
-                padding: var(--sl-spacing-large);
-                border-radius: var(--sl-input-border-radius-large);
-            }
-            .import-step.upload {
-                /* the alerts go below the drop zone */
-                grid-template-rows: auto;
-                align-content: start;
-                border: 1px solid var(--sl-color-gray-200);
-            }
-            /* centered like the content of the drop zone next to it */
-            .template-download {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: var(--sl-spacing-medium);
-                text-align: center;
-            }
-            .template-download > sl-icon {
-                font-size: var(--sl-font-size-4x-large);
-                color: var(--sl-color-primary-600);
-            }
-            .import-step h4 {
-                display: flex;
-                align-items: center;
-                gap: var(--sl-spacing-small);
-                margin: 0;
-            }
-            .import-step p {
-                margin: 0;
-            }
-            .step-number {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                flex: none;
-                width: var(--sl-spacing-x-large);
-                height: var(--sl-spacing-x-large);
-                border-radius: var(--sl-border-radius-circle);
-                background: var(--sl-color-primary-600);
-                color: var(--sl-color-neutral-0);
-                font-size: var(--sl-font-size-small);
-            }
             .file-specs {
-                display: block;
                 margin-top: var(--sl-spacing-large);
-            }
-            .bulk-specs p {
-                margin: 0 0 var(--sl-spacing-x-small);
             }
             .preview {
                 margin-top: var(--sl-spacing-large);
@@ -193,7 +183,7 @@ export class AttendeesImport extends LitElement {
                 </div>
                 <hr class="page-separator" />
                 <p class="page-description text-muted">Create reservations for attendees registered elsewhere, by uploading a CSV file.</p>
-                <form @submit=${(e: Event) => this.submit(e, event)}>
+                <form novalidate @submit=${(e: Event) => this.submit(e)}>
                     ${this.renderAttendees(event, fields)}
                     ${this.renderCategory(event)}
                     ${this.renderImportOptions()}
@@ -208,7 +198,6 @@ export class AttendeesImport extends LitElement {
                         <sl-divider></sl-divider>
                         <div class="row" style="--alfio-row-cols: 3">
                             <sl-button variant="default" size="large" href=${`#/events/${event.shortName}/detail`}>
-                                <sl-icon slot="prefix" name="x-circle"></sl-icon>
                                 Cancel
                             </sl-button>
                             <div></div>
@@ -234,44 +223,14 @@ export class AttendeesImport extends LitElement {
             title: 'Attendees',
             badge,
         }, html`
-            <div class="import-steps">
-                <div class="import-step featured-card">
-                    <h4><span class="step-number">1</span>Download the template</h4>
-                    <div class="template-download">
-                        <sl-icon name="file-earmark-spreadsheet"></sl-icon>
-                        <p class="text-muted">
-                            ${when(fields.length > 0,
-                                () => html`It has a column for each of the ${fieldsLink(event)} of this event, so that you don't miss any of them.`,
-                                () => html`It has all the columns that the import needs.`)}
-                        </p>
-                        <sl-button id="download-template" variant="primary" size="large"
-                                   @click=${() => downloadCsv(`${event.shortName}-attendees.csv`, AttendeesImportService.template(fields.map(field => field.name)))}>
-                            <sl-icon slot="prefix" name="download"></sl-icon>
-                            Download template
-                        </sl-button>
-                    </div>
-                </div>
-                <div class="import-step upload">
-                    <h4><span class="step-number">2</span>Fill it in and upload it</h4>
-                    <alfio-file-upload id="attendees-file" accept=".csv,text/csv" label="Choose the filled-in template or drag it here"
-                                       @change=${(e: FileUploadChangeEvent) => this.onFileChange(e, fields)}></alfio-file-upload>
-                    ${when(this.parseError, () => html`
-                        <sl-alert id="parse-error" variant="danger" open>
-                            <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                            ${this.parseError}
-                        </sl-alert>
-                    `)}
-                    ${when((this.parsed?.skippedRows ?? 0) > 0, () => html`
-                        <sl-alert variant="warning" open>
-                            <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                            ${this.parsed!.skippedRows} rows have been skipped, because they don't contain all the required columns.
-                        </sl-alert>
-                    `)}
-                </div>
-            </div>
-            <sl-details summary="File specifications" class="file-specs">
-                ${this.renderFileSpecs(event, fields)}
-            </sl-details>
+            ${this.#form.field({ name: 'attendeesCount', validators: validateWith(value => this.validateAttendeesCount(value)) }, field => csvImport({
+                templateDescription: templateDescription(event, fields),
+                onDownloadTemplate: () => downloadCsv(`${event.shortName}-attendees.csv`, AttendeesImportService.template(fields.map(field => field.name))),
+                onFileChange: (e: FileUploadChangeEvent) => this.onFileChange(e, fields),
+                error: this.parseError ?? this.error(field.state.meta) ?? null,
+                warning: skippedRowsWarning(this.parsed?.skippedRows ?? 0),
+                specs: this.renderFileSpecs(event, fields),
+            }))}
             ${when(count > 0, () => this.renderPreview(this.parsed!))}
         `);
     }
@@ -292,9 +251,9 @@ export class AttendeesImport extends LitElement {
 ${requiredColumns(', ')}: required, in this order
 ${REFERENCE_COLUMN}: optional, the attendee ID in your system
 ${when(fieldNames.length > 0,
-    () => html`${fieldNames.join(', ')}: optional, the ${fieldsLink(event)}${fields.filter(hasRestrictedValues).map(field => html`
+    () => html`${fieldNames.join(', ')}: optional, the ${attendeeFieldsLink(event.shortName)}${fields.filter(hasRestrictedValues).map(field => html`
 ${field.name}: one of ${allowedValues(field).join(', ')}`)}`,
-    () => html`There are no ${fieldsLink(event)} for this event`)}</pre>
+    () => html`There are no ${attendeeFieldsLink(event.shortName)} for this event`)}</pre>
             </div>
         `;
     }
@@ -343,12 +302,15 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`,
                 options: CATEGORY_TYPE_CHOICES,
                 panel: html`
                     ${when(this.categoryType === 'existing',
-                        () => ticketCategorySelect(this.categories, {
-                            id: 'existing-category',
-                            value: this.existingCategoryId,
-                            onChange: existingCategoryId => { this.existingCategoryId = existingCategoryId; },
-                            onRefresh: () => this.refreshCategories(event),
-                        }),
+                        () => this.#form.field({ name: 'existingCategoryId', validators: validateWith(value => this.validateExistingCategory(value)) },
+                            field => ticketCategorySelect(this.categories, {
+                                id: 'existing-category',
+                                value: field.state.value,
+                                error: this.error(field.state.meta),
+                                onChange: existingCategoryId => field.handleChange(existingCategoryId),
+                                onBlur: () => field.handleBlur(),
+                                onRefresh: () => this.refreshCategories(event),
+                            })),
                         () => this.renderNewCategory(event))}
                 `,
             }, this.onCategoryTypeChange)}
@@ -356,23 +318,28 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`,
     }
 
     private renderNewCategory(event: AlfioEvent): TemplateResult {
-        const nameInput = html`
-            <sl-input id="new-category-name" label="Name" required .value=${this.newCategoryName}
-                      @sl-input=${(e: Event) => { this.newCategoryName = (e.target as SlInput).value; }}></sl-input>
-        `;
+        const nameInput = this.#form.field({
+            name: 'newCategoryName',
+            validators: validateWith(value => this.ifNewCategory(() => requiredValue(value))),
+        }, field => this.textInput(field, { id: 'new-category-name', label: 'Name' }));
         if (event.freeOfCharge) {
-            return nameInput;
+            return html`${nameInput}`;
         }
+        const validatePrice = (value: unknown) => this.ifNewCategory(() => {
+            const price = Number(value);
+            if (String(value ?? '').trim() === '' || Number.isNaN(price) || price < 0) {
+                return 'Please enter a price, 0 or more';
+            }
+            return undefined;
+        });
         return html`
             <div class="row" style="--alfio-row-cols: 3">
                 ${nameInput}
-                <sl-input id="new-category-price" label="Ticket price" type="number" min="0" step="0.01" required .value=${this.newCategoryPrice}
-                          @sl-input=${(e: Event) => { this.newCategoryPrice = (e.target as SlInput).value; }}>
-                    <span slot="suffix">${event.currency}</span>
-                </sl-input>
+                ${this.#form.field({ name: 'newCategoryPrice', validators: validateWith(validatePrice) },
+                    field => this.textInput(field, { id: 'new-category-price', label: 'Ticket price', type: 'number', suffix: event.currency }))}
                 <sl-input label="Final price" readonly
                           help-text=${vatDescription(event)}
-                          .value=${formatFinalPrice(event, this.newCategoryPrice)}></sl-input>
+                          .value=${formatFinalPrice(event, this.#form.api.state.values.newCategoryPrice)}></sl-input>
             </div>
         `;
     }
@@ -439,16 +406,14 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`,
             <div class="form-stack">
                 ${when(singleReservation, () => html`
                     <div class="row">
-                        <sl-input id="contact-first-name" label="First name" required .value=${this.contact.firstName}
-                                  @sl-input=${(e: Event) => this.updateContact({ firstName: (e.target as SlInput).value })}></sl-input>
-                        <sl-input id="contact-last-name" label="Last name" required .value=${this.contact.lastName}
-                                  @sl-input=${(e: Event) => this.updateContact({ lastName: (e.target as SlInput).value })}></sl-input>
+                        ${this.#form.field({ name: 'contact.firstName', validators: validateWith(value => this.ifSingleReservation(() => requiredValue(value))) },
+                            field => this.textInput(field, { id: 'contact-first-name', label: 'First name' }))}
+                        ${this.#form.field({ name: 'contact.lastName', validators: validateWith(value => this.ifSingleReservation(() => requiredValue(value))) },
+                            field => this.textInput(field, { id: 'contact-last-name', label: 'Last name' }))}
                     </div>
                     <div class="row">
-                        <sl-input id="contact-email" label="Email address" type="email" required .value=${this.contact.emailAddress}
-                                  @sl-input=${(e: Event) => this.updateContact({ emailAddress: (e.target as SlInput).value })}>
-                            <sl-icon slot="prefix" name="envelope"></sl-icon>
-                        </sl-input>
+                        ${this.#form.field({ name: 'contact.emailAddress', validators: validateWith(value => this.ifSingleReservation(() => emailAddress(value))) },
+                            field => this.textInput(field, { id: 'contact-email', label: 'Email address', type: 'email', prefixIcon: 'envelope' }))}
                         ${when(multipleLanguages, () => this.renderLanguage(event))}
                     </div>
                 `, () => this.renderLanguage(event))}
@@ -458,23 +423,68 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`,
 
     private renderLanguage(event: AlfioEvent): TemplateResult {
         return html`
-            <sl-select id="language" label="Language" required help-text="Used for the attendees without a language"
-                       .value=${this.language}
-                       @sl-change=${(e: Event) => { this.language = String((e.target as SlSelect).value); }}>
-                ${event.contentLanguages.map(language => html`<sl-option value=${language.locale}>${language.displayLanguage}</sl-option>`)}
-            </sl-select>
+            ${this.#form.field({ name: 'language', validators: validateWith(value => requiredValue(value)) }, field => {
+                const error = this.error(field.state.meta);
+                return html`
+                    <sl-select id="language" label="Language" required class=${classMap({ error: error != null })}
+                               help-text=${error ?? 'Used for the attendees without a language'}
+                               .value=${field.state.value}
+                               @sl-change=${(e: Event) => field.handleChange(String((e.target as SlSelect).value))}
+                               @sl-blur=${() => field.handleBlur()}>
+                        ${event.contentLanguages.map(language => html`<sl-option value=${language.locale}>${language.displayLanguage}</sl-option>`)}
+                    </sl-select>
+                `;
+            })}
         `;
     }
 
-    private updateContact(change: Partial<Contact>): void {
-        this.contact = { ...this.contact, ...change };
+    private textInput(field: BoundField<string>, options: ValidatedInputOptions): TemplateResult {
+        return validatedInput(field, this.#form.api.state.submissionAttempts > 0, options);
+    }
+
+    private error(meta: ValidatedFieldMeta): string | undefined {
+        return fieldError(meta, this.#form.api.state.submissionAttempts > 0);
+    }
+
+    private validateAttendeesCount(value: unknown): string | undefined {
+        const count = Number(value ?? 0);
+        if (count === 0) {
+            return 'Please upload a CSV file with the attendees';
+        }
+        if (!this.oneReservationPerAttendee && count > MAX_ATTENDEES_PER_RESERVATION) {
+            return `A reservation can contain at most ${MAX_ATTENDEES_PER_RESERVATION} attendees`;
+        }
+        return undefined;
+    }
+
+    private validateExistingCategory(value: unknown): string | undefined {
+        if (this.categoryType !== 'existing' || requiredValue(value) == null) {
+            return undefined;
+        }
+        return 'Please select a category';
+    }
+
+    private ifNewCategory(validate: () => string | undefined): string | undefined {
+        if (this.categoryType !== 'new') {
+            return undefined;
+        }
+        return validate();
+    }
+
+    // the contact person is asked only when all the attendees go in the same reservation
+    private ifSingleReservation(validate: () => string | undefined): string | undefined {
+        if (this.oneReservationPerAttendee) {
+            return undefined;
+        }
+        return validate();
     }
 
     private async refreshCategories(event: AlfioEvent): Promise<void> {
         await this.categories.refresh(event.shortName);
         // the selected category could have been removed in the meantime
-        if (this.existingCategoryId !== '' && !this.categories.contains(this.existingCategoryId)) {
-            this.existingCategoryId = '';
+        const existingCategoryId = this.#form.api.state.values.existingCategoryId;
+        if (existingCategoryId !== '' && !this.categories.contains(existingCategoryId)) {
+            this.#form.api.setFieldValue('existingCategoryId', '');
         }
     }
 
@@ -491,6 +501,7 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`,
         this.parsed = null;
         this.parseError = null;
         this.submitError = null;
+        this.#form.api.setFieldValue('attendeesCount', 0, { dontUpdateMeta: true });
         if (file == null) {
             return;
         }
@@ -511,28 +522,37 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`,
             if (parsed.attendees.length > MAX_ATTENDEES_PER_RESERVATION && this.categoryType === 'existing') {
                 this.oneReservationPerAttendee = true;
             }
+            this.#form.api.setFieldValue('attendeesCount', parsed.attendees.length);
         } catch (error) {
             this.parseError = errorMessage(error, 'The file cannot be read.');
         }
     }
 
-    private async submit(e: Event, event: AlfioEvent): Promise<void> {
+    private async submit(e: Event): Promise<void> {
         e.preventDefault();
+        e.stopImmediatePropagation();
         if (this.submitting) {
             return;
         }
-        if (this.parsed == null) {
-            this.submitError = 'Please upload a CSV file with the attendees.';
-            return;
+        this.submitError = null;
+        if (!await submitValidated(this.#form.api)) {
+            this.submitError = INVALID_FORM_MESSAGE;
+            await this.updateComplete;
+            focusFirstError(this.renderRoot);
         }
-        if (!this.oneReservationPerAttendee && this.parsed.attendees.length > MAX_ATTENDEES_PER_RESERVATION) {
-            this.submitError = `A reservation can contain at most ${MAX_ATTENDEES_PER_RESERVATION} attendees.`;
+    }
+
+    /**
+     * Called by the form once all the fields are valid
+     */
+    private async save(values: ImportFormValues): Promise<void> {
+        const event = this.loadDataTask.value?.event;
+        if (event == null || this.parsed == null) {
             return;
         }
         this.submitting = true;
-        this.submitError = null;
         try {
-            const requestId = await AttendeesImportService.submit(event.shortName, this.buildRequest(event, this.parsed), this.oneReservationPerAttendee);
+            const requestId = await AttendeesImportService.submit(event.shortName, this.buildRequest(event, this.parsed, values), this.oneReservationPerAttendee);
             window.location.hash = `#/events/${event.shortName}/reservation/import/${requestId}/status`;
         } catch (error) {
             this.submitError = errorMessage(error, 'Unexpected error. Please retry and/or check the logs.');
@@ -541,14 +561,14 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`,
         }
     }
 
-    private buildRequest(event: AlfioEvent, parsed: ParsedAttendees): AttendeesImportRequest {
+    private buildRequest(event: AlfioEvent, parsed: ParsedAttendees, values: ImportFormValues): AttendeesImportRequest {
         const category = buildCategory(event, {
             categoryType: this.categoryType,
-            existingCategoryId: this.existingCategoryId,
-            name: this.newCategoryName,
-            price: this.newCategoryPrice,
+            existingCategoryId: values.existingCategoryId,
+            name: values.newCategoryName,
+            price: values.newCategoryPrice,
         });
-        let customerData = this.contact;
+        let customerData = values.contact;
         if (this.oneReservationPerAttendee) {
             // each attendee is the contact of their own reservation
             customerData = { firstName: '', lastName: '', emailAddress: '' };
@@ -556,7 +576,7 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`,
         return {
             expiration: reservationExpiration(event),
             customerData,
-            language: this.language,
+            language: values.language,
             ticketsInfo: [{
                 category,
                 attendees: parsed.attendees.map(attendee => ({ ...attendee, forbidReassignment: this.forbidReassignment })),
@@ -576,8 +596,21 @@ async function booleanConfig(eventName: string, key: string): Promise<boolean> {
     }
 }
 
-function fieldsLink(event: AlfioEvent): TemplateResult {
-    return html`<a href=${`#/events/${event.shortName}/attendee-data-to-collect`}>attendees' data to collect</a>`;
+function templateDescription(event: AlfioEvent, fields: AdditionalField[]): TemplateResult {
+    if (fields.length > 0) {
+        return html`It has a column for each of the ${attendeeFieldsLink(event.shortName)} of this event, so that you don't miss any of them.`;
+    }
+    return html`It has all the columns that the import needs.`;
+}
+
+function skippedRowsWarning(skippedRows: number): string | null {
+    if (skippedRows === 0) {
+        return null;
+    }
+    if (skippedRows === 1) {
+        return "1 row has been skipped, because it doesn't contain all the required columns.";
+    }
+    return `${skippedRows} rows have been skipped, because they don't contain all the required columns.`;
 }
 
 function requiredColumns(separator: string, format: (column: string) => string = column => column): TemplateResult[] {
@@ -586,10 +619,6 @@ function requiredColumns(separator: string, format: (column: string) => string =
 
 function hasRestrictedValues(field: AdditionalField): boolean {
     return allowedValues(field).length > 0;
-}
-
-function allowedValues(field: AdditionalField): string[] {
-    return (field.restrictedValues ?? []).filter(value => !(field.disabledValues ?? []).includes(value));
 }
 
 declare global {

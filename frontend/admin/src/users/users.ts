@@ -3,6 +3,7 @@ import {customElement, property, query, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
 import {Task, TaskStatus} from '@lit/task';
+import {TanStackFormController} from '@tanstack/lit-form';
 import {UsersService} from './users-service.ts';
 import {ConfirmationDialogService} from '../service/confirmation-dialog.ts';
 import {Role, User, UserModification, UserType} from '../model/user.ts';
@@ -28,6 +29,21 @@ import type {SlDialog} from '@shoelace-style/shoelace';
 import {UtilService} from "../service/util.ts";
 import {FileUploadChangeEvent} from "../components/file-upload.ts";
 import {emptyState} from '../components/empty-state.ts';
+import {
+    BoundField,
+    emailAddress,
+    fieldError,
+    focusFirstError,
+    FormMountController,
+    minLength,
+    requiredValue,
+    setServerError,
+    submitValidated,
+    validatedInput,
+    ValidatedInputOptions,
+    validatedSelect,
+    validateWith,
+} from '../components/form-validation.ts';
 
 interface LoadResult {
     users: User[];
@@ -38,6 +54,38 @@ interface LoadResult {
 
 interface EditableUser extends UserModification {
     target?: string;
+}
+
+/**
+ * The validated values of the user (or API key) being edited
+ */
+interface UserFormValues {
+    // the ID of the organization, empty if none is selected
+    organizationId: string;
+    role: string;
+    username: string;
+    firstName: string;
+    lastName: string;
+    emailAddress: string;
+    description: string;
+}
+
+interface BulkImportFormValues {
+    organizationId: string;
+    role: string;
+    // the API keys read from the CSV file
+    entries: number;
+}
+
+function emptyUserForm(organizationId: string): UserFormValues {
+    return { organizationId, role: '', username: '', firstName: '', lastName: '', emailAddress: '', description: '' };
+}
+
+function validateEntries(value: unknown): string | undefined {
+    if (Number(value ?? 0) === 0) {
+        return 'Please upload a CSV file with at least one API key';
+    }
+    return undefined;
 }
 
 @customElement('alfio-users')
@@ -62,11 +110,23 @@ export class Users extends LitElement {
     @query('sl-dialog#user-edit') userEditDialog!: SlDialog;
     @query('sl-dialog#bulk-import') bulkImportDialog!: SlDialog;
 
+    // the user (or API key) being edited: what is not in the form, e.g. its ID and type
     @state() private editingUser: EditableUser | null = null;
-    @state() private validationErrors: Record<string, string> = {};
 
-    @state() private bulkOrgId: number | null = null;
-    @state() private bulkRole: string = '';
+    readonly #userForm = new TanStackFormController(this, {
+        defaultValues: emptyUserForm(''),
+        onSubmit: async ({value}) => {
+            await this.saveUser(value);
+        },
+    });
+
+    readonly #bulkForm = new TanStackFormController(this, {
+        defaultValues: { organizationId: '', role: '', entries: 0 } as BulkImportFormValues,
+        onSubmit: async ({value}) => {
+            await this.saveBulkImport(value);
+        },
+    });
+
     @state() private bulkDescriptions: string[] = [];
     private bulkCsvInput: HTMLInputElement | null = null;
 
@@ -430,84 +490,61 @@ render() {
 
         if (!user) return nothing;
 
-        const errorFor = (field: string) =>
-            this.validationErrors[field] ? html`<sl-alert variant="danger" open class="mt-2">${this.validationErrors[field]}</sl-alert>` : nothing;
+        const submitted = this.#userForm.api.state.submissionAttempts > 0;
+        const input = (field: BoundField<string>, options: ValidatedInputOptions) => validatedInput(field, submitted, options);
+        const ifUser = (validate: () => string | undefined) => {
+            if (this.editingUser?.target !== 'USER') {
+                return undefined;
+            }
+            return validate();
+        };
 
         return html`
             <sl-dialog id="user-edit" label=${dialogLabel} size="large" placement="bottom">
                 <div class="row" style="--alfio-row-cols: 2">
                     <div class="form-group">
-                        <sl-select id="edit-org" label="Organization" required
-                            .value=${String(user.organizationId)}
-                            @sl-change=${(e: Event) => {
-                                const val = (e.target as any).value;
-                                user.organizationId = val ? Number(val) : 0;
-                            }}>
-                            <sl-option value="" disabled>Select an organization</sl-option>
-                            ${repeat(this.organizations, (org) => org.id, (org) => html`
-                                <sl-option value=${org.id}>${org.name}</sl-option>
-                            `)}
-                        </sl-select>
-                        ${errorFor('organizationId')}
+                        ${this.#userForm.field({ name: 'organizationId', validators: validateWith(value => requiredValue(value)) },
+                            field => validatedSelect(field, submitted, { id: 'edit-org', label: 'Organization', placeholder: 'Select an organization' }, html`
+                                ${repeat(this.organizations, (org) => org.id, (org) => html`
+                                    <sl-option value=${String(org.id)}>${org.name}</sl-option>
+                                `)}
+                            `))}
                     </div>
                     <div class="form-group">
-                        <sl-select id="edit-role" label="Role" required
-                            .value=${user.role}
-                            @sl-change=${(e: Event) => {
-                                user.role = (e.target as any).value;
-                            }}>
-                            <sl-option value="" disabled>Select a role</sl-option>
-                            ${repeat(availableRoles, (r) => r.role, (r) => html`
-                                <sl-option value=${r.role}>${r.description}</sl-option>
-                            `)}
-                        </sl-select>
-                        ${errorFor('role')}
+                        ${this.#userForm.field({ name: 'role', validators: validateWith(value => requiredValue(value)) },
+                            field => validatedSelect(field, submitted, { id: 'edit-role', label: 'Role', placeholder: 'Select a role' }, html`
+                                ${repeat(availableRoles, (r) => r.role, (r) => html`
+                                    <sl-option value=${r.role}>${r.description}</sl-option>
+                                `)}
+                            `))}
                     </div>
                 </div>
 
                 ${when(target === 'USER',
                     () => html`
                         <div class="form-group">
-                            <sl-input id="edit-username" label="Username" required minlength="2"
-                                .value=${user.username ?? ''}
-                                @sl-input=${(e: InputEvent) => user.username = (e.target as any).value}>
-                                <sl-icon name="person" slot="prefix"></sl-icon>
-                            </sl-input>
-                            ${errorFor('username')}
+                            ${this.#userForm.field({ name: 'username', validators: validateWith(value => ifUser(() => minLength(value, 2))) },
+                                field => input(field, { id: 'edit-username', label: 'Username', prefixIcon: 'person' }))}
                         </div>
                         <div class="row" style="--alfio-row-cols: 2">
                             <div class="form-group">
-                                <sl-input id="edit-firstName" label="First name" required minlength="2"
-                                    .value=${user.firstName ?? ''}
-                                    @sl-input=${(e: InputEvent) => user.firstName = (e.target as any).value}>
-                                </sl-input>
-                                ${errorFor('firstName')}
+                                ${this.#userForm.field({ name: 'firstName', validators: validateWith(value => ifUser(() => minLength(value, 2))) },
+                                    field => input(field, { id: 'edit-firstName', label: 'First name' }))}
                             </div>
                             <div class="form-group">
-                                <sl-input id="edit-lastName" label="Last name" required minlength="2"
-                                    .value=${user.lastName ?? ''}
-                                    @sl-input=${(e: InputEvent) => user.lastName = (e.target as any).value}>
-                                </sl-input>
-                                ${errorFor('lastName')}
+                                ${this.#userForm.field({ name: 'lastName', validators: validateWith(value => ifUser(() => minLength(value, 2))) },
+                                    field => input(field, { id: 'edit-lastName', label: 'Last name' }))}
                             </div>
                         </div>
                         <div class="form-group">
-                            <sl-input id="edit-emailAddress" label="E-mail" type="email" required
-                                .value=${user.emailAddress ?? ''}
-                                @sl-input=${(e: InputEvent) => user.emailAddress = (e.target as any).value}>
-                                <sl-icon name="envelope" slot="prefix"></sl-icon>
-                            </sl-input>
-                            ${errorFor('emailAddress')}
+                            ${this.#userForm.field({ name: 'emailAddress', validators: validateWith(value => ifUser(() => emailAddress(value))) },
+                                field => input(field, { id: 'edit-emailAddress', label: 'E-mail', type: 'email', prefixIcon: 'envelope' }))}
                         </div>
                     `,
                     () => html`
                         <div class="form-group">
-                            <sl-input id="edit-description" label="Description" maxlength="128"
-                                .value=${user.description ?? ''}
-                                @sl-input=${(e: InputEvent) => user.description = (e.target as any).value}>
-                                <sl-icon name="card-text" slot="prefix"></sl-icon>
-                            </sl-input>
-                            ${errorFor('description')}
+                            ${this.#userForm.field({ name: 'description' },
+                                field => input(field, { id: 'edit-description', label: 'Description', maxlength: 128, prefixIcon: 'card-text', optional: true }))}
                         </div>
                     `)}
 
@@ -516,8 +553,8 @@ render() {
                     <div class="row" style="--alfio-row-cols: 3">
                         <sl-button variant="default" size="large" @click=${() => this.cancelEdit()}>Cancel</sl-button>
                         <div></div>
-                        <sl-button variant="warning" size="large" @click=${() => this.saveUser()}>
-                            <sl-icon slot="prefix" name="check2"></sl-icon> Save
+                        <sl-button id="save-user" variant="warning" size="large" @click=${() => this.submitUser()}>
+                            Save
                         </sl-button>
                     </div>
                 </div>
@@ -527,34 +564,26 @@ render() {
 
     private renderBulkImportDialog(): TemplateResult {
         const availableRoles = this.roles.filter(r => (r.target || []).includes('API_KEY'));
+        const bulkSubmitted = this.#bulkForm.api.state.submissionAttempts > 0;
 
         return html`
             <sl-dialog id="bulk-import" label="Bulk create API Keys" style="--width: 80vw" placement="bottom">
                 <div class="form-group">
-                    <sl-select id="bulk-org" label="Organization" required
-                        .value=${this.bulkOrgId != null ? String(this.bulkOrgId) : ''}
-                        @sl-change=${(e: Event) => {
-                            const val = (e.target as any).value;
-                            this.bulkOrgId = val ? Number(val) : null;
-                        }}>
-                        <sl-option value="" disabled>Select an organization</sl-option>
-                        ${repeat(this.organizations, (org) => org.id, (org) => html`
-                            <sl-option value=${org.id}>${org.name}</sl-option>
-                        `)}
-                    </sl-select>
+                    ${this.#bulkForm.field({ name: 'organizationId', validators: validateWith(value => requiredValue(value)) },
+                        field => validatedSelect(field, bulkSubmitted, { id: 'bulk-org', label: 'Organization', placeholder: 'Select an organization' }, html`
+                            ${repeat(this.organizations, (org) => org.id, (org) => html`
+                                <sl-option value=${String(org.id)}>${org.name}</sl-option>
+                            `)}
+                        `))}
                 </div>
 
                 <div class="form-group">
-                    <sl-select id="bulk-role" label="Role" required
-                        .value=${this.bulkRole}
-                        @sl-change=${(e: Event) => {
-                            this.bulkRole = (e.target as any).value;
-                        }}>
-                        <sl-option value="" disabled>Select a role</sl-option>
-                        ${repeat(availableRoles, (r) => r.role, (r) => html`
-                            <sl-option value=${r.role}>${r.description}</sl-option>
-                        `)}
-                    </sl-select>
+                    ${this.#bulkForm.field({ name: 'role', validators: validateWith(value => requiredValue(value)) },
+                        field => validatedSelect(field, bulkSubmitted, { id: 'bulk-role', label: 'Role', placeholder: 'Select a role' }, html`
+                            ${repeat(availableRoles, (r) => r.role, (r) => html`
+                                <sl-option value=${r.role}>${r.description}</sl-option>
+                            `)}
+                        `))}
                 </div>
 
                 <div class="form-group">
@@ -571,6 +600,15 @@ where:
 <span class="text-success">name</span> is the client name, displayed in the QR-Code and statistics</pre>
                     </div>
                     <alfio-file-upload class="mt-3" @change=${(e: FileUploadChangeEvent) => this.handleFileSelect(e)}></alfio-file-upload>
+                    ${this.#bulkForm.field({ name: 'entries', validators: validateWith(value => validateEntries(value)) }, field => {
+                        const error = fieldError(field.state.meta, bulkSubmitted);
+                        return html`${when(error, () => html`
+                            <sl-alert class="bulk-entries-error mt-2" variant="danger" open>
+                                <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+                                ${error}
+                            </sl-alert>
+                        `)}`;
+                    })}
                 </div>
 
                 ${when(this.bulkDescriptions.length > 0, () => html`
@@ -604,8 +642,7 @@ where:
                         <sl-button
                             variant="success"
                             size="large"
-                            .disabled=${this.bulkDescriptions.length === 0}
-                            @click=${() => this.saveBulkImport()}>
+                            @click=${() => this.submitBulkImport()}>
                             <sl-icon slot="prefix" name="check2"></sl-icon> Create
                         </sl-button>
                     </div>
@@ -726,6 +763,12 @@ private countFilteredUsers(users: User[]): number {
         this.refreshCount++;
     }
 
+    constructor() {
+        super();
+        new FormMountController(this, this.#userForm.api);
+        new FormMountController(this, this.#bulkForm.api);
+    }
+
     connectedCallback(): void {
         super.connectedCallback();
         document.body.addEventListener('alfio-users-refresh', this.handleRefresh);
@@ -748,51 +791,39 @@ private countFilteredUsers(users: User[]): number {
     };
 
     public openNewUser(): void {
-        this.editingUser = {
-            id: null,
-            organizationId: this.organizations.length === 1 ? this.organizations[0].id : 0,
-            role: '',
-            username: '',
-            firstName: '',
-            lastName: '',
-            emailAddress: '',
-            target: 'USER',
-        };
-        this.validationErrors = {};
+        this.editingUser = { id: null, organizationId: 0, role: '', target: 'USER' };
+        this.#userForm.api.reset(emptyUserForm(this.singleOrganizationId()));
     }
 
     public openNewApiKey(): void {
-        this.editingUser = {
-            id: null,
-            organizationId: this.organizations.length === 1 ? this.organizations[0].id : 0,
-            role: '',
-            description: '',
-            type: 'API_KEY',
-            target: 'API_KEY',
-        };
-        this.validationErrors = {};
+        this.editingUser = { id: null, organizationId: 0, role: '', type: 'API_KEY', target: 'API_KEY' };
+        this.#userForm.api.reset(emptyUserForm(this.singleOrganizationId()));
     }
 
     public async editUser(user: User): Promise<void> {
         const orgId = (user as any).organizationId ?? user.memberOf[0]?.id ?? 0;
-        this.editingUser = {
-            id: user.id,
-            organizationId: orgId,
+        let target = 'USER';
+        if (user.type === 'API_KEY') {
+            target = 'API_KEY';
+        }
+        this.editingUser = { id: user.id, organizationId: orgId, role: '', type: user.type, target };
+        let organizationId = '';
+        if (orgId) {
+            organizationId = String(orgId);
+        }
+        this.#userForm.api.reset({
+            organizationId,
             role: user.roles[0] ?? '',
-            username: user.username,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            emailAddress: user.emailAddress,
-            description: user.description,
-            type: user.type,
-            target: user.type === 'API_KEY' ? 'API_KEY' : 'USER',
-        };
-        this.validationErrors = {};
+            username: user.username ?? '',
+            firstName: user.firstName ?? '',
+            lastName: user.lastName ?? '',
+            emailAddress: user.emailAddress ?? '',
+            description: user.description ?? '',
+        });
     }
 
     public openBulkImport(): void {
-        this.bulkOrgId = this.organizations.length === 1 ? this.organizations[0].id : null;
-        this.bulkRole = '';
+        this.#bulkForm.api.reset({ organizationId: this.singleOrganizationId(), role: '', entries: 0 });
         this.bulkDescriptions = [];
         if (this.bulkCsvInput) {
             this.bulkCsvInput.value = '';
@@ -800,26 +831,48 @@ private countFilteredUsers(users: User[]): number {
         this.bulkImportDialog.show();
     }
 
+    // preselected when there is no choice
+    private singleOrganizationId(): string {
+        if (this.organizations.length === 1) {
+            return String(this.organizations[0].id);
+        }
+        return '';
+    }
+
     private cancelEdit(): void {
         this.editingUser = null;
-        this.validationErrors = {};
         this.userEditDialog.hide();
     }
 
-    private async saveUser(): Promise<void> {
-        if (!this.editingUser) return;
-
-        this.validationErrors = {};
-
-        const missing = this.validateEditingUser();
-        if (missing.length > 0) {
-            dispatchFeedback({type: 'danger', message: `Please fill in all required fields: ${missing.join(', ')}`}, this);
-            return;
+    private async submitUser(): Promise<void> {
+        if (!await submitValidated(this.#userForm.api)) {
+            await this.updateComplete;
+            focusFirstError(this.userEditDialog);
         }
+    }
+
+    /**
+     * Called by the user form once all the fields are valid
+     */
+    private async saveUser(values: UserFormValues): Promise<void> {
+        if (!this.editingUser) return;
+        this.editingUser = this.toModification(this.editingUser, values);
 
         const result = await UsersService.check(this.editingUser);
         if (!result.success) {
-            this.validationErrors = this.mapValidationErrors(result.validationErrors);
+            const errors = this.mapValidationErrors(result.validationErrors);
+            const fields = Object.keys(this.#userForm.api.fieldInfo);
+            const others: string[] = [];
+            Object.entries(errors).forEach(([field, message]) => {
+                if (fields.includes(field)) {
+                    setServerError(this.#userForm.api, field, message);
+                } else {
+                    others.push(message);
+                }
+            });
+            if (others.length > 0) {
+                dispatchFeedback({type: 'danger', message: others.join(' ')}, this);
+            }
             return;
         }
 
@@ -828,18 +881,21 @@ private countFilteredUsers(users: User[]): number {
         this.cancelEdit();
     }
 
-    private validateEditingUser(): string[] {
-        if (!this.editingUser) return [];
-        const missing: string[] = [];
-        if (!this.editingUser.organizationId) missing.push('organization');
-        if (!this.editingUser.role) missing.push('role');
-        if (this.editingUser.target === 'USER') {
-            if (!(this.editingUser.username?.length && this.editingUser.username.length >= 2)) missing.push('username');
-            if (!(this.editingUser.firstName?.length && this.editingUser.firstName.length >= 2)) missing.push('firstName');
-            if (!(this.editingUser.lastName?.length && this.editingUser.lastName.length >= 2)) missing.push('lastName');
-            if (!(this.editingUser.emailAddress)) missing.push('emailAddress');
+    private toModification(user: EditableUser, values: UserFormValues): EditableUser {
+        const modification: EditableUser = {
+            ...user,
+            organizationId: Number(values.organizationId),
+            role: values.role,
+        };
+        if (user.target === 'USER') {
+            modification.username = values.username.trim();
+            modification.firstName = values.firstName.trim();
+            modification.lastName = values.lastName.trim();
+            modification.emailAddress = values.emailAddress.trim();
+        } else {
+            modification.description = values.description;
         }
-        return missing;
+        return modification;
     }
 
     private mapValidationErrors(errors: ErrorDescriptor[]): Record<string, string> {
@@ -877,7 +933,9 @@ private countFilteredUsers(users: User[]): number {
         if (file != null) {
             const content = await file.text();
             this.bulkDescriptions = this.parseCsv(content);
+            this.#bulkForm.api.setFieldValue('entries', this.bulkDescriptions.length);
         } else {
+            this.#bulkForm.api.setFieldValue('entries', 0);
             this.bulkDescriptions = [];
         }
     }
@@ -893,14 +951,20 @@ private countFilteredUsers(users: User[]): number {
             .map(row => row[0]);
     }
 
-    private async saveBulkImport(): Promise<void> {
-        if (!this.bulkOrgId || !this.bulkRole || this.bulkDescriptions.length === 0) {
-            dispatchFeedback({type: 'danger', message: 'Please select organization, role and upload a CSV file'}, this);
-            return;
+    private async submitBulkImport(): Promise<void> {
+        if (!await submitValidated(this.#bulkForm.api)) {
+            await this.updateComplete;
+            focusFirstError(this.bulkImportDialog);
         }
+    }
+
+    /**
+     * Called by the bulk import form once all the fields are valid
+     */
+    private async saveBulkImport(values: BulkImportFormValues): Promise<void> {
         await UsersService.bulkImportApiKeys({
-            organizationId: this.bulkOrgId,
-            role: this.bulkRole,
+            organizationId: Number(values.organizationId),
+            role: values.role,
             descriptions: this.bulkDescriptions,
         });
         this.refresh();
@@ -909,8 +973,6 @@ private countFilteredUsers(users: User[]): number {
     }
 
     private cancelBulkImport(): void {
-        this.bulkOrgId = null;
-        this.bulkRole = '';
         this.bulkDescriptions = [];
         if (this.bulkCsvInput) this.bulkCsvInput.value = '';
         this.bulkImportDialog.hide();
