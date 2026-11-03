@@ -957,6 +957,10 @@ public class EventManager {
 
     public String getEventUrl(Event event) {
         var baseUrl = configurationManager.getFor(ConfigurationKeys.BASE_URL, event.getConfigurationLevel()).getRequiredValue();
+        return buildEventUrl(baseUrl, event);
+    }
+
+    public static String buildEventUrl(String baseUrl, Event event) {
         return StringUtils.removeEnd(baseUrl, "/") + "/event/" + event.getShortName() + "/";
     }
 
