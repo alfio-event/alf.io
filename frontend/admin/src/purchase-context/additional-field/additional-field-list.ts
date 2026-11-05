@@ -54,6 +54,10 @@ export class AdditionalFieldList extends LitElement {
 
     private readonly retrievePageDataTask = new Task<ReadonlyArray<string>, Model>(this,
         async ([publicIdentifier, purchaseContextType, organizationId]) => {
+            if (!this.ready) {
+                // AngularJS has not interpolated the attributes yet: the next run will have them
+                return new Promise<Model>(() => {});
+            }
             const result = await PurchaseContextService.load(publicIdentifier, purchaseContextType as PurchaseContextType, Number.parseInt(organizationId, 10));
             const isSubscription = (purchaseContextType as PurchaseContextType) === 'subscription';
             const purchaseContext: PurchaseContext = isSubscription ? result.subscriptionDescriptor! : result.eventWithOrganization!.event;
@@ -83,6 +87,24 @@ export class AdditionalFieldList extends LitElement {
             }
         },
         () => [this.publicIdentifier!, this.purchaseContextType!, this.organizationId!]);
+
+    /**
+     * False while AngularJS has not interpolated the attributes yet (e.g. data-organization-id="{{...}}"):
+     * the next run will have the real values. Number.parseInt of such a value is NaN, which the server rejects.
+     */
+    private get ready(): boolean {
+        if (this.publicIdentifier == null || this.publicIdentifier === '' || this.publicIdentifier.includes('{{')) {
+            return false;
+        }
+        if (this.purchaseContextType == null || this.purchaseContextType.includes('{{')) {
+            return false;
+        }
+        if (this.purchaseContextType === 'subscription'
+            && (this.organizationId == null || Number.isNaN(Number.parseInt(this.organizationId, 10)))) {
+            return false;
+        }
+        return true;
+    }
 
     static readonly styles = [pageHeader, textColors, itemsList, cardBgColors, badges, retroCompat, css`
         sl-tab-group {

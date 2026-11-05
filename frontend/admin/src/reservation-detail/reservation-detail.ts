@@ -239,6 +239,10 @@ export class ReservationDetailPage extends LitElement {
 
     private readonly loadDataTask = new Task(this, {
         task: async ([type, publicIdentifier, reservationId, organizationId]): Promise<ReservationData> => {
+            if (!this.ready) {
+                // AngularJS has not interpolated the attributes yet: the next run will have them
+                return new Promise<ReservationData>(() => {});
+            }
             const service = new ReservationService(type, publicIdentifier, reservationId);
             const [context, descriptor] = await Promise.all([
                 this.loadPurchaseContext(type, publicIdentifier, organizationId),
@@ -276,6 +280,22 @@ export class ReservationDetailPage extends LitElement {
             this.#form.api.reset(initialDrafts(data));
         },
     });
+
+    /**
+     * False while AngularJS has not interpolated the attributes yet (e.g. data-organization-id="{{...}}",
+     * which Lit reads as NaN): the next run will have the real values.
+     */
+    private get ready(): boolean {
+        if (this.publicIdentifier === '' || this.publicIdentifier.includes('{{')
+            || this.reservationId === '' || this.reservationId.includes('{{')) {
+            return false;
+        }
+        if (this.purchaseContextType === 'subscription'
+            && (this.organizationId == null || Number.isNaN(this.organizationId))) {
+            return false;
+        }
+        return true;
+    }
 
     static readonly styles = [
         base,

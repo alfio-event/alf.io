@@ -93,3 +93,5 @@ export { CheckInScan } from './event/check-in/check-in-scan';
 export { AttendeesImport } from './event/attendees-import/attendees-import';
 export { AttendeesImportStatus } from './event/attendees-import/attendees-import-status';
 export { ReservationCreate } from './event/reservation-create/reservation-create';
+export { TemplateList } from './template/template-list';
+export { TemplateEdit } from './template/template-edit';

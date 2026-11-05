@@ -9,7 +9,7 @@
 
     var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives',
         'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-util', 'alfio-configuration', 'alfio-event-statistic',
-        'ui.ace', 'checklist-model', 'group', 'subscriptions', angularDragula(angular)]);
+        'checklist-model', 'group', 'subscriptions', angularDragula(angular)]);
 
     var loadEvent = {
         'loadEvent': function($stateParams, EventService) {
@@ -90,7 +90,7 @@
             })
             .state('system-edit-resources', {
                 url: '/show-resources/:resourceName/',
-                template: '<resources-edit system="true" resource-name="ctrl.resourceName"></resources-edit>',
+                template: '<alfio-template-edit data-system data-resource-name="{{ctrl.resourceName}}"></alfio-template-edit>',
                 controller: function($state) {
                     this.resourceName = $state.params.resourceName;
                 },
@@ -98,7 +98,7 @@
             })
             .state('organization-edit-resources', {
                 url: '/organizations/:organizationId/show-resources/:resourceName/',
-                template: '<resources-edit for-organization="true" organization-id="ctrl.organizationId" resource-name="ctrl.resourceName"></resources-edit>',
+                template: '<alfio-template-edit data-organization-id="{{ctrl.organizationId}}" data-resource-name="{{ctrl.resourceName}}"></alfio-template-edit>',
                 controller: function($state) {
                     this.organizationId = $state.params.organizationId;
                     this.resourceName = $state.params.resourceName;
@@ -292,14 +292,14 @@
                 }
             }).state('events.single.show-resources', {
                 url: '/show-resources',
-                template: '<resources-show event="ctrl.event"></resources-show>',
+                template: '<alfio-template-list data-event-name="{{ctrl.event.shortName}}"></alfio-template-list>',
                 controller: function(getEvent) {
                     this.event = getEvent.data.event;
                 },
                 controllerAs: 'ctrl'
             }).state('events.single.edit-resources', {
                 url: '/show-resources/:resourceName/',
-                template: '<resources-edit event="ctrl.event" resource-name="ctrl.resourceName"></resources-show>',
+                template: '<alfio-template-edit data-event-name="{{ctrl.event.shortName}}" data-resource-name="{{ctrl.resourceName}}"></alfio-template-edit>',
                 controller: function(getEvent, $state) {
                     this.event = getEvent.data.event;
                     this.resourceName = $state.params.resourceName;

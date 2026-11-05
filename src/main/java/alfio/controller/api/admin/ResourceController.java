@@ -85,8 +85,8 @@ public class ResourceController {
     }
 
     @GetMapping("/overridable-template")
-    public List<TemplateResource> getOverridableTemplates() {
-        return Stream.of(TemplateResource.values()).filter(TemplateResource::overridable).toList();
+    public List<TemplateResource.Descriptor> getOverridableTemplates() {
+        return Stream.of(TemplateResource.values()).filter(TemplateResource::overridable).map(TemplateResource.Descriptor::new).toList();
     }
 
     @GetMapping("/overridable-template/{name}/{locale}")

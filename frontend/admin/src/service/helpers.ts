@@ -76,6 +76,32 @@ export function errorMessage(error: unknown, fallback: string): string {
     return fallback;
 }
 
+/**
+ * Message of a failed response: the backend sends either plain text or a JSON error body
+ */
+export async function responseErrorMessage(response: Response, fallback: string): Promise<string> {
+    const text = await response.text();
+    try {
+        const parsed = JSON.parse(text);
+        if (typeof parsed === 'string') {
+            return parsed;
+        }
+        if (parsed != null && typeof parsed === 'object') {
+            const errors = (parsed as { errors?: unknown }).errors;
+            if (Array.isArray(errors) && errors.length > 0) {
+                return errors.map((e) => (e as { description?: string })?.description ?? String(e)).join(', ');
+            }
+            const message = (parsed as { message?: unknown }).message;
+            if (typeof message === 'string') {
+                return message;
+            }
+        }
+    } catch {
+        // not JSON: the body itself is the message
+    }
+    return text || fallback;
+}
+
 export function renderIf(predicate: () => boolean, template: () => TemplateResult): TemplateResult {
     return html`${when(predicate(), template, () => nothing)}`;
 }
@@ -168,6 +194,18 @@ export function humanize(value: string): string {
  */
 export function downloadCsv(fileName: string, csv: string): void {
     const url = URL.createObjectURL(new Blob(['\uFEFF', csv], {type: 'text/csv;charset=utf-8;'}));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/**
+ * Lets the browser save a binary response (e.g. a rendered PDF) as a file.
+ */
+export function downloadFile(fileName: string, blob: Blob): void {
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName;

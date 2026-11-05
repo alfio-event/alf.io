@@ -59,7 +59,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/directive/admin-directive.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/filter/util.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/service/service.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/service/resource-service.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/service/organization.service.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/service/user.service.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/util/file-upload.js"></script>
@@ -73,10 +72,6 @@
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/additional-fields-to-collect/additional-fields-to-collect.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/tickets-remove/tickets-remove.js"></script>
-
-
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/resources/show/resources-show.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/resources/edit/resources-edit.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/reservation.service.js"></script>
 
@@ -97,8 +92,6 @@
 
 
     <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
-    <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/ace-builds/src-min-noconflict/ace.js"></script>
-    <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/angular-ui-ace/ui-ace.js"></script>
     <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/papaparse/papaparse.min.js"></script>
     <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/checklist-model/checklist-model.js"></script>
     <title>Alf.io Admin</title>

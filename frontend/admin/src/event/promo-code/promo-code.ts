@@ -205,11 +205,30 @@ export class PromoCode extends LitElement {
         access: {page: 1, sortKey: 'code', sortDirection: 'asc'},
     };
 
+    /**
+     * False while AngularJS has not interpolated the attributes yet (e.g. data-organization-id="{{...}}",
+     * which Lit reads as NaN): the next run will have the real values.
+     */
+    private get ready(): boolean {
+        if (this.eventName != null && this.eventName.includes('{{')) {
+            return false;
+        }
+        if (this.organizationId != null && Number.isNaN(this.organizationId)) {
+            return false;
+        }
+        return true;
+    }
+
     private loadDataTask = new Task(this,
         async ([_eventName, _orgId, _forEvent]) => {
             void _eventName;
             void _orgId;
             void _forEvent;
+
+            if (!this.ready) {
+                // AngularJS has not interpolated the attributes yet: the next run will have them
+                return new Promise<never>(() => {});
+            }
 
             const forEvent = !!this.forEvent && !!this.eventName;
             let ev: AlfioEvent | null = null;

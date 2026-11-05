@@ -245,6 +245,90 @@ class AdminConsole {
     }
 
     /**
+     * Opens the "customize templates" page of the event and returns the list component.
+     */
+    WebElement openTemplateList(String slug) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/show-resources");
+        return wait.until(presenceOfElementLocated(By.tagName("alfio-template-list")));
+    }
+
+    /**
+     * Opens the editor of the given template of the event, by clicking its "Edit" button in the templates list.
+     */
+    WebElement openTemplateEdit(String slug, String template) {
+        var list = openTemplateList(slug);
+        var editButton = wait.until(_ -> findAllInShadowRoot(list, "sl-button.edit-template").stream()
+            .filter(b -> template.equals(b.getDomAttribute("data-template")))
+            .findFirst()
+            .orElse(null));
+        clickWithJs(driver, editButton);
+        return wait.until(presenceOfElementLocated(By.tagName("alfio-template-edit")));
+    }
+
+    /**
+     * In the template editor, appends a marker to the given locale, previews the rendered template
+     * and saves the override. Waits until the locale tab shows the "customized" badge.
+     */
+    void editTemplateAndSave(String template, String locale, String marker) {
+        var edit = wait.until(presenceOfElementLocated(By.tagName("alfio-template-edit")));
+        var panel = "sl-tab-panel[name='" + locale + "']";
+        var codeEditor = wait.until(_ -> findInShadowRoot(edit, panel + " alfio-code-editor"));
+        var code = findInShadowRoot(codeEditor, ".cm-content");
+        wait.until(_ -> !code.getText().isBlank());
+        // set the content like pasting it: typing it would be changed by the editor (auto-indent, closing brackets).
+        // The marker goes on the first line: CodeMirror only renders the visible part of the document
+        ((JavascriptExecutor) driver).executeScript("arguments[0].value = arguments[1] + '\\n' + arguments[0].value;", codeEditor, marker);
+        wait.until(_ -> code.getText().contains(marker));
+        // for event templates, Save is enabled only after a successful preview
+        clickWithJs(driver, findInShadowRoot(edit, panel + " sl-button[data-action='preview']"));
+        var preview = wait.until(_ -> findInShadowRoot(edit, panel + " pre.preview"));
+        wait.until(_ -> preview.getText().contains(marker));
+        LOGGER.info("saving an override of {} ({}) with marker {}", template, locale, marker);
+        clickWithJs(driver, findInShadowRoot(edit, panel + " sl-button[data-action='save']"));
+        // after the save the data is reloaded: the tab shows that the locale has a customized version
+        wait.until(_ -> findInShadowRoot(edit, "sl-tab[panel='" + locale + "'] .override-badge") != null);
+    }
+
+    /**
+     * Checks that the editor of the given locale still contains the marker, e.g. after a reload.
+     */
+    void verifyTemplateContent(String locale, String marker) {
+        var edit = wait.until(presenceOfElementLocated(By.tagName("alfio-template-edit")));
+        var codeEditor = wait.until(_ -> findInShadowRoot(edit, "sl-tab-panel[name='" + locale + "'] alfio-code-editor"));
+        var code = findInShadowRoot(codeEditor, ".cm-content");
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the editor of locale " + locale + " does not contain " + marker)
+            .until(_ -> code.getText().contains(marker));
+    }
+
+    /**
+     * Deletes the override of the given locale, after confirming the dialog,
+     * and waits until the "customized" badge of the locale tab disappears.
+     */
+    void deleteTemplateOverride(String locale) {
+        var edit = wait.until(presenceOfElementLocated(By.tagName("alfio-template-edit")));
+        var panel = "sl-tab-panel[name='" + locale + "']";
+        clickWithJs(driver, findInShadowRoot(edit, panel + " sl-button[data-action='delete']"));
+        // the confirmation dialog is appended to the document body and removed once closed; its
+        // buttons get their click listeners only after the show animation (sl-after-show),
+        // so click until the dialog is gone
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .ignoring(StaleElementReferenceException.class)
+            .withMessage(() -> "the confirmation dialog did not close")
+            .until(_ -> {
+                var dialog = driver.findElements(By.cssSelector("sl-dialog[label='Delete template override']")).stream().findFirst().orElse(null);
+                if (dialog == null || dialog.getDomAttribute("open") == null) {
+                    return true;
+                }
+                clickWithJs(driver, dialog.findElement(By.cssSelector("sl-button#confirm")));
+                return false;
+            });
+        wait.until(_ -> (Boolean) ((JavascriptExecutor) driver).executeScript(
+            "return arguments[0].shadowRoot.querySelector(arguments[1]) == null;", edit, "sl-tab[panel='" + locale + "'] .override-badge"));
+        LOGGER.info("override of locale {} deleted", locale);
+    }
+
+    /**
      * Composes a message for all the attendees and sends it, after checking the preview.
      */
     void sendMessageToAttendees(String slug, String subject, String message, int expectedRecipients) {
