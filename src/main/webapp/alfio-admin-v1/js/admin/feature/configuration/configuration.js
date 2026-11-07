@@ -70,7 +70,7 @@
             loadCurrentConfigurationContext: function(OrganizationService, EventService) {
                 if(configurationCache == null) {
                     configurationCache = $q(function(resolve, reject) {
-                        $q.all([OrganizationService.getAllOrganizations(), EventService.getAllEvents()]).then(function(results) {
+                        $q.all([OrganizationService.getAllOrganizations(), EventService.getAllEventsBasic()]).then(function(results) {
                             var organizations = results[0].data;
                             var events = results[1].data;
                             resolve({

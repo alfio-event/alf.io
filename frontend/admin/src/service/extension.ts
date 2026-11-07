@@ -70,7 +70,7 @@ export class ExtensionService {
     static async loadScopeOptions(): Promise<{ organizations: ReadonlyArray<Organization>, events: ReadonlyArray<ExtensionEvent> }> {
         const [organizations, events] = await Promise.all([
             fetchJson<ReadonlyArray<Organization>>('/admin/api/organizations'),
-            fetchJson<ReadonlyArray<ExtensionEvent>>('/admin/api/events'),
+            fetchJson<ReadonlyArray<ExtensionEvent>>('/admin/api/events/basic'),
         ]);
         return { organizations, events };
     }

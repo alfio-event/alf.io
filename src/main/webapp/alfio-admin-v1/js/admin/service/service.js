@@ -59,8 +59,8 @@
             getEventsCount: function () {
                 return $http.get('/admin/api/events-count').error(HttpErrorHandler.handle);
             },
-            getAllEvents : function() {
-                return $http.get('/admin/api/events').error(HttpErrorHandler.handle);
+            getAllEventsBasic : function() {
+                return $http.get('/admin/api/events/basic').error(HttpErrorHandler.handle);
             },
             getAllActiveEvents : function() {
                 return $http.get('/admin/api/active-events').error(HttpErrorHandler.handle);

@@ -174,12 +174,22 @@ public class EventApiController {
             .filter(e -> userOrganizations.contains(e.getOrganizationId()) && (includeOnline || e.getFormat() != Event.EventFormat.ONLINE))
             .sorted(Comparator.comparing(e -> e.getBegin().withZoneSameInstant(ZoneId.systemDefault())))
             .map(s -> new EventListItem(s, request.getContextPath(), eventDescriptionRepository.findByEventId(s.getId())))
-            .collect(toList());
+            .toList();
     }
 
     @GetMapping("/events")
-    public List<EventStatistic> getAllEvents(Principal principal) {
-        return eventStatisticsManager.getAllEventsWithStatistics(principal.getName());
+    public List<EventStatistic> getAllEvents(Principal principal,
+                                             @RequestParam(value = "includeExpired", required = false, defaultValue = "false") boolean includeExpired) {
+        if (includeExpired) {
+            return eventStatisticsManager.getAllEventsWithStatistics(principal.getName());
+        }
+        // by default only active events are returned: not expired, or expired less than 14 days ago
+        return eventStatisticsManager.getAllEventsWithStatisticsFilteredBy(principal.getName(), event -> !event.expiredSince(14));
+    }
+
+    @GetMapping("/events/basic")
+    public List<EventBasicInfo> getAllEventsBasicInfo(Principal principal) {
+        return eventStatisticsManager.getAllEventsBasicInfo(principal.getName());
     }
 
     @GetMapping("/events-count")
@@ -437,7 +447,7 @@ public class EventApiController {
     private static final String PAYMENT_METHOD = "Payment Method";
     private static final String EXTERNAL_REFERENCE = "External Reference";
     static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Country Code", "Promo Code","Payment ID", PAYMENT_METHOD, EXTERNAL_REFERENCE);
-    private static final List<SerializablePair<String, String>> FIXED_PAIRS = FIXED_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList());
+    private static final List<SerializablePair<String, String>> FIXED_PAIRS = FIXED_FIELDS.stream().map(f -> SerializablePair.of(f, f)).toList();
     private static final String FISCAL_CODE = "Fiscal Code";
     private static final String REFERENCE_TYPE = "Reference Type";
     private static final List<String> ITALIAN_E_INVOICING_FIELDS = List.of(FISCAL_CODE, REFERENCE_TYPE, "Addressee Code", "PEC");
@@ -568,7 +578,7 @@ public class EventApiController {
                 DetailedScanData data = p.getLeft();
                 Map<String, List<String>> descriptions = p.getRight();
                 return Pair.of(data, fields.stream()
-                    .map(x -> String.join("; ", descriptions.getOrDefault(x.getName(), List.of()))).collect(toList()));
+                    .map(x -> String.join("; ", descriptions.getOrDefault(x.getName(), List.of()))).toList());
             }).map(p -> {
                 List<String> line = new ArrayList<>();
                 Ticket ticket = p.getLeft().getTicket();
@@ -614,9 +624,9 @@ public class EventApiController {
         var eventAndOrganizationId = eventManager.getEventAndOrganizationId(eventName, principal.getName());
         List<SerializablePair<String, String>> fields = new ArrayList<>(FIXED_PAIRS);
         if(configurationManager.isItalianEInvoicingEnabled(eventAndOrganizationId)) {
-            fields.addAll(ITALIAN_E_INVOICING_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList()));
+            fields.addAll(ITALIAN_E_INVOICING_FIELDS.stream().map(f -> SerializablePair.of(f, f)).toList());
         }
-        fields.addAll(purchaseContextFieldRepository.findFieldsForEvent(eventName).stream().map(f -> SerializablePair.of(CUSTOM_FIELDS_PREFIX + f, f)).collect(toList()));
+        fields.addAll(purchaseContextFieldRepository.findFieldsForEvent(eventName).stream().map(f -> SerializablePair.of(CUSTOM_FIELDS_PREFIX + f, f)).toList());
         return fields;
     }
 
@@ -692,7 +702,7 @@ public class EventApiController {
                             return Triple.of(Boolean.FALSE, Optional.ofNullable(line.reservationId).orElse(""), e.getMessage());
                         }
                     })
-                    .collect(toList());
+                    .toList();
         }
     }
 

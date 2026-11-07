@@ -37,7 +37,7 @@ export interface ExtensionLog {
 }
 
 /**
- * Subset of the events returned by GET /admin/api/events, used by the scope selectors of the editor
+ * Event data returned by GET /admin/api/events/basic, used by the scope selectors of the editor
  */
 export interface ExtensionEvent {
     id: number;

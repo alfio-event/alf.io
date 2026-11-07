@@ -128,6 +128,12 @@ public class EventStatisticsManager {
         return getAllEventsWithStatisticsFilteredBy(username, e -> true);
     }
 
+    public List<EventBasicInfo> getAllEventsBasicInfo(String username) {
+        return getAllEvents(username).stream()
+            .map(e -> new EventBasicInfo(e.getId(), e.getShortName(), e.getDisplayName(), e.getOrganizationId(), e.expired()))
+            .collect(toList());
+    }
+
     public List<EventWithAdditionalInfo> getAllEventsWithAdditionalInfo(String username) {
         List<Integer> organizations = userManager.findUserOrganizations(username).stream().map(Organization::getId).toList();
         return eventRepository.findByOrganizationIds(organizations).stream()

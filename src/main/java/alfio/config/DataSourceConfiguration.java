@@ -109,6 +109,7 @@ public class DataSourceConfiguration {
             dataSource.setMaximumPoolSize(platform.getMaxActive(env));
             dataSource.setMinimumIdle(platform.getMinIdle(env));
             dataSource.setConnectionTimeout(1000L);
+            dataSource.setConnectionInitSql("SET jit = off");
 
             log.debug("Connection pool properties: max active {}, initial size {}", dataSource.getMaximumPoolSize(), dataSource.getMinimumIdle());
 
@@ -187,7 +188,7 @@ public class DataSourceConfiguration {
         }
         return migration;
     }
-    
+
     @Bean
     public PasswordEncoder getPasswordEncoder() {
          return new BCryptPasswordEncoder();

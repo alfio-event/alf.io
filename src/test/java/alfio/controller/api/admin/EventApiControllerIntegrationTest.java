@@ -48,6 +48,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.Authentication;
@@ -71,8 +73,10 @@ import static alfio.test.util.IntegrationTestUtil.initEvent;
 import static alfio.test.util.IntegrationTestUtil.owner;
 import static alfio.test.util.TestUtil.clockProvider;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 
 @AlfioIntegrationTest
@@ -106,6 +110,8 @@ class EventApiControllerIntegrationTest {
     private PromoCodeDiscountIntegrationTestingToolkit promoCodeDiscountIntegrationTestingToolkit;
     @Autowired
     private CustomOfflineConfigurationManager customOfflineConfigurationManager;
+    @Autowired
+    private NamedParameterJdbcTemplate jdbcTemplate;
 
     private Event event;
     private static final String TEST_ATTENDEE_EXTERNAL_REFERENCE = "123";
@@ -118,7 +124,7 @@ class EventApiControllerIntegrationTest {
     void getAllEventsForExternalInPerson() {
         var eventAndUser = createEvent(Event.EventFormat.IN_PERSON);
         event = eventAndUser.getKey();
-        var principal = Mockito.mock(Authentication.class);
+        var principal = mock(Authentication.class);
         when(principal.getName()).thenReturn(eventAndUser.getValue());
         var events = eventApiController.getAllEventsForExternal(principal, new MockHttpServletRequest(), false);
 
@@ -131,7 +137,7 @@ class EventApiControllerIntegrationTest {
     void getAllEventsForExternalHybrid() {
         var eventAndUser = createEvent(Event.EventFormat.HYBRID);
         event = eventAndUser.getKey();
-        var principal = Mockito.mock(Authentication.class);
+        var principal = mock(Authentication.class);
         when(principal.getName()).thenReturn(eventAndUser.getValue());
         var events = eventApiController.getAllEventsForExternal(principal, new MockHttpServletRequest(), false);
 
@@ -144,7 +150,7 @@ class EventApiControllerIntegrationTest {
     void getAllEventsForExternalOnline() {
         var eventAndUser = createEvent(Event.EventFormat.ONLINE);
         event = eventAndUser.getKey();
-        var principal = Mockito.mock(Authentication.class);
+        var principal = mock(Authentication.class);
         when(principal.getName()).thenReturn(eventAndUser.getValue());
         var events = eventApiController.getAllEventsForExternal(principal, new MockHttpServletRequest(), false);
 
@@ -158,11 +164,48 @@ class EventApiControllerIntegrationTest {
     }
 
     @Test
+    void getAllEventsReturnsOnlyActiveEventsByDefault() {
+        var eventAndUser = createEvent(Event.EventFormat.IN_PERSON);
+        event = eventAndUser.getKey();
+        var principal = mock(Authentication.class);
+        when(principal.getName()).thenReturn(owner(eventAndUser.getValue()));
+
+        // the event ends in 5 days, so it is active and returned by default
+        assertEquals(1, eventApiController.getAllEvents(principal, false).size());
+
+        // move the end date 20 days in the past: the event counts as expired
+        var endTs = ZonedDateTime.now(clockProvider().getClock()).minusDays(20).toOffsetDateTime();
+        int updated = jdbcTemplate.update("update event set end_ts = :end_ts where id = :id",
+            new MapSqlParameterSource("end_ts", endTs).addValue("id", event.getId()));
+        assertEquals(1, updated);
+
+        assertEquals(0, eventApiController.getAllEvents(principal, false).size());
+        assertEquals(1, eventApiController.getAllEvents(principal, true).size());
+    }
+
+    @Test
+    void getAllEventsBasicInfoReturnsBasicFields() {
+        var eventAndUser = createEvent(Event.EventFormat.IN_PERSON);
+        event = eventAndUser.getKey();
+        var principal = mock(Authentication.class);
+        when(principal.getName()).thenReturn(owner(eventAndUser.getValue()));
+
+        var infos = eventApiController.getAllEventsBasicInfo(principal);
+        assertEquals(1, infos.size());
+        var info = infos.getFirst();
+        assertEquals(event.getId(), info.id());
+        assertEquals(event.getShortName(), info.shortName());
+        assertEquals(event.getDisplayName(), info.displayName());
+        assertEquals(event.getOrganizationId(), info.organizationId());
+        assertFalse(info.expired());
+    }
+
+    @Test
     void testGivenListOfAttendeesWithFieldsUploadThenSameFieldsAvailableOnCsvDownload() throws IOException {
         // GIVEN - creation of event and registration of attendees
         var eventAndUser = createEvent(Event.EventFormat.HYBRID);
         event = eventAndUser.getKey();
-        var principal = Mockito.mock(Authentication.class);
+        var principal = mock(Authentication.class);
         when(principal.getName()).thenReturn(owner(eventAndUser.getValue()));
         var modification = getTestAdminReservationModification();
         var result = this.attendeeBulkImportApiController.createReservations(eventAndUser.getKey().getShortName(), modification, false, principal);
@@ -201,7 +244,7 @@ class EventApiControllerIntegrationTest {
     void testCanGetDeniedCustomPaymentMethods() throws CustomOfflinePaymentMethodAlreadyExistsException, PassedIdDoesNotExistException, CustomOfflinePaymentMethodDoesNotExistException {
         var eventAndUser = createEvent(Event.EventFormat.ONLINE);
         event = eventAndUser.getKey();
-        var principal = Mockito.mock(Authentication.class);
+        var principal = mock(Authentication.class);
         when(principal.getName()).thenReturn(owner(eventAndUser.getValue()));
         var organizationId = organizationRepository.findAllForUser(eventAndUser.getRight()).getFirst().getId();
         var ticketCategoryList = this.ticketCategoryRepository.findAllTicketCategories(event.getId());
@@ -260,7 +303,7 @@ class EventApiControllerIntegrationTest {
     void testCanSetDeniedCustomPaymentMethods() throws PassedIdDoesNotExistException, CustomOfflinePaymentMethodAlreadyExistsException, CustomOfflinePaymentMethodDoesNotExistException {
         var eventAndUser = createEvent(Event.EventFormat.ONLINE);
         event = eventAndUser.getKey();
-        var principal = Mockito.mock(Authentication.class);
+        var principal = mock(Authentication.class);
         when(principal.getName()).thenReturn(owner(eventAndUser.getValue()));
         var ticketCategoryList = this.ticketCategoryRepository.findAllTicketCategories(event.getId());
 
