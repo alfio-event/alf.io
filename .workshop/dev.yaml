@@ -1,0 +1,7 @@
+name: dev
+base: ubuntu@26.04
+sdks:
+  - name: openjdk
+    channel: latest/stable
+  - name: docker-ce
+    channel: latest/stable
