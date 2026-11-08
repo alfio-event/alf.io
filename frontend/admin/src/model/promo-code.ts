@@ -1,10 +1,7 @@
+import {DateTimeModification} from "./purchase-context.ts";
+
 export type DiscountType = 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FIXED_AMOUNT_RESERVATION' | 'NONE';
 export type PromoCodeType = 'DISCOUNT' | 'ACCESS' | 'DYNAMIC';
-
-export interface DateTimeModification {
-    date: string;
-    time: string;
-}
 
 export interface PromoCodeDiscount {
     id: number;

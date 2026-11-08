@@ -48,6 +48,54 @@ export function minLength(value: unknown, length: number): string | undefined {
     return undefined;
 }
 
+/**
+ * A URL that must start with https://. Empty is valid: combine with requiredValue for a required URL field
+ */
+export function httpsUrl(value: unknown): string | undefined {
+    const text = String(value ?? '').trim();
+    if (text === '') {
+        return undefined;
+    }
+    if (!text.toLowerCase().startsWith('https://')) {
+        return 'The URL must start with https://';
+    }
+    try {
+        new URL(text);
+        return undefined;
+    } catch {
+        return 'Please enter a valid URL';
+    }
+}
+
+/**
+ * A required URL that must start with https://
+ */
+export function requiredHttpsUrl(value: unknown): string | undefined {
+    const missing = requiredValue(value);
+    if (missing != null) {
+        return missing;
+    }
+    return httpsUrl(value);
+}
+
+/**
+ * Normalizes a URL so that it starts with https://: prepends the scheme when it is missing,
+ * replaces http:// with https://. Applied on blur to every input rendered with type="url"
+ */
+export function normalizeHttpsUrl(value: string): string {
+    const text = value.trim();
+    if (text === '') {
+        return text;
+    }
+    if (text.toLowerCase().startsWith('https://')) {
+        return text;
+    }
+    if (text.toLowerCase().startsWith('http://')) {
+        return `https://${text.substring('http://'.length)}`;
+    }
+    return `https://${text}`;
+}
+
 export interface ValidatedFieldMeta {
     errors: unknown[];
     isBlurred: boolean;
@@ -134,7 +182,15 @@ export function validatedInput(field: TextField, submitted: boolean, options: Va
                   help-text=${error ?? options.helpText ?? ''}
                   .value=${field.state.value ?? ''}
                   @sl-input=${(e: Event) => field.handleChange((e.target as SlInput).value)}
-                  @sl-blur=${() => field.handleBlur()}>
+                  @sl-blur=${() => {
+                      if (options.type === 'url') {
+                          const normalized = normalizeHttpsUrl(String(field.state.value ?? ''));
+                          if (normalized !== String(field.state.value ?? '')) {
+                              field.handleChange(normalized);
+                          }
+                      }
+                      field.handleBlur();
+                  }}>
             ${when(options.prefixIcon, () => html`<sl-icon slot="prefix" name=${options.prefixIcon!}></sl-icon>`)}
             ${when(options.suffix, () => html`<span slot="suffix">${options.suffix}</span>`)}
             ${when(options.suffixIcon, () => html`<sl-icon slot="suffix" name=${options.suffixIcon!}></sl-icon>`)}

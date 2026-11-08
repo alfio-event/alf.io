@@ -1,9 +1,6 @@
-import {DateTimeModification} from './event.ts';
+import {DateTimeModification, VatStatus} from './purchase-context.ts';
+import {TicketStatus} from './event.ts';
 import {ReservationStatus} from './reservation.ts';
-
-export type VatStatus = 'NONE' | 'INCLUDED' | 'NOT_INCLUDED' | 'INCLUDED_EXEMPT' | 'NOT_INCLUDED_EXEMPT';
-export type TicketStatus = 'FREE' | 'PENDING' | 'TO_BE_PAID' | 'ACQUIRED' | 'CANCELLED' | 'CHECKED_IN' | 'EXPIRED'
-    | 'INVALIDATED' | 'RELEASED' | 'PRE_RESERVED';
 
 export interface ReservationDetail {
     id: string;

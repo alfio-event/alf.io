@@ -1,4 +1,4 @@
-import {DateTimeModification} from "../model/event.ts";
+import {DateTimeModification} from "../model/purchase-context.ts";
 
 /**
  * A date coming from the backend. Accepted shapes:
@@ -92,6 +92,49 @@ export function toIsoString(value: DateValue): string {
         return parsed.date.toISOString().substring(0, 16);
     }
     return parsed.date.toISOString();
+}
+
+/**
+ * Converts the value of a datetime-local input ("yyyy-MM-ddTHH:mm", wall-clock in the given time zone)
+ * to an ISO-8601 instant with the offset of that zone, e.g. "2026-06-30T14:00:00+02:00".
+ * Returns null for an empty value.
+ */
+export function zonedIsoFromDateTimeLocal(value: string, timeZone: string): string | null {
+    if (value == null || value.trim() === '') {
+        return null;
+    }
+    // interpret the wall time as UTC to approximate the instant, then read the offset of the zone there
+    const wallAsUtc = new Date(`${value}:00Z`);
+    if (Number.isNaN(wallAsUtc.getTime())) {
+        return null;
+    }
+    let offset = zoneOffsetMinutes(timeZone, wallAsUtc);
+    // refine once, so that the offset is the one in effect at the actual instant
+    offset = zoneOffsetMinutes(timeZone, new Date(wallAsUtc.getTime() - offset * 60000));
+    let sign = '+';
+    if (offset < 0) {
+        sign = '-';
+    }
+    const abs = Math.abs(offset);
+    const hh = String(Math.floor(abs / 60)).padStart(2, '0');
+    const mm = String(abs % 60).padStart(2, '0');
+    return `${value}:00${sign}${hh}:${mm}`;
+}
+
+function zoneOffsetMinutes(timeZone: string, instant: Date): number {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        hour12: false,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+    }).formatToParts(instant);
+    const get = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((part) => part.type === type)?.value);
+    const asUtc = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour') % 24, get('minute'), get('second'));
+    return (asUtc - instant.getTime()) / 60000;
 }
 
 /**

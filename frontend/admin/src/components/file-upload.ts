@@ -1,58 +1,17 @@
 import {css, html, LitElement, nothing, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
 import {when} from 'lit/directives/when.js';
-import {form, textColors} from '../styles.ts';
+import {dropZone, form, textColors} from '../styles.ts';
+import {formatBytesBinary, matchesAccept} from '../service/helpers.ts';
 
 export type FileUploadChangeEvent = CustomEvent<{ file: File | null }>;
 
 @customElement('alfio-file-upload')
 export class FileUpload extends LitElement {
 
-    static styles = [form, textColors, css`
+    static styles = [form, textColors, dropZone, css`
         :host {
             display: block;
-        }
-
-        .drop-zone {
-            border: 2px dashed var(--sl-input-border-color);
-            border-radius: var(--sl-input-border-radius);
-            padding: var(--sl-spacing-3x-large) var(--sl-spacing-large);
-            text-align: center;
-            cursor: pointer;
-            transition: border-color 0.15s ease, background-color 0.15s ease;
-            background-color: var(--sl-color-neutral-5);
-            outline: none;
-        }
-
-        .drop-zone:focus-visible {
-            border-color: var(--sl-color-primary-500);
-            background-color: var(--sl-color-primary-100);
-            box-shadow: 0 0 0 3px var(--sl-color-primary-200);
-        }
-
-        .drop-zone:hover {
-            border-color: var(--sl-color-primary-300);
-            background-color: var(--sl-color-primary-50);
-        }
-
-        .drop-zone.drag-over {
-            border-color: var(--sl-color-primary-500);
-            background-color: var(--sl-color-primary-100);
-        }
-
-        .drop-zone-icon {
-            color: var(--sl-color-primary-400);
-            margin-bottom: var(--sl-spacing-small);
-        }
-
-        .drop-zone-icon sl-icon {
-            font-size: var(--sl-font-size-4x-large);
-        }
-
-        .drop-zone-prompt {
-            margin: var(--sl-spacing-small) 0 0;
-            color: var(--sl-color-gray-600);
-            font-size: var(--sl-font-size-small);
         }
 
         .file-info {
@@ -156,7 +115,7 @@ export class FileUpload extends LitElement {
                 ${when(this.accept,
                     () => html`<p class="drop-zone-prompt">Accepted: ${this.accept}</p>`)}
                 ${when(this.maxSize > 0,
-                    () => html`<p class="drop-zone-prompt">Max size: <sl-format-bytes value=${this.maxSize}></sl-format-bytes></p>`)}
+                    () => html`<p class="drop-zone-prompt">Max size: ${formatBytesBinary(this.maxSize)}</p>`)}
             </div>
         `;
     }
@@ -224,13 +183,13 @@ export class FileUpload extends LitElement {
             return;
         }
 
-        if (this.accept && !this.acceptMatch(file)) {
+        if (this.accept && !matchesAccept(file, this.accept)) {
             this.error = `File type "${file.type || '(unknown)'}" is not accepted. Expected: ${this.accept}`;
             return;
         }
 
         if (this.maxSize > 0 && file.size > this.maxSize) {
-            this.error = html`File exceeds maximum size of <sl-format-bytes value=${this.maxSize}></sl-format-bytes>`;
+            this.error = html`File exceeds maximum size of ${formatBytesBinary(this.maxSize)}`;
             return;
         }
 
@@ -246,19 +205,6 @@ export class FileUpload extends LitElement {
         this.error = '';
         this.dispatchChange(null);
     };
-
-    private acceptMatch(file: File): boolean {
-        const acceptList = this.accept.split(',').map(s => s.trim().toLowerCase());
-        const fileType = file.type.toLowerCase();
-        const fileName = file.name.toLowerCase();
-
-        for (const pattern of acceptList) {
-            if (pattern === fileType) return true;
-            if (pattern.endsWith('/*') && fileType.startsWith(pattern.slice(0, -1))) return true;
-            if (pattern.startsWith('.') && fileName.endsWith(pattern)) return true;
-        }
-        return false;
-    }
 
     private dispatchChange(file: File | null): void {
         this.dispatchEvent(new CustomEvent<{ file: File | null }>('change', {

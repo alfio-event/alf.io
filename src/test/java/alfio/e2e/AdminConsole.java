@@ -1321,6 +1321,120 @@ class AdminConsole {
         return wait.until(presenceOfElementLocated(By.tagName("alfio-pending-payments")));
     }
 
+    //
+    // subscriptions (Lit components, see frontend/admin/src/subscriptions)
+    //
+
+    WebElement openSubscriptions() {
+        driver.navigate().to(serverBaseUrl + "/admin#/subscriptions");
+        // the page redirects to the list of the first organization
+        return wait.until(presenceOfElementLocated(By.tagName("alfio-subscriptions-list")));
+    }
+
+    /**
+     * Creates a multi-access subscription through the admin console. Returns its id, read from the
+     * URL of the edit page the console lands on after the creation.
+     */
+    String createSubscription(String title) {
+        var list = driver.findElement(By.tagName("alfio-subscriptions-list"));
+        clickWithJs(driver, findInShadowRoot(list, "#add-subscription"));
+        var edit = wait.until(presenceOfElementLocated(By.tagName("alfio-subscription-edit")));
+        // wait for the form to be loaded
+        wait.until(_ -> findInShadowRoot(edit, "alfio-multi-language-text[label='Title']") != null);
+
+        typeInShoelaceControl(findMultiLanguageControl(edit, "Title", "sl-input"), "input", title);
+        typeInShoelaceControl(findMultiLanguageControl(edit, "Description", "sl-textarea"), "textarea", "Description of " + title);
+        typeInShoelaceControl(findInShadowRoot(edit, "sl-input#termsAndConditionsUrl"), "input", "https://alf.io/terms");
+        // the pricing and payment sections appear once a subscription type has been chosen
+        chooseCard(edit, ".subscription-type", "multipleEntries");
+        typeInShoelaceControl(findInShadowRoot(edit, "sl-input#maxEntries"), "input", "3");
+        typeInShoelaceControl(findInShadowRoot(edit, "sl-input#price"), "input", "100");
+        selectShoelaceOptionByValue(findInShadowRoot(edit, "sl-select#currency"), "CHF");
+        selectShoelaceOption(findInShadowRoot(edit, "sl-select#vatStatus"), "Taxes included in the price");
+        typeInShoelaceControl(findInShadowRoot(edit, "sl-input#vat"), "input", "7.7");
+        // on sale from yesterday, so that the subscription is on sale now
+        setDateTimeLocal(findInShadowRoot(edit, "sl-input#onSaleFrom"), LocalDate.now().minusDays(1) + "T10:00");
+        // the first active online payment provider (bank transfer and on-site are not selectable)
+        clickWithJs(driver, findInShadowRoot(edit, "sl-checkbox.payment-proxy"));
+        uploadSubscriptionImage(edit);
+
+        clickWithJs(driver, findInShadowRoot(edit, "#save-subscription"));
+        wait.until(urlContains("/edit"));
+        return driver.getCurrentUrl().replaceAll(".*#/subscriptions/\\d+/([0-9a-f-]{36})/edit.*", "$1");
+    }
+
+    boolean subscriptionListed(String title) {
+        var list = wait.until(presenceOfElementLocated(By.tagName("alfio-subscriptions-list")));
+        return wait.until(d -> (Boolean) ((JavascriptExecutor) d).executeScript(
+            "return arguments[0].shadowRoot.textContent.includes(arguments[1]);", list, title));
+    }
+
+    /**
+     * Opens the edit page of the subscription with the given title (the row links to the edit
+     * page), and renames it
+     */
+    void renameSubscription(String title, String subscriptionId, String newTitle) {
+        var list = driver.findElement(By.tagName("alfio-subscriptions-list"));
+        var row = wait.until(d -> (WebElement) ((JavascriptExecutor) d).executeScript(
+            "return Array.from(arguments[0].shadowRoot.querySelectorAll('.subscription-row'))" +
+                ".find(r => r.textContent.includes(arguments[1]));", list, title));
+        clickWithJs(driver, row);
+        var edit = wait.until(presenceOfElementLocated(By.tagName("alfio-subscription-edit")));
+        assertEquals(subscriptionId, edit.getDomAttribute("data-subscription-id"));
+        var titleField = findMultiLanguageControl(edit, "Title", "sl-input");
+        wait.until(_ -> !String.valueOf(findInShadowRoot(titleField, "input").getDomProperty("value")).isBlank());
+        var input = findInShadowRoot(titleField, "input");
+        input.clear();
+        input.sendKeys(newTitle);
+        clickWithJs(driver, findInShadowRoot(edit, "#save-subscription"));
+        // the console stays on the edit page after an update
+        wait.until(urlContains("/subscriptions/"));
+    }
+
+    /**
+     * Publishes a subscription (visibility toggle on the edit page) and waits for the badge to change
+     */
+    void publishSubscription(String subscriptionId) {
+        var edit = wait.until(presenceOfElementLocated(By.tagName("alfio-subscription-edit")));
+        assertEquals(subscriptionId, edit.getDomAttribute("data-subscription-id"));
+        clickWithJs(driver, findInShadowRoot(edit, ".toggle-visibility"));
+        wait.until(d -> {
+            var badge = findInShadowRoot(edit, "sl-badge.subscription-visibility");
+            return badge != null && badge.getText().contains("Visible");
+        });
+    }
+
+    private void uploadSubscriptionImage(WebElement edit) {
+        try (var logo = AdminConsole.class.getResourceAsStream(LOGO_RESOURCE)) {
+            var imagePicker = findInShadowRoot(edit, "alfio-purchase-context-image");
+            var fileInput = findInShadowRoot(findInShadowRoot(imagePicker, "alfio-file-upload"), "#file-input");
+            uploadFile(fileInput, tempFile("e2e-subscription-logo", ".png", requireNonNull(logo).readAllBytes()));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        wait.until(_ -> findInShadowRoot(findInShadowRoot(edit, "alfio-purchase-context-image"), ".preview-box img") != null);
+    }
+
+    /**
+     * Sets the value of a datetime-local sl-input: sendKeys doesn't work reliably on the native control
+     */
+    private void setDateTimeLocal(WebElement control, String value) {
+        var input = findInShadowRoot(control, "input");
+        ((JavascriptExecutor) driver).executeScript(
+            "arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', { bubbles: true }));", input, value);
+    }
+
+    /**
+     * Selects an option of a sl-select by its value: sets the value and emits sl-change,
+     * since the options of a hoisted select don't react reliably to a scripted click
+     */
+    private void selectShoelaceOptionByValue(WebElement select, String value) {
+        ((JavascriptExecutor) driver).executeScript(
+            "arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('sl-change', { bubbles: true, composed: true }));",
+            select, value);
+        wait.until(_ -> value.equals(String.valueOf(select.getDomProperty("value"))));
+    }
+
     /**
      * Matches the rows on their textContent: ChromeDriver's getText() of a row containing a component with a shadow root
      * (e.g. alfio-payment-method) returns only the text of that shadow root.
@@ -1435,6 +1549,15 @@ class AdminConsole {
      */
     private WebElement findInShadowRoot(WebElement host, String selector) {
         return wait.until(d -> (WebElement) ((JavascriptExecutor) d).executeScript("return arguments[0].shadowRoot.querySelector(arguments[1]);", host, selector));
+    }
+
+    /**
+     * The editor control (sl-input or sl-textarea) of the alfio-multi-language-text section with
+     * the given label (e.g. "Title"), nested one shadow root deeper than the page
+     */
+    private WebElement findMultiLanguageControl(WebElement edit, String label, String control) {
+        var field = findInShadowRoot(edit, "alfio-multi-language-text[label='" + label + "']");
+        return findInShadowRoot(field, control);
     }
 
     @SuppressWarnings("unchecked")

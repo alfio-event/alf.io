@@ -3,6 +3,13 @@ import {dispatchFeedback} from "../model/dom-events.ts";
 import {LitElement} from "lit";
 import {Country} from "../components/attendee-fields.ts";
 
+export interface AvailableCurrency {
+    code: string;
+    name: string;
+    symbol: string;
+    decimalPlaces: number;
+}
+
 export class UtilService {
     static renderMarkdown(text: string): Promise<string> {
         return fetchJson(`/admin/api/utils/render-commonmark?text=${encodeURIComponent(text)}`)
@@ -13,6 +20,10 @@ export class UtilService {
      */
     static countriesForVat(): Promise<Record<string, string>> {
         return fetchJson('/admin/api/utils/countriesForVat');
+    }
+
+    static availableCurrencies(): Promise<AvailableCurrency[]> {
+        return fetchJson('/admin/api/utils/currencies');
     }
 
     /**

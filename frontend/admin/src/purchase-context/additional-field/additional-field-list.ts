@@ -131,6 +131,11 @@ export class AdditionalFieldList extends LitElement {
     protected render(): unknown {
         return this.retrievePageDataTask.render({
             initial: () => html`loading...`,
+            error: () => html`
+                <sl-alert open variant="danger">
+                    <sl-icon name="exclamation-triangle" slot="icon"></sl-icon>Failed to load the page data
+                </sl-alert>
+            `,
             complete: (model) => html`
                 <div class="page-header">
                     <h3>
@@ -174,6 +179,11 @@ export class AdditionalFieldList extends LitElement {
     private iterateItems(model: Model) {
         return model.dataTask.render({
             initial: () => html`loading...`,
+            error: () => html`
+                <sl-alert open variant="danger">
+                    <sl-icon name="exclamation-triangle" slot="icon"></sl-icon>Failed to load the additional fields
+                </sl-alert>
+            `,
             complete: listData => {
                 this.itemsCount = listData.items.length;
                 if (listData.items.length === 0) {

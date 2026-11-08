@@ -11,9 +11,9 @@ import {
     PromoCodeDiscount,
     PromoCodeType,
     DiscountType,
-    DateTimeModification,
     UsageDetailEvent
 } from '../../model/promo-code.ts';
+import {DateTimeModification} from '../../model/purchase-context.ts';
 import {PromoCodeService} from '../../service/promo-code.ts';
 import {UtilService} from '../../service/util.ts';
 import {ConfirmationDialogService} from '../../service/confirmation-dialog.ts';

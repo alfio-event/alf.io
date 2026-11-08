@@ -1,4 +1,4 @@
-import {DateTimeModification} from "./event.ts";
+import {DateTimeModification} from "./purchase-context.ts";
 
 export type AdditionalItemType = 'DONATION' | 'SUPPLEMENT';
 export type AdditionalItemTaxType = 'INHERITED' | 'NONE' | 'CUSTOM_INCLUDED' | 'CUSTOM_EXCLUDED';

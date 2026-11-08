@@ -5,7 +5,7 @@ import {TanStackFormController} from '@tanstack/lit-form';
 import type {SlDialog, SlTextarea} from '@shoelace-style/shoelace';
 import {base, dialog, form, modernLayout, retroCompat, row} from '../../styles.ts';
 import {PaymentTransaction} from '../../model/reservation.ts';
-import {DateTimeModification} from '../../model/event.ts';
+import {DateTimeModification} from '../../model/purchase-context.ts';
 import {PurchaseContextType} from '../../model/purchase-context.ts';
 import {dispatchFeedback} from '../../model/dom-events.ts';
 import {fetchJson, postJson, putJson, toDateTimeModification} from '../../service/helpers.ts';

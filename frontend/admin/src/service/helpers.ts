@@ -1,4 +1,4 @@
-import {DateTimeModification} from "../model/event.ts";
+import {DateTimeModification} from "../model/purchase-context.ts";
 import {html, nothing, TemplateResult} from "lit";
 import {when} from "lit/directives/when.js";
 import {ContentLanguage} from "../model/purchase-context.ts";
@@ -12,11 +12,15 @@ export function putJson(url: string, payload: any): Promise<Response> {
     return performRequest(url, 'PUT', payload);
 }
 
+export function patchJson(url: string, payload: any): Promise<Response> {
+    return performRequest(url, 'PATCH', payload);
+}
+
 export function callDelete(url: string): Promise<Response> {
     return performRequest(url, 'DELETE', null);
 }
 
-function performRequest(url: string, method: 'PUT' | 'POST' | 'DELETE', payload: any): Promise<Response> {
+function performRequest(url: string, method: 'PUT' | 'POST' | 'PATCH' | 'DELETE', payload: any): Promise<Response> {
     const xsrfName = document.querySelector('meta[name=_csrf_header]')?.getAttribute('content') as string;
     const xsrfValue = document.querySelector('meta[name=_csrf]')?.getAttribute('content') as string;
 
@@ -100,6 +104,47 @@ export async function responseErrorMessage(response: Response, fallback: string)
         // not JSON: the body itself is the message
     }
     return text || fallback;
+}
+
+/**
+ * Whether a file matches an accept attribute (mime types, "type/*" or extensions like ".png")
+ */
+export function matchesAccept(file: File, accept: string): boolean {
+    const acceptList = accept.split(',').map(s => s.trim().toLowerCase());
+    const fileType = file.type.toLowerCase();
+    const fileName = file.name.toLowerCase();
+
+    for (const pattern of acceptList) {
+        if (pattern === fileType) return true;
+        if (pattern.endsWith('/*') && fileType.startsWith(pattern.slice(0, -1))) return true;
+        if (pattern.startsWith('.') && fileName.endsWith(pattern)) return true;
+    }
+    return false;
+}
+
+/**
+ * Human-readable size with binary units (1 MB = 1024 * 1024 bytes), unlike sl-format-bytes,
+ * which is decimal and would show 1048576 bytes as "1.05 MB"
+ */
+export function formatBytesBinary(bytes: number): string {
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let value = bytes;
+    let unit = 0;
+    while (value >= 1024 && unit < units.length - 1) {
+        value /= 1024;
+        unit++;
+    }
+    const rounded = Math.round(value * 10) / 10;
+    return `${rounded} ${units[unit]}`;
+}
+
+export function readAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+    });
 }
 
 export function renderIf(predicate: () => boolean, template: () => TemplateResult): TemplateResult {

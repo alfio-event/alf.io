@@ -1,4 +1,4 @@
-import {DateTimeModification} from './event.ts';
+import {DateTimeModification} from './purchase-context.ts';
 import {AttendeeFieldValues} from '../components/attendee-fields.ts';
 
 export type TicketAccessType = 'IN_PERSON' | 'ONLINE';

@@ -34,6 +34,29 @@
         };
     });
 
+    baseServices.service('SubscriptionService', function($http, HttpErrorHandler, $q) {
+        return {
+            findAllReservations: function(name, page, search, status) {
+                return $http.get('/admin/api/reservation/subscription/'+name+'/reservations/list', {params: {page: page, search: search, status: status}});
+            },
+            loadSubscriptionsDescriptors: function(organizationId) {
+                if (!window.USER_IS_OWNER) {
+                    return $q.reject('not authorized');
+                }
+                return $http.get('/admin/api/organization/'+organizationId+'/subscription/list')
+                    .error(HttpErrorHandler.handle);
+            },
+            loadActiveSubscriptionsDescriptors: function(organizationId) {
+                return $http.get('/admin/api/organization/'+organizationId+'/subscription/active')
+                    .error(HttpErrorHandler.handle);
+            },
+            loadDescriptor: function(organizationId, subscriptionId) {
+                return $http.get('/admin/api/organization/'+organizationId+'/subscription/'+subscriptionId)
+                    .error(HttpErrorHandler.handle);
+            }
+        };
+    });
+
     baseServices.service('PurchaseContextService', function(EventService, SubscriptionService) {
         return {
             findAllReservations: function(type, contextName, page, search, status) {

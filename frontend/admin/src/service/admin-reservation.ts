@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
-import {AlfioEvent, DateTimeModification} from '../model/event.ts';
+import {AlfioEvent} from '../model/event.ts';
+import {DateTimeModification} from '../model/purchase-context.ts';
 import {
     AdminReservationRequest,
     CategoryType,

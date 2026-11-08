@@ -16,7 +16,9 @@
  */
 package alfio.model.modification;
 
+import alfio.model.ContentLanguage;
 import alfio.model.PriceContainer.VatStatus;
+import alfio.model.PurchaseContext;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.subscription.SubscriptionDescriptor;
@@ -34,6 +36,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNullElse;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -143,6 +146,18 @@ public class SubscriptionDescriptorModification {
 
     public String getPublicIdentifier() {
         return getId().toString();
+    }
+
+    // serialized so that the descriptor endpoint returns a PurchaseContext-shaped object, like events do
+    public PurchaseContext.PurchaseContextType getType() {
+        return PurchaseContext.PurchaseContextType.subscription;
+    }
+
+    public List<ContentLanguage> getContentLanguages() {
+        var languages = title.keySet();
+        return ContentLanguage.ALL_LANGUAGES.stream()
+            .filter(l -> languages.contains(l.getLanguage()))
+            .collect(Collectors.toList());
     }
 
     public static SubscriptionDescriptorModification fromModel(SubscriptionDescriptor subscriptionDescriptor) {

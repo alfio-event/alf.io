@@ -1,4 +1,4 @@
-export type TicketStatus = 'FREE' | 'PENDING' | 'TO_BE_PAID' | 'ACQUIRED' | 'CANCELLED' | 'CHECKED_IN' | 'EXPIRED' | 'INVALIDATED' | 'RELEASED' | 'PRE_RESERVED';
+import {TicketStatus} from './event.ts';
 
 export type CheckInStatus =
     'EVENT_NOT_FOUND'

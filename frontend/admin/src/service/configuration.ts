@@ -20,4 +20,17 @@ export class ConfigurationService {
     static loadSingleConfig(publicIdentifier: string, key: string): Promise<string> {
         return fetchJson(`/admin/api/configuration/events/${publicIdentifier}/single/${key}`);
     }
+
+    static loadSingleConfigForOrganization(organizationId: number, key: string): Promise<string> {
+        return fetchJson(`/admin/api/configuration/organizations/${organizationId}/single/${key}`);
+    }
+
+    static loadInstanceSettings(): Promise<InstanceSettings> {
+        return fetchJson('/admin/api/configuration/instance-settings');
+    }
+}
+
+export interface InstanceSettings {
+    descriptionMaxLength: number;
+    baseUrl: string;
 }

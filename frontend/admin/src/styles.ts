@@ -1604,3 +1604,238 @@ export const panelStyles = css`
         text-decoration: underline;
     }
 `;
+
+/* a sl-card with a header (title + action button) and a list of clickable rows: logo, title + badges, muted
+   meta lines and a sales progress bar. Used by the events list and the subscriptions list */
+export const cardList = css`
+    :host {
+        display: block;
+        margin-block: var(--sl-spacing-large);
+        color: var(--sl-color-neutral-900);
+    }
+
+    *, *::before, *::after {
+        box-sizing: border-box;
+    }
+
+    sl-card {
+        width: 100%;
+    }
+
+    sl-card::part(base) {
+        overflow: hidden;
+        border-color: var(--sl-color-gray-200);
+        border-radius: var(--sl-border-radius-large);
+        box-shadow: var(--sl-shadow-x-small);
+    }
+
+    sl-card::part(header),
+    sl-card::part(footer) {
+        padding: var(--sl-spacing-medium) var(--sl-spacing-large);
+        border-color: var(--sl-color-gray-200);
+    }
+
+    sl-card::part(body) {
+        padding: 0;
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--sl-spacing-medium);
+    }
+
+    .card-header h2 {
+        margin: 0;
+        font-size: var(--sl-font-size-large);
+        font-weight: var(--sl-font-weight-semibold);
+    }
+
+    .event-row {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: var(--sl-spacing-medium);
+        padding: var(--sl-spacing-large);
+        color: inherit;
+        text-decoration: none;
+        transition: background-color var(--sl-transition-fast);
+    }
+
+    .event-row:hover {
+        background: var(--sl-color-primary-50);
+    }
+
+    .event-row:focus-visible {
+        outline: var(--sl-focus-ring-width) solid var(--sl-focus-ring-color);
+        outline-offset: calc(-1 * var(--sl-focus-ring-width));
+    }
+
+    .event-row + .event-row {
+        border-top: 1px solid var(--sl-color-gray-200);
+    }
+
+    .event-logo {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        border-radius: var(--sl-border-radius-medium);
+        overflow: hidden;
+    }
+
+    .event-logo.placeholder {
+        color: var(--sl-color-gray-400);
+        background: var(--sl-color-gray-50);
+        border: 1px solid var(--sl-color-gray-200);
+        font-size: var(--sl-font-size-large);
+    }
+
+    .event-logo img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .event-main {
+        min-width: 0;
+    }
+
+    .event-heading {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--sl-spacing-x-small);
+        min-height: var(--sl-input-height-small);
+    }
+
+    .event-title {
+        color: var(--sl-color-neutral-900);
+        font-size: var(--sl-font-size-large);
+        font-weight: var(--sl-font-weight-semibold);
+        text-decoration: none;
+    }
+
+    .event-row:hover .event-title {
+        color: var(--sl-color-primary-700);
+        text-decoration: underline;
+    }
+
+    .event-date,
+    .ticket-summary,
+    .sales-meta {
+        display: flex;
+        align-items: center;
+        gap: var(--sl-spacing-2x-small);
+    }
+
+    .event-date {
+        margin-top: var(--sl-spacing-2x-small);
+        color: var(--sl-color-gray-600);
+        font-size: var(--sl-font-size-small);
+    }
+
+    .sales-row {
+        display: grid;
+        grid-template-columns: minmax(180px, 1fr) minmax(200px, 1.5fr);
+        align-items: end;
+        gap: var(--sl-spacing-large);
+        margin-top: var(--sl-spacing-small);
+        max-width: 720px;
+    }
+
+    .sales-meta {
+        justify-content: space-between;
+        color: var(--sl-color-gray-600);
+        font-size: var(--sl-font-size-x-small);
+        margin-bottom: var(--sl-spacing-2x-small);
+    }
+
+    .sales-progress {
+        width: 100%;
+    }
+
+    sl-progress-bar {
+        --height: var(--sl-spacing-2x-small);
+        --indicator-color: var(--sl-color-primary-600);
+        --track-color: var(--sl-color-gray-100);
+    }
+
+    sl-progress-bar.nearly-full {
+        --indicator-color: var(--sl-color-warning-600);
+    }
+
+    .payment-warning {
+        color: var(--sl-color-warning-700);
+        font-size: var(--sl-font-size-small);
+    }
+
+    alfio-pending-payments-count {
+        align-self: center;
+    }
+
+    .card-footer sl-button::part(base) {
+        padding-inline: 0;
+    }
+
+    .state-message {
+        padding: var(--sl-spacing-large);
+    }
+
+    @media (max-width: 640px) {
+        .event-row {
+            padding: var(--sl-spacing-medium);
+        }
+
+        .sales-row {
+            grid-template-columns: 1fr;
+            gap: var(--sl-spacing-small);
+        }
+    }
+`;
+
+/* the dashed drop target of a file picker (components/file-upload.ts, components/image-upload.ts) */
+export const dropZone = css`
+    .drop-zone {
+        border: 2px dashed var(--sl-input-border-color);
+        border-radius: var(--sl-input-border-radius);
+        padding: var(--sl-spacing-3x-large) var(--sl-spacing-large);
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.15s ease, background-color 0.15s ease;
+        background-color: var(--sl-color-neutral-5);
+        outline: none;
+    }
+
+    .drop-zone:focus-visible {
+        border-color: var(--sl-color-primary-500);
+        background-color: var(--sl-color-primary-100);
+        box-shadow: 0 0 0 3px var(--sl-color-primary-200);
+    }
+
+    .drop-zone:hover {
+        border-color: var(--sl-color-primary-300);
+        background-color: var(--sl-color-primary-50);
+    }
+
+    .drop-zone.drag-over {
+        border-color: var(--sl-color-primary-500);
+        background-color: var(--sl-color-primary-100);
+    }
+
+    .drop-zone-icon {
+        color: var(--sl-color-primary-400);
+        margin-bottom: var(--sl-spacing-small);
+    }
+
+    .drop-zone-icon sl-icon {
+        font-size: var(--sl-font-size-4x-large);
+    }
+
+    .drop-zone-prompt {
+        margin: var(--sl-spacing-small) 0 0;
+        color: var(--sl-color-gray-600);
+        font-size: var(--sl-font-size-small);
+    }
+`;

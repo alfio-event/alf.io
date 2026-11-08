@@ -1,14 +1,9 @@
 import {Organization} from "./organization.ts";
-import {LocalizedContent, PurchaseContext} from "./purchase-context.ts";
+import {LocalizedContent, PaymentProxy, PurchaseContext} from "./purchase-context.ts";
 
 export interface EventWithOrganization {
     event: AlfioEvent;
     organization: Organization;
-}
-
-export interface DateTimeModification {
-    date: string;
-    time: string;
 }
 
 export interface AlfioEvent extends PurchaseContext {
@@ -58,8 +53,12 @@ export interface TicketCategory {
     accessRestricted:             boolean;
 }
 
-export type PaymentProxy = 'STRIPE' | 'ON_SITE' | 'OFFLINE' | 'NONE' | 'ADMIN' | 'PAYPAL' | 'MOLLIE' | 'SAFERPAY' | 'CUSTOM_OFFLINE';
 export type EventStatus = 'DRAFT' | 'PUBLIC' | 'DISABLED';
+
+/**
+ * Status of a ticket
+ */
+export type TicketStatus = 'FREE' | 'PENDING' | 'TO_BE_PAID' | 'ACQUIRED' | 'CANCELLED' | 'CHECKED_IN' | 'EXPIRED' | 'INVALIDATED' | 'RELEASED' | 'PRE_RESERVED';
 
 export interface EventStatistic {
     id: number;
