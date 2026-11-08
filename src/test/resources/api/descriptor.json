@@ -5323,7 +5323,7 @@
         "operationId" : "getAllEvents",
         "parameters" : [ {
           "in" : "query",
-          "name" : "includeOnline",
+          "name" : "includeExpired",
           "required" : false,
           "schema" : {
             "type" : "boolean",
@@ -5334,6 +5334,14 @@
           "name" : "Authorization",
           "schema" : {
             "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "includeOnline",
+          "required" : false,
+          "schema" : {
+            "type" : "boolean",
+            "default" : false
           }
         } ],
         "responses" : {
@@ -5532,6 +5540,67 @@
                   "type" : "array",
                   "items" : {
                     "$ref" : "#/components/schemas/ContentLanguage"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Internal Server Error"
+          }
+        },
+        "tags" : [ "event-api-controller" ]
+      }
+    },
+    "/admin/api/events/basic" : {
+      "get" : {
+        "operationId" : "getAllEventsBasicInfo",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/EventBasicInfo"
                   }
                 }
               }
