@@ -8,6 +8,7 @@ import {ContentLanguage, LocalizedContent} from '../model/purchase-context.ts';
 import {sectionCard} from './section-card.ts';
 import {badges, form, modernLayout, textColors} from '../styles.ts';
 import {UtilService} from '../service/util.ts';
+import './markdown-editor.ts';
 
 export interface MultiLanguageTextChange {
     value: LocalizedContent;
@@ -292,8 +293,8 @@ export class MultiLanguageText extends LitElement {
     }
 
     /**
-     * The editor of one language block. This is the single place to replace with a WYSIWYG
-     * markdown editor: the replacement only needs to call onInput with the new text, the
+     * The editor of one language block. Markdown fields use the WYSIWYG alfio-markdown-editor,
+     * the other fields a plain input/textarea; both only call onInput with the new text, so the
      * component keeps owning the value and the "change" event.
      */
     protected renderEditor(locale: string, text: string, onInput: (text: string) => void): TemplateResult {
@@ -301,13 +302,21 @@ export class MultiLanguageText extends LitElement {
         if (this.maxLength > 0) {
             maxLengthAttr = this.maxLength;
         }
+        if (this.markdown) {
+            return html`
+                <alfio-markdown-editor class="editor" id=${`editor-${locale}`} label=${this.label}
+                                      max-length=${this.maxLength}
+                                      .value=${text}
+                                      @value-changed=${(e: CustomEvent<string>) => onInput(e.detail)}>
+                </alfio-markdown-editor>
+            `;
+        }
         if (!this.multiline) {
             return html`
                 <sl-input class="editor" id=${`editor-${locale}`} label=${this.label} type="text"
                           maxlength=${maxLengthAttr}
                           .value=${text}
                           @sl-input=${(e: Event) => onInput((e.target as SlInput).value)}>
-                    ${this.renderHelpText()}
                 </sl-input>
             `;
         }
@@ -316,19 +325,8 @@ export class MultiLanguageText extends LitElement {
                          maxlength=${maxLengthAttr}
                          .value=${text}
                          @sl-input=${(e: Event) => onInput((e.target as SlTextarea).value)}>
-                ${this.renderHelpText()}
             </sl-textarea>
         `;
-    }
-
-    private renderHelpText(): TemplateResult | typeof nothing {
-        return when(this.markdown, () => html`
-            <div slot="help-text">
-                <sl-button variant="text" size="small" href="https://commonmark.org/help/" target="_blank">
-                    <sl-icon name="markdown" slot="prefix"></sl-icon>How to format text
-                </sl-button>
-            </div>
-        `, () => nothing);
     }
 
     private renderAddTranslation(): TemplateResult | typeof nothing {

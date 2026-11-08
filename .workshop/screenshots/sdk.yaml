@@ -1,0 +1,7 @@
+name: screenshots
+plugs:
+  # Shares host screenshots with the workshop.
+  # Host source is set with: workshop remount dev/screenshots:screenshots ~/Pictures/Screenshots
+  screenshots:
+    interface: mount
+    workshop-target: /home/workshop/screenshots

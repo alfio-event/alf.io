@@ -20,6 +20,11 @@
     "@lit/task": "1.0.3",
     "@shoelace-style/shoelace": "2.20.1",
     "@tanstack/lit-form": "1.1.0",
+    "@tiptap/core": "^3.33.0",
+    "@tiptap/extension-table": "^3.33.0",
+    "@tiptap/markdown": "^3.33.0",
+    "@tiptap/pm": "^3.33.0",
+    "@tiptap/starter-kit": "^3.33.0",
     "codemirror": "^6.0.0",
     "lit": "3.3.2",
     "papaparse": "^5.5.4"

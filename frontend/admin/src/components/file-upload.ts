@@ -14,6 +14,18 @@ export class FileUpload extends LitElement {
             display: block;
         }
 
+        /* when the host is stretched by a parent grid/flex row (e.g. beside the image
+           preview in alfio-purchase-context-image), the dashed box fills it instead of
+           keeping its content height; with an auto-height host, 100% resolves to auto */
+        .drop-zone {
+            height: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
         .file-info {
             display: flex;
             align-items: center;

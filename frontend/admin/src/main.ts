@@ -89,6 +89,7 @@ export { ExtensionList } from './extension/extension-list';
 export { ExtensionEdit } from './extension/extension-edit';
 export { ExtensionLogPage } from './extension/extension-log';
 export { CodeEditor } from './components/code-editor';
+export { MarkdownEditor } from './components/markdown-editor';
 export { ReservationDetailPage } from './reservation-detail/reservation-detail';
 export { CheckIn } from './event/check-in/check-in';
 export { CheckInScan } from './event/check-in/check-in-scan';

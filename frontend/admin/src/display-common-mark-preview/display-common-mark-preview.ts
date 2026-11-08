@@ -11,9 +11,6 @@ export class DisplayCommonMarkPreview extends LitElement {
     static styles = [
         row,
         css`
-            sl-button.left::part(base) {
-                justify-content: start;
-            }
             sl-button.right::part(base) {
                 justify-content: end;
             }
@@ -34,7 +31,6 @@ export class DisplayCommonMarkPreview extends LitElement {
     protected render(): TemplateResult {
         return html`
             <div class="row">
-                <sl-button class="left" variant="text" target="_blank" href="https://commonmark.org/help/" size="small"><sl-icon name="markdown" slot="prefix"></sl-icon> How to format text</sl-button>
                 <sl-button class="right" variant="text" .disabled=${(this.text ?? '').trim().length === 0} @click=${this.openDialog} size="small"><sl-icon name="easel3" slot="prefix"></sl-icon> ${this.buttonText}</sl-button>
             </div>
             <sl-dialog ?open=${this.dialogOpen} label="Text Preview" style="--width: 50vw;" class="dialog-markdown-preview" >

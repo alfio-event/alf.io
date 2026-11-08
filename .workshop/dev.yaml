@@ -5,3 +5,4 @@ sdks:
     channel: latest/stable
   - name: docker-ce
     channel: latest/stable
+  - name: project-screenshots
