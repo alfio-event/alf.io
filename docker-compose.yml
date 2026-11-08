@@ -3,7 +3,7 @@ volumes:
 
 services:
     db:
-        image: postgres:10
+        image: postgres:11
         env_file:
             - .env
         healthcheck:

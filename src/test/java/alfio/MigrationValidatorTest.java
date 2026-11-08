@@ -54,7 +54,7 @@ class MigrationValidatorTest {
 
     @BeforeEach
     void setUp() {
-        postgres = new PostgreSQLContainer("postgres:10")
+        postgres = new PostgreSQLContainer("postgres:11")
             .withDatabaseName(POSTGRES_DB)
             .withNetwork(network)
             .withNetworkAliases(DB_ALIAS)
@@ -97,7 +97,7 @@ class MigrationValidatorTest {
                     .waitingFor(Wait.forHttp("/healthz").forStatusCode(200))
                     .withStartupAttempts(1)
                     .start();
-            } catch (Exception e) {
+            } catch (Exception _) {
                 throw new IllegalStateException("cannot start alf.io dev. Message from container: \n" + alfioCurrent.getLogs(OutputFrame.OutputType.STDOUT));
             }
             log.info("started and healthy");

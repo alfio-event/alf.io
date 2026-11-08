@@ -76,7 +76,7 @@ public class BaseTestConfiguration {
     @DependsOnDatabaseInitialization
     @Profile("!travis")
     public RefreshableDataSource dataSource() {
-        String postgresVersion = Objects.requireNonNullElse(System.getProperty("pgsql.version"), "10");
+        String postgresVersion = Objects.requireNonNullElse(System.getProperty("pgsql.version"), "11");
         log.debug("Running tests using PostgreSQL v.{}", postgresVersion);
         if (postgres == null) {
             postgres = new PostgreSQLContainer("postgres:"+postgresVersion)
