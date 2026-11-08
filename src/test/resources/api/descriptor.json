@@ -34351,6 +34351,12 @@
       "SubscriptionDescriptorModification" : {
         "type" : "object",
         "properties" : {
+          "contentLanguages" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ContentLanguage"
+            }
+          },
           "currency" : {
             "type" : "string"
           },
@@ -34430,6 +34436,10 @@
             "additionalProperties" : {
               "type" : "string"
             }
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "subscription", "event" ]
           },
           "usageType" : {
             "type" : "string",
