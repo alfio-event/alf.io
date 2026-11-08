@@ -70,6 +70,7 @@ import static alfio.manager.support.extension.ExtensionEvent.*;
 import static alfio.model.PromoCodeDiscount.DiscountType.PERCENTAGE;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.Map.entry;
+import static java.util.Objects.requireNonNull;
 
 @Component
 @AllArgsConstructor
@@ -196,7 +197,7 @@ public class ExtensionManager {
         Map<String, Object> payload = new HashMap<>();
         payload.put(METADATA, metadata);
         payload.put(ORGANIZATION, writeOrganization(organization));
-        payload.put("baseUrl", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.organization(organization.getId())).getRequiredValue());
+        payload.put("baseUrl", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.organization(requireNonNull(organization).getId())).getRequiredValue());
         return payload;
     }
 
