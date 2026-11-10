@@ -16,11 +16,18 @@
  */
 package alfio.model.extension;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
 public class PdfGenerationResult {
     private final String tempFilePath;
+
+    @JsonCreator
+    public static PdfGenerationResult fromJson(@JsonProperty("tempFilePath") String tempFilePath) {
+        return new PdfGenerationResult(tempFilePath);
+    }
 
     public boolean isEmpty() {
         return tempFilePath == null || tempFilePath.isEmpty();
