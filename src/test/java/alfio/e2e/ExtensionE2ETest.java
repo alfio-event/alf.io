@@ -17,6 +17,7 @@
 package alfio.e2e;
 
 import alfio.model.transaction.PaymentProxy;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.EnumSet;
@@ -24,8 +25,15 @@ import java.util.EnumSet;
 /**
  * The extension scripts can be managed from the "Extension" menu of the admin console:
  * the test creates an extension, edits it, checks the logs page and deletes it.
+ * <p>
+ * Managing extensions requires the Administrator role. The test therefore runs by default only
+ * outside CI (locally the e2e user is the admin); in CI it is skipped unless E2E_EXTENSION_TEST=true
+ * is set, on an instance whose e2e user has the Administrator role.
  */
 class ExtensionE2ETest extends BaseE2ETest {
+
+    private static final boolean ENABLED = Boolean.parseBoolean(
+        System.getenv().getOrDefault("E2E_EXTENSION_TEST", Boolean.toString(!CI_RUN)));
 
     // the script must define getScriptMetadata() with a display name and at least one event
     private static final String SCRIPT = """
@@ -50,6 +58,8 @@ class ExtensionE2ETest extends BaseE2ETest {
 
     @Test
     void manageExtension() {
+        Assumptions.assumeTrue(ENABLED,
+            "extension management requires an admin e2e user: run locally, or set E2E_EXTENSION_TEST=true");
         var name = "e2e" + uniqueId();
         adminConsole.login();
         try {
@@ -64,7 +74,7 @@ class ExtensionE2ETest extends BaseE2ETest {
             // best effort, e.g. when the test fails midway: don't hide the original failure
             try {
                 adminConsole.deleteExtensionIfPresent(name);
-            } catch (Exception cleanupError) {
+            } catch (Exception _) {
                 // ignore: the extension is unique to this run (name contains the event slug)
             }
         }
