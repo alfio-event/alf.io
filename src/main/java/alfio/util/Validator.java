@@ -460,14 +460,17 @@ public final class Validator {
                     form.setAdditional(new HashMap<>());
                 }
                 form.getAdditional().put(fieldConf.getName(), Collections.singletonList(""));
-                errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"][0]", ErrorsCode.EMPTY_FIELD);
+                // checkbox: "required" is a property of the whole group, so the error is always reported on the field itself
+                String fieldKey = fieldConf.isCheckboxField() ? fieldConf.getName() + "]" : fieldConf.getName() + "][0]";
+                errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldKey, ErrorsCode.EMPTY_FIELD);
             }
             return;
         }
         var values = form.getAdditional().computeIfAbsent(fieldConf.getName(), k -> List.of());
 
         //handle required for multiple choice (checkbox) where required is interpreted as at least one!
-        if (fieldConf.isRequired() && fieldConf.getCount() > 1  && values.stream().allMatch(StringUtils::isBlank)) {
+        // this applies regardless of the number of options: a single-option checkbox is still a group
+        if (fieldConf.isRequired() && fieldConf.isCheckboxField() && values.stream().allMatch(StringUtils::isBlank)) {
             errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]", ErrorsCode.EMPTY_FIELD);
         }
 
@@ -499,7 +502,7 @@ public final class Validator {
                 ERROR_RESTRICTED_VALUE, fieldConf.getRestrictedValues(), errors);
         }
 
-        if(fieldConf.isRequired() && fieldConf.getCount() == 1 && StringUtils.isBlank(formValue)){
+        if(fieldConf.isRequired() && !fieldConf.isCheckboxField() && StringUtils.isBlank(formValue)){
             errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]", ErrorsCode.EMPTY_FIELD);
         }
 

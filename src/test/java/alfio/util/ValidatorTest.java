@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
 
@@ -380,5 +381,59 @@ class ValidatorTest {
             }
             return new DateTimeModification(LocalDate.parse(dateTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME), LocalTime.parse(dateTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         };
+    }
+
+    // SUP-170: "required" on a checkbox field is a property of the whole group, so the error
+    // must be reported on additional[name], regardless of how many options the field has
+    @ParameterizedTest
+    @ValueSource(strings = {"[\"accept\"]", "[\"a\",\"b\"]"})
+    void requiredCheckboxErrorIsReportedOnTheField(String restrictedValues) {
+        var field = checkboxField(restrictedValues);
+        var form = new TestAdditionalFieldsForm();
+        form.setAdditional(new HashMap<>(Map.of("terms", new ArrayList<>(Collections.nCopies(field.getRestrictedValues().size(), (String) null)))));
+        var bindingResult = new BeanPropertyBindingResult(form, "form");
+        Validator.validateFieldConfiguration(form, null, bindingResult, "", field);
+        assertTrue(bindingResult.hasFieldErrors("additional[terms]"));
+        assertFalse(bindingResult.hasFieldErrors("additional[terms][0]"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"[\"accept\"]", "[\"a\",\"b\"]"})
+    void requiredCheckboxNotSentErrorIsReportedOnTheField(String restrictedValues) {
+        var field = checkboxField(restrictedValues);
+        var form = new TestAdditionalFieldsForm();
+        var bindingResult = new BeanPropertyBindingResult(form, "form");
+        Validator.validateFieldConfiguration(form, null, bindingResult, "", field);
+        assertTrue(bindingResult.hasFieldErrors("additional[terms]"));
+        assertFalse(bindingResult.hasFieldErrors("additional[terms][0]"));
+    }
+
+    @Test
+    void requiredSingleOptionCheckboxAccepted() {
+        var field = checkboxField("[\"accept\"]");
+        var form = new TestAdditionalFieldsForm();
+        form.setAdditional(new HashMap<>(Map.of("terms", new ArrayList<>(List.of("accept")))));
+        var bindingResult = new BeanPropertyBindingResult(form, "form");
+        Validator.validateFieldConfiguration(form, null, bindingResult, "", field);
+        assertFalse(bindingResult.hasErrors());
+    }
+
+    private static PurchaseContextFieldConfiguration checkboxField(String restrictedValues) {
+        return new PurchaseContextFieldConfiguration(1, 1, null, "terms", 0, "checkbox", null, null,
+            true, true, restrictedValues, PurchaseContextFieldConfiguration.Context.ATTENDEE, null, null, null, false);
+    }
+
+    public static class TestAdditionalFieldsForm implements alfio.controller.form.AdditionalFieldsContainer {
+        private Map<String, List<String>> additional;
+
+        @Override
+        public Map<String, List<String>> getAdditional() {
+            return additional;
+        }
+
+        @Override
+        public void setAdditional(Map<String, List<String>> additional) {
+            this.additional = additional;
+        }
     }
 }
