@@ -29,6 +29,7 @@ export class UpdateTicketComponent implements OnInit {
   emailSent: boolean;
   ticketFormVisible: boolean;
   ticketAccessType: TicketAccessType;
+  updating = false;
 
   constructor(
     private ticketService: TicketService,
@@ -68,13 +69,22 @@ export class UpdateTicketComponent implements OnInit {
   }
 
   updateTicket(): void {
-    this.ticketService.updateTicket(this.event.shortName, this.ticket.uuid, this.formGroup.value).subscribe(res => {
-      if (res.success) {
-        this.ticketService.getTicket(this.event.shortName, this.ticketIdentifier)
-          .subscribe(t => this.handleTicketResponse(t));
+    if (this.updating) {
+      return;
+    }
+    this.updating = true;
+    this.ticketService.updateTicket(this.event.shortName, this.ticket.uuid, this.formGroup.value).subscribe({
+      next: res => {
+        this.updating = false;
+        if (res.success) {
+          this.ticketService.getTicket(this.event.shortName, this.ticketIdentifier)
+            .subscribe(t => this.handleTicketResponse(t));
+        }
+      },
+      error: (err) => {
+        this.updating = false;
+        handleServerSideValidationError(err, this.formGroup);
       }
-    }, (err) => {
-      handleServerSideValidationError(err, this.formGroup);
     });
   }
 

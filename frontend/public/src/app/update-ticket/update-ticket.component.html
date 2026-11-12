@@ -47,10 +47,10 @@
                     <div class="bg-white pb-3 pt-3" [class.sticky]="ticket.ticketFieldConfigurationAfterStandard.length > 0">
                       <div class="row d-flex justify-content-between">
                         <div class="col-md-5 order-md-1 col-12">
-                          <button type="submit" class="btn btn-success block-button" *ngIf="canUpdateTicket">{{ (ticket.assigned ? 'reservation-page-complete.update' : 'reservation-page-complete.assign') | translate}}</button>
+                          <button type="submit" class="btn btn-success block-button" *ngIf="canUpdateTicket" [disabled]="updating"><span *ngIf="updating" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>{{ (ticket.assigned ? 'reservation-page-complete.update' : 'reservation-page-complete.assign') | translate}}</button>
                         </div>
                         <div class="col-md-5 mt-2 mt-md-0 order-md-0 col-12">
-                          <button type="button" (click)="ticketFormVisible = false" translate="reservation-page-complete.cancel" class="btn btn-light block-button"></button>
+                          <button type="button" (click)="ticketFormVisible = false" translate="reservation-page-complete.cancel" class="btn btn-light block-button" [disabled]="updating"></button>
                         </div>
                       </div>
                     </div>

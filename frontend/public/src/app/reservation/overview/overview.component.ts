@@ -43,6 +43,7 @@ export class OverviewComponent implements OnInit {
   expired: boolean;
 
   submitting: boolean;
+  busy = false;
   paymentStatusNotification: PaymentStatusNotification;
   private forceCheckInProgress = false;
 
@@ -161,6 +162,14 @@ export class OverviewComponent implements OnInit {
   }
 
   back(requestInvoice?: boolean): void {
+    if (this.busy) {
+      return;
+    }
+    this.busy = true;
+    const onError = () => {
+      this.busy = false;
+      this.feedbackService.showError('error.STEP_2_PAYMENT_REQUEST_CREATION');
+    };
     const extras: NavigationExtras = {};
     if (requestInvoice != null) {
       extras.queryParams = {
@@ -168,19 +177,29 @@ export class OverviewComponent implements OnInit {
       };
     }
     if (this.expired) {
-      this.reservationService.cancelPendingReservation(this.reservationId).subscribe(res => {
-        this.router.navigate([this.purchaseContextType, this.publicIdentifier]);
+      this.reservationService.cancelPendingReservation(this.reservationId).subscribe({
+        next: () => this.navigateBack([this.purchaseContextType, this.publicIdentifier]),
+        error: onError
       });
     } else {
-      this.reservationService.backToBooking(this.reservationId).subscribe(res => {
-        this.router.navigate([this.purchaseContextType, this.publicIdentifier, 'reservation', this.reservationId, 'book'], extras);
+      this.reservationService.backToBooking(this.reservationId).subscribe({
+        next: () => this.navigateBack([this.purchaseContextType, this.publicIdentifier, 'reservation', this.reservationId, 'book'], extras),
+        error: onError
       });
     }
   }
 
+  private navigateBack(commands: string[], extras?: NavigationExtras): void {
+    this.router.navigate(commands, extras).then(navigated => {
+      if (!navigated) {
+        this.busy = false;
+      }
+    }, () => this.busy = false);
+  }
+
   confirm() {
 
-    if (!this.overviewForm.valid || this.selectedPaymentProvider == null) {
+    if (!this.overviewForm.valid || this.selectedPaymentProvider == null || this.busy) {
       return; // prevent accidental submissions
     }
 

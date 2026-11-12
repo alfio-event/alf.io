@@ -40,6 +40,7 @@ export class SuccessComponent implements OnInit {
   ticketsFormControl: {[key: string]: UntypedFormGroup} = {};
   ticketsFormShow: {[key: string]: boolean} = {};
   ticketsReleaseShow: {[key: string]: boolean} = {};
+  ticketsUpdating: {[key: string]: boolean} = {};
 
   unlockedTicketCount = 0;
   ticketsAllAssigned = true;
@@ -137,14 +138,23 @@ export class SuccessComponent implements OnInit {
   }
 
   updateTicket(uuid: string): void {
+    if (this.ticketsUpdating[uuid]) {
+      return;
+    }
     const ticketValue = this.ticketsFormControl[uuid].value;
-    this.ticketService.updateTicket(this.event.shortName, uuid, ticketValue).subscribe(res => {
-      if (res.success) {
-        this.loadReservation();
-        this.hideTicketForm(uuid);
+    this.ticketsUpdating[uuid] = true;
+    this.ticketService.updateTicket(this.event.shortName, uuid, ticketValue).subscribe({
+      next: res => {
+        delete this.ticketsUpdating[uuid];
+        if (res.success) {
+          this.loadReservation();
+          this.hideTicketForm(uuid);
+        }
+      },
+      error: (err) => {
+        delete this.ticketsUpdating[uuid];
+        handleServerSideValidationError(err, this.ticketsFormControl[uuid]);
       }
-    }, (err) => {
-      handleServerSideValidationError(err, this.ticketsFormControl[uuid]);
     });
   }
 

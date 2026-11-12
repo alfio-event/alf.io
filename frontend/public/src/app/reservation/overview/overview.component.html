@@ -38,7 +38,7 @@
               <div class="h-100 d-flex flex-column justify-content-center"><span translate="reservation-page.no-invoice-requested"></span></div>
             </div>
             <div class="col-5 col-md-12 mt-md-3">
-              <button type="button" class="btn btn-secondary" (click)="back(true)"><fa-icon [icon]="['far', 'edit']" a11yRole="presentation"></fa-icon>{{' '}}{{(reservationInfo.invoiceRequested ? 'common.edit' : 'reservation-page.request-invoice') | translate}}</button>
+              <button type="button" class="btn btn-secondary" (click)="back(true)" [disabled]="busy"><fa-icon [icon]="['far', 'edit']" a11yRole="presentation"></fa-icon>{{' '}}{{(reservationInfo.invoiceRequested ? 'common.edit' : 'reservation-page.request-invoice') | translate}}</button>
             </div>
           </div>
         </div>
@@ -118,8 +118,8 @@
 
     <div class="row d-flex justify-content-between mobile-add-margin-bottom mt-4" *ngIf="!submitting">
       <div class="col-md-5 order-md-1 col-12">
-        <button *ngIf="reservationInfo.orderSummary.free" type="submit" class="block-button btn btn-success" translate="reservation-page.continue" [disabled]="expired"></button>
-        <button *ngIf="!reservationInfo.orderSummary.free" type="submit" class="block-button btn btn-success" [disabled]="expired || !selectedPaymentProvider || !acceptedPrivacyAndTermAndConditions">
+        <button *ngIf="reservationInfo.orderSummary.free" type="submit" class="block-button btn btn-success" translate="reservation-page.continue" [disabled]="expired || busy"></button>
+        <button *ngIf="!reservationInfo.orderSummary.free" type="submit" class="block-button btn btn-success" [disabled]="expired || busy || !selectedPaymentProvider || !acceptedPrivacyAndTermAndConditions">
           <ng-container *ngIf="!reservationInfo.tokenAcquired">
             {{ (paymentMethodDeferred ? 'common.confirm' : 'reservation-page.pay')| translate}} <app-price-tag *ngIf="!paymentMethodDeferred" [purchaseContext]="purchaseContext" [formattedPrice]="reservationInfo.orderSummary.totalPrice" [displayTextInline]="true"></app-price-tag>
           </ng-container>
@@ -129,7 +129,7 @@
         </button>
       </div>
       <div class="col-md-5 order-md-0 col-12 ">
-        <button type="button" class="block-button btn btn-light" (click)="back()" translate="common.back" *ngIf="!reservationInfo.tokenAcquired"></button>
+        <button type="button" class="block-button btn btn-light" (click)="back()" [disabled]="busy" *ngIf="!reservationInfo.tokenAcquired"><span *ngIf="busy" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>{{ 'common.back' | translate }}</button>
         <button type="button" class="block-button btn btn-light" (click)="clearToken()" translate="reservation-page-complete.cancel" *ngIf="reservationInfo.tokenAcquired"></button>
       </div>
     </div>

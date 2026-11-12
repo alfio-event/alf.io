@@ -3,10 +3,10 @@
     <hr/>
     <div class="row">
         <div class="col-6">
-            <button type="button" class="btn btn-light block-button" (click)="activeModal.close('no')" translate="reservation-page-complete.confirm-cancellation.button.no"></button>
+            <button type="button" class="btn btn-light block-button" (click)="activeModal.close('no')" [disabled]="processing" translate="reservation-page-complete.confirm-cancellation.button.no"></button>
         </div>
         <div class="col-6">
-            <button type="button" class="btn btn-danger block-button" (click)="activeModal.close('yes')" translate="reservation-page-complete.confirm-cancellation.button.yes"></button>
+            <button type="button" class="btn btn-danger block-button" (click)="confirm()" [disabled]="processing"><span *ngIf="processing" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>{{ 'reservation-page-complete.confirm-cancellation.button.yes' | translate }}</button>
         </div>
     </div>
 </div>

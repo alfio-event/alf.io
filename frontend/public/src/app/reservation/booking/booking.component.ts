@@ -18,7 +18,7 @@ import {MoveAdditionalServiceRequest, Ticket, TicketIdentifier} from '../../mode
 import {TranslateService} from '@ngx-translate/core';
 import {AnalyticsService} from '../../shared/analytics.service';
 import {ErrorDescriptor} from '../../model/validated-response';
-import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {NgbModal, NgbModalRef} from '@ng-bootstrap/ng-bootstrap';
 import {ReservationExpiredComponent} from '../expired-notification/reservation-expired.component';
 import {CancelReservationComponent} from '../cancel-reservation/cancel-reservation.component';
 import {PurchaseContextService, PurchaseContextType} from '../../shared/purchase-context.service';
@@ -45,6 +45,7 @@ export class BookingComponent implements OnInit, AfterViewInit {
   private publicIdentifier: string;
   reservationId: string;
   expired: boolean;
+  busy = false;
   globalErrors: ErrorDescriptor[];
   @ViewChild('invoiceAnchor')
   private invoiceElement: ElementRef<HTMLAnchorElement>;
@@ -229,11 +230,15 @@ export class BookingComponent implements OnInit, AfterViewInit {
   }
 
   submitForm(): void {
+    if (this.busy) {
+      return;
+    }
     this.removeUnnecessaryFields();
     this.validateToOverview(false);
   }
 
   private validateToOverview(ignoreWarnings: boolean): void {
+    this.busy = true;
     this.reservationService.validateToOverview(this.reservationId, this.contactAndTicketsForm.value, this.translate.currentLang, ignoreWarnings).subscribe({
         next: res => {
             if (res.success && (!res.warnings || res.warnings.length === 0 || ignoreWarnings)) {
@@ -248,7 +253,10 @@ export class BookingComponent implements OnInit, AfterViewInit {
                     // if there is an error, we proceed anyway
                     error: () => this.proceedToOverview()
                 });
-            } else if (res.success) {
+                return;
+            }
+            this.busy = false;
+            if (res.success) {
                 // display warnings
                 const modalRef = this.modalService.open(WarningModalComponent, {centered: true, backdrop: 'static'});
                 const firstWarning = res.warnings[0];
@@ -260,6 +268,7 @@ export class BookingComponent implements OnInit, AfterViewInit {
             }
         },
         error: (err) => {
+            this.busy = false;
             this.globalErrors = handleServerSideValidationError(err, this.contactAndTicketsForm, key => {
                 const additionalRegex = /tickets\.([a-f0-9-]+)\.additional\.([^.]+)\.(\d+)/;
                 const result = additionalRegex.exec(key);
@@ -283,15 +292,30 @@ export class BookingComponent implements OnInit, AfterViewInit {
   private proceedToOverview(): Promise<boolean> {
     return this.router.navigate([this.purchaseContextType, this.publicIdentifier, 'reservation', this.reservationId, 'overview'], {
       queryParams: SearchParams.transformParams(this.route.snapshot.queryParams, this.route.snapshot.params)
+    }).then(navigated => {
+      if (!navigated) {
+        this.busy = false;
+      }
+      return navigated;
+    }, err => {
+      this.busy = false;
+      throw err;
     });
   }
 
   cancelPendingReservation() {
-    this.modalService.open(CancelReservationComponent, {centered: true}).result.then(res => {
+    if (this.busy) {
+      return;
+    }
+    const modalRef: NgbModalRef = this.modalService.open(CancelReservationComponent, {
+      centered: true,
+      // prevent closing the modal (ESC / backdrop click) while the cancellation is in progress
+      beforeDismiss: () => !modalRef.componentInstance.processing
+    });
+    modalRef.componentInstance.onConfirm = () => this.reservationService.cancelPendingReservation(this.reservationId);
+    modalRef.result.then(res => {
       if (res === 'yes') {
-        this.reservationService.cancelPendingReservation(this.reservationId).subscribe(() => {
-          this.handleCancelOrExpired();
-        });
+        this.handleCancelOrExpired();
       }
     }, () => {});
   }
