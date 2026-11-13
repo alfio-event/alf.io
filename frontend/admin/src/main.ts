@@ -66,6 +66,9 @@ export { CustomOfflinePaymentSelector } from './event/custom-offline-payment-eve
 export { CustomOfflinePaymentDeniedMethodsSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-denied-methods-selector';
 export { EventsList } from './event/events-list/events-list';
 export { EventsPage } from './event/events-page/events-page';
+export { EventCreate } from './event/event-create/event-create';
+export { EventCategoryDialog } from './event/event-create/category-dialog';
+export { CopyEventDialog } from './event/event-create/copy-event-dialog';
 export { OrganizationList } from './organization/organization-list.ts';
 export { OrganizationEdit } from './organization/organization-edit.ts';
 export { Users } from './users/users.ts';

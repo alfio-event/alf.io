@@ -1,4 +1,4 @@
-import {fetchJson} from "./helpers.ts";
+import {fetchJson, postJson, responseErrorMessage} from "./helpers.ts";
 import {dispatchFeedback} from "../model/dom-events.ts";
 import {LitElement} from "lit";
 import {Country} from "../components/attendee-fields.ts";
@@ -24,6 +24,27 @@ export class UtilService {
 
     static availableCurrencies(): Promise<AvailableCurrency[]> {
         return fetchJson('/admin/api/utils/currencies');
+    }
+
+    /**
+     * Generates a candidate event short name (slug) from the display name
+     */
+    static generateShortName(displayName: string): Promise<string> {
+        return fetchJson(`/admin/api/utils/short-name/generate?displayName=${encodeURIComponent(displayName)}`);
+    }
+
+    /**
+     * Whether the short name is still available. Rejects when it is taken (409)
+     */
+    static async validateShortName(shortName: string): Promise<boolean> {
+        const response = await postJson(`/admin/api/utils/short-name/validate?shortName=${encodeURIComponent(shortName)}`, null);
+        if (response.status === 409) {
+            return false;
+        }
+        if (!response.ok) {
+            throw new Error(await responseErrorMessage(response, `Unexpected status ${response.status}`));
+        }
+        return await response.json();
     }
 
     /**

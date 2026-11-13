@@ -43,6 +43,14 @@ export interface AlfioEvent extends PurchaseContext {
     netPrice:                          number;
     taxablePrice:                      number;
     timeZone:                          string;
+    // present on the full event (GET /admin/api/events/{name}), used by the "copy from previous event" flow
+    location?:                         string | null;
+    latitude?:                         string | null;
+    longitude?:                        string | null;
+    availableSeats?:                   number;
+    allowedPaymentProxies?:            PaymentProxy[];
+    websiteUrl?:                       string;
+    fileBlobId?:                       string | null;
 }
 
 export interface TicketCategory {
@@ -51,6 +59,20 @@ export interface TicketCategory {
     id:                           number;
     expired:                      boolean;
     accessRestricted:             boolean;
+    // present on the full event (GET /admin/api/events/{name}), used by the "copy from previous event" flow
+    bounded?:                     boolean;
+    maxTickets?:                  number;
+    price?:                       number;
+    ordinal?:                     number;
+    code?:                        string | null;
+    ticketAccessType?:            string | null;
+    // wall-clock "yyyy-MM-dd HH:mm" in the event time zone
+    formattedInception?:          string;
+    formattedExpiration?:         string;
+    formattedValidCheckInFrom?:   string | null;
+    formattedValidCheckInTo?:     string | null;
+    formattedTicketValidityStart?: string | null;
+    formattedTicketValidityEnd?:  string | null;
 }
 
 export type EventStatus = 'DRAFT' | 'PUBLIC' | 'DISABLED';

@@ -9,6 +9,7 @@ export interface ValidatedResponse<T> {
 export interface ErrorDescriptor {
     fieldName: string;
     code: string;
+    message?: string;
     arguments: {[key: string]: any};
 }
 

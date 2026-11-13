@@ -18,7 +18,6 @@ package alfio.e2e;
 
 import alfio.model.transaction.PaymentProxy;
 import org.openqa.selenium.*;
-import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,17 +112,22 @@ class AdminConsole {
 
     void createEvent(EventDefinition event) {
         driver.navigate().to(serverBaseUrl + "/admin#/events/new");
-        wait.until(elementToBeClickable(By.id("displayName")));
+        var page = wait.until(presenceOfElementLocated(By.tagName("alfio-event-create")));
+        // waits for the form to be rendered after the initial data has loaded
+        findInShadowRoot(page, "sl-select#organizationId");
 
-        fillBasicInfo(event);
-        fillUrls(event);
-        uploadLogo();
-        fillPrices(event);
-        addCategory(event);
+        fillBasicInfo(page, event);
+        fillUrls(page, event);
+        uploadLogo(page);
+        fillPrices(page, event);
+        addCategory(page, event);
 
         LOGGER.info("saving event {}", event.slug());
-        clickWithJs(driver, driver.findElement(By.cssSelector("form[name=editEvent] control-buttons button.btn-warning")));
-        wait.until(urlContains("/events/" + event.slug() + "/detail"));
+        clickWithJs(driver, findInShadowRoot(page, "#save-button"));
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "Event creation did not complete: " + ((JavascriptExecutor) driver).executeScript(
+                "return Array.from(arguments[0].shadowRoot.querySelectorAll('#submit-error, .form-error-text, .error, .categories-error')).map(element => element.getAttribute('help-text') || element.textContent).join(' | ');", page))
+            .until(urlContains("/events/" + event.slug() + "/detail"));
     }
 
     void publishEvent(String slug) {
@@ -1290,18 +1294,18 @@ class AdminConsole {
     }
 
     /**
-     * Opens the dropdown of a sl-select and clicks the option. Options react to mouse events, not to a scripted click
+     * Resolves an option by label, then uses the same value-change event as the select.
+     * Hoisted option text is not consistently exposed by Selenium's getText().
      */
     @SuppressWarnings("unchecked")
     private void selectShoelaceOption(WebElement select, String label) {
-        scrollToCenter(select).click();
-        var option = wait.until(d -> ((List<WebElement>) ((JavascriptExecutor) d).executeScript("return Array.from(arguments[0].querySelectorAll('sl-option'));", select))
+        var option = wait.until(d -> ((List<WebElement>) ((JavascriptExecutor) d).executeScript(
+                "return Array.from(arguments[0].querySelectorAll('sl-option'));", select))
             .stream()
-            .filter(o -> o.isDisplayed() && o.getText().trim().equals(label))
+            .filter(o -> o.getDomProperty("textContent").trim().equals(label))
             .findFirst()
             .orElse(null));
-        option.click();
-        wait.until(_ -> !String.valueOf(select.getDomProperty("value")).isEmpty());
+        selectShoelaceOptionByValue(select, option.getDomProperty("value"));
     }
 
     private void setShoelaceSwitch(WebElement shoelaceSwitch, boolean checked) {
@@ -1622,46 +1626,85 @@ class AdminConsole {
         wait.until(elementToBeClickable(findInShadowRoot(edit, "sl-input[name='name']")));
     }
 
-    private void fillBasicInfo(EventDefinition event) {
-        var displayName = driver.findElement(By.id("displayName"));
-        displayName.sendKeys(event.name());
-
-        var organizationSelect = new Select(driver.findElement(By.id("organizationId")));
+    private void selectEventOrganizer(WebElement page) {
+        var organizationSelect = findInShadowRoot(page, "sl-select#organizationId");
+        if (Boolean.parseBoolean(organizationSelect.getDomProperty("disabled"))) {
+            return;
+        }
         if (organizationName != null && !organizationName.isBlank()) {
-            organizationSelect.selectByVisibleText(organizationName);
+            selectShoelaceOption(organizationSelect, organizationName);
         } else {
-            // angular adds a placeholder option with value "?" while the model is undefined
-            var firstOrganization = organizationSelect.getOptions().stream()
-                .filter(o -> !o.getAttribute("value").startsWith("?"))
+            var firstOrganization = ((List<WebElement>) ((JavascriptExecutor) driver).executeScript(
+                "return Array.from(arguments[0].querySelectorAll('sl-option'));", organizationSelect))
+                .stream()
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No organization available for user " + username));
-            organizationSelect.selectByVisibleText(firstOrganization.getText());
+            selectShoelaceOptionByValue(organizationSelect, firstOrganization.getDomProperty("value"));
         }
 
-        var location = driver.findElement(By.id("location"));
+    }
+
+    void verifyEventCreationDraft() {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/new");
+        var page = wait.until(presenceOfElementLocated(By.tagName("alfio-event-create")));
+        selectEventOrganizer(page);
+        typeInShoelaceControl(findInShadowRoot(page, "sl-input#displayName"), "input", "Draft recovery check");
+        fillUrl(page, "privacyPolicyUrl", "https://example.org/privacy");
+        var organizer = findInShadowRoot(page, "#organizationId").getDomProperty("value");
+        driver.navigate().refresh();
+        var restored = wait.until(presenceOfElementLocated(By.tagName("alfio-event-create")));
+        assertEquals("Draft recovery check", findInShadowRoot(restored, "#displayName").getDomProperty("value"));
+        assertEquals(organizer, findInShadowRoot(restored, "#organizationId").getDomProperty("value"));
+        var privacy = findInShadowRoot(restored, "#privacyPolicyUrl");
+        assertEquals("https://example.org/privacy", privacy.getDomProperty("value"));
+        assertTrue(privacy.isDisplayed(), "The recommended privacy link must remain visible");
+        assertTrue(findInShadowRoot(restored, "#event-logo").isDisplayed(), "The required event logo must remain visible");
+        clickWithJs(driver, findInShadowRoot(restored, "#save-button"));
+        wait.until(_ -> findInShadowRoot(restored, ".logo-error").isDisplayed());
+        assertEquals("Please upload an event logo.", findInShadowRoot(restored, ".logo-error").getText().strip());
+        assertEquals(3L, ((Number) ((JavascriptExecutor) driver).executeScript(
+            "return arguments[0].shadowRoot.querySelectorAll('.form-section').length;", restored)).longValue());
+    }
+
+    private void fillBasicInfo(WebElement page, EventDefinition event) {
+        selectEventOrganizer(page);
+        var begin = LocalDate.now().plusDays(1).atTime(10, 0).toString();
+        var end = LocalDate.now().plusDays(1).atTime(18, 0).toString();
+        setDateTimeLocal(findInShadowRoot(page, "sl-input#begin"), begin);
+        setDateTimeLocal(findInShadowRoot(page, "sl-input#end"), end);
+
+        typeInShoelaceControl(findInShadowRoot(page, "sl-input#displayName"), "input", event.name());
+        var location = findInShadowRoot(findInShadowRoot(page, "sl-textarea#location"), "textarea");
         location.sendKeys(event.location());
         // location is geocoded on blur, which can overwrite the time zone
         location.sendKeys(Keys.TAB);
-        waitForGeolocation();
-        selectBrowserTimeZone();
+        waitForGeolocation(page);
+        selectBrowserTimeZone(page);
 
-        driver.findElement(By.id("description")).sendKeys(event.description());
+        // the description is a markdown editor inside the multi-language block
+        var markdownEditor = findInShadowRoot(findInShadowRoot(page, "alfio-multi-language-text"), "alfio-markdown-editor");
+        var description = wait.until(_ -> findInShadowRoot(markdownEditor, ".editor-host .ProseMirror"));
+        description.sendKeys(event.description());
 
         // the event URL is generated from the name. Wait for it, then replace it with our slug
-        var shortName = driver.findElement(By.id("shortName"));
+        var shortName = findInShadowRoot(page, "sl-input#shortName");
         try {
-            new WebDriverWait(driver, Duration.ofSeconds(10)).until(_ -> !shortName.getAttribute("value").isEmpty());
+            new WebDriverWait(driver, Duration.ofSeconds(10)).until(_ -> !String.valueOf(shortName.getDomProperty("value")).isEmpty());
         } catch (TimeoutException _) {
             LOGGER.warn("event URL was not generated automatically");
         }
-        clearInput(shortName);
-        shortName.sendKeys(event.slug());
-        shortName.sendKeys(Keys.TAB);
+        var shortNameInput = findInShadowRoot(shortName, "input");
+        clearInput(shortNameInput);
+        shortNameInput.sendKeys(event.slug());
+        shortNameInput.sendKeys(Keys.TAB);
     }
 
-    private void waitForGeolocation() {
+    private void waitForGeolocation(WebElement page) {
         try {
-            new WebDriverWait(driver, Duration.ofSeconds(15)).until(invisibilityOfElementLocated(By.cssSelector(".map-loading")));
+            new WebDriverWait(driver, Duration.ofSeconds(15)).until(_ ->
+                ((List<WebElement>) ((JavascriptExecutor) driver).executeScript(
+                    "return Array.from(arguments[0].shadowRoot.querySelectorAll('.map-loading'));", page))
+                    .stream().noneMatch(WebElement::isDisplayed));
         } catch (TimeoutException _) {
             LOGGER.warn("geolocation did not complete in time, continuing anyway");
         }
@@ -1671,38 +1714,41 @@ class AdminConsole {
      * The category goes on sale "now" according to the browser's clock, so the event time zone must match
      * the browser's one. Otherwise, the sale might start in the future.
      */
-    private void selectBrowserTimeZone() {
+    private void selectBrowserTimeZone(WebElement page) {
         var timeZone = (String) ((JavascriptExecutor) driver).executeScript("return Intl.DateTimeFormat().resolvedOptions().timeZone;");
         try {
-            new Select(driver.findElement(By.id("timeZone"))).selectByVisibleText(timeZone);
-        } catch (NoSuchElementException _) {
+            selectShoelaceOption(findInShadowRoot(page, "sl-select#timeZone"), timeZone);
+        } catch (NoSuchElementException | TimeoutException _) {
             LOGGER.warn("time zone {} not available, keeping the default one", timeZone);
         }
     }
 
-    private void fillUrls(EventDefinition event) {
-        fillUrl("websiteUrl", event.websiteUrl());
-        fillUrl("termsAndConditionsUrl", event.termsAndConditionsUrl());
-        fillUrl("privacyPolicyUrl", event.privacyPolicyUrl());
+    private void fillUrls(WebElement page, EventDefinition event) {
+        fillUrl(page, "websiteUrl", event.websiteUrl());
+        fillUrl(page, "termsAndConditionsUrl", event.termsAndConditionsUrl());
+        fillUrl(page, "privacyPolicyUrl", event.privacyPolicyUrl());
     }
 
     /**
-     * URL fields are pre-filled with "https://" on focus.
+     * URL inputs normalize to https:// on blur.
      */
-    private void fillUrl(String id, String url) {
-        var element = scrollToCenter(driver.findElement(By.id(id)));
-        element.click();
+    private void fillUrl(WebElement page, String id, String url) {
+        var element = findInShadowRoot(findInShadowRoot(page, "sl-input#" + id), "input");
+        scrollToCenter(element).click();
         clearInput(element);
         element.sendKeys(url);
+        element.sendKeys(Keys.TAB);
     }
 
-    private void uploadLogo() {
+    private void uploadLogo(WebElement page) {
         try (var logo = AdminConsole.class.getResourceAsStream(LOGO_RESOURCE)) {
-            uploadFile(driver.findElement(By.cssSelector("input[type=file]")), tempFile("e2e-logo", ".png", requireNonNull(logo).readAllBytes()));
+            var fileInput = findInShadowRoot(findInShadowRoot(findInShadowRoot(page, "alfio-purchase-context-image"), "alfio-file-upload"), "input[type=file]");
+            uploadFile(fileInput, tempFile("e2e-logo", ".png", requireNonNull(logo).readAllBytes()));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        wait.until(presenceOfElementLocated(By.cssSelector("img.event-logo")));
+        // the preview appears in the image component once the upload completes
+        wait.until(_ -> findInShadowRoot(findInShadowRoot(page, "alfio-purchase-context-image"), ".preview-box img") != null);
     }
 
     private void uploadFile(WebElement fileInput, Path file) {
@@ -1722,23 +1768,25 @@ class AdminConsole {
         }
     }
 
-    private void fillPrices(EventDefinition event) {
+    private void fillPrices(WebElement page, EventDefinition event) {
         // the "Seats and payment info" section is displayed once the organization is selected
-        wait.until(elementToBeClickable(By.id("availableSeats"))).sendKeys(Integer.toString(event.maxTickets()));
-        driver.findElement(By.id("regularPrice")).sendKeys(event.price());
-        var currency = driver.findElement(By.id("currency"));
-        currency.sendKeys(event.currency());
-        // close the currency suggestions
-        currency.sendKeys(Keys.ESCAPE);
-        driver.findElement(By.id("vatPercentage")).sendKeys(event.taxPercentage());
-        var vatIncluded = driver.findElement(By.id("vatIncluded"));
-        if (vatIncluded.isSelected() != event.taxIncludedInPrice()) {
-            selectElement(vatIncluded, browserWebDriver);
+        typeInShoelaceControl(wait.until(_ -> findInShadowRoot(page, "sl-input#availableSeats")), "input", Integer.toString(event.maxTickets()));
+        typeInShoelaceControl(findInShadowRoot(page, "sl-input#regularPrice"), "input", event.price());
+        selectShoelaceOptionByValue(findInShadowRoot(page, "sl-select#currency"), event.currency());
+        typeInShoelaceControl(findInShadowRoot(page, "sl-input#vatPercentage"), "input", event.taxPercentage());
+        var vatIncluded = findInShadowRoot(page, "sl-switch#vatIncluded");
+        if (Boolean.parseBoolean(String.valueOf(vatIncluded.getDomProperty("checked"))) != event.taxIncludedInPrice()) {
+            setShoelaceSwitch(vatIncluded, event.taxIncludedInPrice());
         }
         for (var paymentProxy : event.paymentMethods()) {
-            var checkbox = driver.findElement(By.xpath("//form[@name='editEvent']//div[contains(@class, 'checkbox')]/label[contains(normalize-space(.), '" + paymentMethodLabel(paymentProxy) + "')]/input"));
-            if (!checkbox.isSelected()) {
-                selectElement(scrollTo(driver, checkbox), browserWebDriver);
+            var checkbox = wait.until(_ -> ((List<WebElement>) ((JavascriptExecutor) driver).executeScript(
+                    "return Array.from(arguments[0].shadowRoot.querySelectorAll('sl-checkbox.payment-proxy'));", page))
+                .stream()
+                .filter(c -> c.getText().contains(paymentMethodLabel(paymentProxy)))
+                .findFirst()
+                .orElse(null));
+            if (!Boolean.parseBoolean(String.valueOf(checkbox.getDomProperty("checked")))) {
+                clickWithJs(driver, scrollTo(driver, checkbox));
             }
         }
     }
@@ -1752,13 +1800,14 @@ class AdminConsole {
         };
     }
 
-    private void addCategory(EventDefinition event) {
-        clickWithJs(driver, driver.findElement(By.xpath("//form[@name='editEvent']//button[contains(., 'Add new')]")));
-        var name = wait.until(elementToBeClickable(By.cssSelector(".modal-dialog #name")));
-        name.sendKeys(event.categoryName());
+    private void addCategory(WebElement page, EventDefinition event) {
+        clickWithJs(driver, findInShadowRoot(page, "#add-category"));
+        var categoryDialog = wait.until(_ -> findInShadowRoot(page, "alfio-event-category-dialog"));
+        var dialog = wait.until(_ -> findInShadowRoot(categoryDialog, "sl-dialog"));
         // price is pre-filled with the event's regular price, and the category is on sale until the event starts
-        clickWithJs(driver, driver.findElement(By.cssSelector(".modal-footer control-buttons button.btn-warning")));
-        wait.until(invisibilityOfElementLocated(By.cssSelector(".modal-dialog")));
+        typeInShoelaceControl(wait.until(_ -> findInShadowRoot(categoryDialog, "sl-input#name")), "input", event.categoryName());
+        clickWithJs(driver, findInShadowRoot(categoryDialog, "#category-save"));
+        wait.until(_ -> !Boolean.parseBoolean(String.valueOf(dialog.getDomProperty("open"))));
     }
 
     private WebElement scrollToCenter(WebElement element) {

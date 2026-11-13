@@ -39,6 +39,8 @@ Background on 2 and on the placement of form actions:
 | Data loaded by a `@lit/task` Task: spinner, error, refresh    | `taskContent()`, `components/task-content.ts`                                  |
 | An empty list                                                 | `emptyState()`, `components/empty-state.ts`                                    |
 | An input or select bound to a draft object                    | `formField()`, `selectField()`, `components/form-field.ts`                     |
+| A localized text, one block per language (markdown-capable)   | `<alfio-multi-language-text>`, `components/multi-language-text.ts`, see [Multi-language text](#multi-language-text) |
+| A WYSIWYG markdown field                                      | `<alfio-markdown-editor>`, `components/markdown-editor.ts` — usually via `alfio-multi-language-text` with `markdown` |
 | Validation of a form: validators, error display               | `TanStackFormController` + `components/form-validation.ts`, see [Validation](#validation) |
 | A choice between options that need a short explanation       | `choiceCards()`, `components/choice-cards.ts`, see [Choices](#choices)         |
 | An existing ticket category, with a Refresh button            | `ticketCategorySelect()`, `components/ticket-category-select.ts`               |
@@ -59,6 +61,7 @@ Each component adds the shared CSS blocks it uses to its `static styles`: `moder
 attendees' additional fields, `csvImport` for CSV imports, `badges` for badges, `row` for grids. [`branding-guidelines.md`](branding-guidelines.md) lists which block defines each class.
 
 Complete examples: `event/reservation-create/reservation-create.ts` (form with repeated groups and choices),
+`event/event-create/event-create.ts` (creation form with multi-language text, image upload and dialogs),
 `event/check-in/add-attendees-dialog.ts` (dialog), `event/attendees-import/attendees-import.ts` (CSV import).
 
 ## 3. Page structure
@@ -91,6 +94,21 @@ Complete examples: `event/reservation-create/reservation-create.ts` (form with r
 - When the user may have created the options of a select in another tab (e.g. ticket categories), put a
   "Refresh" button next to the select, in an `.input-with-action` wrapper (from the `form` block).
   `ticketCategorySelect()` does this for categories.
+
+### Multi-language text
+
+- Render any localized text (a title, a description, …) with `<alfio-multi-language-text>`
+  (`components/multi-language-text.ts`): one block per selected language, an "Add translation" menu below
+  the last block, and — with `markdown` — the WYSIWYG `<alfio-markdown-editor>` with an inline
+  Edit/Preview toggle. Don't render the per-language textareas or editors by hand.
+- Bind it to the form like any other field: the `value` property is the map (locale → text), the `change`
+  event carries the new map (`MultiLanguageTextChange`), and `error` shows the field error below the blocks.
+  With `card` off, it renders as a bare field group, e.g. inside a dialog or another section card.
+- `languages` are all the languages the instance supports; `contextLanguages` are the ones of the purchase
+  context when there is one — they define the default language picked for a new text.
+- When several localized fields are on the same page or dialog, listen to `locales-change` and apply the same
+  languages to the other fields, keeping their current texts (see `subscriptions/subscription-edit.ts` and
+  `event/event-create/event-create.ts` + `category-dialog.ts`).
 
 ### Validation
 
