@@ -30,6 +30,8 @@ import {formatAmount} from '../../service/reservation-format.ts';
 import {dispatchFeedback} from '../../model/dom-events.ts';
 import {sectionCard} from '../../components/section-card.ts';
 import {taskContent} from '../../components/task-content.ts';
+import '../../components/section-nav.ts';
+import type {SectionNav} from '../../components/section-nav.ts';
 import {ChoiceCardOption, choiceCards} from '../../components/choice-cards.ts';
 import {
     BoundField,
@@ -47,7 +49,7 @@ import {
     validateWith,
     ValidatedFieldMeta,
 } from '../../components/form-validation.ts';
-import {badges, base, choiceCards as choiceCardsStyles, form, modernLayout, row, textColors} from '../../styles.ts';
+import {badges, base, choiceCards as choiceCardsStyles, creationLayout, form, modernLayout, row, textColors} from '../../styles.ts';
 import '../../components/purchase-context-image.ts';
 import type {ImageChangeDetail} from '../../components/purchase-context-image.ts';
 import '../../components/multi-language-text.ts';
@@ -269,7 +271,6 @@ export class EventCreate extends LitElement {
     @state() private shortNameChecking = false;
     @state() private timeZoneTouched = false;
 
-    @state() private activeSection = 'event-details';
     @state() private paymentLoading = false;
     @state() private paymentError: string | null = null;
     private draftReady = false;
@@ -277,7 +278,6 @@ export class EventCreate extends LitElement {
     private previousValues: EventFormValues | null = null;
     private syncingCategories = false;
     private paymentGeneration = 0;
-    private scrollFrame = 0;
 
     private copiedFrom: string | null = null;
     private pendingCopy: PendingCopy | null = null;
@@ -336,6 +336,7 @@ export class EventCreate extends LitElement {
         row,
         modernLayout,
         choiceCardsStyles,
+        creationLayout,
         css`
             :host {
                 display: block;
@@ -343,55 +344,15 @@ export class EventCreate extends LitElement {
             }
             .page-actions {
                 margin-inline-start: auto;
+                display: flex;
+                flex-wrap: wrap;
+                gap: var(--sl-spacing-small);
             }
-            .creation-layout {
-                display: grid;
-                grid-template-columns: 12rem minmax(0, 1fr);
-                gap: var(--sl-spacing-x-large);
-                align-items: start;
-            }
-            .section-nav {
-                position: sticky;
-                top: 7rem;
-                display: grid;
-                gap: var(--sl-spacing-2x-small);
-            }
-            .section-nav a {
-                padding: var(--sl-spacing-small) var(--sl-spacing-medium);
-                border-radius: var(--sl-border-radius-medium);
-                color: var(--sl-color-neutral-600);
-                text-decoration: none;
-                font-weight: var(--sl-font-weight-semibold);
-            }
-            .section-nav a[aria-current="location"] {
-                background: var(--sl-color-primary-50);
-                color: var(--sl-color-primary-700);
-            }
-            .section-nav a:focus-visible {
-                outline: var(--sl-focus-ring);
-            }
-            .mobile-section-nav { display: none; }
-            .form-section { scroll-margin-top: 7rem; }
-            .form-section:focus { outline: none; }
-            .form-section > h2 {
-                font-size: var(--sl-font-size-large);
-                margin: 0 0 var(--sl-spacing-medium);
-            }
-            .form-section + .form-section { margin-top: var(--sl-spacing-2x-large); }
-            .creation-content { min-width: 0; }
-            .page-actions { display: flex; flex-wrap: wrap; gap: var(--sl-spacing-small); }
             .organizer-field { max-width: 32rem; }
             .category-conflict { flex-basis: 100%; }
             .event-url-prefix { overflow-wrap: anywhere; }
             @media (max-width: 900px) {
-                .creation-layout { grid-template-columns: minmax(0, 1fr); gap: var(--sl-spacing-medium); }
-                .section-nav { display: none; }
-                .mobile-section-nav { display: block; }
-                .page-title-row { flex-wrap: wrap; }
                 .page-actions { margin-inline-start: 0; }
-                .row { grid-template-columns: minmax(0, 1fr); }
-                .footer .row { grid-template-columns: 1fr 1fr; column-gap: var(--sl-spacing-medium); }
-                .footer .row > div { display: none; }
             }
             .price-model-free .choice-panel { display: none; }
             .container { padding-top: var(--sl-spacing-large); }
@@ -498,7 +459,7 @@ export class EventCreate extends LitElement {
                 ${this.renderOrganizer(data)}
                 ${when(values.organizationId !== '', () => html`
                     <div class="creation-layout">
-                        ${this.renderSectionNavigation()}
+                        <alfio-section-nav label="Event form sections" .sections=${FORM_SECTIONS}></alfio-section-nav>
                         <div class="creation-content">
                             <section id="event-details" class="form-section" tabindex="-1" aria-labelledby="event-details-title">
                                 <h2 id="event-details-title">Event details</h2>
@@ -558,60 +519,6 @@ export class EventCreate extends LitElement {
             </div>
         `);
     }
-
-    private renderSectionNavigation(): TemplateResult {
-        return html`
-            <nav class="section-nav" aria-label="Event form sections">
-                ${FORM_SECTIONS.map(section => html`
-                    <a href=${`#${section.id}`} aria-current=${this.sectionCurrent(section.id)}
-                       @click=${(event: Event) => { event.preventDefault(); this.jumpToSection(section.id); }}>${section.label}</a>
-                `)}
-            </nav>
-            <sl-select class="mobile-section-nav" label="Jump to section" hoist .value=${this.activeSection}
-                       @sl-change=${(event: Event) => this.jumpToSection(String((event.target as SlSelect).value))}>
-                ${FORM_SECTIONS.map(section => html`<sl-option value=${section.id}>${section.label}</sl-option>`)}
-            </sl-select>
-        `;
-    }
-
-    private sectionCurrent(id: string): string {
-        if (this.activeSection === id) {
-            return 'location';
-        }
-        return 'false';
-    }
-
-    private jumpToSection(id: string): void {
-        const section = this.renderRoot.querySelector<HTMLElement>(`#${id}`);
-        section?.focus({preventScroll: true});
-        section?.scrollIntoView({block: 'start'});
-        this.activeSection = id;
-    }
-
-    connectedCallback(): void {
-        super.connectedCallback();
-        window.addEventListener('scroll', this.onPageScroll, {passive: true, capture: true});
-    }
-
-    disconnectedCallback(): void {
-        super.disconnectedCallback();
-        window.removeEventListener('scroll', this.onPageScroll, true);
-        cancelAnimationFrame(this.scrollFrame);
-    }
-
-    private onPageScroll = (): void => {
-        cancelAnimationFrame(this.scrollFrame);
-        this.scrollFrame = requestAnimationFrame(() => {
-            let current = FORM_SECTIONS[0].id;
-            for (const section of FORM_SECTIONS) {
-                const element = this.renderRoot.querySelector(`#${section.id}`);
-                if (element != null && element.getBoundingClientRect().top <= 160) {
-                    current = section.id;
-                }
-            }
-            this.activeSection = current;
-        });
-    };
 
     private renderBasicInfo(data: LoadedData): TemplateResult {
         return sectionCard({ icon: 'info-circle', title: 'Name and schedule' }, html`
@@ -1705,7 +1612,7 @@ export class EventCreate extends LitElement {
         if (values.organizationId !== '') {
             void this.loadPaymentProxies(Number(values.organizationId));
         }
-        this.activeSection = 'event-details';
+        this.renderRoot.querySelector<SectionNav>('alfio-section-nav')?.reset();
         try {
             window.sessionStorage.removeItem(STORAGE_KEY);
         } catch {

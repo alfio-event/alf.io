@@ -856,6 +856,70 @@ export const modernLayout = css`
     }
 `;
 
+/**
+ * Layout of a long creation form (event, subscription): a narrow sticky section index beside the
+ * form on desktop, a compact "Jump to section" select on mobile, and the form split in
+ * .form-section groups, each introduced by an h2. Render the index with <alfio-section-nav>
+ * (components/section-nav.ts) as a child of .creation-layout, beside the .creation-content column.
+ * The sticky offset and scroll-margin (7rem) clear the fixed admin header.
+ */
+export const creationLayout = css`
+    .creation-layout {
+        display: grid;
+        grid-template-columns: 12rem minmax(0, 1fr);
+        gap: var(--sl-spacing-x-large);
+        align-items: start;
+    }
+
+    .section-nav {
+        position: sticky;
+        top: 7rem;
+        display: grid;
+        gap: var(--sl-spacing-2x-small);
+    }
+
+    .section-nav a {
+        padding: var(--sl-spacing-small) var(--sl-spacing-medium);
+        border-radius: var(--sl-border-radius-medium);
+        color: var(--sl-color-neutral-600);
+        text-decoration: none;
+        font-weight: var(--sl-font-weight-semibold);
+    }
+
+    .section-nav a[aria-current="location"] {
+        background: var(--sl-color-primary-50);
+        color: var(--sl-color-primary-700);
+    }
+
+    .section-nav a:focus-visible {
+        outline: var(--sl-focus-ring);
+    }
+
+    .mobile-section-nav { display: none; }
+
+    .creation-content { min-width: 0; }
+
+    .form-section { scroll-margin-top: 7rem; }
+    .form-section:focus { outline: none; }
+
+    .form-section > h2 {
+        font-size: var(--sl-font-size-large);
+        margin: 0 0 var(--sl-spacing-medium);
+    }
+
+    .form-section + .form-section { margin-top: var(--sl-spacing-2x-large); }
+
+    @media (max-width: 900px) {
+        .creation-layout { grid-template-columns: minmax(0, 1fr); gap: var(--sl-spacing-medium); }
+        .section-nav { display: none; }
+        .mobile-section-nav { display: block; }
+        .page-title-row { flex-wrap: wrap; }
+        .row { grid-template-columns: minmax(0, 1fr); }
+        .footer .row { grid-template-columns: 1fr 1fr; column-gap: var(--sl-spacing-medium); }
+        .footer .row > div { display: none; }
+    }
+`;
+
 /* layout for list pages hosted in the event/subscription detail (next to the AngularJS sidebar). Use with modernLayout */
 export const purchaseContextListPage = css`
     :host {

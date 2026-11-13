@@ -283,6 +283,9 @@ Classes from other shared blocks:
 | `retroCompat` | `.hidden-xs`, `.hidden-sm` | Responsive visibility |
 | `panelStyles` | `.panel`, `.panel-heading`, `.panel-body` | Bootstrap panel compat |
 | `row` | `.row` | CSS-grid with `--alfio-row-cols` |
+| `creationLayout` | `.creation-layout`, `.creation-content` | Two-column layout of a long creation form: section index + content |
+| `creationLayout` | `.section-nav`, `.mobile-section-nav` | Sticky section index (desktop) / "Jump to section" select (mobile), rendered by `<alfio-section-nav>` |
+| `creationLayout` | `.form-section` | One navigable group of a creation form, introduced by an `h2` |
 | `form` | `.input-with-action` | Control with a button beside it (e.g. select + Refresh) |
 | `choiceCards` | `.choice-cards`, `.choice-card`, `.choice-panel` | Rendered by `choiceCards()` |
 | `attendeeFields` | `.attendee-fields` | Rendered by `attendeeFields()` |

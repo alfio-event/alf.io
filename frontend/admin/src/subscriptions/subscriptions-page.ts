@@ -19,6 +19,10 @@ export class SubscriptionsPage extends LitElement {
     @state()
     private selectedOrganizationId: number | null = null;
 
+    // the create/edit pages have their own organizer selector in the setup card: no top selector there
+    @state()
+    private formRoute = false;
+
     private readonly loadOrganizationsTask = new Task(this, {
         task: async (): Promise<readonly Organization[]> => {
             const orgs = await OrganizationService.loadAll();
@@ -51,6 +55,7 @@ export class SubscriptionsPage extends LitElement {
 
     connectedCallback(): void {
         super.connectedCallback();
+        this.formRoute = this.isFormRoute();
         window.addEventListener('hashchange', this.onHashChange);
     }
 
@@ -60,6 +65,7 @@ export class SubscriptionsPage extends LitElement {
     }
 
     private onHashChange = (): void => {
+        this.formRoute = this.isFormRoute();
         // the routed content can change without this component being recreated (e.g. going
         // back from the edit page to #/subscriptions): re-sync the organization from the URL
         const orgs = this.loadOrganizationsTask.value;
@@ -67,6 +73,12 @@ export class SubscriptionsPage extends LitElement {
             this.syncSelectedOrganization(orgs);
         }
     };
+
+    // #/subscriptions/:organizationId/create and #/subscriptions/:organizationId/:id/edit
+    private isFormRoute(): boolean {
+        return /#\/subscriptions\/\d+\/create/.test(window.location.hash)
+            || /#\/subscriptions\/\d+\/[^/]+\/edit/.test(window.location.hash);
+    }
 
     render(): TemplateResult {
         return html`
@@ -85,7 +97,7 @@ export class SubscriptionsPage extends LitElement {
     }
 
     private renderOrganizationSelector(orgs: readonly Organization[]): TemplateResult {
-        if (orgs.length === 0) {
+        if (orgs.length === 0 || this.formRoute) {
             return html``;
         }
         return html`

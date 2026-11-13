@@ -4,7 +4,7 @@ import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
 import {Task} from '@lit/task';
 import {TanStackFormController} from '@tanstack/lit-form';
-import type {SlCheckbox, SlSwitch} from '@shoelace-style/shoelace';
+import type {SlCheckbox, SlSelect, SlSwitch} from '@shoelace-style/shoelace';
 import {
     SubscriptionDescriptorModification,
     SubscriptionPayload,
@@ -13,19 +13,25 @@ import {
     SubscriptionValidityType,
 } from '../model/subscription-descriptor.ts';
 import {ContentLanguage, LocalizedContent, PaymentProxy, VatStatus} from '../model/purchase-context.ts';
+import {Organization} from '../model/organization.ts';
 import {SubscriptionService} from '../service/subscription.ts';
+import {OrganizationService} from '../service/organization.ts';
 import {ConfigurationService} from '../service/configuration.ts';
 import {LocalizationService} from '../service/localization.ts';
 import {UtilService, AvailableCurrency} from '../service/util.ts';
 import {LocationService} from '../service/location.ts';
 import {PAYMENT_PROXY_DESCRIPTIONS, PaymentMethodDTO, PaymentProxyService} from '../service/payment-proxy.ts';
 import {errorMessage} from '../service/helpers.ts';
+import {ConfirmationDialogService} from '../service/confirmation-dialog.ts';
 import {toDateTimeLocal, zonedIsoFromDateTimeLocal} from '../service/date-format.ts';
 import {dispatchFeedback} from '../model/dom-events.ts';
 import {sectionCard} from '../components/section-card.ts';
 import {taskContent} from '../components/task-content.ts';
 import {statusBadge} from '../components/status-badge.ts';
 import {ChoiceCardOption, choiceCards} from '../components/choice-cards.ts';
+import {detailList as renderDetailList} from '../components/detail-list.ts';
+import '../components/section-nav.ts';
+import type {FormSection} from '../components/section-nav.ts';
 import {
     BoundField,
     fieldError,
@@ -42,7 +48,7 @@ import {
     validatedSelect,
     validateWith,
 } from '../components/form-validation.ts';
-import {badges, base, choiceCards as choiceCardsStyles, form, modernLayout, row, textColors} from '../styles.ts';
+import {badges, base, choiceCards as choiceCardsStyles, creationLayout, detailList, form, modernLayout, row, textColors} from '../styles.ts';
 import '../components/purchase-context-image.ts';
 import type {ImageChangeDetail} from '../components/purchase-context-image.ts';
 import '../components/multi-language-text.ts';
@@ -95,6 +101,13 @@ const TIME_UNITS: { value: SubscriptionTimeUnit; label: string }[] = [
     {value: 'YEARS', label: 'Years'},
 ];
 
+// the navigable groups of the form, rendered as .form-section blocks and indexed by <alfio-section-nav>
+const SUBSCRIPTION_SECTIONS: FormSection[] = [
+    {id: 'subscription-details', label: 'Subscription details'},
+    {id: 'subscription-pricing', label: 'Pricing and payments'},
+    {id: 'subscription-page', label: 'Subscription page'},
+];
+
 interface SubscriptionFormValues {
     preset: Preset | '';
     title: LocalizedContent;
@@ -120,6 +133,7 @@ interface SubscriptionFormValues {
 }
 
 interface LoadedData {
+    organizations: readonly Organization[];
     languages: ContentLanguage[];
     currencies: AvailableCurrency[];
     paymentProxies: { id: PaymentProxy; description: string }[];
@@ -161,6 +175,9 @@ export class SubscriptionEdit extends LitElement {
     @state()
     private saving = false;
 
+    @state()
+    private submitError: string | null = null;
+
     private previousFileBlobId: string | null = null;
 
     readonly #form = new TanStackFormController(this, {
@@ -182,7 +199,8 @@ export class SubscriptionEdit extends LitElement {
             } else {
                 descriptorPromise = Promise.resolve(null);
             }
-            const [languages, currencies, proxies, timeZones, ticketsGeneration, instanceSettings, descriptor] = await Promise.all([
+            const [organizations, languages, currencies, proxies, timeZones, ticketsGeneration, instanceSettings, descriptor] = await Promise.all([
+                OrganizationService.loadAll(),
                 new LocalizationService().getEventsSupportedLanguages(),
                 UtilService.availableCurrencies(),
                 PaymentProxyService.selectableProxies(organizationId),
@@ -192,6 +210,7 @@ export class SubscriptionEdit extends LitElement {
                 descriptorPromise,
             ]);
             const loaded: LoadedData = {
+                organizations,
                 languages,
                 currencies,
                 paymentProxies: dedupeByDescription(proxies),
@@ -217,6 +236,8 @@ export class SubscriptionEdit extends LitElement {
         modernLayout,
         choiceCardsStyles,
         row,
+        creationLayout,
+        detailList,
         badges,
         textColors,
         css`
@@ -227,6 +248,14 @@ export class SubscriptionEdit extends LitElement {
 
             .image-error {
                 margin-top: var(--sl-spacing-small);
+            }
+
+            .setup-card .text-muted {
+                margin: var(--sl-spacing-small) 0 0;
+            }
+
+            .organizer-field {
+                max-width: 32rem;
             }
 
             .visibility-alert {
@@ -275,116 +304,208 @@ export class SubscriptionEdit extends LitElement {
 
     private renderForm(data: LoadedData): TemplateResult {
         const submitted = this.#form.api.state.submissionAttempts > 0;
-        const values = this.#form.api.state.values;
         return html`
             <form novalidate @submit=${this.submit}>
                 ${when(this.existing, () => this.renderVisibilitySection())}
-                ${this.renderImageSection()}
-                ${this.#form.field({name: 'title', validators: validateWith(localizedContent(TITLE_MAX_LENGTH))},
-                    (field) => this.renderMultiLanguageText(data, field, {label: 'Title', icon: 'card-heading', maxLength: TITLE_MAX_LENGTH, markdown: false, multiline: false}))}
-                ${this.#form.field({name: 'description', validators: validateWith(localizedContent(data.descriptionMaxLength))},
-                    (field) => this.renderMultiLanguageText(data, field, {label: 'Description', icon: 'text-paragraph', maxLength: data.descriptionMaxLength, markdown: true, multiline: true}))}
-                ${sectionCard({icon: 'link-45deg', title: 'URLs'}, html`
-                    <div class="form-stack">
-                        <div class="row" style="--alfio-row-cols: 2">
-                            ${this.#form.field({name: 'termsAndConditionsUrl', validators: validateWith(requiredHttpsUrl)},
-                                (field) => this.textInput(field, {id: 'termsAndConditionsUrl', label: 'Terms and Conditions URL', type: 'url', prefixIcon: 'link-45deg'}))}
-                            ${this.#form.field({name: 'privacyPolicyUrl', validators: validateWith(httpsUrl)},
-                                (field) => this.textInput(field, {
-                                    id: 'privacyPolicyUrl',
-                                    label: 'Privacy policy URL',
-                                    type: 'url',
-                                    prefixIcon: 'link-45deg',
-                                    optional: true,
-                                    helpText: 'Privacy policy link is optional. However, it is good practice to have one.',
-                                }))}
-                        </div>
-                    </div>
-                `)}
-                ${sectionCard({icon: 'layers', title: 'Type'}, html`
-                    ${this.#form.field({name: 'preset', validators: validateWith(requiredValue)}, (field) => {
-                        const error = fieldError(field.state.meta, submitted);
-                        const preset = (field.state.value ?? '') as Preset | '';
-                        return html`
-                            ${choiceCards<Preset | ''>({
-                                name: 'subscription-preset',
-                                className: 'subscription-type',
-                                label: 'How can attendees use the subscription?',
-                                value: preset,
-                                options: PRESET_CHOICES,
-                                panel: this.renderPresetPanel(preset),
-                            }, (value) => this.selectPreset(field, value as Preset))}
-                            ${when(error != null, () => html`<div class="form-error-text">${error}</div>`, () => nothing)}
-                        `;
-                    })}
-                `)}
-                ${when(values.preset !== '', () => html`
-                    ${sectionCard({icon: 'cash-coin', title: 'Pricing and sales period'}, html`
-                        <div class="form-stack">
-                            <div class="row" style="--alfio-row-cols: 4">
-                                ${this.#form.field({name: 'price', validators: validateWith(requiredNumber)},
-                                    (field) => this.textInput(field, {id: 'price', label: 'Price', type: 'number', suffixIcon: 'cash'}))}
-                                ${this.#form.field({name: 'currency', validators: validateWith(requiredValue)}, (field) =>
-                                    validatedSelect(field, submitted, {id: 'currency', label: 'Currency', placeholder: 'Select a currency'}, html`
-                                        ${repeat(data.currencies, (c) => c.code, (c) => html`
-                                            <sl-option value=${c.code}>${c.code} – ${c.name}</sl-option>
-                                        `)}
-                                    `))}
-                                ${this.#form.field({name: 'vatStatus', validators: validateWith(requiredValue)}, (field) =>
-                                    validatedSelect(field, submitted, {id: 'vatStatus', label: 'Tax policy', placeholder: 'Select a tax policy'}, html`
-                                        ${repeat(VAT_STATUSES, (s) => s.value, (s) => html`<sl-option value=${s.value}>${s.label}</sl-option>`)}
-                                    `))}
-                                ${when(values.vatStatus !== 'NONE' && values.vatStatus !== '', () => html`
-                                    ${this.#form.field({
-                                        name: 'vat',
-                                        validators: {
-                                            ...validateWith((value) => this.validateVat(value)),
-                                            onChangeListenTo: ['vatStatus'],
-                                        },
-                                    }, (field) => this.textInput(field, {id: 'vat', label: 'Taxes %', type: 'number', suffix: '%'}))}
-                                `)}
-                            </div>
-                            <div class="row" style="--alfio-row-cols: 4">
-                                ${this.#form.field({name: 'onSaleFrom', validators: validateWith(requiredValue)},
-                                    (field) => this.textInput(field, {id: 'onSaleFrom', label: 'On sale from', type: 'datetime-local'}))}
-                                ${this.#form.field({name: 'onSaleTo'},
-                                    (field) => this.textInput(field, {id: 'onSaleTo', label: 'On sale to (optional)', type: 'datetime-local', optional: true}))}
-                                ${this.#form.field({name: 'timeZone', validators: validateWith(requiredValue)}, (field) =>
-                                    validatedSelect(field, submitted, {id: 'timeZone', label: 'Time zone', placeholder: 'Select a time zone'}, html`
-                                        ${repeat(data.timeZones, (tz) => tz, (tz) => html`<sl-option value=${tz}>${tz}</sl-option>`)}
-                                    `))}
-                                ${this.#form.field({name: 'maxAvailable', validators: validateWith(optionalNumber)},
-                                    (field) => this.textInput(field, {
-                                        id: 'maxAvailable',
-                                        label: 'Max available (optional)',
-                                        type: 'number',
-                                        optional: true,
-                                        helpText: 'How many subscriptions can be sold. Leave empty for unlimited.',
-                                    }))}
-                            </div>
-                        </div>
-                    `)}
-                    ${this.renderPaymentMethodsSection(data, submitted)}
-                    ${when(data.ticketsGenerationJobActive, () => sectionCard({icon: 'ticket', title: 'Automatic tickets generation'}, html`
-                        ${this.#form.field({name: 'supportsTicketsGeneration'}, (field) => html`
-                            <sl-switch ?checked=${field.state.value}
-                                       @sl-change=${(e: Event) => field.handleChange((e.target as SlSwitch).checked)}
-                                       help-text="If enabled, each subscription holder will receive one ticket for present and future compatible events automatically. Unless the subscriber has already used the subscription for that event, in which case no tickets will be generated.">
-                                Generate tickets automatically for compatible events
-                            </sl-switch>
+                ${this.renderSetupCard(data)}
+                <div class="creation-layout">
+                    <alfio-section-nav label="Subscription form sections" .sections=${SUBSCRIPTION_SECTIONS}></alfio-section-nav>
+                    <div class="creation-content">
+                        <section id="subscription-details" class="form-section" tabindex="-1" aria-labelledby="subscription-details-title">
+                            <h2 id="subscription-details-title">Subscription details</h2>
+                            ${this.#form.field({name: 'title', validators: validateWith(localizedContent(TITLE_MAX_LENGTH))},
+                                (field) => this.renderMultiLanguageText(data, field, {label: 'Title', icon: 'card-heading', maxLength: TITLE_MAX_LENGTH, markdown: false, multiline: false}))}
+                            ${this.#form.field({name: 'description', validators: validateWith(localizedContent(data.descriptionMaxLength))},
+                                (field) => this.renderMultiLanguageText(data, field, {label: 'Description', icon: 'text-paragraph', maxLength: data.descriptionMaxLength, markdown: true, multiline: true}))}
+                            ${this.renderTypeCard(submitted)}
+                        </section>
+                        <section id="subscription-pricing" class="form-section" tabindex="-1" aria-labelledby="subscription-pricing-title">
+                            <h2 id="subscription-pricing-title">Pricing and payments</h2>
+                            ${this.renderPricingCard(data, submitted)}
+                            ${this.renderPaymentMethodsSection(data, submitted)}
+                            ${when(data.ticketsGenerationJobActive, () => this.renderTicketsGenerationCard())}
+                        </section>
+                        <section id="subscription-page" class="form-section" tabindex="-1" aria-labelledby="subscription-page-title">
+                            <h2 id="subscription-page-title">Subscription page</h2>
+                            ${this.renderUrlsCard()}
+                            ${this.renderImageSection()}
+                        </section>
+                        ${when(this.submitError != null, () => html`
+                            <sl-alert id="submit-error" variant="danger" open closable @sl-after-hide=${() => { this.submitError = null; }}>
+                                <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+                                ${this.submitError}
+                            </sl-alert>
                         `)}
-                    `))}
-                `)}
-                <div class="footer">
-                    <sl-divider></sl-divider>
-                    <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" href=${`#/subscriptions/${this.organizationId}/list`}>Cancel</sl-button>
-                        <div></div>
-                        <sl-button id="save-subscription" type="submit" variant="warning" size="large" ?loading=${this.saving}>Save</sl-button>
+                        <div class="footer">
+                            <sl-divider></sl-divider>
+                            <div class="row" style="--alfio-row-cols: 3">
+                                <sl-button variant="default" size="large" href=${`#/subscriptions/${this.organizationId}/list`}>Cancel</sl-button>
+                                <div></div>
+                                <sl-button id="save-subscription" type="submit" variant="warning" size="large" ?loading=${this.saving}>Save</sl-button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </form>
         `;
+    }
+
+    /**
+     * The full-width setup card: the organizer of the subscription. On creation it can be changed
+     * here (as on the event page); an existing subscription keeps its organizer, fixed by the route
+     * (#/subscriptions/:organizationId/...)
+     */
+    private renderSetupCard(data: LoadedData): TemplateResult {
+        const organization = data.organizations.find((o) => o.id === this.organizationId);
+        return sectionCard({icon: 'building', title: 'Subscription setup', className: 'setup-card'}, html`
+            ${when(this.existing, () => html`
+                ${renderDetailList([{label: 'Organizer', value: organization?.name ?? `#${this.organizationId}`}])}
+                <p class="text-muted">The organizer determines the available payment methods.</p>
+            `, () => html`
+                <sl-select id="organizationId" class="organizer-field" label="Subscription organizer" placeholder="Select an organizer" hoist
+                           ?disabled=${data.organizations.length === 1}
+                           .value=${String(this.organizationId)}
+                           help-text="The organizer determines the available payment methods."
+                           @sl-change=${this.onOrganizerChange}>
+                    ${repeat(data.organizations, (o) => String(o.id), (o) => html`
+                        <sl-option value=${String(o.id)}>${o.name}</sl-option>
+                    `)}
+                </sl-select>
+            `)}
+        `);
+    }
+
+    /**
+     * Switches to the create page of another organization. The route carries the organizer, so this
+     * reloads the form: confirm first when information has already been entered
+     */
+    private onOrganizerChange = async (event: Event): Promise<void> => {
+        const select = event.target as SlSelect;
+        const newOrganizationId = Number(select.value);
+        if (newOrganizationId === this.organizationId) {
+            return;
+        }
+        if (this.#form.api.state.isDirty || this.fileBlobId != null) {
+            const confirmed = await ConfirmationDialogService.requestConfirm(
+                'Change organizer?',
+                'The information entered for this subscription will be discarded.',
+                'warning');
+            if (!confirmed) {
+                select.value = String(this.organizationId);
+                return;
+            }
+        }
+        window.location.hash = `#/subscriptions/${newOrganizationId}/create`;
+    };
+
+    /**
+     * The choice of how attendees can use the subscription, with the fields it controls
+     * (number of entries, validity period or date interval, usage per event) in its panel
+     */
+    private renderTypeCard(submitted: boolean): TemplateResult {
+        return sectionCard({icon: 'layers', title: 'Type'}, html`
+            ${this.#form.field({name: 'preset', validators: validateWith(requiredValue)}, (field) => {
+                const error = fieldError(field.state.meta, submitted);
+                const preset = (field.state.value ?? '') as Preset | '';
+                return html`
+                    ${choiceCards<Preset | ''>({
+                        name: 'subscription-preset',
+                        className: 'subscription-type',
+                        label: 'How can attendees use the subscription?',
+                        value: preset,
+                        options: PRESET_CHOICES,
+                        panel: this.renderPresetPanel(preset),
+                    }, (value) => this.selectPreset(field, value as Preset))}
+                    ${when(error != null, () => html`<div class="form-error-text">${error}</div>`, () => nothing)}
+                `;
+            })}
+        `);
+    }
+
+    /**
+     * Price and sales period. The currency comes first, as it gives meaning to the amounts
+     * and to the available payment methods
+     */
+    private renderPricingCard(data: LoadedData, submitted: boolean): TemplateResult {
+        const values = this.#form.api.state.values;
+        return sectionCard({icon: 'cash-coin', title: 'Pricing and sales period'}, html`
+            <div class="form-stack">
+                <div class="row" style="--alfio-row-cols: 4">
+                    ${this.#form.field({name: 'currency', validators: validateWith(requiredValue)}, (field) =>
+                        validatedSelect(field, submitted, {id: 'currency', label: 'Currency', placeholder: 'Select a currency'}, html`
+                            ${repeat(data.currencies, (c) => c.code, (c) => html`
+                                <sl-option value=${c.code}>${c.code} – ${c.name}</sl-option>
+                            `)}
+                        `))}
+                    ${this.#form.field({name: 'price', validators: validateWith(requiredNumber)},
+                        (field) => this.textInput(field, {id: 'price', label: 'Price', type: 'number', suffix: values.currency || undefined}))}
+                    ${this.#form.field({name: 'vatStatus', validators: validateWith(requiredValue)}, (field) =>
+                        validatedSelect(field, submitted, {id: 'vatStatus', label: 'Tax policy', placeholder: 'Select a tax policy'}, html`
+                            ${repeat(VAT_STATUSES, (s) => s.value, (s) => html`<sl-option value=${s.value}>${s.label}</sl-option>`)}
+                        `))}
+                    ${when(values.vatStatus !== 'NONE' && values.vatStatus !== '', () => html`
+                        ${this.#form.field({
+                            name: 'vat',
+                            validators: {
+                                ...validateWith((value) => this.validateVat(value)),
+                                onChangeListenTo: ['vatStatus'],
+                            },
+                        }, (field) => this.textInput(field, {id: 'vat', label: 'Taxes %', type: 'number', suffix: '%'}))}
+                    `)}
+                </div>
+                <div class="row" style="--alfio-row-cols: 4">
+                    ${this.#form.field({name: 'onSaleFrom', validators: validateWith(requiredValue)},
+                        (field) => this.textInput(field, {id: 'onSaleFrom', label: 'On sale from', type: 'datetime-local'}))}
+                    ${this.#form.field({name: 'onSaleTo'},
+                        (field) => this.textInput(field, {id: 'onSaleTo', label: 'On sale to (optional)', type: 'datetime-local', optional: true}))}
+                    ${this.#form.field({name: 'timeZone', validators: validateWith(requiredValue)}, (field) =>
+                        validatedSelect(field, submitted, {id: 'timeZone', label: 'Time zone', placeholder: 'Select a time zone'}, html`
+                            ${repeat(data.timeZones, (tz) => tz, (tz) => html`<sl-option value=${tz}>${tz}</sl-option>`)}
+                        `))}
+                    ${this.#form.field({name: 'maxAvailable', validators: validateWith(optionalNumber)},
+                        (field) => this.textInput(field, {
+                            id: 'maxAvailable',
+                            label: 'Max available (optional)',
+                            type: 'number',
+                            optional: true,
+                            helpText: 'How many subscriptions can be sold. Leave empty for unlimited.',
+                        }))}
+                </div>
+            </div>
+        `);
+    }
+
+    private renderTicketsGenerationCard(): TemplateResult {
+        return sectionCard({icon: 'ticket', title: 'Automatic tickets generation'}, html`
+            ${this.#form.field({name: 'supportsTicketsGeneration'}, (field) => html`
+                <sl-switch ?checked=${field.state.value}
+                           @sl-change=${(e: Event) => field.handleChange((e.target as SlSwitch).checked)}
+                           help-text="If enabled, each subscription holder will receive one ticket for present and future compatible events automatically. Unless the subscriber has already used the subscription for that event, in which case no tickets will be generated.">
+                    Generate tickets automatically for compatible events
+                </sl-switch>
+            `)}
+        `);
+    }
+
+    private renderUrlsCard(): TemplateResult {
+        return sectionCard({icon: 'link-45deg', title: 'Public links'}, html`
+            <p class="text-muted">The links shown on the public page of the subscription.</p>
+            <div class="form-stack">
+                <div class="row" style="--alfio-row-cols: 2">
+                    ${this.#form.field({name: 'termsAndConditionsUrl', validators: validateWith(requiredHttpsUrl)},
+                        (field) => this.textInput(field, {id: 'termsAndConditionsUrl', label: 'Terms and Conditions URL', type: 'url', prefixIcon: 'link-45deg'}))}
+                    ${this.#form.field({name: 'privacyPolicyUrl', validators: validateWith(httpsUrl)},
+                        (field) => this.textInput(field, {
+                            id: 'privacyPolicyUrl',
+                            label: 'Privacy policy URL (recommended)',
+                            type: 'url',
+                            prefixIcon: 'link-45deg',
+                            optional: true,
+                            helpText: 'Recommended so attendees can understand how their data is used.',
+                        }))}
+                </div>
+            </div>
+        `);
     }
 
     /**
@@ -495,16 +616,18 @@ export class SubscriptionEdit extends LitElement {
     }
 
     private renderImageSection(): TemplateResult {
-        return sectionCard({icon: 'image', title: 'Image'}, html`
-            <p class="text-muted">Upload an image for this subscription in PNG, JPG, GIF or SVG format.</p>
+        return sectionCard({icon: 'image', title: 'Subscription image'}, html`
+            <p class="text-muted">Upload an image for this subscription in PNG, JPG, GIF or SVG format. Maximum size: 1 MB. The image is required.</p>
             <alfio-purchase-context-image
+                id="subscription-image" tabindex="-1" aria-label="Subscription image (required)"
+                aria-invalid=${this.imageError != null} aria-describedby="subscription-image-error"
                 current-image=${this.previousFileBlobId != null ? `/file/${this.previousFileBlobId}` : ''}
                 accept="image/*"
                 max-size="1048576"
                 label="Drop your image here or click to select"
                 @image-change=${this.onImageChange}></alfio-purchase-context-image>
             ${when(this.imageError != null, () => html`
-                <sl-alert variant="danger" open class="image-error">
+                <sl-alert id="subscription-image-error" variant="danger" open class="image-error">
                     <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
                     ${this.imageError}
                 </sl-alert>
@@ -612,8 +735,9 @@ export class SubscriptionEdit extends LitElement {
         if (this.saving) {
             return;
         }
+        this.submitError = null;
         if (!await submitValidated(this.#form.api)) {
-            dispatchFeedback({type: 'danger', message: INVALID_FORM_MESSAGE}, this);
+            this.submitError = INVALID_FORM_MESSAGE;
             await this.updateComplete;
             focusFirstError(this.renderRoot);
         }

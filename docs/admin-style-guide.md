@@ -36,6 +36,7 @@ Background on 2 and on the placement of form actions:
 | Need                                                          | Use                                                                            |
 |---------------------------------------------------------------|--------------------------------------------------------------------------------|
 | A titled block of a page or a form                            | `sectionCard()`, `components/section-card.ts`                                  |
+| The section index of a long creation form (sticky nav on desktop, "Jump to section" select on mobile) | `<alfio-section-nav>`, `components/section-nav.ts`, with the `creationLayout` styles |
 | Data loaded by a `@lit/task` Task: spinner, error, refresh    | `taskContent()`, `components/task-content.ts`                                  |
 | An empty list                                                 | `emptyState()`, `components/empty-state.ts`                                    |
 | An input or select bound to a draft object                    | `formField()`, `selectField()`, `components/form-field.ts`                     |
@@ -73,6 +74,80 @@ Complete examples: `event/reservation-create/reservation-create.ts` (form with r
 - Load the data with a `@lit/task` Task and render it with `taskContent()`.
 - List pages: filter toolbar, tables and empty states are described in
   [`branding-guidelines.md`](branding-guidelines.md) (sections 2 to 4).
+
+### Creation pages with dependent choices
+
+Use `event/event-create/event-create.ts` as the reference for long creation forms, including subscription
+creation. The improvement is the order of decisions and the visibility of their consequences, as well as the
+Shoelace styling. Prefer one adaptive page that experienced organizers can scan and edit freely. Page length
+alone is not a reason to introduce a wizard, numbered steps, completion percentages or mandatory Next/Back actions.
+
+#### Put prerequisites before dependent fields
+
+- Start with a full-width setup card containing the organizer. Explain that it determines available payment
+  methods and subscriptions. When several organizers are available, reveal the remaining form after selection.
+  When only one is available, select it automatically and keep its name visible.
+- Put each subsequent controlling choice immediately before the fields it affects. Do not collect every
+  choice in the setup card: free/paid admission belongs with pricing; currency precedes amounts and payment methods.
+- For an event, the order is **name → format → location → timezone → dates**. Location can determine timezone,
+  and timezone gives meaning to the dates. Online events omit the physical location but retain an editable
+  timezone. Preserve a manually chosen timezone when resolving a location.
+- Use `choiceCards()` for choices that change the following fields, with those fields in its tinted `panel`.
+  Keep the panel within the group instead of nesting another bordered section card inside it.
+
+#### Group the form and provide section navigation
+
+The event page groups its content as follows:
+
+| Group | Contents, in order |
+|-------|--------------------|
+| Event setup | Organizer |
+| Event details | Name, format and conditional location, timezone, dates |
+| Tickets and payments | Capacity, free/paid choice, conditional currency/pricing/taxes/payment methods, categories |
+| Event page | Languages and description, public links, required logo |
+
+- Below setup, use a narrow sticky section index beside the form on desktop. The event reference uses a
+  `12rem` index and a `minmax(0, 1fr)` content column, separated by `--sl-spacing-x-large`.
+- Use an `<h2>` for each navigable group and `sectionCard()` for its titled blocks. Separate groups with
+  whitespace; use the existing Shoelace colors, typography, spacing and borders.
+- Section links scroll within the form, move focus to the destination and highlight the current section
+  with primary blue and `aria-current="location"`. They must not change the admin's hash route. Account for
+  the fixed admin header in both sticky positioning and `scroll-margin-top`.
+- At the event reference's `900px` breakpoint, switch to a single column and replace the index with a compact
+  `sl-select` labelled "Jump to section". Stack fields and choice cards as needed. Verify at `400px`, including
+  long URLs, category actions and the footer; Cancel and Save must have space between them.
+- The layout and navigation classes live in the `creationLayout` block of `styles.ts`, and the navigation
+  behavior in `<alfio-section-nav>` (`components/section-nav.ts`): render it as a child of `.creation-layout`,
+  beside the `.creation-content` column, passing the sections of the form (`{id, label}`), each rendered as
+  `<section class="form-section" id="…">` with an `<h2>`.
+
+#### Keep important content visible
+
+- Required fields remain expanded. **The event logo is required**: show its upload control in a section card,
+  label it required and block Save without an uploaded or copied logo. Do not put it in an optional artwork accordion.
+- Keep website, terms and privacy URLs visible together. Label the privacy URL "recommended" and explain its
+  purpose; being technically optional does not make it suitable for hiding.
+- Reserve `sl-details` for genuinely optional, secondary content. Verify the existing requirements before
+  classifying any field as optional. Continue using the shared multilingual text and image-upload components.
+
+#### Keep actions quiet and preserve entered work
+
+- Keep copying from an existing item as a quiet header action when that feature exists. Put Reset in a
+  secondary "More" menu and confirm before discarding entered information.
+- The footer contains Cancel on the left and Save on the right, following [Buttons](#5-buttons), with
+  validation feedback near Save. Preserve the existing requirements for saving; a layout redesign does not
+  introduce a separate incomplete-draft workflow.
+- Changing an earlier choice preserves compatible values. Untouched defaults can follow the new settings;
+  explicit customizations must not be overwritten. Show conflicts beside the affected fields or categories,
+  and confirm changes only when they would discard entered information.
+- Recheck organizer- and currency-dependent selections, show unavailable selections so the user can resolve
+  them, and ignore stale responses from an earlier selection. Reveal and focus invalid fields when saving.
+
+For **subscription creation**, apply this structure to its existing fields: organizer setup first, then
+subscription details and the choices governing validity/availability, pricing and payment settings, and
+public-facing content. Determine the exact order from the subscription's dependencies and save contract;
+do not add event-specific venue or ticket-category fields. Preserve its required fields and use the same
+section navigation, choice panels, visible public links, upload treatment and footer conventions.
 
 ## 4. Forms
 
