@@ -90,6 +90,15 @@ export class MarkdownEditor extends LitElement {
             background-color: var(--sl-color-gray-200);
         }
 
+        /* the active state of a toolbar toggle (sl-icon-button has no variant): filled primary icon */
+        .toolbar sl-icon-button[aria-pressed="true"] {
+            color: var(--sl-color-neutral-0);
+        }
+
+        .toolbar sl-icon-button[aria-pressed="true"]::part(base) {
+            background-color: var(--sl-color-primary-600);
+        }
+
         .editor-host {
             max-height: 24rem;
             overflow: auto;
@@ -278,17 +287,20 @@ export class MarkdownEditor extends LitElement {
             },
         });
         this.lastMarkdown = this.editor.getMarkdown();
+        // render the toolbar with the real editor states (enabled buttons, active marks)
+        this.requestUpdate();
     }
 
     private active(name: string, attributes?: Record<string, unknown>): boolean {
         return this.editor?.isActive(name, attributes) === true;
     }
 
-    private variantFor(name: string, attributes?: Record<string, unknown>): 'default' | 'primary' {
+    // sl-icon-button has no "variant": the active state is shown with aria-pressed, styled below
+    private pressed(name: string, attributes?: Record<string, unknown>): string {
         if (this.active(name, attributes)) {
-            return 'primary';
+            return 'true';
         }
-        return 'default';
+        return 'false';
     }
 
     private headingLabel(): string {
@@ -359,19 +371,19 @@ export class MarkdownEditor extends LitElement {
                                 ?disabled=${editor == null || !editor.can().redo()}
                                 @click=${() => editor?.chain().focus().redo().run()}></sl-icon-button>
                 <span class="toolbar-divider"></span>
-                <sl-icon-button name="type-bold" label="Bold" variant=${this.variantFor('bold')}
+                <sl-icon-button name="type-bold" label="Bold" aria-pressed=${this.pressed('bold')}
                                 ?disabled=${editor == null || !editor.can().toggleBold()}
                                 @click=${() => editor?.chain().focus().toggleBold().run()}></sl-icon-button>
-                <sl-icon-button name="type-italic" label="Italic" variant=${this.variantFor('italic')}
+                <sl-icon-button name="type-italic" label="Italic" aria-pressed=${this.pressed('italic')}
                                 ?disabled=${editor == null || !editor.can().toggleItalic()}
                                 @click=${() => editor?.chain().focus().toggleItalic().run()}></sl-icon-button>
-                <sl-icon-button name="type-underline" label="Underline" variant=${this.variantFor('underline')}
+                <sl-icon-button name="type-underline" label="Underline" aria-pressed=${this.pressed('underline')}
                                 ?disabled=${editor == null || !editor.can().toggleUnderline()}
                                 @click=${() => editor?.chain().focus().toggleUnderline().run()}></sl-icon-button>
-                <sl-icon-button name="type-strikethrough" label="Strikethrough" variant=${this.variantFor('strike')}
+                <sl-icon-button name="type-strikethrough" label="Strikethrough" aria-pressed=${this.pressed('strike')}
                                 ?disabled=${editor == null || !editor.can().toggleStrike()}
                                 @click=${() => editor?.chain().focus().toggleStrike().run()}></sl-icon-button>
-                <sl-icon-button name="code-slash" label="Inline code" variant=${this.variantFor('code')}
+                <sl-icon-button name="code-slash" label="Inline code" aria-pressed=${this.pressed('code')}
                                 ?disabled=${editor == null || !editor.can().toggleCode()}
                                 @click=${() => editor?.chain().focus().toggleCode().run()}></sl-icon-button>
                 <span class="toolbar-divider"></span>
@@ -385,24 +397,24 @@ export class MarkdownEditor extends LitElement {
                     </sl-menu>
                 </sl-dropdown>
                 <span class="toolbar-divider"></span>
-                <sl-icon-button name="list-ul" label="Bullet list" variant=${this.variantFor('bulletList')}
+                <sl-icon-button name="list-ul" label="Bullet list" aria-pressed=${this.pressed('bulletList')}
                                 ?disabled=${editor == null || !editor.can().toggleBulletList()}
                                 @click=${() => editor?.chain().focus().toggleBulletList().run()}></sl-icon-button>
-                <sl-icon-button name="list-ol" label="Ordered list" variant=${this.variantFor('orderedList')}
+                <sl-icon-button name="list-ol" label="Ordered list" aria-pressed=${this.pressed('orderedList')}
                                 ?disabled=${editor == null || !editor.can().toggleOrderedList()}
                                 @click=${() => editor?.chain().focus().toggleOrderedList().run()}></sl-icon-button>
                 <span class="toolbar-divider"></span>
-                <sl-icon-button name="quote" label="Quote" variant=${this.variantFor('blockquote')}
+                <sl-icon-button name="quote" label="Quote" aria-pressed=${this.pressed('blockquote')}
                                 ?disabled=${editor == null || !editor.can().toggleBlockquote()}
                                 @click=${() => editor?.chain().focus().toggleBlockquote().run()}></sl-icon-button>
-                <sl-icon-button name="code-square" label="Code block" variant=${this.variantFor('codeBlock')}
+                <sl-icon-button name="code-square" label="Code block" aria-pressed=${this.pressed('codeBlock')}
                                 ?disabled=${editor == null || !editor.can().toggleCodeBlock()}
                                 @click=${() => editor?.chain().focus().toggleCodeBlock().run()}></sl-icon-button>
                 <sl-icon-button name="hr" label="Horizontal rule"
                                 ?disabled=${editor == null || !editor.can().setHorizontalRule()}
                                 @click=${() => editor?.chain().focus().setHorizontalRule().run()}></sl-icon-button>
                 <span class="toolbar-divider"></span>
-                <sl-icon-button name="link-45deg" label="Link" variant=${this.variantFor('link')}
+                <sl-icon-button name="link-45deg" label="Link" aria-pressed=${this.pressed('link')}
                                 ?disabled=${editor == null}
                                 @click=${this.openLinkDialog}></sl-icon-button>
                 <sl-icon-button name="eraser" label="Clear formatting"

@@ -430,7 +430,7 @@ export class SubscriptionEdit extends LitElement {
         const values = this.#form.api.state.values;
         return sectionCard({icon: 'cash-coin', title: 'Pricing and sales period'}, html`
             <div class="form-stack">
-                <div class="row" style="--alfio-row-cols: 4">
+                <div class="row" style="--alfio-row-cols: 3">
                     ${this.#form.field({name: 'currency', validators: validateWith(requiredValue)}, (field) =>
                         validatedSelect(field, submitted, {id: 'currency', label: 'Currency', placeholder: 'Select a currency'}, html`
                             ${repeat(data.currencies, (c) => c.code, (c) => html`
@@ -439,21 +439,21 @@ export class SubscriptionEdit extends LitElement {
                         `))}
                     ${this.#form.field({name: 'price', validators: validateWith(requiredNumber)},
                         (field) => this.textInput(field, {id: 'price', label: 'Price', type: 'number', suffix: values.currency || undefined}))}
+                    ${this.#form.field({
+                        name: 'vat',
+                        validators: {
+                            ...validateWith((value) => this.validateVat(value)),
+                            onChangeListenTo: ['vatStatus'],
+                        },
+                    }, (field) => this.textInput(field, {id: 'vat', label: 'Taxes %', type: 'number', suffix: '%'}))}
+                </div>
+                <div class="row" style="--alfio-row-cols: 1">
                     ${this.#form.field({name: 'vatStatus', validators: validateWith(requiredValue)}, (field) =>
                         validatedSelect(field, submitted, {id: 'vatStatus', label: 'Tax policy', placeholder: 'Select a tax policy'}, html`
                             ${repeat(VAT_STATUSES, (s) => s.value, (s) => html`<sl-option value=${s.value}>${s.label}</sl-option>`)}
                         `))}
-                    ${when(values.vatStatus !== 'NONE' && values.vatStatus !== '', () => html`
-                        ${this.#form.field({
-                            name: 'vat',
-                            validators: {
-                                ...validateWith((value) => this.validateVat(value)),
-                                onChangeListenTo: ['vatStatus'],
-                            },
-                        }, (field) => this.textInput(field, {id: 'vat', label: 'Taxes %', type: 'number', suffix: '%'}))}
-                    `)}
                 </div>
-                <div class="row" style="--alfio-row-cols: 4">
+                <div class="row" style="--alfio-row-cols: 3">
                     ${this.#form.field({name: 'onSaleFrom', validators: validateWith(requiredValue)},
                         (field) => this.textInput(field, {id: 'onSaleFrom', label: 'On sale from', type: 'datetime-local'}))}
                     ${this.#form.field({name: 'onSaleTo'},
@@ -462,6 +462,8 @@ export class SubscriptionEdit extends LitElement {
                         validatedSelect(field, submitted, {id: 'timeZone', label: 'Time zone', placeholder: 'Select a time zone'}, html`
                             ${repeat(data.timeZones, (tz) => tz, (tz) => html`<sl-option value=${tz}>${tz}</sl-option>`)}
                         `))}
+                </div>
+                <div class="row" style="--alfio-row-cols: 1">
                     ${this.#form.field({name: 'maxAvailable', validators: validateWith(optionalNumber)},
                         (field) => this.textInput(field, {
                             id: 'maxAvailable',
@@ -913,7 +915,7 @@ export class SubscriptionEdit extends LitElement {
             privacyPolicyUrl: descriptor?.privacyPolicyUrl ?? '',
             price: optionalString(descriptor?.price),
             currency: descriptor?.currency ?? '',
-            vatStatus: descriptor?.vatStatus ?? '',
+            vatStatus: descriptor?.vatStatus ?? 'NOT_INCLUDED',
             vat,
             onSaleFrom,
             onSaleTo,
@@ -959,7 +961,7 @@ function emptyFormValues(): SubscriptionFormValues {
         privacyPolicyUrl: '',
         price: '',
         currency: '',
-        vatStatus: '',
+        vatStatus: 'NOT_INCLUDED',
         vat: '0',
         onSaleFrom: '',
         onSaleTo: '',
