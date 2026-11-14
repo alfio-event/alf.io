@@ -6,7 +6,7 @@
 #
 
 # JDK used to build the runtime image.
-ARG JDK_IMAGE=eclipse-temurin:27-alpine
+ARG JDK_IMAGE=bellsoft/liberica-runtime-container:jdk-all-27-musl
 ARG GC_OPTS="-XX:+UseParallelGC"
 
 FROM ${JDK_IMAGE} AS jdk
@@ -27,7 +27,7 @@ RUN "$JAVA_HOME/bin/java" -Djarmode=tools -jar alfio-boot.jar extract --destinat
         -Dspring.profiles.active=app-cds -Dspring.context.exit=onRefresh -jar alfio-boot.jar)
 
 
-FROM alpine:3.24
+FROM bellsoft/alpaquita-linux-base:stream-musl
 ARG GC_OPTS
 LABEL org.opencontainers.image.source=https://github.com/alfio-event/alf.io
 
@@ -38,9 +38,8 @@ ENV ALFIO_GC_OPTS="${GC_OPTS}"
 
 RUN addgroup -S alfio  \
     && adduser -h /home/alfio -u 1001 -G alfio -S alfio  \
-    && apk update  \
-    && apk add --update ttf-dejavu  \
-    && rm -rf /var/cache/apk/* \
+    && apk upgrade --no-cache  \
+    && apk add --no-cache ttf-dejavu  \
     && mkdir /home/alfio/app
 
 COPY --from=jdk /jlinked /opt/jdk/

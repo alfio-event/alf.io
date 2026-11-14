@@ -181,6 +181,10 @@ dependencies {
     implementation(libs.imgscalr)
     implementation(libs.rhino)
     implementation(libs.google.auth.oauth2.http)
+    constraints {
+        // see the comment next to "guava" in gradle/libs.versions.toml
+        implementation(libs.guava)
+    }
     implementation(libs.spring.boot.starter.webmvc) {
         exclude(module = "spring-boot-starter-logging")
         exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")

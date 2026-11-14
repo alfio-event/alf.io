@@ -13,7 +13,7 @@ hierynomus-license = "0.16.1"
 kordamp-jacoco = "0.54.0"
 lombok-plugin = "9.5.0"
 sonarqube = "7.5.0.8588"
-spring-boot = "4.1.1"
+spring-boot = "4.1.2"
 spring-dependency-management = "1.1.7"
 
 # -- build-time only (buildscript classpath)
@@ -22,7 +22,7 @@ mjml4j = "1.2.2"
 postgresql-driver = "42.7.13"
 
 # -- overrides applied to the Spring Boot BOM
-# Spring Boot 4.1.1 manages Flyway 12.4.0, whose plugin-based resolution of the schema history "type"
+# Spring Boot 4.1.2 manages Flyway 12.4.0, whose plugin-based resolution of the schema history "type"
 # column no longer honours the legacy SPRING_JDBC alias, making existing instances unable to start
 # (FlywayUnknownMigrationTypeException). Fixed upstream in 12.11.0, see Flyway issue 4253.
 flyway = "12.11.0"
@@ -37,6 +37,9 @@ commons-collections4 = "4.6.0"
 commons-lang3 = "3.20.0"
 commons-text = "1.15.0"
 google-auth = "1.52.0"
+# google-auth (via api-common) still pulls Guava 33.6.0, affected by CVE-2026-102554; constrained up in build.gradle.kts.
+# Drop this once google-auth ships with Guava 33.7.2 or newer.
+guava = "33.7.2-jre"
 gson = "2.14.0"
 gson-javatime = "1.1.2"
 imgscalr = "4.2"
@@ -73,6 +76,7 @@ commons-collections4 = { module = "org.apache.commons:commons-collections4", ver
 commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
 commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
 google-auth-oauth2-http = { module = "com.google.auth:google-auth-library-oauth2-http", version.ref = "google-auth" }
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 gson-javatime-serialisers = { module = "com.fatboyindustrial.gson-javatime-serialisers:gson-javatime-serialisers", version.ref = "gson-javatime" }
 imgscalr = { module = "org.imgscalr:imgscalr-lib", version.ref = "imgscalr" }
