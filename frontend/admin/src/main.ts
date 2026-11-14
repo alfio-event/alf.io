@@ -107,3 +107,6 @@ export { SubscriptionsList } from './subscriptions/subscriptions-list';
 export { SubscriptionDetail } from './subscriptions/subscription-detail';
 export { SubscriptionEdit } from './subscriptions/subscription-edit';
 export { LinkedEventsDialog } from './subscriptions/linked-events-dialog';
+export { GroupsPage } from './groups/groups-page';
+export { GroupsList } from './groups/groups-list';
+export { GroupEdit } from './groups/group-edit';

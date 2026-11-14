@@ -522,6 +522,35 @@
                     this.organizationId = $stateParams.organizationId;
                     this.subscriptionId = $stateParams.subscriptionId;
                 }]
+            })
+            .state('groups', {
+                url: '/group',
+                template: '<alfio-groups-page><div ui-view></div></alfio-groups-page>'
+            })
+            .state('groups.all', {
+                url: '/:orgId/all',
+                template: '<alfio-groups-list data-organization-id="{{ctrl.orgId}}"></alfio-groups-list>',
+                controllerAs: 'ctrl',
+                controller: ['$stateParams', function ($stateParams) {
+                    this.orgId = $stateParams.orgId;
+                }]
+            })
+            .state('groups.edit', {
+                url: '/:orgId/edit/:groupId',
+                template: '<alfio-group-edit data-organization-id="{{ctrl.orgId}}" data-group-id="{{ctrl.groupId}}"></alfio-group-edit>',
+                controllerAs: 'ctrl',
+                controller: ['$stateParams', function ($stateParams) {
+                    this.orgId = $stateParams.orgId;
+                    this.groupId = $stateParams.groupId;
+                }]
+            })
+            .state('groups.new', {
+                url: '/:orgId/new',
+                template: '<alfio-group-edit data-organization-id="{{ctrl.orgId}}" data-create-new="true"></alfio-group-edit>',
+                controllerAs: 'ctrl',
+                controller: ['$stateParams', function ($stateParams) {
+                    this.orgId = $stateParams.orgId;
+                }]
             });
      });
 

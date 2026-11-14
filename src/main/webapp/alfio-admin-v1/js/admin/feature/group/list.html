@@ -1,7 +1,0 @@
-<div class="list-group" ng-if="!$ctrl.hideGroup()">
-    <a class="list-group-item" ng-repeat="group in $ctrl.groups" ng-click="$ctrl.selectedGroup = group" ui-sref-active="active" ui-sref="^.edit({orgId: $ctrl.organizationId, groupId: group.id})">
-        <h4 class="list-group-item-heading">{{group.name}} <span class="pull-right"><i class="fa fa-chevron-right text-muted"></i></span></h4>
-        <p class="list-group-item-text" ng-bind="group.description"></p>
-    </a>
-</div>
-<a class="btn btn-success pull-right" ui-sref="^.new({orgId: $ctrl.organizationId})"><i class="fa fa-plus"></i> add new</a>

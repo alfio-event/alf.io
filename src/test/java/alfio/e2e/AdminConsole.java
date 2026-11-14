@@ -1705,6 +1705,114 @@ class AdminConsole {
         wait.until(_ -> findInShadowRoot(findInShadowRoot(edit, "alfio-purchase-context-image"), ".preview-box img") != null);
     }
 
+    //
+    // groups (Lit components, see frontend/admin/src/groups)
+    //
+
+    WebElement openGroups() {
+        driver.navigate().to(serverBaseUrl + "/admin#/group");
+        // the page redirects to the list of the first organization
+        return wait.until(presenceOfElementLocated(By.tagName("alfio-groups-list")));
+    }
+
+    /**
+     * Creates a group with one member through the admin console, and waits to be back on the list
+     */
+    void createGroup(String name, String description, String memberEmail) {
+        var list = driver.findElement(By.tagName("alfio-groups-list"));
+        clickWithJs(driver, findInShadowRoot(list, "#add-group"));
+        var edit = wait.until(presenceOfElementLocated(By.tagName("alfio-group-edit")));
+        // wait for the form to be rendered
+        wait.until(_ -> findInShadowRoot(edit, "sl-input#group-name") != null);
+        typeInShoelaceControl(findInShadowRoot(edit, "sl-input#group-name"), "input", name);
+        typeInShoelaceControl(findInShadowRoot(edit, "sl-input#group-description"), "input", description);
+        typeInShoelaceControl(findInShadowRoot(edit, "sl-input#member-email-0"), "input", memberEmail);
+        clickWithJs(driver, findInShadowRoot(edit, "#save-group"));
+        wait.until(urlContains("/all"));
+    }
+
+    boolean groupListed(String name) {
+        var list = wait.until(presenceOfElementLocated(By.tagName("alfio-groups-list")));
+        return wait.until(d -> (Boolean) ((JavascriptExecutor) d).executeScript(
+            "return arguments[0].shadowRoot.textContent.includes(arguments[1]);", list, name));
+    }
+
+    /**
+     * Opens the edit page of the group with the given name (the row of the list links there),
+     * adds a member and saves
+     */
+    void addMemberToGroup(String name, String memberEmail) {
+        var list = driver.findElement(By.tagName("alfio-groups-list"));
+        var row = wait.until(d -> (WebElement) ((JavascriptExecutor) d).executeScript(
+            "return Array.from(arguments[0].shadowRoot.querySelectorAll('.group-row'))" +
+                ".find(r => r.textContent.includes(arguments[1]));", list, name));
+        clickWithJs(driver, row);
+        var edit = wait.until(presenceOfElementLocated(By.tagName("alfio-group-edit")));
+        wait.until(_ -> findInShadowRoot(edit, "#members-count") != null);
+        // the existing members are read-only: add a new row and fill it in
+        clickWithJs(driver, findInShadowRoot(edit, "#add-member"));
+        var lastEmail = wait.until(d -> (WebElement) ((JavascriptExecutor) d).executeScript(
+            "var emails = Array.from(arguments[0].shadowRoot.querySelectorAll('sl-input.member-email:not([readonly])'));" +
+                "return emails[emails.length - 1];", edit));
+        typeInShoelaceControl(lastEmail, "input", memberEmail);
+        clickWithJs(driver, findInShadowRoot(edit, "#save-group"));
+        wait.until(urlContains("/all"));
+    }
+
+    /**
+     * Opens the edit page of the group with the given name, switches to the CSV upload, uploads the
+     * given CSV content and saves
+     */
+    void importGroupMembersCsv(String name, String csv) {
+        var list = driver.findElement(By.tagName("alfio-groups-list"));
+        var row = wait.until(d -> (WebElement) ((JavascriptExecutor) d).executeScript(
+            "return Array.from(arguments[0].shadowRoot.querySelectorAll('.group-row'))" +
+                ".find(r => r.textContent.includes(arguments[1]));", list, name));
+        clickWithJs(driver, row);
+        var edit = wait.until(presenceOfElementLocated(By.tagName("alfio-group-edit")));
+        // wait for the group to be loaded
+        wait.until(_ -> findInShadowRoot(edit, "sl-input#group-name") != null);
+        // the members can be added manually or with a CSV file: pick the upload
+        chooseCard(edit, ".members-input-mode", "csv");
+        uploadFile(findInShadowRoot(findInShadowRoot(edit, "alfio-file-upload.attendees-file"), "#file-input"),
+            tempFile("e2e-group-members", ".csv", csv.getBytes(StandardCharsets.UTF_8)));
+        // wait until the file has been parsed and the members appended to the form
+        wait.until(_ -> findInShadowRoot(edit, "sl-alert.csv-message") != null);
+        clickWithJs(driver, findInShadowRoot(edit, "#save-group"));
+        wait.until(urlContains("/all"));
+    }
+
+    int groupMembersCount(String name) {
+        var list = driver.findElement(By.tagName("alfio-groups-list"));
+        var row = wait.until(d -> (WebElement) ((JavascriptExecutor) d).executeScript(
+            "return Array.from(arguments[0].shadowRoot.querySelectorAll('.group-row'))" +
+                ".find(r => r.textContent.includes(arguments[1]));", list, name));
+        clickWithJs(driver, row);
+        var edit = wait.until(presenceOfElementLocated(By.tagName("alfio-group-edit")));
+        var badge = wait.until(_ -> findInShadowRoot(edit, "#members-count"));
+        wait.until(_ -> findInShadowRoot(edit, "sl-input#group-name") != null);
+        return Integer.parseInt(badge.getText().trim());
+    }
+
+    /**
+     * Deletes the group with the given name from its edit page, confirming the dialog
+     */
+    void deleteGroup(String name) {
+        var list = driver.findElement(By.tagName("alfio-groups-list"));
+        var row = wait.until(d -> (WebElement) ((JavascriptExecutor) d).executeScript(
+            "return Array.from(arguments[0].shadowRoot.querySelectorAll('.group-row'))" +
+                ".find(r => r.textContent.includes(arguments[1]));", list, name));
+        clickWithJs(driver, row);
+        var edit = wait.until(presenceOfElementLocated(By.tagName("alfio-group-edit")));
+        // wait for the group to be loaded
+        wait.until(_ -> findInShadowRoot(edit, "sl-input#group-name") != null);
+        clickWithJs(driver, findInShadowRoot(edit, "#delete-group"));
+        // the confirmation dialog is appended to the document body, outside any shadow root
+        var confirm = wait.until(presenceOfElementLocated(By.cssSelector("body sl-dialog sl-button#confirm")));
+        clickWithJs(driver, confirm);
+        wait.until(urlContains("/all"));
+    }
+
     /**
      * Sets the value of a datetime-local sl-input: sendKeys doesn't work reliably on the native control
      */
