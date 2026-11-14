@@ -126,8 +126,8 @@ class ReservationFlow {
         });
 
 
-        // submit
-        driver.findElement(By.cssSelector("button[type=submit][translate='reservation-page.continue']")).sendKeys(Keys.RETURN);
+        // submit (the label is rendered with the translate pipe, so the button has no translate attribute)
+        driver.findElement(By.cssSelector("app-booking button[type=submit].btn-success")).sendKeys(Keys.RETURN);
     }
 
 

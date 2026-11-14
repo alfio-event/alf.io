@@ -1631,7 +1631,9 @@ class AdminConsole {
         wait.until(_ -> findInShadowRoot(edit, "alfio-multi-language-text[label='Title']") != null);
 
         typeInShoelaceControl(findMultiLanguageControl(edit, "Title", "sl-input"), "input", title);
-        typeInShoelaceControl(findMultiLanguageControl(edit, "Description", "sl-textarea"), "textarea", "Description of " + title);
+        // the description is a markdown (WYSIWYG) editor
+        var descriptionEditor = findMultiLanguageControl(edit, "Description", "alfio-markdown-editor");
+        wait.until(_ -> findInShadowRoot(descriptionEditor, ".editor-host .ProseMirror")).sendKeys("Description of " + title);
         typeInShoelaceControl(findInShadowRoot(edit, "sl-input#termsAndConditionsUrl"), "input", "https://alf.io/terms");
         // the pricing and payment sections appear once a subscription type has been chosen
         chooseCard(edit, ".subscription-type", "multipleEntries");
@@ -1985,7 +1987,10 @@ class AdminConsole {
 
     private void waitForGeolocation(WebElement page) {
         try {
-            new WebDriverWait(driver, Duration.ofSeconds(15)).until(_ ->
+            // the loading indicator can be removed between the lookup and isDisplayed(): retry in that case
+            new WebDriverWait(driver, Duration.ofSeconds(15))
+                .ignoring(StaleElementReferenceException.class)
+                .until(_ ->
                 ((List<WebElement>) ((JavascriptExecutor) driver).executeScript(
                     "return Array.from(arguments[0].shadowRoot.querySelectorAll('.map-loading'));", page))
                     .stream().noneMatch(WebElement::isDisplayed));
