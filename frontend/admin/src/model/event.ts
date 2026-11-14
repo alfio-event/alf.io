@@ -1,5 +1,6 @@
 import {Organization} from "./organization.ts";
 import {LocalizedContent, PaymentProxy, PurchaseContext} from "./purchase-context.ts";
+import {SpecialPrice} from "./special-price.ts";
 
 export interface EventWithOrganization {
     event: AlfioEvent;
@@ -59,6 +60,8 @@ export interface TicketCategory {
     id:                           number;
     expired:                      boolean;
     accessRestricted:             boolean;
+    // present on the full event (GET /admin/api/events/{name}): all the codes of a restricted category
+    tokenStatus?:                 SpecialPrice[];
     // present on the full event (GET /admin/api/events/{name}), used by the "copy from previous event" flow
     bounded?:                     boolean;
     maxTickets?:                  number;

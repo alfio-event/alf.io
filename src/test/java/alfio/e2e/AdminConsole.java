@@ -111,6 +111,14 @@ class AdminConsole {
     }
 
     void createEvent(EventDefinition event) {
+        createEvent(event, false);
+    }
+
+    /**
+     * Creates the event, optionally adding a second, access-restricted category ("Restricted", 5 seats,
+     * fixed allocation): the restricted category gets one token per seat, which the invitations are sent for.
+     */
+    void createEvent(EventDefinition event, boolean withRestrictedCategory) {
         driver.navigate().to(serverBaseUrl + "/admin#/events/new");
         var page = wait.until(presenceOfElementLocated(By.tagName("alfio-event-create")));
         // waits for the form to be rendered after the initial data has loaded
@@ -120,7 +128,10 @@ class AdminConsole {
         fillUrls(page, event);
         uploadLogo(page);
         fillPrices(page, event);
-        addCategory(page, event);
+        addCategory(page, event, false);
+        if (withRestrictedCategory) {
+            addCategory(page, event, true);
+        }
 
         LOGGER.info("saving event {}", event.slug());
         clickWithJs(driver, findInShadowRoot(page, "#save-button"));
@@ -925,7 +936,20 @@ class AdminConsole {
     String downloadAttendeesImportTemplate(String slug) {
         driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/import");
         var importPage = wait.until(presenceOfElementLocated(By.tagName("alfio-attendees-import")));
-        var button = findInShadowRoot(importPage, ".download-template");
+        return downloadViaButton(findInShadowRoot(importPage, ".download-template"));
+    }
+
+    /**
+     * Downloads the invitations template of the send-invitations page and returns its content.
+     */
+    String downloadSendInvitationsTemplate(String slug) {
+        var page = openSendInvitations(slug);
+        // the template download is in the "Upload CSV" panel
+        clickWithJs(driver, findInShadowRoot(page, ".choice-card[data-value='csv']"));
+        return downloadViaButton(findInShadowRoot(page, ".download-template"));
+    }
+
+    private String downloadViaButton(WebElement button) {
         var content = (String) ((JavascriptExecutor) driver).executeAsyncScript("""
             const [button, done] = arguments;
             const createObjectURL = URL.createObjectURL;
@@ -947,6 +971,266 @@ class AdminConsole {
             }
             """, button);
         return new String(Base64.getDecoder().decode(requireNonNull(content, "the template has not been downloaded")), StandardCharsets.UTF_8);
+    }
+
+    //
+    // send invitations (Lit component, see frontend/admin/src/event/send-invitations)
+    //
+
+    /**
+     * Opens the "send invitations" page of the first access-restricted category of the event,
+     * through the link on the event detail page.
+     */
+    WebElement openSendInvitations(String slug) {
+        openEventDetail(slug);
+        var link = wait.until(presenceOfElementLocated(By.xpath("//a[contains(@data-ui-sref, 'sendInvitations')]")));
+        clickWithJs(driver, link);
+        return wait.until(presenceOfElementLocated(By.tagName("alfio-send-invitations")));
+    }
+
+    /**
+     * Uploads the CSV file with the invitations on the "Invitations" tab, waits for the preview
+     * and sends them.
+     * @param csv the content of the file, with header: code, assignee, email, language
+     */
+    void sendInvitations(WebElement page, String csv, int expectedInvitations) {
+        // switch to the "Upload CSV" panel
+        clickWithJs(driver, findInShadowRoot(page, ".choice-card[data-value='csv']"));
+        // the tokens of a restricted category become FREE when a periodic job generates their codes:
+        // if the upload happens before that, the backend answers "available: 0" — wait and upload again.
+        // a fresh temp file per attempt: the file input ignores a path it has already seen
+        var deadline = System.currentTimeMillis() + Duration.ofSeconds(90).toMillis();
+        while (true) {
+            var file = tempFile("e2e-invitations", ".csv", csv.getBytes(StandardCharsets.UTF_8));
+            var upload = findInShadowRoot(page, "alfio-file-upload");
+            uploadFile(findInShadowRoot(upload, "#file-input"), file);
+            try {
+                new WebDriverWait(driver, Duration.ofSeconds(10))
+                    .withMessage(() -> "CSV not parsed: " + findAllInShadowRoot(page, ".csv-error").stream().map(WebElement::getText).findFirst().orElse("no error displayed"))
+                    .until(_ -> previewShows(page, expectedInvitations));
+                break;
+            } catch (org.openqa.selenium.TimeoutException e) {
+                var error = findAllInShadowRoot(page, ".csv-error").stream().map(WebElement::getText).findFirst().orElse("");
+                if (error.contains("available: 0") && System.currentTimeMillis() < deadline) {
+                    LOGGER.info("tokens not generated yet, retrying the upload");
+                    try {
+                        Thread.sleep(Duration.ofSeconds(5).toMillis());
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException(ie);
+                    }
+                    continue;
+                }
+                throw e;
+            }
+        }
+        LOGGER.info("{} invitations parsed, sending them", expectedInvitations);
+        sendFromPreview(page);
+    }
+
+    record ManualInvitations(WebElement page, String pickedCode) {}
+
+    /**
+     * Types the invitees one by one in the "Insert manually" panel of the "Invitations" tab, picks one of
+     * the free codes offered for the first invitee, clicks Review and sends the invitations from the preview.
+     * @param invitees each entry is {assignee, email}
+     * @return the page (reloaded, if the codes were still being generated when it first loaded) and the picked code
+     */
+    ManualInvitations addInviteesManually(WebElement page, List<String[]> invitees) {
+        // the free codes are read when the page loads; the tokens of a restricted category become FREE when
+        // a periodic job generates their codes, so reload until the select offers them
+        var deadline = System.currentTimeMillis() + Duration.ofSeconds(90).toMillis();
+        String pickedCode = null;
+        while (pickedCode == null) {
+            var codeSelect = findAllInShadowRoot(page, "sl-select#invitee-code-0").stream().findFirst().orElse(null);
+            @SuppressWarnings("unchecked")
+            var options = codeSelect == null ? List.<String>of() : (List<String>) ((JavascriptExecutor) driver).executeScript(
+                "return Array.from(arguments[0].querySelectorAll('sl-option')).map(o => o.value).filter(v => v !== '');", codeSelect);
+            if (!options.isEmpty()) {
+                pickedCode = options.getFirst();
+                selectShoelaceOptionByValue(codeSelect, pickedCode);
+            } else {
+                if (System.currentTimeMillis() >= deadline) {
+                    throw new IllegalStateException("the form does not offer any free code");
+                }
+                LOGGER.info("free codes not generated yet, reloading the page");
+                driver.navigate().refresh();
+                page = wait.until(presenceOfElementLocated(By.tagName("alfio-send-invitations")));
+                try {
+                    Thread.sleep(Duration.ofSeconds(5).toMillis());
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(ie);
+                }
+            }
+        }
+        final var formPage = page;
+        final var code = pickedCode;
+        for (var i = 0; i < invitees.size(); i++) {
+            if (i > 0) {
+                clickWithJs(driver, findInShadowRoot(formPage, ".add-invitee"));
+            }
+            var invitee = invitees.get(i);
+            typeInShoelaceControl(findInShadowRoot(formPage, "sl-input#invitee-assignee-" + i), "input", invitee[0]);
+            typeInShoelaceControl(findInShadowRoot(formPage, "sl-input#invitee-email-" + i), "input", invitee[1]);
+        }
+        // the tokens of a restricted category become FREE when a periodic job generates their codes:
+        // if Review happens before that, the backend answers "available: 0" — wait and click Review again
+        while (true) {
+            clickWithJs(driver, findInShadowRoot(formPage, "#review-button"));
+            try {
+                new WebDriverWait(driver, Duration.ofSeconds(10))
+                    .withMessage(() -> "the manual form did not reach the preview: " + findAllInShadowRoot(formPage, ".review-error").stream().map(WebElement::getText).findFirst().orElse("no error displayed"))
+                    .until(_ -> previewShows(formPage, invitees.size()));
+                break;
+            } catch (org.openqa.selenium.TimeoutException e) {
+                var error = findAllInShadowRoot(formPage, ".review-error").stream().map(WebElement::getText).findFirst().orElse("");
+                if (error.contains("available: 0") && System.currentTimeMillis() < deadline) {
+                    LOGGER.info("tokens not generated yet, clicking Review again");
+                    try {
+                        Thread.sleep(Duration.ofSeconds(5).toMillis());
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException(ie);
+                    }
+                    continue;
+                }
+                throw e;
+            }
+        }
+        LOGGER.info("{} invitations prepared from the form, sending them", invitees.size());
+        sendFromPreview(formPage);
+        return new ManualInvitations(formPage, code);
+    }
+
+    /**
+     * Types two invitees in the "Insert manually" panel, picking the SAME free code in both code selects,
+     * fills assignee and email of both rows, and clicks Review.
+     * @return the page (reloaded, if the codes were still being generated when it first loaded)
+     */
+    WebElement addInviteesWithSameCode(WebElement page) {
+        // the free codes are read when the page loads; the tokens of a restricted category become FREE when
+        // a periodic job generates their codes, so reload until the select offers them
+        var deadline = System.currentTimeMillis() + Duration.ofSeconds(90).toMillis();
+        String code;
+        while (true) {
+            var codeSelect = findAllInShadowRoot(page, "sl-select#invitee-code-0").stream().findFirst().orElse(null);
+            @SuppressWarnings("unchecked")
+            var options = codeSelect == null ? List.<String>of() : (List<String>) ((JavascriptExecutor) driver).executeScript(
+                "return Array.from(arguments[0].querySelectorAll('sl-option')).map(o => o.value).filter(v => v !== '');", codeSelect);
+            if (!options.isEmpty()) {
+                code = options.getFirst();
+                break;
+            }
+            if (System.currentTimeMillis() >= deadline) {
+                throw new IllegalStateException("the form does not offer any free code");
+            }
+            LOGGER.info("free codes not generated yet, reloading the page");
+            driver.navigate().refresh();
+            page = wait.until(presenceOfElementLocated(By.tagName("alfio-send-invitations")));
+            try {
+                Thread.sleep(Duration.ofSeconds(5).toMillis());
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(ie);
+            }
+        }
+        clickWithJs(driver, findInShadowRoot(page, ".add-invitee"));
+        selectShoelaceOptionByValue(findInShadowRoot(page, "sl-select#invitee-code-0"), code);
+        selectShoelaceOptionByValue(findInShadowRoot(page, "sl-select#invitee-code-1"), code);
+        typeInShoelaceControl(findInShadowRoot(page, "sl-input#invitee-assignee-0"), "input", "Doe John");
+        typeInShoelaceControl(findInShadowRoot(page, "sl-input#invitee-email-0"), "input", "john.doe@example.org");
+        typeInShoelaceControl(findInShadowRoot(page, "sl-input#invitee-assignee-1"), "input", "Roe Jane");
+        typeInShoelaceControl(findInShadowRoot(page, "sl-input#invitee-email-1"), "input", "jane.roe@example.org");
+        clickWithJs(driver, findInShadowRoot(page, "#review-button"));
+        return page;
+    }
+
+    /**
+     * Waits until the given number of code selects of the manual form show a validation error,
+     * and returns the errors by field id, with their help text.
+     */
+    Map<String, String> awaitCodeSelectErrors(WebElement page, int expectedCount) {
+        return new WebDriverWait(driver, Duration.ofSeconds(15))
+            .withMessage(() -> "expected " + expectedCount + " code field(s) with an error, got: " + codeSelectErrors(page))
+            .until(_ -> {
+                var errors = codeSelectErrors(page);
+                return errors.size() == expectedCount ? errors : null;
+            });
+    }
+
+    private Map<String, String> codeSelectErrors(WebElement page) {
+        var errors = new LinkedHashMap<String, String>();
+        for (var select : findAllInShadowRoot(page, "sl-select.invitee-code")) {
+            if (String.valueOf(select.getDomAttribute("class")).contains("error")) {
+                errors.put(String.valueOf(select.getDomAttribute("id")), String.valueOf(select.getDomAttribute("help-text")));
+            }
+        }
+        return errors;
+    }
+
+    /**
+     * Whether the review preview of the invitations is currently shown.
+     */
+    boolean previewIsShown(WebElement page) {
+        return !findAllInShadowRoot(page, "#preview-count").isEmpty();
+    }
+
+    private boolean previewShows(WebElement page, int expectedInvitations) {
+        return findAllInShadowRoot(page, "#preview-count").stream()
+            .anyMatch(badge -> badge.getText().equals(Integer.toString(expectedInvitations)));
+    }
+
+    /**
+     * Sends the invitations shown in the preview, and waits for the preview to be replaced by the input again.
+     */
+    private void sendFromPreview(WebElement page) {
+        clickWithJs(driver, findInShadowRoot(page, "#send-button"));
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "invitations not sent: " + findAllInShadowRoot(page, "#send-error").stream().map(WebElement::getText).findFirst().orElse("no error displayed"))
+            .until(_ -> findAllInShadowRoot(page, "#preview-count").isEmpty());
+    }
+
+    /**
+     * Switches to the "History" tab and returns the codes of the invitations already sent.
+     */
+    List<String> sentInvitationCodes(WebElement page, int expected) {
+        clickWithJs(driver, findInShadowRoot(page, "sl-tab[panel='history']"));
+        return new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "history does not show " + expected + " sent codes")
+            .until(_ -> {
+                var rows = findAllInShadowRoot(page, ".sent-code");
+                return rows.size() == expected
+                    ? rows.stream().map(row -> row.findElement(By.cssSelector("td")).getText()).toList()
+                    : null;
+            });
+    }
+
+    /**
+     * Clears the recipient of the first sent code of the "History" tab, confirming the dialog,
+     * and waits for the row to disappear.
+     * @param sentBefore how many codes are listed before the clear
+     */
+    void clearFirstRecipient(WebElement page, int sentBefore) {
+        var row = wait.until(_ -> findAllInShadowRoot(page, ".sent-code").stream().findFirst().orElse(null));
+        clickWithJs(driver, row.findElement(By.cssSelector(".clear-recipient")));
+        // the confirm listener is attached only once the dialog has finished opening: click until it closes
+        var confirmSelector = By.xpath("//sl-dialog[@label='Clear the recipient' and @open]//sl-button[@id='confirm']");
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "confirmation dialog did not close")
+            .until(_ -> {
+                var confirm = driver.findElements(confirmSelector);
+                if (confirm.isEmpty()) {
+                    return true;
+                }
+                clickWithJs(driver, confirm.getFirst());
+                return driver.findElements(By.cssSelector("sl-dialog[open]")).isEmpty();
+            });
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "recipient not cleared: rows=" + findAllInShadowRoot(page, ".sent-code").size()
+                + ", open dialogs=" + driver.findElements(By.cssSelector("sl-dialog[open]")).size()
+                + ", url=" + driver.getCurrentUrl())
+            .until(_ -> findAllInShadowRoot(page, ".sent-code").size() == sentBefore - 1);
     }
 
     record ReservationContact(String firstName, String lastName, String email) {}
@@ -1800,12 +2084,18 @@ class AdminConsole {
         };
     }
 
-    private void addCategory(WebElement page, EventDefinition event) {
+    private void addCategory(WebElement page, EventDefinition event, boolean restricted) {
         clickWithJs(driver, findInShadowRoot(page, "#add-category"));
         var categoryDialog = wait.until(_ -> findInShadowRoot(page, "alfio-event-category-dialog"));
         var dialog = wait.until(_ -> findInShadowRoot(categoryDialog, "sl-dialog"));
         // price is pre-filled with the event's regular price, and the category is on sale until the event starts
-        typeInShoelaceControl(wait.until(_ -> findInShadowRoot(categoryDialog, "sl-input#name")), "input", event.categoryName());
+        typeInShoelaceControl(wait.until(_ -> findInShadowRoot(categoryDialog, "sl-input#name")), "input", restricted ? "Restricted" : event.categoryName());
+        if (restricted) {
+            // restricted access requires a fixed allocation: one token is generated per seat
+            selectShoelaceOptionByValue(findInShadowRoot(categoryDialog, "#tokenGenerationRequested"), "hidden");
+            selectShoelaceOptionByValue(findInShadowRoot(categoryDialog, "#bounded"), "fixed");
+            typeInShoelaceControl(wait.until(_ -> findInShadowRoot(categoryDialog, "sl-input#maxTickets")), "input", "5");
+        }
         clickWithJs(driver, findInShadowRoot(categoryDialog, "#category-save"));
         wait.until(_ -> !Boolean.parseBoolean(String.valueOf(dialog.getDomProperty("open"))));
     }

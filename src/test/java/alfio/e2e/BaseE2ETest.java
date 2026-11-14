@@ -93,7 +93,7 @@ abstract class BaseE2ETest {
         // the organizer sets up the event
         adminConsole.login();
         eventSubmitted = true;
-        adminConsole.createEvent(eventDefinition());
+        adminConsole.createEvent(eventDefinition(), withRestrictedCategory());
         adminConsole.publishEvent(slug);
         adminConsole.logout();
     }
@@ -135,6 +135,13 @@ abstract class BaseE2ETest {
      */
     protected int maxTickets() {
         return 10;
+    }
+
+    /**
+     * Whether the event created for the test also gets an access-restricted category ("Restricted", 5 seats).
+     */
+    protected boolean withRestrictedCategory() {
+        return false;
     }
 
     private AdminConsole.EventDefinition eventDefinition() {

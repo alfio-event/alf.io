@@ -205,6 +205,8 @@ export interface ValidatedSelectOptions {
     placeholder?: string;
     // shown when there is no error
     helpText?: string;
+    // the select is not required, e.g. an optional choice with a default "automatic" option
+    optional?: boolean;
 }
 
 /**
@@ -220,7 +222,7 @@ export function validatedSelect(field: BoundField<string>, submitted: boolean, o
     }
     return html`
         <sl-select id=${options.id ?? nothing} class=${classMap(classes)} label=${options.label}
-                   placeholder=${options.placeholder ?? nothing} required hoist
+                   placeholder=${options.placeholder ?? nothing} ?required=${options.optional !== true} hoist
                    help-text=${error ?? options.helpText ?? ''}
                    .value=${field.state.value ?? ''}
                    @sl-change=${(e: Event) => field.handleChange(String((e.target as SlSelect).value))}

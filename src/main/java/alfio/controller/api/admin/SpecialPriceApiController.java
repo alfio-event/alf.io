@@ -56,7 +56,6 @@ public class SpecialPriceApiController {
     }
 
     @ExceptionHandler
-    @ResponseBody
     public ResponseEntity<String> handleExceptions(Exception e) {
         log.error("Unexpected exception in SpecialPriceApiController", e);
         if(!(e instanceof IllegalArgumentException)) {
@@ -68,6 +67,8 @@ public class SpecialPriceApiController {
     @PostMapping("/events/{eventName}/categories/{categoryId}/link-codes")
     public ResponseEntity<List<SendCodeModification>> linkAssigneeToCodes(@PathVariable String eventName,
                                                                          @PathVariable int categoryId,
+                                                                         // true when the first line of the file is the header (as in the template downloaded from the admin console)
+                                                                         @RequestParam(name = "withHeader", required = false, defaultValue = "false") boolean withHeader,
                                                                          @RequestBody UploadBase64FileModification file,
                                                                          Principal principal) throws IOException {
 
@@ -79,6 +80,10 @@ public class SpecialPriceApiController {
                 .with(CsvReadFeature.WRAP_AS_ARRAY)
                 .readValues(isr);
             var all = iterator.readAll();
+            if (withHeader && !all.isEmpty()) {
+                // the first line is the header of the template, not a row of data
+                all = all.subList(1, all.size());
+            }
             var modificationList = all.stream()
                 .filter(l -> l.size() > 3)
                 .map(list -> new SendCodeModification(StringUtils.trimToNull(list.getFirst()), list.get(1), list.get(2), list.get(3))).toList();

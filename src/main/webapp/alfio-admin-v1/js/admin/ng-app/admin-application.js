@@ -205,8 +205,13 @@
             })
             .state('events.single.sendInvitations', {
                 url: '/c/:categoryId/send-invitation',
-                templateUrl: BASE_STATIC_URL + '/event/fragment/send-reserved-codes.html',
-                controller: 'SendInvitationsController',
+                template: '<alfio-send-invitations data-event-name="{{$ctrl.loadEvent.shortName}}" data-category-id="{{$ctrl.categoryId}}"></alfio-send-invitations>',
+                controller: ['loadEvent', '$stateParams', function(loadEvent, $stateParams) {
+                    this.loadEvent = loadEvent.data.event;
+                    this.categoryId = $stateParams.categoryId;
+                }],
+                controllerAs: '$ctrl',
+                resolve: loadEvent,
                 data: {
                     view: 'SEND_INVITATIONS'
                 }
@@ -1266,58 +1271,6 @@
         };
 
     });
-
-    admin.controller('SendInvitationsController', function($scope, $stateParams, $state, EventService, $window, NotificationHandler) {
-        $scope.eventName = $stateParams.eventName;
-        $scope.categoryId = $stateParams.categoryId;
-
-        var loadSentCodes = function() {
-            EventService.loadSentCodes($stateParams.eventName, $stateParams.categoryId).then(function(result) {
-                $scope.codes = result.data;
-            }, function(err) {
-                NotificationHandler.showError(err.data);
-            })
-        };
-
-        $scope.closeAlert = function() {
-            $scope.errorMessage = null;
-            $scope.success = false;
-        };
-
-        loadSentCodes();
-
-        $scope.sendCodes = function(data) {
-            EventService.sendCodesByEmail($stateParams.eventName, $stateParams.categoryId, data).success(function() {
-                loadSentCodes();
-                $scope.results = undefined;
-                NotificationHandler.showSuccess("Invitations have been sent.");
-            }).error(function(e) {
-                NotificationHandler.showError(e.data);
-            });
-        };
-
-        $scope.cancelCodes = function() {
-            $scope.results = undefined;
-        };
-
-        $scope.clearRecipient = function(id, code) {
-            if($window.confirm('About to clear recipient for code '+code+'. Are you sure?')) {
-                EventService.deleteRecipientData($stateParams.eventName, $stateParams.categoryId, id).then(function() {
-                    loadSentCodes();
-                });
-            }
-        };
-
-        $scope.uploadSuccess = function(data) {
-            $scope.results = data;
-        };
-        $scope.uploadError = function(data) {
-            NotificationHandler.showError(data);
-            $scope.success = false;
-        };
-        $scope.uploadUrl = '/admin/api/events/'+$stateParams.eventName+'/categories/'+$stateParams.categoryId+'/link-codes';
-    });
-
 
     admin.controller('MessageBarController', function($scope, $rootScope) {
         $rootScope.$on('Message', function(m) {

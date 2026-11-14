@@ -179,15 +179,6 @@
             unbindTickets: function(event, category) {
                 return $http['put']('/admin/api/events/'+event.shortName+'/category/'+category.id+'/unbind-tickets').error(HttpErrorHandler.handle);
             },
-            sendCodesByEmail: function(eventName, categoryId, pairs) {
-                return $http['post']('/admin/api/events/'+eventName+'/categories/'+categoryId+'/send-codes', pairs).error(HttpErrorHandler.handle);
-            },
-            loadSentCodes: function(eventName, categoryId) {
-                return $http['get']('/admin/api/events/'+eventName+'/categories/'+categoryId+'/sent-codes').error(HttpErrorHandler.handle);
-            },
-            deleteRecipientData: function(eventName, categoryId, codeId) {
-                return $http['delete']('/admin/api/events/'+eventName+'/categories/'+categoryId+'/codes/'+codeId+'/recipient').error(HttpErrorHandler.handle);
-            },
             getSelectedLanguages: function(eventName) {
                 return $http['get']('/admin/api/events/'+eventName+'/languages').error(HttpErrorHandler.handle);
             },

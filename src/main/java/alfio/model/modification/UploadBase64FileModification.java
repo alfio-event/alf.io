@@ -34,11 +34,12 @@ public class UploadBase64FileModification {
     private Map<String, String> attributes;
 
     public InputStream getInputStream() {
-        return new ByteArrayInputStream(file);
+        // getFile() resolves both the base64 "file" and the plain-text "fileAsString"
+        return new ByteArrayInputStream(getFile());
     }
 
     public Map<String, String> getAttributes() {
-        return attributes != null ? attributes : new HashMap<>(0);
+        return attributes != null ? attributes : HashMap.newHashMap(0);
     }
 
     public byte[] getFile() {
