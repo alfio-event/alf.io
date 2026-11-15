@@ -2,6 +2,7 @@ import {EventWithOrganization, GroupLink, TicketsStatistics} from "../model/even
 import {EventModificationPayload, TicketCategoryModificationPayload} from "../model/event-modification.ts";
 import {ValidatedResponse} from "../model/validation.ts";
 import {DateTimeModification} from "../model/purchase-context.ts";
+import {WaitingQueueSubscription} from "../model/waiting-queue.ts";
 import {callDelete, fetchJson, postJson, putJson, responseErrorMessage} from "./helpers.ts";
 
 export interface EventValidationResult extends Omit<ValidatedResponse<unknown>, "value"> {
@@ -192,6 +193,21 @@ export class EventService {
         return fetchJson(`/admin/api/event/${eventName}/waiting-queue/count`);
     }
 
+    static loadWaitingQueue(eventName: string): Promise<WaitingQueueSubscription[]> {
+        return fetchJson(`/admin/api/event/${encodeURIComponent(eventName)}/waiting-queue/load`);
+    }
+
+    /**
+     * Removes a person from the waiting list. The backend refuses it unless the person is still waiting
+     */
+    static removeFromWaitingQueue(eventName: string, subscriptionId: number): Promise<WaitingQueueSubscription[]> {
+        return waitingQueueModification(callDelete(`/admin/api/event/${encodeURIComponent(eventName)}/waiting-queue/subscriber/${subscriptionId}`));
+    }
+
+    static restoreInWaitingQueue(eventName: string, subscriptionId: number): Promise<WaitingQueueSubscription[]> {
+        return waitingQueueModification(putJson(`/admin/api/event/${encodeURIComponent(eventName)}/waiting-queue/subscriber/${subscriptionId}/restore`, null));
+    }
+
     static loadWaitingQueueStatus(eventName: string): Promise<{ active: boolean; paused: boolean }> {
         return fetchJson(`/admin/api/event/${eventName}/waiting-queue/status`);
     }
@@ -202,6 +218,18 @@ export class EventService {
             throw new Error(await responseErrorMessage(response, `Unexpected status ${response.status}`));
         }
     }
+}
+
+/**
+ * The waiting list after a change of one of its subscriptions
+ */
+async function waitingQueueModification(request: Promise<Response>): Promise<WaitingQueueSubscription[]> {
+    const response = await request;
+    if (!response.ok) {
+        throw new Error(await responseErrorMessage(response, `Unexpected status ${response.status}`));
+    }
+    const body: { list: WaitingQueueSubscription[] } = await response.json();
+    return body.list;
 }
 
 /**

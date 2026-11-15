@@ -9,8 +9,6 @@ import {dispatchEventChanged, EVENT_CHANGED_EVENT, EventService, isEventChangedE
 import {ConfigurationService} from '../../service/configuration.ts';
 import {errorMessage, fetchJson} from '../../service/helpers.ts';
 import {dispatchFeedback} from '../../model/dom-events.ts';
-import {statusBadge} from '../../components/status-badge.ts';
-import {eventStatusBadge} from '../event-detail/event-detail.ts';
 import {badges} from '../../styles.ts';
 import '../../components/pending-payments-count.ts';
 import './export-dialog.ts';
@@ -300,10 +298,6 @@ export class EventSidebar extends LitElement {
             <div class="sidebar">
                 <header>
                     <p class="event-name"><a href="#/events/${event.shortName}/detail">${event.displayName}</a></p>
-                    <div class="event-status">
-                        ${statusBadge(event.status, eventStatusBadge(event.status), 'event-status-badge')}
-                        ${when(event.expired, () => html`<sl-badge variant="neutral" pill>Expired</sl-badge>`, () => nothing)}
-                    </div>
                 </header>
                 ${this.renderActions(event)}
                 ${this.renderGoTo(groups)}

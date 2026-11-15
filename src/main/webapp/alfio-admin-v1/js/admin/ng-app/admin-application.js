@@ -316,8 +316,10 @@
             })
             .state('events.single.show-waiting-queue', {
                 url: '/waiting-queue',
-                templateUrl: BASE_STATIC_URL + '/waiting-queue/index.html',
-                controller: 'ShowWaitingQueue as ctrl',
+                template: '<alfio-waiting-list data-event-name="{{$ctrl.loadEvent.shortName}}"></alfio-waiting-list>',
+                controller: loadEventCtrl,
+                controllerAs: '$ctrl',
+                resolve: loadEvent,
                 data: {
                     view: 'WAITING_QUEUE'
                 }
@@ -702,34 +704,6 @@
             $scope.message = m;
         });
     });
-
-    admin.controller('ShowWaitingQueue', ['WaitingQueueService', '$stateParams', '$state', function(WaitingQueueService, $stateParams, $state) {
-        var ctrl = this;
-        this.loading = true;
-        this.eventName = $stateParams.eventName;
-        WaitingQueueService.loadAllSubscribers(this.eventName).success(function(result) {
-            ctrl.subscriptions = result;
-            ctrl.loading = false;
-        });
-        ctrl.removeSubscriber = function(subscriber) {
-            WaitingQueueService.removeSubscriber(ctrl.eventName, subscriber).success(function(result) {
-                ctrl.subscriber = result.modified;
-                ctrl.subscriptions = result.list;
-                ctrl.showConfirmation = true;
-            });
-        };
-        ctrl.restoreSubscriber = function(subscriber) {
-            WaitingQueueService.restoreSubscriber(ctrl.eventName, subscriber).success(function(result) {
-                ctrl.subscriber = result.modified;
-                ctrl.subscriptions = result.list;
-                ctrl.showConfirmation = true;
-            });
-        };
-
-        ctrl.dismissMessage = function() {
-            ctrl.showConfirmation = false;
-        };
-    }]);
 
     admin.controller('LayoutController', ['$state', '$rootScope', function($state, $rootScope) {
         var ctrl = this;

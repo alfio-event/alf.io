@@ -87,6 +87,7 @@ export { ReservationsList } from './event/reservations-list/reservations-list';
 export { ComposeMessage } from './event/compose-message/compose-message';
 export { PaymentsList } from './event/payments-list/payments-list';
 export { PendingPayments } from './event/pending-payments/pending-payments';
+export { WaitingList } from './event/waiting-list/waiting-list';
 export { EmailLog } from './email-log/email-log';
 export { EmailTable } from './email-log/email-table';
 export { ExtensionList } from './extension/extension-list';
