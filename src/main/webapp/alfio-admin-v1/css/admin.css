@@ -13,6 +13,14 @@ div.menu-spacer {
     padding-top:50px;
 }
 
+/* the column of the event menu (<alfio-event-sidebar>) stays below the navbar while the page scrolls */
+@media (min-width: 992px) {
+    .event-sidebar-column {
+        position: sticky;
+        top: 50px;
+    }
+}
+
 div.list-even {
     background: #f5f5f5;
     border-top: 1px solid #c0c0c0;

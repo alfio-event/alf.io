@@ -925,15 +925,17 @@ export const creationLayout = css`
     }
 `;
 
-/* layout for list pages hosted in the event/subscription detail (next to the AngularJS sidebar). Use with modernLayout */
+/* layout for list pages hosted in the event/subscription detail (next to the event menu). Use with modernLayout */
 export const purchaseContextListPage = css`
     :host {
         display: block;
     }
 
+    /* the left margin shrinks to the space left, so that the page never overflows its column */
     .container {
-        width: min(1140px, calc(100% - 2 * var(--sl-spacing-medium)));
-        margin-left: 122px;
+        --alfio-container-width: min(1140px, calc(100% - 2 * var(--sl-spacing-medium)));
+        width: var(--alfio-container-width);
+        margin-left: min(122px, calc(100% - var(--alfio-container-width)));
     }
 
     .page-title-row {

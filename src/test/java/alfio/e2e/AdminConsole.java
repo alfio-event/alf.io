@@ -155,16 +155,18 @@ class AdminConsole {
 
     void deleteEvent(String slug) {
         openEventDetail(slug);
-        // the actions menu might be collapsed, depending on the window size
-        clickWithJs(driver, driver.findElement(By.id("actions-dpdwn")));
-        var deleteLink = wait.until(presenceOfElementLocated(By.xpath("//ul[@aria-labelledby='actions-dpdwn']//a[contains(., 'Delete')]")));
-        clickWithJs(driver, deleteLink);
-        var confirmInput = wait.until(elementToBeClickable(By.cssSelector(".modal-dialog #confirm")));
+        // "Delete the event", in the Actions menu of the event menu, opens the confirmation dialog
+        var sidebar = wait.until(presenceOfElementLocated(By.tagName("alfio-event-sidebar")));
+        clickWithJs(driver, findInShadowRoot(sidebar, "#event-actions sl-menu-item.delete-event"));
+        var deleteDialog = wait.until(presenceOfElementLocated(By.tagName("alfio-delete-event-dialog")));
+        var confirmInput = findInShadowRoot(findInShadowRoot(deleteDialog, "sl-input#delete-confirmation"), "input");
+        wait.until(_ -> confirmInput.isDisplayed());
         confirmInput.sendKeys(slug);
-        selectElement(driver.findElement(By.cssSelector(".modal-dialog input[type=checkbox]")), browserWebDriver);
-        var confirmButton = wait.until(elementToBeClickable(By.cssSelector(".modal-dialog button[type=submit]")));
+        var confirmButton = findInShadowRoot(deleteDialog, "#confirm-delete-event");
+        wait.until(_ -> confirmButton.getDomAttribute("disabled") == null);
         clickWithJs(driver, confirmButton);
-        wait.until(invisibilityOfElementLocated(By.cssSelector(".modal-dialog")));
+        // back to the event list
+        wait.until(urlMatches("/admin/?#/$"));
         LOGGER.info("event {} deleted", slug);
     }
 
@@ -1985,7 +1987,7 @@ class AdminConsole {
      */
     private WebElement openEventDetail(String slug) {
         driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/detail");
-        wait.until(presenceOfElementLocated(By.id("actions-dpdwn")));
+        wait.until(presenceOfElementLocated(By.tagName("alfio-event-sidebar")));
         var detail = wait.until(presenceOfElementLocated(By.tagName("alfio-event-detail")));
         // the page title is rendered once the event has been loaded; a failed load shows an error alert instead
         new WebDriverWait(driver, Duration.ofSeconds(30))

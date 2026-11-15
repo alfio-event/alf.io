@@ -68,6 +68,7 @@ export { EventCreate } from './event/event-create/event-create';
 export { EventCategoryDialog } from './event/event-create/category-dialog';
 export { CopyEventDialog } from './event/event-create/copy-event-dialog';
 export { EventDetail } from './event/event-detail/event-detail';
+export { EventSidebar } from './event/event-sidebar/event-sidebar';
 export { EventStatistics } from './event/event-detail/event-statistics';
 export { EventCategories } from './event/event-detail/category-list';
 export { OrganizationList } from './organization/organization-list.ts';

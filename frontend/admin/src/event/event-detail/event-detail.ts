@@ -8,7 +8,7 @@ import {AlfioEvent, GroupLink} from '../../model/event.ts';
 import {Organization} from '../../model/organization.ts';
 import {ContentLanguage, LocalizedContent} from '../../model/purchase-context.ts';
 import {SubscriptionWithStatistics} from '../../model/subscription-descriptor.ts';
-import {EventService} from '../../service/event.ts';
+import {dispatchEventChanged, EVENT_CHANGED_EVENT, EventService, isEventChangedElsewhere} from '../../service/event.ts';
 import {ConfigurationService} from '../../service/configuration.ts';
 import {GroupService} from '../../service/group.ts';
 import {LocalizationService} from '../../service/localization.ts';
@@ -297,12 +297,32 @@ export class EventDetail extends LitElement {
             // the alert that confirms the publication offers an Undo
             this.justPublished = publish;
             void this.loadTask.run([this.eventName]);
+            // the event menu shows the status too
+            dispatchEventChanged(this.eventName, this);
         } catch (error) {
             dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to change the event status')}, this);
         } finally {
             this.changingStatus = false;
         }
     }
+
+    connectedCallback(): void {
+        super.connectedCallback();
+        window.addEventListener(EVENT_CHANGED_EVENT, this.onEventChanged);
+    }
+
+    disconnectedCallback(): void {
+        window.removeEventListener(EVENT_CHANGED_EVENT, this.onEventChanged);
+        super.disconnectedCallback();
+    }
+
+    // the event menu has changed the event (e.g. removed it from the event list)
+    private onEventChanged = (e: Event): void => {
+        if (isEventChangedElsewhere(e, this.eventName, this)) {
+            this.justPublished = false;
+            void this.loadTask.run([this.eventName]);
+        }
+    };
 
     render(): TemplateResult {
         return html`

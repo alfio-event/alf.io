@@ -83,7 +83,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/internationalization-editor/internationalization-editor.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/metadata-editor/metadata-editor.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/polls/polls.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/open-generated-link/open-generated-link.js"></script>
 
 
 
@@ -122,53 +121,6 @@
                                 {{#isAdmin}}<li data-ui-sref-active="active"><a data-ui-sref="extension.list" ng-click="ctrl.menuCollapsed = true">Extension</a></li>{{/isAdmin}}
                                 {{/isOwner}}
                             </ul>
-                            <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
-                                <li class="navbar-header"><h4>Actions</h4></li>
-                                <li data-ui-sref-active="active"><a data-ui-sref="events.single.create-reservation({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-magic"></i> create reservation</a></li>
-                                <li data-ui-sref-active="active"><a data-ui-sref="events.single.configuration({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-wrench"></i> edit configuration</a></li>
-                                <li data-ui-sref-active="active"><a data-ui-sref="events.single.show-resources({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-file-text-o" aria-hidden="true"></i> customize templates</a></li>
-                                <li data-ui-sref-active="active"><a data-ui-sref="events.single.compose-custom-message({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-envelope"></i> compose message</a></li>
-                                <li data-ui-sref-active="active" {{^isOwner}}data-ng-if="!ctrl.event.expired"{{/isOwner}}><a data-ui-sref="events.single.checkIn({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-check"></i> Check-in</a></li>
-                            </ul>
-                            <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
-                                <li class="navbar-header"><h4>Download</h4></li>
-                                <li role="menuitem"><a data-ng-click="ctrl.openFieldSelectionModal()"><i class="fa fa-users"></i> attendees' data</a></li>
-                                <li role="menuitem"><a data-ng-click="ctrl.openWaitingQueueModal()" ><i class="fa fa-group"></i> waiting list</a></li>
-                                <li role="menuitem"><a data-ng-click="ctrl.downloadSponsorsScan()" ><i class="fa fa-barcode"></i> sponsors scan</a></li>
-                                <li role="menuitem"><a data-ng-click="ctrl.downloadInvoices()" ><i class="fa fa-file-o"></i> all Billing Documents (PDF)</a></li>
-                                <li role="menuitem"><a data-ng-click="ctrl.downloadInvoices('xls')" ><i class="fa fa-file-o"></i> all Billing Documents (Excel)</a></li>
-                            </ul>
-
-                            <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
-                                <li class="navbar-header"><h4>Status</h4></li>
-                                <li data-ui-sref-active="active" waiting-queue-display-counter="" data-event-name="ctrl.eventName" data-style-class="navbar-link"></li>
-                                <li data-ui-sref-active="active" pending-payments-link="" data-style-class="emulate-nav-pills-link" data-event-name="ctrl.eventName"></li>
-                            </ul>
-
-                            <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
-                                <li class="navbar-header"><h4>Navigate</h4></li>
-                                <li role="presentation" data-ui-sref-active="active">
-                                    <a ui-sref="events.single.dataToCollect({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-info-circle"></i> Attendees' data to collect</a>
-                                </li>
-                                <li role="presentation" data-ui-sref-active="active">
-                                    <a ui-sref="events.single.promoCodes({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-percent"></i> Promo Codes</a>
-                                </li>
-                                <li role="presentation" data-ui-sref-active="active">
-                                    <a ui-sref="events.single.additionalServices({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-money"></i> Additional options</a>
-                                </li>
-                                <li role="presentation" data-ui-sref-active="active">
-                                    <a ui-sref="events.single.donations({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-gift"></i> Donation options</a>
-                                </li>
-                                <li role="presentation" data-ui-sref-active="active">
-                                    <a data-ui-sref="events.single.reservationsList({eventName:ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-ticket"></i> Reservations</a>
-                                </li>
-                                <li role="presentation" data-ui-sref-active="active" data-ng-if="!ctrl.event.free">
-                                    <a data-ui-sref="events.single.paymentsList({eventName:ctrl.event.shortName})"><i class="fa fa-dollar"></i> Confirmed Payments</a>
-                                </li>
-                                <li role="presentation" data-ui-sref-active="active">
-                                    <a data-ui-sref="events.single.email-log({eventName:ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-paper-plane-o"></i> E-mail log</a>
-                                </li>
-                            </ul>
                             <ul class="nav navbar-nav visible-sm visible-xs">
                                 <li class="nav-divider"></li>
                                 <li class="visible-xs visible-sm">
@@ -194,10 +146,13 @@
     <div data-ng-controller="LayoutController as ctrl">
         <div class="container-fluid menu-spacer">
             <div class="row">
-                <div class="hidden-xs hidden-sm col-md-3 col-lg-2" ng-if="ctrl.displaySidebar">
+                <div class="col-xs-12 col-md-3 col-lg-2 event-sidebar-column" ng-if="ctrl.eventName">
+                    <alfio-event-sidebar></alfio-event-sidebar>
+                </div>
+                <div class="hidden-xs hidden-sm col-md-3 col-lg-2" ng-if="ctrl.displaySidebar && !ctrl.eventName">
                     <alfio-sidebar></alfio-sidebar>
                 </div>
-                <div class="col-sm-12 col-xs-12" ng-class="{'col-md-9': ctrl.displaySidebar}">
+                <div class="col-sm-12 col-xs-12" ng-class="{'col-md-9': ctrl.displaySidebar, 'col-lg-10': ctrl.eventName}">
                     {{#errorMessage}}
                         <div class="container wMarginTop10px">
                             <div class="alert alert-danger text-center"><i class="fa fa-warning"></i> <strong>{{errorMessage}}</strong></div>

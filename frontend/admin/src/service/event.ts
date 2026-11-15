@@ -164,6 +164,30 @@ export class EventService {
         return fetchJson(`/admin/api/group/for/event/${eventName}/all`);
     }
 
+    /**
+     * Deletes the event and all its data (DELETE /events/{id})
+     */
+    static async deleteEvent(eventId: number): Promise<void> {
+        const response = await callDelete(`/admin/api/events/${eventId}`);
+        if (!response.ok) {
+            throw new Error(await responseErrorMessage(response, 'The event could not be deleted'));
+        }
+    }
+
+    /**
+     * The attendee fields that can be exported (GET /events/{eventName}/fields): key = request parameter, value = label
+     */
+    static loadExportFields(eventName: string): Promise<ExportField[]> {
+        return fetchJson(`/admin/api/events/${encodeURIComponent(eventName)}/fields`);
+    }
+
+    /**
+     * The number of billing documents (invoices, receipts) of the event
+     */
+    static countBillingDocuments(eventName: string): Promise<number> {
+        return fetchJson(`/admin/api/events/${encodeURIComponent(eventName)}/invoices/count`);
+    }
+
     static loadWaitingQueueCount(eventName: string): Promise<number> {
         return fetchJson(`/admin/api/event/${eventName}/waiting-queue/count`);
     }
@@ -189,4 +213,35 @@ function validationResult(body: EventValidationResult | string): EventValidation
         throw new Error(body);
     }
     return body;
+}
+
+/**
+ * An attendee field of the export
+ */
+export interface ExportField {
+    key: string;
+    value: string;
+}
+
+/**
+ * Fired on window when a component has changed an event (e.g. its status), so that the other components showing
+ * it (the event menu, the detail page) reload it. The source ignores its own notification
+ */
+export const EVENT_CHANGED_EVENT = 'alfio-event-changed';
+
+export interface EventChangedDetail {
+    eventName: string;
+    source: EventTarget;
+}
+
+export function dispatchEventChanged(eventName: string, source: EventTarget): void {
+    window.dispatchEvent(new CustomEvent<EventChangedDetail>(EVENT_CHANGED_EVENT, { detail: { eventName, source } }));
+}
+
+/**
+ * Whether a notification of EVENT_CHANGED_EVENT concerns the given event and comes from another component
+ */
+export function isEventChangedElsewhere(e: Event, eventName: string, self: EventTarget): boolean {
+    const detail = (e as CustomEvent<EventChangedDetail>).detail;
+    return detail != null && detail.eventName === eventName && detail.source !== self;
 }

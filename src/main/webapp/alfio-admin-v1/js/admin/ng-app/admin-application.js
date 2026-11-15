@@ -657,17 +657,9 @@
         });
     });
 
-    admin.controller('MenuController', ['$scope', '$http', '$window', 'UtilsService', '$state', '$rootScope', 'EventService', 'MenuButtonService', function($scope, $http, $window, UtilsService, $state, $rootScope, EventService, MenuButtonService) {
+    admin.controller('MenuController', ['$scope', '$http', '$window', 'UtilsService', function($scope, $http, $window, UtilsService) {
         var ctrl = this;
         ctrl.menuCollapsed = true;
-        ctrl.eventName = $state.params.eventName;
-        $rootScope.$on('$stateChangeSuccess', function(event, toState, toParams) {
-            ctrl.eventName = toParams.eventName;
-        });
-        $rootScope.$on('EventLoaded', function(_, event) {
-            ctrl.event = event;
-            MenuButtonService.configureMenu(ctrl);
-        });
         ctrl.toggleCollapse = function(currentStatus) {
             ctrl.menuCollapsed = !currentStatus;
         };
@@ -700,11 +692,6 @@
                 if(!(idpLogoutRedirectionUrl === '')){
                     $window.location.replace(idpLogoutRedirectionUrl);
                 }
-            });
-        };
-        ctrl.openDeleteWarning = function() {
-            EventService.deleteEvent(ctrl.event).then(function(result) {
-                $state.go('index');
             });
         };
     }]);
@@ -748,6 +735,11 @@
         var ctrl = this;
         var checkSidebar = function() {
             ctrl.displaySidebar = angular.isDefined($state.$current.data) && angular.isDefined($state.$current.data.view);
+            // the pages of an event show the event menu (<alfio-event-sidebar>)
+            ctrl.eventName = undefined;
+            if ($state.includes('events.single')) {
+                ctrl.eventName = $state.params.eventName;
+            }
         };
         checkSidebar();
         $rootScope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {

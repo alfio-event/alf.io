@@ -167,6 +167,21 @@ A detail page (e.g. the event detail) shows the item as section cards, and each 
 - Operations on a list of the page that change many cards at once (e.g. rearranging the categories) open a dialog
   too: the page behind stays as it is, and Cancel discards the change.
 
+### Event pages: the event menu
+
+Every page of an event (`#/events/{eventName}/…`) is shown next to `<alfio-event-sidebar>`
+(`event/event-sidebar/event-sidebar.ts`), which the AngularJS layout renders for the `events.single.*` states. It shows
+the event name and status, "Create reservation", the Actions and Download menus, and the links to the pages grouped
+by task (Sales, Attendees, Setup), with the current page highlighted. Below `992px` the links become a "Go to" select
+above the page.
+
+- A new event page gets its link in `navGroups()`: its path below `#/events/{eventName}/` and the routes on which it
+  is the current page. Don't add a second navigation to the page itself.
+- The menu reads the event from the route, and reloads it on `EVENT_CHANGED_EVENT`. A page that changes what the
+  menu shows (e.g. the status) calls `dispatchEventChanged(eventName, this)` (`service/event.ts`).
+- Its column is sticky: a dialog rendered inside it would stay under the page. The menu's own dialogs are appended
+  to `document.body`.
+
 ### Ticket categories: words to use
 
 Describe what the organizer gets, not how tickets are allocated:

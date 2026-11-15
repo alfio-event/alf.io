@@ -416,27 +416,6 @@
         }
     });
 
-    directives.directive('waitingQueueDisplayCounter', function() {
-        return {
-            restrict: 'AE',
-            bindToController: true,
-            scope: {
-                eventName: '=',
-                styleClass: '@',
-                justCount: '='
-            },
-            controllerAs: 'ctrl',
-            controller: function(WaitingQueueService) {
-                var ctrl = this;
-                WaitingQueueService.countSubscribers(ctrl.eventName).success(function(result) {
-                    ctrl.count = result;
-                });
-                ctrl.styleClass = ctrl.styleClass || 'btn btn-warning';
-            },
-            template: '<a data-ng-class="ctrl.styleClass" data-ui-sref="events.single.show-waiting-queue({eventName: ctrl.eventName})"><i class="fa fa-group" ng-if="!ctrl.justCount"></i> <span ng-class="{\'sr-only\': ctrl.justCount}">Waiting list</span> <span ng-class="{\'badge\': !ctrl.justCount}">{{ctrl.count}}</span></a>'
-        }
-    });
-
     directives.directive('validateShortName', ['UtilsService', function(UtilsService) {
         return {
             require: 'ngModel',
@@ -506,14 +485,15 @@
         }
     }]);
 
-    directives.directive('alfioSidebar', ['EventService', 'OrganizationService', 'UtilsService', 'ConfigurationService', '$state', '$window', '$rootScope', '$uibModal', function(EventService, OrganizationService, UtilsService, ConfigurationService, $state, $window, $rootScope, $uibModal) {
+    // the menu of the configuration pages; the pages of an event use <alfio-event-sidebar> (Lit)
+    directives.directive('alfioSidebar', ['OrganizationService', 'UtilsService', 'ConfigurationService', 'EventService', '$state', '$rootScope', function(OrganizationService, UtilsService, ConfigurationService, EventService, $state, $rootScope) {
         return {
             restrict: 'E',
             bindToController: true,
             scope: {},
             controllerAs: 'ctrl',
             templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/main/sidebar.html',
-            controller: ['$location', '$anchorScroll', '$scope', 'MenuButtonService', function($location, $anchorScroll, $scope, MenuButtonService) {
+            controller: ['$location', '$anchorScroll', '$scope', function($location, $anchorScroll, $scope) {
                 var ctrl = this;
                 var toUnbind = [];
                 var detectCurrentView = function(state) {
@@ -522,92 +502,8 @@
                     }
                     return state.data.view || 'UNKNOWN';
                 };
-                var loadEventData = function() {
-                    if(ctrl.displayEventData && $state.params.eventName) {
-                        EventService.getEvent($state.params.eventName).success(function(event) {
-                            ConfigurationService.loadSingleConfigForEvent(event.event.shortName, 'USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL')
-                                .then(function(result) {
-                                    ctrl.promoCodeDescription = (result.data === 'true') ? 'Partner' : 'Promo';
-                                });
-                            ctrl.event = event.event;
-                            ctrl.internal = true;
-                            ctrl.freeOfCharge = ctrl.event.free;
-                            ctrl.offlineEnabled = !ctrl.freeOfCharge
-                                && ctrl.event.allowedPaymentProxies.some(
-                                    proxy => ['OFFLINE', 'CUSTOM_OFFLINE'].includes(proxy)
-                                );
-                            ctrl.owner = ctrl.event.visibleForCurrentUser;
-                            ctrl.openDeleteWarning = function() {
-                                EventService.deleteEvent(ctrl.event).then(function(result) {
-                                    $state.go('index');
-                                });
-                            };
-                            ctrl.deactivateEvent = function(e) {
-                                EventService.toggleActivation(e.id, false).then(function() {
-                                    $rootScope.$emit('ReloadEvent');
-                                })
-                            };
-                            MenuButtonService.configureMenu(ctrl);
-                            ctrl.goToCategory = function(category) {
-                                ctrl.navigateTo('ticket-category-'+category.id);
-                            };
-                            ctrl.categoryFilter = {
-                                active: true,
-                                expired: false,
-                                freeText: ''
-                            };
-                            ctrl.filterChanged = function() {
-                                $rootScope.$emit('SidebarCategoryFilterUpdated', ctrl.categoryFilter);
-                            };
-                            ctrl.hasLinkedApplications = false;
-                            if (ctrl.owner && ctrl.event.supportedCapabilities) {
-                                ctrl.linkedApplications = (ctrl.event.supportedCapabilities || []).filter(function(c) {
-                                    return c.capability === 'LINK_EXTERNAL_APPLICATION';
-                                }).flatMap(function(c) {
-                                    return (c.details || []).map(function(d) {
-                                        return {
-                                            label: d.label,
-                                            selector: d.selector,
-                                            capability: c.capability
-                                        }
-                                    });
-                                });
-                                ctrl.hasLinkedApplications = ctrl.linkedApplications.length > 0;
-                                ctrl.linkSelected = function(event, link, $browserEvent) {
-                                    $browserEvent.stopPropagation();
-                                    $uibModal.open({
-                                        size: 'sm',
-                                        template: '<open-generated-link data-event="$ctrl.event" data-link="$ctrl.link" data-on-success="$ctrl.ok()"></open-generated-link>',
-                                        backdrop: 'static',
-                                        controllerAs: '$ctrl',
-                                        controller: function ($scope) {
-                                            var ctrl = this;
-                                            ctrl.event = event;
-                                            ctrl.link = link;
-                                            ctrl.ok = function () {
-                                                $scope.$close(true);
-                                            };
-                                        }
-                                    });
-                                }
-                            }
-                            toUnbind.push($rootScope.$on('CategoryFilterUpdated', function(ev, categoryFilter) {
-                                if(categoryFilter) {
-                                    ctrl.categoryFilter.freeText = categoryFilter.freeText;
-                                }
-                            }));
-                        });
-                    }
-                };
-
-                $rootScope.$on('EventUpdated', function() {
-                    loadEventData();
-                });
 
                 ctrl.currentView = detectCurrentView($state.current);
-                ctrl.isDetail = ctrl.currentView === 'EVENT_DETAIL';
-                ctrl.displayEventData = $state.current.data && $state.current.data.displayEventData;
-                loadEventData();
                 var displayConfiguration = function() {
 
                     ConfigurationService.loadCurrentConfigurationContext(OrganizationService, EventService).then(function(res) {
@@ -649,14 +545,8 @@
                     });
                 };
 
-                toUnbind.push($rootScope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+                toUnbind.push($rootScope.$on('$stateChangeSuccess', function(event, toState) {
                     ctrl.currentView = detectCurrentView(toState);
-                    ctrl.isDetail = ctrl.currentView === 'EVENT_DETAIL';
-                    ctrl.displayEventData = toState.data && toState.data.displayEventData;
-                    loadEventData();
-                    if(!ctrl.displayEventData) {
-                        delete ctrl.event;
-                    }
                     if(ctrl.isConfiguration()) {
                         displayConfiguration();
                     }
