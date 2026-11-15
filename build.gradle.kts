@@ -592,11 +592,6 @@ tasks.bootJar {
     /*from(adminFrontendIndexTransform) {
         rename("alfio-admin-frontend-index.html", "BOOT-INF/classes/alfio-admin-frontend-index.html")
     }*/
-    val bowerDir = "resources/bower_components"
-    val excludesFile = File("./lib_exclude")
-    if (excludesFile.exists()) {
-        exclude(excludesFile.readLines().map { bowerDir + it })
-    }
 }
 
 // MJML email templates translations to HTML

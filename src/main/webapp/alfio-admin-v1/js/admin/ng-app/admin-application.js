@@ -3,9 +3,9 @@
 
     var BASE_STATIC_URL = window.ALFIO_CONTEXT_PATH + "/resources/angular-templates/admin/partials";
 
-    var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives',
+    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives',
         'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-util', 'alfio-configuration',
-        'checklist-model', 'group', angularDragula(angular)]);
+        'checklist-model', 'group']);
 
     var loadEvent = {
         'loadEvent': function($stateParams, EventService) {

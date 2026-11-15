@@ -27,7 +27,6 @@
     <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker-bs3.css" />
     <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-csp.css"/>
     <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.css"/>
-    <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/dragula.js/dist/dragula.min.css"/>
     <script nonce="{{nonce}}">
         window.ALFIO_CONTEXT_PATH = "{{contextPath}}";
         window.USER_IS_OWNER = {{isOwner}};
@@ -41,7 +40,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/moment/min/moment-with-locales.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/numeral/min/numeral.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular/angular.min.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-sanitize/angular-sanitize.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-messages/angular-messages.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-ui-router/release/angular-ui-router.min.js"></script>
@@ -52,8 +50,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-animate/angular-animate.min.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/dragula.js/dist/dragula.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angularjs-dragula/dist/angularjs-dragula.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/jsqrcode/jsqrcode.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/ng-app/admin-application.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/directive/admin-directive.js"></script>
@@ -81,13 +77,11 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/group/groups.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/util/reservation-identifier.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/internationalization-editor/internationalization-editor.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/metadata-editor/metadata-editor.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/polls/polls.js"></script>
 
 
 
     <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
-    <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/papaparse/papaparse.min.js"></script>
     <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/checklist-model/checklist-model.js"></script>
     <title>Alf.io Admin</title>
 </head>

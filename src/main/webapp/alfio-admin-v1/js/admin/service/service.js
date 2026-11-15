@@ -168,23 +168,6 @@
 
             createAdditionalService: function(eventId, additionalService) {
                 return $http.post('/admin/api/event/'+eventId+'/additional-services', additionalService).error(HttpErrorHandler.handle);
-            },
-
-            updateEventMetadata: function(eventName, metadata) {
-                return $http.put('/admin/api/events/'+eventName+'/metadata', metadata).error(HttpErrorHandler.handle);
-            },
-            retrieveMetadata: function(eventName) {
-                return $http.get('/admin/api/events/'+eventName+'/metadata').error(HttpErrorHandler.handle);
-            },
-
-            updateCategoryMetadata: function(eventName, categoryId, metadata) {
-                return $http.put('/admin/api/events/'+eventName+'/category/'+categoryId+'/metadata', metadata).error(HttpErrorHandler.handle);
-            },
-            retrieveCategoryMetadata: function(eventName, categoryId) {
-                return $http.get('/admin/api/events/'+eventName+'/category/'+categoryId+'/metadata').error(HttpErrorHandler.handle);
-            },
-            executeCapability: function(eventName, capability, parameters) {
-                return $http.post('/admin/api/events/'+eventName+'/capability/'+capability, parameters);
             }
         };
         return service;
@@ -478,9 +461,6 @@
             },
             validateShortName: function(shortName) {
                 return $http['post']('/admin/api/utils/short-name/validate', null, {params: {shortName: shortName}}).error(HttpErrorHandler.handle);
-            },
-            renderCommonMark: function(text) {
-            	return $http.get('/admin/api/utils/render-commonmark', {params: {text: text}}).error(HttpErrorHandler.handle);
             },
             getApplicationInfo: function() {
                 return $http.get('/admin/api/utils/alfio/info').error(HttpErrorHandler.handle);
