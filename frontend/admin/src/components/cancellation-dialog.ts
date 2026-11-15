@@ -67,7 +67,7 @@ export class CancellationDialog extends PromptDialog<CancellationChoice> {
     render(): TemplateResult {
         const request = this.request;
         return html`
-            <sl-dialog class="responsive-dialog" label=${request?.title ?? ''} placement="bottom"
+            <sl-dialog class="responsive-dialog" label=${request?.title ?? ''}
                        @sl-after-hide=${this.onAfterHide}>
                 ${when(request, () => this.renderContent(request!))}
             </sl-dialog>

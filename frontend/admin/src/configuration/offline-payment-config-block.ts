@@ -1,10 +1,11 @@
 import { customElement, property, query, state } from "lit/decorators.js";
-import { html, LitElement, type TemplateResult } from "lit";
+import { css, html, LitElement, type TemplateResult } from "lit";
 import { repeat } from "lit/directives/repeat.js";
 
 import { CustomPaymentMethodsService } from "../service/custom-payment-methods";
 import { dispatchFeedback } from "../model/dom-events";
-import type { ConfirmationDialog } from "./confirmation-dialog";
+import { ConfirmationDialogService } from "../service/confirmation-dialog";
+import { base } from "../styles";
 import type { OfflinePaymentDialog } from "./offline-payment-dialog";
 
 /**
@@ -18,10 +19,6 @@ export class OfflinePaymentConfigBlock extends LitElement {
 
     @query("offline-payment-dialog")
     paymentCreationDialog?: OfflinePaymentDialog;
-    @query("#paymentMethodDeleteConfirmDialog")
-    paymentMethodDeleteConfirmDialog?: ConfirmationDialog;
-    @query("#localizationDeleteConfirmDialog")
-    localizationDeleteConfirmDialog?: ConfirmationDialog;
 
     @state()
     protected _paymentConfig: CustomOfflinePayment[] = [];
@@ -40,49 +37,90 @@ export class OfflinePaymentConfigBlock extends LitElement {
         }
     }
 
+    static styles = [
+        base,
+        css`
+            .toolbar {
+                display: flex;
+                justify-content: flex-end;
+                margin-bottom: var(--sl-spacing-small);
+            }
+            .payment-methods {
+                display: grid;
+                gap: var(--sl-spacing-small);
+            }
+            .payment-method-summary {
+                display: flex;
+                align-items: center;
+                gap: var(--sl-spacing-small);
+                width: 100%;
+                min-width: 0;
+            }
+            .payment-method-name {
+                flex: 1 1 auto;
+                min-width: 0;
+                overflow-wrap: anywhere;
+                font-weight: var(--sl-font-weight-semibold);
+            }
+            .localization h4 {
+                margin: var(--sl-spacing-medium) 0 var(--sl-spacing-2x-small);
+                font-size: var(--sl-font-size-small);
+                color: var(--sl-color-gray-600);
+            }
+            .localization p {
+                margin: 0;
+                overflow-wrap: anywhere;
+            }
+            .localization-actions {
+                display: flex;
+                justify-content: flex-end;
+                margin-top: var(--sl-spacing-medium);
+            }
+        `,
+    ];
+
     protected render(): TemplateResult {
         return html`
             <div>
-                <sl-button type="button" variant="success" @click=${() => this.paymentCreationDialog?.openDialog()} size="medium">
-                    <sl-icon name="plus-circle" slot="prefix"></sl-icon>
-                    New Payment Method
-                </sl-button>
+                <div class="toolbar">
+                    <sl-button type="button" variant="success" size="small" @click=${() => this.paymentCreationDialog?.openDialog()}>
+                        <sl-icon name="plus-circle" slot="prefix"></sl-icon>
+                        Add payment method
+                    </sl-button>
+                </div>
                 ${this.renderPaymentMethodDetails()}
                 <offline-payment-dialog
                     .currentMethods=${this._paymentConfig}
                     @offlinePaymentDialogSave=${this._saveCustomPaymentMethod}
-                />
+                ></offline-payment-dialog>
             </div>
         `;
     }
 
     protected renderPaymentMethodDetails() {
         return html`
-            <div>
+            <div class="payment-methods">
                 ${repeat(this._paymentConfig, (config) => config.paymentMethodId, (config) => html`
-                    <sl-details style="margin: 10px 0;">
-                        <div style="display: flex; align-items: center;" slot="summary">
-                            <sl-tooltip content="Delete">
-                                <sl-icon-button
-                                    label="Delete"
-                                    name="trash"
-                                    style="color: rgb(148, 35, 32);"
-                                    @click=${(event: MouseEvent) => {
-                                        event.stopPropagation();
-                                        this.paymentMethodDeleteConfirmDialog?.openDialog(config.paymentMethodId)
-                                    }}
-                                ></sl-icon-button>
-                            </sl-tooltip>
-                            <span>
+                    <sl-details>
+                        <div class="payment-method-summary" slot="summary">
+                            <span class="payment-method-name">
                                 ${config.localizations?.en?.paymentName || config.localizations[Object.keys(config.localizations)[0]].paymentName}
                             </span>
+                            <sl-button variant="danger" size="small"
+                                       @click=${(event: MouseEvent) => {
+                                           event.stopPropagation();
+                                           void this._confirmDeletePaymentMethod(config);
+                                       }}>
+                                <sl-icon slot="prefix" name="trash"></sl-icon>
+                                Delete
+                            </sl-button>
                         </div>
                         <sl-tab-group>
                             ${repeat(Object.keys(config.localizations), (key) => key, (key) => html`
                                 <sl-tab
                                     .closable=${Object.keys(config.localizations).length > 1}
                                     @sl-close=${() => {
-                                        this.localizationDeleteConfirmDialog?.openDialog({"config": config, "localizationKey": key})
+                                        void this._confirmDeleteLocale(config, key);
                                     }}
                                     slot="nav"
                                     panel="${key}"
@@ -90,57 +128,54 @@ export class OfflinePaymentConfigBlock extends LitElement {
                                     ${key}
                                 </sl-tab>
 
-                                <sl-tab-panel name="${key}">
-                                    <h3>Name</h3>
-                                    ${config.localizations[key].paymentName}
-                                    <h3>Description</h3>
-                                    ${config.localizations[key].paymentDescription}
-                                    <h3>Instructions</h3>
-                                    ${config.localizations[key].paymentInstructions}
-                                    <br/>
-                                    <div style="display: flex; flex-direction: row; justify-content: flex-end;">
-                                        <sl-tooltip content="Change Translation">
-                                            <sl-icon-button
-                                                style="color: #E8E0E0; background-color: rgb(153, 95, 13); margin-right: 5px;"
-                                                name="pencil-square"
-                                                label="Edit"
-                                                @click=${() => {
-                                                    this.paymentCreationDialog?.openDialog(config, key);
-                                                }}
-                                            ></sl-icon-button>
-                                        </sl-tooltip
+                                <sl-tab-panel name="${key}" class="localization">
+                                    <h4>Name</h4>
+                                    <p>${config.localizations[key].paymentName}</p>
+                                    <h4>Description</h4>
+                                    <p>${config.localizations[key].paymentDescription}</p>
+                                    <h4>Instructions</h4>
+                                    <p>${config.localizations[key].paymentInstructions}</p>
+                                    <div class="localization-actions">
+                                        <sl-button variant="default" size="small"
+                                                   @click=${() => {
+                                                       this.paymentCreationDialog?.openDialog(config, key);
+                                                   }}>
+                                            <sl-icon slot="prefix" name="pencil"></sl-icon>
+                                            Edit
+                                        </sl-button>
                                     </div>
                                 </sl-tab-panel>
                             `)}
                             <sl-tab slot="nav" @click=${(event: MouseEvent) => this._handleAddNewLocale(event, config)}>
-                                <sl-tooltip content="Add New Translation" hoist>
-                                    <sl-icon-button label="New Locale" name="plus-square"></sl-icon-button>
+                                <sl-tooltip content="Add translation" hoist>
+                                    <sl-icon-button label="Add translation" name="plus-square"></sl-icon-button>
                                 </sl-tooltip>
                             </sl-tab>
                         </sl-tab-group>
                     </sl-details>
                 `)}
-
-                <confirmation-dialog
-                    id="paymentMethodDeleteConfirmDialog"
-                    dialog-title="Delete Payment Method?"
-                    dialog-description="This payment method will be permanently deleted from your organization."
-                    confirm-text="Delete"
-                    cancel-text="Cancel"
-                    confirm-variant="danger"
-                    @confirmActionButtonPressed=${this._handleDeletePaymentMethod}
-                ></confirmation-dialog>
-                <confirmation-dialog
-                    id="localizationDeleteConfirmDialog"
-                    dialog-title="Delete Translation?"
-                    dialog-description="This translation will be permanently deleted."
-                    confirm-text="Delete"
-                    cancel-text="Cancel"
-                    confirm-variant="danger"
-                    @confirmActionButtonPressed=${this._handleDeleteLocale}
-                ></confirmation-dialog>
             </div>
         `;
+    }
+
+    private async _confirmDeletePaymentMethod(config: CustomOfflinePayment): Promise<void> {
+        const confirmed = await ConfirmationDialogService.requestConfirm(
+            'Delete payment method',
+            'This payment method will be permanently deleted from your organization.',
+            'danger');
+        if (confirmed) {
+            await this._handleDeletePaymentMethod(config.paymentMethodId);
+        }
+    }
+
+    private async _confirmDeleteLocale(config: CustomOfflinePayment, localizationKey: string): Promise<void> {
+        const confirmed = await ConfirmationDialogService.requestConfirm(
+            'Delete translation',
+            'This translation will be permanently deleted.',
+            'danger');
+        if (confirmed) {
+            await this._handleDeleteLocale(config, localizationKey);
+        }
     }
 
     private _handleAddNewLocale(event: MouseEvent, config: CustomOfflinePayment) {
@@ -148,9 +183,7 @@ export class OfflinePaymentConfigBlock extends LitElement {
         this.paymentCreationDialog?.openDialog(config);
     }
 
-    private async _handleDeleteLocale(event: CustomEvent) {
-        const {config, localizationKey} = event.detail;
-
+    private async _handleDeleteLocale(config: CustomOfflinePayment, localizationKey: string) {
         if(!config.paymentMethodId) return;
 
         delete config.localizations[localizationKey];
@@ -176,8 +209,7 @@ export class OfflinePaymentConfigBlock extends LitElement {
     }
 
 
-    private async _handleDeletePaymentMethod(event: CustomEvent) {
-        const paymentMethodId = event.detail;
+    private async _handleDeletePaymentMethod(paymentMethodId: string | null) {
         if(!paymentMethodId) {
             return;
         }
@@ -190,7 +222,7 @@ export class OfflinePaymentConfigBlock extends LitElement {
         if (submitResult?.ok) {
             dispatchFeedback({
                 type: "success",
-                message: "Deleted Offline Payment Method."
+                message: "Payment method deleted."
             }, this);
             this.paymentCreationDialog?.closeDialog();
             this._paymentConfig = this._paymentConfig.filter(
@@ -223,17 +255,23 @@ export class OfflinePaymentConfigBlock extends LitElement {
             );
         }
 
+        let successMessage = "Payment method created.";
+        let failureMessage = "Failed to create the payment method.";
+        if (oldPayment) {
+            successMessage = "Payment method updated.";
+            failureMessage = "Failed to update the payment method.";
+        }
         if (submitResult?.ok) {
             dispatchFeedback({
                 type: "success",
-                message: `${oldPayment ? "Edited" : "Created"} Offline Payment Method.`
+                message: successMessage
             }, this);
             this.paymentCreationDialog?.closeDialog();
             await this.updateConfigFromServer();
         } else {
             dispatchFeedback({
                 type: "danger",
-                message: `Failed to ${oldPayment ? "edit" : "create"} offline payment method.`
+                message: failureMessage
             }, this);
         }
     }

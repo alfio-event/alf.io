@@ -1,4 +1,4 @@
-import { html, LitElement, type TemplateResult } from "lit";
+import { css, html, LitElement, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { dialog, row } from "../styles";
 import type { SlDialog } from "@shoelace-style/shoelace";
@@ -10,7 +10,15 @@ import type { SlDialog } from "@shoelace-style/shoelace";
  */
 @customElement('confirmation-dialog')
 export class ConfirmationDialog extends LitElement {
-    static styles = [row, dialog];
+    static styles = [
+        row,
+        dialog,
+        css`
+            sl-dialog {
+                --alfio-dialog-max-width: 32rem;
+            }
+        `,
+    ];
 
     @property({attribute: "dialog-title", type: String})
     dialogTitle?: string;
@@ -39,14 +47,18 @@ export class ConfirmationDialog extends LitElement {
 
     protected render(): TemplateResult {
         return html`
-            <sl-dialog label=${this.dialogTitle} class="dialog">
+            <sl-dialog label=${this.dialogTitle} class="responsive-dialog">
                 ${this.dialogDescription}
-                <span slot="footer">
-                    <sl-button variant=${this.confirmVariant} @click=${() => this.handleConfirmPressed()}>
-                        ${this.confirmText}
-                    </sl-button>
-                    <sl-button variant="neutral" @click=${() => this.closeDialog()}>${this.cancelText}</sl-button>
-                </span>
+                <div slot="footer">
+                    <sl-divider></sl-divider>
+                    <div class="row" style="--alfio-row-cols: 3">
+                        <sl-button variant="default" size="large" @click=${() => this.closeDialog()}>${this.cancelText}</sl-button>
+                        <div></div>
+                        <sl-button variant=${this.confirmVariant} size="large" @click=${() => this.handleConfirmPressed()}>
+                            ${this.confirmText}
+                        </sl-button>
+                    </div>
+                </div>
             </sl-dialog>
         `;
     }

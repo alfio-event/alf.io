@@ -21,6 +21,7 @@ import {
     purchaseContextListPage,
     reservationTable,
     retroCompat,
+    row,
     textColors,
 } from '../../styles.ts';
 import {AlfioPageChange} from '../../components/pagination-bar.ts';
@@ -112,6 +113,7 @@ export class CheckIn extends LitElement {
         reservationTable,
         listTabs,
         dialog,
+        row,
         css`
             .apps-info {
                 margin-bottom: var(--sl-spacing-large);
@@ -167,7 +169,7 @@ export class CheckIn extends LitElement {
                 margin-inline: auto;
             }
             #qr-code-dialog {
-                --width: 24rem;
+                --alfio-dialog-max-width: 24rem;
             }
         `,
     ];
@@ -232,7 +234,7 @@ export class CheckIn extends LitElement {
                 <div class="filter-toolbar">
                     <div class="filter-left">${this.searchController.render('attendees')}</div>
                     <div class="filter-right">
-                        <sl-button id="refresh-button" variant="default" ?loading=${this.loadDataTask.status === TaskStatus.PENDING}
+                        <sl-button id="refresh-button" variant="default" size="large" ?loading=${this.loadDataTask.status === TaskStatus.PENDING}
                                    @click=${() => this.loadDataTask.run()}>
                             <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
                             Refresh
@@ -268,15 +270,17 @@ export class CheckIn extends LitElement {
                     </sl-tab-panel>
                 </sl-tab-group>
             </div>
-            <sl-dialog id="qr-code-dialog" label=${this.qrCodeTicket?.fullName ?? ''}
-                       @sl-after-hide=${(e: Event) => e.target === e.currentTarget && (this.qrCodeTicket = null)}>
+            <sl-dialog id="qr-code-dialog" class="responsive-dialog" label=${this.qrCodeTicket?.fullName ?? ''}
+                       @sl-after-hide=${this.onQrCodeDialogHidden}>
                 ${when(this.qrCodeTicket != null, () => html`
                     <img class="qr-code" alt="QR code of the ticket of ${this.qrCodeTicket!.fullName}"
                          src=${`/event/${encodeURIComponent(this.eventName)}/ticket/${this.qrCodeTicket!.publicUuid}/code.png`}>
                 `)}
                 <div slot="footer">
                     <sl-divider></sl-divider>
-                    <sl-button variant="default" size="large" @click=${() => this.qrCodeDialog.hide()}>Close</sl-button>
+                    <div class="row" style="--alfio-row-cols: 3">
+                        <sl-button variant="default" size="large" @click=${() => this.qrCodeDialog.hide()}>Close</sl-button>
+                    </div>
                 </div>
             </sl-dialog>
             <alfio-add-attendees-dialog data-event-name=${this.eventName} @alfio-attendees-added=${this.onAttendeesAdded}></alfio-add-attendees-dialog>
@@ -333,7 +337,7 @@ export class CheckIn extends LitElement {
             <section class="section-card">
                 <div class="section-body">
                     ${when(tickets.length === 0,
-                        () => emptyState(this.search ? 'No attendees match your filter' : emptyMessage),
+                        () => emptyState(this.emptyMessage(emptyMessage)),
                         () => html`
                             ${renderTable(pageContent)}
                             <alfio-pagination-bar
@@ -383,7 +387,7 @@ export class CheckIn extends LitElement {
                                                ?disabled=${this.busyTicketId != null}
                                                ?loading=${this.busyTicketId === ticket.id}
                                                @click=${() => this.manualCheckIn(ticket)}>
-                                        <sl-icon slot="prefix" name="check-lg"></sl-icon>
+                                        <sl-icon slot="prefix" name="check2"></sl-icon>
                                         Check-in
                                     </sl-button>
                                 </td>
@@ -484,6 +488,21 @@ export class CheckIn extends LitElement {
         this.loadDataTask.run();
     };
 
+    private onQrCodeDialogHidden = (event: Event): void => {
+        // nested Shoelace components (e.g. tooltips) emit their own sl-after-hide
+        if (event.target !== event.currentTarget) {
+            return;
+        }
+        this.qrCodeTicket = null;
+    };
+
+    private emptyMessage(defaultMessage: string): string {
+        if (this.search) {
+            return 'No attendees match your filter';
+        }
+        return defaultMessage;
+    }
+
     private showQrCode(ticket: CheckInTicket): void {
         this.qrCodeTicket = ticket;
         void this.qrCodeDialog.show();
@@ -507,7 +526,11 @@ export class CheckIn extends LitElement {
         this.busyTicketId = ticket.id;
         try {
             const success = await action();
-            dispatchFeedback({ type: success ? 'success' : 'warning', message: success ? successMessage : failureMessage }, this);
+            if (success) {
+                dispatchFeedback({ type: 'success', message: successMessage }, this);
+            } else {
+                dispatchFeedback({ type: 'warning', message: failureMessage }, this);
+            }
             this.loadDataTask.run();
             await this.loadDataTask.taskComplete;
         } catch (e) {

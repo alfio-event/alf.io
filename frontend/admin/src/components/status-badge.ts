@@ -12,7 +12,7 @@ export interface StatusBadgeConfig {
  */
 export function statusBadge(status: string, config: StatusBadgeConfig, className: string): TemplateResult {
     return html`
-        <sl-badge class="status-badge ${className}" variant=${config.variant} data-status=${status}>
+        <sl-badge class="status-badge ${className}" variant=${config.variant} data-status=${status} pill>
             <sl-icon name=${config.icon} aria-hidden="true"></sl-icon>
             ${config.label}
         </sl-badge>

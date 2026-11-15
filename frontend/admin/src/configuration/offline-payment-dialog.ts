@@ -1,10 +1,11 @@
-import type { SlDialog } from "@shoelace-style/shoelace";
+import type { SlDialog, SlRequestCloseEvent } from "@shoelace-style/shoelace";
 import { TanStackFormController } from "@tanstack/lit-form";
 import { customElement, property, query, state } from "lit/decorators.js";
-import { html, LitElement, type TemplateResult } from "lit";
+import { css, html, LitElement, nothing, type TemplateResult } from "lit";
+import { when } from "lit/directives/when.js";
 import {Task} from '@lit/task';
 import { repeat } from "lit/directives/repeat.js";
-import { dialog, form, row } from "../styles";
+import { dialog, form, modernLayout, row } from "../styles";
 import { classMap } from "lit/directives/class-map.js";
 import { type SlSelect } from '@shoelace-style/shoelace';
 import { LocalizationService } from "../service/localization";
@@ -19,7 +20,17 @@ type LocalizationFormFields = CustomOfflinePaymentLocalization & {
  */
 @customElement('offline-payment-dialog')
 export class OfflinePaymentDialog extends LitElement {
-    static styles = [row, dialog, form];
+    static styles = [
+        row,
+        dialog,
+        form,
+        modernLayout,
+        css`
+            sl-dialog {
+                --alfio-dialog-max-width: 48rem;
+            }
+        `,
+    ];
 
     @query("sl-dialog#offlinePaymentDialog")
     dialog?: SlDialog;
@@ -81,10 +92,11 @@ export class OfflinePaymentDialog extends LitElement {
         return html`
             <div>
                 <sl-dialog
-                    label="${this.editObject ? "Update" : "Create"} Payment Method"
+                    label=${this.dialogLabel()}
                     id="offlinePaymentDialog"
-                    style="--width: 50vw; --sl-font-size-large: 1.5rem;"
-                    class="dialog"
+                    class="responsive-dialog"
+                    @sl-request-close=${this.onRequestClose}
+                    @sl-after-hide=${this.onAfterHide}
                 >
                     ${this.renderPaymentMethodForm()}
                 </sl-dialog>
@@ -92,9 +104,36 @@ export class OfflinePaymentDialog extends LitElement {
         `;
     }
 
+    private dialogLabel(): string {
+        if (this.editObject) {
+            return 'Edit payment method';
+        }
+        return 'Add payment method';
+    }
+
+    // a click outside the dialog would discard what the user typed: only the close button and Cancel close it
+    private onRequestClose = (event: SlRequestCloseEvent): void => {
+        if (event.target !== event.currentTarget) {
+            return;
+        }
+        if (event.detail.source === 'overlay') {
+            event.preventDefault();
+        }
+    };
+
+    private onAfterHide = (event: Event): void => {
+        // nested Shoelace components (e.g. selects, the preview dialog) emit their own sl-after-hide
+        if (event.target !== event.currentTarget) {
+            return;
+        }
+        this.#form.api.reset();
+    };
+
     renderPaymentMethodForm(): TemplateResult {
+        const formErrors = this.#form.api.state.errors.filter(error => error != null && error !== '');
         return html`<form
             id="form"
+            class="form-stack"
             @submit=${
                 async (e: Event) => {
                     e.preventDefault();
@@ -108,16 +147,20 @@ export class OfflinePaymentDialog extends LitElement {
                     name: `localizationKey`,
                     validators: {
                         onChange: ({ value }: {value: string}) => {
-                            return !value ? 'Language selection is required.' : undefined;
+                            if (!value) {
+                                return 'Language selection is required.';
+                            }
+                            return undefined;
                         }
                     },
                 },
                 (field) => {
                     return html`
                     <sl-select
-                        label="Translation"
+                        label="Language"
                         class="${classMap({ error: this._hasError(field.state.meta) })}"
                         required
+                        hoist
                         ?disabled=${this.editingExistingLocalization}
                         .value=${field.state.value}
                         @sl-blur=${() => field.handleBlur()}
@@ -154,7 +197,10 @@ export class OfflinePaymentDialog extends LitElement {
                     name: `paymentName`,
                     validators: {
                         onChange: ({ value }: {value: string}) => {
-                            return value.length < 3 ? 'Name is too short.' : undefined;
+                            if (value.length < 3) {
+                                return 'Name is too short.';
+                            }
+                            return undefined;
                         }
                     },
                 },
@@ -164,7 +210,7 @@ export class OfflinePaymentDialog extends LitElement {
                         <sl-input
                             id="paymentMethodName"
                             class="${classMap({ error: this._hasError(field.state.meta) })}"
-                            label="Payment Method Name"
+                            label="Name"
                             required
                             .value=${field.state.value}
                             @sl-blur=${() => field.handleBlur()}
@@ -183,15 +229,19 @@ export class OfflinePaymentDialog extends LitElement {
                 {
                     name: `paymentDescription`,
                     validators: {
-                    onChange: ({ value }: {value: string}) =>
-                        value.length < 3 ? 'Description is too short' : undefined,
+                    onChange: ({ value }: {value: string}) => {
+                        if (value.length < 3) {
+                            return 'Description is too short.';
+                        }
+                        return undefined;
+                    },
                     },
                 },
                 (field) => {
                     return html`
                     <div>
                         <sl-textarea
-                            label="Payment Method Description"
+                            label="Description"
                             class="${classMap({ error: this._hasError(field.state.meta) })}"
                             required
                             rows="2"
@@ -206,7 +256,7 @@ export class OfflinePaymentDialog extends LitElement {
                         >
                             <div slot="help-text">
                                 <alfio-display-commonmark-preview
-                                    data-button-text="preview"
+                                    data-button-text="Preview"
                                     .text=${field.state.value}
                                 >
                                 </alfio-display-commonmark-preview>
@@ -219,15 +269,19 @@ export class OfflinePaymentDialog extends LitElement {
                 {
                     name: `paymentInstructions`,
                     validators: {
-                    onChange: ({ value }: {value: string}) =>
-                        value.length < 3 ? 'Instructions are too short.' : undefined,
+                    onChange: ({ value }: {value: string}) => {
+                        if (value.length < 3) {
+                            return 'Instructions are too short.';
+                        }
+                        return undefined;
+                    },
                     },
                 },
                 (field) => {
                     return html`
                     <div>
                         <sl-textarea
-                            label="Payment Method Instructions"
+                            label="Instructions"
                             class="${classMap({ error: this._hasError(field.state.meta) })}"
                             required
                             rows="2"
@@ -242,7 +296,7 @@ export class OfflinePaymentDialog extends LitElement {
                         >
                             <div slot="help-text">
                                 <alfio-display-commonmark-preview
-                                    data-button-text="preview"
+                                    data-button-text="Preview"
                                     .text=${field.state.value}
                                 >
                                 </alfio-display-commonmark-preview>
@@ -251,15 +305,23 @@ export class OfflinePaymentDialog extends LitElement {
                     </div>`
                 },
             )}
-            <div slot="footer">
+            ${when(formErrors.length > 0, () => html`
+                <sl-alert variant="danger" open>
+                    <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+                    ${formErrors.join(' ')}
+                </sl-alert>
+            `, () => nothing)}
+            <!-- the footer stays inside the form, so that Save submits it -->
+            <div class="footer">
                 <sl-divider></sl-divider>
                 <div class="row" style="--alfio-row-cols: 3">
-                    <sl-button variant="default" size="large" @click=${() => this.closeDialog()}>Close</sl-button>
+                    <sl-button variant="default" size="large" @click=${() => this.closeDialog()}>Cancel</sl-button>
                     <div></div>
                     <sl-button
-                        variant="success"
+                        variant="warning"
                         type="submit"
                         size="large"
+                        ?loading=${this.#form.api.state.isSubmitting}
                         .disabled=${!this.#form.api.state.canSubmit}
                     >
                         Save
@@ -286,7 +348,10 @@ export class OfflinePaymentDialog extends LitElement {
             this.#form.api.update({
                 defaultValues: this._buildInitialFormValues(curLocaleKey),
                 onSubmit: async ({value}) => {
-                    let existingLocalizations = this.editObject ? {...this.editObject.localizations} : {};
+                    let existingLocalizations: Record<string, CustomOfflinePaymentLocalization> = {};
+                    if (this.editObject) {
+                        existingLocalizations = {...this.editObject.localizations};
+                    }
                     const newPaymentObj = {
                         paymentMethodId: this.editObject?.paymentMethodId ?? null,
                         localizations: {

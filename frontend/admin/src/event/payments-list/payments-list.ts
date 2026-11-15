@@ -135,14 +135,14 @@ export class PaymentsList extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row secondary">
-                    <h1>Confirmed Payments for <i>${localizedTitle(data.event)}</i></h1>
+                    <h1>Confirmed payments for <i>${localizedTitle(data.event)}</i></h1>
                 </div>
                 <hr class="page-separator" />
                 <div class="filter-toolbar">
                     <div class="filter-left">${this.searchController.render('payments')}</div>
                     ${when(payments.right > 0, () => html`
                         <div class="filter-right">
-                            <sl-button variant="default" href=${this.exportHref()} target="_blank" rel="noopener">
+                            <sl-button variant="default" size="large" href=${this.exportHref()} target="_blank" rel="noopener">
                                 <sl-icon slot="prefix" name="download"></sl-icon>
                                 Export
                             </sl-button>

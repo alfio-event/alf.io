@@ -32,12 +32,16 @@ function performRequest(url: string, method: 'PUT' | 'POST' | 'PATCH' | 'DELETE'
         body = JSON.stringify(payload);
     }
 
+    let contentType = 'application/json';
+    if (payload instanceof URLSearchParams) {
+        contentType = 'application/x-www-form-urlencoded';
+    }
     return fetch(url, {
         method,
         credentials: 'include',
         headers: {
             'Accept': 'application/json',
-            'Content-Type': payload instanceof URLSearchParams ? 'application/x-www-form-urlencoded' : 'application/json',
+            'Content-Type': contentType,
             'X-Requested-With': 'XMLHttpRequest',
             [xsrfName]: xsrfValue
         },

@@ -67,7 +67,7 @@ const PRESET_CHOICES: ChoiceCardOption<Preset>[] = [
     {
         value: 'multipleEntries',
         icon: 'ticket-perforated',
-        title: 'Multi-Access Pass',
+        title: 'Multi-access pass',
         description: 'Give full access to attendees for a defined number of events',
     },
     {
@@ -91,8 +91,8 @@ const VAT_STATUSES: { value: VatStatus; label: string }[] = [
 ];
 
 const USAGE_TYPES: { value: SubscriptionUsageType; label: string }[] = [
-    {value: 'ONCE_PER_EVENT', label: 'Once per Event'},
-    {value: 'UNLIMITED', label: 'Multiple times per Event'},
+    {value: 'ONCE_PER_EVENT', label: 'Once per event'},
+    {value: 'UNLIMITED', label: 'Multiple times per event'},
 ];
 
 const TIME_UNITS: { value: SubscriptionTimeUnit; label: string }[] = [
@@ -495,7 +495,7 @@ export class SubscriptionEdit extends LitElement {
             <div class="form-stack">
                 <div class="row" style="--alfio-row-cols: 2">
                     ${this.#form.field({name: 'termsAndConditionsUrl', validators: validateWith(requiredHttpsUrl)},
-                        (field) => this.textInput(field, {id: 'termsAndConditionsUrl', label: 'Terms and Conditions URL', type: 'url', prefixIcon: 'link-45deg'}))}
+                        (field) => this.textInput(field, {id: 'termsAndConditionsUrl', label: 'Terms and conditions URL', type: 'url', prefixIcon: 'link-45deg'}))}
                     ${this.#form.field({name: 'privacyPolicyUrl', validators: validateWith(httpsUrl)},
                         (field) => this.textInput(field, {
                             id: 'privacyPolicyUrl',
@@ -554,9 +554,9 @@ export class SubscriptionEdit extends LitElement {
                         validators: validateWith((value) => this.validateForPreset('multipleEntries', requiredNumber, value)),
                     }, (field) => this.textInput(field, {
                         id: 'maxEntries',
-                        label: 'Number of access included',
+                        label: 'Number of entries included',
                         type: 'number',
-                        helpText: 'How many times people can use this subscription',
+                        helpText: 'How many times people can use this subscription.',
                     }))}
                 `)}
                 ${when(preset === 'period', () => html`
@@ -623,7 +623,7 @@ export class SubscriptionEdit extends LitElement {
             <alfio-purchase-context-image
                 id="subscription-image" tabindex="-1" aria-label="Subscription image (required)"
                 aria-invalid=${this.imageError != null} aria-describedby="subscription-image-error"
-                current-image=${this.previousFileBlobId != null ? `/file/${this.previousFileBlobId}` : ''}
+                current-image=${this.currentImageUrl()}
                 accept="image/*"
                 max-size="1048576"
                 label="Drop your image here or click to select"
@@ -637,8 +637,15 @@ export class SubscriptionEdit extends LitElement {
         `);
     }
 
+    private currentImageUrl(): string {
+        if (this.previousFileBlobId == null) {
+            return '';
+        }
+        return `/file/${this.previousFileBlobId}`;
+    }
+
     private renderVisibilitySection(): TemplateResult {
-        let variant: 'success' | 'warning';
+        let variant: 'success' | 'neutral';
         let icon: string;
         let badge: TemplateResult;
         let actionIcon: string;
@@ -652,7 +659,8 @@ export class SubscriptionEdit extends LitElement {
             actionLabel = 'Hide';
             statusText = 'visible';
         } else {
-            variant = 'warning';
+            // a hidden subscription can still be sold through a direct link: not a warning
+            variant = 'neutral';
             icon = 'eye-slash';
             badge = statusBadge('hidden', {label: 'Hidden', variant: 'neutral', icon: 'eye-slash'}, 'subscription-visibility');
             actionIcon = 'eye';
@@ -711,7 +719,11 @@ export class SubscriptionEdit extends LitElement {
         this.imageError = null;
         if (fileBlobId == null) {
             // removal: an existing subscription falls back to its saved image
-            this.fileBlobId = this.existing ? this.previousFileBlobId : null;
+            if (this.existing) {
+                this.fileBlobId = this.previousFileBlobId;
+            } else {
+                this.fileBlobId = null;
+            }
         } else {
             this.fileBlobId = fileBlobId;
         }

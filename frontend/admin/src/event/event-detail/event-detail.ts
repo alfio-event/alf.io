@@ -1,8 +1,9 @@
 import {css, html, LitElement, nothing, TemplateResult} from 'lit';
-import {customElement, property, state} from 'lit/decorators.js';
+import {customElement, property, query, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
 import {Task} from '@lit/task';
+import type {SlDialog, SlRequestCloseEvent} from '@shoelace-style/shoelace';
 import {AlfioEvent, GroupLink} from '../../model/event.ts';
 import {Organization} from '../../model/organization.ts';
 import {ContentLanguage, LocalizedContent} from '../../model/purchase-context.ts';
@@ -27,10 +28,13 @@ import '../../components/localized-markdown.ts';
 import './event-statistics.ts';
 import './category-list.ts';
 import './online-settings.ts';
+import '../event-create/event-create.ts';
+import type {EventEditSection} from '../event-create/event-create.ts';
 import {
     badges,
     base,
     detailList as detailListStyles,
+    dialog,
     modernLayout,
     purchaseContextListPage,
     row,
@@ -102,6 +106,11 @@ export class EventDetail extends LitElement {
 
     @state() private changingStatus = false;
 
+    // the part of the event being edited in the section dialog
+    @state() private editedSection: EventEditSection | null = null;
+
+    @query('#section-dialog') private sectionDialog!: SlDialog;
+
     private readonly loadTask = new Task(this, {
         task: async (): Promise<EventDetailData> => {
             const {event, organization} = await EventService.load(this.eventName);
@@ -150,11 +159,16 @@ export class EventDetail extends LitElement {
         base,
         badges,
         detailListStyles,
+        dialog,
         modernLayout,
         purchaseContextListPage,
         row,
         textColors,
         css`
+            :host {
+                display: block;
+                --alfio-section-body-padding: var(--sl-spacing-medium);
+            }
             .page-title-row {
                 flex-wrap: wrap;
                 row-gap: var(--sl-spacing-x-small);
@@ -163,7 +177,7 @@ export class EventDetail extends LitElement {
                 margin-inline-start: auto;
                 display: flex;
                 flex-wrap: wrap;
-                gap: var(--sl-spacing-x-small);
+                gap: var(--sl-spacing-small);
             }
             .page-alerts {
                 display: grid;
@@ -236,6 +250,9 @@ export class EventDetail extends LitElement {
             .seats-body {
                 row-gap: var(--sl-spacing-large);
             }
+            #section-dialog {
+                --alfio-dialog-max-width: 60rem;
+            }
         `,
     ];
 
@@ -301,25 +318,23 @@ export class EventDetail extends LitElement {
         const event = data.event;
         const online = event.format === 'ONLINE' || event.format === 'HYBRID';
         return html`
-            <div class="page-title-row">
+            <div class="page-title-row secondary">
                 <h1>${event.displayName}</h1>
                 ${statusBadge(event.status, eventStatusBadge(event.status), 'event-status')}
                 ${when(event.expired, () => html`<sl-badge variant="neutral" pill>Expired</sl-badge>`, () => nothing)}
-                ${when(event.visibleForCurrentUser, () => html`
-                    <div class="page-actions">
-                        <sl-button id="edit-event" variant="default" size="medium" href="#/events/${event.shortName}/edit">
-                            <sl-icon slot="prefix" name="pencil"></sl-icon>
-                            Edit
-                        </sl-button>
-                    </div>
-                `, () => nothing)}
             </div>
             <hr class="page-separator">
             ${this.renderAlerts(data)}
             ${when(event.displayStatistics, () => html`<alfio-event-statistics .event=${event}></alfio-event-statistics>`, () => nothing)}
             ${this.renderEventDetailsCard(data)}
-            ${when(hasText(firstText(event.description)), () => sectionCard({icon: 'card-text', title: 'Description'}, html`
-                <alfio-localized-markdown class="event-description" .value=${event.description} .languages=${event.contentLanguages ?? []}></alfio-localized-markdown>
+            ${when(hasText(firstText(event.description)) || event.visibleForCurrentUser, () => sectionCard({
+                icon: 'card-text',
+                title: 'Description',
+                actions: this.editButton(event, 'description', 'edit-description'),
+            }, html`
+                ${when(hasText(firstText(event.description)),
+                    () => html`<alfio-localized-markdown class="event-description" .value=${event.description} .languages=${event.contentLanguages ?? []}></alfio-localized-markdown>`,
+                    () => html`<p class="text-muted">No description yet.</p>`)}
             `), () => nothing)}
             ${this.renderSeatsCard(data)}
             ${when(online, () => html`
@@ -331,8 +346,63 @@ export class EventDetail extends LitElement {
                                     .baseUrl=${data.baseUrl}
                                     .descriptionMaxLength=${data.descriptionMaxLength}
                                     @alfio-event-reload=${this.reload}></alfio-event-categories>
+            ${this.renderSectionDialog(event)}
         `;
     }
+
+    /**
+     * The Edit button of a card, which edits that part of the event in the section dialog
+     */
+    private editButton(event: AlfioEvent, section: EventEditSection, id: string): TemplateResult | undefined {
+        if (!event.visibleForCurrentUser) {
+            return undefined;
+        }
+        return html`
+            <sl-button id=${id} variant="default" size="small" @click=${() => void this.editSection(section)}>
+                <sl-icon slot="prefix" name="pencil"></sl-icon>
+                Edit
+            </sl-button>
+        `;
+    }
+
+    private renderSectionDialog(event: AlfioEvent): TemplateResult {
+        let label = 'Edit event details';
+        if (this.editedSection === 'description') {
+            label = 'Edit description';
+        } else if (this.editedSection === 'seats') {
+            label = 'Edit seats and payment info';
+        }
+        // the form is created at every opening, so that it always starts from the saved event
+        return html`
+            <sl-dialog id="section-dialog" class="responsive-dialog" label=${label}
+                       @sl-request-close=${this.onSectionDialogRequestClose}
+                       @sl-after-hide=${(e: Event) => { if (e.target === this.sectionDialog) { this.editedSection = null; } }}>
+                ${when(this.editedSection != null, () => html`
+                    <alfio-event-create data-event-name=${event.shortName} data-section=${this.editedSection!}
+                                        @alfio-event-section-saved=${this.onSectionSaved}
+                                        @alfio-event-section-cancelled=${() => void this.sectionDialog.hide()}></alfio-event-create>
+                `, () => nothing)}
+            </sl-dialog>
+        `;
+    }
+
+    private async editSection(section: EventEditSection): Promise<void> {
+        this.editedSection = section;
+        await this.updateComplete;
+        await this.sectionDialog.show();
+    }
+
+    // a click outside the dialog doesn't discard the changes
+    private onSectionDialogRequestClose = (e: SlRequestCloseEvent): void => {
+        if (e.target === this.sectionDialog && e.detail.source === 'overlay') {
+            e.preventDefault();
+        }
+    };
+
+    private onSectionSaved = async (): Promise<void> => {
+        await this.sectionDialog.hide();
+        this.reload();
+    };
 
     private reload = (): void => {
         void this.loadTask.run([this.eventName]);
@@ -366,8 +436,8 @@ export class EventDetail extends LitElement {
         }
         if (this.justPublished && event.status === 'PUBLIC') {
             alerts.push(html`
-                <sl-alert open variant="primary" class="activated-alert" closable @sl-after-hide=${() => { this.justPublished = false; }}>
-                    <sl-icon slot="icon" name="check-circle"></sl-icon>
+                <sl-alert open variant="success" class="activated-alert" closable @sl-after-hide=${() => { this.justPublished = false; }}>
+                    <sl-icon slot="icon" name="check2-circle"></sl-icon>
                     <div class="alert-content">
                         <span>This event has been successfully published on the event list.</span>
                         <sl-button variant="default" size="small" class="undo-publish" ?loading=${this.changingStatus}
@@ -436,7 +506,7 @@ export class EventDetail extends LitElement {
         if (data.mapUrl != null) {
             location = html`<a href=${data.mapUrl} target="_blank" rel="noopener">${event.location}</a>`;
         }
-        return sectionCard({icon: 'info-circle', title: 'Event details'}, html`
+        return sectionCard({icon: 'info-circle', title: 'Event details', actions: this.editButton(event, 'details', 'edit-event')}, html`
             <div class="event-summary">
                 <div class="event-logo">
                     ${when(event.fileBlobId != null, () => html`<img src="/file/${event.fileBlobId}" alt="Logo of ${event.displayName}">`, () => nothing)}
@@ -475,7 +545,7 @@ export class EventDetail extends LitElement {
             vatLabel += ' (included in the price)';
         }
         const subscriptions = event.subscriptionDescriptors ?? [];
-        return sectionCard({icon: 'cash', title: 'Seats and payment info'}, html`
+        return sectionCard({icon: 'cash', title: 'Seats and payment info', actions: this.editButton(event, 'seats', 'edit-seats')}, html`
             <div class="row seats-body" style="--alfio-row-cols: 2">
                 <div>
                     ${detailList([

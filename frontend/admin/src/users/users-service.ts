@@ -18,9 +18,10 @@ export class UsersService {
     static edit(user: UserModification & { id: number }): Promise<void>;
     static edit(user: UserModification & { id: null }): Promise<User>;
     static async edit(user: UserModification): Promise<void | User> {
-        const url = user.id != null
-            ? '/admin/api/users/edit'
-            : '/admin/api/users/new?baseUrl=' + encodeURIComponent(window.location.origin);
+        let url = '/admin/api/users/new?baseUrl=' + encodeURIComponent(window.location.origin);
+        if (user.id != null) {
+            url = '/admin/api/users/edit';
+        }
         const response = await postJson(url, user);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         if (user.id != null) {

@@ -5,9 +5,11 @@ import {Task} from "@lit/task";
 import {AdditionalFieldService} from "../../service/additional-field.ts";
 import {AdditionalField, AdditionalFieldStats} from "../../model/additional-field.ts";
 import {repeat} from "lit/directives/repeat.js";
+import {when} from "lit/directives/when.js";
 import {SlDrawer} from "@shoelace-style/shoelace";
 import {renderIf} from "../../service/helpers.ts";
-import {textAlign} from "../../styles.ts";
+import {modernLayout, modernTable, textAlign} from "../../styles.ts";
+import {emptyState} from "../../components/empty-state.ts";
 
 
 @customElement('alfio-additional-field-statistics')
@@ -22,30 +24,14 @@ export class AdditionalFieldStatistics extends LitElement {
     @query("sl-drawer#drawer-statistics")
     drawer?: SlDrawer;
 
-    static readonly styles = [textAlign, css`
+    static readonly styles = [textAlign, modernLayout, modernTable, css`
         sl-drawer {
             --sl-z-index-drawer: 1031;
         }
-        table {
+
+        .table {
             width: 100%;
         }
-        table.table-striped th, table.table-striped tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-
-        .table-striped tr {
-            height: 2rem;
-        }
-
-        .table-striped td, .table-striped th {
-            padding: 12px 15px;
-        }
-
-        table.table-striped th {
-            font-weight: bold;
-            text-align: center;
-        }
-
     `]
 
     private readonly retrievePageDataTask = new Task<ReadonlyArray<boolean>, ReadonlyArray<AdditionalFieldStats>>(this,
@@ -62,8 +48,16 @@ export class AdditionalFieldStatistics extends LitElement {
         return html`
             <sl-drawer label=${`Statistics for ${this.field?.name}`} id="drawer-statistics">
                ${renderIf(() => this.active, () => this.retrievePageDataTask.render({
-                   initial: () => html`<sl-spinner></sl-spinner>`,
-                   complete: stats => html`
+                   initial: () => html`<div class="loading"><sl-spinner></sl-spinner></div>`,
+                   pending: () => html`<div class="loading"><sl-spinner></sl-spinner></div>`,
+                   error: () => html`
+                       <sl-alert open variant="danger">
+                           <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+                           Failed to load the statistics.
+                       </sl-alert>
+                   `,
+                   complete: stats => when(stats.length === 0, () => emptyState('No values collected yet.'), () => html`
+                    <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
                             <tr>
@@ -82,7 +76,8 @@ export class AdditionalFieldStatistics extends LitElement {
                             `)}
                         </tbody>
                     </table>
-            `
+                    </div>
+            `)
                })!)}
             </sl-drawer>
         `;
@@ -98,7 +93,11 @@ export class AdditionalFieldStatistics extends LitElement {
             this.active = true;
             await this.drawer?.show();
         }
-        this.drawer?.addEventListener('sl-after-hide', async () => {
+        this.drawer?.addEventListener('sl-after-hide', async (event: Event) => {
+            // nested Shoelace components emit their own sl-after-hide
+            if (event.target !== event.currentTarget) {
+                return;
+            }
             this.active = false;
             this.dispatchEvent(new CustomEvent('alfio-drawer-closed'));
         })

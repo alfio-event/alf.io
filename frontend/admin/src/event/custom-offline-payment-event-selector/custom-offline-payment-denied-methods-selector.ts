@@ -15,6 +15,9 @@ export class CustomOfflinePaymentDeniedMethodsSelector extends LitElement {
     @state()
     selectedPaymentMethods: Array<{ paymentMethod: CustomOfflinePayment; selected: boolean }> = [];
 
+    // the selection is known (reported by the selector once loaded, then at every change): before that, save() would clear it
+    private changed = false;
+
     paymentMethodService?: CustomPaymentMethodsService = new CustomPaymentMethodsService();
 
     private _paymentMethodsTask = new Task(this, {
@@ -47,9 +50,20 @@ export class CustomOfflinePaymentDeniedMethodsSelector extends LitElement {
 
     handleSelectionChange = (selectedMethods: Array<{ paymentMethod: CustomOfflinePayment; selected: boolean }>) => {
         this.selectedPaymentMethods = selectedMethods;
+        this.changed = true;
     }
 
     handleUpdateDeniedListSubmit = async (_event: Event) => {
+        await this.save();
+    }
+
+    /**
+     * Saves the denied methods of the category, once they have been loaded
+     */
+    async save(): Promise<void> {
+        if (!this.changed) {
+            return;
+        }
         const deniedPaymentMethodIds: string[] = this.selectedPaymentMethods
             .filter(pm => pm.selected)
             .map(pm => pm.paymentMethod.paymentMethodId)
@@ -63,11 +77,12 @@ export class CustomOfflinePaymentDeniedMethodsSelector extends LitElement {
             this.category,
             deniedPaymentMethodIds
         );
+        this.changed = false;
     }
 
     render() {
         return this._paymentMethodsTask.render({
-            pending: () => html`<p>Loading payment methods...</p>`,
+            pending: () => html`<sl-spinner></sl-spinner>`,
             complete: (paymentMethods) => html`
                 <custom-offline-payment-selector
                     .paymentMethods=${paymentMethods}
@@ -75,7 +90,12 @@ export class CustomOfflinePaymentDeniedMethodsSelector extends LitElement {
                     @selection-change=${(e: CustomEvent) => this.handleSelectionChange(e.detail)}
                 ></custom-offline-payment-selector>
             `,
-            error: (e) => html`<p>Error: ${e}</p>`
+            error: (e) => html`
+                <sl-alert variant="danger" open>
+                    <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+                    Failed to load the payment methods: ${e}
+                </sl-alert>
+            `
         });
     }
 }

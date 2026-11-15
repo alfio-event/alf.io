@@ -1,5 +1,6 @@
 import {html, TemplateResult} from 'lit';
 import {repeat} from 'lit/directives/repeat.js';
+import {classMap} from 'lit/directives/class-map.js';
 
 export interface DetailEntry {
     label: string;
@@ -18,7 +19,7 @@ export function detailList(entries: (DetailEntry | null | false | undefined)[]):
         <dl class="detail-list">
             ${repeat(visible, (entry) => entry.label, (entry) => html`
                 <dt>${entry.label}</dt>
-                <dd class=${entry.monospace ? 'monospace' : ''}>${entry.value}</dd>
+                <dd class=${classMap({ monospace: entry.monospace === true })}>${entry.value}</dd>
             `)}
         </dl>
     `;

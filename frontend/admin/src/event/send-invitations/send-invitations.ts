@@ -341,10 +341,18 @@ export class SendInvitations extends LitElement {
 
     private renderInvitee(event: AlfioEvent, index: number, submitted: boolean, freeCodes: string[]): TemplateResult {
         // the labels of the first row act as column headers
-        const labelClass = index > 0 ? 'label-hidden' : '';
+        let labelClass = '';
+        if (index > 0) {
+            labelClass = 'label-hidden';
+        }
         const path = `invitees[${index}]` as const;
         // the validators run only while the manual form is shown
-        const ifManual = (validate: () => string | undefined) => this.addMode === 'manual' ? validate() : undefined;
+        const ifManual = (validate: () => string | undefined) => {
+            if (this.addMode !== 'manual') {
+                return undefined;
+            }
+            return validate();
+        };
         return html`
             <div class="row custom invitee">
                 <span class="invitee-number">#${index + 1}</span>
@@ -498,13 +506,15 @@ the first line is the header, then one line per invitee:
                                     <td>${code.code}</td>
                                     <td>${code.recipientName} <span class="text-muted">&lt;${code.recipientEmail}&gt;</span></td>
                                     <td><alfio-format-date date=${code.sentTimestamp ?? ''} time-zone=${event.timeZone}>—</alfio-format-date></td>
-                                    <td class="actions-cell">
-                                        ${when(code.status === 'FREE', () => html`
-                                            <sl-button class="clear-recipient" variant="danger" size="small" @click=${() => this.clearRecipient(code)}>
-                                                <sl-icon slot="prefix" name="trash"></sl-icon>
-                                                Clear
-                                            </sl-button>
-                                        `)}
+                                    <td>
+                                        <div class="actions-cell">
+                                            ${when(code.status === 'FREE', () => html`
+                                                <sl-button class="clear-recipient" variant="danger" size="small" @click=${() => this.clearRecipient(code)}>
+                                                    <sl-icon slot="prefix" name="trash"></sl-icon>
+                                                    Clear
+                                                </sl-button>
+                                            `)}
+                                        </div>
                                     </td>
                                 </tr>
                             `)}
@@ -593,7 +603,11 @@ the first line is the header, then one line per invitee:
                 if (code !== '') {
                     used.add(code);
                 }
-                return { code: code === '' ? null : code, assignee: i.assignee, email: i.email, language: i.language };
+                let assignedCode: string | null = null;
+                if (code !== '') {
+                    assignedCode = code;
+                }
+                return { code: assignedCode, assignee: i.assignee, email: i.email, language: i.language };
             });
             const csv = invitationsCsv(rows);
             const codes = await SpecialPriceService.linkCodesFromCsv(this.eventName, Number(this.categoryId), csv);

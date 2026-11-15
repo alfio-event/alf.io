@@ -155,7 +155,7 @@ export class CheckInScan extends LitElement {
             ${when(this.cameraError != null, () => this.renderError(this.cameraError!))}
             ${when(!this.scanning && this.scanned == null, () => html`
                 <div class="featured-card">
-                    <h1><sl-icon name="qr-code-scan"></sl-icon> Ready to scan</h1>
+                    <h2><sl-icon name="qr-code-scan"></sl-icon> Ready to scan</h2>
                     <small class="text-muted">The browser will ask for permission to use the camera.</small>
                     <sl-button id="scan-button" variant="primary" size="large" @click=${this.startScanning}>
                         <sl-icon slot="prefix" name="camera-video"></sl-icon>
@@ -176,7 +176,7 @@ export class CheckInScan extends LitElement {
     private renderCameraActions(): TemplateResult {
         return html`
             ${when(this.cameras.length > 1, () => html`
-                <sl-select class="camera-select" size="small" aria-label="Camera" .value=${this.selectedCamera} @sl-change=${this.onCameraChange}>
+                <sl-select class="camera-select label-hidden" size="small" label="Camera" hoist .value=${this.selectedCamera} @sl-change=${this.onCameraChange}>
                     ${this.cameras.map((camera, index) => html`
                         <sl-option value=${camera.deviceId}>${camera.label || `Camera ${index + 1}`}</sl-option>
                     `)}
@@ -220,22 +220,7 @@ export class CheckInScan extends LitElement {
      * Same layout as the dialog footers: secondary action on the left, main action on the right
      */
     private renderScannedActions(event: AlfioEvent, scanned: ScanResult): TemplateResult {
-        const status = scanned.data!.result.status;
-        const confirm = status === 'OK_READY_TO_BE_CHECKED_IN'
-            ? html`
-                <sl-button id="confirm-check-in-button" variant="success" size="large" ?loading=${this.actionInProgress}
-                           @click=${() => this.checkIn(event, scanned.code)}>
-                    <sl-icon slot="prefix" name="check2"></sl-icon>
-                    Confirm check-in
-                </sl-button>`
-            : status === 'MUST_PAY'
-                ? html`
-                    <sl-button id="confirm-payment-button" variant="success" size="large" ?loading=${this.actionInProgress}
-                               @click=${() => this.confirmPayment(event, scanned.code)}>
-                        <sl-icon slot="prefix" name="cash-coin"></sl-icon>
-                        Confirm payment
-                    </sl-button>`
-                : null;
+        const confirm = this.renderConfirmAction(event, scanned);
         const nextScan = html`
             <sl-button id="next-scan-button" variant="primary" size="large" ?disabled=${this.actionInProgress} @click=${this.nextScan}>
                 <sl-icon slot="prefix" name="qr-code-scan"></sl-icon>
@@ -247,10 +232,31 @@ export class CheckInScan extends LitElement {
                     <sl-icon slot="prefix" name="stop-circle"></sl-icon>
                     Stop scanning
                 </sl-button>
-                ${confirm != null ? nextScan : html`<div></div>`}
-                ${confirm ?? nextScan}
+                ${when(confirm != null, () => html`${nextScan}${confirm}`, () => html`<div></div>${nextScan}`)}
             </div>
         `;
+    }
+
+    // the action that completes the scan, if the status of the ticket requires one
+    private renderConfirmAction(event: AlfioEvent, scanned: ScanResult): TemplateResult | null {
+        const status = scanned.data!.result.status;
+        if (status === 'OK_READY_TO_BE_CHECKED_IN') {
+            return html`
+                <sl-button id="confirm-check-in-button" variant="warning" size="large" ?loading=${this.actionInProgress}
+                           @click=${() => this.checkIn(event, scanned.code)}>
+                    <sl-icon slot="prefix" name="check2"></sl-icon>
+                    Confirm check-in
+                </sl-button>`;
+        }
+        if (status === 'MUST_PAY') {
+            return html`
+                <sl-button id="confirm-payment-button" variant="warning" size="large" ?loading=${this.actionInProgress}
+                           @click=${() => this.confirmPayment(event, scanned.code)}>
+                    <sl-icon slot="prefix" name="cash-coin"></sl-icon>
+                    Confirm payment
+                </sl-button>`;
+        }
+        return null;
     }
 
     private renderResult({ result }: TicketAndCheckInResult): TemplateResult {
@@ -261,7 +267,11 @@ export class CheckInScan extends LitElement {
                 return this.renderAlert('success', 'check2-circle', 'Ticket is ok, ready to be checked in.');
             case 'MUST_PAY': {
                 const amount = formatAmount(result.dueAmount, result.currency);
-                return this.renderAlert('warning', 'cash-coin', `Ticket is ok, but customer must still pay the ticket${amount ? ` (${amount})` : ''}.`);
+                let message = 'Ticket is ok, but customer must still pay the ticket.';
+                if (amount) {
+                    message = `Ticket is ok, but customer must still pay the ticket (${amount}).`;
+                }
+                return this.renderAlert('warning', 'cash-coin', message);
             }
             case 'ALREADY_CHECK_IN':
                 return this.renderAlert('warning', 'exclamation-triangle', result.message || 'Ticket already checked in.');
@@ -309,7 +319,10 @@ export class CheckInScan extends LitElement {
 
     private nextScan = (): Promise<void> => {
         // the ticket just processed is probably still in front of the camera
-        this.ignoredCode = this.scanned != null ? { code: this.scanned.code, seenAt: Date.now() } : null;
+        this.ignoredCode = null;
+        if (this.scanned != null) {
+            this.ignoredCode = { code: this.scanned.code, seenAt: Date.now() };
+        }
         return this.startScanning();
     };
 
@@ -322,9 +335,7 @@ export class CheckInScan extends LitElement {
         clearTimeout(this.captureTimer);
         this.stream?.getTracks().forEach(track => track.stop());
         try {
-            this.stream = await navigator.mediaDevices.getUserMedia({
-                video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: 'environment' },
-            });
+            this.stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints(deviceId) });
             // labels are available only after the user has granted access to the camera
             const devices = await navigator.mediaDevices.enumerateDevices();
             this.cameras = devices.filter(device => device.kind === 'videoinput');
@@ -418,6 +429,14 @@ export class CheckInScan extends LitElement {
             this.actionInProgress = false;
         }
     }
+}
+
+// the selected camera, or the one facing the attendee by default
+function videoConstraints(deviceId: string): MediaTrackConstraints {
+    if (deviceId) {
+        return { deviceId: { exact: deviceId } };
+    }
+    return { facingMode: 'environment' };
 }
 
 /**

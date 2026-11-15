@@ -197,10 +197,10 @@ class AdminConsole {
                 if (row == null) {
                     return false;
                 }
-                // an enabled extension has an "enabled" badge, a disabled one has none
+                // an enabled extension has an "Enabled" badge, a disabled one has none
                 var badge = (WebElement) ((JavascriptExecutor) driver).executeScript(
                     "return arguments[0].querySelector('sl-badge');", row);
-                var displayedAsEnabled = badge != null && "enabled".equals(badge.getText().strip());
+                var displayedAsEnabled = badge != null && "Enabled".equals(badge.getText().strip());
                 return displayedAsEnabled == enabled;
             });
     }
@@ -523,7 +523,7 @@ class AdminConsole {
         waitForReservationStatus(reservationDetail, "OFFLINE_PAYMENT");
         LOGGER.info("confirming payment of {} from the reservation detail", customerName);
         clickWithJs(driver, findInShadowRoot(reservationDetail, ".filter-right sl-button[variant='success']"));
-        submitDialog(reservationDetail, "alfio-edit-payment-dialog", "success");
+        submitDialog(reservationDetail, "alfio-edit-payment-dialog", "warning");
         return waitForReservationStatus(reservationDetail, "COMPLETE");
     }
 
@@ -678,7 +678,7 @@ class AdminConsole {
         LOGGER.info("confirming pending payment for {} on {}", customerName, slug);
         clickWithJs(driver, confirmButton);
         // the organizer can specify when the payment has been received
-        submitDialog(pendingPayments, "alfio-edit-payment-dialog", "success");
+        submitDialog(pendingPayments, "alfio-edit-payment-dialog", "warning");
         waitForEmptyState(pendingPayments, "No pending payments found");
         waitForPendingPaymentsCount(slug, "badge", 0, badgeText(0));
     }
@@ -696,7 +696,7 @@ class AdminConsole {
         var bulkConfirmation = findInShadowRoot(pendingPayments, "alfio-bulk-confirmation");
         var fileInput = findInShadowRoot(findInShadowRoot(bulkConfirmation, "alfio-file-upload"), "#file-input");
         uploadFile(fileInput, tempFile("e2e-payments", ".csv", (reservationId + "," + amount + "\n").getBytes(StandardCharsets.UTF_8)));
-        var uploadButton = findInShadowRoot(bulkConfirmation, "sl-button[variant='success']");
+        var uploadButton = findInShadowRoot(bulkConfirmation, "sl-button[variant='warning']");
         wait.until(_ -> uploadButton.getDomAttribute("disabled") == null);
         clickWithJs(driver, uploadButton);
 
@@ -2057,13 +2057,15 @@ class AdminConsole {
     }
 
     /**
-     * Opens the edit page from the event detail (the edit reuses the event creation form),
-     * changes the event name and saves, landing back on the detail page.
+     * Edits the event details in the dialog of the event detail page (the dialog reuses the event creation form),
+     * changes the event name and saves: the page shows the new name.
      */
     void editEventNameFromDetail(String slug, String newDisplayName) {
         var detail = openEventDetail(slug);
         clickWithJs(driver, findInShadowRoot(detail, "#edit-event"));
-        var edit = wait.until(presenceOfElementLocated(By.tagName("alfio-event-create")));
+        var edit = new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the dialog to edit the event details did not open")
+            .until(_ -> findAllInShadowRoot(detail, "#section-dialog alfio-event-create").stream().findFirst().orElse(null));
         // the form is pre-filled with the event data once the initial load has completed
         var nameControl = findInShadowRoot(edit, "sl-input#displayName");
         var nameInput = findInShadowRoot(nameControl, "input");
@@ -2075,11 +2077,10 @@ class AdminConsole {
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .withMessage(() -> "saving the edited event did not complete: " + ((JavascriptExecutor) driver).executeScript(
                 "return Array.from(arguments[0].shadowRoot.querySelectorAll('#submit-error, .form-error-text, .error')).map(element => element.getAttribute('help-text') || element.textContent).join(' | ');", edit))
-            .until(urlContains("/events/" + slug + "/detail"));
-        var detailAfter = wait.until(presenceOfElementLocated(By.tagName("alfio-event-detail")));
+            .until(_ -> findAllInShadowRoot(detail, "#section-dialog alfio-event-create").isEmpty());
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .withMessage(() -> "the event detail page does not show the new name " + newDisplayName)
-            .until(_ -> findInShadowRoot(detailAfter, "h1").getText().contains(newDisplayName));
+            .until(_ -> findInShadowRoot(detail, "h1").getText().contains(newDisplayName));
     }
 
     private WebElement openExtensionList() {
@@ -2311,9 +2312,8 @@ class AdminConsole {
         // price is pre-filled with the event's regular price, and the category is on sale until the event starts
         typeInShoelaceControl(wait.until(_ -> findInShadowRoot(categoryDialog, "sl-input#name")), "input", restricted ? "Restricted" : event.categoryName());
         if (restricted) {
-            // restricted access requires a fixed allocation: one token is generated per seat
+            // an unlisted category always has a limit (the dialog turns it on): one token is generated per seat
             selectShoelaceOptionByValue(findInShadowRoot(categoryDialog, "#tokenGenerationRequested"), "hidden");
-            selectShoelaceOptionByValue(findInShadowRoot(categoryDialog, "#bounded"), "fixed");
             typeInShoelaceControl(wait.until(_ -> findInShadowRoot(categoryDialog, "sl-input#maxTickets")), "input", "5");
         }
         clickWithJs(driver, findInShadowRoot(categoryDialog, "#category-save"));

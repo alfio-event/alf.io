@@ -370,12 +370,12 @@ public class EventManager {
     // temporary until we support full subscription link on the admin UI
     private static List<LinkSubscriptionsToEventRequest> toSubscriptionLinkRequests(List<UUID> subscriptionIds) {
         return requireNonNullElse(subscriptionIds, List.<UUID>of()).stream()
-            .map(s -> new LinkSubscriptionsToEventRequest(s, List.of())).collect(Collectors.toList());
+            .map(s -> new LinkSubscriptionsToEventRequest(s, List.of())).toList();
     }
 
     public void updateLinkedSubscriptions(List<LinkSubscriptionsToEventRequest> linkedSubscriptions, int eventId, int organizationId) {
         if(CollectionUtils.isNotEmpty(linkedSubscriptions)) {
-            var descriptorIds = linkedSubscriptions.stream().map(LinkSubscriptionsToEventRequest::getDescriptorId).collect(Collectors.toList());
+            var descriptorIds = linkedSubscriptions.stream().map(LinkSubscriptionsToEventRequest::getDescriptorId).toList();
             int removed = subscriptionRepository.removeStaleSubscriptions(eventId, organizationId, descriptorIds);
             log.trace("removed {} subscription links", removed);
             createSubscriptionLinks(eventId, organizationId, linkedSubscriptions);
@@ -603,6 +603,7 @@ public class EventManager {
                 requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty), accessType);
 
             insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
+            saveBadgeColorConfiguration(tc.getBadgeColor(), event, category.getKey());
 
             if (tc.isTokenGenerationRequested()) {
                 final TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), event.getId());
@@ -673,7 +674,7 @@ public class EventManager {
                             return new ColorConfiguration(chosenColor, newList);
                         }
                         return cc;
-                    }).collect(toUnmodifiableList()));
+                    }).toList());
                 } else {
                     var newList = new ArrayList<>(configurationWithoutCategory);
                     newList.add(new ColorConfiguration(chosenColor, List.of(categoryId)));
@@ -729,7 +730,7 @@ public class EventManager {
                 atZone(tc.getValidCheckInTo(), zoneId),
                 atZone(tc.getTicketValidityStart(), zoneId),
                 atZone(tc.getTicketValidityEnd(), zoneId),
-                requireNonNullElse(tc.getTicketCheckInStrategy(), ONCE_PER_EVENT), tc.getTicketAccessType());
+                requireNonNullElse(tc.getTicketCheckInStrategy(), ONCE_PER_EVENT), requireNonNullElse(tc.getTicketAccessType(), TicketAccessType.INHERIT));
         TicketCategory updated = ticketCategoryRepository.getByIdAndActive(tc.getId(), eventId);
         int addedTickets = 0;
         if(allocationStrategyChanged) {
@@ -918,7 +919,7 @@ public class EventManager {
         }
 
         //
-        categoriesId = Optional.ofNullable(categoriesId).orElse(Collections.emptyList()).stream().filter(Objects::nonNull).collect(toList());
+        categoriesId = Optional.ofNullable(categoriesId).orElse(Collections.emptyList()).stream().filter(Objects::nonNull).toList();
         //
 
         if (organizationId == null) {
@@ -947,12 +948,12 @@ public class EventManager {
 
     public List<PromoCodeDiscountWithFormattedTimeAndAmount> findPromoCodesInEvent(int eventId) {
         var event = eventRepository.findById(eventId);
-        return promoCodeRepository.findAllInEvent(eventId).stream().map(p -> new PromoCodeDiscountWithFormattedTimeAndAmount(p, event.getZoneId(), event.getCurrency())).collect(toList());
+        return promoCodeRepository.findAllInEvent(eventId).stream().map(p -> new PromoCodeDiscountWithFormattedTimeAndAmount(p, event.getZoneId(), event.getCurrency())).toList();
     }
 
     public List<PromoCodeDiscountWithFormattedTimeAndAmount> findPromoCodesInOrganization(int organizationId) {
         ZoneId zoneId = ZoneId.systemDefault();
-        return promoCodeRepository.findAllInOrganization(organizationId).stream().map(p -> new PromoCodeDiscountWithFormattedTimeAndAmount(p, zoneId, null)).collect(toList());
+        return promoCodeRepository.findAllInOrganization(organizationId).stream().map(p -> new PromoCodeDiscountWithFormattedTimeAndAmount(p, zoneId, null)).toList();
     }
 
     public String getEventUrl(Event event) {
@@ -1050,7 +1051,7 @@ public class EventManager {
                 .toArray(MapSqlParameterSource[]::new);
             int[] results = jdbcTemplate.batchUpdate(ticketCategoryRepository.updateOrdinal(), parameterSources);
             Validate.isTrue(IntStream.of(results).sum() == categories.size(), "Unexpected result from update.");
-        } else {
+        } else if(log.isWarnEnabled()) {
             log.warn("unauthorized access to event {}", removeTabsAndNewlines(eventName));
         }
     }
@@ -1094,21 +1095,22 @@ public class EventManager {
                                               ExtensionCapability capability,
                                               Map<String, String> requestParams) {
         return getOptionalByName(eventName, username)
-            .flatMap(event -> {
-                if (capability == ExtensionCapability.GENERATE_MEETING_LINK) {
-                    var organization = organizationRepository.getById(event.getOrganizationId());
-                    return extensionManager.handleGenerateMeetingLinkCapability(event, organization, getMetadataForEvent(event), requestParams)
-                        .map(metadata -> {
-                            eventRepository.updateMetadata(requireNonNullElseGet(metadata, AlfioMetadata::empty), event.getId());
-                            return "metadata updated";
-                        });
-                } else if (capability == ExtensionCapability.LINK_EXTERNAL_APPLICATION) {
-                    return extensionManager.handleGenerateLinkCapability(event, getMetadataForEvent(event), requestParams);
-                } else {
-                    return extensionManager.executeCapability(capability, requestParams, event, String.class);
+            .flatMap(event ->
+                switch (capability) {
+                    case ExtensionCapability.GENERATE_MEETING_LINK -> {
+                        var organization = organizationRepository.getById(event.getOrganizationId());
+                        yield extensionManager.handleGenerateMeetingLinkCapability(event, organization, getMetadataForEvent(event), requestParams)
+                            .map(metadata -> {
+                                eventRepository.updateMetadata(requireNonNullElseGet(metadata, AlfioMetadata::empty), event.getId());
+                                return "metadata updated";
+                            });
+                    }
+                    case ExtensionCapability.LINK_EXTERNAL_APPLICATION ->
+                        extensionManager.handleGenerateLinkCapability(event, getMetadataForEvent(event), requestParams);
+                    default -> extensionManager.executeCapability(capability, requestParams, event, String.class);
                 }
 
-            });
+            );
     }
 
     public List<UUID> getLinkedSubscriptionIds(int eventId, int organizationId) {

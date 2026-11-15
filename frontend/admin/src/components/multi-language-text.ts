@@ -215,7 +215,10 @@ export class MultiLanguageText extends LitElement {
      * then by language part (it-IT matches it)
      */
     private browserLocale(): string | null {
-        const browserLanguages = navigator.languages?.length ? navigator.languages : [navigator.language];
+        let browserLanguages: readonly string[] = [navigator.language];
+        if (navigator.languages?.length) {
+            browserLanguages = navigator.languages;
+        }
         for (const browserLanguage of browserLanguages) {
             if (browserLanguage == null) {
                 continue;

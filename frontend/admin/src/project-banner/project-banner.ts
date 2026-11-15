@@ -2,7 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js';
 import { ConfigurationService } from '../service/configuration';
-import { retroCompat, textColors, panelStyles, row, spacing } from '../styles'
+import { retroCompat, textColors, row, spacing } from '../styles'
 
 @customElement('alfio-project-banner')
 export class ProjectBanner extends LitElement {
@@ -13,13 +13,20 @@ export class ProjectBanner extends LitElement {
     @property({ type: String, attribute: 'data-alfio-version' })
     alfioVersion?: string;
 
-        static readonly styles = [
+    static readonly styles = [
         retroCompat,
-        panelStyles,
         textColors,
         row,
         spacing,
-        css` :host { --alfio-row-cols: 3 }`
+        css`
+            :host {
+                --alfio-row-cols: 3;
+            }
+
+            .banner-actions {
+                margin-top: var(--sl-spacing-large);
+            }
+        `
     ];
 
     render() {
@@ -28,7 +35,7 @@ export class ProjectBanner extends LitElement {
                 <h5 class="text-muted">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.${this.alfioVersion}</h5>
                 <small><a href="https://github.com/alfio-event/alf.io/issues" target="_blank" rel="noopener">report an issue</a> or <a href="https://github.com/alfio-event/alf.io/discussions" target="_blank" rel="nofollow noopener noreferrer">ask for help</a></small>
                 <div class="wMarginTop10px">
-                    <sl-button variant="success" size="small" href="https://alf.io/usage-form/" target="_blank" rel="noopener">Tell us about you!</sl-button>
+                    <sl-button variant="primary" size="small" href="https://alf.io/usage-form/" target="_blank" rel="noopener">Tell us about you!</sl-button>
                 </div>
             </div>
         `;
@@ -38,15 +45,14 @@ export class ProjectBanner extends LitElement {
                 <h3 class="text-center">Thank you for using Alf.io!</h3>
                 <h4> We don't track usage in any way, because we respect your privacy<br>
                 ...but we're very happy that you've decided to use Alf.io and we'd love to hear your story! </h4>
-                <div>&nbsp;</div>
-                <div class="row">
+                <div class="row banner-actions">
                     <div>
                         <sl-button variant="primary" href="https://alf.io/usage-form/" target="_blank" rel="noopener">
                             Tell us about you!
                         </sl-button>
                     </div>
                     <div>
-                        <sl-button variant="success" href="https://opencollective.com/alfio/contribute" target="_blank" rel="noopener">
+                        <sl-button variant="default" href="https://opencollective.com/alfio/contribute" target="_blank" rel="noopener">
                             Contribute on OpenCollective
                         </sl-button>
                     </div>

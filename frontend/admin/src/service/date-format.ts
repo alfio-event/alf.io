@@ -10,7 +10,11 @@ import {DateTimeModification} from "../model/purchase-context.ts";
  */
 export type DateValue = string | DateTimeModification | Date | null | undefined;
 
-export type DateFormatStyle = 'date-time' | 'date' | 'time';
+/**
+ * - date-time, date, time: the parts of the admin-wide format
+ * - day-month: the date without the year, e.g. "Jun 30", for compact labels such as chart axes
+ */
+export type DateFormatStyle = 'date-time' | 'date' | 'time' | 'day-month';
 
 export interface DateFormatOptions {
     // IANA time zone used to display instants. Ignored for wall-clock values. Defaults to the browser time zone
@@ -217,12 +221,27 @@ function formatter(style: DateFormatStyle = 'date-time', timeZone: string | unde
     return result;
 }
 
+/**
+ * The date of the admin-wide format, without the year
+ */
+function dayMonthOptions(): Intl.DateTimeFormatOptions {
+    const options: Intl.DateTimeFormatOptions = { ...preferences.date };
+    delete options.year;
+    // a "full"/"long" dateStyle can't be combined with the single fields: keep only day and month
+    if (options.dateStyle != null) {
+        return { month: 'short', day: 'numeric' };
+    }
+    return options;
+}
+
 function styleOptions(style: DateFormatStyle): Intl.DateTimeFormatOptions {
     switch (style) {
         case 'date':
             return preferences.date;
         case 'time':
             return preferences.time;
+        case 'day-month':
+            return dayMonthOptions();
         default:
             return { ...preferences.date, ...preferences.time };
     }

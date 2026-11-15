@@ -258,6 +258,23 @@ function requiredNonNegativeNumber(value: unknown): string | undefined {
  * With the "data-event-name" attribute (#/events/{eventName}/edit), the same form edits an
  * existing event: it is pre-filled with the event's data and saved through the update endpoints.
  */
+/**
+ * A part of an existing event, edited in a dialog of the event detail page: "details" (name, format, location,
+ * dates, public links, logo) and "description" are saved through the header endpoint, "seats" (capacity,
+ * prices, payment methods, subscriptions) through the prices endpoint
+ */
+export type EventEditSection = 'details' | 'description' | 'seats';
+
+/**
+ * Fired when the section has been saved (section mode only)
+ */
+export const EVENT_SECTION_SAVED = 'alfio-event-section-saved';
+
+/**
+ * Fired when the user cancels the edit of the section (section mode only)
+ */
+export const EVENT_SECTION_CANCELLED = 'alfio-event-section-cancelled';
+
 @customElement('alfio-event-create')
 export class EventCreate extends LitElement {
 
@@ -266,6 +283,13 @@ export class EventCreate extends LitElement {
      */
     @property({type: String, attribute: 'data-event-name'})
     eventName = '';
+
+    /**
+     * With "data-event-name": renders only this part of the form, without the page title, to be embedded in a
+     * dialog. Saving fires EVENT_SECTION_SAVED instead of going back to the detail page
+     */
+    @property({type: String, attribute: 'data-section'})
+    section: EventEditSection | '' = '';
 
     @state() private editingEvent: AlfioEvent | null = null;
 
@@ -463,6 +487,13 @@ export class EventCreate extends LitElement {
     }
 
     render(): TemplateResult {
+        if (this.isSectionMode()) {
+            return html`
+                ${taskContent(this.loadDataTask, this.loadDataTask.value ?? null,
+                    'Failed to load the event. Please try again.',
+                    (data) => this.renderSectionForm(data))}
+            `;
+        }
         // known before the event has been loaded, so that the page never shows the creation title meanwhile
         const editing = this.eventName !== '';
         let title: TemplateResult = html`Create new event`;
@@ -559,6 +590,55 @@ export class EventCreate extends LitElement {
                 `, () => html`<sl-button variant="default" size="large" href=${cancelHref}>Cancel</sl-button>`)}
             </form>
         `;
+    }
+
+    private isSectionMode(): boolean {
+        return this.eventName !== '' && this.section !== '';
+    }
+
+    /**
+     * One part of the form of an existing event, with its own Cancel and Save (see "section")
+     */
+    private renderSectionForm(data: LoadedData): TemplateResult {
+        const submitted = this.#form.api.state.submissionAttempts > 0;
+        let content: TemplateResult;
+        if (this.section === 'description') {
+            content = this.renderDescription(data);
+        } else if (this.section === 'seats') {
+            content = this.renderSeatsAndPayments(data, submitted);
+        } else {
+            content = html`
+                ${this.renderBasicInfo(data)}
+                ${this.renderUrls(data)}
+                ${this.renderLogo()}
+            `;
+        }
+        return html`
+            <form class="section-form form-stack" novalidate @submit=${this.submit}>
+                ${content}
+                ${when(this.submitError, () => html`
+                    <sl-alert id="submit-error" variant="danger" open closable @sl-after-hide=${() => { this.submitError = null; }}>
+                        <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+                        ${this.submitError}
+                    </sl-alert>
+                `)}
+                <!-- the footer stays inside the form, because Save submits it -->
+                <div class="footer">
+                    <sl-divider></sl-divider>
+                    <div class="row" style="--alfio-row-cols: 3">
+                        <sl-button id="cancel-button" variant="default" size="large"
+                                   @click=${() => this.dispatchEvent(new CustomEvent(EVENT_SECTION_CANCELLED, {bubbles: true, composed: true}))}>Cancel</sl-button>
+                        <div></div>
+                        <sl-button id="save-button" type="submit" variant="warning" size="large" ?loading=${this.submitting} ?disabled=${this.submitting}>Save</sl-button>
+                    </div>
+                </div>
+            </form>
+        `;
+    }
+
+    // the logo is edited, and required, only with the event details
+    private logoRequired(): boolean {
+        return !this.isSectionMode() || this.section === 'details';
     }
 
     private renderOrganizer(data: LoadedData): TemplateResult {
@@ -1023,12 +1103,17 @@ export class EventCreate extends LitElement {
 
     private renderCategoryCard(category: CategoryDraft, index: number, count: number): TemplateResult {
         const values = this.values;
-        let meta = 'dynamic allocation';
+        // only the exceptions: a limit, an unlisted category
+        const metaParts: string[] = [];
         if (category.bounded) {
-            meta = `${category.maxTickets} tickets`;
+            metaParts.push(`up to ${category.maxTickets} tickets`);
         }
         if (category.tokenGenerationRequested) {
-            meta += ', hidden';
+            metaParts.push('unlisted');
+        }
+        let meta = 'no limit';
+        if (metaParts.length > 0) {
+            meta = metaParts.join(', ');
         }
         const actions = html`
             <sl-button variant="default" size="small" class="edit-category" @click=${() => void this.editCategory(category)}>
@@ -1552,6 +1637,8 @@ export class EventCreate extends LitElement {
                     validCheckInTo: adjust(tc.formattedValidCheckInTo),
                     ticketValidityStart: adjust(tc.formattedTicketValidityStart),
                     ticketValidityEnd: adjust(tc.formattedTicketValidityEnd),
+                    ticketCheckInStrategy: tc.ticketCheckInStrategy ?? 'ONCE_PER_EVENT',
+                    badgeColor: '',
                     ordinal,
                     metadataCopiedFrom: tc.id,
                     currency: event.currency ?? values.currency,
@@ -1873,6 +1960,8 @@ export class EventCreate extends LitElement {
                         validCheckInTo: asDateTimeLocal(c['validCheckInTo']),
                         ticketValidityStart: asDateTimeLocal(c['ticketValidityStart']),
                         ticketValidityEnd: asDateTimeLocal(c['ticketValidityEnd']),
+                        ticketCheckInStrategy: String(c['ticketCheckInStrategy'] ?? 'ONCE_PER_EVENT'),
+                        badgeColor: String(c['badgeColor'] ?? ''),
                         ordinal,
                         metadataCopiedFrom,
                         inheritedFields: c['inheritedFields'] as CategoryDraft['inheritedFields'],
@@ -1937,7 +2026,7 @@ export class EventCreate extends LitElement {
         this.submitError = null;
         this.categoriesError = null;
         this.logoError = null;
-        if (!this.hasLogo()) {
+        if (this.logoRequired() && !this.hasLogo()) {
             this.logoError = 'Please upload an event logo.';
         }
         if (!await submitValidated(this.#form.api)) {
@@ -2095,7 +2184,7 @@ export class EventCreate extends LitElement {
      * then creates the event — or, when editing, updates its header and its prices
      */
     private async save(values: EventFormValues): Promise<void> {
-        if (!this.hasLogo()) {
+        if (this.logoRequired() && !this.hasLogo()) {
             this.logoError = 'Please upload an event logo.';
             this.submitError = INVALID_FORM_MESSAGE;
             await this.updateComplete;
@@ -2146,24 +2235,41 @@ export class EventCreate extends LitElement {
      * methods and linked subscriptions. Both answer with a validation result.
      */
     private async saveExisting(event: AlfioEvent, payload: EventModificationPayload): Promise<void> {
-        const headerResult = await EventService.updateHeader(event.id, payload);
-        if (!headerResult.success) {
-            this.applyServerErrors(headerResult.validationErrors ?? []);
-            this.submitError = 'Please correct the errors highlighted in the form.';
-            await this.updateComplete;
-            focusFirstError(this.renderRoot);
+        // a section saves only its own endpoint
+        const sectionMode = this.isSectionMode();
+        const updateHeader = !sectionMode || this.section !== 'seats';
+        const updatePrices = !sectionMode || this.section === 'seats';
+        if (updateHeader) {
+            const headerResult = await EventService.updateHeader(event.id, payload);
+            if (!headerResult.success) {
+                await this.showSaveErrors(headerResult.validationErrors ?? []);
+                return;
+            }
+        }
+        if (updatePrices) {
+            const pricesResult = await EventService.updatePrices(event.id, payload);
+            if (!pricesResult.success) {
+                await this.showSaveErrors(pricesResult.validationErrors ?? []);
+                return;
+            }
+        }
+        dispatchFeedback({type: 'success', message: `Event ${payload.displayName} updated`}, this);
+        if (sectionMode) {
+            this.dispatchEvent(new CustomEvent(EVENT_SECTION_SAVED, {bubbles: true, composed: true}));
             return;
         }
-        const pricesResult = await EventService.updatePrices(event.id, payload);
-        if (!pricesResult.success) {
-            this.applyServerErrors(pricesResult.validationErrors ?? []);
-            this.submitError = 'Please correct the errors highlighted in the form.';
-            await this.updateComplete;
-            focusFirstError(this.renderRoot);
-            return;
-        }
-        dispatchFeedback({type: 'success', message: `Event ${event.displayName} updated`}, this);
         window.location.hash = `#/events/${event.shortName}/detail`;
+    }
+
+    private async showSaveErrors(errors: ErrorDescriptor[]): Promise<void> {
+        this.applyServerErrors(errors);
+        this.submitError = 'Please correct the errors highlighted in the form.';
+        if (this.isSectionMode() && this.categoriesError != null) {
+            // in a section there is no category list to display them
+            this.submitError = this.categoriesError;
+        }
+        await this.updateComplete;
+        focusFirstError(this.renderRoot);
     }
 
     private applyServerErrors(errors: ErrorDescriptor[]): void {

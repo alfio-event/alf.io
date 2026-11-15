@@ -564,6 +564,7 @@ export class EventOnlineSettings extends LitElement {
         css`
             :host {
                 display: block;
+                --alfio-section-body-padding: var(--sl-spacing-medium);
             }
             .section-body {
                 display: grid;
@@ -644,8 +645,8 @@ export class EventOnlineSettings extends LitElement {
                                     ${repeat(links, (link, index) => `${index}-${link.link}`, (link) => html`
                                         <tr>
                                             <td class="meeting-link"><a href=${link.link} target="_blank" rel="noopener">${link.link}</a></td>
-                                            <td><alfio-format-date date=${link.validFrom}></alfio-format-date></td>
-                                            <td><alfio-format-date date=${link.validTo}></alfio-format-date></td>
+                                            <td><alfio-format-date date=${link.validFrom} time-zone=${event.timeZone}></alfio-format-date></td>
+                                            <td><alfio-format-date date=${link.validTo} time-zone=${event.timeZone}></alfio-format-date></td>
                                         </tr>
                                     `)}
                                 </tbody>

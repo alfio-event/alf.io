@@ -2,13 +2,19 @@ import {css, html, LitElement, nothing, TemplateResult} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
+import {classMap} from 'lit/directives/class-map.js';
 import {Task} from '@lit/task';
 import {SubscriptionWithStatistics} from '../model/subscription-descriptor.ts';
 import {SubscriptionService} from '../service/subscription.ts';
 import {ConfigurationService} from '../service/configuration.ts';
 import {dispatchFeedback} from '../model/dom-events.ts';
 import {formatAmount} from '../service/reservation-format.ts';
-import {badges, cardList, textColors} from '../styles.ts';
+import {badges, cardList, modernLayout, textColors} from '../styles.ts';
+import {emptyState} from '../components/empty-state.ts';
+import {taskContent} from '../components/task-content.ts';
+import {sectionCard} from '../components/section-card.ts';
+import {organizationFilter} from '../components/organization-filter.ts';
+import {OrganizationService} from '../service/organization.ts';
 import '../components/format-date.ts';
 import './linked-events-dialog.ts';
 import type {LinkedEventsDialog} from './linked-events-dialog.ts';
@@ -49,11 +55,21 @@ export class SubscriptionsList extends LitElement {
         args: () => [this.organizationId] as const,
     });
 
+    private readonly loadOrganizationsTask = new Task(this, {
+        task: async () => OrganizationService.loadAll(),
+        args: () => [] as const,
+    });
+
     static readonly styles = [
         badges,
         cardList,
+        modernLayout,
         textColors,
         css`
+            .list-card {
+                --alfio-section-body-padding: 0;
+            }
+
             /* each row is the link to the edit page; the actions sit beside it */
             .subscription-item {
                 display: grid;
@@ -118,36 +134,29 @@ export class SubscriptionsList extends LitElement {
     ];
 
     render(): TemplateResult {
+        const data = this.loadDataTask.value;
+        let count: TemplateResult | undefined = undefined;
+        if (data != null) {
+            count = html`<sl-badge variant="primary" pill>${data.subscriptions.length}</sl-badge>`;
+        }
         return html`
-            <sl-card>
-                <div slot="header" class="card-header">
-                    <h2>Your subscriptions</h2>
+            <div class="filter-toolbar">
+                <div class="filter-left">
+                    ${organizationFilter(this.loadOrganizationsTask.value, this.organizationId,
+                        (organizationId) => window.location.hash = `#/subscriptions/${organizationId}/list`)}
+                </div>
+                <div class="filter-right">
                     <sl-button id="add-subscription" href=${`#/subscriptions/${this.organizationId}/create`}
-                               variant="success" size="medium">
-                        <sl-icon name="plus-circle" slot="prefix"></sl-icon>Add new
+                               variant="success" size="large">
+                        <sl-icon name="plus-circle" slot="prefix"></sl-icon>
+                        Add new
                     </sl-button>
                 </div>
-                ${this.loadDataTask.render({
-                    initial: () => this.renderSpinner(),
-                    running: () => this.renderSpinner(),
-                    error: () => html`
-                        <div class="state-message">
-                            <sl-alert open variant="danger">
-                                <sl-icon name="exclamation-triangle" slot="icon"></sl-icon>Failed to load subscriptions
-                            </sl-alert>
-                        </div>
-                    `,
-                    complete: (data: SubscriptionsListData | null) => {
-                        if (data == null) {
-                            return this.renderSpinner();
-                        }
-                        if (data.subscriptions.length === 0) {
-                            return this.renderEmpty();
-                        }
-                        return this.renderSubscriptions(data);
-                    }
-                })}
-            </sl-card>
+            </div>
+            ${sectionCard({icon: 'ticket-perforated', title: 'Subscriptions', badge: count, className: 'list-card'},
+                taskContent(this.loadDataTask, this.loadDataTask.value ?? null,
+                    'Failed to load the subscriptions. Please try again.',
+                    (loaded) => this.renderContent(loaded)))}
             <alfio-linked-events-dialog></alfio-linked-events-dialog>
         `;
     }
@@ -160,15 +169,18 @@ export class SubscriptionsList extends LitElement {
         `;
     }
 
+    private renderContent(data: SubscriptionsListData | null): TemplateResult {
+        if (data == null) {
+            return this.renderSpinner();
+        }
+        if (data.subscriptions.length === 0) {
+            return this.renderEmpty();
+        }
+        return this.renderSubscriptions(data);
+    }
+
     private renderEmpty(): TemplateResult {
-        return html`
-            <div class="state-message">
-                <sl-button id="create-first-subscription" href=${`#/subscriptions/${this.organizationId}/create`}
-                           variant="success" size="large">
-                    <sl-icon name="plus-circle" slot="prefix"></sl-icon> Create subscription
-                </sl-button>
-            </div>
-        `;
+        return emptyState('No subscriptions have been found');
     }
 
     private renderSubscriptions(data: SubscriptionsListData): TemplateResult {
@@ -186,7 +198,7 @@ export class SubscriptionsList extends LitElement {
                 <a class="event-row subscription-row" title=${descriptor.id}
                    href=${`#/subscriptions/${descriptor.organizationId}/${descriptor.id}/edit`}
                    aria-label=${`Edit ${title}`}>
-                    <div class="event-logo ${descriptor.fileBlobId == null ? 'placeholder' : ''}">
+                    <div class=${classMap({ 'event-logo': true, placeholder: descriptor.fileBlobId == null })}>
                         ${when(descriptor.fileBlobId != null,
                             () => html`<img src=${`/file/${descriptor.fileBlobId}`} alt="${title} logo">`,
                             () => html`<sl-icon name="ticket-perforated" aria-label="No image"></sl-icon>`)}
@@ -196,7 +208,7 @@ export class SubscriptionsList extends LitElement {
                             <span class="event-title">${title}</span>
                             ${when(descriptor.isPublic,
                                 () => html`<sl-badge variant="success" pill><sl-icon name="eye" aria-hidden="true"></sl-icon> Visible</sl-badge>`,
-                                () => html`<sl-badge variant="warning" pill><sl-icon name="eye-slash" aria-hidden="true"></sl-icon> Hidden</sl-badge>`)}
+                                () => html`<sl-badge variant="neutral" pill><sl-icon name="eye-slash" aria-hidden="true"></sl-icon> Hidden</sl-badge>`)}
                             ${when(data.ticketsGenerationJobActive && descriptor.supportsTicketsGeneration === true,
                                 () => html`<sl-badge variant="primary" pill><sl-icon name="ticket" aria-hidden="true"></sl-icon> Automatic tickets generation</sl-badge>`,
                                 () => nothing)}
@@ -244,18 +256,27 @@ export class SubscriptionsList extends LitElement {
 
     private renderSales(sub: SubscriptionWithStatistics): TemplateResult {
         const descriptor = sub.descriptor;
-        const pending = sub.pendingCount > 0 ? ` · ${sub.pendingCount} pending` : '';
+        let pending = '';
+        if (sub.pendingCount > 0) {
+            pending = ` · ${sub.pendingCount} pending`;
+        }
         if (descriptor.maxAvailable > 0) {
             const soldAndPending = sub.soldCount + sub.pendingCount;
             const percentage = Math.min(100, Math.round(soldAndPending * 100 / descriptor.maxAvailable));
+            const nearlyFull = percentage >= 90;
+            // when nearly sold out, the remaining subscriptions say more than the percentage
+            let progressLabel = `${percentage}%`;
+            if (sub.availableCount > 0 && nearlyFull) {
+                progressLabel = `${sub.availableCount} left`;
+            }
             return html`
                 <div class="ticket-summary">
                     <div class="sales-progress">
                         <div class="sales-meta">
                             <span>${sub.soldCount} of ${descriptor.maxAvailable} sold${pending}</span>
-                            <span>${sub.availableCount > 0 && percentage >= 90 ? `${sub.availableCount} left` : `${percentage}%`}</span>
+                            <span>${progressLabel}</span>
                         </div>
-                        <sl-progress-bar class=${percentage >= 90 ? 'nearly-full' : ''} value=${percentage}
+                        <sl-progress-bar class=${classMap({ 'nearly-full': nearlyFull })} value=${percentage}
                                          aria-label="${percentage}% of the subscriptions sold"></sl-progress-bar>
                     </div>
                 </div>

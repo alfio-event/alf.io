@@ -2,7 +2,7 @@ import {css, html, LitElement, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
 import {when} from 'lit/directives/when.js';
 import {TanStackFormController} from '@tanstack/lit-form';
-import type {SlDialog, SlTextarea} from '@shoelace-style/shoelace';
+import type {SlDialog, SlRequestCloseEvent, SlTextarea} from '@shoelace-style/shoelace';
 import {base, dialog, form, modernLayout, retroCompat, row} from '../../styles.ts';
 import {PaymentTransaction} from '../../model/reservation.ts';
 import {DateTimeModification} from '../../model/purchase-context.ts';
@@ -33,7 +33,8 @@ interface DialogModeConfig {
     title: string;
     description: string;
     action: string;
-    variant: 'warning' | 'success';
+    // icon of the action, Save has none
+    actionIcon?: string;
     successMessage: string;
     errorMessage: string;
 }
@@ -43,7 +44,6 @@ const MODES: Record<DialogMode, DialogModeConfig> = {
         title: 'Edit payment for',
         description: 'Update when the payment has been received and add internal notes.',
         action: 'Save',
-        variant: 'warning',
         successMessage: 'Payment updated successfully',
         errorMessage: 'Failed to update payment',
     },
@@ -51,7 +51,7 @@ const MODES: Record<DialogMode, DialogModeConfig> = {
         title: 'Confirm payment for',
         description: 'Register when the payment has been received. Tickets will be sent to the customer.',
         action: 'Confirm',
-        variant: 'success',
+        actionIcon: 'check2',
         successMessage: 'Payment confirmed successfully',
         errorMessage: 'Failed to confirm payment',
     },
@@ -149,7 +149,7 @@ export class EditPaymentDialog extends LitElement {
     render(): TemplateResult {
         const config = MODES[this.mode];
         return html`
-            <sl-dialog class="responsive-dialog" label="${config.title} ${shortReservationId(this.reservationId)}" placement="bottom"
+            <sl-dialog class="responsive-dialog" label="${config.title} ${shortReservationId(this.reservationId)}"
                        @sl-request-close=${this.onRequestClose}
                        @sl-after-hide=${this.onAfterHide}>
                 ${dialogTitle('cash-coin', `${config.title} ${shortReservationId(this.reservationId)}`, config.description)}
@@ -162,11 +162,10 @@ export class EditPaymentDialog extends LitElement {
                         <sl-button variant="default" size="large" ?disabled=${this.saving}
                                    @click=${() => this.dialog.hide()}>Cancel</sl-button>
                         <div></div>
-                        <sl-button id="save-payment" variant=${config.variant} size="large" ?disabled=${this.saving || this.transaction == null}
+                        <sl-button id="save-payment" variant="warning" size="large"
+                                   ?loading=${this.saving} ?disabled=${this.transaction == null}
                                    @click=${() => this.submit()}>
-                            ${when(this.saving,
-                                () => html`<sl-spinner slot="prefix"></sl-spinner>`,
-                                () => html`<sl-icon name="check2" slot="prefix"></sl-icon>`)}
+                            ${when(config.actionIcon, () => html`<sl-icon name=${config.actionIcon!} slot="prefix"></sl-icon>`)}
                             ${config.action}
                         </sl-button>
                     </div>
@@ -297,15 +296,16 @@ export class EditPaymentDialog extends LitElement {
         return `${prefix}/${this.purchaseContextType}/${encodeURIComponent(this.publicIdentifier)}/${suffix}`;
     }
 
-    private onRequestClose = (e: CustomEvent): void => {
-        if (this.saving) {
+    // a click outside the dialog would discard the notes typed so far: only the close button and Cancel close it
+    private onRequestClose = (e: SlRequestCloseEvent): void => {
+        if (this.saving || e.detail.source === 'overlay') {
             e.preventDefault();
         }
     };
 
     private onAfterHide = (e: Event): void => {
         // sl-after-hide bubbles from nested components (e.g. tooltips)
-        if (e.target !== this.dialog) {
+        if (e.target !== e.currentTarget) {
             return;
         }
         this.dispatchEvent(new CustomEvent('alfio-dialog-closed', {

@@ -39,6 +39,7 @@ Background on 2 and on the placement of form actions:
 | The section index of a long creation form (sticky nav on desktop, "Jump to section" select on mobile) | `<alfio-section-nav>`, `components/section-nav.ts`, with the `creationLayout` styles |
 | Data loaded by a `@lit/task` Task: spinner, error, refresh    | `taskContent()`, `components/task-content.ts`                                  |
 | An empty list                                                 | `emptyState()`, `components/empty-state.ts`                                    |
+| The organization whose items a list shows                     | `organizationFilter()`, `components/organization-filter.ts`                    |
 | An input or select bound to a draft object                    | `formField()`, `selectField()`, `components/form-field.ts`                     |
 | A localized text, one block per language (markdown-capable)   | `<alfio-multi-language-text>`, `components/multi-language-text.ts`, see [Multi-language text](#multi-language-text) |
 | A WYSIWYG markdown field                                      | `<alfio-markdown-editor>`, `components/markdown-editor.ts` — usually via `alfio-multi-language-text` with `markdown` |
@@ -68,12 +69,15 @@ Complete examples: `event/reservation-create/reservation-create.ts` (form with r
 ## 3. Page structure
 
 - Wrap the page in `.container`, and start it with a `.page-title-row` (holding the `<h1>`) followed by a
-  `<hr class="page-separator">`.
+  `<hr class="page-separator">`. An optional one-sentence description goes below the separator, as
+  `<p class="page-description text-muted">`.
 - Split the content in section cards with `sectionCard()`: header with icon, title, optional count badge and
   actions on the right; body below.
 - Load the data with a `@lit/task` Task and render it with `taskContent()`.
-- List pages: filter toolbar, tables and empty states are described in
-  [`branding-guidelines.md`](branding-guidelines.md) (sections 2 to 4).
+- List pages: a `.filter-toolbar` (filters left, actions right, "Add new" last), then the list in a `sectionCard()`
+  with a count badge. Filter toolbar, tables and empty states are described in
+  [`branding-guidelines.md`](branding-guidelines.md) (sections 2 to 4). Use `<alfio-pagination-bar>` for pages,
+  not hand-made Previous/Next buttons.
 
 ### Creation pages with dependent choices
 
@@ -148,6 +152,34 @@ subscription details and the choices governing validity/availability, pricing an
 public-facing content. Determine the exact order from the subscription's dependencies and save contract;
 do not add event-specific venue or ticket-category fields. Preserve its required fields and use the same
 section navigation, choice panels, visible public links, upload treatment and footer conventions.
+
+### Detail pages: edit in place
+
+A detail page (e.g. the event detail) shows the item as section cards, and each part is edited where it is shown:
+
+- Each editable card has a small "Edit" button in its header (`sectionCard({ actions })`). It opens a dialog with
+  the fields of that card only, with Cancel and Save. Don't link to a separate edit page, and don't mix the two
+  approaches on the same page.
+- Reuse the creation form for the dialog instead of duplicating its fields: the event form renders a single part
+  with `<alfio-event-create data-event-name="…" data-section="details|description|seats">` and fires
+  `alfio-event-section-saved` / `alfio-event-section-cancelled`. Create the form at every opening, so that it
+  starts from the saved item, and reload the page after Save.
+- Operations on a list of the page that change many cards at once (e.g. rearranging the categories) open a dialog
+  too: the page behind stays as it is, and Cancel discards the change.
+
+### Ticket categories: words to use
+
+Describe what the organizer gets, not how tickets are allocated:
+
+| Concept (code) | Say | Don't say |
+|---|---|---|
+| Category with `bounded = false` (the default) | nothing; "Available (shared with other categories)" in a ticket bar | dynamic, grows dynamically |
+| Category with `bounded = true` | "Limit the number of tickets", "Up to 20 tickets" | fixed, fixed allocation, bounded |
+| Tickets of the limited categories, not sold yet | "Kept for categories with a limit" | reserved (a reservation is an order) |
+| Seats of the event outside every category (`notAllocatedTickets`) | "Not on sale" | not assigned, not allocated |
+| Category with `tokenGenerationRequested` / `accessRestricted` | "Unlisted" | hidden, restricted, access code category |
+| Its per-ticket codes | "Invitation codes" | access codes (those are the shared codes of the promo codes page) |
+| Moving leftover tickets to the shared capacity | "Put back on sale" | assign to the dynamic categories |
 
 ## 4. Forms
 
@@ -278,7 +310,8 @@ While Save is saving, use its `loading` attribute.
 | Delete                                                      | `danger`                       |         | `trash`       |                                                         |
 | Any other destructive confirmation (rotate a key, disable)  | `warning`                      | `large` |               | dialog footer, right                                    |
 | Secondary action (bulk creation)                            | `primary`                      |         |               | list toolbar                                            |
-| Action in a table row, a toolbar or a section card header   | as above                       | `small` |               | next to what it applies to                              |
+| Other action in a list toolbar, next to Add new             | as above                       | `large` |               | list toolbar, before Add new                            |
+| Action in a table row or a section card header              | as above                       | `small` |               | next to what it applies to                              |
 
 Other icons: `pencil` edit, `clipboard` copy, `qr-code` QR code, `x-circle` clear (a field or a filter), `check2` confirm,
 `arrow-clockwise` refresh.
@@ -351,6 +384,9 @@ Example: `event/check-in/add-attendees-dialog.ts`.
   - **Wall-clock strings** (`yyyy-MM-dd HH:mm`, no offset) are already in the event time zone and are displayed
     unchanged.
 - Import the component where it is used: `import '../components/format-date.ts';`.
+- Where an element can't be used (e.g. the labels of a chart), call `formatDate()` from `service/date-format.ts`.
+  The `day-month` style drops the year (`Jun 30`) for compact labels. Re-render on `DATE_FORMAT_CHANGED_EVENT`,
+  as `<alfio-format-date>` does.
 
 ```html
 <!-- date + time (default) -->
@@ -359,8 +395,9 @@ Example: `event/check-in/add-attendees-dialog.ts`.
 <alfio-format-date .date=${payment.transactionTimestamp} time-zone=${event.timeZone}>—</alfio-format-date>
 <!-- interval -->
 <alfio-format-date date=${ev.formattedBegin} end=${ev.formattedEnd}></alfio-format-date>
-<!-- date only / time only -->
+<!-- date only / time only / day and month only -->
 <alfio-format-date date=${value} format="date"></alfio-format-date>
+<alfio-format-date date=${value} format="day-month"></alfio-format-date>
 ```
 
 ## 9. CSV import

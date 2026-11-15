@@ -4,6 +4,7 @@ import {slColor} from '../../components/chart.ts';
  * The states of the tickets of an event, shown by the ticket status chart and by the bar of each
  * category: the same state has the same name and color in both.
  */
+// availableDynamic: available to every category without a limit; availableFixed: kept by the categories with a limit
 export type AllocationKey = 'checkedIn' | 'sold' | 'pending' | 'availableFixed' | 'availableDynamic' | 'notAssigned';
 
 interface AllocationDefinition {
@@ -13,14 +14,23 @@ interface AllocationDefinition {
     fallback: string;
 }
 
+// Sold and checked in are the strongest colors: they are what the organizer looks for. Pending is calm, as the
+// reservations in progress are normal. Only "Not on sale" asks for attention, because it needs an action
 const DEFINITIONS: Record<AllocationKey, AllocationDefinition> = {
-    checkedIn: {label: 'Checked in', token: '--sl-color-success-600', fallback: '#16a34a'},
-    sold: {label: 'Sold', token: '--sl-color-success-300', fallback: '#86efac'},
-    pending: {label: 'Pending', token: '--sl-color-warning-400', fallback: '#fbbf24'},
-    availableFixed: {label: 'Available in fixed categories', token: '--sl-color-sky-300', fallback: '#7dd3fc'},
-    availableDynamic: {label: 'Available in dynamic categories', token: '--sl-color-gray-300', fallback: '#d1d5db'},
-    notAssigned: {label: 'Not assigned to a category', token: '--sl-color-gray-500', fallback: '#6b7280'},
+    checkedIn: {label: 'Checked in', token: '--sl-color-success-700', fallback: '#15803d'},
+    sold: {label: 'Sold', token: '--sl-color-success-500', fallback: '#22c55e'},
+    pending: {label: 'Pending', token: '--sl-color-sky-400', fallback: '#38bdf8'},
+    availableDynamic: {label: 'Available', token: '--sl-color-gray-300', fallback: '#d1d5db'},
+    availableFixed: {label: 'Kept for categories with a limit', token: '--sl-color-gray-200', fallback: '#e5e7eb'},
+    notAssigned: {label: 'Not on sale', token: '--sl-color-warning-500', fallback: '#f59e0b'},
 };
+
+/**
+ * The color of a state, e.g. for another chart that shows the same states
+ */
+export function allocationColor(key: AllocationKey): string {
+    return slColor(DEFINITIONS[key].token, DEFINITIONS[key].fallback);
+}
 
 export interface AllocationSegment {
     key: AllocationKey;
@@ -44,6 +54,6 @@ export function allocationSegments(values: Partial<Record<AllocationKey, number>
             key,
             label: labels[key] ?? DEFINITIONS[key].label,
             value: values[key] ?? 0,
-            color: slColor(DEFINITIONS[key].token, DEFINITIONS[key].fallback),
+            color: allocationColor(key),
         }));
 }

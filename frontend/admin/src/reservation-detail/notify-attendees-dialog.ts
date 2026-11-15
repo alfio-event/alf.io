@@ -1,7 +1,7 @@
 import {css, html, TemplateResult} from 'lit';
 import {customElement, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
-import type {SlCheckbox} from '@shoelace-style/shoelace';
+import type {SlCheckbox, SlRequestCloseEvent} from '@shoelace-style/shoelace';
 import {base, dialog, modernLayout, retroCompat, row} from '../styles.ts';
 import {Ticket} from '../model/reservation-detail.ts';
 import {dialogTitle, PromptDialog} from '../components/prompt-dialog.ts';
@@ -59,7 +59,8 @@ export class NotifyAttendeesDialog extends PromptDialog<number[]> {
 
     render(): TemplateResult {
         return html`
-            <sl-dialog class="responsive-dialog" label="Send tickets via e-mail" placement="bottom"
+            <sl-dialog class="responsive-dialog" label="Send tickets via e-mail"
+                       @sl-request-close=${this.onRequestClose}
                        @sl-after-hide=${this.onAfterHide}>
                 ${dialogTitle('envelope', 'Send tickets via e-mail', 'Select the attendees who will receive their ticket.')}
                 <div class="dialog-form form-stack">
@@ -89,7 +90,6 @@ export class NotifyAttendeesDialog extends PromptDialog<number[]> {
                         <div></div>
                         <sl-button variant="warning" size="large" ?disabled=${this.selected.size === 0}
                                    @click=${() => this.close([...this.selected])}>
-                            <sl-icon name="send" slot="prefix"></sl-icon>
                             Send
                         </sl-button>
                     </div>
@@ -97,6 +97,13 @@ export class NotifyAttendeesDialog extends PromptDialog<number[]> {
             </sl-dialog>
         `;
     }
+
+    // a click outside the dialog would discard the selection: only the close button and Cancel close it
+    private onRequestClose = (event: SlRequestCloseEvent): void => {
+        if (event.detail.source === 'overlay') {
+            event.preventDefault();
+        }
+    };
 
     private selectAll(select: boolean): void {
         if (select) {

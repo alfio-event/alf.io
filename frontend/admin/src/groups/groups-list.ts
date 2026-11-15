@@ -8,6 +8,9 @@ import {GroupService} from '../service/group.ts';
 import {badges, base, cardList, modernLayout, textColors} from '../styles.ts';
 import {emptyState} from '../components/empty-state.ts';
 import {taskContent} from '../components/task-content.ts';
+import {sectionCard} from '../components/section-card.ts';
+import {organizationFilter} from '../components/organization-filter.ts';
+import {OrganizationService} from '../service/organization.ts';
 
 /**
  * The groups of an organization, as a card with one row each: the row opens the edit page.
@@ -30,6 +33,11 @@ export class GroupsList extends LitElement {
         args: () => [this.organizationId] as const,
     });
 
+    private readonly loadOrganizationsTask = new Task(this, {
+        task: async () => OrganizationService.loadAll(),
+        args: () => [] as const,
+    });
+
     static readonly styles = [
         base,
         badges,
@@ -37,6 +45,10 @@ export class GroupsList extends LitElement {
         modernLayout,
         textColors,
         css`
+            .list-card {
+                --alfio-section-body-padding: 0;
+            }
+
             .group-row {
                 grid-template-columns: auto minmax(0, 1fr) auto;
             }
@@ -63,19 +75,28 @@ export class GroupsList extends LitElement {
     ];
 
     render(): TemplateResult {
+        const groups = this.loadGroupsTask.value;
+        let count: TemplateResult | undefined = undefined;
+        if (groups != null) {
+            count = html`<sl-badge variant="primary" pill>${groups.length}</sl-badge>`;
+        }
         return html`
-            <sl-card>
-                <div slot="header" class="card-header">
-                    <h2>Your groups</h2>
-                    <sl-button id="add-group" href=${`#/group/${this.organizationId}/new`}
-                               variant="success" size="medium">
-                        <sl-icon name="plus-circle" slot="prefix"></sl-icon>Add new
+            <div class="filter-toolbar">
+                <div class="filter-left">
+                    ${organizationFilter(this.loadOrganizationsTask.value, this.organizationId,
+                        (organizationId) => window.location.hash = `#/group/${organizationId}/all`)}
+                </div>
+                <div class="filter-right">
+                    <sl-button id="add-group" href=${`#/group/${this.organizationId}/new`} variant="success" size="large">
+                        <sl-icon name="plus-circle" slot="prefix"></sl-icon>
+                        Add new
                     </sl-button>
                 </div>
-                ${taskContent(this.loadGroupsTask, this.loadGroupsTask.value ?? null,
+            </div>
+            ${sectionCard({icon: 'people', title: 'Groups', badge: count, className: 'list-card'},
+                taskContent(this.loadGroupsTask, this.loadGroupsTask.value ?? null,
                     'Failed to load the groups. Please try again.',
-                    (groups) => this.renderGroups(groups))}
-            </sl-card>
+                    (loaded) => this.renderGroups(loaded)))}
         `;
     }
 

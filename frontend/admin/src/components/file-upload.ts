@@ -1,5 +1,6 @@
 import {css, html, LitElement, nothing, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
+import {classMap} from 'lit/directives/class-map.js';
 import {when} from 'lit/directives/when.js';
 import {dropZone, form, textColors} from '../styles.ts';
 import {formatBytesBinary, matchesAccept} from '../service/helpers.ts';
@@ -110,7 +111,7 @@ export class FileUpload extends LitElement {
     private renderDropZone(): TemplateResult {
         return html`
             <div
-                class="drop-zone ${this.isDragOver ? 'drag-over' : ''}"
+                class=${classMap({ 'drop-zone': true, 'drag-over': this.isDragOver })}
                 role="button"
                 tabindex="0"
                 aria-label="Choose a file"

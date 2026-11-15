@@ -8,9 +8,10 @@ import {ExtensionEvent, ExtensionSupport} from '../model/extension.ts';
 import type {Organization} from '../model/organization.ts';
 import {ExtensionService} from '../service/extension.ts';
 import {dispatchFeedback} from '../model/dom-events.ts';
-import {base, dialog as dialogStyling, modernLayout, modernTable, row, textColors} from '../styles.ts';
+import {badges, base, dialog as dialogStyling, modernLayout, modernTable, row, textColors} from '../styles.ts';
 import {emptyState} from '../components/empty-state.ts';
 import {taskContent} from '../components/task-content.ts';
+import {sectionCard} from '../components/section-card.ts';
 import {renderScope} from './extension-scope.ts';
 
 interface ListData {
@@ -50,6 +51,7 @@ export class ExtensionList extends LitElement {
 
     static readonly styles = [
         base,
+        badges,
         textColors,
         modernLayout,
         modernTable,
@@ -59,11 +61,8 @@ export class ExtensionList extends LitElement {
             :host {
                 display: block;
             }
-            .enabled-icon {
-                font-size: var(--sl-font-size-x-large);
-            }
-            .enabled-icon.disabled {
-                color: var(--sl-color-gray-500);
+            sl-dialog {
+                --alfio-dialog-max-width: 32rem;
             }
         `,
     ];
@@ -77,7 +76,7 @@ export class ExtensionList extends LitElement {
                 <hr class="page-separator"/>
                 <div class="filter-toolbar" style="justify-content: flex-end;">
                     <div class="filter-right">
-                        <sl-button variant="primary" size="large" @click=${() => this.navigateTo('log')}>
+                        <sl-button variant="default" size="large" @click=${() => this.navigateTo('log')}>
                             <sl-icon slot="prefix" name="journal-text"></sl-icon> Show logs
                         </sl-button>
                         <sl-button variant="success" size="large" @click=${() => this.navigateTo('new')}>
@@ -93,32 +92,28 @@ export class ExtensionList extends LitElement {
     }
 
     private renderTable(data: ListData): TemplateResult {
-        if (data.extensions.length === 0) {
-            return html`
-                <section class="section-card">
-                    ${emptyState('No extensions have been found')}
-                </section>
-            `;
-        }
-        return html`
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Path</th>
-                            <th>Name</th>
-                            <th>Enabled</th>
-                            <th><span class="sr-only">Actions</span></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${repeat(data.extensions,
-                            (ext) => `${ext.path}/${ext.name}`,
-                            (ext) => this.renderRow(ext, data))}
-                    </tbody>
-                </table>
-            </div>
-        `;
+        const count = html`<sl-badge variant="primary" pill>${data.extensions.length}</sl-badge>`;
+        return sectionCard({icon: 'puzzle', title: 'Extensions', badge: count}, when(data.extensions.length === 0,
+            () => emptyState('No extensions have been found'),
+            () => html`
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Path</th>
+                                <th>Name</th>
+                                <th>Enabled</th>
+                                <th><span class="sr-only">Actions</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${repeat(data.extensions,
+                                (ext) => `${ext.path}/${ext.name}`,
+                                (ext) => this.renderRow(ext, data))}
+                        </tbody>
+                    </table>
+                </div>
+            `));
     }
 
     private renderRow(ext: ExtensionSupport, data: ListData): TemplateResult {
@@ -145,14 +140,14 @@ export class ExtensionList extends LitElement {
 
     private renderEnabledIcon(ext: ExtensionSupport): TemplateResult {
         if (ext.enabled) {
-            return html`<sl-badge pill variant="success">enabled</sl-badge>`;
+            return html`<sl-badge pill variant="success">Enabled</sl-badge>`;
         }
         return html``;
     }
 
     private renderDeleteDialog(): TemplateResult {
         return html`
-            <sl-dialog id="deleteDialog" label="Delete extension" @sl-request-close=${(e: CustomEvent) => {
+            <sl-dialog id="deleteDialog" class="responsive-dialog" label="Delete extension" @sl-request-close=${(e: CustomEvent) => {
                 // ignore the close while the deletion is in progress
                 if (this.deleting) {
                     e.preventDefault();
@@ -171,8 +166,7 @@ export class ExtensionList extends LitElement {
                             Cancel
                         </sl-button>
                         <div></div>
-                        <sl-button variant="warning" size="large" ?disabled=${this.deleting} @click=${() => this.confirmDelete()}>
-                            ${when(this.deleting, () => html`<sl-spinner slot="prefix" size="small"></sl-spinner>`)}
+                        <sl-button variant="warning" size="large" ?loading=${this.deleting} ?disabled=${this.deleting} @click=${() => this.confirmDelete()}>
                             Delete
                         </sl-button>
                     </div>

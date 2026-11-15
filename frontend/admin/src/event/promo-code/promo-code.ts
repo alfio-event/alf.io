@@ -23,6 +23,7 @@ import {
     form,
     modernLayout,
     modernTable,
+    purchaseContextListPage,
     retroCompat,
     row,
     sortableTable,
@@ -33,9 +34,13 @@ import {nextSort, sortableHeader, sortItems, SortState, SortValue} from '../../s
 import {dispatchFeedback} from '../../model/dom-events.ts';
 import {EventService} from '../../service/event.ts';
 import {downloadCsv, fetchJson} from '../../service/helpers.ts';
+import {localizedTitle} from '../../service/reservation-format.ts';
 import '../../components/format-date.ts';
-import type {SlDialog, SlInput, SlSelect, SlSwitch, SlTextarea} from '@shoelace-style/shoelace';
+import '../../components/pagination-bar.ts';
+import type {AlfioPageChange} from '../../components/pagination-bar.ts';
+import type {SlDialog, SlInput, SlRequestCloseEvent, SlSelect, SlSwitch, SlTextarea} from '@shoelace-style/shoelace';
 import {emptyState} from '../../components/empty-state.ts';
+import {taskContent} from '../../components/task-content.ts';
 import {
     BoundField,
     emailAddress,
@@ -246,15 +251,20 @@ export class PromoCode extends LitElement {
             if (forEvent && ev) {
                 try {
                     const val = await PromoCodeService.loadSingleConfig(ev.shortName, 'USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL');
-                    promoCodeDescription = (val === 'true') ? 'Partner' : 'Promo';
+                    if (val === 'true') {
+                        promoCodeDescription = 'Partner';
+                    }
                 } catch {
                     // ignore, keep default
                 }
             }
 
-            const allCodes = forEvent
-                ? await PromoCodeService.listByEvent(ev!.id)
-                : await PromoCodeService.listByOrganization(orgId);
+            let allCodes: PromoCodeDiscount[];
+            if (forEvent) {
+                allCodes = await PromoCodeService.listByEvent(ev!.id);
+            } else {
+                allCodes = await PromoCodeService.listByOrganization(orgId);
+            }
 
             const promocodes = allCodes
                 .filter(pc => pc.codeType === 'DISCOUNT' || pc.codeType === 'DYNAMIC') as PromoCodeWithUsage[];
@@ -287,7 +297,9 @@ export class PromoCode extends LitElement {
             let currencies: AvailableCurrency[] = [];
             if (!forEvent) {
                 const currencyResult = await fetchJson<AvailableCurrency[]>('/admin/api/utils/currencies');
-                currencies = Array.isArray(currencyResult) ? currencyResult : [];
+                if (Array.isArray(currencyResult)) {
+                    currencies = currencyResult;
+                }
             }
 
             return {
@@ -314,6 +326,7 @@ export class PromoCode extends LitElement {
         badges,
         modernTable,
         modernLayout,
+        purchaseContextListPage,
         row,
         spacing,
         sortableTable,
@@ -321,11 +334,6 @@ export class PromoCode extends LitElement {
             .promo-code-name {
                 font-family: var(--sl-font-mono);
                 font-weight: 600;
-            }
-
-            .code-section > .section-header {
-                flex-wrap: wrap;
-                align-items: center;
             }
 
             .code-section {
@@ -341,21 +349,9 @@ export class PromoCode extends LitElement {
                 order: 1;
             }
 
-            .code-section > .section-header h3 {
-                font-size: var(--sl-font-size-small);
-                font-weight: 600;
-                text-transform: uppercase;
-            }
             .category-badge::part(base) {
                 background: var(--sl-color-gray-100);
                 color: var(--sl-color-gray-700);
-            }
-
-            .code-section > .section-header > sl-icon {
-                color: var(--sl-color-primary-600);
-                background: var(--sl-color-primary-100);
-                padding: var(--sl-spacing-2x-small);
-                border-radius: var(--sl-border-radius-small);
             }
 
             .section-description {
@@ -488,19 +484,6 @@ export class PromoCode extends LitElement {
                 box-shadow: 0 2px 0 var(--sl-color-gray-300);
             }
 
-            .pagination-bar {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: var(--sl-spacing-small);
-                padding-top: var(--sl-spacing-medium);
-            }
-
-            .pagination-actions {
-                display: flex;
-                gap: var(--sl-spacing-2x-small);
-            }
-
             #usage-details-dialog {
                 --alfio-dialog-max-width: 75rem;
             }
@@ -509,19 +492,36 @@ export class PromoCode extends LitElement {
     ];
 
     render() {
-        return this.loadDataTask.render({
-            initial: () => html`<sl-spinner></sl-spinner>`,
-            error: () => html`<sl-alert open variant="danger"><sl-icon name="exclamation-triangle" slot="icon"></sl-icon>Failed to load promo codes.</sl-alert>`,
-            complete: (data) => this.renderContent(data),
-        });
+        return taskContent(this.loadDataTask, this.loadDataTask.value ?? null, 'Failed to load promo codes.',
+            data => this.renderContent(data));
     }
 
     private renderContent(data: LoadData): TemplateResult {
+        const event = data.event;
+        if (data.forEvent && event != null) {
+            // page of the event detail
+            return html`
+                <div class="container">
+                    <div class="page-title-row secondary">
+                        <h1>${data.promoCodeDescription} codes for <i>${localizedTitle(event)}</i></h1>
+                    </div>
+                    <hr class="page-separator" />
+                    ${this.renderCodes(data)}
+                </div>
+            `;
+        }
+        // embedded in the organization configuration
+        return this.renderCodes(data);
+    }
+
+    private renderCodes(data: LoadData): TemplateResult {
         return html`
             ${when(
                 !data.event?.freeOfCharge,
                 () => html`
-                    <div class="first-element text-right" style="margin-bottom: var(--sl-spacing-x-large)">${this.renderAddCodeButton(data)}</div>
+                    <div class="filter-toolbar" style="justify-content: flex-end;">
+                        <div class="filter-right">${this.renderAddCodeButton(data)}</div>
+                    </div>
                     ${this.renderSection(data, data.promocodes, false)}
                 `
             )}
@@ -532,9 +532,9 @@ export class PromoCode extends LitElement {
             ${when(
                 data.forEvent && data.event?.freeOfCharge,
                 () => html`
-                    <sl-alert open variant="warning" class="first-element">
+                    <sl-alert open variant="warning">
                         <sl-icon name="exclamation-triangle" slot="icon"></sl-icon>
-                        <strong>Your event cannot have ${data.promoCodeDescription} or Access Codes</strong>
+                        <strong>Your event cannot have ${data.promoCodeDescription.toLowerCase()} or access codes</strong>
                         <p>Free events do not support promo or access codes.</p>
                     </sl-alert>
                 `
@@ -546,18 +546,25 @@ export class PromoCode extends LitElement {
     }
 
     private renderSection(data: LoadData, codes: PromoCodeWithUsage[], isAccess: boolean): TemplateResult {
-        const title = isAccess ? 'Access codes' : `${data.promoCodeDescription} codes`;
-        const icon = isAccess ? 'unlock' : 'percent';
-        const description = isAccess
-            ? 'Access codes are special codes that give access to hidden categories. By entering an Access Code, an attendee can register one or more tickets, depending on the configuration.'
-            : `Manage/Handle the ${data.promoCodeDescription} codes.`;
+        let title = `${data.promoCodeDescription} codes`;
+        let icon = 'percent';
+        let description = `${data.promoCodeDescription} codes give a discount on the tickets of a reservation.`;
+        let filterKey: 'promo' | 'access' = 'promo';
+        if (isAccess) {
+            title = 'Access codes';
+            icon = 'unlock';
+            description = 'Access codes unlock unlisted categories: an attendee who enters one can buy tickets of that category.';
+            filterKey = 'access';
+        }
 
-        const filterKey = isAccess ? 'access' : 'promo';
         const filter = this.filters[filterKey];
         const searchTerm = filter.search.trim().toLowerCase();
         const matchedCodes = codes.filter(code => `${code.promoCode} ${code.description ?? ''}`.toLowerCase().includes(searchTerm)
-            && (!filter.category || (isAccess ? code.hiddenCategoryId === Number(filter.category)
-                : !code.categories?.length || code.categories.includes(Number(filter.category)))));
+            && this.matchesCategory(code, filter.category, isAccess));
+        let countBadge = `${matchedCodes.length} / ${codes.length}`;
+        if (matchedCodes.length === codes.length) {
+            countBadge = String(codes.length);
+        }
         const state = this.tableState[filterKey];
         const sortedCodes = sortItems(matchedCodes, state, (code, key) => this.sortValue(code, key));
         const pageCount = Math.max(1, Math.ceil(sortedCodes.length / 25));
@@ -577,7 +584,7 @@ export class PromoCode extends LitElement {
                 <div class="section-header">
                     <div class="section-heading">
                         <sl-icon name=${icon}></sl-icon><h3>${title}</h3>
-                        <sl-badge variant="primary" pill>${matchedCodes.length === codes.length ? codes.length : `${matchedCodes.length} / ${codes.length}`}</sl-badge>
+                        <sl-badge variant="primary" pill>${countBadge}</sl-badge>
                     </div>
                     <sl-details class="text-muted section-description">
                         <span slot="summary">About ${title.toLowerCase()}</span>${description}
@@ -591,7 +598,7 @@ export class PromoCode extends LitElement {
                                 <sl-icon name="search" slot="prefix"></sl-icon>
                             </sl-input>
                             ${when(data.forEvent, () => html`
-                                <sl-select class="filter-select" size="small" clearable placeholder="All categories" aria-label="Filter ${title} by category"
+                                <sl-select class="filter-select" size="small" clearable hoist placeholder="All categories" aria-label="Filter ${title} by category"
                                     .value=${filter.category}
                                     @sl-change=${(e: Event) => setFilter('category', (e.target as SlSelect).value as string)}
                                     @sl-clear=${() => setFilter('category', '')}>
@@ -610,21 +617,23 @@ export class PromoCode extends LitElement {
                 <div class="section-body">
                     ${this.renderTable(data, sortedCodes.slice((page - 1) * 25, page * 25), isAccess, setSort, state)}
                     ${when(sortedCodes.length > 0, () => html`
-                        <div class="pagination-bar">
-                            <span class="text-muted">Showing ${(page - 1) * 25 + 1}–${Math.min(page * 25, sortedCodes.length)} of ${sortedCodes.length}</span>
-                            <div class="pagination-actions">
-                                <sl-button size="small" ?disabled=${page === 1} @click=${() => this.setTablePage(filterKey, page - 1)}>
-                                    <sl-icon name="chevron-left" slot="prefix"></sl-icon>Previous
-                                </sl-button>
-                                <sl-button size="small" ?disabled=${page === pageCount} @click=${() => this.setTablePage(filterKey, page + 1)}>
-                                    Next<sl-icon name="chevron-right" slot="suffix"></sl-icon>
-                                </sl-button>
-                            </div>
-                        </div>
+                        <alfio-pagination-bar page=${page} total=${sortedCodes.length} page-size="25" item-label="codes"
+                                              @alfio-page-change=${(e: AlfioPageChange) => this.setTablePage(filterKey, e.detail.page)}></alfio-pagination-bar>
                     `)}
                 </div>
             </div>
         `;
+    }
+
+    private matchesCategory(code: PromoCodeWithUsage, category: string, isAccess: boolean): boolean {
+        if (!category) {
+            return true;
+        }
+        if (isAccess) {
+            return code.hiddenCategoryId === Number(category);
+        }
+        // a discount without categories applies to all of them
+        return !code.categories?.length || code.categories.includes(Number(category));
     }
 
     private setTablePage(filterKey: 'promo' | 'access', page: number): void {
@@ -656,34 +665,47 @@ export class PromoCode extends LitElement {
         if (!this.canAddAccessCode(data)) {
             return html`
                 <sl-button variant="success" size="large" @click=${() => this.openCodeDialog(data, 'DISCOUNT')}>
-                    <sl-icon name="plus-circle" slot="prefix"></sl-icon>Add ${data.promoCodeDescription} Code
+                    <sl-icon name="plus-circle" slot="prefix"></sl-icon>Add ${data.promoCodeDescription.toLowerCase()} code
                 </sl-button>
             `;
         }
         return html`
             <sl-dropdown hoist placement="bottom-end">
                 <sl-button slot="trigger" variant="success" size="large" caret>
-                    <sl-icon name="plus-circle" slot="prefix"></sl-icon>Add Code
+                    <sl-icon name="plus-circle" slot="prefix"></sl-icon>Add code
                 </sl-button>
                 <sl-menu @sl-select=${(e: CustomEvent) => this.openCodeDialog(data, e.detail.item.value as PromoCodeType)}>
-                    <sl-menu-item value="DISCOUNT"><sl-icon name="percent" slot="prefix"></sl-icon>${data.promoCodeDescription} Code</sl-menu-item>
-                    <sl-menu-item value="ACCESS"><sl-icon name="unlock" slot="prefix"></sl-icon>Access Code</sl-menu-item>
+                    <sl-menu-item value="DISCOUNT"><sl-icon name="percent" slot="prefix"></sl-icon>${data.promoCodeDescription} code</sl-menu-item>
+                    <sl-menu-item value="ACCESS"><sl-icon name="unlock" slot="prefix"></sl-icon>Access code</sl-menu-item>
                 </sl-menu>
             </sl-dropdown>
         `;
     }
 
     private downloadCodes(codes: PromoCodeWithUsage[], data: LoadData, isAccess: boolean): void {
-        const csv = Papa.unparse(codes.map(code => ({
-            Code: code.promoCode, Status: this.codeStatus(code).label,
-            Usage: code.useCount ?? '', 'Max usage': code.maxUsage ?? '',
-            Start: code.formattedStart, End: code.formattedEnd, 'Time zone': data.event?.timeZone ?? 'UTC',
-            ...(!isAccess ? {Amount: code.formattedDiscountAmount ?? code.discountAmount, 'Discount type': code.discountType, Currency: code.currencyCode} : {}),
-            Categories: (isAccess ? [code.hiddenCategoryId] : code.categories ?? []).filter(id => id != null)
-                .map(id => data.ticketCategoriesById[id!]?.name ?? id).join(', '),
-            Description: code.description, Contact: code.emailReference,
-        })), {escapeFormulae: true});
-        downloadCsv(`${isAccess ? 'access' : 'promo'}-codes.csv`, csv);
+        const csv = Papa.unparse(codes.map(code => {
+            let discount = {};
+            let categoryIds: Array<number | null | undefined> = code.categories ?? [];
+            if (isAccess) {
+                categoryIds = [code.hiddenCategoryId];
+            } else {
+                discount = {Amount: code.formattedDiscountAmount ?? code.discountAmount, 'Discount type': code.discountType, Currency: code.currencyCode};
+            }
+            return {
+                Code: code.promoCode, Status: this.codeStatus(code).label,
+                Usage: code.useCount ?? '', 'Max usage': code.maxUsage ?? '',
+                Start: code.formattedStart, End: code.formattedEnd, 'Time zone': data.event?.timeZone ?? 'UTC',
+                ...discount,
+                Categories: categoryIds.filter(id => id != null)
+                    .map(id => data.ticketCategoriesById[id!]?.name ?? id).join(', '),
+                Description: code.description, Contact: code.emailReference,
+            };
+        }), {escapeFormulae: true});
+        let fileName = 'promo-codes.csv';
+        if (isAccess) {
+            fileName = 'access-codes.csv';
+        }
+        downloadCsv(fileName, csv);
     }
 
     private codeStatus(code: PromoCodeWithUsage) {
@@ -691,9 +713,28 @@ export class PromoCode extends LitElement {
         if (code.maxUsage != null && code.useCount != null && code.useCount >= code.maxUsage) {
             return {label: 'Used up', icon: 'check-circle', color: 'text-muted'};
         }
-        return code.currentlyValid
-            ? {label: 'Active', icon: 'check-circle', color: 'text-success'}
-            : {label: 'Scheduled', icon: 'clock', color: 'text-muted'};
+        if (code.currentlyValid) {
+            return {label: 'Active', icon: 'check-circle', color: 'text-success'};
+        }
+        return {label: 'Scheduled', icon: 'clock', color: 'text-muted'};
+    }
+
+    // with an event, the dates are shown in its time zone; otherwise, the UTC instant
+    private codeDate(code: PromoCodeDiscount, data: LoadData, which: 'start' | 'end'): string {
+        if (data.event) {
+            if (which === 'start') {
+                return code.formattedStart;
+            }
+            return code.formattedEnd;
+        }
+        if (which === 'start') {
+            return code.utcStart;
+        }
+        return code.utcEnd;
+    }
+
+    private categoryName(id: number, data: LoadData): string | number {
+        return data.ticketCategoriesById[id]?.name ?? id;
     }
 
     private renderTable(data: LoadData, codes: PromoCodeWithUsage[], isAccess: boolean,
@@ -725,12 +766,12 @@ export class PromoCode extends LitElement {
                             const hasUsage = (code.useCount ?? 0) > 0;
                             const status = this.codeStatus(code);
                             return html`
-                                <tr class=${code.expired ? 'text-muted' : ''}>
+                                <tr class=${classMap({'text-muted': code.expired})}>
                                     <td>
                                         <span class="promo-code-name">
-                                            ${hasUsage
-                                                ? html`<a href="#" @click=${(e: Event) => { e.preventDefault(); this.showUsageDetails(code, data); }}>${code.promoCode}</a>`
-                                                : code.promoCode}
+                                            ${when(hasUsage,
+                                                () => html`<a href="#" @click=${(e: Event) => { e.preventDefault(); this.showUsageDetails(code, data); }}>${code.promoCode}</a>`,
+                                                () => code.promoCode)}
                                         </span>
                                         ${when(!code.expired && code.codeType === 'DYNAMIC', () => html`<span class="text-muted"> (auto)</span>`)}
                                     </td>
@@ -745,13 +786,13 @@ export class PromoCode extends LitElement {
                                     <td>
                                         <alfio-format-date
                                             time-zone=${data.event?.timeZone ?? 'UTC'}
-                                            date=${data.event ? code.formattedStart : code.utcStart}
+                                            date=${this.codeDate(code, data, 'start')}
                                         ></alfio-format-date>
                                     </td>
                                     <td>
                                         <alfio-format-date
                                             time-zone=${data.event?.timeZone ?? 'UTC'}
-                                            date=${data.event ? code.formattedEnd : code.utcEnd}
+                                            date=${this.codeDate(code, data, 'end')}
                                         ></alfio-format-date>
                                     </td>
                                     ${when(!isAccess, () => this.renderDiscountAmount(code))}
@@ -802,7 +843,7 @@ export class PromoCode extends LitElement {
         return html`
             <td>
                 -${code.formattedDiscountAmount ?? code.discountAmount}
-                ${currency ? currency : ''}
+                ${currency}
                 ${when(code.discountType === 'FIXED_AMOUNT', () => html`<div class="text-muted">per ticket</div>`)}
             </td>
         `;
@@ -810,17 +851,15 @@ export class PromoCode extends LitElement {
 
     private renderCategories(code: PromoCodeDiscount, data: LoadData): TemplateResult {
         if (code.codeType === 'ACCESS' && code.hiddenCategoryId) {
-            const cat = data.ticketCategoriesById[code.hiddenCategoryId];
-            return html`<td><sl-badge variant="neutral" class="category-badge" pill>${cat ? cat.name : code.hiddenCategoryId}</sl-badge></td>`;
+            return html`<td><sl-badge variant="neutral" class="category-badge" pill>${this.categoryName(code.hiddenCategoryId, data)}</sl-badge></td>`;
         }
 
         if (code.categories && code.categories.length > 0) {
             return html`
                 <td>
-                    ${repeat(code.categories, (id) => id, (id) => {
-                        const cat = data.ticketCategoriesById[id];
-                        return html`<sl-badge variant="neutral" class="category-badge" pill>${cat ? cat.name : id}</sl-badge>`;
-                    })}
+                    ${repeat(code.categories, (id) => id, (id) => html`
+                        <sl-badge variant="neutral" class="category-badge" pill>${this.categoryName(id, data)}</sl-badge>
+                    `)}
                 </td>
             `;
         }
@@ -878,18 +917,29 @@ export class PromoCode extends LitElement {
         const isAccess = this.pendingCodeType === 'ACCESS';
         const isDiscount = this.pendingCodeType === 'DISCOUNT';
         const editing = this.editingState != null;
-        const title = `${editing ? 'Edit' : 'Insert new'} ${isAccess ? 'Access' : data.promoCodeDescription} Code`;
+        let kind = data.promoCodeDescription.toLowerCase();
+        let icon = 'ticket-perforated';
+        if (isAccess) {
+            kind = 'access';
+            icon = 'unlock';
+        }
+        let title = `New ${kind} code`;
+        let subtitle = 'Fields marked * are required.';
+        if (editing) {
+            title = `Edit ${kind} code`;
+            subtitle = 'Update validity, usage limits, and details. Code and discount cannot be changed.';
+        }
         const save = () => this.submitCode();
         const submitted = this.#codeForm.api.state.submissionAttempts > 0;
         const input = (field: BoundField<string>, options: ValidatedInputOptions) => validatedInput(field, submitted, options);
         return html`
-            <sl-dialog id="code-dialog" class="responsive-dialog" label=${title} size="large" placement="bottom"
-                @sl-request-close=${(e: CustomEvent) => { if (this.saving) e.preventDefault(); }}>
+            <sl-dialog id="code-dialog" class="responsive-dialog" label=${title}
+                @sl-request-close=${(e: SlRequestCloseEvent) => this.onCodeDialogRequestClose(e)}>
                 <div slot="label" class="dialog-title">
-                    <sl-icon name=${isAccess ? 'unlock' : 'ticket-perforated'}></sl-icon>
+                    <sl-icon name=${icon}></sl-icon>
                     <div>
                         <strong>${title}</strong>
-                        <small>${editing ? 'Update validity, usage limits, and details. Code and discount cannot be changed.' : 'Fields marked * are required.'}</small>
+                        <small>${subtitle}</small>
                     </div>
                 </div>
                 <form class="dialog-form form-stack" novalidate @submit=${(e: Event) => { e.preventDefault(); void save(); }}>
@@ -925,7 +975,7 @@ export class PromoCode extends LitElement {
                     ${when(isDiscount, () => html`
                         <div class="section-card">
                             <div class="dialog-section-header"><sl-icon name="percent"></sl-icon>Discount</div>
-                            <div class="section-body row" style="--alfio-row-cols: ${data.forEvent ? 2 : 3}">
+                            <div class="section-body row" style="--alfio-row-cols: ${this.discountColumns(data)}">
                                 ${this.#codeForm.field({ name: 'discountType' }, field => html`
                                     <sl-select name="discountType" label="Discount type" ?disabled=${editing} required hoist
                                         .value=${field.state.value}
@@ -961,10 +1011,10 @@ export class PromoCode extends LitElement {
 
                     ${when(data.forEvent && (isDiscount || isAccess), () => html`
                         <div class="section-card">
-                            <div class="dialog-section-header"><sl-icon name=${isAccess ? 'unlock' : 'collection'}></sl-icon>Ticket categories</div>
+                            <div class="dialog-section-header"><sl-icon name=${this.categoriesIcon(isAccess)}></sl-icon>Ticket categories</div>
                             <div class="section-body">
                                 ${when(!isAccess, () => html`
-                                    <sl-switch help-text="Or select specific categories" class="block mt-2 mb-2"
+                                    <sl-switch help-text="Turn it off to select the categories the discount applies to." class="block mt-2 mb-2"
                                         .checked=${this.allCategories}
                                         @sl-change=${(e: Event) => {
                                             this.allCategories = (e.target as SlSwitch).checked;
@@ -1015,6 +1065,13 @@ export class PromoCode extends LitElement {
         `;
     }
 
+    // a click outside the dialog would discard what the user typed: only the close button and Cancel close it
+    private onCodeDialogRequestClose(event: SlRequestCloseEvent): void {
+        if (this.saving || event.detail.source === 'overlay') {
+            event.preventDefault();
+        }
+    }
+
     private renderHiddenCategory(data: LoadData, editing: boolean, submitted: boolean): TemplateResult {
         const hiddenCategoryId = this.editingState?.code.hiddenCategoryId;
         let categoryIds = data.restrictedCategories.map(cat => cat.id);
@@ -1038,7 +1095,7 @@ export class PromoCode extends LitElement {
         return html`${this.#codeForm.field({ name: 'categories', validators: validateWith(value => this.validateCategories(value)) }, field => {
             const error = fieldError(field.state.meta, submitted);
             return html`
-                <sl-select name="categories" label="Select Categories" placeholder="Select categories" multiple required hoist
+                <sl-select name="categories" label="Categories" placeholder="Select categories" multiple required hoist
                            class=${classMap({ error: error != null })} help-text=${error ?? ''}
                            .value=${field.state.value}
                            @sl-change=${(e: Event) => field.handleChange([...(e.target as SlSelect).value as string[]])}
@@ -1047,6 +1104,21 @@ export class PromoCode extends LitElement {
                 </sl-select>
             `;
         })}`;
+    }
+
+    // the currency is chosen only for an organization's codes
+    private discountColumns(data: LoadData): number {
+        if (data.forEvent) {
+            return 2;
+        }
+        return 3;
+    }
+
+    private categoriesIcon(isAccess: boolean): string {
+        if (isAccess) {
+            return 'unlock';
+        }
+        return 'collection';
     }
 
     private percentageSuffix(): string | undefined {
@@ -1268,7 +1340,7 @@ export class PromoCode extends LitElement {
 
     private renderUsageDetailsDialog(): TemplateResult {
         return html`
-            <sl-dialog id="usage-details-dialog" label="Usage details" class="usage-details-dialog responsive-dialog" size="large" placement="bottom">
+            <sl-dialog id="usage-details-dialog" label="Usage details" class="usage-details-dialog responsive-dialog">
                 <div slot="label" class="dialog-title">
                     <sl-icon name="ticket-perforated"></sl-icon>
                     <div>
@@ -1280,7 +1352,7 @@ export class PromoCode extends LitElement {
                     <section class="section-card">
                         <div class="dialog-section-header">
                             <sl-icon name="calendar-event"></sl-icon>${detail.event.displayName}
-                            <sl-badge variant="primary" pill>${detail.reservations.length} ${detail.reservations.length === 1 ? 'reservation' : 'reservations'}</sl-badge>
+                            <sl-badge variant="primary" pill>${this.reservationCount(detail.reservations.length)}</sl-badge>
                         </div>
                         <div class="section-body table-responsive">
                         <table class="table table-striped" aria-label="Reservations for ${detail.event.displayName}">
@@ -1308,7 +1380,7 @@ export class PromoCode extends LitElement {
                                             ${when(reservation.confirmationTimestamp, () => html`
                                                 <alfio-format-date
                                                     time-zone=${this.usageTimeZone}
-                                                    date=${this.asUtcDateTime(reservation.confirmationTimestamp!)}
+                                                    date=${reservation.confirmationTimestamp}
                                                 ></alfio-format-date>
                                             `, () => html`<span class="text-muted">Not confirmed</span>`)}
                                         </td>
@@ -1347,8 +1419,6 @@ export class PromoCode extends LitElement {
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <div></div>
-                        <div></div>
                         <sl-button variant="default" size="large" @click=${() => this.usageDetailsDialog.hide()}>Close</sl-button>
                     </div>
                 </div>
@@ -1410,9 +1480,11 @@ export class PromoCode extends LitElement {
         return {date, time};
     }
 
-    private asUtcDateTime(dateTime: string): string {
-        const normalized = dateTime.replace(' ', 'T');
-        return /(?:Z|[+-]\d{2}:?\d{2})$/.test(normalized) ? normalized : `${normalized}Z`;
+    private reservationCount(count: number): string {
+        if (count === 1) {
+            return '1 reservation';
+        }
+        return `${count} reservations`;
     }
 
     private extractValidationErrors(errors: Array<{fieldName: string, message: string}>): Record<string, string> {

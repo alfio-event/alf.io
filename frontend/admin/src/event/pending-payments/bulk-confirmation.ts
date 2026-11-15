@@ -7,6 +7,7 @@ import {base, badges, modernLayout, modernTable, reservationTable, retroCompat, 
 import {BulkConfirmationResult} from '../../model/reservation.ts';
 import {PendingPaymentsService} from '../../service/pending-payments.ts';
 import {dispatchFeedback} from '../../model/dom-events.ts';
+import {sectionCard} from '../../components/section-card.ts';
 import {FileUploadChangeEvent} from '../../components/file-upload.ts';
 import '../../components/file-upload.ts';
 
@@ -38,7 +39,8 @@ export class BulkConfirmation extends LitElement {
                 display: block;
                 --alfio-section-body-padding: var(--sl-spacing-large);
             }
-            .section-header small {
+            .card-description {
+                margin: 0 0 var(--sl-spacing-medium);
                 color: var(--sl-color-gray-600);
             }
             .upload {
@@ -96,31 +98,24 @@ export class BulkConfirmation extends LitElement {
 
     render(): TemplateResult {
         return html`
-            <section class="section-card">
-                <div class="section-header">
-                    <sl-icon name="file-earmark-spreadsheet"></sl-icon>
-                    <h3>Bulk confirmation</h3>
-                    <small>Upload a CSV file with the received payments</small>
-                </div>
-                <div class="section-body">
+            ${sectionCard({ icon: 'file-earmark-spreadsheet', title: 'Bulk confirmation' }, html`
+                    <p class="card-description">Upload a CSV file with the received payments.</p>
                     <div class="row">
                         <div class="upload">
                             ${keyed(this.uploadCount, html`
                                 <alfio-file-upload accept=".csv,text/csv" label="Choose a CSV file or drag it here"
                                                    @change=${(e: FileUploadChangeEvent) => { this.file = e.detail.file; }}></alfio-file-upload>
                             `)}
-                            <sl-button variant="success" ?disabled=${this.file == null || this.uploading} @click=${this.upload}>
-                                ${when(this.uploading,
-                                    () => html`<sl-spinner slot="prefix"></sl-spinner>`,
-                                    () => html`<sl-icon slot="prefix" name="upload"></sl-icon>`)}
+                            <sl-button variant="warning" size="large" ?loading=${this.uploading} ?disabled=${this.file == null}
+                                       @click=${this.upload}>
+                                <sl-icon slot="prefix" name="upload"></sl-icon>
                                 Upload and confirm
                             </sl-button>
                         </div>
                         ${this.renderFormat()}
                     </div>
                     ${when(this.results.length > 0, () => this.renderResults())}
-                </div>
-            </section>
+            `)}
         `;
     }
 

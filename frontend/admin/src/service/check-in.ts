@@ -38,7 +38,10 @@ export class CheckInService {
             cache = { since: null, tickets: new Map() };
             caches.set(eventId, cache);
         }
-        const params = cache.since != null ? `?${new URLSearchParams({ changedSince: cache.since })}` : '';
+        let params = '';
+        if (cache.since != null) {
+            params = `?${new URLSearchParams({ changedSince: cache.since })}`;
+        }
         const response = await fetch(`${baseUrl(eventId)}/ticket-identifiers${params}`, { credentials: 'include' });
         await ensureSuccess(response);
         const since = response.headers.get(SERVER_TIME_HEADER);

@@ -15,6 +15,8 @@ import {ConfirmationDialogService} from '../../service/confirmation-dialog.ts';
 import {dispatchFeedback} from '../../model/dom-events.ts';
 import {ContentLanguage} from '../../model/purchase-context.ts';
 import {base, dialog, form, listGroup, modernLayout, retroCompat, row, textColors} from '../../styles.ts';
+import {sectionCard} from '../../components/section-card.ts';
+import {taskContent} from '../../components/task-content.ts';
 import {
     fieldError,
     focusFirstError,
@@ -171,11 +173,6 @@ export class ComposeMessage extends LitElement {
                 --alfio-section-body-padding: var(--sl-spacing-medium);
             }
 
-            .page-title-row {
-                flex-direction: column;
-                gap: var(--sl-spacing-2x-small);
-            }
-
             .layout {
                 display: grid;
                 gap: var(--sl-spacing-large);
@@ -257,11 +254,8 @@ export class ComposeMessage extends LitElement {
     ];
 
     render(): TemplateResult {
-        return this.loadDataTask.render({
-            pending: () => html`<div class="empty-state"><sl-spinner style="font-size: var(--sl-font-size-2x-large);"></sl-spinner></div>`,
-            error: () => html`<sl-alert open variant="danger" class="first-element"><sl-icon name="exclamation-triangle" slot="icon"></sl-icon>Failed to load event data.</sl-alert>`,
-            complete: data => this.renderContent(data)
-        }) ?? html``;
+        return taskContent(this.loadDataTask, this.loadDataTask.value ?? null, 'Failed to load the event. Please try again.',
+            data => this.renderContent(data));
     }
 
     private renderContent(data: LoadData): TemplateResult {
@@ -270,16 +264,11 @@ export class ComposeMessage extends LitElement {
             <div class="container">
                 <div class="page-title-row secondary">
                     <h1>Send a custom message to attendees</h1>
-                    <span class="text-muted">Write a custom message and send it to all the attendees or only to those of specific categories</span>
                 </div>
                 <hr class="page-separator">
+                <p class="page-description text-muted">Write a message and send it to all the attendees, or only to those of specific categories.</p>
                 <div class="layout">
-                    <section class="section-card">
-                        <div class="section-header">
-                            <sl-icon name="envelope"></sl-icon>
-                            <h3>Message</h3>
-                        </div>
-                        <div class="section-body">
+                    ${sectionCard({ icon: 'envelope', title: 'Message' }, html`
                             <form class="compose-form form-stack" novalidate @submit=${(e: Event) => { e.preventDefault(); void this.submit(); }}>
                                 <sl-switch name="allAttendees" help-text="Or select specific categories" .checked=${this.allAttendees}
                                            @sl-change=${(e: Event) => this.toggleAllAttendees((e.target as SlSwitch).checked)}>
@@ -291,7 +280,7 @@ export class ComposeMessage extends LitElement {
                                 }, field => {
                                     const error = fieldError(field.state.meta, this.submitted);
                                     return html`
-                                        <sl-select name="categories" label="Categories" placeholder="Select categories" multiple clearable required max-options-visible="3"
+                                        <sl-select name="categories" label="Categories" placeholder="Select categories" multiple clearable required hoist max-options-visible="3"
                                                    class=${classMap({ error: error != null })}
                                                    help-text=${error ?? ''}
                                                    .value=${field.state.value}
@@ -345,12 +334,11 @@ export class ComposeMessage extends LitElement {
                                     </sl-button>
                                     <div></div>
                                     <sl-button id="preview-button" type="submit" variant="warning" size="large" ?loading=${this.loadingPreview}>
-                                        <sl-icon name="eye" slot="prefix"></sl-icon>Preview
+                                        Preview
                                     </sl-button>
                                 </div>
                             </form>
-                        </div>
-                    </section>
+                    `)}
                     ${this.renderVariables(data)}
                 </div>
             </div>
@@ -360,12 +348,7 @@ export class ComposeMessage extends LitElement {
 
     private renderVariables(data: LoadData): TemplateResult {
         return html`
-            <section class="section-card">
-                <div class="section-header">
-                    <sl-icon name="braces"></sl-icon>
-                    <h3>Available variables</h3>
-                </div>
-                <div class="section-body">
+            ${sectionCard({ icon: 'braces', title: 'Available variables' }, html`
                     <p class="variables-intro text-muted">
                         The syntax is defined by <a href="https://mustache.github.io/mustache.5.html" target="_blank" rel="noopener">Mustache</a>,
                         with some <a href="https://github.com/samskivert/jmustache#limitations" target="_blank" rel="noopener">limitations</a>
@@ -383,8 +366,7 @@ export class ComposeMessage extends LitElement {
                             </li>
                         `)}
                     </ul>
-                </div>
-            </section>
+            `)}
         `;
     }
 
@@ -395,7 +377,7 @@ export class ComposeMessage extends LitElement {
             .join(', ');
         const attachment = this.attachmentTexts(data.event);
         return html`
-            <sl-dialog id="preview-dialog" class="responsive-dialog" style="--alfio-dialog-max-width: 56rem" label="Message Preview"
+            <sl-dialog id="preview-dialog" class="responsive-dialog" style="--alfio-dialog-max-width: 56rem" label="Message preview"
                        @sl-request-close=${(e: CustomEvent) => {
                            // a send in progress must not be interrupted
                            if (this.sending || e.detail.source === 'overlay') {
@@ -405,7 +387,7 @@ export class ComposeMessage extends LitElement {
                        @sl-after-hide=${(e: Event) => { if (e.target === this.previewDialog) { this.preview = null; } }}>
                 <div slot="label" class="dialog-title">
                     <sl-icon name="eye"></sl-icon>
-                    <strong>Message Preview</strong>
+                    <strong>Message preview</strong>
                 </div>
                 ${when(this.preview, preview => html`
                     <sl-alert open variant=${this.affectedUsersVariant(preview.affectedUsers)} class="affected-users">
@@ -430,7 +412,7 @@ export class ComposeMessage extends LitElement {
                                         <sl-textarea class="preview-text" label="Message" readonly filled resize="auto" rows="3" .value=${m.textExample}></sl-textarea>
                                     `)}
                                     ${when(m.attachTicket, () => html`
-                                        <sl-alert open variant="neutral">
+                                        <sl-alert open variant="primary">
                                             <sl-icon name=${attachment.previewIcon} slot="icon"></sl-icon>
                                             ${attachment.previewNotice}
                                         </sl-alert>
@@ -448,7 +430,7 @@ export class ComposeMessage extends LitElement {
                         </sl-button>
                         <div></div>
                         <sl-button id="send-button" variant="warning" size="large" ?loading=${this.sending} @click=${() => this.send()}>
-                            <sl-icon name="send" slot="prefix"></sl-icon>Send
+                            Send
                         </sl-button>
                     </div>
                 </div>

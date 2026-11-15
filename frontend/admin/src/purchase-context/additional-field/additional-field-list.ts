@@ -1,5 +1,6 @@
 import {customElement, property, state} from "lit/decorators.js";
-import {css, html, LitElement} from "lit";
+import {css, html, LitElement, TemplateResult} from "lit";
+import {when} from "lit/directives/when.js";
 import {AlfioEvent} from "../../model/event.ts";
 import {Task} from "@lit/task";
 import {
@@ -13,7 +14,11 @@ import {PurchaseContextService} from "../../service/purchase-context.ts";
 import {AdditionalFieldService} from "../../service/additional-field.ts";
 import {repeat} from "lit/directives/repeat.js";
 import {renderIf} from "../../service/helpers.ts";
-import {badges, cardBgColors, itemsList, pageHeader, retroCompat, textColors} from "../../styles.ts";
+import {badges, detailList as detailListStyles, modernLayout, purchaseContextListPage, textColors} from "../../styles.ts";
+import {taskContent} from "../../components/task-content.ts";
+import {sectionCard} from "../../components/section-card.ts";
+import {detailList} from "../../components/detail-list.ts";
+import {localizedTitle} from "../../service/reservation-format.ts";
 import {ConfirmationDialogService} from "../../service/confirmation-dialog.ts";
 import {AlfioDialogClosed, dispatchFeedback} from "../../model/dom-events.ts";
 import {LocalizedAdditionalFieldContent, renderPreview} from "./additional-field-util.ts";
@@ -49,8 +54,6 @@ export class AdditionalFieldList extends LitElement {
     editActive: boolean = false;
     @state()
     refreshCount: number = 0;
-    @state()
-    itemsCount: number = 0;
 
     private readonly retrievePageDataTask = new Task<ReadonlyArray<string>, Model>(this,
         async ([publicIdentifier, purchaseContextType, organizationId]) => {
@@ -60,7 +63,12 @@ export class AdditionalFieldList extends LitElement {
             }
             const result = await PurchaseContextService.load(publicIdentifier, purchaseContextType as PurchaseContextType, Number.parseInt(organizationId, 10));
             const isSubscription = (purchaseContextType as PurchaseContextType) === 'subscription';
-            const purchaseContext: PurchaseContext = isSubscription ? result.subscriptionDescriptor! : result.eventWithOrganization!.event;
+            let purchaseContext: PurchaseContext;
+            if (isSubscription) {
+                purchaseContext = result.subscriptionDescriptor!;
+            } else {
+                purchaseContext = result.eventWithOrganization!.event;
+            }
             const templates = await AdditionalFieldService.loadTemplates(purchaseContext);
             const supportedLanguages = purchaseContext.contentLanguages;
             const additionalItems: AdditionalItem[] = [];
@@ -106,178 +114,138 @@ export class AdditionalFieldList extends LitElement {
         return true;
     }
 
-    static readonly styles = [pageHeader, textColors, itemsList, cardBgColors, badges, retroCompat, css`
-        sl-tab-group {
-            height: 100%;
+    static readonly styles = [modernLayout, purchaseContextListPage, detailListStyles, badges, textColors, css`
+        .field-body {
+            display: grid;
+            gap: var(--sl-spacing-large);
         }
-        div.m-1 {
-            margin-top: 1em;
-            margin-bottom: 1em;
+
+        @media (min-width: 768px) {
+            .field-body {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+            }
         }
-        div.info-box {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            gap: 1em;
+
+        .preview-label {
+            color: var(--sl-color-gray-600);
+            font-size: var(--sl-font-size-small);
+            font-weight: var(--sl-font-weight-semibold);
         }
-        div.info-box--messages {
+
+        .field-filters {
+            margin-top: var(--sl-spacing-medium);
+        }
+
+        .field-filters sl-badge {
+            margin-inline-start: var(--sl-spacing-2x-small);
+        }
+
+        .standard-fields {
             display: flex;
             flex-direction: column;
-            align-items: start;
-            gap: 10px;
         }
     `];
 
     protected render(): unknown {
-        return this.retrievePageDataTask.render({
-            initial: () => html`loading...`,
-            error: () => html`
-                <sl-alert open variant="danger">
-                    <sl-icon name="exclamation-triangle" slot="icon"></sl-icon>Failed to load the page data
-                </sl-alert>
-            `,
-            complete: (model) => html`
-                <div class="page-header">
-                    <h3>
-                        <sl-icon name="info-circle"></sl-icon> ${model.isSubscription ? `Subscription owner's` : `Attendees'`} data to collect
-                    </h3>
-                    <h5 class="text-muted">
-                        The following data will be collected ${model.isSubscription ? '': `(full name, e-mail and language are collected by default)`}
-                    </h5>
-                </div>
-
-                ${this.renderCreateButton(model)}
-
-                <div class="m-1">
+        return taskContent(this.retrievePageDataTask, this.retrievePageDataTask.value ?? null, 'Failed to load the page data.',
+            (model) => html`
+                <div class="container">
+                    <div class="page-title-row secondary">
+                        <h1>${pageTitle(model)}</h1>
+                    </div>
+                    <hr class="page-separator" />
+                    <p class="page-description text-muted">${pageDescription(model)}</p>
+                    <div class="filter-toolbar" style="justify-content: flex-end;">
+                        <div class="filter-right">${this.renderCreateButton(model)}</div>
+                    </div>
                     ${this.iterateItems(model)}
                 </div>
+            `);
+    }
 
-                <div class="m-1"></div>
-            `
-        });
+    private itemsCount(model: Model): number {
+        return model.dataTask.value?.items.length ?? 0;
     }
 
     private renderCreateButton(model: Model) {
         return html`
-            <sl-dropdown>
-                <sl-button variant="success" slot="trigger" caret>Create new</sl-button>
+            <sl-dropdown hoist placement="bottom-end">
+                <sl-button variant="success" size="large" slot="trigger" caret>
+                    <sl-icon name="plus-circle" slot="prefix"></sl-icon>
+                    Add new
+                </sl-button>
                 <sl-menu>
                     <sl-menu-item>
-                        From Template
+                        From template
                         <sl-menu slot="submenu">
                             ${repeat(model.templates, t => t.name, (template) => html`
-                                    <sl-menu-item @click=${() => this.newFromTemplate(model, template, this.itemsCount)}>${template.description['en'].label} (${template.name})</sl-menu-item>
+                                    <sl-menu-item @click=${() => this.newFromTemplate(model, template, this.itemsCount(model))}>${template.description['en'].label} (${template.name})</sl-menu-item>
                                 `)}
                         </sl-menu>
                     </sl-menu-item>
-                    <sl-menu-item @click=${() => this.newCustom(model, this.itemsCount)}>Custom</sl-menu-item>
+                    <sl-menu-item @click=${() => this.newCustom(model, this.itemsCount(model))}>Custom</sl-menu-item>
                 </sl-menu>
             </sl-dropdown>
         `;
     }
 
-    private iterateItems(model: Model) {
-        return model.dataTask.render({
-            initial: () => html`loading...`,
-            error: () => html`
-                <sl-alert open variant="danger">
-                    <sl-icon name="exclamation-triangle" slot="icon"></sl-icon>Failed to load the additional fields
-                </sl-alert>
-            `,
-            complete: listData => {
-                this.itemsCount = listData.items.length;
-                if (listData.items.length === 0) {
-                    return this.renderStandard();
-                }
-                const renderedItems = repeat(listData.items, (field) => field.id, (field, index) => {
-                    return html`
-
-                        ${renderIf(() => index === listData.standardIndex, this.renderStandard)}
-
-                        <div id=${`additional-field-${field.id}`}></div>
-                        <sl-card class="item bg-default">
-                            <div slot="header">
-                                <div class="col"><strong>${field.name}</strong></div>
-                                <div class="col">
-                                    ${renderIf(() => field.required, () => html`
-                                        <sl-tooltip content="This information is required">
-                                            <sl-badge variant="warning" pill>required</sl-badge>
-                                        </sl-tooltip>
-                                    `)}
-                                    ${renderIf(() => !field.editable, () => html`
-                                        <sl-tooltip content="Information cannot be modified after set">
-                                            <sl-badge variant="neutral" pill>read-only</sl-badge>
-                                        </sl-tooltip>
-                                    `)}
-                                    ${renderIf(() => field.displayAtCheckIn, () => html`
-                                        <sl-tooltip
-                                            content="This information will be shown in the check-in app upon successful scan">
-                                            <sl-badge variant="success" pill>shown at check-in</sl-badge>
-                                        </sl-tooltip>
-                                    `)}
-                                </div>
-                            </div>
-                            <div slot="footer" class="multiple">
-                                <div class="button-container">
-                                    ${this.showMoveUpDownButtons(index, field, listData, model)}
-                                </div>
-                                ${this.showStatisticsButton(field, model)}
-                                <div class="button-container">
-                                    <sl-button type="button" variant="default" @click=${() => this.edit(field, model)}>
-                                        <sl-icon name="pencil" slot="prefix"></sl-icon>
-                                        Edit
-                                    </sl-button>
-                                    <sl-button type="button" variant="danger" @click=${() => this.delete(field, model)}>
-                                        <sl-icon name="trash" slot="prefix"></sl-icon>
-                                        Delete
-                                    </sl-button>
-                                </div>
-                            </div>
-                            <div class="body">
-                                <div class="info-container">
-                                    <div class="info">
-                                        <strong>Type</strong>
-                                        <span>${renderAdditionalFieldType(field.type)}</span>
-                                    </div>
-                                    ${renderIf(() => supportsMinMaxLength(field.type), () => html`
-                                        <div class="info">
-                                            <strong>Min length</strong>
-                                            <span>${field.minLength}</span>
-                                        </div>
-                                        <div class="info">
-                                            <strong>Max length</strong>
-                                            <span>${field.maxLength}</span>
-                                        </div>
-                                    `)}
-                                </div>
-                                <div>
-                                    <strong>Preview</strong>
-                                    <sl-tab-group>
-                                        ${repeat(this.sortContentLanguages(field, model), d => d.localeLabel, d => html`
-                                            <sl-tab slot="nav" panel=${d.locale}>${d.localeLabel}</sl-tab>
-                                            <sl-tab-panel name=${d.locale}>
-                                                <div class="info-container">
-                                                    ${renderPreview(d, field)}
-                                                </div>
-                                            </sl-tab-panel>
-                                        `)}
-                                    </sl-tab-group>
-                                </div>
-                            </div>
-                            ${this.displayFilters(field, model)}
-                        </sl-card>
-                    `;
-                });
-                if (listData.standardIndex === -1) {
-                    // standard fields are set to be at the end
-                    return html`
-                        ${renderedItems}
-                        ${this.renderStandard()}
-                    `
-                }
-                return renderedItems;
+    private iterateItems(model: Model): TemplateResult {
+        return taskContent(model.dataTask, model.dataTask.value ?? null, 'Failed to load the additional fields.', listData => {
+            if (listData.items.length === 0) {
+                return renderStandard();
             }
-        })
+            const renderedItems = repeat(listData.items, (field) => field.id, (field, index) => html`
+                ${renderIf(() => index === listData.standardIndex, renderStandard)}
+
+                <div id=${`additional-field-${field.id}`}></div>
+                ${sectionCard({
+                    icon: 'input-cursor-text',
+                    title: field.name,
+                    badge: fieldBadges(field),
+                    className: 'field-card',
+                    actions: html`
+                        ${this.showMoveUpDownButtons(index, field, listData, model)}
+                        ${this.showStatisticsButton(field, model)}
+                        <sl-button type="button" variant="default" size="small" @click=${() => this.edit(field, model)}>
+                            <sl-icon name="pencil" slot="prefix"></sl-icon>
+                            Edit
+                        </sl-button>
+                        <sl-button type="button" variant="danger" size="small" @click=${() => this.delete(field, model)}>
+                            <sl-icon name="trash" slot="prefix"></sl-icon>
+                            Delete
+                        </sl-button>
+                    `,
+                }, html`
+                    <div class="field-body">
+                        ${detailList([
+                            { label: 'Type', value: renderAdditionalFieldType(field.type) },
+                            supportsMinMaxLength(field.type) && { label: 'Min length', value: field.minLength },
+                            supportsMinMaxLength(field.type) && { label: 'Max length', value: field.maxLength },
+                        ])}
+                        <div>
+                            <span class="preview-label">Preview</span>
+                            <sl-tab-group>
+                                ${repeat(this.sortContentLanguages(field, model), d => d.localeLabel, d => html`
+                                    <sl-tab slot="nav" panel=${d.locale}>${d.localeLabel}</sl-tab>
+                                    <sl-tab-panel name=${d.locale}>
+                                        ${renderPreview(d, field)}
+                                    </sl-tab-panel>
+                                `)}
+                            </sl-tab-group>
+                        </div>
+                    </div>
+                    ${this.displayFilters(field, model)}
+                `)}
+            `);
+            if (listData.standardIndex === -1) {
+                // standard fields are set to be at the end
+                return html`
+                    ${renderedItems}
+                    ${renderStandard()}
+                `;
+            }
+            return html`${renderedItems}`;
+        });
     }
 
     private displayFilters(field: AdditionalField, model: Model) {
@@ -291,24 +259,19 @@ export class AdditionalFieldList extends LitElement {
         }
 
         return html`
-            <sl-divider></sl-divider>
-            <div class="info-box">
-                <sl-icon slot="icon" name="info-circle" style="color: var(--sl-color-primary-600); font-size: 1.5em"></sl-icon>
-                <div class="info-box--messages">
-                    ${renderIf(() => selectedCategories > 0, () => html`
-                        <div>
-                            Collected only for the following Categories: ${repeat(eventCategories.filter(c => field.categoryIds!.includes(c.id)), c => c.id, category => html`<sl-badge variant="neutral" class="ms-1">${category.name}</sl-badge>`)}
-                        </div>
-                    `)}
-                    ${renderIf(() => additionalItem != null, () => html`
-                        <div>
-                            Collected only if additional option <sl-badge variant="neutral" class="ms-1">${additionalItem!.title.map(t => t.value).join(" / ")}</sl-badge> was selected
-                        </div>
-                    `)}
-                </div>
-
-            </div>
-
+            <sl-alert open variant="primary" class="field-filters">
+                <sl-icon slot="icon" name="info-circle"></sl-icon>
+                ${renderIf(() => selectedCategories > 0, () => html`
+                    <div>
+                        Collected only for the following categories: ${repeat(eventCategories.filter(c => field.categoryIds!.includes(c.id)), c => c.id, category => html`<sl-badge variant="neutral" pill>${category.name}</sl-badge>`)}
+                    </div>
+                `)}
+                ${renderIf(() => additionalItem != null, () => html`
+                    <div>
+                        Collected only if the additional option <sl-badge variant="neutral" pill>${additionalItem!.title.map(t => t.value).join(" / ")}</sl-badge> was selected
+                    </div>
+                `)}
+            </sl-alert>
         `;
     }
 
@@ -316,35 +279,18 @@ export class AdditionalFieldList extends LitElement {
         return html`
         ${renderIf(() => index > 0 || field.order >= listData.standardIndex,
             () => html`
-                <sl-button type="button" variant="default" @click=${() => this.fieldUp(field, index, listData, (model.event ?? model.subscriptionDescriptor)!)}>
+                <sl-button type="button" variant="default" size="small" @click=${() => this.fieldUp(field, index, listData, (model.event ?? model.subscriptionDescriptor)!)}>
                     <sl-icon name="arrow-up" slot="prefix"></sl-icon>
                     Move up
                 </sl-button>
             `)}
         ${renderIf(() => (index < listData.items.length - 1) || field.order < 0,
             () => html`
-                <sl-button type="button" variant="default" @click=${() => this.fieldDown(field, index, listData, (model.event ?? model.subscriptionDescriptor)!)}>
+                <sl-button type="button" variant="default" size="small" @click=${() => this.fieldDown(field, index, listData, (model.event ?? model.subscriptionDescriptor)!)}>
                     <sl-icon name="arrow-down" slot="prefix"></sl-icon>
                     Move down
                 </sl-button>
             `)}
-        `;
-    }
-
-    private renderStandard() {
-        return html`
-            <sl-card class="item bg-primary">
-                <div slot="header">
-                    Standard Fields
-                </div>
-                <div>
-                    <div>First Name</div>
-                    <sl-divider></sl-divider>
-                    <div>Last Name</div>
-                    <sl-divider></sl-divider>
-                    <div>Email Address</div>
-                </div>
-            </sl-card>
         `;
     }
 
@@ -423,9 +369,7 @@ export class AdditionalFieldList extends LitElement {
 
     private showStatisticsButton(field: AdditionalField, model: Model) {
         return renderIf(() => field.type === 'select' || field.type === 'country', () => html`
-            <div class="button-container">
-                <sl-button @click=${() => this.openStatisticsDetail(model, field)}><sl-icon name="bar-chart-line" slot="prefix"></sl-icon> Statistics</sl-button>
-            </div>
+            <sl-button variant="default" size="small" @click=${() => this.openStatisticsDetail(model, field)}><sl-icon name="bar-chart-line" slot="prefix"></sl-icon>Statistics</sl-button>
         `);
     }
 
@@ -461,7 +405,10 @@ export class AdditionalFieldList extends LitElement {
             await this.editDialogClosed(e);
             setTimeout(() => div.remove());
         });
-        const purchaseContext: PurchaseContext = (model.isSubscription ? model.subscriptionDescriptor : model.event)!;
+        let purchaseContext: PurchaseContext = model.event!;
+        if (model.isSubscription) {
+            purchaseContext = model.subscriptionDescriptor!;
+        }
         await component.open({
             field,
             template,
@@ -498,6 +445,53 @@ export class AdditionalFieldList extends LitElement {
             }, this);
         }
     }
+}
+
+function pageTitle(model: Model): TemplateResult {
+    if (model.isSubscription) {
+        const title = Object.values(model.subscriptionDescriptor?.title ?? {})[0];
+        return html`Subscription owner's data to collect${when(title, () => html` for <i>${title}</i>`)}`;
+    }
+    return html`Attendees' data to collect for <i>${localizedTitle(model.event!)}</i>`;
+}
+
+function pageDescription(model: Model): string {
+    if (model.isSubscription) {
+        return 'The following data will be collected.';
+    }
+    return 'The following data will be collected. Full name, email and language are collected by default.';
+}
+
+function fieldBadges(field: AdditionalField): TemplateResult {
+    return html`
+        ${renderIf(() => field.required, () => html`
+            <sl-tooltip content="This information is required">
+                <sl-badge variant="warning" pill>required</sl-badge>
+            </sl-tooltip>
+        `)}
+        ${renderIf(() => !field.editable, () => html`
+            <sl-tooltip content="Information cannot be modified after set">
+                <sl-badge variant="neutral" pill>read-only</sl-badge>
+            </sl-tooltip>
+        `)}
+        ${renderIf(() => field.displayAtCheckIn, () => html`
+            <sl-tooltip content="This information will be shown in the check-in app upon successful scan">
+                <sl-badge variant="success" pill>shown at check-in</sl-badge>
+            </sl-tooltip>
+        `)}
+    `;
+}
+
+function renderStandard(): TemplateResult {
+    return sectionCard({icon: 'person-vcard', title: 'Standard fields'}, html`
+        <div class="standard-fields">
+            <div>First name</div>
+            <sl-divider></sl-divider>
+            <div>Last name</div>
+            <sl-divider></sl-divider>
+            <div>Email address</div>
+        </div>
+    `);
 }
 
 declare global {

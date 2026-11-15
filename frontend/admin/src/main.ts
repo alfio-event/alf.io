@@ -44,12 +44,10 @@ import '@shoelace-style/shoelace/dist/components/copy-button/copy-button.js';
 
 // see https://vitejs.dev/guide/env-and-mode
 if (import.meta.env.MODE === 'development') {
-    const baseUrl = import.meta.env.MODE ? 'http://localhost:5173/' : '';
-    setBasePath(`${baseUrl}shoelace/`);
+    setBasePath('http://localhost:5173/shoelace/');
 } else if (import.meta.env.MODE === 'production') {
     setBasePath(`${document.getElementById('lit-js')?.getAttribute('src')?.replace(/assets.*/g, '')}shoelace/`);
 }
-export { NewElement } from './new-element';
 export { ProjectBanner } from './project-banner/project-banner';
 export { AdditionalItemList } from './event/additional-item-list/additional-item-list';
 export { DisplayCommonMarkPreview } from './display-common-mark-preview/display-common-mark-preview';
@@ -76,7 +74,6 @@ export { OrganizationList } from './organization/organization-list.ts';
 export { OrganizationEdit } from './organization/organization-edit.ts';
 export { Users } from './users/users.ts';
 export { UserProfileEdit } from './users/user-profile-edit.ts';
-export { ExportReservationsButton } from './event/export-reservations/export-reservations-button';
 export { FileUpload } from './components/file-upload';
 export { PurchaseContextImage } from './components/purchase-context-image';
 export { MultiLanguageText } from './components/multi-language-text';

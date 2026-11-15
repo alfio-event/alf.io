@@ -434,13 +434,15 @@ export class ReservationDetailPage extends LitElement {
         const reservation = data.descriptor.reservation;
         return html`
             <div class="container">
-                <div class="page-title-row secondary">
-                    <h1>Reservation ${shortReservationId(reservation.id)}</h1>
-                    <sl-copy-button hoist value=${reservation.id} copy-label="Copy the full reservation ID"></sl-copy-button>
-                    ${reservationStatusBadge(reservation.status)}
-                </div>
-                <p class="page-description text-muted">${data.context.title}</p>
-                <hr class="page-separator" />
+                ${when(!this.embedded, () => html`
+                    <div class="page-title-row secondary">
+                        <h1>Reservation ${shortReservationId(reservation.id)}</h1>
+                        <sl-copy-button hoist value=${reservation.id} copy-label="Copy the full reservation ID"></sl-copy-button>
+                        ${reservationStatusBadge(reservation.status)}
+                    </div>
+                    <hr class="page-separator" />
+                    <p class="page-description text-muted">${data.context.title}</p>
+                `)}
                 ${this.renderNotices(data)}
                 ${this.renderToolbar(data)}
                 <sl-tab-group>
@@ -913,6 +915,7 @@ export class ReservationDetailPage extends LitElement {
             ${when(vatApplied != null,
                 () => html`
                     <sl-switch .checked=${vatApplied!}
+                               help-text="When off, the reservation is exempt from VAT/GST"
                                @sl-change=${(e: Event) => this.updateDrafts({ vatApplied: (e.target as SlSwitch).checked })}>
                         Apply VAT/GST
                     </sl-switch>`,
@@ -953,7 +956,7 @@ export class ReservationDetailPage extends LitElement {
                                     ${this.attendeeCell(category.id, ticket.id, draft, 'lastName', ticket.lastName, 'Last name')}
                                     ${this.attendeeCell(category.id, ticket.id, draft, 'emailAddress', ticket.email, 'E-mail')}
                                     <td class="hide-small">
-                                        ${when(ticket.status === 'CHECKED_IN', () => html`<sl-badge variant="success">Checked in</sl-badge>`)}
+                                        ${when(ticket.status === 'CHECKED_IN', () => html`<sl-badge variant="success" pill>Checked in</sl-badge>`)}
                                     </td>
                                     <td>
                                         <div class="actions-cell">
@@ -1059,7 +1062,7 @@ export class ReservationDetailPage extends LitElement {
         return html`
             ${when(data.descriptor.reservation.status !== 'CANCELLED', () => html`
                 <div class="tab-toolbar">
-                    <sl-button variant="warning" ?disabled=${this.busy}
+                    <sl-button variant="warning" size="small" ?disabled=${this.busy}
                                @click=${() => this.perform(() => service.regenerateBillingDocument(), 'Billing document regenerated', 'Failed to regenerate the billing document')}>
                         <sl-icon slot="prefix" name="arrow-repeat"></sl-icon>
                         Regenerate

@@ -107,7 +107,7 @@
             })
             .state('apikey', {
                 url: "/api-keys/",
-                template: "<alfio-users alfio-title='Api Keys' type='apikey'></alfio-users>"
+                template: "<alfio-users alfio-title='API keys' type='apikey'></alfio-users>"
             })
             .state('edit-current-user', {
                 url: "/profile/edit",

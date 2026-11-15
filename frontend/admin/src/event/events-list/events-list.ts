@@ -1,11 +1,14 @@
-import {html, LitElement, nothing, TemplateResult} from 'lit';
+import {css, html, LitElement, TemplateResult} from 'lit';
 import {customElement, state} from 'lit/decorators.js';
+import {classMap} from 'lit/directives/class-map.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
-import {Task} from '@lit/task';
+import {Task, TaskStatus} from '@lit/task';
 import {fetchJson, supportsOfflinePayments} from '../../service/helpers.ts';
 import {EventStatistic} from '../../model/event.ts';
-import {badges, cardList} from '../../styles.ts';
+import {badges, cardList, modernLayout} from '../../styles.ts';
+import {sectionCard} from '../../components/section-card.ts';
+import {emptyState} from '../../components/empty-state.ts';
 import '../../components/format-date.ts';
 import '../../components/pending-payments-count.ts';
 
@@ -38,22 +41,43 @@ export class EventsList extends LitElement {
         () => []
     );
 
-    static readonly styles = [badges, cardList];
+    static readonly styles = [badges, cardList, modernLayout, css`
+        :host {
+            margin-block: 0;
+        }
+
+        .list-card {
+            --alfio-section-body-padding: 0;
+        }
+
+        .older-events {
+            padding: var(--sl-spacing-small) var(--sl-spacing-large);
+            border-top: 1px solid var(--sl-color-gray-200);
+        }
+    `];
 
     render() {
         return this.renderActive();
     }
 
     private renderActive() {
+        const events = this.loadEventsTask.value;
+        let count: TemplateResult | undefined = undefined;
+        if (events != null && this.loadEventsTask.status === TaskStatus.COMPLETE) {
+            count = html`<sl-badge variant="primary" pill>${events.length}</sl-badge>`;
+        }
         return html`
-            <sl-card>
-                <div slot="header" class="card-header">
-                    <h2>Your events</h2>
-                    ${when(this.isOwner,
-                        () => html`<sl-button href="#/events/new" variant="success" size="medium"><sl-icon name="plus-circle" slot="prefix"></sl-icon>Create event</sl-button>`,
-                        () => nothing)}
+            ${when(this.isOwner, () => html`
+                <div class="filter-toolbar" style="justify-content: flex-end;">
+                    <div class="filter-right">
+                        <sl-button href="#/events/new" variant="success" size="large">
+                            <sl-icon name="plus-circle" slot="prefix"></sl-icon>
+                            Add new
+                        </sl-button>
+                    </div>
                 </div>
-
+            `)}
+            ${sectionCard({icon: 'calendar-event', title: 'Active events', badge: count, className: 'list-card'}, html`
                 ${this.loadEventsTask.render({
                     initial: () => this.renderSpinner(),
                     running: () => this.renderSpinner(),
@@ -62,26 +86,28 @@ export class EventsList extends LitElement {
                             <sl-alert open variant="danger"><sl-icon name="exclamation-triangle" slot="icon"></sl-icon>Failed to load events</sl-alert>
                         </div>
                     `,
-                    complete: (events: EventStatistic[]) => {
-                        if (events.length === 0) {
-                            return this.renderEmptyActive();
+                    complete: (loaded: EventStatistic[]) => {
+                        if (loaded.length === 0) {
+                            return emptyState('No active events have been found');
                         }
-                        return this.renderEvents(events, false);
+                        return this.renderEvents(loaded, false);
                     }
                 })}
                 ${when(this.loaded && !this.loading && !this._error && this.events.length > 0,
-                    () => this.renderEvents(this.events, true),
-                    () => nothing)}
-                <div slot="footer" class="card-footer">
+                    () => this.renderEvents(this.events, true))}
+                <div class="older-events">
                     ${when(!this.loaded,
                         () => html`<sl-button variant="text" size="small" @click=${() => this.loadExpiredEvents()}>Show older events<sl-icon name="chevron-down" slot="suffix"></sl-icon></sl-button>`,
                         () => when(this.loading,
                             () => html`<sl-spinner></sl-spinner>`,
-                            () => when(this._error,
-                                () => html`<span class="payment-warning">Failed to load older events</span>`,
-                                () => nothing)))}
+                            () => when(this._error, () => html`
+                                <sl-alert open variant="danger">
+                                    <sl-icon name="exclamation-triangle" slot="icon"></sl-icon>
+                                    Failed to load older events
+                                </sl-alert>
+                            `)))}
                 </div>
-            </sl-card>
+            `)}
         `;
     }
 
@@ -93,30 +119,18 @@ export class EventsList extends LitElement {
         `;
     }
 
-    private renderEmptyActive(): TemplateResult {
-        return when(this.isOwner,
-            () => html`
-                <div class="state-message">
-                    <sl-button href="#/events/new" variant="success" size="large"><sl-icon name="plus-circle" slot="prefix"></sl-icon> Create new event</sl-button>
-                </div>
-            `,
-            () => html`
-                <div class="state-message">
-                    <sl-alert open variant="primary"><sl-icon name="info-circle" slot="icon"></sl-icon>no active events have been found.</sl-alert>
-                </div>
-            `);
-    }
-
     private renderEvents(events: EventStatistic[], expired: boolean): TemplateResult {
         return html`
             ${repeat(events, (ev) => ev.id, (ev) => {
                     const sold = ev.soldTickets + ev.checkedInTickets;
-                    const percentage = ev.availableSeats > 0 ? Math.min(100, Math.round(sold * 100 / ev.availableSeats)) : 0;
+                    const percentage = this.soldPercentage(sold, ev.availableSeats);
                     const remaining = Math.max(0, ev.availableSeats - sold);
+                    const nearlyFull = percentage >= 90;
+                    const showLogo = !expired && ev.fileBlobId != null;
                     return html`
                         <a class="event-row" href="#/events/${ev.shortName}/detail" aria-label="Open ${ev.displayName}">
-                            <div class="event-logo ${expired || ev.fileBlobId == null ? 'placeholder' : ''}">
-                                ${when(!expired && ev.fileBlobId != null,
+                            <div class=${classMap({ 'event-logo': true, placeholder: !showLogo })}>
+                                ${when(showLogo,
                                     () => html`<img src="/file/${ev.fileBlobId}" alt="${ev.displayName} logo">`,
                                     () => html`<sl-icon name="image" aria-label="No event logo"></sl-icon>`)}
                             </div>
@@ -130,8 +144,7 @@ export class EventsList extends LitElement {
                                                          <sl-icon name="exclamation-triangle" style="cursor: help;" tabindex="0" aria-label="Warning: please check event detail"></sl-icon>
                                                      </sl-tooltip>
                                                   </sl-badge>
-                                              `,
-                                              () => nothing)}
+                                              `)}
                                             ${when(!expired && ev.status === 'DRAFT',
                                               () => html`
                                                   <sl-badge variant="neutral" pill>
@@ -140,8 +153,7 @@ export class EventsList extends LitElement {
                                                   </sl-badge>
                                               `,
                                               () => when(!expired && ev.status === 'PUBLIC',
-                                                  () => html`<sl-badge variant="success" pill>Live</sl-badge>`,
-                                                  () => nothing))}
+                                                  () => html`<sl-badge variant="success" pill>Live</sl-badge>`))}
                                 </div>
                                 <div class="event-date">
                                     <sl-icon name="calendar-event" aria-hidden="true"></sl-icon>
@@ -152,20 +164,26 @@ export class EventsList extends LitElement {
                                         <div class="sales-progress">
                                             <div class="sales-meta">
                                                 <span>${sold} of ${ev.availableSeats} tickets sold</span>
-                                                <span>${remaining > 0 && percentage >= 90 ? `${remaining} left` : `${percentage}%`}</span>
+                                                <span>${when(remaining > 0 && nearlyFull, () => `${remaining} left`, () => `${percentage}%`)}</span>
                                             </div>
-                                            <sl-progress-bar class=${percentage >= 90 ? 'nearly-full' : ''} value=${percentage} aria-label="${percentage}% of tickets sold"></sl-progress-bar>
+                                            <sl-progress-bar class=${classMap({ 'nearly-full': nearlyFull })} value=${percentage} aria-label="${percentage}% of tickets sold"></sl-progress-bar>
                                         </div>
                                     </div>
                                     ${when(!expired && ev.visibleForCurrentUser && supportsOfflinePayments(ev.allowedPaymentProxies),
-                                        () => html`<alfio-pending-payments-count event-name=${ev.shortName} display="summary"></alfio-pending-payments-count>`,
-                                        () => nothing)}
+                                        () => html`<alfio-pending-payments-count event-name=${ev.shortName} display="summary"></alfio-pending-payments-count>`)}
                                 </div>
                             </div>
                         </a>
                     `;
                 })}
         `;
+    }
+
+    private soldPercentage(sold: number, availableSeats: number): number {
+        if (availableSeats <= 0) {
+            return 0;
+        }
+        return Math.min(100, Math.round(sold * 100 / availableSeats));
     }
 
     @state()

@@ -7,13 +7,14 @@ import type {SlRadioGroup} from '@shoelace-style/shoelace';
 import {AlfioEvent, TicketsStatistics} from '../../model/event.ts';
 import {EventService} from '../../service/event.ts';
 import {errorMessage, supportsOfflinePayments} from '../../service/helpers.ts';
+import {DATE_FORMAT_CHANGED_EVENT, formatDate} from '../../service/date-format.ts';
 import {subscribePendingPayments} from '../../service/pending-payments.ts';
 import {sectionCard} from '../../components/section-card.ts';
 import {emptyState} from '../../components/empty-state.ts';
 import {slColor} from '../../components/chart.ts';
 import type {AlfioChartType} from '../../components/chart.ts';
 import '../../components/chart.ts';
-import {allocationSegments} from './ticket-allocation.ts';
+import {allocationColor, allocationSegments} from './ticket-allocation.ts';
 import {modernLayout, textColors} from '../../styles.ts';
 
 type TrendMode = 'twoWeeks' | 'all';
@@ -38,15 +39,11 @@ function localDateString(date: Date): string {
 }
 
 /**
- * Formats a "yyyy-MM-dd" date (a day, or the first day of a week/month bucket) for a chart axis.
- * Parsed as UTC so that the label is never shifted by the browser time zone.
+ * Formats a "yyyy-MM-dd" date (a day, or the first day of a week/month bucket) for a chart axis, with the
+ * admin-wide format without the year. The value is a wall-clock day, so it is never shifted by a time zone
  */
 function formatChartDate(date: string): string {
-    const parsed = new Date(`${date}T00:00:00Z`);
-    if (Number.isNaN(parsed.getTime())) {
-        return date;
-    }
-    return new Intl.DateTimeFormat(undefined, {month: 'short', day: 'numeric', timeZone: 'UTC'}).format(parsed);
+    return formatDate(date, {style: 'day-month'}) || date;
 }
 
 function formatNumber(amount: number): string {
@@ -76,6 +73,7 @@ export class EventStatistics extends LitElement {
         css`
             :host {
                 display: block;
+                --alfio-section-body-padding: var(--sl-spacing-medium);
             }
             .section-body {
                 display: grid;
@@ -188,6 +186,10 @@ export class EventStatistics extends LitElement {
                 font-size: var(--sl-font-size-small);
                 color: var(--sl-color-gray-700);
             }
+            .not-on-sale-hint {
+                margin: var(--sl-spacing-x-small) 0 0;
+                font-size: var(--sl-font-size-small);
+            }
             .legend .swatch {
                 display: inline-block;
                 width: 0.8em;
@@ -195,22 +197,25 @@ export class EventStatistics extends LitElement {
                 border-radius: var(--sl-border-radius-small);
                 margin-inline-end: var(--sl-spacing-2x-small);
             }
-            .trend-period::part(form-control-label) {
-                position: absolute;
-                width: 1px;
-                height: 1px;
-                overflow: hidden;
-                clip: rect(0 0 0 0);
-                white-space: nowrap;
-            }
         `,
     ];
 
+    connectedCallback(): void {
+        super.connectedCallback();
+        window.addEventListener(DATE_FORMAT_CHANGED_EVENT, this.onDateFormatChanged);
+    }
+
     disconnectedCallback(): void {
         super.disconnectedCallback();
+        window.removeEventListener(DATE_FORMAT_CHANGED_EVENT, this.onDateFormatChanged);
         this.unsubscribePendingPayments?.();
         this.unsubscribePendingPayments = null;
     }
+
+    // the labels of the chart follow the admin-wide date format
+    private onDateFormatChanged = (): void => {
+        this.requestUpdate();
+    };
 
     protected willUpdate(changed: PropertyValues): void {
         if (changed.has('event') && this.event != null) {
@@ -388,6 +393,11 @@ export class EventStatistics extends LitElement {
                             <li><span class="swatch" style="background: ${slice.color}"></span>${slice.label}: ${slice.value}</li>
                         `)}
                     </ul>
+                    ${when((event.notAllocatedTickets ?? 0) > 0, () => html`
+                        <p class="not-on-sale-hint text-muted">
+                            No category can sell the ${event.notAllocatedTickets} tickets not on sale. Add a category without a limit, or raise a limit.
+                        </p>
+                    `, () => nothing)}
                 `, () => emptyState('No tickets yet'))}
             </div>
         `;
@@ -401,7 +411,7 @@ export class EventStatistics extends LitElement {
             <div class="graph-panel reservations-trend">
                 <div class="graph-header">
                     <h4>Reservations trend</h4>
-                    <sl-radio-group class="trend-period" label="Period" size="small" value=${this.trendMode}
+                    <sl-radio-group class="trend-period label-hidden" label="Period" size="small" value=${this.trendMode}
                                     @sl-change=${(e: Event) => { this.trendMode = (e.target as SlRadioGroup).value as TrendMode; }}>
                         <sl-radio-button value="twoWeeks">Last two weeks</sl-radio-button>
                         <sl-radio-button value="all">Entire sale period</sl-radio-button>
@@ -429,8 +439,9 @@ export class EventStatistics extends LitElement {
         const labels = Array.from(new Set([...statistics.sold, ...statistics.reserved].map((s) => s.date))).sort();
         const countOf = (rows: { date: string; count: number }[], label: string): number =>
             rows.find((row) => row.date === label)?.count ?? 0;
-        const reservedColor = slColor('--sl-color-sky-400', '#38bdf8');
-        const soldColor = slColor('--sl-color-success-600', '#16a34a');
+        // the same colors as the ticket status chart: created reservations are pending, confirmed ones are sold
+        const reservedColor = allocationColor('pending');
+        const soldColor = allocationColor('sold');
         const data: ChartData = {
             labels: labels.map(formatChartDate),
             datasets: [

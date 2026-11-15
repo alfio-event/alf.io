@@ -1,13 +1,24 @@
 import {customElement, query, state} from "lit/decorators.js";
-import {css, html, LitElement, nothing, TemplateResult} from "lit";
-import {SlDialog, SlRequestCloseEvent} from "@shoelace-style/shoelace";
-import {TanStackFormController} from "@tanstack/lit-form";
+import {css, html, LitElement, TemplateResult} from "lit";
+import {when} from "lit/directives/when.js";
 import {classMap} from "lit/directives/class-map.js";
-import {notifyChange, renderIf} from "../service/helpers.ts";
-import {cardBgColors, dialog as dialogStyling, form, pageHeader, panelStyles, retroCompat, textColors} from "../styles.ts";
+import {SlDialog, SlRequestCloseEvent, SlTextarea} from "@shoelace-style/shoelace";
+import {TanStackFormController} from "@tanstack/lit-form";
+import {dialog as dialogStyling, form, modernLayout, retroCompat, row, textColors} from "../styles.ts";
 import {Organization, OrganizationModification} from "../model/organization.ts";
 import {OrganizationService, ValidationResult} from "../service/organization.ts";
 import {dispatchFeedback} from "../model/dom-events.ts";
+import {
+    emailAddress,
+    fieldError,
+    focusFirstError,
+    FormMountController,
+    minLength,
+    setServerError,
+    submitValidated,
+    validatedInput,
+    validateWith,
+} from "../components/form-validation.ts";
 
 interface OrganizationForm {
     id: number | null;
@@ -16,6 +27,18 @@ interface OrganizationForm {
     description: string;
     externalId: string | null;
     slug: string | null;
+}
+
+const SLUG_PATTERN = /^[A-Za-z0-9]+([_-]+[A-Za-z0-9]+)*$/;
+
+function validateSlugFormat(value: unknown): string | undefined {
+    if (!value) {
+        return undefined;
+    }
+    if (!SLUG_PATTERN.test(String(value))) {
+        return 'Please use only letters and digits, separated by "-" or "_"';
+    }
+    return undefined;
 }
 
 @customElement('alfio-organization-edit')
@@ -49,6 +72,9 @@ export class OrganizationEdit extends LitElement {
     @state()
     formSubmitted: boolean = false;
 
+    @state()
+    saving: boolean = false;
+
     readonly #form = new TanStackFormController(this, {
         defaultValues: {
             id: null,
@@ -60,29 +86,14 @@ export class OrganizationEdit extends LitElement {
         } as OrganizationForm
     });
 
-static readonly styles = [dialogStyling, panelStyles, pageHeader, form, textColors, cardBgColors, retroCompat, css`
-        :host {
-            font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            font-size: 16px;
-        }
+    constructor() {
+        super();
+        new FormMountController(this, this.#form.api);
+    }
 
-        sl-input, sl-textarea {
-            display: block;
-            width: 100%;
-            font-size: 16px;
-        }
-
-        sl-input::part(input) {
-            font-size: 16px;
-            line-height: 1.42857143;
-            height: 34px;
-            padding: 6px 12px;
-        }
-
-        sl-textarea::part(textarea) {
-            font-size: 16px;
-            line-height: 1.42857143;
-            padding: 6px 12px;
+    static readonly styles = [dialogStyling, form, row, textColors, retroCompat, modernLayout, css`
+        sl-dialog {
+            --alfio-dialog-max-width: 50rem;
         }
 
         .slug-error-text {
@@ -92,68 +103,24 @@ static readonly styles = [dialogStyling, panelStyles, pageHeader, form, textColo
         sl-input.error .slug-error-text {
             display: inline-block;
         }
-
-        .form-group {
-            margin-bottom: 16px;
-            margin-top: 16px;
-        }
-
-        .slug-loading {
-            margin-left: 8px;
-        }
-
- sl-input::part(form-control),
- sl-textarea::part(form-control) {
-            margin-bottom: 0;
-        }
-
- sl-input, sl-textarea {
-            margin-top: 0;
-            margin-bottom: 15px;
-        }
-
-        sl-input::part(form-control-label),
- sl-textarea::part(form-control-label) {
-            font-size: 16px;
-            line-height: 1.42857143;
-           margin-top: 0;
-            margin-bottom: 8px;
-            display: block;
-        }
-
-         .page-header {
-            padding-bottom: 10px;
-            margin: 16px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .page-header h2 {
-            font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            font-size: 30px;
-            font-weight: 700;
-            line-height: 1.1;
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
     `];
 
     protected render(): TemplateResult {
         return html`
             <sl-dialog
                 id="editDialog"
-                style="--width: min(50rem, calc(100vw - 2rem)); --header-spacing:16px; --body-spacing: 16px; --sl-font-size-large: 1.5rem;"
-                class="dialog"
-                label=${this.dialogTitle}
+                class="responsive-dialog"
+                label=${this.dialogTitle ?? ''}
                 @sl-request-close=${this.preventAccidentalClose}>
 
-                    ${renderIf(() => this.displayForm, () => this.renderForm())}
+                    ${when(this.displayForm, () => this.renderForm())}
 
                     <div slot="footer">
                         <sl-divider></sl-divider>
-                        <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <sl-button variant="default" size="large" @click=${() => this.close(false)}>Close</sl-button>
+                        <div class="row" style="--alfio-row-cols: 3">
+                            <sl-button variant="default" size="large" @click=${() => this.close(false)}>Cancel</sl-button>
                             <div></div>
-                            <sl-button variant="success" type="submit" size="large" form="form">Save</sl-button>
+                            <sl-button id="save-organization" variant="warning" type="submit" size="large" form="form" ?loading=${this.saving}>Save</sl-button>
                         </div>
                     </div>
 
@@ -163,133 +130,104 @@ static readonly styles = [dialogStyling, panelStyles, pageHeader, form, textColo
 
     private renderForm(): TemplateResult {
         return html`
-            <form id="form" @submit="${async (e: Event) => {e.preventDefault(); e.stopImmediatePropagation(); if (this.slugChecking || !this.slugValid) { return; } this.clearServerErrors(); this.formSubmitted = true; await this.#form.api.handleSubmit();}}">
-                <div class="page-header">
-                    <h4>Organizer Data</h4>
+            <form id="form" class="dialog-form form-stack" @submit=${this.onSubmit}>
+                <div class="section-card">
+                    <div class="dialog-section-header"><sl-icon name="building"></sl-icon>Organizer data</div>
+                    <div class="section-body form-stack">
+                        ${this.renderNameField()}
+                        ${this.renderEmailField()}
+                        ${this.renderDescriptionField()}
+                    </div>
                 </div>
 
-                ${this.renderNameField()}
-                ${this.renderEmailField()}
-                ${this.renderDescriptionField()}
-
-                ${renderIf(() => this.isAdmin, () => html`
-                    <div class="page-header" style="margin-top: 24px;">
-                        <h4>Advanced Configuration</h4>
+                ${when(this.isAdmin, () => html`
+                    <div class="section-card">
+                        <div class="dialog-section-header"><sl-icon name="gear"></sl-icon>Advanced configuration</div>
+                        <div class="section-body form-stack">
+                            ${this.renderSlugField()}
+                            ${this.renderExternalIdField()}
+                        </div>
                     </div>
-                    ${this.renderSlugField()}
-                    ${this.renderExternalIdField()}
                 `)}
-
             </form>
         `;
     }
 
+    private readonly onSubmit = async (e: Event): Promise<void> => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (this.slugChecking || !this.slugValid || this.saving) {
+            return;
+        }
+        this.formSubmitted = true;
+        this.saving = true;
+        try {
+            if (!await submitValidated(this.#form.api)) {
+                await this.updateComplete;
+                focusFirstError(this.renderRoot);
+            }
+        } finally {
+            this.saving = false;
+        }
+    };
+
     private renderNameField() {
-        const validate = ({value}: { value: any }) => {
-            if (!value || value.length === 0) {
-                return 'error.required';
-            }
-            if (value.length < 2) {
-                return 'error.minLength';
-            }
-            return undefined;
-        };
         return this.#form.field({
             name: 'name',
-            validators: {
-                onChange: validate,
-                onSubmit: validate
-            }
-        }, (field) => html`
-            <div class="form-group">
-                <sl-input label="Name" class=${classMap({ error: this.hasError(field.state.meta) })} .value=${field.state.value} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
-            </div>
-        `);
+            validators: validateWith(value => minLength(value, 2))
+        }, (field) => validatedInput(field, this.formSubmitted, { id: 'organization-name', label: 'Name' }));
     }
 
     private renderEmailField() {
-        const validate = ({value}: { value: any }) => {
-            if (!value || value.length === 0) {
-                return 'error.required';
-            }
-            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailPattern.test(value)) {
-                return 'error.emailFormat';
-            }
-            return undefined;
-        };
         return this.#form.field({
             name: 'email',
-            validators: {
-                onChange: validate,
-                onSubmit: validate
-            }
-        }, (field) => html`
-            <div class="form-group">
-                <sl-input label="Contact E-Mail" type="email" class=${classMap({ error: this.hasError(field.state.meta) })} .value=${field.state.value ?? nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-input>
-            </div>
-        `);
+            validators: validateWith(value => emailAddress(value))
+        }, (field) => validatedInput(field, this.formSubmitted, { id: 'organization-email', label: 'Contact e-mail', type: 'email', prefixIcon: 'envelope' }));
     }
 
     private renderDescriptionField() {
-        const validate = ({value}: { value: any }) => {
-            if (!value || value.length === 0) {
-                return 'error.required';
-            }
-            if (value.length < 3) {
-                return 'error.minLength';
-            }
-            return undefined;
-        };
         return this.#form.field({
             name: 'description',
-            validators: {
-                onChange: validate,
-                onSubmit: validate
-            }
-        }, (field) => html`
-            <div class="form-group">
-                <sl-textarea label="Description" rows="2" class=${classMap({ error: this.hasError(field.state.meta) })} .value=${field.state.value ?? nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field)}></sl-textarea>
-            </div>
-        `);
+            validators: validateWith(value => minLength(value, 3))
+        }, (field) => {
+            const error = fieldError(field.state.meta, this.formSubmitted);
+            return html`
+                <sl-textarea id="organization-description" label="Description" rows="2" required
+                             class=${classMap({ error: error != null })}
+                             help-text=${error ?? ''}
+                             .value=${field.state.value ?? ''}
+                             @sl-input=${(e: Event) => field.handleChange((e.target as SlTextarea).value)}
+                             @sl-blur=${() => field.handleBlur()}></sl-textarea>
+            `;
+        });
     }
 
     private renderSlugField() {
         const baseUrl = window.BASE_URL;
-        const validate = ({value}: { value: any }) => {
-            if (!value) {
-                return undefined;
-            }
-            const slugPattern = /^[A-Za-z0-9]+([_-]+[A-Za-z0-9]+)*$/;
-            if (!slugPattern.test(value)) {
-                return 'error.slugPattern';
-            }
-            return undefined;
-        };
         return this.#form.field({
             name: 'slug',
-            validators: {
-                onChange: validate,
-                onSubmit: validate
+            validators: validateWith(value => validateSlugFormat(value))
+        }, (field) => {
+            let error = fieldError(field.state.meta, this.formSubmitted);
+            if (!this.slugValid) {
+                error = 'This slug is already in use. Please choose a different one.';
             }
-        }, (field) => html`
-            <div class="form-group">
-                <sl-input label="Slug"
+            return html`
+                <sl-input id="organization-slug" label="Slug"
                     type="text"
                     pattern="^[A-Za-z0-9]+([_-]+[A-Za-z0-9]+)*$"
-                    class=${classMap({ error: !this.slugValid || this.hasError(field.state.meta) })}
+                    class=${classMap({ error: error != null })}
+                    help-text=${error ?? ''}
                     .value=${field.state.value ?? ''}
-                    @sl-change=${(e: InputEvent) => {
-                        notifyChange(e, field);
-                        this.validateSlug(e, field);
-                    }}>
+                    @sl-input=${(e: Event) => field.handleChange((e.target as HTMLInputElement).value)}
+                    @sl-change=${(e: InputEvent) => this.validateSlug(e, field)}>
                     <span slot="prefix" class="text-muted">${baseUrl}/o/</span>
                     <sl-icon name="exclamation-triangle" class="slug-error-text" slot="suffix"></sl-icon>
-                    ${renderIf(() => this.slugChecking, () => html`<sl-spinner slot="suffix" size="small"></sl-spinner>`)}
+                    ${when(this.slugChecking, () => html`<sl-spinner slot="suffix"></sl-spinner>`)}
                     <span slot="suffix" class="text-muted">/</span>
                 </sl-input>
-            </div>
-        `);
+            `;
+        });
     }
 
     private async validateSlug(e: InputEvent, field: { handleChange: (m: any) => void; handleBlur: () => void }) {
@@ -329,28 +267,7 @@ static readonly styles = [dialogStyling, panelStyles, pageHeader, form, textColo
     private renderExternalIdField() {
         return this.#form.field({
             name: 'externalId',
-        }, (field) => html`
-            <sl-input label="External ID (OpenID organization ID)"
-                .value=${field.state.value ?? nothing}
-                @sl-change=${(e: InputEvent) => notifyChange(e, field)}>
-            </sl-input>
-        `);
-    }
-
-    private clearServerErrors() {
-        ['name', 'email', 'description', 'externalId', 'slug'].forEach((field: string) => {
-            this.#form.api.setFieldMeta(field as any, (meta: any) => ({
-                ...meta,
-                errorMap: {
-                    ...meta.errorMap,
-                    onServer: undefined
-                }
-            }));
-        });
-    }
-
-    private hasError(meta: any) {
-        return (meta.isTouched || this.formSubmitted) && meta.errors.length > 0;
+        }, (field) => validatedInput(field, this.formSubmitted, { id: 'organization-external-id', label: 'External ID (OpenID organization ID)', optional: true }));
     }
 
     public async hide(): Promise<void> {
@@ -380,7 +297,11 @@ static readonly styles = [dialogStyling, panelStyles, pageHeader, form, textColo
 
     public async open(request: { type: 'new' | 'edit', organizationId?: number }): Promise<void> {
         const myGeneration = ++this.openGeneration;
-        this.dialogTitle = request.type === 'edit' ? 'Edit Organization' : 'Create new Organization';
+        if (request.type === 'edit') {
+            this.dialogTitle = 'Edit organization';
+        } else {
+            this.dialogTitle = 'New organization';
+        }
         this.isAdmin = window.IS_ADMIN;
         this.slugCheckGeneration++;
         this.slugChecking = false;
@@ -470,15 +391,7 @@ static readonly styles = [dialogStyling, panelStyles, pageHeader, form, textColo
         try {
             const result: ValidationResult = await OrganizationService.check(orgModification);
             if (!result.success) {
-                result.validationErrors.forEach(error => {
-                    this.#form.api.setFieldMeta(error.fieldName as any, (meta: any) => ({
-                        ...meta,
-                        errorMap: {
-                            ...meta.errorMap,
-                            onServer: error.code
-                        }
-                    }));
-                });
+                result.validationErrors.forEach(error => setServerError(this.#form.api, error.fieldName, error.code));
                 dispatchFeedback({
                     type: "danger",
                     message: "Please correct the errors in the form"

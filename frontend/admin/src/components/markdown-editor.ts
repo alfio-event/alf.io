@@ -45,6 +45,12 @@ export class MarkdownEditor extends LitElement {
     private lastMarkdown = '';
 
     static styles = css`
+        .link-dialog-footer {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--sl-spacing-small);
+        }
+
         :host {
             display: block;
         }
@@ -426,14 +432,23 @@ export class MarkdownEditor extends LitElement {
 
     private renderLinkDialog(): TemplateResult {
         return html`
-            <sl-dialog ?open=${this.linkDialogOpen} label="Link" @sl-hide=${() => this.linkDialogOpen = false}>
+            <sl-dialog ?open=${this.linkDialogOpen} label="Link" style="--width: min(32rem, calc(100vw - 2 * var(--sl-spacing-large)));"
+                       @sl-hide=${() => this.linkDialogOpen = false}>
                 <sl-input label="URL" type="url" placeholder="https://…" .value=${this.linkUrl}
                           @sl-input=${(e: Event) => this.linkUrl = (e.target as SlInput).value}></sl-input>
-                <sl-button slot="footer" variant="default" @click=${() => this.linkDialogOpen = false}>Cancel</sl-button>
-                ${when(this.active('link'), () => html`
-                    <sl-button slot="footer" variant="danger" @click=${this.removeLink}>Remove link</sl-button>
-                `, () => nothing)}
-                <sl-button slot="footer" variant="primary" @click=${this.applyLink}>Apply</sl-button>
+                <div slot="footer">
+                    <sl-divider></sl-divider>
+                    <div class="link-dialog-footer">
+                        <sl-button variant="default" size="large" @click=${() => this.linkDialogOpen = false}>Cancel</sl-button>
+                        ${when(this.active('link'), () => html`
+                            <sl-button variant="danger" size="large" @click=${this.removeLink}>
+                                <sl-icon slot="prefix" name="trash"></sl-icon>
+                                Remove link
+                            </sl-button>
+                        `, () => html`<div></div>`)}
+                        <sl-button variant="warning" size="large" @click=${this.applyLink}>Apply</sl-button>
+                    </div>
+                </div>
             </sl-dialog>
         `;
     }

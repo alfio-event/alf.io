@@ -28,7 +28,10 @@ export function nextSort<K extends string>(current: SortState<K>, sortKey: K): S
 export function sortItems<T, K extends string>(items: T[],
                                                sort: SortState<K>,
                                                valueOf: (item: T, key: K) => SortValue): T[] {
-    const multiplier = sort.sortDirection === 'asc' ? 1 : -1;
+    let multiplier = -1;
+    if (sort.sortDirection === 'asc') {
+        multiplier = 1;
+    }
     return [...items].sort((a, b) => compareValues(valueOf(a, sort.sortKey), valueOf(b, sort.sortKey)) * multiplier);
 }
 

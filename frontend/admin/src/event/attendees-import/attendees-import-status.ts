@@ -101,11 +101,20 @@ export class AttendeesImportStatus extends LitElement {
         const processed = stats.countSuccess + stats.countError;
         const total = processed + stats.countPending;
         const completed = stats.countPending === 0;
-        const percentage = total > 0 ? Math.floor(processed * 100 / total) : 0;
-        return sectionCard({
-            icon: !completed ? 'hourglass-split' : stats.countError > 0 ? 'exclamation-triangle' : 'check-circle',
-            title: completed ? 'Import completed' : 'Import in progress',
-        }, html`
+        let percentage = 0;
+        if (total > 0) {
+            percentage = Math.floor(processed * 100 / total);
+        }
+        let icon = 'hourglass-split';
+        let title = 'Import in progress';
+        if (completed) {
+            title = 'Import completed';
+            icon = 'check-circle';
+            if (stats.countError > 0) {
+                icon = 'exclamation-triangle';
+            }
+        }
+        return sectionCard({ icon, title }, html`
             <div class="import-status">
                 <sl-progress-bar value=${percentage} label="Processed reservations">${processed} / ${total}</sl-progress-bar>
                 <div class="counters">
@@ -114,17 +123,17 @@ export class AttendeesImportStatus extends LitElement {
                     ${when(stats.countPending > 0, () => html`<sl-badge variant="neutral" pill>${stats.countPending} pending</sl-badge>`)}
                 </div>
                 ${when(completed, () => html`
-                    ${stats.countError === 0
-                        ? html`
+                    ${when(stats.countError === 0,
+                        () => html`
                             <sl-alert id="import-result" variant="success" open>
                                 <sl-icon slot="icon" name="check2-circle"></sl-icon>
                                 All the reservations have been created.
-                            </sl-alert>`
-                        : html`
+                            </sl-alert>`,
+                        () => html`
                             <sl-alert id="import-result" variant="warning" open>
                                 <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
                                 ${stats.countError} of ${total} reservations could not be created. The application log contains the details.
-                            </sl-alert>`}
+                            </sl-alert>`)}
                     <div class="row" style="--alfio-row-cols: 3">
                         <sl-button variant="default" size="large" href=${`#/events/${event.shortName}/detail`}>
                             <sl-icon slot="prefix" name="arrow-left"></sl-icon>

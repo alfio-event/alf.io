@@ -98,7 +98,10 @@ export function invitationsCsv(invitees: SendCodeModification[]): string {
  */
 function detectHeader(content: string): boolean {
     const endOfFirstLine = content.indexOf('\n');
-    const firstLine = endOfFirstLine === -1 ? content : content.substring(0, endOfFirstLine);
+    let firstLine = content;
+    if (endOfFirstLine !== -1) {
+        firstLine = content.substring(0, endOfFirstLine);
+    }
     const firstRow = Papa.parse<string[]>(firstLine, { skipEmptyLines: true }).data[0] ?? [];
     const cells = firstRow.map(cell => String(cell).trim().toLowerCase());
     if (cells.length === CSV_HEADER.length && CSV_HEADER.every((name, index) => cells[index] === name)) {

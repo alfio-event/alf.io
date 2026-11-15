@@ -70,12 +70,12 @@ export class EventService {
 
     static async createCategory(eventId: number, category: TicketCategoryModificationPayload): Promise<EventValidationResult> {
         const response = await postJson(`/admin/api/events/${eventId}/categories/new`, category);
-        return await response.json();
+        return validationResult(await response.json());
     }
 
     static async updateCategory(eventId: number, categoryId: number, category: TicketCategoryModificationPayload): Promise<EventValidationResult> {
         const response = await postJson(`/admin/api/events/${eventId}/categories/${categoryId}/update`, category);
-        return await response.json();
+        return validationResult(await response.json());
     }
 
     static async deleteCategory(eventName: string, categoryId: number): Promise<void> {
@@ -178,4 +178,15 @@ export class EventService {
             throw new Error(await responseErrorMessage(response, `Unexpected status ${response.status}`));
         }
     }
+}
+
+/**
+ * The validation result of a category request. The server answers an unexpected error with a plain message
+ * (and status 200): it becomes a rejection, so that it isn't mistaken for a validation result
+ */
+function validationResult(body: EventValidationResult | string): EventValidationResult {
+    if (typeof body === 'string') {
+        throw new Error(body);
+    }
+    return body;
 }

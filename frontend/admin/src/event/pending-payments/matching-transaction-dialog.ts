@@ -44,7 +44,7 @@ export class MatchingTransactionDialog extends PromptDialog<MatchingTransactionC
 
     render(): TemplateResult {
         return html`
-            <sl-dialog class="responsive-dialog" label="Matching transaction" placement="bottom"
+            <sl-dialog class="responsive-dialog" label="Matching transaction"
                        @sl-after-hide=${this.onAfterHide}>
                 ${dialogTitle('arrow-left-right',
                     `Matching transaction for ${shortReservationId(this.reservationId)}`,
@@ -58,7 +58,7 @@ export class MatchingTransactionDialog extends PromptDialog<MatchingTransactionC
                             <sl-icon name="x-octagon" slot="prefix"></sl-icon>
                             Flag as not valid
                         </sl-button>
-                        <sl-button variant="success" size="large" @click=${() => this.close('confirm')}>
+                        <sl-button variant="warning" size="large" @click=${() => this.close('confirm')}>
                             <sl-icon name="check2" slot="prefix"></sl-icon>
                             Confirm
                         </sl-button>

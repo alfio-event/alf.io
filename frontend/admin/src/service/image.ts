@@ -96,9 +96,10 @@ async function transformRaster(file: File): Promise<TransformedImage> {
         height = MAX_DIMENSION;
         resize = true;
     }
-    const source = resize
-        ? await createImageBitmap(img, {resizeWidth: width, resizeHeight: height, resizeQuality: 'high'})
-        : img;
+    let source: HTMLImageElement | ImageBitmap = img;
+    if (resize) {
+        source = await createImageBitmap(img, {resizeWidth: width, resizeHeight: height, resizeQuality: 'high'});
+    }
     const dataUrl = drawImage(source).toDataURL(file.type);
     return {
         dataUrl,

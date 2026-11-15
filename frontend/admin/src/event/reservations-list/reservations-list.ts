@@ -1,6 +1,7 @@
-import { css, html, LitElement, nothing, TemplateResult } from 'lit';
+import { css, html, LitElement, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
+import { when } from 'lit/directives/when.js';
 import { Task } from '@lit/task';
 import { AlfioEvent } from '../../model/event.ts';
 import { EventService } from '../../service/event.ts';
@@ -31,6 +32,7 @@ import '../../components/format-date.ts';
 import {emptyState} from '../../components/empty-state.ts';
 import { ListSearchController } from '../../components/list-search.ts';
 import { taskContent } from '../../components/task-content.ts';
+import { sectionCard } from '../../components/section-card.ts';
 
 type TabName = 'completed' | 'payment-pending' | 'in-process' | 'credited' | 'cancelled';
 interface Reservation extends ReservationSummary {
@@ -128,9 +130,7 @@ export class ReservationsList extends LitElement {
         task: async ([eventName, purchaseContextType, search, pages]): Promise<ReservationListData> => {
             const baseUrl = `/admin/api/reservation/${purchaseContextType}/${encodeURIComponent(eventName)}/reservations/list`;
             const [event, useInvoiceNumberAsId, ...results] = await Promise.all([
-                purchaseContextType === 'event'
-                    ? EventService.load(eventName).then((result) => result.event)
-                    : Promise.resolve(null),
+                this.loadEvent(eventName, purchaseContextType),
                 this.loadUseInvoiceNumberAsId(eventName, purchaseContextType),
                 ...sections.map((section) =>
                     this.loadReservations(baseUrl, pages[section.name], search, section.statuses),
@@ -177,12 +177,12 @@ export class ReservationsList extends LitElement {
                 background: var(--sl-color-warning-50);
                 border-bottom-color: var(--sl-color-warning-200);
             }
-            .stuck-reservations .section-header sl-icon {
+            .stuck-reservations .section-header > sl-icon {
                 color: var(--sl-color-warning-700);
             }
             .stuck-message {
                 margin: 0;
-                padding: var(--sl-spacing-medium);
+                padding: var(--sl-spacing-x-small) var(--sl-spacing-x-small) var(--sl-spacing-small);
                 color: var(--sl-color-gray-700);
             }
             .table > thead > tr > th:nth-child(1) {
@@ -229,11 +229,10 @@ export class ReservationsList extends LitElement {
             // The host interpolates an empty attribute when it has no reservations yet,
             // which Lit's Array converter turns into null.
             const reservations = this.reservations ?? [];
-            return reservations.length === 0
-                ? html`
-                      ${emptyState('No reservations completed so far')}
-                  `
-                : this.renderTable(reservations, null);
+            if (reservations.length === 0) {
+                return emptyState('No reservations completed so far');
+            }
+            return this.renderTable(reservations, null);
         }
         return taskContent(this.loadDataTask, this.lastData, 'Failed to load reservations. Please try again.', (data) =>
             this.renderContent(data),
@@ -246,42 +245,33 @@ export class ReservationsList extends LitElement {
                 <div class="page-title-row secondary">
                     <h1>
                         Reservations for
-                        <i>
-                            ${this.purchaseContextTitle ||
-                            (data.event ? localizedTitle(data.event) : this.eventName)}
-                        </i>
+                        <i>${this.contextTitle(data.event)}</i>
                     </h1>
                 </div>
                 <hr class="page-separator" />
                 <div class="filter-toolbar">
                     <div class="filter-left">${this.searchController.render('reservations')}</div>
-                    ${this.purchaseContextType === 'event' && !data.event?.expired
-                        ? html`
-                              <div class="filter-right">
-                                  <sl-button variant="success" size="large" href=${this.newReservationHref()}>
-                                      <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-                                      Create Reservation
-                                  </sl-button>
-                              </div>
-                          `
-                        : nothing}
+                    ${when(this.purchaseContextType === 'event' && !data.event?.expired, () => html`
+                        <div class="filter-right">
+                            <sl-button variant="success" size="large" href=${this.newReservationHref()}>
+                                <sl-icon slot="prefix" name="plus-circle"></sl-icon>
+                                Create reservation
+                            </sl-button>
+                        </div>
+                    `)}
                 </div>
-                ${stuck.right > 0
-                    ? html`
-                          <section class="section-card stuck-reservations">
-                              <div class="section-header">
-                                  <sl-icon name="exclamation-triangle"></sl-icon>
-                                  <h3>Stuck reservations</h3>
-                                  <sl-badge variant="warning" pill>${stuck.right}</sl-badge>
-                              </div>
-                              <p class="stuck-message">
-                                  Please check your payment provider’s data and confirm or cancel the following
-                                  reservations.
-                              </p>
-                              ${this.renderTable(stuck.left, data.event)}
-                          </section>
-                      `
-                    : nothing}
+                ${when(stuck.right > 0, () => sectionCard({
+                    icon: 'exclamation-triangle',
+                    title: 'Stuck reservations',
+                    badge: html`<sl-badge variant="warning" pill>${stuck.right}</sl-badge>`,
+                    className: 'stuck-reservations',
+                }, html`
+                    <p class="stuck-message">
+                        Please check your payment provider’s data and confirm or cancel the following
+                        reservations.
+                    </p>
+                    ${this.renderTable(stuck.left, data.event)}
+                `))}
                 <sl-tab-group class="list-tabs" .activeTab=${this.selectedTab} @sl-tab-show=${this.onTabShow}>
                     ${repeat(
                         sections,
@@ -311,20 +301,18 @@ export class ReservationsList extends LitElement {
         return html`
             <section class="section-card">
                 <div class="section-body">
-                    ${data.right === 0
-                        ? html`
-                              ${emptyState(section.emptyMessage)}
-                          `
-                        : html`
-                              ${this.renderTable(data.left, event)}
-                              <alfio-pagination-bar
-                                  .page=${this.pages[section.name]}
-                                  .total=${data.right}
-                                  page-size=${ITEMS_PER_PAGE}
-                                  item-label="${section.label.toLowerCase()} reservations"
-                                  @alfio-page-change=${(e: AlfioPageChange) => this.changePage(section.name, e.detail.page)}
-                              ></alfio-pagination-bar>
-                          `}
+                    ${when(data.right === 0,
+                        () => emptyState(section.emptyMessage),
+                        () => html`
+                            ${this.renderTable(data.left, event)}
+                            <alfio-pagination-bar
+                                .page=${this.pages[section.name]}
+                                .total=${data.right}
+                                page-size=${ITEMS_PER_PAGE}
+                                item-label="${section.label.toLowerCase()} reservations"
+                                @alfio-page-change=${(e: AlfioPageChange) => this.changePage(section.name, e.detail.page)}
+                            ></alfio-pagination-bar>
+                        `)}
                 </div>
             </section>
         `;
@@ -361,9 +349,8 @@ export class ReservationsList extends LitElement {
                                         <alfio-payment-method method=${reservation.paymentMethod ?? ''}></alfio-payment-method>
                                     </td>
                                     <td class="amount">
-                                        ${reservation.finalPriceCts > 0
-                                            ? formatAmount(reservation.paidAmount, reservation.currencyCode)
-                                            : ''}
+                                        ${when(reservation.finalPriceCts > 0,
+                                            () => formatAmount(reservation.paidAmount, reservation.currencyCode))}
                                     </td>
                                     <td class="timestamp hide-small">
                                         <alfio-format-date
@@ -433,9 +420,26 @@ export class ReservationsList extends LitElement {
         return ConfigurationService.useInvoiceNumberAsId(eventName);
     }
     private reservationHref(reservation: Reservation, event: AlfioEvent | null): string {
-        return this.purchaseContextType === 'subscription' && !this.completedOnly
-            ? `#/subscriptions/${this.organizationId}/${this.eventName}/reservation/${reservation.id}`
-            : `#/events/${reservation.eventPublicIdentifier ?? event?.shortName ?? this.eventName}/reservation/${reservation.id}`;
+        if (this.purchaseContextType === 'subscription' && !this.completedOnly) {
+            return `#/subscriptions/${this.organizationId}/${this.eventName}/reservation/${reservation.id}`;
+        }
+        return `#/events/${reservation.eventPublicIdentifier ?? event?.shortName ?? this.eventName}/reservation/${reservation.id}`;
+    }
+    private async loadEvent(eventName: string, purchaseContextType: 'event' | 'subscription'): Promise<AlfioEvent | null> {
+        if (purchaseContextType !== 'event') {
+            return null;
+        }
+        const result = await EventService.load(eventName);
+        return result.event;
+    }
+    private contextTitle(event: AlfioEvent | null): string {
+        if (this.purchaseContextTitle) {
+            return this.purchaseContextTitle;
+        }
+        if (event) {
+            return localizedTitle(event);
+        }
+        return this.eventName;
     }
     private newReservationHref(): string {
         return `#/events/${this.eventName}/reservation/new`;

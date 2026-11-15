@@ -35,13 +35,12 @@ export class ListSearchController implements ReactiveController {
      * @param itemLabel plural label of the listed items, e.g. "payments"
      */
     render(itemLabel: string): TemplateResult {
-        const capitalized = itemLabel.charAt(0).toUpperCase() + itemLabel.slice(1);
         return html`
             <sl-input
                 ${ref(this.field)}
                 class="list-search label-hidden"
                 label="Filter ${itemLabel}"
-                placeholder="Filter ${capitalized}"
+                placeholder="Filter ${itemLabel}"
                 clearable
                 .value=${this.input}
                 @sl-input=${this.onInput}

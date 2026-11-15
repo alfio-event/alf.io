@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import {Group, GroupMemberModification, GroupModification} from '../model/group.ts';
+import {Group, GroupMemberModification, GroupModification, LinkedGroup} from '../model/group.ts';
 import {callDelete, fetchJson, postJson, responseErrorMessage} from './helpers.ts';
 
 export const GROUP_CSV_EMAIL_COLUMN = 'email';
@@ -17,6 +17,41 @@ export class GroupService {
 
     static loadGroups(organizationId: number): Promise<readonly Group[]> {
         return fetchJson(`/admin/api/group/for/${organizationId}`);
+    }
+
+    /**
+     * The group linked to a category of an event, or null when there is none
+     */
+    static async loadCategoryLink(eventName: string, categoryId: number): Promise<LinkedGroup | null> {
+        const response = await fetch(`/admin/api/group/for/event/${eventName}/category/${categoryId}`, {credentials: 'include'});
+        if (response.status === 204) {
+            return null;
+        }
+        if (!response.ok) {
+            throw new Error(await responseErrorMessage(response, 'Failed to load the group of the category'));
+        }
+        return response.json();
+    }
+
+    /**
+     * Links a group to an event or to one of its categories, or updates the link
+     */
+    static async link(link: LinkedGroup): Promise<void> {
+        const response = await postJson(`/admin/api/group/${link.groupId}/link`, link);
+        if (!response.ok) {
+            throw new Error(await responseErrorMessage(response, 'Failed to link the group'));
+        }
+    }
+
+    static async unlink(organizationId: number, eventId: number, linkId: number, categoryId: number | null): Promise<void> {
+        let url = `/admin/api/group/for/${organizationId}/event/${eventId}/link/${linkId}`;
+        if (categoryId != null) {
+            url += `?categoryId=${categoryId}`;
+        }
+        const response = await callDelete(url);
+        if (!response.ok) {
+            throw new Error(await responseErrorMessage(response, 'Failed to remove the group'));
+        }
     }
 
     static loadGroupDetail(organizationId: number, groupId: number): Promise<GroupModification> {

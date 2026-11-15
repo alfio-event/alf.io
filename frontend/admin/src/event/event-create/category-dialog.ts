@@ -3,13 +3,19 @@ import {customElement, query, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
 import {classMap} from 'lit/directives/class-map.js';
-import type {SlDialog, SlInput, SlSelect, SlRequestCloseEvent} from '@shoelace-style/shoelace';
+import type {SlDialog, SlInput, SlSelect, SlRequestCloseEvent, SlSwitch, SlTabGroup} from '@shoelace-style/shoelace';
 import {ContentLanguage, DateTimeModification, LocalizedContent} from '../../model/purchase-context.ts';
 import {EventFormat, TicketCategoryModificationPayload} from '../../model/event-modification.ts';
-import {dialog as dialogStyles, form, modernLayout, row, textColors} from '../../styles.ts';
+import {choiceCards as choiceCardsStyles, dialog as dialogStyles, form, modernLayout, row, textColors} from '../../styles.ts';
 import {sectionCard} from '../../components/section-card.ts';
+import {ChoiceCardOption, choiceCards} from '../../components/choice-cards.ts';
+import {ConfigurationService} from '../../service/configuration.ts';
+import {BADGE_COLORS, badgeSwatch, findBadgeColor} from '../../components/badge-color.ts';
 import '../../components/multi-language-text.ts';
 import type {MultiLanguageTextChange} from '../../components/multi-language-text.ts';
+import '../event-detail/category-options.ts';
+import type {CategoryOptions, CategoryOptionsTarget} from '../event-detail/category-options.ts';
+import {errorMessage} from '../../service/helpers.ts';
 
 /**
  * A ticket category of the event being created, as edited in the category dialog.
@@ -33,6 +39,10 @@ export interface CategoryDraft {
     validCheckInTo: string;
     ticketValidityStart: string;
     ticketValidityEnd: string;
+    // ONCE_PER_EVENT | ONCE_PER_DAY
+    ticketCheckInStrategy: string;
+    // color shown by the check-in app on a successful scan, '' = none
+    badgeColor: string;
     ordinal: number;
     // set when the category was copied from another event
     metadataCopiedFrom?: number;
@@ -90,7 +100,7 @@ export function wallClockToDateTimeLocal(value: string | null | undefined): stri
 }
 
 /**
- * A new category: on sale from now until the event starts, dynamic allocation, price = regular price
+ * A new category: on sale from now until the event starts, without a limit, price = regular price
  */
 export function newCategoryDraft(eventBegin: string, regularPrice: string, format: EventFormat, ordinal: number, key: number): CategoryDraft {
     const now = new Date();
@@ -116,6 +126,8 @@ export function newCategoryDraft(eventBegin: string, regularPrice: string, forma
         validCheckInTo: '',
         ticketValidityStart: '',
         ticketValidityEnd: '',
+        ticketCheckInStrategy: 'ONCE_PER_EVENT',
+        badgeColor: '',
         ordinal,
         inheritedFields: ['expiration', 'price', 'ticketAccessType'],
     };
@@ -164,9 +176,73 @@ export function categoryDraftToPayload(draft: CategoryDraft): TicketCategoryModi
         validCheckInTo: dateTimeLocalToModification(draft.validCheckInTo),
         ticketValidityStart: dateTimeLocalToModification(draft.ticketValidityStart),
         ticketValidityEnd: dateTimeLocalToModification(draft.ticketValidityEnd),
-        ticketCheckInStrategy: null,
+        ticketCheckInStrategy: draft.ticketCheckInStrategy || 'ONCE_PER_EVENT',
+        badgeColor: draft.badgeColor || null,
         metadata,
     };
+}
+
+export type CategoryDialogTab = 'general' | 'validity' | 'options';
+
+type ValidityMode = 'event' | 'custom';
+type CheckInMode = 'anytime' | 'custom';
+
+const VALIDITY_CHOICES: ChoiceCardOption<ValidityMode>[] = [
+    {
+        value: 'event',
+        icon: 'calendar-range',
+        title: 'For the whole event',
+        description: 'The ticket shows the dates of the event.',
+    },
+    {
+        value: 'custom',
+        icon: 'calendar-day',
+        title: 'For specific dates',
+        description: 'For example, a one-day pass of a multi-day event.',
+    },
+];
+
+const CHECK_IN_CHOICES: ChoiceCardOption<CheckInMode>[] = [
+    {
+        value: 'anytime',
+        icon: 'clock',
+        title: 'At any time',
+        description: 'Tickets can be scanned whenever attendees arrive.',
+    },
+    {
+        value: 'custom',
+        icon: 'clock-history',
+        title: 'Only at specific times',
+        description: 'Tickets scanned outside these times are refused.',
+    },
+];
+
+const CHECK_IN_STRATEGY_CHOICES: ChoiceCardOption<string>[] = [
+    {
+        value: 'ONCE_PER_EVENT',
+        icon: 'ticket-perforated',
+        title: 'Once',
+        description: 'The first scan of the ticket checks attendees in for the whole event.',
+    },
+    {
+        value: 'ONCE_PER_DAY',
+        icon: 'person-badge',
+        title: 'Every day',
+        description: 'With the ticket on the first day, then with the badge printed at check-in.',
+    },
+];
+
+function hasValue(value: string): boolean {
+    return value.trim() !== '';
+}
+
+/**
+ * The options of an existing category, edited in a second tab of the dialog
+ */
+export interface CategoryDialogOptions {
+    configuration?: CategoryOptionsTarget;
+    // the tab displayed when the dialog opens
+    tab?: CategoryDialogTab;
 }
 
 const TICKET_ACCESS_TYPES = [
@@ -175,19 +251,36 @@ const TICKET_ACCESS_TYPES = [
 ];
 
 /**
- * Dialog to add or edit a ticket category of the event being created. open() resolves with the
- * edited draft, or with null when the user cancels
+ * Dialog to add or edit a ticket category. open() resolves with the edited draft, or with null when the
+ * user cancels. For an existing category, the dialog can also edit its options (second tab): they are
+ * saved by the dialog itself, before it resolves
  */
 @customElement('alfio-event-category-dialog')
 export class EventCategoryDialog extends LitElement {
 
     @query('sl-dialog') private dialog?: SlDialog;
+    @query('sl-tab-group') private tabGroup?: SlTabGroup;
+    @query('alfio-category-options') private options?: CategoryOptions;
 
     @state() private isOpen = false;
     @state() private draft: CategoryDraft | null = null;
     @state() private context: CategoryDialogContext | null = null;
     // validation messages, by field
     @state() private errors: Record<string, string> = {};
+    // decided when the dialog opens, so that typing the name of a new category doesn't change it
+    @state() private label = 'New category';
+    @state() private optionsTarget: CategoryOptionsTarget | null = null;
+    @state() private saving = false;
+    @state() private saveError: string | null = null;
+    // the tab displayed when the dialog opens
+    @state() private initialTab: CategoryDialogTab = 'general';
+    // whether the ticket validity and the check-in window differ from the dates of the event
+    @state() private validityMode: ValidityMode = 'event';
+    @state() private checkInMode: CheckInMode = 'anytime';
+    @state() private badgeColorLoading = false;
+    @state() private badgeColorError: string | null = null;
+    // discards the badge color loaded for a previous opening
+    private openCount = 0;
 
     private resolve: ((result: CategoryDraft | null) => void) | null = null;
 
@@ -197,6 +290,7 @@ export class EventCategoryDialog extends LitElement {
         form,
         row,
         textColors,
+        choiceCardsStyles,
         css`
             :host {
                 display: block;
@@ -213,8 +307,27 @@ export class EventCategoryDialog extends LitElement {
                 font-size: var(--sl-font-size-small);
                 margin-top: var(--sl-spacing-x-small);
             }
+            .access-url code {
+                overflow-wrap: anywhere;
+            }
             sl-input.error, sl-select.error, sl-textarea.error {
                 --sl-input-border-color: var(--sl-color-danger-600);
+            }
+            sl-tab-group::part(body) {
+                padding-top: var(--sl-spacing-medium);
+            }
+            .save-error {
+                margin-top: var(--sl-spacing-medium);
+            }
+            .validity-note {
+                margin: 0;
+            }
+            .badge-swatch {
+                display: inline-block;
+                width: 1rem;
+                height: 1rem;
+                border-radius: var(--sl-border-radius-circle);
+                border: 1px solid var(--sl-color-neutral-300);
             }
         `,
     ];
@@ -222,8 +335,12 @@ export class EventCategoryDialog extends LitElement {
     /**
      * Opens the dialog to edit the given draft (a fresh one when adding a category)
      */
-    public open(context: CategoryDialogContext, existing: CategoryDraft): Promise<CategoryDraft | null> {
+    public open(context: CategoryDialogContext, existing: CategoryDraft, options: CategoryDialogOptions = {}): Promise<CategoryDraft | null> {
         this.context = context;
+        this.optionsTarget = options.configuration ?? null;
+        this.initialTab = options.tab ?? 'general';
+        this.saveError = null;
+        this.saving = false;
         // a new category gets one empty description per language selected for the event
         const description: LocalizedContent = { ...existing.description };
         for (const locale of context.selectedLocales) {
@@ -232,7 +349,20 @@ export class EventCategoryDialog extends LitElement {
             }
         }
         this.draft = { ...existing, description };
+        this.validityMode = 'event';
+        if (hasValue(existing.ticketValidityStart) || hasValue(existing.ticketValidityEnd)) {
+            this.validityMode = 'custom';
+        }
+        this.checkInMode = 'anytime';
+        if (hasValue(existing.validCheckInFrom) || hasValue(existing.validCheckInTo)) {
+            this.checkInMode = 'custom';
+        }
+        this.loadBadgeColor(options.configuration);
         this.errors = {};
+        this.label = 'New category';
+        if (existing.name.trim() !== '') {
+            this.label = `Edit category ${existing.name}`;
+        }
         this.isOpen = true;
         const promise = new Promise<CategoryDraft | null>((resolve) => {
             this.resolve = resolve;
@@ -254,14 +384,10 @@ export class EventCategoryDialog extends LitElement {
         if (error('code') !== '') {
             codeHelp = error('code');
         }
-        let label = 'New category';
-        if (draft.name.trim() !== '') {
-            label = `Edit category ${draft.name}`;
-        }
         return html`
-            <sl-dialog class="responsive-dialog" style="--alfio-dialog-max-width: 60rem" label=${label}
+            <sl-dialog class="responsive-dialog" style="--alfio-dialog-max-width: 60rem" label=${this.label}
                        @sl-request-close=${this.onRequestClose} @sl-after-hide=${this.onAfterHide}>
-                <form class="dialog-form" novalidate @submit=${this.onSubmit}>
+                ${this.renderBody(this.renderValidity(draft, context), html`<form class="dialog-form" novalidate @submit=${this.onSubmit}>
                     ${sectionCard({ icon: 'tag', title: 'Base information' }, html`
                         <div class="form-stack">
                             <sl-input id="name" name="name" label="Name" required
@@ -294,20 +420,16 @@ export class EventCategoryDialog extends LitElement {
                     `)}
                     ${sectionCard({ icon: 'ticket-perforated', title: 'Tickets and sales' }, html`
                         <div class="form-stack">
-                            <div class="row" style="--alfio-row-cols: 2">
-                                <sl-select id="tokenGenerationRequested" label="Visibility" required hoist
-                                           .value=${this.visibilityValue(draft)}
-                                           @sl-change=${this.onVisibilityChange}>
-                                    <sl-option value="public">Public</sl-option>
-                                    <sl-option value="hidden">Hidden (access code required)</sl-option>
-                                </sl-select>
-                                <sl-select id="bounded" label="Ticket allocation strategy" required hoist
-                                           .value=${this.allocationValue(draft)}
-                                           @sl-change=${this.onBoundedChange}>
-                                    <sl-option value="dynamic">Grow dynamically</sl-option>
-                                    <sl-option value="fixed">Fixed number of tickets</sl-option>
-                                </sl-select>
-                            </div>
+                            <sl-select id="tokenGenerationRequested" label="Visibility" required hoist
+                                       help-text=${this.visibilityHelp(draft)}
+                                       .value=${this.visibilityValue(draft)}
+                                       @sl-change=${this.onVisibilityChange}>
+                                <sl-option value="public">Listed on the event page</sl-option>
+                                <sl-option value="hidden">Unlisted</sl-option>
+                            </sl-select>
+                            <sl-switch id="bounded" ?checked=${draft.bounded} ?disabled=${draft.tokenGenerationRequested}
+                                       help-text=${this.limitHelp(draft)}
+                                       @sl-change=${this.onBoundedChange}>Limit the number of tickets</sl-switch>
                             ${when(draft.bounded, () => html`
                                 <sl-input id="maxTickets" name="maxTickets" label="Number of tickets" type="number" min="1" step="1" required
                                           class=${classMap({ error: error('maxTickets') !== '' })}
@@ -346,21 +468,276 @@ export class EventCategoryDialog extends LitElement {
                                       .value=${draft.code}
                                       @sl-input=${(e: Event) => this.updateDraft('code', (e.target as SlInput).value)}></sl-input>
                             ${when(draft.code.trim() !== '', () => html`
-                                <p class="text-muted">Access URL: <code>${context.baseUrl}/e/${context.shortName}/c/${draft.code.trim()}</code></p>
+                                <p class="text-muted access-url">Access URL: <code>${context.baseUrl}/e/${context.shortName}/c/${draft.code.trim()}</code></p>
                             `)}
                         </div>
                     `)}
-                </form>
+                </form>`)}
+                ${when(this.saveError != null, () => html`
+                    <sl-alert class="save-error" variant="danger" open closable @sl-after-hide=${() => { this.saveError = null; }}>
+                        <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+                        ${this.saveError}
+                    </sl-alert>
+                `)}
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
                         <sl-button variant="default" size="large" @click=${this.cancel}>Cancel</sl-button>
                         <div></div>
-                        <sl-button id="category-save" variant="warning" size="large" @click=${this.onSubmit}>Save</sl-button>
+                        <sl-button id="category-save" variant="warning" size="large" ?loading=${this.saving} ?disabled=${this.saving} @click=${this.onSubmit}>Save</sl-button>
                     </div>
                 </div>
             </sl-dialog>
         `;
+    }
+
+    /**
+     * The tabs of the dialog: the form of the category, its ticket validity and, for an existing category, its options
+     */
+    private renderBody(validity: TemplateResult, general: TemplateResult): TemplateResult {
+        const target = this.optionsTarget;
+        return html`
+            <sl-tab-group>
+                <sl-tab slot="nav" panel="general" class="general-tab" ?active=${this.initialTab === 'general'}>General</sl-tab>
+                <sl-tab slot="nav" panel="validity" class="validity-tab" ?active=${this.initialTab === 'validity'}>Ticket validity</sl-tab>
+                ${when(target != null, () => html`
+                    <sl-tab slot="nav" panel="options" class="options-tab" ?active=${this.initialTab === 'options'}>Options</sl-tab>
+                `)}
+                <sl-tab-panel name="general">${general}</sl-tab-panel>
+                <sl-tab-panel name="validity">${validity}</sl-tab-panel>
+                ${when(target != null, () => html`
+                    <sl-tab-panel name="options">
+                        <alfio-category-options .target=${target}></alfio-category-options>
+                    </sl-tab-panel>
+                `)}
+            </sl-tab-group>
+        `;
+    }
+
+    /**
+     * When the ticket is valid (shown on the ticket) and how attendees check in
+     */
+    private renderValidity(draft: CategoryDraft, context: CategoryDialogContext): TemplateResult {
+        const error = (field: string): string => this.errors[field] ?? '';
+        let validityPanel: TemplateResult | undefined;
+        if (this.validityMode === 'custom') {
+            validityPanel = html`
+                <div class="row" style="--alfio-row-cols: 2">
+                    ${this.dateInput('ticketValidityStart', 'Valid from', draft.ticketValidityStart, error('ticketValidityStart'))}
+                    ${this.dateInput('ticketValidityEnd', 'Valid until', draft.ticketValidityEnd, error('ticketValidityEnd'))}
+                </div>
+            `;
+        }
+        let checkInPanel: TemplateResult | undefined;
+        if (this.checkInMode === 'custom') {
+            checkInPanel = html`
+                <div class="row" style="--alfio-row-cols: 2">
+                    ${this.dateInput('validCheckInFrom', 'Check-in from', draft.validCheckInFrom, error('validCheckInFrom'))}
+                    ${this.dateInput('validCheckInTo', 'Check-in until', draft.validCheckInTo, error('validCheckInTo'))}
+                </div>
+            `;
+        }
+        return html`
+            <div class="dialog-form">
+                ${sectionCard({ icon: 'calendar-check', title: 'Validity' }, html`
+                    <div class="form-stack">
+                        ${choiceCards({
+                            name: 'ticket-validity',
+                            label: 'When is the ticket valid?',
+                            value: this.validityMode,
+                            options: VALIDITY_CHOICES,
+                            className: 'validity-choice',
+                            panel: validityPanel,
+                        }, mode => this.onValidityModeChange(mode))}
+                        <p class="text-muted validity-note">Shown on the ticket PDF, the Apple Wallet pass and the calendar invitation.</p>
+                    </div>
+                `)}
+                ${sectionCard({ icon: 'qr-code-scan', title: 'Check-in' }, html`
+                    <div class="form-stack">
+                        ${choiceCards({
+                            name: 'check-in-window',
+                            label: 'When can attendees check in?',
+                            value: this.checkInMode,
+                            options: CHECK_IN_CHOICES,
+                            className: 'check-in-choice',
+                            panel: checkInPanel,
+                        }, mode => this.onCheckInModeChange(mode))}
+                        ${when(this.isMultiDay(context), () => choiceCards({
+                            name: 'check-in-strategy',
+                            label: 'How often do attendees check in?',
+                            value: draft.ticketCheckInStrategy,
+                            options: CHECK_IN_STRATEGY_CHOICES,
+                            className: 'check-in-strategy-choice',
+                        }, strategy => this.updateDraft('ticketCheckInStrategy', strategy)))}
+                        ${this.renderBadgeColor(draft)}
+                    </div>
+                `)}
+            </div>
+        `;
+    }
+
+    private dateInput(field: 'ticketValidityStart' | 'ticketValidityEnd' | 'validCheckInFrom' | 'validCheckInTo',
+                      label: string, value: string, error: string): TemplateResult {
+        return html`
+            <sl-input id=${field} label=${label} type="datetime-local" required
+                      class=${classMap({ error: error !== '' })}
+                      help-text=${error}
+                      .value=${value}
+                      @sl-input=${(e: Event) => this.updateDraft(field, (e.target as SlInput).value)}></sl-input>
+        `;
+    }
+
+    private renderBadgeColor(draft: CategoryDraft): TemplateResult {
+        let help = 'The check-in app shows this color when it scans a ticket of this category, so that your staff can spot it.';
+        if (this.badgeColorLoading) {
+            help = 'Loading the current color…';
+        }
+        if (this.badgeColorError != null) {
+            help = this.badgeColorError;
+        }
+        const selected = findBadgeColor(draft.badgeColor);
+        return html`
+            <sl-select id="badgeColor" label="Badge color" placeholder="None" hoist
+                       help-text=${help}
+                       ?disabled=${this.badgeColorLoading || this.badgeColorError != null}
+                       .value=${draft.badgeColor}
+                       @sl-change=${(e: Event) => this.updateDraft('badgeColor', String((e.target as SlSelect).value))}>
+                ${when(selected != null, () => badgeSwatch(selected!, 'prefix'))}
+                ${repeat(BADGE_COLORS, c => c.value, c => html`
+                    <sl-option value=${c.value}>
+                        ${badgeSwatch(c, 'prefix')}
+                        ${c.label}
+                    </sl-option>
+                `)}
+            </sl-select>
+        `;
+    }
+
+    /**
+     * Multi-day events can ask attendees to check in every day
+     */
+    private isMultiDay(context: CategoryDialogContext): boolean {
+        if (context.eventBegin === '' || context.eventEnd === '') {
+            return false;
+        }
+        return context.eventBegin.substring(0, 10) !== context.eventEnd.substring(0, 10);
+    }
+
+    /**
+     * The badge color is part of the event's check-in settings: load it for an existing category
+     */
+    private loadBadgeColor(configuration: CategoryOptionsTarget | undefined): void {
+        this.openCount++;
+        this.badgeColorError = null;
+        this.badgeColorLoading = false;
+        if (configuration == null) {
+            return;
+        }
+        const openCount = this.openCount;
+        this.badgeColorLoading = true;
+        ConfigurationService.loadBadgeColor(configuration.eventName, configuration.categoryId)
+            .then(color => {
+                if (openCount !== this.openCount || this.draft == null) {
+                    return;
+                }
+                this.draft = { ...this.draft, badgeColor: color };
+            })
+            .catch(error => {
+                if (openCount === this.openCount) {
+                    this.badgeColorError = errorMessage(error, 'Failed to load the badge color');
+                }
+            })
+            .finally(() => {
+                if (openCount === this.openCount) {
+                    this.badgeColorLoading = false;
+                }
+            });
+    }
+
+    private onValidityModeChange(mode: ValidityMode): void {
+        this.validityMode = mode;
+        const draft = this.draft;
+        const context = this.context;
+        if (mode !== 'custom' || draft == null || context == null) {
+            return;
+        }
+        // start from the dates of the event, so that only the different one needs to be changed
+        let ticketValidityStart = draft.ticketValidityStart;
+        if (!hasValue(ticketValidityStart)) {
+            ticketValidityStart = context.eventBegin;
+        }
+        let ticketValidityEnd = draft.ticketValidityEnd;
+        if (!hasValue(ticketValidityEnd)) {
+            ticketValidityEnd = context.eventEnd;
+        }
+        this.draft = { ...draft, ticketValidityStart, ticketValidityEnd };
+    }
+
+    private onCheckInModeChange(mode: CheckInMode): void {
+        this.checkInMode = mode;
+        const draft = this.draft;
+        const context = this.context;
+        if (mode !== 'custom' || draft == null || context == null) {
+            return;
+        }
+        // start from the validity of the ticket
+        let defaultFrom = context.eventBegin;
+        let defaultTo = context.eventEnd;
+        if (this.validityMode === 'custom') {
+            defaultFrom = draft.ticketValidityStart;
+            defaultTo = draft.ticketValidityEnd;
+        }
+        let validCheckInFrom = draft.validCheckInFrom;
+        if (!hasValue(validCheckInFrom)) {
+            validCheckInFrom = defaultFrom;
+        }
+        let validCheckInTo = draft.validCheckInTo;
+        if (!hasValue(validCheckInTo)) {
+            validCheckInTo = defaultTo;
+        }
+        this.draft = { ...draft, validCheckInFrom, validCheckInTo };
+    }
+
+    /**
+     * Errors of the ticket validity tab
+     */
+    private validateValidity(draft: CategoryDraft, context: CategoryDialogContext): Record<string, string> {
+        const errors: Record<string, string> = {};
+        const begin = context.eventBegin;
+        const end = context.eventEnd;
+        if (this.validityMode === 'custom') {
+            const from = draft.ticketValidityStart;
+            const to = draft.ticketValidityEnd;
+            if (!hasValue(from)) {
+                errors.ticketValidityStart = 'Please fill in this field';
+            } else if (begin !== '' && from < begin) {
+                errors.ticketValidityStart = 'The ticket cannot be valid before the event starts';
+            }
+            if (!hasValue(to)) {
+                errors.ticketValidityEnd = 'Please fill in this field';
+            } else if (end !== '' && to > end) {
+                errors.ticketValidityEnd = 'The ticket cannot be valid after the event ends';
+            } else if (hasValue(from) && to <= from) {
+                errors.ticketValidityEnd = 'The end of the validity must be after its start';
+            }
+        }
+        if (this.checkInMode === 'custom') {
+            const from = draft.validCheckInFrom;
+            const to = draft.validCheckInTo;
+            if (!hasValue(from)) {
+                errors.validCheckInFrom = 'Please fill in this field';
+            }
+            if (!hasValue(to)) {
+                errors.validCheckInTo = 'Please fill in this field';
+            } else if (end !== '' && to > end) {
+                errors.validCheckInTo = 'Check-in cannot end after the event';
+            } else if (begin !== '' && to <= begin) {
+                errors.validCheckInTo = 'Check-in must end after the event starts';
+            } else if (hasValue(from) && to <= from) {
+                errors.validCheckInTo = 'The end of check-in must be after its start';
+            }
+        }
+        return errors;
     }
 
     private visibilityValue(draft: CategoryDraft): string {
@@ -370,11 +747,18 @@ export class EventCategoryDialog extends LitElement {
         return 'public';
     }
 
-    private allocationValue(draft: CategoryDraft): string {
-        if (draft.bounded) {
-            return 'fixed';
+    private visibilityHelp(draft: CategoryDraft): string {
+        if (draft.tokenGenerationRequested) {
+            return 'Only people with an invitation, the category link or an access code can buy it.';
         }
-        return 'dynamic';
+        return 'Anyone can buy it from the event page.';
+    }
+
+    private limitHelp(draft: CategoryDraft): string {
+        if (draft.tokenGenerationRequested) {
+            return 'Unlisted categories always have a limit: each ticket gets its own invitation code.';
+        }
+        return "These tickets are kept for this category. Other categories can't sell them, even if some are left over.";
     }
 
     private updateDraft<K extends keyof CategoryDraft>(key: K, value: CategoryDraft[K]): void {
@@ -415,7 +799,7 @@ export class EventCategoryDialog extends LitElement {
         if (this.draft == null) {
             return;
         }
-        // a hidden category needs a fixed number of tickets to work
+        // an unlisted category always has a limit: each ticket gets its own invitation code
         let bounded = this.draft.bounded;
         if (hidden) {
             bounded = true;
@@ -424,15 +808,14 @@ export class EventCategoryDialog extends LitElement {
     };
 
     private onBoundedChange = (e: Event): void => {
-        const bounded = (e.target as SlSelect).value === 'fixed';
-        this.updateDraft('bounded', bounded);
+        this.updateDraft('bounded', (e.target as SlSwitch).checked);
     };
 
-    private onSubmit = (e: Event): void => {
+    private onSubmit = async (e: Event): Promise<void> => {
         e.preventDefault();
         const draft = this.draft;
         const context = this.context;
-        if (draft == null || context == null) {
+        if (draft == null || context == null || this.saving) {
             return;
         }
         const errors: Record<string, string> = {};
@@ -480,11 +863,44 @@ export class EventCategoryDialog extends LitElement {
         if (draft.code.trim() !== '' && !CODE_PATTERN.test(draft.code.trim())) {
             errors.code = 'Spaces and other special characters are not allowed';
         }
-        this.errors = errors;
+        const validityErrors = this.validateValidity(draft, context);
+        this.errors = { ...errors, ...validityErrors };
         if (Object.keys(errors).length > 0) {
+            this.tabGroup?.show('general');
             return;
         }
-        this.closeWith({...draft, currency: context.currency});
+        if (Object.keys(validityErrors).length > 0) {
+            this.tabGroup?.show('validity');
+            return;
+        }
+        const options = this.options;
+        if (options != null) {
+            if (!options.validate()) {
+                this.tabGroup?.show('options');
+                return;
+            }
+            this.saving = true;
+            this.saveError = null;
+            try {
+                await options.save();
+            } catch (error) {
+                this.saveError = errorMessage(error, 'Failed to save the options of the category');
+                return;
+            } finally {
+                this.saving = false;
+            }
+        }
+        const saved = { ...draft, currency: context.currency };
+        // the dates of the event apply
+        if (this.validityMode === 'event') {
+            saved.ticketValidityStart = '';
+            saved.ticketValidityEnd = '';
+        }
+        if (this.checkInMode === 'anytime') {
+            saved.validCheckInFrom = '';
+            saved.validCheckInTo = '';
+        }
+        this.closeWith(saved);
     };
 
     private onRequestClose = (e: SlRequestCloseEvent): void => {
@@ -501,6 +917,8 @@ export class EventCategoryDialog extends LitElement {
         this.isOpen = false;
         this.draft = null;
         this.context = null;
+        this.optionsTarget = null;
+        this.saveError = null;
         this.errors = {};
         const resolve = this.resolve;
         this.resolve = null;

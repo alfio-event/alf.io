@@ -139,14 +139,14 @@ export class TemplateEdit extends LitElement {
             :host {
                 display: block;
             }
-            .error-alert {
-                margin-bottom: var(--sl-spacing-medium);
-            }
             .scope-description {
                 margin: 0 0 var(--sl-spacing-medium);
             }
             sl-alert {
                 margin-bottom: var(--sl-spacing-medium);
+            }
+            sl-alert.error-alert {
+                margin: var(--sl-spacing-medium) 0 0;
             }
             alfio-code-editor {
                 --alfio-code-editor-height: max(24rem, calc(100vh - 30rem));
@@ -168,12 +168,13 @@ export class TemplateEdit extends LitElement {
                 display: flex;
                 flex-wrap: wrap;
                 justify-content: space-between;
+                align-items: center;
                 gap: var(--sl-spacing-small);
-                margin-top: var(--sl-spacing-medium);
             }
             .locale-actions .right {
                 display: flex;
                 flex-wrap: wrap;
+                align-items: center;
                 gap: var(--sl-spacing-x-small);
             }
             sl-tab sl-badge {
@@ -192,12 +193,6 @@ export class TemplateEdit extends LitElement {
                     <h1>${this.editTitle()}</h1>
                 </div>
                 <hr class="page-separator"/>
-                ${when(this.error != null, () => html`
-                    <sl-alert open variant="danger" class="error-alert">
-                        <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                        ${this.error}
-                    </sl-alert>
-                `)}
                 ${taskContent(this.loadTask, this.data, 'Failed to load the template. Please try again.',
                     (data) => this.renderEditor(data))}
             </div>
@@ -217,7 +212,7 @@ export class TemplateEdit extends LitElement {
                 ${repeat(data.locales, (l) => l.locale, (l) => html`
                     <sl-tab slot="nav" panel=${l.locale}>
                         ${l.language.displayLanguage || l.locale}
-                        ${when(l.override != null, () => html`<sl-badge pill variant="primary" class="override-badge">customized</sl-badge>`)}
+                        ${when(l.override != null, () => html`<sl-badge pill variant="primary" class="override-badge">Customized</sl-badge>`)}
                     </sl-tab>
                 `)}
                 ${repeat(data.locales, (l) => l.locale, (l) => html`
@@ -266,6 +261,14 @@ export class TemplateEdit extends LitElement {
                         @value-changed=${(e: CustomEvent<string>) => this.updateLocale(st.locale, {current: e.detail})}>
                     </alfio-code-editor>
                 `)}
+            <!-- next to the buttons: the errors come from Save, Preview or Delete -->
+            ${when(this.error != null, () => html`
+                <sl-alert open variant="danger" class="error-alert">
+                    <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+                    ${this.error}
+                </sl-alert>
+            `)}
+            <sl-divider></sl-divider>
             <div class="locale-actions">
                 <div>
                     ${when(this.showDelete(data.scope, st), () => html`
@@ -275,14 +278,14 @@ export class TemplateEdit extends LitElement {
                     `)}
                 </div>
                 <div class="right">
-                    <sl-button variant="default" size="large" data-action="reset" ?disabled=${busy} @click=${() => this.resetFor(st)}>Reset</sl-button>
+                    <sl-button variant="default" data-action="reset" ?disabled=${busy} @click=${() => this.resetFor(st)}>Reset</sl-button>
                     ${when(st.previewMode,
                         () => html`
-                            <sl-button variant="default" size="large" data-action="close-preview" ?disabled=${busy}
+                            <sl-button variant="default" data-action="close-preview" ?disabled=${busy}
                                        @click=${() => this.updateLocale(st.locale, {previewMode: false})}>Close preview</sl-button>
                         `,
                         () => html`
-                            <sl-button variant="default" size="large" data-action="preview" ?disabled=${busy || data.scope.type === 'system'}
+                            <sl-button variant="default" data-action="preview" ?disabled=${busy || data.scope.type === 'system'}
                                        @click=${() => this.previewFor(data, st)}>Preview</sl-button>
                         `)}
                     ${when(this.canSave(data.scope, st), () => html`

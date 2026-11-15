@@ -80,14 +80,19 @@ export class CustomOfflinePaymentEventSelector extends LitElement {
 
     render() {
         return this._paymentMethodsTask.render({
-            pending: () => html`<p>Loading payment methods...</p>`,
+            pending: () => html`<sl-spinner></sl-spinner>`,
             complete: (paymentMethods) => html`
                 <custom-offline-payment-selector
                     .paymentMethods=${paymentMethods}
                     @selection-change=${(e: CustomEvent) => this.handleSelectionChange(e.detail)}
                 ></custom-offline-payment-selector>
             `,
-            error: (e) => html`<p>Error: ${e}</p>`
+            error: (e) => html`
+                <sl-alert variant="danger" open>
+                    <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+                    Failed to load the payment methods: ${e}
+                </sl-alert>
+            `
         });
     }
 }

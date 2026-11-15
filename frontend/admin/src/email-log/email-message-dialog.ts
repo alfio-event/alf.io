@@ -73,7 +73,7 @@ export class EmailMessageDialog extends LitElement {
     render(): TemplateResult {
         const title = this.message?.subject ?? 'E-mail';
         return html`
-            <sl-dialog class="responsive-dialog" label=${title} placement="bottom">
+            <sl-dialog class="responsive-dialog" label=${title}>
                 ${dialogTitle('envelope', title, this.description())}
                 ${when(this.message,
                     () => this.renderMessage(this.message!),
@@ -94,7 +94,7 @@ export class EmailMessageDialog extends LitElement {
                 <div class="section-card">
                     <div class="dialog-section-header">
                         <sl-icon name="send"></sl-icon>Delivery
-                        <sl-badge variant="primary" pill>${this.timeZone}</sl-badge>
+                        <sl-badge variant="neutral" pill>${this.timeZone}</sl-badge>
                     </div>
                     <div class="section-body">
                         <dl class="detail-list">

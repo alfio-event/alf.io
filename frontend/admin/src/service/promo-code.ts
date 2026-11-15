@@ -62,7 +62,10 @@ export class PromoCodeService {
     }
 
     static getUsageDetails(promoCodeId: number, eventShortName?: string): Promise<UsageDetailEvent[]> {
-        const params = eventShortName ? `?eventShortName=${encodeURIComponent(eventShortName)}` : '';
+        let params = '';
+        if (eventShortName) {
+            params = `?eventShortName=${encodeURIComponent(eventShortName)}`;
+        }
         return fetchJson(`/admin/api/promo-code/${promoCodeId}/detailed-usage${params}`);
     }
 

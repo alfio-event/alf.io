@@ -10,7 +10,8 @@ import {ExtensionEvent, ExtensionModification, ExtensionSupport} from '../model/
 import type {Organization} from '../model/organization.ts';
 import {ExtensionService} from '../service/extension.ts';
 import {dispatchFeedback} from '../model/dom-events.ts';
-import {base, form, modernLayout, textColors} from '../styles.ts';
+import {base, form, modernLayout, row, textColors} from '../styles.ts';
+import {sectionCard} from '../components/section-card.ts';
 import {taskContent} from '../components/task-content.ts';
 import {parseScope} from './extension-scope.ts';
 import {extensionScriptLanguage} from './script-completions.ts';
@@ -108,6 +109,7 @@ export class ExtensionEdit extends LitElement {
         form,
         textColors,
         modernLayout,
+        row,
         css`
             :host {
                 display: block;
@@ -128,11 +130,8 @@ export class ExtensionEdit extends LitElement {
             sl-alert {
                 margin-bottom: var(--sl-spacing-medium);
             }
-            .actions {
-                display: flex;
-                justify-content: flex-end;
-                gap: var(--sl-spacing-x-small);
-                margin-top: var(--sl-spacing-medium);
+            .footer sl-divider {
+                margin-top: 0;
             }
         `,
     ];
@@ -152,9 +151,9 @@ export class ExtensionEdit extends LitElement {
 
     private get pageTitle(): string {
         if (this.isEdit) {
-            return 'Update Extension';
+            return 'Edit extension';
         }
-        return 'Add Extension';
+        return 'Create new extension';
     }
 
     private renderForm(data: EditData): TemplateResult {
@@ -163,27 +162,10 @@ export class ExtensionEdit extends LitElement {
             events = data.events.filter((e) => e.organizationId === this.organizationId);
         }
         return html`
-            ${when(this.errorMessage != null, () => html`
-                <sl-alert open variant="danger">
-                    <sl-icon slot="icon" name="exclamation-triangle"></sl-icon> ${this.errorMessage}
-                </sl-alert>
-            `)}
-
             <form novalidate @submit=${this.submit}>
-                <section class="section-card">
-                    <div class="section-header">
-                        <sl-icon name="diagram-3" aria-hidden="true"></sl-icon>
-                        <h3>Scope and name</h3>
-                        <div class="section-actions">
-                            <sl-switch
-                                ?checked=${this.enabled}
-                                @sl-change=${(e: Event) => {
-                                    this.enabled = (e.target as SlSwitch).checked;
-                                }}>Enabled</sl-switch>
-                        </div>
-                    </div>
-                    <div class="section-body">
-                        <div class="settings-row form-stack">
+                ${sectionCard({ icon: 'diagram-3', title: 'Scope and name' }, html`
+                    <div class="form-stack">
+                        <div class="settings-row">
                             <sl-select
                                 label="Scope"
                                 hoist
@@ -199,10 +181,10 @@ export class ExtensionEdit extends LitElement {
                                 <sl-select
                                     label="Event"
                                     hoist
-                                    placeholder="All Events"
+                                    placeholder="All events"
                                     .value=${String(this.eventId ?? '')}
                                     @sl-change=${this.onEventChange}>
-                                    <sl-option value="">All Events</sl-option>
+                                    <sl-option value="">All events</sl-option>
                                     ${repeat(events, (event) => event.id, (event) => html`
                                         <sl-option value=${event.id}>${event.displayName}</sl-option>
                                     `)}
@@ -215,39 +197,49 @@ export class ExtensionEdit extends LitElement {
                                 handleBlur: () => field.handleBlur(),
                             }, this.submitted, { id: 'extension-name', name: 'name', label: 'Name', placeholder: 'Letters and numbers only' }))}
                         </div>
+                        <sl-switch
+                            ?checked=${this.enabled}
+                            help-text="Only enabled extensions are run when their events occur."
+                            @sl-change=${(e: Event) => {
+                                this.enabled = (e.target as SlSwitch).checked;
+                            }}>Enabled</sl-switch>
                     </div>
-                </section>
+                `)}
 
-                <section class="section-card">
-                    <div class="section-header">
-                        <sl-icon name="code-slash" aria-hidden="true"></sl-icon>
-                        <h3>Script</h3>
-                    </div>
-                    <div class="section-body">
-                        ${this.#form.field({ name: 'script', validators: validateWith(value => requiredValue(value)) }, field => {
-                            const error = fieldError(field.state.meta, this.submitted);
-                            return html`
-                                <!-- "error" marks the first invalid control, see focusFirstError() -->
-                                <alfio-code-editor
-                                    class=${classMap({ error: error != null })}
-                                    ?invalid=${error != null}
-                                    .language=${extensionScriptLanguage}
-                                    help-text=${error ?? 'The script must define a getScriptMetadata() function, see the sample. In the events array, press Ctrl+Space or type a quote to list the supported events.'}
-                                    .value=${field.state.value}
-                                    @value-changed=${(e: CustomEvent<string>) => field.handleChange(e.detail)}></alfio-code-editor>
-                            `;
-                        })}
-                    </div>
-                </section>
+                ${sectionCard({ icon: 'code-slash', title: 'Script' }, html`
+                    ${this.#form.field({ name: 'script', validators: validateWith(value => requiredValue(value)) }, field => {
+                        const error = fieldError(field.state.meta, this.submitted);
+                        return html`
+                            <!-- "error" marks the first invalid control, see focusFirstError() -->
+                            <alfio-code-editor
+                                class=${classMap({ error: error != null })}
+                                ?invalid=${error != null}
+                                .language=${extensionScriptLanguage}
+                                help-text=${error ?? 'The script must define a getScriptMetadata() function, see the sample. In the events array, press Ctrl+Space or type a quote to list the supported events.'}
+                                .value=${field.state.value}
+                                @value-changed=${(e: CustomEvent<string>) => field.handleChange(e.detail)}></alfio-code-editor>
+                        `;
+                    })}
+                `)}
 
-                <div class="actions">
-                    <sl-button type="button" variant="default" size="large" ?disabled=${this.busy}
-                               @click=${() => this.cancel()}>
-                        Cancel
-                    </sl-button>
-                    <sl-button type="submit" variant="warning" size="large" ?loading=${this.busy} ?disabled=${this.busy}>
-                        Save
-                    </sl-button>
+                ${when(this.errorMessage != null, () => html`
+                    <sl-alert open variant="danger">
+                        <sl-icon slot="icon" name="exclamation-triangle"></sl-icon> ${this.errorMessage}
+                    </sl-alert>
+                `)}
+
+                <div class="footer">
+                    <sl-divider></sl-divider>
+                    <div class="row" style="--alfio-row-cols: 3">
+                        <sl-button type="button" variant="default" size="large" ?disabled=${this.busy}
+                                   @click=${() => this.cancel()}>
+                            Cancel
+                        </sl-button>
+                        <div></div>
+                        <sl-button type="submit" variant="warning" size="large" ?loading=${this.busy} ?disabled=${this.busy}>
+                            Save
+                        </sl-button>
+                    </div>
                 </div>
             </form>
         `;
@@ -346,7 +338,6 @@ export class ExtensionEdit extends LitElement {
                     this.gotoList();
                 } else {
                     this.errorMessage = result.message ?? 'Failed to save the extension';
-                    this.scrollToTop();
                 }
             })
             .catch(() => {
@@ -363,10 +354,6 @@ export class ExtensionEdit extends LitElement {
 
     private gotoList(): void {
         window.location.hash = '#/extension/list';
-    }
-
-    private scrollToTop(): void {
-        window.scrollTo(0, 0);
     }
 }
 

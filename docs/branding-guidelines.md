@@ -9,16 +9,14 @@ All styling relies exclusively on Shoelace CSS custom properties (`--sl-*`) and 
 Every component should import the style blocks it needs from `../styles.ts`. The canonical set for a full-page component is:
 
 ```ts
-import {badges, base, dialog, form, modernLayout, modernTable, pageHeader, panelStyles, retroCompat, row, spacing, textColors} from '../styles.ts';
+import {badges, base, dialog, form, modernLayout, modernTable, retroCompat, row, spacing, textColors} from '../styles.ts';
 ```
 
 | Import | Purpose |
 |---|---|
 | `base` | Default font size, line height, antialiasing |
 | `retroCompat` | Bootstrap compat: headings, `.container`, `.col`, `.text-right`, `.text-center`, `.mt-*`, `.hidden-xs` |
-| `panelStyles` | `.panel`, `.list-group-item`, `.btn` compat, responsive `.col` grid |
 | `spacing` | `.wMarginTop10px` |
-| `pageHeader` | `.page-header`, `.border-bottom` |
 | `form` | Label weight, error border colors, `.error-text`, `.input-with-action` |
 | `dialog` | Dialog z-index, `.responsive-dialog` width, dialog titles and sections, loading placeholder |
 | `row` | `.row` CSS-grid with `--alfio-row-cols` |
@@ -34,16 +32,17 @@ import {badges, base, dialog, form, modernLayout, modernTable, pageHeader, panel
 
 ### Page title
 
-Use the `page-title-row` + `page-separator` pattern (from `modernLayout`) instead of `page-header`:
+Use the `page-title-row` + `page-separator` pattern (from `modernLayout`):
 
 ```html
 <div class="page-title-row">
-    <h1>Page Title</h1>
+    <h1>Page title</h1>
 </div>
 <hr class="page-separator">
+<p class="page-description text-muted">One sentence that says what the page is for.</p>
 ```
 
-The `page-title-row` is a flex container that allows side-by-side elements (e.g. subtitle) while keeping the heading top-aligned. Reset heading margins so it sits consistently under the navbar.
+The `page-title-row` is a flex container that keeps the heading top-aligned, with the things that belong to the title beside it (a status badge, an Edit button). The optional description goes below the separator, never inside the title row. Pages of an event or a subscription use `page-title-row secondary` ("Reservations for *Event*").
 
 ### Container
 
@@ -63,6 +62,8 @@ When a page has filters and action buttons, use the `filter-toolbar` layout (fro
     </div>
 </div>
 ```
+
+The action buttons on the right share the size of "Add new" (`large`), so that the bar has one height. Filter controls on the left, and a Refresh button next to them, stay small. When a list belongs to an organization, put `organizationFilter()` (`components/organization-filter.ts`) on the left: it renders nothing for users of a single organization.
 
 Filter selects should use `class="filter-select"` (resets default `margin-top`, sets a flex-basis of 170px). Pair each filter with a small clear button using `name="x-circle"` and `class="filter-clear-btn"`.
 
@@ -244,6 +245,7 @@ Classes from `modernLayout` (import `modernLayout` from `styles.ts`):
 |---|---|
 | `page-title-row` | Flex header for `<h1>` + siblings |
 | `page-separator` | Thin `<hr>` under title |
+| `page-description` | One-sentence description below the separator |
 | `filter-toolbar` | Toolbar bar with filters + actions |
 | `filter-left` / `filter-right` | Toolbar sub-columns |
 | `filter-select` | Select with reset margin-top |
@@ -281,7 +283,6 @@ Classes from other shared blocks:
 | `retroCompat` | `.text-center`, `.text-right` | Text alignment |
 | `retroCompat` | `.mt-*`, `.ms-*` | Margin utilities |
 | `retroCompat` | `.hidden-xs`, `.hidden-sm` | Responsive visibility |
-| `panelStyles` | `.panel`, `.panel-heading`, `.panel-body` | Bootstrap panel compat |
 | `row` | `.row` | CSS-grid with `--alfio-row-cols` |
 | `creationLayout` | `.creation-layout`, `.creation-content` | Two-column layout of a long creation form: section index + content |
 | `creationLayout` | `.section-nav`, `.mobile-section-nav` | Sticky section index (desktop) / "Jump to section" select (mobile), rendered by `<alfio-section-nav>` |

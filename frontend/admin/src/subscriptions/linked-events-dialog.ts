@@ -5,7 +5,7 @@ import {when} from 'lit/directives/when.js';
 import type {SlDialog} from '@shoelace-style/shoelace';
 import {EventSubscriptionLink} from '../model/subscription-descriptor.ts';
 import {formatAmount} from '../service/reservation-format.ts';
-import {badges, dialog, modernLayout, modernTable} from '../styles.ts';
+import {badges, dialog, modernLayout, modernTable, row} from '../styles.ts';
 
 /**
  * Shows the events linked to a subscription. The content is set by show(), so that every
@@ -20,7 +20,7 @@ export class LinkedEventsDialog extends LitElement {
     @query('sl-dialog')
     private dialog!: SlDialog;
 
-    static readonly styles = [dialog, modernLayout, modernTable, badges];
+    static readonly styles = [dialog, modernLayout, modernTable, badges, row];
 
     async show(links: EventSubscriptionLink[]): Promise<void> {
         this.links = links;
@@ -55,7 +55,10 @@ export class LinkedEventsDialog extends LitElement {
                         </div>
                     `)}
                 <div slot="footer">
-                    <sl-button variant="default" size="large" @click=${() => this.dialog.hide()}>Close</sl-button>
+                    <sl-divider></sl-divider>
+                    <div class="row" style="--alfio-row-cols: 3">
+                        <sl-button variant="default" size="large" @click=${() => this.dialog.hide()}>Close</sl-button>
+                    </div>
                 </div>
             </sl-dialog>
         `;

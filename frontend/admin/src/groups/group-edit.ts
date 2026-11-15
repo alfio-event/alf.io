@@ -499,7 +499,7 @@ description: optional, for internal usage</pre>
         const name = this.#form.api.state.values.name;
         const confirmed = await ConfirmationDialogService.requestConfirm(
             'Delete group',
-            `About to delete [${name}] group. Are you sure?`,
+            `The group ${name} will be deleted.`,
             'danger');
         if (!confirmed) {
             return;
@@ -519,7 +519,7 @@ description: optional, for internal usage</pre>
         }
         const confirmed = await ConfirmationDialogService.requestConfirm(
             'Remove member',
-            `About to remove [${item.value}]. Are you sure?`,
+            `${item.value} will be removed from the group.`,
             'danger');
         if (!confirmed) {
             return;

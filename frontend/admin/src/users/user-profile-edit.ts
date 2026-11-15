@@ -1,10 +1,14 @@
 import {customElement, query, state} from "lit/decorators.js";
 import {css, html, LitElement, nothing, TemplateResult} from "lit";
-import {SlButton, SlDialog} from "@shoelace-style/shoelace";
+import {SlButton, SlDialog, SlRequestCloseEvent} from "@shoelace-style/shoelace";
 import {when} from "lit/directives/when.js";
 import {TanStackFormController} from "@tanstack/lit-form";
-import {badges, base, dialog, form, modernLayout, pageHeader, panelStyles, retroCompat, row, spacing, textColors} from "../styles.ts";
+import {Task} from "@lit/task";
+import {badges, base, dialog, form, modernLayout, retroCompat, row, spacing, textColors} from "../styles.ts";
+import {sectionCard} from "../components/section-card.ts";
+import {taskContent} from "../components/task-content.ts";
 import {UsersService} from "./users-service.ts";
+import {UserModification} from "../model/user.ts";
 import {dispatchFeedback} from "../model/dom-events.ts";
 import {ErrorDescriptor} from "../model/validation.ts";
 import {
@@ -45,8 +49,10 @@ export class UserProfileEdit extends LitElement {
     @query('sl-button#change-password-btn')
     changePasswordBtn?: SlButton;
 
-    @state() loading: boolean = true;
     @state() profileUsername: string = '';
+    // the profile as last loaded, kept while a reload is running
+    @state() private profile: UserModification | null = null;
+    @state() private refreshCount: number = 0;
     @state() isAdminProfile: boolean = false;
     @state() passwordSuccess: boolean = false;
 
@@ -67,12 +73,25 @@ export class UserProfileEdit extends LitElement {
     @state() saving: boolean = false;
     @state() changingPassword: boolean = false;
 
+    private readonly loadProfileTask = new Task(this, {
+        task: async (): Promise<UserModification> => UsersService.loadCurrentUser(),
+        args: () => [this.refreshCount] as const,
+        onComplete: (user) => {
+            this.profileUsername = user.username ?? '';
+            this.isAdminProfile = this.profileUsername === 'admin';
+            this.#profileForm.api.reset({
+                firstName: user.firstName ?? '',
+                lastName: user.lastName ?? '',
+                emailAddress: user.emailAddress ?? ''
+            });
+            this.profile = user;
+        },
+    });
+
     static readonly styles = [
         base,
         retroCompat,
-        panelStyles,
         spacing,
-        pageHeader,
         form,
         textColors,
         badges,
@@ -85,13 +104,15 @@ export class UserProfileEdit extends LitElement {
             }
 
             .container {
+                box-sizing: border-box;
                 max-width: 640px;
-                padding: var(--sl-spacing-medium);
+                padding-inline: var(--sl-spacing-medium);
             }
 
-            .form-group {
-                margin-bottom: 16px;
-                margin-top: 16px;
+            .profile-username {
+                display: flex;
+                align-items: center;
+                gap: var(--sl-spacing-x-small);
             }
 
             .actions {
@@ -101,9 +122,13 @@ export class UserProfileEdit extends LitElement {
                 margin-top: var(--sl-spacing-medium);
             }
 
-            .warning-admin {
-                margin-top: 0;
-                margin-bottom: var(--sl-spacing-medium);
+            .password-requirements {
+                margin: var(--sl-spacing-2x-small) 0 0;
+                padding-left: var(--sl-spacing-large);
+            }
+
+            #change-password {
+                --alfio-dialog-max-width: 40rem;
             }
         `
     ];
@@ -112,7 +137,6 @@ export class UserProfileEdit extends LitElement {
         super();
         new FormMountController(this, this.#profileForm.api);
         new FormMountController(this, this.#passwordForm.api);
-        void this.loadProfile();
     }
 
     protected render(): TemplateResult {
@@ -123,67 +147,49 @@ export class UserProfileEdit extends LitElement {
                 </div>
                 <hr class="page-separator">
 
-                ${when(this.loading,
-                    () => html`
-                        <div class="loading-spinner">
-                            <sl-spinner></sl-spinner>
-                        </div>
-                    `,
-                    () => html`
-                        <div class="section-card">
-                            <div class="section-header">
-                                <sl-icon name="person-fill"></sl-icon>
-                                <h3>Personal Information</h3>
-                            </div>
-                            <div class="section-body">
-                                <div class="text-muted mb-3">
-                                    <sl-icon name="person"></sl-icon> ${this.profileUsername}
-                                </div>
-
-                                ${this.renderProfileForm()}
-
-                                <div class="actions" style="justify-content: space-between;">
-                                    ${when(this.saving,
-                                        () => html`<sl-spinner></sl-spinner>`,
-                                        () => html`
-                                            <sl-button variant="default" size="large" @click=${this.resetProfileForm}>Cancel</sl-button>
-                                            <sl-button id="save-profile" variant="warning" size="large" @click=${this.submitProfile}>
-                                                Save
-                                            </sl-button>
-                                        `)}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="section-card">
-                            <div class="section-header">
-                                <sl-icon name="lock-fill"></sl-icon>
-                                <h3>Change Password</h3>
-                            </div>
-                            <div class="section-body">
-                                ${when(this.isAdminProfile,
-                                    () => html`
-                                        <sl-alert variant="warning" open>
-                                            <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                                            <div>
-                                                <strong>With great power comes great responsibility.</strong> You are the administrator,
-                                                therefore <strong>nobody could reset your password if you lose it</strong>. Be careful!
-                                            </div>
-                                        </sl-alert>
-                                    `,
-                                    () => nothing)}
-
-                                <div class="actions">
-                                    <sl-button id="change-password-btn" variant="primary" size="large" @click=${this.openChangePasswordDialog}>
-                                        <sl-icon slot="prefix" name="key"></sl-icon> Change Password
-                                    </sl-button>
-                                </div>
-                            </div>
-                        </div>
-                    `)}
+                ${taskContent(this.loadProfileTask, this.profile, 'Failed to load your profile. Please try again.',
+                    () => this.renderProfile())}
             </div>
 
             ${this.renderChangePasswordDialog()}
+        `;
+    }
+
+    private renderProfile(): TemplateResult {
+        return html`
+            ${sectionCard({ icon: 'person-fill', title: 'Personal information' }, html`
+                <div class="form-stack">
+                    <div class="profile-username text-muted">
+                        <sl-icon name="person"></sl-icon> ${this.profileUsername}
+                    </div>
+                    ${this.renderProfileForm()}
+                </div>
+                <sl-divider></sl-divider>
+                <div class="row" style="--alfio-row-cols: 3">
+                    <sl-button variant="default" size="large" ?disabled=${this.saving} @click=${this.resetProfileForm}>Cancel</sl-button>
+                    <div></div>
+                    <sl-button id="save-profile" variant="warning" size="large" ?loading=${this.saving} @click=${this.submitProfile}>
+                        Save
+                    </sl-button>
+                </div>
+            `)}
+
+            ${sectionCard({ icon: 'lock-fill', title: 'Password' }, html`
+                ${when(this.isAdminProfile, () => html`
+                    <sl-alert variant="warning" open>
+                        <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+                        <div>
+                            You are the administrator: <strong>nobody can reset your password if you lose it</strong>.
+                        </div>
+                    </sl-alert>
+                `)}
+
+                <div class="actions">
+                    <sl-button id="change-password-btn" variant="primary" @click=${this.openChangePasswordDialog}>
+                        <sl-icon slot="prefix" name="key"></sl-icon> Change password
+                    </sl-button>
+                </div>
+            `)}
         `;
     }
 
@@ -192,19 +198,13 @@ export class UserProfileEdit extends LitElement {
         const input = (field: BoundField<string>, options: ValidatedInputOptions) => validatedInput(field, submitted, options);
         return html`
             <div class="row" style="--alfio-row-cols: 2">
-                <div class="form-group">
-                    ${this.#profileForm.field({ name: 'firstName', validators: validateWith(value => minLength(value, 2)) },
-                        field => input(field, { id: 'firstName', label: 'First Name', prefixIcon: 'person' }))}
-                </div>
-                <div class="form-group">
-                    ${this.#profileForm.field({ name: 'lastName', validators: validateWith(value => minLength(value, 2)) },
-                        field => input(field, { id: 'lastName', label: 'Last Name', prefixIcon: 'person' }))}
-                </div>
+                ${this.#profileForm.field({ name: 'firstName', validators: validateWith(value => minLength(value, 2)) },
+                    field => input(field, { id: 'firstName', label: 'First name', prefixIcon: 'person' }))}
+                ${this.#profileForm.field({ name: 'lastName', validators: validateWith(value => minLength(value, 2)) },
+                    field => input(field, { id: 'lastName', label: 'Last name', prefixIcon: 'person' }))}
             </div>
-            <div class="form-group">
-                ${this.#profileForm.field({ name: 'emailAddress', validators: validateWith(value => emailAddress(value)) },
-                    field => input(field, { id: 'emailAddress', label: 'Email Address', type: 'email', prefixIcon: 'envelope' }))}
-            </div>
+            ${this.#profileForm.field({ name: 'emailAddress', validators: validateWith(value => emailAddress(value)) },
+                field => input(field, { id: 'emailAddress', label: 'E-mail', type: 'email', prefixIcon: 'envelope' }))}
         `;
     }
 
@@ -235,85 +235,70 @@ export class UserProfileEdit extends LitElement {
             return undefined;
         };
         return html`
-            <div class="form-group">
-                ${this.#passwordForm.field({ name: 'oldPassword', validators: validateWith(value => requiredValue(value)) },
-                    field => input(field, { id: 'oldPassword', label: 'Current Password', prefixIcon: 'lock' }))}
-            </div>
-            <div class="form-group">
-                ${this.#passwordForm.field({ name: 'newPassword', validators: validateWith(validateNewPassword) },
-                    field => input(field, { id: 'newPassword', label: 'New Password', prefixIcon: 'lock-fill' }))}
-            </div>
-            <div class="form-group">
-                ${this.#passwordForm.field({
-                    name: 'newPasswordConfirm',
-                    // checked again when the new password changes
-                    validators: { ...validateWith(validateConfirmation), onChangeListenTo: ['newPassword'] },
-                }, field => input(field, { id: 'newPasswordConfirm', label: 'Confirm New Password', prefixIcon: 'lock-fill' }))}
-            </div>
+            ${this.#passwordForm.field({ name: 'oldPassword', validators: validateWith(value => requiredValue(value)) },
+                field => input(field, { id: 'oldPassword', label: 'Current password', prefixIcon: 'lock' }))}
+            ${this.#passwordForm.field({ name: 'newPassword', validators: validateWith(validateNewPassword) },
+                field => input(field, { id: 'newPassword', label: 'New password', prefixIcon: 'lock-fill' }))}
+            ${this.#passwordForm.field({
+                name: 'newPasswordConfirm',
+                // checked again when the new password changes
+                validators: { ...validateWith(validateConfirmation), onChangeListenTo: ['newPassword'] },
+            }, field => input(field, { id: 'newPasswordConfirm', label: 'Confirm new password', prefixIcon: 'lock-fill' }))}
         `;
     }
 
     private renderChangePasswordDialog(): TemplateResult | typeof nothing {
         return html`
-            <sl-dialog
-                id="change-password"
-                label="Change Password"
-                style="--width: min(40rem, calc(100vw - 2rem)); --header-spacing:16px; --body-spacing: 16px;"
-                @sl-request-close=${(e: any) => {
-                    if (e.detail.source === 'overlay') {
-                        e.preventDefault();
-                    } else {
-                        this.closeChangePasswordDialog();
-                    }
-                }}>
-                ${when(this.passwordSuccess,
-                    () => html`
+            <sl-dialog id="change-password" class="responsive-dialog" label="Change password"
+                       @sl-request-close=${this.onPasswordDialogRequestClose}>
+                <div class="form-stack">
+                    ${when(this.passwordSuccess, () => html`
                         <sl-alert variant="success" open>
                             <sl-icon slot="icon" name="check-circle"></sl-icon>
                             Password changed successfully.
                         </sl-alert>
-                    `,
-                    () => nothing)}
+                    `)}
 
-                <sl-alert variant="primary" open>
-                    <sl-icon slot="icon" name="info-circle"></sl-icon>
-                    <div>
-                        <strong>Password requirements:</strong> at least 10 characters with:
-                        <ul style="margin: 4px 0 0; padding-left: 20px;">
-                            <li>at least one uppercase letter <code>A-Z</code></li>
-                            <li>at least one lowercase letter <code>a-z</code></li>
-                            <li>at least one digit <code>0-9</code></li>
-                            <li>at least one punctuation character <code>!"#$%&'()*+,-./:;<=>?@[\]^_\`{|}~</code></li>
-                            <li>no spaces</li>
-                        </ul>
-                    </div>
-                </sl-alert>
+                    <sl-alert variant="primary" open>
+                        <sl-icon slot="icon" name="info-circle"></sl-icon>
+                        <div>
+                            <strong>Password requirements:</strong> at least 10 characters with:
+                            <ul class="password-requirements">
+                                <li>at least one uppercase letter <code>A-Z</code></li>
+                                <li>at least one lowercase letter <code>a-z</code></li>
+                                <li>at least one digit <code>0-9</code></li>
+                                <li>at least one punctuation character <code>!"#$%&'()*+,-./:;<=>?@[\]^_\`{|}~</code></li>
+                                <li>no spaces</li>
+                            </ul>
+                        </div>
+                    </sl-alert>
 
-                ${this.renderPasswordFields()}
+                    ${this.renderPasswordFields()}
+                </div>
 
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
                         <sl-button variant="default" size="large" @click=${this.closeChangePasswordDialog}>Cancel</sl-button>
                         <div></div>
-                        <sl-button
-                            variant="success"
-                            size="large"
-                            ?disabled=${this.changingPassword}
-                            @click=${this.submitPassword}>
-                            ${when(this.changingPassword,
-                                () => nothing,
-                                () => html`<sl-icon slot="prefix" name="check2"></sl-icon>`)}
-                            ${when(!this.changingPassword, () => 'Update')}
+                        <sl-button id="save-password" variant="warning" size="large" ?loading=${this.changingPassword}
+                                   @click=${this.submitPassword}>
+                            Save
                         </sl-button>
-                        ${when(this.changingPassword,
-                            () => html`<sl-spinner style="--sl-spinner-size: 1.5rem;"></sl-spinner>`,
-                            () => nothing)}
                     </div>
                 </div>
             </sl-dialog>
         `;
     }
+
+    // a click outside the dialog would discard the passwords typed so far: only the close button and Cancel close it
+    private readonly onPasswordDialogRequestClose = (event: SlRequestCloseEvent): void => {
+        if (event.detail.source === 'overlay') {
+            event.preventDefault();
+            return;
+        }
+        this.closeChangePasswordDialog();
+    };
 
     private getPasswordErrorMessage(field: string): string {
         switch (field) {
@@ -334,26 +319,8 @@ export class UserProfileEdit extends LitElement {
         }
     }
 
-    private async loadProfile(): Promise<void> {
-        this.loading = true;
-        try {
-            const user = await UsersService.loadCurrentUser();
-            this.profileUsername = user.username ?? '';
-            this.isAdminProfile = this.profileUsername === 'admin';
-            this.#profileForm.api.reset({
-                firstName: user.firstName ?? '',
-                lastName: user.lastName ?? '',
-                emailAddress: user.emailAddress ?? ''
-            });
-        } catch {
-            dispatchFeedback({type: 'danger', message: 'Failed to load profile.'}, this);
-        } finally {
-            this.loading = false;
-        }
-    }
-
     private resetProfileForm(): void {
-        this.loadProfile();
+        this.refreshCount++;
     }
 
     private openChangePasswordDialog(): void {

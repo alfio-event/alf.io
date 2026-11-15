@@ -321,6 +321,7 @@ export class ActivityLog extends LitElement {
                     `)}
                 </sl-radio-group>
                 <sl-switch size="small" .checked=${this.showTechnicalDetails}
+                           help-text="Shows the data recorded for each operation"
                            @sl-change=${(e: Event) => { this.showTechnicalDetails = (e.target as SlSwitch).checked; }}>
                     Technical details
                 </sl-switch>

@@ -170,10 +170,10 @@ export class PendingPayments extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row secondary">
-                    <h1>Pending Payments for <i>${localizedTitle(data.event)}</i></h1>
+                    <h1>Pending payments for <i>${localizedTitle(data.event)}</i></h1>
                 </div>
-                <p class="page-description text-muted">Confirm them one at a time, or upload a file to confirm them in bulk.</p>
                 <hr class="page-separator" />
+                <p class="page-description text-muted">Confirm them one at a time, or upload a file to confirm them in bulk.</p>
                 ${when(data.rows.length === 0,
                     () => html`
                         <section class="section-card">
@@ -203,7 +203,7 @@ export class PendingPayments extends LitElement {
                     <sl-input
                         class="list-search label-hidden"
                         label="Filter payments"
-                        placeholder="Filter Payments"
+                        placeholder="Filter payments"
                         clearable
                         .value=${this.search}
                         @sl-input=${(e: Event) => { this.search = (e.target as SlInput).value; }}

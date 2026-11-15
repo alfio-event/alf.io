@@ -29,3 +29,20 @@ export interface GroupModification {
     organizationId: number;
     items: GroupMemberModification[];
 }
+
+export type LinkedGroupType = 'ONCE_PER_VALUE' | 'LIMITED_QUANTITY' | 'UNLIMITED';
+export type LinkedGroupMatchType = 'FULL' | 'EMAIL_DOMAIN';
+
+/**
+ * The link between a group and an event or one of its categories (alfio.model.group.LinkedGroup):
+ * only the members of the group can buy tickets. A link not saved yet has no id
+ */
+export interface LinkedGroup {
+    id?: number | null;
+    groupId: number;
+    eventId: number;
+    ticketCategoryId: number | null;
+    type: LinkedGroupType;
+    matchType: LinkedGroupMatchType;
+    maxAllocation: number | null;
+}

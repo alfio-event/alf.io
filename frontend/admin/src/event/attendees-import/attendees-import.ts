@@ -374,6 +374,7 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`,
                     Forbid ticket reassignment
                 </sl-switch>
                 <sl-switch id="send-tickets" .checked=${this.sendTickets}
+                           help-text="Each attendee receives their ticket by email once their reservation is created"
                            @sl-change=${(e: Event) => { this.sendTickets = (e.target as SlSwitch).checked; }}>
                     Send tickets via email
                 </sl-switch>
@@ -426,7 +427,7 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`,
             ${this.#form.field({ name: 'language', validators: validateWith(value => requiredValue(value)) }, field => {
                 const error = this.error(field.state.meta);
                 return html`
-                    <sl-select id="language" label="Language" required class=${classMap({ error: error != null })}
+                    <sl-select id="language" label="Language" required hoist class=${classMap({ error: error != null })}
                                help-text=${error ?? 'Used for the attendees without a language'}
                                .value=${field.state.value}
                                @sl-change=${(e: Event) => field.handleChange(String((e.target as SlSelect).value))}

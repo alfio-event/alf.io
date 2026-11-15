@@ -130,7 +130,10 @@ export class PurchaseContextImage extends LitElement {
     }
 
     protected render(): TemplateResult {
-        const preview = this.previewUrl ?? (this.currentImage != null && this.currentImage !== '' ? this.currentImage : null);
+        let preview = this.previewUrl;
+        if (preview == null && this.currentImage != null && this.currentImage !== '') {
+            preview = this.currentImage;
+        }
         return html`
             <div class="image-upload">
                 ${repeat([this.uploadResetCount], (count) => count, () => html`

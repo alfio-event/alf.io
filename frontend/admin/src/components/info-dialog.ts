@@ -59,7 +59,7 @@ export class InfoDialog extends LitElement {
     render(): TemplateResult {
         const content = this.content;
         return html`
-            <sl-dialog class="responsive-dialog" label=${content?.title ?? ''} placement="bottom">
+            <sl-dialog class="responsive-dialog" label=${content?.title ?? ''}>
                 ${when(content, () => dialogTitle(content!.icon, content!.title, content!.description))}
                 ${when(this.body,
                     () => this.body!,

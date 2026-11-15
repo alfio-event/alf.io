@@ -93,7 +93,7 @@ export class TemplateList extends LitElement {
 
     private renderList(templates: TemplateDescriptor[]): TemplateResult {
         if (templates.length === 0) {
-            return emptyState('No templates found');
+            return emptyState('No templates have been found');
         }
         return html`
             ${repeat(groupTemplatesByContext(templates), (group) => group.context, (group) => this.renderContextGroup(group))}
@@ -128,13 +128,15 @@ export class TemplateList extends LitElement {
                                         </span>
                                     </td>
                                     <td>${this.renderRecipientBadge(template)}</td>
-                                    <td class="actions-cell">
-                                        <!-- the enum name is the data attribute and the accessible label of the button -->
-                                        <sl-button variant="default" size="small" class="edit-template" data-template=${template.name}
-                                                   title=${template.name} type="button" @click=${() => this.openEditor(template.name)}>
-                                            <sl-icon slot="prefix" name="pencil"></sl-icon>
-                                            Edit<span class="sr-only"> ${template.name}</span>
-                                        </sl-button>
+                                    <td>
+                                        <div class="actions-cell">
+                                            <!-- the enum name is the data attribute and the accessible label of the button -->
+                                            <sl-button variant="default" size="small" class="edit-template" data-template=${template.name}
+                                                       title=${template.name} type="button" @click=${() => this.openEditor(template.name)}>
+                                                <sl-icon slot="prefix" name="pencil"></sl-icon>
+                                                Edit<span class="sr-only"> ${template.name}</span>
+                                            </sl-button>
+                                        </div>
                                     </td>
                                 </tr>
                             `)}

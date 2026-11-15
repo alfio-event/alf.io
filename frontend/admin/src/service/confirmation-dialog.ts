@@ -7,11 +7,15 @@ export class ConfirmationDialogService {
         return new Promise((resolve) => {
             const div = document.createElement('div');
             div.innerHTML = `
-              <sl-dialog label="${title}">
-                <div class="text-center">${escapeHtml(message)}</div>
-                <div slot="footer" style="display: flex; justify-content: space-between;">
-                    <sl-button variant="default" id="close" style="width: 30%;" size="large">Close</sl-button>
-                    <sl-button variant=${variant} size="large"  style="width: 30%;" id="confirm">Confirm</sl-button>
+              <sl-dialog label="${escapeHtml(title).replaceAll('"', '&quot;')}" style="--width: min(32rem, calc(100vw - 2 * var(--sl-spacing-large)));">
+                <div>${escapeHtml(message)}</div>
+                <div slot="footer">
+                    <sl-divider></sl-divider>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sl-spacing-small);">
+                        <sl-button variant="default" id="close" size="large">Cancel</sl-button>
+                        <div></div>
+                        <sl-button variant="${variant}" size="large" id="confirm">Confirm</sl-button>
+                    </div>
                 </div>
               </sl-dialog>
             `;

@@ -93,7 +93,10 @@ async function load(eventName: string, entry: Entry): Promise<void> {
             throw new Error(`unexpected status ${response.status}`);
         } else {
             const count = Number(await response.json());
-            entry.count = Number.isFinite(count) ? count : 0;
+            entry.count = 0;
+            if (Number.isFinite(count)) {
+                entry.count = count;
+            }
             entry.failures = 0;
         }
     } catch (e) {

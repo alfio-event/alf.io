@@ -71,15 +71,16 @@ export class ExtensionLogPage extends LitElement {
             :host {
                 display: block;
             }
-            .page-description {
-                margin: 0 0 var(--sl-spacing-medium);
+            .page-title-row {
+                flex-wrap: wrap;
             }
             .filter-toolbar,
             .filter-left {
                 align-items: center;
             }
+            /* the search field takes the rest of the toolbar */
             .type-filter {
-                flex: 0 0 170px;
+                flex: 0 0 11rem;
             }
             .scope {
                 font-size: var(--sl-font-size-small);
@@ -113,8 +114,8 @@ export class ExtensionLogPage extends LitElement {
                 <div class="page-title-row">
                     <h1>Extension logs</h1>
                 </div>
-                <p class="page-description text-muted">Messages written by the extension scripts while they run, newest first.</p>
                 <hr class="page-separator"/>
+                <p class="page-description text-muted">Messages written by the extension scripts while they run, newest first.</p>
                 <div class="filter-toolbar">
                     <div class="filter-left">
                         ${this.searchController.render('logs')}
