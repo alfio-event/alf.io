@@ -225,9 +225,9 @@ export class AdditionalFieldList extends LitElement {
                         <div>
                             <span class="preview-label">Preview</span>
                             <sl-tab-group>
-                                ${repeat(this.sortContentLanguages(field, model), d => d.localeLabel, d => html`
-                                    <sl-tab slot="nav" panel=${d.locale}>${d.localeLabel}</sl-tab>
-                                    <sl-tab-panel name=${d.locale}>
+                                ${repeat(this.sortContentLanguages(field, model), d => d.localeLabel, (d, index) => html`
+                                    <sl-tab slot="nav" panel=${d.locale} ?active=${index === 0}>${d.localeLabel}</sl-tab>
+                                    <sl-tab-panel name=${d.locale} ?active=${index === 0}>
                                         ${renderPreview(d, field)}
                                     </sl-tab-panel>
                                 `)}

@@ -244,8 +244,8 @@ export class AdditionalFieldEdit extends LitElement {
                             <sl-tab-group>
                                 ${contentLanguages.map((d, index) => {
                                     return html`
-                                            <sl-tab slot="nav" panel=${d.locale}>${d.displayLanguage}${renderIf(() => index === 0, () => html`<sl-badge variant="primary" pill class="ms-1">Primary</sl-badge>`)}</sl-tab>
-                                            <sl-tab-panel name=${d.locale}>
+                                            <sl-tab slot="nav" panel=${d.locale} ?active=${index === 0}>${d.displayLanguage}${renderIf(() => index === 0, () => html`<sl-badge variant="primary" pill class="ms-1">Primary</sl-badge>`)}</sl-tab>
+                                            <sl-tab-panel name=${d.locale} ?active=${index === 0}>
                                                 <div class="info-container">
                                                     ${this.renderLanguageFields(d, index === 0)}
                                                 </div>

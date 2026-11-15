@@ -335,7 +335,17 @@ export class EventCategoryDialog extends LitElement {
     /**
      * Opens the dialog to edit the given draft (a fresh one when adding a category)
      */
-    public open(context: CategoryDialogContext, existing: CategoryDraft, options: CategoryDialogOptions = {}): Promise<CategoryDraft | null> {
+    public async open(context: CategoryDialogContext, existing: CategoryDraft, options: CategoryDialogOptions = {}): Promise<CategoryDraft | null> {
+        // the previous category is still closing (e.g. "Add category" clicked right after a save): reopening the
+        // dialog during its closing animation would leave it half closed, so the new one opens once it has ended
+        const closing = this.dialog;
+        if (this.isOpen && closing != null && !closing.open) {
+            await new Promise<void>((resolve) => closing.addEventListener('sl-after-hide', (e) => {
+                if (e.target === closing) {
+                    resolve();
+                }
+            }));
+        }
         this.context = context;
         this.optionsTarget = options.configuration ?? null;
         this.initialTab = options.tab ?? 'general';

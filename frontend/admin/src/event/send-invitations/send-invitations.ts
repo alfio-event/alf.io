@@ -260,12 +260,12 @@ export class SendInvitations extends LitElement {
                             <sl-badge variant="primary" pill>${sentCodes.length}</sl-badge>
                         </span>
                     </sl-tab>
-                    <sl-tab-panel name="invitations">
+                    <sl-tab-panel name="invitations" ?active=${this.selectedTab === 'invitations'}>
                         ${when(this.preview == null,
                             () => this.renderInput(event),
                             () => this.renderPreview())}
                     </sl-tab-panel>
-                    <sl-tab-panel name="history">
+                    <sl-tab-panel name="history" ?active=${this.selectedTab === 'history'}>
                         ${this.renderHistory(event, sentCodes)}
                     </sl-tab-panel>
                 </sl-tab-group>

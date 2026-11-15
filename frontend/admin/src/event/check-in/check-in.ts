@@ -260,11 +260,11 @@ export class CheckIn extends LitElement {
                             <sl-badge variant="primary" pill>${checkedIn.length}</sl-badge>
                         </span>
                     </sl-tab>
-                    <sl-tab-panel name="pending">
+                    <sl-tab-panel name="pending" ?active=${this.selectedTab === 'pending'}>
                         ${this.renderSection('pending', pending, 'No attendees to check in',
                             (tickets) => this.renderPendingTable(tickets, data.event))}
                     </sl-tab-panel>
-                    <sl-tab-panel name="checked-in">
+                    <sl-tab-panel name="checked-in" ?active=${this.selectedTab === 'checked-in'}>
                         ${this.renderSection('checked-in', checkedIn, 'No attendees have been checked in yet',
                             (tickets) => this.renderCheckedInTable(tickets))}
                     </sl-tab-panel>

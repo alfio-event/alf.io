@@ -294,10 +294,10 @@ export class ComposeMessage extends LitElement {
                                 <!-- keyed by index: the names of the validated fields contain the index of the message -->
                                 <sl-tab-group id="messages-editor">
                                     ${repeat(this.messages, (_, index) => index, (m, index) => html`
-                                        <sl-tab slot="nav" panel=${m.locale} class=${classMap({ 'has-error': this.messageHasError(index) })}>${this.languageName(m.locale)}</sl-tab>
+                                        <sl-tab slot="nav" panel=${m.locale} ?active=${index === 0} class=${classMap({ 'has-error': this.messageHasError(index) })}>${this.languageName(m.locale)}</sl-tab>
                                     `)}
                                     ${repeat(this.messages, (_, index) => index, (m, index) => html`
-                                        <sl-tab-panel name=${m.locale}>
+                                        <sl-tab-panel name=${m.locale} ?active=${index === 0}>
                                             <div class="form-stack">
                                                 ${this.#form.field({ name: `messages[${index}].subject`, validators: validateWith(value => requiredValue(value)) },
                                                     field => validatedInput(field, this.submitted, { name: `subject-${m.locale}`, label: 'Subject', placeholder: m.subjectExample }))}
@@ -395,9 +395,9 @@ export class ComposeMessage extends LitElement {
                         Potentially affected users: <strong>${preview.affectedUsers}</strong>${when(categoryNames, () => html` of ${this.categoriesLabel()} ${categoryNames}`)}
                     </sl-alert>
                     <sl-tab-group>
-                        ${repeat(preview.preview, m => m.locale, m => html`<sl-tab slot="nav" panel=${m.locale}>${this.languageName(m.locale)}</sl-tab>`)}
-                        ${repeat(preview.preview, m => m.locale, m => html`
-                            <sl-tab-panel name=${m.locale}>
+                        ${repeat(preview.preview, m => m.locale, (m, index) => html`<sl-tab slot="nav" panel=${m.locale} ?active=${index === 0}>${this.languageName(m.locale)}</sl-tab>`)}
+                        ${repeat(preview.preview, m => m.locale, (m, index) => html`
+                            <sl-tab-panel name=${m.locale} ?active=${index === 0}>
                                 <div class="form-stack">
                                     <sl-input class="preview-subject" label="Subject" readonly filled .value=${m.subjectExample}></sl-input>
                                     ${when(preview.htmlPreview?.[m.locale], htmlPreview => html`

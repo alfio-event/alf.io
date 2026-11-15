@@ -260,9 +260,9 @@ export class AdditionalItemList extends LitElement {
                             showMaxQuantity(item) && { label: maxQuantityLabel(item), value: item.maxQtyPerOrder },
                         ])}
                         <sl-tab-group>
-                            ${repeat(this.sortContentLanguages(item, model), d => d.locale, (d) => html`
-                                <sl-tab slot="nav" panel=${d.locale}>${d.localeLabel}</sl-tab>
-                                <sl-tab-panel name=${d.locale}>
+                            ${repeat(this.sortContentLanguages(item, model), d => d.locale, (d, index) => html`
+                                <sl-tab slot="nav" panel=${d.locale} ?active=${index === 0}>${d.localeLabel}</sl-tab>
+                                <sl-tab-panel name=${d.locale} ?active=${index === 0}>
                                     <div class="panel-content">
                                         <alfio-display-commonmark-preview data-button-text="Preview" data-text=${d.value}></alfio-display-commonmark-preview>
                                         <div class="description-text">${d.value}</div>

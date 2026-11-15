@@ -23,23 +23,22 @@ export class ConfirmationDialogService {
 
             document.body.appendChild(div);
 
-            const close = (r: boolean) => {
-                dialog.hide().then(() => {
-                    document.body.removeChild(div);
-                    resolve(r);
-                });
-            }
-            customElements.whenDefined('sl-dialog').then(async () => {
-                await dialog.show();
-                div.querySelectorAll('sl-button')?.forEach(e => e.addEventListener('click', () => {
-                    close(e.id === 'confirm')
-                }));
-                dialog.addEventListener('sl-hide', (e) => {
-                    if (['close-button', 'keyboard', 'overlay'].includes(e.detail.source)) {
-                        resolve(false);
-                    }
-                });
+            // the answer given by the buttons; closing the dialog in any other way (X, Escape, overlay) means "no"
+            let answer = false;
+            // the listeners are attached before the dialog opens, so that a click during the opening animation counts
+            div.querySelectorAll('sl-button').forEach(e => e.addEventListener('click', () => {
+                answer = e.id === 'confirm';
+                void dialog.hide();
+            }));
+            dialog.addEventListener('sl-after-hide', (e) => {
+                // nested Shoelace components fire their own sl-after-hide
+                if (e.target !== dialog) {
+                    return;
+                }
+                div.remove();
+                resolve(answer);
             });
+            void customElements.whenDefined('sl-dialog').then(() => dialog.show());
         })
     }
 

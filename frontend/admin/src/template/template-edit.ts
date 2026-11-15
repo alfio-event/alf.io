@@ -209,14 +209,14 @@ export class TemplateEdit extends LitElement {
                 </sl-alert>
             `)}
             <sl-tab-group>
-                ${repeat(data.locales, (l) => l.locale, (l) => html`
-                    <sl-tab slot="nav" panel=${l.locale}>
+                ${repeat(data.locales, (l) => l.locale, (l, index) => html`
+                    <sl-tab slot="nav" panel=${l.locale} ?active=${index === 0}>
                         ${l.language.displayLanguage || l.locale}
                         ${when(l.override != null, () => html`<sl-badge pill variant="primary" class="override-badge">Customized</sl-badge>`)}
                     </sl-tab>
                 `)}
-                ${repeat(data.locales, (l) => l.locale, (l) => html`
-                    <sl-tab-panel name=${l.locale}>${this.renderLocale(data, l)}</sl-tab-panel>
+                ${repeat(data.locales, (l) => l.locale, (l, index) => html`
+                    <sl-tab-panel name=${l.locale} ?active=${index === 0}>${this.renderLocale(data, l)}</sl-tab-panel>
                 `)}
             </sl-tab-group>
         `);

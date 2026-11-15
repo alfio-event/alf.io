@@ -56,6 +56,8 @@ class GroupsE2ETest extends BaseE2ETest {
         // import a third member from a CSV file, through the upload option of the members section
         var csvMember = "csv-" + uniqueId() + "@example.com";
         var csv = "\"email\",\"description\"\r\n\"" + csvMember + "\",\"from csv\"\r\n";
+        // groupMembersCount() left the browser on the edit page of the group
+        adminConsole.openGroups();
         adminConsole.importGroupMembersCsv(name, csv);
         adminConsole.openGroups();
         assertEquals(3, adminConsole.groupMembersCount(name), "the group should have 3 members after the CSV import");

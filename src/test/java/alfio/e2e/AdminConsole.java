@@ -53,7 +53,6 @@ class AdminConsole {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminConsole.class);
     private static final String LOGO_RESOURCE = "/images/sample-logo.png";
 
-    private final BrowserWebDriver browserWebDriver;
     private final WebDriver driver;
     private final WebDriverWait wait;
     private final String serverBaseUrl;
@@ -66,7 +65,6 @@ class AdminConsole {
                  String username,
                  String password,
                  String organizationName) {
-        this.browserWebDriver = browserWebDriver;
         this.driver = browserWebDriver.driver;
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(30));
         this.serverBaseUrl = serverBaseUrl;
@@ -109,10 +107,6 @@ class AdminConsole {
             .filter(WebElement::isDisplayed)
             .findFirst()
             .orElse(null);
-    }
-
-    void createEvent(EventDefinition event) {
-        createEvent(event, false);
     }
 
     /**
@@ -1743,10 +1737,15 @@ class AdminConsole {
         wait.until(urlContains("/all"));
     }
 
+    /**
+     * Waits until the groups have been loaded (a row or the empty state is shown), then tells whether
+     * the group with the given name is in the list
+     */
     boolean groupListed(String name) {
         var list = wait.until(presenceOfElementLocated(By.tagName("alfio-groups-list")));
-        return wait.until(d -> (Boolean) ((JavascriptExecutor) d).executeScript(
-            "return arguments[0].shadowRoot.textContent.includes(arguments[1]);", list, name));
+        wait.until(_ -> !findAllInShadowRoot(list, ".group-row, .empty-state").isEmpty());
+        return (Boolean) ((JavascriptExecutor) driver).executeScript(
+            "return arguments[0].shadowRoot.textContent.includes(arguments[1]);", list, name);
     }
 
     /**
@@ -2320,6 +2319,9 @@ class AdminConsole {
         }
         clickWithJs(driver, findInShadowRoot(categoryDialog, "#category-save"));
         wait.until(_ -> !Boolean.parseBoolean(String.valueOf(dialog.getDomProperty("open"))));
+        // the dialog is rendered only while open: wait until the closing has ended, so that the next category
+        // doesn't find the elements of this one
+        wait.until(_ -> findAllInShadowRoot(categoryDialog, "sl-dialog").isEmpty());
     }
 
     private WebElement scrollToCenter(WebElement element) {

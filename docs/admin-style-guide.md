@@ -386,6 +386,9 @@ Example: `event/check-in/add-attendees-dialog.ts`.
   Shoelace itself is loaded by `main.ts`, and Font Awesome helpers (`injectFontAwesome`) go away.
 - Badges are always `pill`, and need the `badges` block.
 - Once a component uses the Shoelace components, delete the Bootstrap emulation from its `styles`.
+- In an `sl-tab-group`, mark the initial tab and its panel `active` (e.g. `?active=${index === 0}` on both):
+  Shoelace activates the first tab only when the group scrolls into view, so below the fold every panel
+  stays hidden until then.
 
 ## 8. Dates
 

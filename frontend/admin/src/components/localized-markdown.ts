@@ -70,9 +70,9 @@ export class LocalizedMarkdown extends LitElement {
         }
         return html`
             <sl-tab-group>
-                ${repeat(entries, ([locale]) => locale, ([locale]) => html`
-                    <sl-tab slot="nav" panel=${locale}>${this.languageName(locale)}</sl-tab>
-                    <sl-tab-panel name=${locale}>${this.renderText(locale)}</sl-tab-panel>
+                ${repeat(entries, ([locale]) => locale, ([locale], index) => html`
+                    <sl-tab slot="nav" panel=${locale} ?active=${index === 0}>${this.languageName(locale)}</sl-tab>
+                    <sl-tab-panel name=${locale} ?active=${index === 0}>${this.renderText(locale)}</sl-tab-panel>
                 `)}
             </sl-tab-group>
         `;

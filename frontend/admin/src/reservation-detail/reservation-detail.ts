@@ -446,13 +446,13 @@ export class ReservationDetailPage extends LitElement {
                 ${this.renderNotices(data)}
                 ${this.renderToolbar(data)}
                 <sl-tab-group>
-                    ${this.renderTab('details', 'Details', 'card-text', null)}
+                    ${this.renderTab('details', 'Details', 'card-text', null, true)}
                     ${when(this.isOwner && data.context.visible, () => html`
                         ${when(this.displayBillingDocuments(data), () => this.renderTab('billing-documents', 'Billing documents', 'receipt', data.billingDocuments.length))}
                         ${this.renderTab('emails', 'E-mails', 'envelope', data.emails.length)}
                         ${this.renderTab('history', 'History', 'clock-history', null)}
                     `)}
-                    <sl-tab-panel name="details">${this.renderDetails(data)}</sl-tab-panel>
+                    <sl-tab-panel name="details" active>${this.renderDetails(data)}</sl-tab-panel>
                     ${when(this.isOwner && data.context.visible, () => html`
                         ${when(this.displayBillingDocuments(data), () => html`<sl-tab-panel name="billing-documents">${this.renderBillingDocuments(data)}</sl-tab-panel>`)}
                         <sl-tab-panel name="emails">
@@ -478,9 +478,9 @@ export class ReservationDetailPage extends LitElement {
         `;
     }
 
-    private renderTab(name: string, label: string, icon: string, count: number | null): TemplateResult {
+    private renderTab(name: string, label: string, icon: string, count: number | null, active = false): TemplateResult {
         return html`
-            <sl-tab slot="nav" panel=${name}>
+            <sl-tab slot="nav" panel=${name} ?active=${active}>
                 <span class="tab-label">
                     <sl-icon name=${icon} aria-hidden="true"></sl-icon>
                     ${label}
