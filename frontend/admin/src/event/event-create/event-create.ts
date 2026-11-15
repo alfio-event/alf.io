@@ -1,5 +1,5 @@
 import {css, html, LitElement, nothing, TemplateResult} from 'lit';
-import {customElement, state} from 'lit/decorators.js';
+import {customElement, property, state} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
 import {cache} from 'lit/directives/cache.js';
@@ -9,9 +9,9 @@ import {Task} from '@lit/task';
 import {TanStackFormController} from '@tanstack/lit-form';
 import type {SlCheckbox, SlInput, SlSelect, SlSwitch} from '@shoelace-style/shoelace';
 import {Organization} from '../../model/organization.ts';
-import {AlfioEvent} from '../../model/event.ts';
+import {AlfioEvent, EventWithOrganization} from '../../model/event.ts';
 import {ContentLanguage, DateTimeModification, LocalizedContent, PaymentProxy} from '../../model/purchase-context.ts';
-import {EventFormat, EventModificationPayload} from '../../model/event-modification.ts';
+import {EventFormat, EventModificationPayload, TicketCategoryModificationPayload} from '../../model/event-modification.ts';
 import {AdditionalField, AdditionalFieldCreateRequest} from '../../model/additional-field.ts';
 import {ErrorDescriptor} from '../../model/validation.ts';
 import {AdditionalItem} from '../../model/additional-item.ts';
@@ -99,6 +99,8 @@ interface LoadedData {
     timeZones: string[];
     baseUrl: string;
     descriptionMaxLength: number;
+    // set when the component edits an existing event (data-event-name), instead of creating one
+    editing?: AlfioEvent;
 }
 
 interface PendingCopy {
@@ -253,9 +255,19 @@ function requiredNonNegativeNumber(value: unknown): string | undefined {
 /**
  * The page of #/events/new: creates a new event (replaces the AngularJS CreateEventController +
  * edit-event.html). The draft is persisted in the session storage while filling the form.
+ * With the "data-event-name" attribute (#/events/{eventName}/edit), the same form edits an
+ * existing event: it is pre-filled with the event's data and saved through the update endpoints.
  */
 @customElement('alfio-event-create')
 export class EventCreate extends LitElement {
+
+    /**
+     * When set, the form edits the event with this short name instead of creating a new one
+     */
+    @property({type: String, attribute: 'data-event-name'})
+    eventName = '';
+
+    @state() private editingEvent: AlfioEvent | null = null;
 
     @state() private paymentProxies: PaymentMethodDTO[] = [];
     @state() private subscriptionDescriptors: { id: string; title: string; description: string }[] = [];
@@ -297,12 +309,18 @@ export class EventCreate extends LitElement {
 
     private readonly loadDataTask = new Task(this, {
         task: async (): Promise<LoadedData> => {
-            const [organizations, languages, currencies, timeZones, instanceSettings] = await Promise.all([
+            // the event to edit, when there is one
+            let loadEditedEvent: Promise<EventWithOrganization | null> = Promise.resolve(null);
+            if (this.eventName !== '') {
+                loadEditedEvent = EventService.load(this.eventName);
+            }
+            const [organizations, languages, currencies, timeZones, instanceSettings, eventWithOrg] = await Promise.all([
                 OrganizationService.loadAll(),
                 new LocalizationService().getEventsSupportedLanguages(),
                 UtilService.availableCurrencies(),
                 LocationService.timezones(),
                 ConfigurationService.loadInstanceSettings(),
+                loadEditedEvent,
             ]);
             const data: LoadedData = {
                 organizations,
@@ -311,11 +329,31 @@ export class EventCreate extends LitElement {
                 timeZones,
                 baseUrl: instanceSettings.baseUrl,
                 descriptionMaxLength: instanceSettings.descriptionMaxLength,
+                editing: eventWithOrg?.event,
             };
+            if (eventWithOrg != null) {
+                this.editingEvent = eventWithOrg.event;
+                this.fileBlobId = eventWithOrg.event.fileBlobId ?? null;
+                this.geolocation = {
+                    latitude: eventWithOrg.event.latitude ?? null,
+                    longitude: eventWithOrg.event.longitude ?? null,
+                    mapUrl: null,
+                };
+                if (eventWithOrg.event.latitude != null && eventWithOrg.event.longitude != null
+                    && eventWithOrg.event.latitude !== '' && eventWithOrg.event.longitude !== '') {
+                    void LocationService.staticMapImage(eventWithOrg.event.latitude, eventWithOrg.event.longitude)
+                        .then((mapUrl) => {
+                            if (this.editingEvent === eventWithOrg.event) {
+                                this.geolocation = {...this.geolocation!, mapUrl};
+                            }
+                        })
+                        .catch(() => undefined);
+                }
+            }
             this.initForm(data);
             return data;
         },
-        args: () => [] as const,
+        args: () => [this.eventName] as const,
     });
 
     constructor() {
@@ -425,35 +463,55 @@ export class EventCreate extends LitElement {
     }
 
     render(): TemplateResult {
+        // known before the event has been loaded, so that the page never shows the creation title meanwhile
+        const editing = this.eventName !== '';
+        let title: TemplateResult = html`Create new event`;
+        let pageDescription = 'Set up your event, configure tickets and prepare the event page.';
+        let loadErrorMessage = 'Failed to load the data needed to create the event. Please try again.';
+        let titleRowClass = 'page-title-row';
+        if (editing) {
+            // the same title as the other pages of an event, e.g. "Reservations for <i>name</i>"
+            title = html`Edit <i>${this.editingEvent?.displayName ?? ''}</i>`;
+            pageDescription = 'Change the event settings and save. The categories are managed on the event detail page.';
+            loadErrorMessage = 'Failed to load the event. Please try again.';
+            titleRowClass = 'page-title-row secondary';
+        }
         return html`
             <div class="container">
-                <div class="page-title-row">
-                    <h1>Create new event</h1>
-                    <div class="page-actions"><sl-button variant="default" size="medium" @click=${this.openCopyDialog}>
-                        <sl-icon slot="prefix" name="clipboard"></sl-icon>
-                        Copy from previous event
-                    </sl-button>
-                    <sl-dropdown hoist>
-                        <sl-button slot="trigger" caret>More</sl-button>
-                        <sl-menu @sl-select=${() => void this.confirmReset()}>
-                            <sl-menu-item id="reset-button">Reset</sl-menu-item>
-                        </sl-menu>
-                    </sl-dropdown></div>
+                <div class=${titleRowClass}>
+                    <h1>${title}</h1>
+                    ${when(!editing, () => html`
+                        <div class="page-actions"><sl-button variant="default" size="medium" @click=${this.openCopyDialog}>
+                            <sl-icon slot="prefix" name="clipboard"></sl-icon>
+                            Copy from previous event
+                        </sl-button>
+                        <sl-dropdown hoist>
+                            <sl-button slot="trigger" caret>More</sl-button>
+                            <sl-menu @sl-select=${() => void this.confirmReset()}>
+                                <sl-menu-item id="reset-button">Reset</sl-menu-item>
+                            </sl-menu>
+                        </sl-dropdown></div>
+                    `, () => nothing)}
                 </div>
                 <hr class="page-separator">
-                <p class="page-description text-muted">Set up your event, configure tickets and prepare the event page.</p>
+                <p class="page-description text-muted">${pageDescription}</p>
                 ${taskContent(this.loadDataTask, this.loadDataTask.value ?? null,
-                    'Failed to load the data needed to create the event. Please try again.',
+                    loadErrorMessage,
                     (data) => this.renderForm(data))}
             </div>
             <alfio-event-category-dialog></alfio-event-category-dialog>
-            <alfio-copy-event-dialog></alfio-copy-event-dialog>
+            ${when(!editing, () => html`<alfio-copy-event-dialog></alfio-copy-event-dialog>`, () => nothing)}
         `;
     }
 
     private renderForm(data: LoadedData): TemplateResult {
         const submitted = this.#form.api.state.submissionAttempts > 0;
         const values = this.values;
+        const editing = data.editing != null;
+        let cancelHref = '#/';
+        if (editing) {
+            cancelHref = `#/events/${this.eventName}/detail`;
+        }
         return html`
             <form novalidate @submit=${this.submit}>
                 ${this.renderOrganizer(data)}
@@ -468,7 +526,13 @@ export class EventCreate extends LitElement {
                             <section id="tickets" class="form-section" tabindex="-1" aria-labelledby="tickets-title">
                                 <h2 id="tickets-title">Tickets and payments</h2>
                                 ${this.renderSeatsAndPayments(data, submitted)}
-                                ${this.renderCategories()}
+                                ${when(!editing, () => this.renderCategories(), () => html`
+                                    <sl-alert open variant="primary">
+                                        <sl-icon slot="icon" name="info-circle"></sl-icon>
+                                        The ticket categories of this event are managed on the
+                                        <a href="#/events/${this.eventName}/detail">event detail page</a>.
+                                    </sl-alert>
+                                `)}
                             </section>
                             <section id="event-page" class="form-section" tabindex="-1" aria-labelledby="event-page-title">
                                 <h2 id="event-page-title">Event page</h2>
@@ -485,14 +549,14 @@ export class EventCreate extends LitElement {
                             <div class="footer">
                                 <sl-divider></sl-divider>
                                 <div class="row" style="--alfio-row-cols: 3">
-                                    <sl-button id="cancel-button" variant="default" size="large" href="#/">Cancel</sl-button>
+                                    <sl-button id="cancel-button" variant="default" size="large" href=${cancelHref}>Cancel</sl-button>
                                     <div></div>
                                     <sl-button id="save-button" type="submit" variant="warning" size="large" ?loading=${this.submitting}>Save</sl-button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                `, () => html`<sl-button variant="default" size="large" href="#/">Cancel</sl-button>`)}
+                `, () => html`<sl-button variant="default" size="large" href=${cancelHref}>Cancel</sl-button>`)}
             </form>
         `;
     }
@@ -663,14 +727,20 @@ export class EventCreate extends LitElement {
                         },
                     }, (field) => {
                         const error = this.error(field.state.meta);
+                        // the URL of an existing event can't be changed: the backend keeps the original one
+                        const editing = data.editing != null;
+                        let urlHelp = `${data.baseUrl}/event/${field.state.value}/`;
+                        if (editing) {
+                            urlHelp = `${urlHelp} (can't be changed once the event is created)`;
+                        }
                         return html`
-                            <sl-input id="shortName" name="shortName" label="Event URL" required
+                            <sl-input id="shortName" name="shortName" label="Event URL" ?required=${!editing} ?readonly=${editing}
                                       class=${classMap({ error: error != null })}
                                       help-text=${error ?? ''}
                                       .value=${field.state.value ?? ''}
                                       @sl-input=${(e: Event) => this.onShortNameInput(field, (e.target as SlInput).value)}
                                       @sl-blur=${() => field.handleBlur()}>
-                                <div slot="help-text" class="event-url-prefix">${error ?? `${data.baseUrl}/event/${field.state.value}/`}</div>
+                                <div slot="help-text" class="event-url-prefix">${error ?? urlHelp}</div>
                                 ${when(this.shortNameChecking, () => html`<sl-spinner slot="suffix" class="short-name-loading" size="small"></sl-spinner>`, () => nothing)}
                             </sl-input>
                         `;
@@ -1011,6 +1081,9 @@ export class EventCreate extends LitElement {
         if (this.fileBlobId != null) {
             return `/file/${this.fileBlobId}`;
         }
+        if (this.editingEvent?.imageUrl != null && this.editingEvent.imageUrl !== '') {
+            return this.editingEvent.imageUrl;
+        }
         return '';
     }
 
@@ -1057,6 +1130,10 @@ export class EventCreate extends LitElement {
     }
 
     private validateCategories(value: unknown): string | undefined {
+        if (this.editingEvent != null) {
+            // the categories of an existing event are edited on the event detail page
+            return undefined;
+        }
         const categories = (value ?? []) as CategoryDraft[];
         if (categories.length === 0) {
             return 'Please define at least one category';
@@ -1105,6 +1182,10 @@ export class EventCreate extends LitElement {
         const shortName = String(value).trim();
         if (!SHORT_NAME_PATTERN.test(shortName)) {
             return 'Only letters, numbers and - _ (no spaces; the last character must be a letter or a number)';
+        }
+        // when editing, the current URL of the event is of course already taken by the event itself
+        if (this.editingEvent != null && shortName === this.editingEvent.shortName) {
+            return undefined;
         }
         if (shortName === this.lastCheckedShortName) {
             if (this.lastCheckedShortNameValid) {
@@ -1549,8 +1630,16 @@ export class EventCreate extends LitElement {
     // ---------- form lifecycle ----------
 
     private initForm(data: LoadedData): void {
-        const restored = this.restoreDraft();
-        const values: EventFormValues = restored ?? emptyValues();
+        let values: EventFormValues;
+        if (data.editing != null) {
+            values = this.valuesFromEvent(data.editing);
+            // the URL and the time zone come from the existing event: don't regenerate them
+            this.shortNameTouched = true;
+            this.timeZoneTouched = true;
+        } else {
+            const restored = this.restoreDraft();
+            values = restored ?? emptyValues();
+        }
         if (!data.organizations.some(organization => String(organization.id) === values.organizationId)) {
             values.organizationId = '';
         }
@@ -1560,19 +1649,62 @@ export class EventCreate extends LitElement {
         this.#form.api.update({ ...this.#form.api.options, defaultValues: values });
         this.formGeneration++;
         this.#form.api.reset(values);
-        this.draftReady = true;
+        this.draftReady = data.editing == null;
         this.submitError = null;
         if (values.organizationId !== '') {
             void this.loadPaymentProxies(Number(values.organizationId));
         }
         // #/events/new?eventName=... opens the copy dialog preselected, as the AngularJS page did
-        if (!this.copyDialogAutoOpened) {
+        if (!this.copyDialogAutoOpened && data.editing == null) {
             const eventName = readRouteParams().get('eventName');
             if (eventName != null && eventName !== '') {
                 this.copyDialogAutoOpened = true;
                 void this.openCopyDialog();
             }
         }
+    }
+
+    /**
+     * The form values of an existing event, when editing (data-event-name)
+     */
+    private valuesFromEvent(event: AlfioEvent): EventFormValues {
+        const values = emptyValues();
+        values.displayName = event.displayName ?? '';
+        values.organizationId = String(event.organizationId ?? '');
+        if (event.format === 'ONLINE' || event.format === 'HYBRID' || event.format === 'IN_PERSON') {
+            values.format = event.format;
+        }
+        values.location = event.location ?? '';
+        values.begin = wallClockToDateTimeLocal(event.formattedBegin);
+        values.end = wallClockToDateTimeLocal(event.formattedEnd);
+        values.timeZone = event.timeZone || values.timeZone;
+        if (event.description != null) {
+            values.description = {...event.description};
+        }
+        values.shortName = event.shortName ?? '';
+        values.websiteUrl = event.websiteUrl ?? '';
+        values.termsAndConditionsUrl = event.termsAndConditionsUrl ?? '';
+        values.privacyPolicyUrl = event.privacyPolicyUrl ?? '';
+        values.priceModel = 'paid';
+        if (event.freeOfCharge) {
+            values.priceModel = 'free';
+        }
+        if (event.availableSeats != null) {
+            values.availableSeats = String(event.availableSeats);
+        }
+        if (event.regularPrice != null) {
+            values.regularPrice = String(event.regularPrice);
+        }
+        values.currency = event.currency ?? '';
+        if (event.vatPercentage != null) {
+            values.vatPercentage = String(event.vatPercentage);
+        }
+        values.vatIncluded = event.vatIncluded ?? false;
+        values.paymentProxies = (event.allowedPaymentProxies ?? []).map(String);
+        values.linkedSubscriptions = (event.linkedSubscriptions ?? []).map(String);
+        // the categories of an existing event are edited on the event detail page
+        values.categories = [];
+        return values;
     }
 
     private async confirmReset(): Promise<void> {
@@ -1805,7 +1937,7 @@ export class EventCreate extends LitElement {
         this.submitError = null;
         this.categoriesError = null;
         this.logoError = null;
-        if (!this.fileBlobId) {
+        if (!this.hasLogo()) {
             this.logoError = 'Please upload an event logo.';
         }
         if (!await submitValidated(this.#form.api)) {
@@ -1846,6 +1978,21 @@ export class EventCreate extends LitElement {
     private buildPayload(values: EventFormValues): EventModificationPayload {
         const freeOfCharge = values.priceModel === 'free';
         const online = values.format === 'ONLINE';
+        const editing = this.editingEvent;
+        // the categories of an existing event are saved one by one, on the event detail page
+        let ticketCategories: TicketCategoryModificationPayload[] = [];
+        if (editing == null) {
+            ticketCategories = values.categories.map(category => {
+                const payload = categoryDraftToPayload(category);
+                if (freeOfCharge) {
+                    payload.price = 0;
+                }
+                if (values.format !== 'HYBRID') {
+                    payload.ticketAccessType = null;
+                }
+                return payload;
+            });
+        }
         const description = values.description ?? {};
         const languages = this.loadDataTask.value?.languages ?? [];
         let locales = 0;
@@ -1877,6 +2024,12 @@ export class EventCreate extends LitElement {
         let location: string | null = null;
         if (!online) {
             location = values.location.trim();
+        } else if (editing != null && editing.format !== 'ONLINE') {
+            // the backend validates the header against the current format of the event: an in-person
+            // or hybrid event that becomes online still needs its location (as with the AngularJS form)
+            location = editing.location ?? null;
+            latitude = editing.latitude ?? null;
+            longitude = editing.longitude ?? null;
         }
         let regularPrice: number | null = null;
         let currency: string | null = null;
@@ -1891,8 +2044,11 @@ export class EventCreate extends LitElement {
             metadata = { copiedFrom: this.copiedFrom };
         }
         return {
+            id: editing?.id ?? null,
             format: values.format,
             websiteUrl: values.websiteUrl.trim(),
+            externalUrl: editing?.externalUrl ?? null,
+            imageUrl: editing?.imageUrl ?? null,
             termsAndConditionsUrl: values.termsAndConditionsUrl.trim(),
             privacyPolicyUrl,
             fileBlobId: this.fileBlobId,
@@ -1912,16 +2068,7 @@ export class EventCreate extends LitElement {
             vatPercentage,
             vatIncluded: values.vatIncluded,
             allowedPaymentProxies: proxies as PaymentProxy[],
-            ticketCategories: values.categories.map(category => {
-                const payload = categoryDraftToPayload(category);
-                if (freeOfCharge) {
-                    payload.price = 0;
-                }
-                if (values.format !== 'HYBRID') {
-                    payload.ticketAccessType = null;
-                }
-                return payload;
-            }),
+            ticketCategories,
             freeOfCharge,
             geolocation: {
                 timeZone: values.timeZone,
@@ -1937,11 +2084,18 @@ export class EventCreate extends LitElement {
     }
 
     /**
+     * The event logo is required: an uploaded file, or — when editing — the existing external image
+     */
+    private hasLogo(): boolean {
+        return this.fileBlobId != null || (this.editingEvent != null && this.editingEvent.imageUrl != null && this.editingEvent.imageUrl !== '');
+    }
+
+    /**
      * Called by the form once all the fields are valid: checks the payload on the server,
-     * then creates the event
+     * then creates the event — or, when editing, updates its header and its prices
      */
     private async save(values: EventFormValues): Promise<void> {
-        if (!this.fileBlobId) {
+        if (!this.hasLogo()) {
             this.logoError = 'Please upload an event logo.';
             this.submitError = INVALID_FORM_MESSAGE;
             await this.updateComplete;
@@ -1955,6 +2109,11 @@ export class EventCreate extends LitElement {
         this.logoError = null;
         try {
             const payload = this.buildPayload(values);
+            const editing = this.editingEvent;
+            if (editing != null) {
+                await this.saveExisting(editing, payload);
+                return;
+            }
             const check = await EventService.check(payload);
             if (!check.success) {
                 this.applyServerErrors(check.validationErrors ?? []);
@@ -1979,6 +2138,32 @@ export class EventCreate extends LitElement {
         } finally {
             this.submitting = false;
         }
+    }
+
+    /**
+     * Saves an existing event: the header endpoint updates name, format, location, dates,
+     * description, links and logo; the prices endpoint updates seats, price, taxes, payment
+     * methods and linked subscriptions. Both answer with a validation result.
+     */
+    private async saveExisting(event: AlfioEvent, payload: EventModificationPayload): Promise<void> {
+        const headerResult = await EventService.updateHeader(event.id, payload);
+        if (!headerResult.success) {
+            this.applyServerErrors(headerResult.validationErrors ?? []);
+            this.submitError = 'Please correct the errors highlighted in the form.';
+            await this.updateComplete;
+            focusFirstError(this.renderRoot);
+            return;
+        }
+        const pricesResult = await EventService.updatePrices(event.id, payload);
+        if (!pricesResult.success) {
+            this.applyServerErrors(pricesResult.validationErrors ?? []);
+            this.submitError = 'Please correct the errors highlighted in the form.';
+            await this.updateComplete;
+            focusFirstError(this.renderRoot);
+            return;
+        }
+        dispatchFeedback({type: 'success', message: `Event ${event.displayName} updated`}, this);
+        window.location.hash = `#/events/${event.shortName}/detail`;
     }
 
     private applyServerErrors(errors: ErrorDescriptor[]): void {

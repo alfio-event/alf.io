@@ -19,9 +19,11 @@ export interface GeolocationDescriptor {
 }
 
 /**
- * A ticket category of the event being created (TicketCategoryModification)
+ * A ticket category of the event being created or updated (TicketCategoryModification).
+ * "id" is set only when updating an existing category.
  */
 export interface TicketCategoryModificationPayload {
+    id?: number;
     name: string;
     ticketAccessType: string | null;
     maxTickets: number;

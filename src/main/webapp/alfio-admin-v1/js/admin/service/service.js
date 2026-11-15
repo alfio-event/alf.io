@@ -111,73 +111,11 @@
             toggleActivation: function(id, active) {
                 return $http['put']('/admin/api/events/'+id+'/status?active='+active).error(HttpErrorHandler.handle);
             },
-            updateEventHeader: function(eventHeader) {
-                var update = function() {
-                    return $http['post']('/admin/api/events/'+eventHeader.id+'/header/update', eventHeader).error(HttpErrorHandler.handle);
-                };
-                if(eventHeader.format === 'ONLINE') {
-                    return update();
-                }
-                //
-                if(eventHeader.geolocation && eventHeader.geolocation.latitude) {
-                    copyGeoLocation(eventHeader);
-                    //
-                    return update();
-                } else {
-                    return LocationService.clientGeolocate(eventHeader.location).then(function(geo) {
-                        eventHeader.latitude = geo.latitude;
-                        eventHeader.longitude = geo.longitude;
-                        eventHeader.zoneId = geo.timeZone;
-                        return update();
-                    })
-                }
-
-            },
             getTicketsForCategory: function(event, ticketCategory, page, search) {
               return $http.get('/admin/api/events/'+event.shortName+'/category/'+ticketCategory.id+'/ticket', {params: {page: page, search: search}}).error(HttpErrorHandler.handle);
             },
-            updateEventPrices: function(eventPrices) {
-                return $http['post']('/admin/api/events/'+eventPrices.id+'/prices/update', eventPrices).error(HttpErrorHandler.handle);
-            },
-            saveTicketCategory: function(event, ticketCategory) {
-                var url = angular.isDefined(ticketCategory.id) ? ('/admin/api/events/' + event.id + '/categories/' + ticketCategory.id + '/update') : ('/admin/api/events/' + event.id + '/categories/new');
-                return $http['post'](url, ticketCategory).error(HttpErrorHandler.handle);
-            },
             toggleTicketLocking: function(event, ticket, category) {
                 return $http['put']('/admin/api/events/' + event.shortName + '/categories/' + category.id + '/tickets/' + ticket.id +'/toggle-locking');
-            },
-            reallocateOrphans : function(srcCategory, targetCategoryId, eventId) {
-                return $http['put']('/admin/api/events/reallocate', {
-                    srcCategoryId: srcCategory.id,
-                    targetCategoryId: targetCategoryId,
-                    eventId: eventId
-                }).error(HttpErrorHandler.handle);
-            },
-            deleteCategory: function(category, event) {
-
-                var modal = $uibModal.open({
-                    size:'md',
-                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/fragment/delete-category-modal.html',
-                    backdrop: 'static',
-                    controller: function($scope) {
-                        $scope.cancel = function() {
-                            modal.dismiss('canceled');
-                        };
-
-                        $scope.deleteCategory = function() {
-                            $http['delete']('/admin/api/events/'+event.shortName+'/category/'+category.id)
-                                .error(HttpErrorHandler.handle)
-                                .then(function() {
-                                    modal.close('OK');
-                                });
-                        };
-                        $scope.category = category;
-                    }
-                });
-                return modal.result;
-            },
-            unbindTickets: function(event, category) {
-                return $http['put']('/admin/api/events/'+event.shortName+'/category/'+category.id+'/unbind-tickets').error(HttpErrorHandler.handle);
             },
             getSelectedLanguages: function(eventName) {
                 return $http['get']('/admin/api/events/'+eventName+'/languages').error(HttpErrorHandler.handle);
@@ -297,65 +235,6 @@
 
             countInvoices: function(eventName) {
                 return $http.get('/admin/api/events/'+eventName+'/invoices/count').error(HttpErrorHandler.handle);
-            },
-
-            getTicketsStatistics: function(eventName, from, to) {
-                return $http.get('/admin/api/events/'+eventName+'/ticket-sold-statistics', {params: {from: from, to: to}});
-            },
-
-            rearrangeCategories: function(event) {
-                var modal = $uibModal.open({
-                    size:'lg',
-                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/rearrange-categories.html',
-                    backdrop: 'static',
-                    controller: function($scope) {
-                        var ctrl = this;
-                        ctrl.event = event;
-                        var setOrdinal = function(categories) {
-                            for(var i=0, o=1; i < categories.length; i++, o++) {
-                                var category = categories[i];
-                                category.ordinal = o;
-                            }
-                            return categories;
-                        };
-                        ctrl.categories = event.ticketCategories.map(function(category) {
-                            return {
-                                id: category.id,
-                                name: category.name,
-                                ordinal: category.ordinal
-                            };
-                        });
-                        ctrl.sortedCategories = setOrdinal(_.sortByAll(ctrl.categories, ['ordinal', 'formattedInception', 'id']));
-                        $scope.$on('categories-bag.drop', function (e, el) {
-                            $timeout(function() {
-                                ctrl.sortedCategories = setOrdinal(ctrl.sortedCategories);
-                            }, 10);
-                        });
-                        ctrl.swap = function(index, category, up) {
-                            var list = ctrl.sortedCategories.slice();
-                            var target = up ? index - 1 : index + 1;
-                            var toBeSwapped = list[target];
-                            list[target] = category;
-                            list[index] = toBeSwapped;
-                            ctrl.sortedCategories.length = 0;
-                            for(var i=0; i<list.length; i++) {
-                                ctrl.sortedCategories.push(list[i]);
-                            }
-                            setOrdinal(ctrl.sortedCategories);
-                        };
-                        ctrl.save = function() {
-                            $scope.$close(ctrl.sortedCategories);
-                        };
-                        ctrl.dismiss = function() {
-                            $scope.$dismiss(false);
-                        }
-
-                    },
-                    controllerAs:'$ctrl'
-                });
-                return modal.result.then(function(categories) {
-                    return $http.put('/admin/api/events/'+event.shortName+'/rearrange-categories', categories).error(HttpErrorHandler.handle);
-                });
             },
 
             createAdditionalService: function(eventId, additionalService) {

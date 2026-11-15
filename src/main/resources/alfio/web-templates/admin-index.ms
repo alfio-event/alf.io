@@ -66,7 +66,6 @@
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/configuration/configuration.js"></script>
 
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/event-statistic/event-statistic.js"></script>
 
 
 
@@ -79,7 +78,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/label-template/label-template.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/extension/extension.service.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/ticket-category/ticket-category.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/group/groups.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/util/reservation-identifier.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/internationalization-editor/internationalization-editor.js"></script>

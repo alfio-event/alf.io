@@ -96,7 +96,8 @@ class AdminConsole {
             driver.findElement(By.cssSelector("button.navbar-toggle")).click();
             logoutLink = wait.until(_ -> findDisplayed(logoutLinkLocator));
         }
-        logoutLink.click();
+        // a feedback toast (e.g. "The event has been published") may cover the link and intercept a native click
+        clickWithJs(driver, logoutLink);
         // the page is reloaded after logout, and the user is sent back to the login page
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .withMessage(() -> "login page not displayed after logout. Current URL: " + driver.getCurrentUrl())
@@ -142,10 +143,14 @@ class AdminConsole {
     }
 
     void publishEvent(String slug) {
-        openEventDetail(slug);
-        var publishButton = wait.until(elementToBeClickable(By.xpath("//a[contains(@class, 'btn-warning') and contains(., 'Publish now')]")));
+        var detail = openEventDetail(slug);
+        var publishButton = wait.until(elementToBeClickable(findInShadowRoot(detail, "#publish-now")));
         clickWithJs(driver, publishButton);
-        wait.until(presenceOfElementLocated(By.xpath("//*[contains(., 'this event has been successfully published')]")));
+        wait.until(_ -> findInShadowRoot(detail, ".activated-alert").getText().contains("successfully published"));
+        // the page reloads the event after publishing: wait until the status badge reflects it
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the event status is not Live after publishing: " + shadowText(detail, ".page-title-row"))
+            .until(_ -> shadowText(detail, ".page-title-row").contains("Live"));
     }
 
     void deleteEvent(String slug) {
@@ -982,8 +987,13 @@ class AdminConsole {
      * through the link on the event detail page.
      */
     WebElement openSendInvitations(String slug) {
-        openEventDetail(slug);
-        var link = wait.until(presenceOfElementLocated(By.xpath("//a[contains(@data-ui-sref, 'sendInvitations')]")));
+        var detail = openEventDetail(slug);
+        // the link of the first access-restricted category, rendered by alfio-event-categories
+        var categories = wait.until(_ -> findAllInShadowRoot(detail, "alfio-event-categories").stream()
+            .findFirst()
+            .filter(c -> !findAllInShadowRoot(c, ".send-invitations-link").isEmpty())
+            .orElse(null));
+        var link = findInShadowRoot(categories, ".send-invitations-link");
         clickWithJs(driver, link);
         return wait.until(presenceOfElementLocated(By.tagName("alfio-send-invitations")));
     }
@@ -1970,9 +1980,106 @@ class AdminConsole {
         input.sendKeys(text);
     }
 
-    private void openEventDetail(String slug) {
+    /**
+     * Opens the event detail page and waits for the Lit component to have loaded the event
+     */
+    private WebElement openEventDetail(String slug) {
         driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/detail");
         wait.until(presenceOfElementLocated(By.id("actions-dpdwn")));
+        var detail = wait.until(presenceOfElementLocated(By.tagName("alfio-event-detail")));
+        // the page title is rendered once the event has been loaded; a failed load shows an error alert instead
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the event detail page did not load the event: " + shadowText(detail, ".container"))
+            .until(_ -> {
+                var container = shadowText(detail, ".container");
+                if (container.contains("Failed to load the event")) {
+                    throw new IllegalStateException("the event detail page shows a load error: " + container);
+                }
+                return !findAllInShadowRoot(detail, "h1").isEmpty() && !findInShadowRoot(detail, "h1").getText().isBlank();
+            });
+        return detail;
+    }
+
+    /**
+     * The rendered text of the first element matching the selector in the shadow root of the host, or "" if there is none
+     */
+    private String shadowText(WebElement host, String selector) {
+        var text = ((JavascriptExecutor) driver).executeScript(
+            "const element = arguments[0].shadowRoot && arguments[0].shadowRoot.querySelector(arguments[1]); return element ? element.innerText : '';",
+            host, selector);
+        if (text == null) {
+            return "";
+        }
+        return text.toString();
+    }
+
+    /**
+     * Checks that the event detail page (Lit component alfio-event-detail) shows the event name,
+     * the statistics graphs and the given ticket category.
+     */
+    void verifyEventDetail(String slug, String expectedDisplayName, String categoryName) {
+        var detail = openEventDetail(slug);
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the event detail page does not show the event name " + expectedDisplayName)
+            .until(_ -> findInShadowRoot(detail, "h1").getText().contains(expectedDisplayName));
+        // the two statistics panels (ticket status and reservations trend), inside alfio-event-statistics: each one
+        // shows a graph (a canvas in the shadow root of an alfio-chart) or, without data for the period, an empty state
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the statistics graphs are not displayed on the event detail page")
+            .until(_ -> {
+                var statistics = (WebElement) ((JavascriptExecutor) driver).executeScript(
+                    "return arguments[0].shadowRoot.querySelector('alfio-event-statistics');", detail);
+                if (statistics == null) {
+                    return false;
+                }
+                var panels = findAllInShadowRoot(statistics, ".graph-panel");
+                return panels.size() == 2 && panels.stream().allMatch(panel -> {
+                    var charts = panel.findElements(By.cssSelector("alfio-chart"));
+                    if (!charts.isEmpty()) {
+                        return !findAllInShadowRoot(charts.getFirst(), "canvas").isEmpty();
+                    }
+                    return !panel.findElements(By.cssSelector(".empty-state")).isEmpty();
+                });
+            });
+        // the event details card links the public page of the event (built from BASE_URL)
+        var pageText = shadowText(detail, ".container");
+        assertTrue(pageText.contains("Event details"), "the event details card is missing: " + pageText);
+        assertTrue(pageText.contains("/event/" + slug), "the public URL of the event is missing: " + pageText);
+        // the seats and payment info card
+        assertTrue(pageText.contains("Seats and payment info"), "the seats and payment info card is missing: " + pageText);
+        assertTrue(pageText.contains("Ticket price"), "the ticket price is missing: " + pageText);
+        // the categories section lists the categories of the event
+        var categories = findInShadowRoot(detail, "alfio-event-categories");
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the category " + categoryName + " is not listed on the event detail page")
+            .until(_ -> findAllInShadowRoot(categories, ".category-card").stream()
+                .anyMatch(card -> card.getText().contains(categoryName)));
+    }
+
+    /**
+     * Opens the edit page from the event detail (the edit reuses the event creation form),
+     * changes the event name and saves, landing back on the detail page.
+     */
+    void editEventNameFromDetail(String slug, String newDisplayName) {
+        var detail = openEventDetail(slug);
+        clickWithJs(driver, findInShadowRoot(detail, "#edit-event"));
+        var edit = wait.until(presenceOfElementLocated(By.tagName("alfio-event-create")));
+        // the form is pre-filled with the event data once the initial load has completed
+        var nameControl = findInShadowRoot(edit, "sl-input#displayName");
+        var nameInput = findInShadowRoot(nameControl, "input");
+        wait.until(_ -> "Event Name".equals(nameInput.getDomProperty("value")));
+        clearInput(nameInput);
+        nameInput.sendKeys(newDisplayName);
+        LOGGER.info("saving the edited name of event {}", slug);
+        clickWithJs(driver, findInShadowRoot(edit, "#save-button"));
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "saving the edited event did not complete: " + ((JavascriptExecutor) driver).executeScript(
+                "return Array.from(arguments[0].shadowRoot.querySelectorAll('#submit-error, .form-error-text, .error')).map(element => element.getAttribute('help-text') || element.textContent).join(' | ');", edit))
+            .until(urlContains("/events/" + slug + "/detail"));
+        var detailAfter = wait.until(presenceOfElementLocated(By.tagName("alfio-event-detail")));
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the event detail page does not show the new name " + newDisplayName)
+            .until(_ -> findInShadowRoot(detailAfter, "h1").getText().contains(newDisplayName));
     }
 
     private WebElement openExtensionList() {

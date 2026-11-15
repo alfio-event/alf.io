@@ -134,9 +134,9 @@ export class EventsList extends LitElement {
                                               () => nothing)}
                                             ${when(!expired && ev.status === 'DRAFT',
                                               () => html`
-                                                  <sl-badge variant="warning" pill>
+                                                  <sl-badge variant="neutral" pill>
                                                      <sl-icon name="eye-slash" aria-hidden="true"></sl-icon>
-                                                     Hidden
+                                                     Unlisted
                                                   </sl-badge>
                                               `,
                                               () => when(!expired && ev.status === 'PUBLIC',
