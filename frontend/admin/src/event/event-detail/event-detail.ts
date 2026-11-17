@@ -479,7 +479,7 @@ export class EventDetail extends LitElement {
                             <a href="#/group/${event.organizationId}/edit/${event.attendeesList.groupId}">${event.attendeesList.groupName}</a>
                             can buy tickets for this event.
                         </span>
-                        <sl-button size="small" href="#/configuration/organization/${event.organizationId}/event/${event.id}">
+                        <sl-button size="small" href="#/events/${event.shortName}/configuration">
                             <sl-icon slot="prefix" name="wrench"></sl-icon>
                             Configure
                         </sl-button>

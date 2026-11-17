@@ -4,7 +4,7 @@
     var BASE_STATIC_URL = window.ALFIO_CONTEXT_PATH + "/resources/angular-templates/admin/partials";
 
     var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives',
-        'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-util', 'alfio-configuration',
+        'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'alfio-util',
         'checklist-model', 'group']);
 
     var loadEvent = {
@@ -23,6 +23,32 @@
             .state('index', {
                 url: "/",
                 template: '<alfio-events-page></alfio-events-page>'
+            })
+            .state('configuration', {
+                abstract: true,
+                url: '/configuration',
+                template: '<div data-ui-view></div>'
+            })
+            .state('configuration.system', {
+                url: '/system',
+                template: '<alfio-settings-page></alfio-settings-page>'
+            })
+            .state('configuration.organization', {
+                url: '/organization/:organizationId',
+                template: '<alfio-settings-page data-organization-id="{{$ctrl.organizationId}}"></alfio-settings-page>',
+                controller: ['$stateParams', function($stateParams) {
+                    this.organizationId = $stateParams.organizationId;
+                }],
+                controllerAs: '$ctrl'
+            })
+            .state('configuration.event', {
+                // an event chosen in the level select of the configuration page
+                url: '/organization/:organizationId/event/:eventId',
+                template: '<alfio-settings-page data-event-id="{{$ctrl.eventId}}"></alfio-settings-page>',
+                controller: ['$stateParams', function($stateParams) {
+                    this.eventId = $stateParams.eventId;
+                }],
+                controllerAs: '$ctrl'
             })
             .state('organizations', {
                 url: "/organizations/",
@@ -158,30 +184,15 @@
                 controllerAs: '$ctrl',
                 resolve: loadEvent
             })
-            .state('events.single.categoryConfiguration', {
-                // the options of a category, opened from the categories of the event detail page
-                url: '/category/:categoryId/configuration',
-                template: '<div class="container wMarginTop30px" container-fluid-responsive="">' +
-                    '<ticket-category-configuration data-ng-if="$ctrl.category" data-event="$ctrl.event" data-category="$ctrl.category" ' +
-                    'data-close-modal="$ctrl.back()" data-on-save="$ctrl.saved()"></ticket-category-configuration>' +
-                    '<div class="alert alert-warning" data-ng-if="!$ctrl.category">This category does not exist.</div>' +
-                    '</div>',
-                controller: ['loadEvent', '$stateParams', '$state', 'NotificationHandler', function(loadEvent, $stateParams, $state, NotificationHandler) {
-                    var ctrl = this;
-                    ctrl.event = loadEvent.data.event;
-                    ctrl.category = _.find(ctrl.event.ticketCategories, function(category) {
-                        return String(category.id) === String($stateParams.categoryId);
-                    });
-                    ctrl.back = function() {
-                        $state.go('events.single.detail', {eventName: ctrl.event.shortName});
-                    };
-                    ctrl.saved = function() {
-                        NotificationHandler.showSuccess('The options of the category have been saved');
-                        ctrl.back();
-                    };
-                }],
+            .state('events.single.configuration', {
+                url: '/configuration',
+                template: '<alfio-settings-page data-event-name="{{$ctrl.loadEvent.shortName}}"></alfio-settings-page>',
+                controller: loadEventCtrl,
                 controllerAs: '$ctrl',
-                resolve: loadEvent
+                resolve: loadEvent,
+                data: {
+                    view: 'EVENT_CONFIGURATION'
+                }
             })
             .state('events.single.dataToCollect', {
                 url:'/attendee-data-to-collect',

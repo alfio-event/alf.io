@@ -493,8 +493,7 @@ export class EventSidebar extends LitElement {
             setup.push({ id: 'donations', label: 'Donation options', icon: 'gift', path: 'donations', current: /^donations/ });
         }
         setup.push({ id: 'templates', label: 'Templates', icon: 'file-earmark-text', path: 'show-resources', current: /^show-resources/ });
-        // a page outside of the event pages (see href()): never the current one here
-        setup.push({ id: 'configuration', label: 'Configuration', icon: 'gear', path: '', current: /(?!)/ });
+        setup.push({ id: 'configuration', label: 'Configuration', icon: 'gear', path: 'configuration', current: /^configuration/ });
 
         return [
             { label: '', items: [overview] },
@@ -505,10 +504,6 @@ export class EventSidebar extends LitElement {
     }
 
     private href(event: AlfioEvent, item: NavItem): string {
-        // the configuration of the event is one of the levels of the configuration page
-        if (item.id === 'configuration') {
-            return `#/configuration/organization/${event.organizationId}/event/${event.id}`;
-        }
         return `#/events/${event.shortName}/${item.path}`;
     }
 

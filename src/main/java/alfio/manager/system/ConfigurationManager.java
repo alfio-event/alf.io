@@ -344,7 +344,7 @@ public class ConfigurationManager {
             return null;
         }
         var key = safeValueOf(keyAsString);
-        if (!key.supports(ORGANIZATION)) {
+        if (!key.supports(ORGANIZATION) || key.isSecret()) {
             return null;
         }
         return getFirstConfigurationResult(configurationRepository.findByOrganizationAndKey(organizationId, key.name()));
@@ -365,7 +365,7 @@ public class ConfigurationManager {
             return null;
         }
         var key = safeValueOf(keyAsString);
-        if (!key.supports(PURCHASE_CONTEXT)) {
+        if (!key.supports(PURCHASE_CONTEXT) || key.isSecret()) {
             return null;
         }
         return getFirstConfigurationResult(configurationRepository.findByEventAndKey(organizationId, eventId, key.name()));
@@ -632,6 +632,99 @@ public class ConfigurationManager {
                 break;
         }
         return buildKeyConfigurationMapResult(keys, found);
+    }
+
+    /**
+     * Removes the values of the secrets, before sending the settings to the browser
+     */
+    public static Map<ConfigurationKeys.SettingCategory, List<Configuration>> withoutSecretValues(Map<ConfigurationKeys.SettingCategory, List<Configuration>> settings) {
+        var result = new EnumMap<ConfigurationKeys.SettingCategory, List<Configuration>>(ConfigurationKeys.SettingCategory.class);
+        settings.forEach((category, list) -> result.put(category, list.stream().map(Configuration::withoutSecretValue).toList()));
+        return result;
+    }
+
+    /**
+     * What applies to the settings that the system doesn't set: the external configuration, and the defaults
+     * of the yes/no settings. For the administrators only.
+     */
+    public Map<String, InheritedSetting> loadInheritedSettingsForSystem() {
+        var keys = visibleKeys();
+        return inheritedSettings(keys, valuesOf(getFor(keys, ConfigurationLevel.external())), true);
+    }
+
+    /**
+     * What applies to the settings that an organization doesn't set: the settings of the system.
+     * The owners who are not administrators can't see the settings of the system, so they get nothing.
+     */
+    public Map<String, InheritedSetting> loadInheritedSettingsForOrganization(String username) {
+        if (!userManager.isAdmin(userManager.findUserByUsername(username))) {
+            return Map.of();
+        }
+        var keys = visibleKeys();
+        return inheritedSettings(keys, valuesOf(getFor(keys, ConfigurationLevel.system())), true);
+    }
+
+    /**
+     * What applies to the settings that an event doesn't set: the settings of its organization, which for the
+     * administrators include those inherited from the system. The other owners get only what the organization sets.
+     */
+    public Map<String, InheritedSetting> loadInheritedSettingsForEvent(int organizationId, String username) {
+        var keys = visibleKeys();
+        if (userManager.isAdmin(userManager.findUserByUsername(username))) {
+            return inheritedSettings(keys, valuesOf(getFor(keys, ConfigurationLevel.organization(organizationId))), true);
+        }
+        var values = new EnumMap<ConfigurationKeys, String>(ConfigurationKeys.class);
+        configurationRepository.findOrganizationConfiguration(organizationId)
+            .forEach(c -> values.put(c.getConfigurationKey(), c.getValue()));
+        return inheritedSettings(keys, values, false);
+    }
+
+    private static List<ConfigurationKeys> visibleKeys() {
+        return Arrays.asList(ConfigurationKeys.visible());
+    }
+
+    private static Map<ConfigurationKeys, String> valuesOf(Map<ConfigurationKeys, MaybeConfiguration> found) {
+        var values = new EnumMap<ConfigurationKeys, String>(ConfigurationKeys.class);
+        found.forEach((key, configuration) -> configuration.getValue().ifPresent(value -> values.put(key, value)));
+        return values;
+    }
+
+    /**
+     * @param withDefaults the yes/no settings without a value take their default
+     */
+    private static Map<String, InheritedSetting> inheritedSettings(List<ConfigurationKeys> keys,
+                                                                   Map<ConfigurationKeys, String> values,
+                                                                   boolean withDefaults) {
+        var result = new TreeMap<String, InheritedSetting>();
+        for (var key : keys) {
+            var value = values.get(key);
+            boolean set = value != null && !value.isBlank();
+            if (key.isBooleanComponentType()) {
+                // the value of a yes/no setting is not sensitive: it is shown, e.g. "Same as the system (Yes)"
+                String applied = null;
+                if (set) {
+                    applied = value;
+                } else if (withDefaults) {
+                    applied = key.getDefaultValue();
+                }
+                if (applied != null) {
+                    result.put(key.getValue(), new InheritedSetting(set, applied));
+                }
+            } else if (set) {
+                // the other values are never shown, the page only tells that one applies
+                result.put(key.getValue(), new InheritedSetting(true, null));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * What applies to a setting that a level doesn't set
+     *
+     * @param set the level above sets a value (otherwise, the value is the default)
+     * @param value the value, for the yes/no settings only
+     */
+    public record InheritedSetting(boolean set, String value) {
     }
 
     private Map<ConfigurationKeys, MaybeConfiguration> buildKeyConfigurationMapResult(Collection<ConfigurationKeys> keys, List<ConfigurationKeyValuePathLevel> found) {

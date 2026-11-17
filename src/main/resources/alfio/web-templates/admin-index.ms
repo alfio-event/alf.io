@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-ng-app="adminApplication" data-ng-csp {{#basicConfigurationNeeded}}data-basic-configuration-needed{{/basicConfigurationNeeded}} {{#devModeEnabled}}dev-mode-enabled{{/devModeEnabled}} {{#prodModeEnabled}}prod-mode-enabled{{/prodModeEnabled}}>
+<html lang="en" data-ng-app="adminApplication" data-ng-csp {{#devModeEnabled}}dev-mode-enabled{{/devModeEnabled}} {{#prodModeEnabled}}prod-mode-enabled{{/prodModeEnabled}}>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -26,7 +26,6 @@
     <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
     <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker-bs3.css" />
     <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-csp.css"/>
-    <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.css"/>
     <script nonce="{{nonce}}">
         window.ALFIO_CONTEXT_PATH = "{{contextPath}}";
         window.USER_IS_OWNER = {{isOwner}};
@@ -48,7 +47,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/chartist/dist/chartist.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/chartist-plugin-accessibility/dist/chartist-plugin-accessibility.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.min.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-animate/angular-animate.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/jsqrcode/jsqrcode.min.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/ng-app/admin-application.js"></script>
@@ -60,7 +58,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/util/file-upload.js"></script>
 
 
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/configuration/configuration.js"></script>
 
 
 
@@ -71,12 +68,8 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/reservation.service.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/tickets-list/tickets-list.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/label-template/label-template.js"></script>
 
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/extension/extension.service.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/group/groups.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/util/reservation-identifier.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/internationalization-editor/internationalization-editor.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/polls/polls.js"></script>
 
 
@@ -143,10 +136,7 @@
                 <div class="col-xs-12 col-md-3 col-lg-2 event-sidebar-column" ng-if="ctrl.eventName">
                     <alfio-event-sidebar></alfio-event-sidebar>
                 </div>
-                <div class="hidden-xs hidden-sm col-md-3 col-lg-2" ng-if="ctrl.displaySidebar && !ctrl.eventName">
-                    <alfio-sidebar></alfio-sidebar>
-                </div>
-                <div class="col-sm-12 col-xs-12" ng-class="{'col-md-9': ctrl.displaySidebar, 'col-lg-10': ctrl.eventName}">
+                <div class="col-sm-12 col-xs-12" ng-class="{'col-md-9': ctrl.eventName, 'col-lg-10': ctrl.eventName}">
                     {{#errorMessage}}
                         <div class="container wMarginTop10px">
                             <div class="alert alert-danger text-center"><i class="fa fa-warning"></i> <strong>{{errorMessage}}</strong></div>
@@ -162,5 +152,6 @@
     </div>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/common/warning-msg.js" async="true"></script>
     <alfio-feedback-visualizer></alfio-feedback-visualizer>
+    {{#basicConfigurationNeeded}}<alfio-basic-settings-dialog></alfio-basic-settings-dialog>{{/basicConfigurationNeeded}}
 </body>
 </html>

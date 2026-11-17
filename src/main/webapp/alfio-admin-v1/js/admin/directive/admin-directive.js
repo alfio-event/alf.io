@@ -274,40 +274,6 @@
         }
     });
 
-    directives.directive('setting', function() {
-        return {
-            restrict: 'E',
-            scope: {
-                setting: '=obj',
-                displayDeleteIfNeeded: '=',
-                deleteHandler: '&',
-                listValues: '=',
-                updateHandler: '&'
-            },
-            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/configuration/setting.html',
-            link: angular.noop,
-            controller: function($scope, $rootScope, ConfigurationService) {
-                $scope.displayDelete = $scope.displayDeleteIfNeeded && $scope.setting && !angular.isDefined($scope.setting.pluginId);
-                $scope.removeConfiguration = function(config) {
-                    $scope.loading = true;
-                    $scope.deleteHandler({config: config}).then(function() {$rootScope.$broadcast('ReloadSettings');});
-                };
-                $scope.getLabelValue = function(setting) {
-                    if (setting && setting.configurationPathLevel) {
-                        return setting.configurationPathLevel === 'PURCHASE_CONTEXT' ? 'event' : setting.configurationPathLevel.toLowerCase().replace('_', ' ');
-                    }
-                    return "";
-                };
-                $scope.showDeleteBtn = $scope.displayDelete && $scope.setting.id > -1 && $scope.setting.componentType !== 'BOOLEAN';
-                if(angular.isFunction($scope.updateHandler)) {
-                    $scope.onValueChange = function(newVal) {
-                        $scope.updateHandler({config: newVal})
-                    };
-                }
-            }
-        }
-    });
-
     directives.directive('validateShortName', ['UtilsService', function(UtilsService) {
         return {
             require: 'ngModel',
@@ -323,98 +289,6 @@
                     }
                 }
             }
-        }
-    }]);
-
-    // the menu of the configuration pages; the pages of an event use <alfio-event-sidebar> (Lit)
-    directives.directive('alfioSidebar', ['OrganizationService', 'UtilsService', 'ConfigurationService', 'EventService', '$state', '$rootScope', function(OrganizationService, UtilsService, ConfigurationService, EventService, $state, $rootScope) {
-        return {
-            restrict: 'E',
-            bindToController: true,
-            scope: {},
-            controllerAs: 'ctrl',
-            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/main/sidebar.html',
-            controller: ['$location', '$anchorScroll', '$scope', function($location, $anchorScroll, $scope) {
-                var ctrl = this;
-                var toUnbind = [];
-                var detectCurrentView = function(state) {
-                    if(!state.data) {
-                        return 'UNKNOWN';
-                    }
-                    return state.data.view || 'UNKNOWN';
-                };
-
-                ctrl.currentView = detectCurrentView($state.current);
-                var displayConfiguration = function() {
-
-                    ConfigurationService.loadCurrentConfigurationContext(OrganizationService, EventService).then(function(res) {
-                        ctrl.organizations = res.organizations;
-                        ctrl.settingCategories = [
-                            {
-                                id: 'GENERAL',
-                                name: 'General'
-                            },
-                            {
-                                id: 'RESERVATION_UI',
-                                name: 'Reservation UI'
-                            },
-                            {
-                                id: 'WAITING_LIST',
-                                name: 'Waiting List'
-                            },
-                            {
-                                id: 'MAIL',
-                                name: 'E-Mail'
-                            },
-                            {
-                                id: 'INVOICE',
-                                name: 'Invoice'
-                            },
-                            {
-                                id: 'PAYMENT',
-                                name: 'Payment'
-                            },
-                            {
-                                id: 'IMPORT_ATTENDEES',
-                                name: 'Import Attendees'
-                            },
-                            {
-                                id: 'SUBSCRIPTIONS',
-                                name: 'Subscriptions'
-                            }
-                        ];
-                    });
-                };
-
-                toUnbind.push($rootScope.$on('$stateChangeSuccess', function(event, toState) {
-                    ctrl.currentView = detectCurrentView(toState);
-                    if(ctrl.isConfiguration()) {
-                        displayConfiguration();
-                    }
-                }));
-
-                ctrl.isConfiguration = function() {
-                    return ctrl.currentView === 'CONFIGURATION';
-                };
-
-                if(ctrl.isConfiguration()) {
-                    displayConfiguration();
-                }
-
-                ctrl.navigateTo = function(id) {
-                    //thanks to http://stackoverflow.com/a/14717011
-                    $location.hash(id);
-                    $anchorScroll();
-                };
-
-                $scope.$on('$destroy', function() {
-                    toUnbind.forEach(function(f) {f();});
-                });
-
-                UtilsService.getApplicationInfo().then(function(result) {
-                    ctrl.applicationInfo = result.data;
-                });
-            }]
         }
     }]);
 

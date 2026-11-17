@@ -211,6 +211,10 @@ Describe what the organizer gets, not how tickets are allocated:
   `--alfio-custom-row-cols-layout`. The labels of the first row act as column headers; the following rows add
   `.label-hidden`, which keeps their labels for screen readers only.
 - Explain a switch in its `help-text`.
+- A secret (API key, password, private key) is write-only: the server never returns its value, only whether one
+  is saved. Its field is empty, says "Saved. Type a new value to replace it" when a value is saved, and offers
+  "Remove the saved value" in its help text. A value set on the level above is never shown either: the placeholder
+  only says that one applies ("Same as the organization (a value is set)"). `settingControl()` does both.
 - Messages: `sl-alert variant="danger"` for errors, `variant="primary"` for information, `variant="warning"`
   for a consequence the user must be aware of before saving.
 - When the user may have created the options of a select in another tab (e.g. ticket categories), put a
@@ -284,6 +288,11 @@ choiceCards({
 ```
 
 For short values that need no explanation, such as a filter or "Person / Company", use a plain `sl-radio-group`.
+
+A yes/no setting that a level can leave to the level above (system → organization → event) has three choices.
+Show them as an `sl-select`, not as a switch (a switch reads as on/off): "Same as the organization (Yes)" / "Yes" /
+"No". The first option names the value that applies when the level doesn't set it. `settingControl()`
+(`configuration/setting-control.ts`) renders it.
 
 ### "Add another" buttons
 
