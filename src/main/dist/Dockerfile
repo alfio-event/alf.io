@@ -5,7 +5,7 @@
 # - https://august.nagro.us/small-java.html
 #
 
-FROM azul/zulu-openjdk-alpine:17 AS zulu
+FROM azul-zulu:17.70-17.0.21.1-jdk-headless-alpine3.23 AS zulu
 COPY alfio-boot.jar .
 RUN "$JAVA_HOME/bin/jlink" --compress=2 --strip-java-debug-attributes --no-header-files --no-man-pages \
     --module-path "$JAVA_HOME/jmods" \
@@ -16,10 +16,10 @@ RUN "$JAVA_HOME/bin/jlink" --compress=2 --strip-java-debug-attributes --no-heade
 
 RUN /jlinked/bin/java -Xshare:dump -XX:+UseSerialGC -version
 RUN "$JAVA_HOME/bin/java" -Djarmode=tools -jar alfio-boot.jar extract --destination /cds && \
-    (cd /cds && java -XX:ArchiveClassesAtExit=alfio-cds.jsa -Dspring.profiles.active=app-cds -Dspring.context.exit=onRefresh -jar alfio-boot.jar)
+    (cd /cds && /jlinked/bin/java -XX:ArchiveClassesAtExit=alfio-cds.jsa -Dspring.profiles.active=app-cds -Dspring.context.exit=onRefresh -jar alfio-boot.jar)
 
 
-FROM alpine:3.19
+FROM alpine:3.23
 LABEL org.opencontainers.image.source=https://github.com/alfio-event/alf.io
 
 ENV LANG en_US.UTF-8
@@ -29,6 +29,7 @@ ENV ALFIO_PERFORMANCE_OPTS="-Dspring.jmx.enabled=false -Dlog4j2.disableJmx=true"
 RUN addgroup -S alfio  \
     && adduser -h /home/alfio -u 1001 -G alfio -S alfio  \
     && apk update  \
+    && apk upgrade --no-cache  \
     && apk add --update ttf-dejavu  \
     && rm -rf /var/cache/apk/* \
     && mkdir /home/alfio/app
