@@ -141,7 +141,7 @@ public class BaseTestConfiguration {
     @PostConstruct
     public void initStripeMock() {
         if (stripeMock == null) {
-            stripeMock = new GenericContainer<>("stripe/stripe-mock:latest")
+            stripeMock = new GenericContainer<>("stripe/stripe-mock:v0.205.0")
                 .withExposedPorts(12111, 12112);
             stripeMock.start();
             if ("true".equals(System.getenv().get("TESTCONTAINERS_RYUK_DISABLED"))) {
