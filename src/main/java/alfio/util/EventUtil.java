@@ -163,41 +163,51 @@ public final class EventUtil {
     }
 
     public static Optional<byte[]> getIcalForEvent(Event event, TicketCategory ticketCategory, String description, Organization organization) {
-    	 ICalendar ical = new ICalendar();
-    	 ical.setProductId("-//Alf.io//Alf.io v2.0//EN");
-    	 ical.setMethod(Method.PUBLISH);
-
-         VEvent vEvent = new VEvent();
-         vEvent.setSummary(event.getDisplayName());
-         vEvent.setDescription(MustacheCustomTag.renderToTextCommonmark(description));
-         if (!isAccessOnline(ticketCategory, event)) {
-             // add location only if the attendee can access the location
-            vEvent.setLocation(RegExUtils.replacePattern(event.getLocation(), "[\n\r\t]+", " "));
-         }
-         ZonedDateTime begin = Optional.ofNullable(ticketCategory).map(tc -> tc.getTicketValidityStart(event.getZoneId())).orElse(event.getBegin());
-         ZonedDateTime end = Optional.ofNullable(ticketCategory).map(tc -> tc.getTicketValidityEnd(event.getZoneId())).orElse(event.getEnd());
-         vEvent.setDateStart(Date.from(begin.toInstant()));
-         vEvent.setDateEnd(Date.from(end.toInstant()));
-         vEvent.setUrl(event.getWebsiteUrl());
-         vEvent.setStatus(Status.confirmed());
-
-         if(organization != null) {
-        	 vEvent.setOrganizer(new Organizer(organization.getName(), organization.getEmail()));
-         }
-
-         ical.addEvent(vEvent);
-         StringWriter strWriter = new StringWriter();
-         try (ICalWriter writer = new ICalWriter(strWriter, ICalVersion.V2_0)) {
-             writer.write(ical);
-             return Optional.of(strWriter.toString().getBytes(StandardCharsets.UTF_8));
-         } catch (IOException e) {
-             log.warn("was not able to generate iCal for event " + event.getShortName(), e);
-             return Optional.empty();
-         }
+        ICalendar ical = newCalendar();
+        ical.addEvent(buildVEvent(event, ticketCategory, description, organization));
+        return writeCalendar(ical, "event " + event.getShortName());
     }
 
     public static Optional<byte[]> getIcalForEvent(Event event, TicketCategory ticketCategory, String description) {
-    	return getIcalForEvent(event, ticketCategory, description, null);
+        return getIcalForEvent(event, ticketCategory, description, null);
+    }
+
+    static ICalendar newCalendar() {
+        ICalendar ical = new ICalendar();
+        ical.setProductId("-//Alf.io//Alf.io v2.0//EN");
+        ical.setMethod(Method.PUBLISH);
+        return ical;
+    }
+
+    static VEvent buildVEvent(Event event, TicketCategory ticketCategory, String description, Organization organization) {
+        VEvent vEvent = new VEvent();
+        vEvent.setSummary(event.getDisplayName());
+        vEvent.setDescription(MustacheCustomTag.renderToTextCommonmark(description));
+        if (!isAccessOnline(ticketCategory, event)) {
+            // add location only if the attendee can access the location
+            vEvent.setLocation(RegExUtils.replacePattern(event.getLocation(), "[\n\r\t]+", " "));
+        }
+        ZonedDateTime begin = Optional.ofNullable(ticketCategory).map(tc -> tc.getTicketValidityStart(event.getZoneId())).orElse(event.getBegin());
+        ZonedDateTime end = Optional.ofNullable(ticketCategory).map(tc -> tc.getTicketValidityEnd(event.getZoneId())).orElse(event.getEnd());
+        vEvent.setDateStart(Date.from(begin.toInstant()));
+        vEvent.setDateEnd(Date.from(end.toInstant()));
+        vEvent.setUrl(event.getWebsiteUrl());
+        vEvent.setStatus(Status.confirmed());
+        if (organization != null) {
+            vEvent.setOrganizer(new Organizer(organization.getName(), organization.getEmail()));
+        }
+        return vEvent;
+    }
+
+    static Optional<byte[]> writeCalendar(ICalendar ical, String logContext) {
+        StringWriter strWriter = new StringWriter();
+        try (ICalWriter writer = new ICalWriter(strWriter, ICalVersion.V2_0)) {
+            writer.write(ical);
+            return Optional.of(strWriter.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            log.warn("was not able to generate iCal for " + logContext, e);
+            return Optional.empty();
+        }
     }
 
     public static String getGoogleCalendarURL(Event event, TicketCategory category, String description) {
