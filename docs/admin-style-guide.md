@@ -55,6 +55,8 @@ Background on 2 and on the placement of form actions:
 | Search and pagination of a list                               | `ListSearchController`, `<alfio-pagination-bar>`                               |
 | A yes/no confirmation                                         | `ConfirmationDialogService.requestConfirm()`, `service/confirmation-dialog.ts` |
 | A notification after an action                               | `dispatchFeedback()`, `model/dom-events.ts`                                    |
+| A link to another site (documentation, a provider dashboard)  | `externalLink()`, `components/external-link.ts`: new tab, with an icon         |
+| The steps to set up an integration (where to find API keys)   | `setupGuide()`, `components/setup-guide.ts`: collapsed below the one-sentence card description |
 
 Check `components/` for anything not listed here.
 

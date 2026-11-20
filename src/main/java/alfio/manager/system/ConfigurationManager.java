@@ -653,12 +653,46 @@ public class ConfigurationManager {
     }
 
     /**
+     * The settings of the system whose value the owners who are not administrators can see, when their organization
+     * or event doesn't set them. Only yes/no settings that an organization or an event can set; the live mode of the
+     * payment providers is left out, as it describes the accounts of the system.
+     * Any other setting of the system stays hidden from them: add a key here to show it.
+     */
+    static final Set<ConfigurationKeys> SYSTEM_SETTINGS_SHOWN_TO_OWNERS = Collections.unmodifiableSet(EnumSet.of(
+        // general
+        DISPLAY_STATS_IN_EVENT_DETAIL, NOTIFY_ORGANIZER_ON_RESERVATION, OPTIONAL_DATA_REMINDER_ENABLED,
+        NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS, CHECK_IN_STATS,
+        // reservation page
+        DISPLAY_TICKETS_LEFT_INDICATOR, DISPLAY_EXPIRED_CATEGORIES, DISPLAY_DISCOUNT_CODE_BOX,
+        USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL, ENABLE_CUSTOMER_REFERENCE, ENABLE_ATTENDEE_AUTOCOMPLETE,
+        FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION, SEND_TICKETS_AUTOMATICALLY, ALLOW_TICKET_DOWNLOAD,
+        SEND_RESERVATION_EMAIL_IF_NECESSARY, ENABLE_TICKET_TRANSFER, ALLOW_FREE_TICKETS_CANCELLATION,
+        INCLUDE_CHECK_IN_URL_ICAL,
+        // payments
+        ON_SITE_ENABLED, STRIPE_CC_ENABLED, SAFERPAY_ENABLED, PAYPAL_ENABLED, MOLLIE_CC_ENABLED,
+        BANK_TRANSFER_ENABLED, DEFERRED_BANK_TRANSFER_ENABLED, SHOW_ONLY_BASIC_INSTRUCTIONS,
+        DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL, OFFLINE_PAYMENT_BUSINESS_DAYS,
+        AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT, REVOLUT_ENABLED, REVOLUT_MANUAL_REVIEW,
+        // waiting list
+        ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION, ENABLE_WAITING_QUEUE_NOTIFICATION,
+        // e-mails
+        ENABLE_HTML_EMAILS,
+        // invoices
+        USE_INVOICE_NUMBER_AS_ID, VAT_NUMBER_IS_REQUIRED, GENERATE_ONLY_INVOICE, REUSE_INVOICE_NUMBER_FOR_CREDIT_NOTE,
+        ENABLE_ITALY_E_INVOICING, ITALY_E_INVOICING_SEND_PROFORMA, ENABLE_EU_VAT_DIRECTIVE,
+        ENABLE_REVERSE_CHARGE_ONLINE, ENABLE_REVERSE_CHARGE_IN_PERSON, ENABLE_VIES_VALIDATION,
+        APPLY_VAT_FOREIGN_BUSINESS,
+        // subscriptions
+        GENERATE_TICKETS_FOR_SUBSCRIPTIONS
+    ));
+
+    /**
      * What applies to the settings that an organization doesn't set: the settings of the system.
-     * The owners who are not administrators can't see the settings of the system, so they get nothing.
+     * The owners who are not administrators see only the settings in {@link #SYSTEM_SETTINGS_SHOWN_TO_OWNERS}.
      */
     public Map<String, InheritedSetting> loadInheritedSettingsForOrganization(String username) {
         if (!userManager.isAdmin(userManager.findUserByUsername(username))) {
-            return Map.of();
+            return systemSettingsShownToOwners(valuesOf(getFor(SYSTEM_SETTINGS_SHOWN_TO_OWNERS, ConfigurationLevel.system())));
         }
         var keys = visibleKeys();
         return inheritedSettings(keys, valuesOf(getFor(keys, ConfigurationLevel.system())), true);
@@ -666,17 +700,38 @@ public class ConfigurationManager {
 
     /**
      * What applies to the settings that an event doesn't set: the settings of its organization, which for the
-     * administrators include those inherited from the system. The other owners get only what the organization sets.
+     * administrators include those inherited from the system. The other owners get what the organization sets,
+     * and, for what it doesn't set, the settings of the system in {@link #SYSTEM_SETTINGS_SHOWN_TO_OWNERS}.
      */
     public Map<String, InheritedSetting> loadInheritedSettingsForEvent(int organizationId, String username) {
         var keys = visibleKeys();
         if (userManager.isAdmin(userManager.findUserByUsername(username))) {
             return inheritedSettings(keys, valuesOf(getFor(keys, ConfigurationLevel.organization(organizationId))), true);
         }
-        var values = new EnumMap<ConfigurationKeys, String>(ConfigurationKeys.class);
+        var organizationValues = new EnumMap<ConfigurationKeys, String>(ConfigurationKeys.class);
         configurationRepository.findOrganizationConfiguration(organizationId)
-            .forEach(c -> values.put(c.getConfigurationKey(), c.getValue()));
-        return inheritedSettings(keys, values, false);
+            .forEach(c -> organizationValues.put(c.getConfigurationKey(), c.getValue()));
+        var systemValues = valuesOf(getFor(SYSTEM_SETTINGS_SHOWN_TO_OWNERS, ConfigurationLevel.system()));
+        return inheritedSettingsForOwnerAtEvent(organizationValues, systemValues);
+    }
+
+    /**
+     * What an owner who is not an administrator sees of the settings of the system: the yes/no settings in
+     * {@link #SYSTEM_SETTINGS_SHOWN_TO_OWNERS}, with their default when the system doesn't set them
+     */
+    static Map<String, InheritedSetting> systemSettingsShownToOwners(Map<ConfigurationKeys, String> systemValues) {
+        return inheritedSettings(List.copyOf(SYSTEM_SETTINGS_SHOWN_TO_OWNERS), systemValues, true);
+    }
+
+    /**
+     * What applies to an event for an owner who is not an administrator: what the organization sets, otherwise
+     * the settings of the system that the owner can see
+     */
+    static Map<String, InheritedSetting> inheritedSettingsForOwnerAtEvent(Map<ConfigurationKeys, String> organizationValues,
+                                                                         Map<ConfigurationKeys, String> systemValues) {
+        var result = inheritedSettings(visibleKeys(), organizationValues, false);
+        systemSettingsShownToOwners(systemValues).forEach(result::putIfAbsent);
+        return result;
     }
 
     private static List<ConfigurationKeys> visibleKeys() {

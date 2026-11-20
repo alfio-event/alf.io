@@ -4,6 +4,8 @@ import {repeat} from 'lit/directives/repeat.js';
 import type {SlInput, SlSelect, SlTextarea} from '@shoelace-style/shoelace';
 import {SettingsLevel} from '../model/configuration.ts';
 import {BoundField, fieldError} from '../components/form-validation.ts';
+import {invoiceNumberControl} from './invoice-number-setting.ts';
+import './css-setting.ts';
 
 /**
  * What a control needs to know about a setting, either a setting of alf.io or a parameter of an extension
@@ -20,11 +22,15 @@ export interface SettingDescriptor {
     required?: boolean;
     // yes/no settings: the value ("true"/"false") applied when the level doesn't set the setting, if known
     inheritedValue?: string;
+    // yes/no settings: the default ("true"/"false"), shown when the value that applies is unknown
+    defaultValue?: string;
     // the level above sets a value, which applies when this level doesn't set the setting
     inheritedSet?: boolean;
     // the value is never shown: the field is empty, and secretStored tells whether a value is saved at this level
     secret?: boolean;
     secretStored?: boolean;
+    // a special editor for the value, instead of an input or a textarea
+    editor?: 'css' | 'invoice-number';
 }
 
 /**
@@ -50,12 +56,18 @@ export function notSetLabel(level: SettingsLevel): string {
 /**
  * The label of the "not set" choice of a yes/no setting, with the value that then applies (e.g. "Same as the system (Yes)")
  */
-function notSetYesNoLabel(level: SettingsLevel, inheritedValue: string | undefined): string {
-    const label = notSetLabel(level);
-    if (inheritedValue === 'true') {
+function notSetYesNoLabel(level: SettingsLevel, inheritedValue: string | undefined, defaultValue: string | undefined): string {
+    let label = notSetLabel(level);
+    let value = inheritedValue;
+    if (value == null && defaultValue != null) {
+        // the value of the level above is hidden from this user: only the default is known
+        label = 'Same as default';
+        value = defaultValue;
+    }
+    if (value === 'true') {
         return `${label} (Yes)`;
     }
-    if (inheritedValue === 'false') {
+    if (value === 'false') {
         return `${label} (No)`;
     }
     return label;
@@ -83,7 +95,7 @@ export function settingControl(field: BoundField<string>, submitted: boolean, se
                        help-text=${helpText}
                        @sl-change=${(e: Event) => field.handleChange(String((e.target as SlSelect).value))}
                        @sl-blur=${() => field.handleBlur()}>
-                <sl-option value="">${notSetYesNoLabel(level, setting.inheritedValue)}</sl-option>
+                <sl-option value="">${notSetYesNoLabel(level, setting.inheritedValue, setting.defaultValue)}</sl-option>
                 <sl-option value="true">Yes</sl-option>
                 <sl-option value="false">No</sl-option>
             </sl-select>
@@ -106,6 +118,23 @@ export function settingControl(field: BoundField<string>, submitted: boolean, se
         return secretControl(field, setting, level, classes, helpText);
     }
     const placeholder = inheritedPlaceholder(setting, level);
+    if (setting.editor === 'css') {
+        let notSetText = '';
+        if (placeholder !== nothing) {
+            notSetText = placeholder;
+        }
+        return html`
+            <alfio-css-setting id=${setting.id} class=${classes} label=${setting.label} .value=${value}
+                               not-set-text=${notSetText} help-text=${helpText}
+                               @alfio-css-setting-change=${(e: CustomEvent<string>) => {
+                                   field.handleChange(e.detail);
+                                   field.handleBlur();
+                               }}></alfio-css-setting>
+        `;
+    }
+    if (setting.editor === 'invoice-number') {
+        return invoiceNumberControl(field, setting, placeholder, helpText);
+    }
     if (setting.componentType === 'TEXTAREA') {
         return html`
             <sl-textarea id=${setting.id} class=${classes} label=${setting.label} rows="4" resize="auto"
@@ -134,10 +163,8 @@ function inheritedPlaceholder(setting: SettingDescriptor, level: SettingsLevel):
         }
         return `${notSetLabel(level)} (a value is set)`;
     }
-    if (level.type === 'SYSTEM') {
-        return nothing;
-    }
-    return notSetLabel(level);
+    // nothing is set above: an empty field is enough, a "Same as the system" placeholder reads like a value
+    return nothing;
 }
 
 /**

@@ -538,6 +538,62 @@ export const modernLayout = css`
         --alfio-page-top-margin: 2rem;
     }
 
+    /* externalLink() (components/external-link.ts) */
+    .external-link {
+        color: var(--sl-color-primary-600);
+        text-decoration: none;
+        overflow-wrap: anywhere;
+    }
+
+    .external-link:hover {
+        color: var(--sl-color-primary-800);
+        text-decoration: underline;
+    }
+
+    .external-link:focus-visible {
+        outline: var(--sl-focus-ring);
+        outline-offset: var(--sl-focus-ring-offset);
+        border-radius: var(--sl-border-radius-small);
+    }
+
+    .external-link sl-icon {
+        margin-inline-start: 0.2em;
+        font-size: 0.8em;
+        vertical-align: baseline;
+    }
+
+    /* setupGuide() (components/setup-guide.ts) */
+    .setup-guide {
+        margin-bottom: var(--sl-spacing-medium);
+    }
+
+    .setup-guide::part(base) {
+        background-color: var(--sl-color-gray-50);
+    }
+
+    .setup-guide::part(header) {
+        padding: var(--sl-spacing-x-small) var(--sl-spacing-medium);
+    }
+
+    .setup-guide::part(content) {
+        padding: 0 var(--sl-spacing-medium) var(--sl-spacing-small);
+    }
+
+    .setup-guide::part(summary) {
+        font-size: var(--sl-font-size-small);
+        font-weight: var(--sl-font-weight-semibold);
+    }
+
+    .setup-guide ol {
+        margin: 0;
+        padding-inline-start: var(--sl-spacing-large);
+        font-size: var(--sl-font-size-small);
+    }
+
+    .setup-guide li + li {
+        margin-top: var(--sl-spacing-x-small);
+    }
+
     .first-element {
         margin-top: var(--alfio-page-top-margin);
     }

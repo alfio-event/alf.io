@@ -1,287 +1,233 @@
-import { customElement, property, query, state } from "lit/decorators.js";
-import { css, html, LitElement, type TemplateResult } from "lit";
-import { repeat } from "lit/directives/repeat.js";
+import {css, html, LitElement, TemplateResult} from 'lit';
+import {customElement, property, query, state} from 'lit/decorators.js';
+import {repeat} from 'lit/directives/repeat.js';
+import {Task} from '@lit/task';
+import {CustomPaymentMethodsService} from '../service/custom-payment-methods.ts';
+import {LocalizationService} from '../service/localization.ts';
+import {ConfirmationDialogService} from '../service/confirmation-dialog.ts';
+import {responseErrorMessage} from '../service/helpers.ts';
+import {dispatchFeedback} from '../model/dom-events.ts';
+import {ContentLanguage} from '../model/purchase-context.ts';
+import {emptyState} from '../components/empty-state.ts';
+import {taskContent} from '../components/task-content.ts';
+import {badges, base, modernLayout, modernTable, textColors} from '../styles.ts';
+import type {OfflinePaymentDialog, OfflinePaymentSaveDetail} from './offline-payment-dialog.ts';
+import './offline-payment-dialog.ts';
 
-import { CustomPaymentMethodsService } from "../service/custom-payment-methods";
-import { dispatchFeedback } from "../model/dom-events";
-import { ConfirmationDialogService } from "../service/confirmation-dialog";
-import { base } from "../styles";
-import type { OfflinePaymentDialog } from "./offline-payment-dialog";
+interface PaymentMethodsData {
+    methods: CustomOfflinePayment[];
+    languages: ContentLanguage[];
+}
 
 /**
- * Displays defined custom payment methods for org. Allows
- * organizers to add new payment methods.
+ * The custom offline payment methods of an organization, with Edit and Delete. The host card offers
+ * "Add payment method", which calls add().
  */
 @customElement('offline-payment-config-block')
 export class OfflinePaymentConfigBlock extends LitElement {
-    @property({attribute: "organization", type: Number})
-    organization: number = -1;
+    @property({attribute: 'organization', type: Number}) organization = -1;
 
-    @query("offline-payment-dialog")
-    paymentCreationDialog?: OfflinePaymentDialog;
+    @state() private lastData: PaymentMethodsData | null = null;
+    @state() private deleting: string | null = null;
+    @state() private refreshCount = 0;
+    @query('offline-payment-dialog') private dialog!: OfflinePaymentDialog;
 
-    @state()
-    protected _paymentConfig: CustomOfflinePayment[] = [];
+    private readonly service = new CustomPaymentMethodsService();
+    private readonly localizationService = new LocalizationService();
 
-    paymentMethodService?: CustomPaymentMethodsService;
+    private readonly loadTask = new Task(this, {
+        task: async ([organization]): Promise<PaymentMethodsData> => {
+            if (organization <= 0) {
+                return {methods: [], languages: []};
+            }
+            const [methods, languages] = await Promise.all([
+                this.service.getPaymentMethodsForOrganization(organization),
+                this.localizationService.getEventsSupportedLanguages(),
+            ]);
+            return {methods, languages};
+        },
+        args: () => [this.organization, this.refreshCount] as const,
+        onComplete: (data) => {
+            this.lastData = data;
+        },
+    });
 
-    constructor() {
-        super();
-        this.updateConfigFromServer();
-    }
-
-    async updated(changedProperties: Map<string, unknown>) {
-        if(changedProperties.has("organization") && this.organization) {
-            this.paymentMethodService = new CustomPaymentMethodsService();
-            await this.updateConfigFromServer();
-        }
-    }
-
-    static styles = [
+    static readonly styles = [
         base,
+        textColors,
+        badges,
+        modernTable,
+        modernLayout,
         css`
-            .toolbar {
-                display: flex;
-                justify-content: flex-end;
-                margin-bottom: var(--sl-spacing-small);
-            }
-            .payment-methods {
-                display: grid;
-                gap: var(--sl-spacing-small);
-            }
-            .payment-method-summary {
-                display: flex;
-                align-items: center;
-                gap: var(--sl-spacing-small);
-                width: 100%;
-                min-width: 0;
+            :host {
+                display: block;
             }
             .payment-method-name {
-                flex: 1 1 auto;
-                min-width: 0;
-                overflow-wrap: anywhere;
                 font-weight: var(--sl-font-weight-semibold);
-            }
-            .localization h4 {
-                margin: var(--sl-spacing-medium) 0 var(--sl-spacing-2x-small);
-                font-size: var(--sl-font-size-small);
-                color: var(--sl-color-gray-600);
-            }
-            .localization p {
-                margin: 0;
                 overflow-wrap: anywhere;
             }
-            .localization-actions {
+            .payment-method-languages {
                 display: flex;
-                justify-content: flex-end;
-                margin-top: var(--sl-spacing-medium);
+                flex-wrap: wrap;
+                gap: var(--sl-spacing-3x-small);
+            }
+            .actions-cell {
+                white-space: nowrap;
+                text-align: right;
+            }
+            .actions-cell sl-button + sl-button {
+                margin-inline-start: var(--sl-spacing-2x-small);
+            }
+            @media (max-width: 700px) {
+                .actions-cell {
+                    white-space: normal;
+                }
+                .actions-cell sl-button {
+                    margin: var(--sl-spacing-3x-small) 0;
+                }
             }
         `,
     ];
 
-    protected render(): TemplateResult {
+    /**
+     * Opens the dialog that creates a new payment method
+     */
+    add(): void {
+        this.edit(null);
+    }
+
+    render(): TemplateResult {
         return html`
-            <div>
-                <div class="toolbar">
-                    <sl-button type="button" variant="success" size="small" @click=${() => this.paymentCreationDialog?.openDialog()}>
-                        <sl-icon name="plus-circle" slot="prefix"></sl-icon>
-                        Add payment method
+            ${taskContent(this.loadTask, this.lastData, 'Failed to load the payment methods. Please try again.',
+                (data) => this.renderList(data))}
+            <offline-payment-dialog @alfio-offline-payment-save=${this.onSave}></offline-payment-dialog>
+        `;
+    }
+
+    private renderList(data: PaymentMethodsData): TemplateResult {
+        if (data.methods.length === 0) {
+            return emptyState('No payment methods yet.');
+        }
+        return html`
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Languages</th>
+                            <th><span class="sr-only">Actions</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${repeat(data.methods, (method) => method.paymentMethodId ?? '', (method) => this.renderRow(data, method))}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    private renderRow(data: PaymentMethodsData, method: CustomOfflinePayment): TemplateResult {
+        const locales = Object.keys(method.localizations);
+        const id = method.paymentMethodId ?? '';
+        return html`
+            <tr class="payment-method" data-id=${id}>
+                <td class="payment-method-name">${displayName(method)}</td>
+                <td>
+                    <span class="payment-method-languages">
+                        ${repeat(locales, (locale) => locale, (locale) => html`
+                            <sl-badge variant="neutral" pill>${languageName(data.languages, locale)}</sl-badge>
+                        `)}
+                    </span>
+                </td>
+                <td class="actions-cell">
+                    <sl-button class="edit-payment-method" variant="default" size="small" @click=${() => this.edit(method)}>
+                        <sl-icon slot="prefix" name="pencil"></sl-icon>
+                        Edit
                     </sl-button>
-                </div>
-                ${this.renderPaymentMethodDetails()}
-                <offline-payment-dialog
-                    .currentMethods=${this._paymentConfig}
-                    @offlinePaymentDialogSave=${this._saveCustomPaymentMethod}
-                ></offline-payment-dialog>
-            </div>
+                    <sl-button class="delete-payment-method" variant="danger" size="small" outline
+                               ?loading=${this.deleting === id} ?disabled=${this.deleting != null}
+                               @click=${() => void this.delete(method)}>
+                        <sl-icon slot="prefix" name="trash"></sl-icon>
+                        Delete
+                    </sl-button>
+                </td>
+            </tr>
         `;
     }
 
-    protected renderPaymentMethodDetails() {
-        return html`
-            <div class="payment-methods">
-                ${repeat(this._paymentConfig, (config) => config.paymentMethodId, (config) => html`
-                    <sl-details>
-                        <div class="payment-method-summary" slot="summary">
-                            <span class="payment-method-name">
-                                ${config.localizations?.en?.paymentName || config.localizations[Object.keys(config.localizations)[0]].paymentName}
-                            </span>
-                            <sl-button variant="danger" size="small"
-                                       @click=${(event: MouseEvent) => {
-                                           event.stopPropagation();
-                                           void this._confirmDeletePaymentMethod(config);
-                                       }}>
-                                <sl-icon slot="prefix" name="trash"></sl-icon>
-                                Delete
-                            </sl-button>
-                        </div>
-                        <sl-tab-group>
-                            ${repeat(Object.keys(config.localizations), (key) => key, (key) => html`
-                                <sl-tab
-                                    .closable=${Object.keys(config.localizations).length > 1}
-                                    @sl-close=${() => {
-                                        void this._confirmDeleteLocale(config, key);
-                                    }}
-                                    slot="nav"
-                                    panel="${key}"
-                                >
-                                    ${key}
-                                </sl-tab>
-
-                                <sl-tab-panel name="${key}" class="localization">
-                                    <h4>Name</h4>
-                                    <p>${config.localizations[key].paymentName}</p>
-                                    <h4>Description</h4>
-                                    <p>${config.localizations[key].paymentDescription}</p>
-                                    <h4>Instructions</h4>
-                                    <p>${config.localizations[key].paymentInstructions}</p>
-                                    <div class="localization-actions">
-                                        <sl-button variant="default" size="small"
-                                                   @click=${() => {
-                                                       this.paymentCreationDialog?.openDialog(config, key);
-                                                   }}>
-                                            <sl-icon slot="prefix" name="pencil"></sl-icon>
-                                            Edit
-                                        </sl-button>
-                                    </div>
-                                </sl-tab-panel>
-                            `)}
-                            <sl-tab slot="nav" @click=${(event: MouseEvent) => this._handleAddNewLocale(event, config)}>
-                                <sl-tooltip content="Add translation" hoist>
-                                    <sl-icon-button label="Add translation" name="plus-square"></sl-icon-button>
-                                </sl-tooltip>
-                            </sl-tab>
-                        </sl-tab-group>
-                    </sl-details>
-                `)}
-            </div>
-        `;
-    }
-
-    private async _confirmDeletePaymentMethod(config: CustomOfflinePayment): Promise<void> {
-        const confirmed = await ConfirmationDialogService.requestConfirm(
-            'Delete payment method',
-            'This payment method will be permanently deleted from your organization.',
-            'danger');
-        if (confirmed) {
-            await this._handleDeletePaymentMethod(config.paymentMethodId);
-        }
-    }
-
-    private async _confirmDeleteLocale(config: CustomOfflinePayment, localizationKey: string): Promise<void> {
-        const confirmed = await ConfirmationDialogService.requestConfirm(
-            'Delete translation',
-            'This translation will be permanently deleted.',
-            'danger');
-        if (confirmed) {
-            await this._handleDeleteLocale(config, localizationKey);
-        }
-    }
-
-    private _handleAddNewLocale(event: MouseEvent, config: CustomOfflinePayment) {
-        event.stopPropagation();
-        this.paymentCreationDialog?.openDialog(config);
-    }
-
-    private async _handleDeleteLocale(config: CustomOfflinePayment, localizationKey: string) {
-        if(!config.paymentMethodId) return;
-
-        delete config.localizations[localizationKey];
-
-        const submitResult = await this.paymentMethodService?.updatePaymentMethod(
-            this.organization,
-            config.paymentMethodId,
-            config
-        );
-
-        if (submitResult?.ok) {
-            dispatchFeedback({
-                type: "success",
-                message: "Removed localization from payment method."
-            }, this);
-            await this.updateConfigFromServer();
-        } else {
-            dispatchFeedback({
-                type: "danger",
-                message: "Failed to remove localization."
-            }, this);
-        }
-    }
-
-
-    private async _handleDeletePaymentMethod(paymentMethodId: string | null) {
-        if(!paymentMethodId) {
+    private edit(method: CustomOfflinePayment | null): void {
+        const data = this.lastData;
+        if (data == null) {
             return;
         }
-
-        const submitResult = await this.paymentMethodService?.deletePaymentMethod(
-            this.organization,
-            paymentMethodId
-        );
-
-        if (submitResult?.ok) {
-            dispatchFeedback({
-                type: "success",
-                message: "Payment method deleted."
-            }, this);
-            this.paymentCreationDialog?.closeDialog();
-            this._paymentConfig = this._paymentConfig.filter(
-                method => method.paymentMethodId !== paymentMethodId
-            );
-            await this.updateConfigFromServer();
-        } else {
-            const errorMsg = (await submitResult?.text());
-            dispatchFeedback({
-                type: "danger",
-                message: errorMsg || "Failed to delete offline payment method."
-            }, this);
-        }
+        const others = data.methods.filter((other) => method == null || other.paymentMethodId !== method.paymentMethodId);
+        void this.dialog.show(method, others, data.languages);
     }
 
-    private async _saveCustomPaymentMethod(event: CustomEvent<{newPayment: CustomOfflinePayment, oldPayment?: CustomOfflinePayment}>) {
-        const {newPayment, oldPayment} = event.detail;
-
-        let submitResult;
-        if (oldPayment?.paymentMethodId) {
-            submitResult = await this.paymentMethodService?.updatePaymentMethod(
-                this.organization,
-                oldPayment.paymentMethodId,
-                newPayment
-            );
+    private onSave = async (event: CustomEvent<OfflinePaymentSaveDetail>): Promise<void> => {
+        const {paymentMethodId, payment} = event.detail;
+        let request: Promise<Response>;
+        let message = 'The payment method has been created';
+        if (paymentMethodId != null) {
+            request = this.service.updatePaymentMethod(this.organization, paymentMethodId, payment);
+            message = 'The payment method has been saved';
         } else {
-            submitResult = await this.paymentMethodService?.createPaymentMethod(
-                this.organization,
-                newPayment
-            );
+            request = this.service.createPaymentMethod(this.organization, payment);
         }
+        try {
+            const response = await request;
+            if (!response.ok) {
+                this.dialog.showError(await responseErrorMessage(response, 'Failed to save the payment method. Please try again.'));
+                return;
+            }
+            this.dialog.close();
+            dispatchFeedback({type: 'success', message}, this);
+            this.refreshCount++;
+        } catch {
+            this.dialog.showError('Failed to save the payment method. Please try again.');
+        }
+    };
 
-        let successMessage = "Payment method created.";
-        let failureMessage = "Failed to create the payment method.";
-        if (oldPayment) {
-            successMessage = "Payment method updated.";
-            failureMessage = "Failed to update the payment method.";
-        }
-        if (submitResult?.ok) {
-            dispatchFeedback({
-                type: "success",
-                message: successMessage
-            }, this);
-            this.paymentCreationDialog?.closeDialog();
-            await this.updateConfigFromServer();
-        } else {
-            dispatchFeedback({
-                type: "danger",
-                message: failureMessage
-            }, this);
-        }
-    }
-
-    async updateConfigFromServer() {
-        const result = await this.paymentMethodService?.getPaymentMethodsForOrganization(this.organization);
-        if(!result) {
+    private async delete(method: CustomOfflinePayment): Promise<void> {
+        const id = method.paymentMethodId;
+        if (id == null) {
             return;
         }
+        const confirmed = await ConfirmationDialogService.requestConfirm('Delete payment method',
+            `"${displayName(method)}" will no longer be offered to the buyers.`, 'danger');
+        if (!confirmed) {
+            return;
+        }
+        this.deleting = id;
+        try {
+            const response = await this.service.deletePaymentMethod(this.organization, id);
+            if (!response.ok) {
+                dispatchFeedback({type: 'danger', message: await responseErrorMessage(response, 'Failed to delete the payment method')}, this);
+                return;
+            }
+            dispatchFeedback({type: 'success', message: 'The payment method has been deleted'}, this);
+            this.refreshCount++;
+        } catch {
+            dispatchFeedback({type: 'danger', message: 'Failed to delete the payment method'}, this);
+        } finally {
+            this.deleting = null;
+        }
+    }
+}
 
-        this._paymentConfig = result
+// the English name, or the first one
+function displayName(method: CustomOfflinePayment): string {
+    const localizations = method.localizations ?? {};
+    const localization = localizations['en'] ?? Object.values(localizations)[0];
+    return localization?.paymentName ?? '';
+}
+
+function languageName(languages: ContentLanguage[], locale: string): string {
+    return languages.find((language) => language.locale === locale)?.displayLanguage ?? locale;
+}
+
+declare global {
+    interface HTMLElementTagNameMap {
+        'offline-payment-config-block': OfflinePaymentConfigBlock;
     }
 }

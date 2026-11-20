@@ -21,6 +21,8 @@ import {PAYMENT_PROXY_DESCRIPTIONS} from '../service/payment-proxy.ts';
 import {errorMessage} from '../service/helpers.ts';
 import {dispatchFeedback} from '../model/dom-events.ts';
 import {sectionCard} from '../components/section-card.ts';
+import {externalLink} from '../components/external-link.ts';
+import {setupGuide} from '../components/setup-guide.ts';
 import {taskContent} from '../components/task-content.ts';
 import {choiceCards, ChoiceCardOption} from '../components/choice-cards.ts';
 import {FormSection, SectionNav} from '../components/section-nav.ts';
@@ -38,6 +40,7 @@ import {DEFAULT_LABEL_LAYOUT, labelLayoutPreview} from './label-layout-preview.t
 import './regenerate-invoices-dialog.ts';
 import type {RegenerateInvoicesDialog} from './regenerate-invoices-dialog.ts';
 import './offline-payment-config-block.ts';
+import type {OfflinePaymentConfigBlock} from './offline-payment-config-block.ts';
 import '../components/section-nav.ts';
 
 export const SETTINGS_SAVED_EVENT = 'alfio-settings-saved';
@@ -47,6 +50,13 @@ export const SETTINGS_CANCELLED_EVENT = 'alfio-settings-cancelled';
  * The description of a yes/no setting without its default: "Display stats (default true)" -> "Display stats",
  * "Receive a mail (provider dependant, default: false)" -> "Receive a mail (provider dependant)"
  */
+/**
+ * The default that the description of a yes/no setting tells, e.g. "Live mode (default false)"
+ */
+function defaultValueOf(description: string): string | undefined {
+    return /default:?\s*(true|false)\s*\)/i.exec(description)?.[1]?.toLowerCase();
+}
+
 function withoutDefaultValue(description: string): string {
     return description
         .replace(/,?\s*default:?\s*(true|false)\s*\)/i, ')')
@@ -58,7 +68,10 @@ interface CardOptions {
     id: string;
     icon: string;
     title: string;
+    // one sentence: what the card is for
     description?: TemplateResult;
+    // the steps to set it up, collapsed below the description (see setupGuide())
+    guide?: TemplateResult;
 }
 
 interface SettingsGroup extends CardOptions {
@@ -148,6 +161,26 @@ const HIDDEN_SETTINGS = new Set(['SUPPORTED_LANGUAGES', 'TRANSLATION_OVERRIDE'])
 
 const JSON_SETTINGS = new Set(['LABEL_LAYOUT', 'CHECK_IN_COLOR_CONFIGURATION', 'OPENID_CONFIGURATION_JSON', 'WALLET_SERVICE_ACCOUNT_KEY']);
 
+// settings edited with a special editor, with the label that the editor shows instead of the description
+const SPECIAL_EDITORS: Record<string, { editor: NonNullable<SettingDescriptor['editor']>, label: string, helpText?: string }> = {
+    BASE_CUSTOM_CSS: {editor: 'css', label: 'CSS of all the public pages'},
+    EVENT_CUSTOM_CSS: {editor: 'css', label: 'CSS of the event and subscription pages'},
+    INVOICE_NUMBER_PATTERN: {editor: 'invoice-number', label: 'Invoice number'},
+};
+
+// clearer labels than the descriptions sent by the server, for the settings shown in a card that names the provider
+const LABELS: Record<string, string> = {
+    PAYPAL_ENABLED: 'Accept PayPal payments',
+    PAYPAL_LIVE_MODE: 'Live mode',
+    PAYPAL_CLIENT_ID: 'Client ID',
+    PAYPAL_CLIENT_SECRET: 'Client secret',
+    PAYPAL_DEMO_MODE_USERNAME: 'Demo mode username',
+    PAYPAL_DEMO_MODE_PASSWORD: 'Demo mode password',
+    STRIPE_CC_ENABLED: 'Accept Stripe payments',
+    STRIPE_PUBLIC_KEY: 'Publishable key',
+    STRIPE_SECRET_KEY: 'Secret key',
+};
+
 const PAYMENT_METHODS_DENY_LIST = 'PAYMENT_METHODS_BLACKLIST';
 const MAILER_TYPE = 'MAILER_TYPE';
 const MAPS_PROVIDER = 'MAPS_PROVIDER';
@@ -157,6 +190,9 @@ const GENERATE_TICKETS_FOR_SUBSCRIPTIONS = 'GENERATE_TICKETS_FOR_SUBSCRIPTIONS';
 const DEFERRED_BANK_TRANSFER = 'DEFERRED_BANK_TRANSFER_ENABLED';
 
 // the settings of each mail provider start with its prefix
+// the static resources of the server, e.g. the providers' images
+const resourcesPath = `${window.ALFIO_CONTEXT_PATH ?? ''}/resources`;
+
 const MAILER_PREFIXES: Record<string, string> = {
     smtp: 'SMTP_',
     mailgun: 'MAILGUN_',
@@ -291,11 +327,17 @@ export class SettingsForm extends LitElement {
             .card-description {
                 margin: 0 0 var(--sl-spacing-medium);
             }
-            .card-description a {
-                overflow-wrap: anywhere;
-            }
             .switches {
                 row-gap: var(--sl-spacing-medium);
+            }
+            /* a longer label wraps: the label takes the extra height so that the selects of a row line up */
+            .switches > sl-select::part(form-control) {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+            }
+            .switches > sl-select::part(form-control-label) {
+                flex: 1 0 auto;
             }
             .secret-help sl-button::part(base) {
                 height: auto;
@@ -335,8 +377,131 @@ export class SettingsForm extends LitElement {
                 gap: var(--sl-spacing-small) var(--sl-spacing-medium);
                 margin-bottom: var(--sl-spacing-medium);
             }
+            .connect-button {
+                display: inline-flex;
+                border-radius: var(--sl-border-radius-medium);
+            }
+            /* Stripe's "Connect with Stripe" button, as in https://codepen.io/stripe-connect/pen/BaQNbjK */
+            .stripe-connect {
+                position: relative;
+                width: 180px;
+                height: 38px;
+                background: #635bff;
+                border-radius: 4px;
+                text-decoration: none;
+                user-select: none;
+                -webkit-font-smoothing: antialiased;
+            }
+            .stripe-connect:hover {
+                background: #7a73ff;
+            }
+            .stripe-connect span {
+                padding: 11px 0 0 24px;
+                color: #ffffff;
+                font-family: sohne-var, "Helvetica Neue", Arial, sans-serif;
+                font-size: 15px;
+                font-weight: 400;
+                line-height: 14px;
+            }
+            .connect-button.stripe-connect img {
+                position: absolute;
+                left: 62%;
+                top: 7.24px;
+                width: 49.58px;
+                height: auto;
+            }
+            .connect-button img {
+                display: block;
+            }
+            .connect-button:focus-visible {
+                outline: var(--sl-focus-ring);
+                outline-offset: var(--sl-focus-ring-offset);
+            }
             .label-layout {
                 align-items: start;
+            }
+            fieldset.invoice-number {
+                display: grid;
+                gap: var(--sl-spacing-x-small);
+                border: 0;
+                margin: 0;
+                padding: 0;
+                min-width: 0;
+            }
+            fieldset.invoice-number legend {
+                padding: 0;
+                margin: 0 0 var(--sl-spacing-3x-small);
+                font-size: var(--sl-input-label-font-size-medium);
+                font-weight: bold;
+                color: var(--sl-input-label-color);
+            }
+            fieldset.invoice-number sl-select,
+            fieldset.invoice-number sl-input {
+                margin-top: 0;
+            }
+            .invoice-number-parts {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) 8.5rem minmax(0, 1fr);
+                row-gap: var(--sl-spacing-3x-small);
+            }
+            /* the parts share their borders, like a single input */
+            .invoice-number-parts > sl-input:focus-within,
+            .invoice-number-parts > sl-select:focus-within {
+                position: relative;
+                z-index: 1;
+            }
+            .invoice-number-prefix::part(base) {
+                border-start-end-radius: 0;
+                border-end-end-radius: 0;
+            }
+            .invoice-number-digits {
+                margin-inline: -1px;
+            }
+            .invoice-number-digits::part(combobox) {
+                border-radius: 0;
+                background-color: var(--sl-color-primary-50);
+                font-family: var(--sl-font-mono);
+            }
+            .invoice-number-suffix::part(base) {
+                border-start-start-radius: 0;
+                border-end-start-radius: 0;
+            }
+            /* the samples and their hints need more room than the field */
+            .invoice-number-digits::part(listbox) {
+                min-width: 13rem;
+            }
+            .invoice-number-digits sl-option::part(suffix) {
+                font-size: var(--sl-font-size-x-small);
+                opacity: 0.75;
+            }
+            .invoice-number-caption {
+                font-size: var(--sl-font-size-x-small);
+                color: var(--sl-color-gray-600);
+            }
+            .invoice-number-preview {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: baseline;
+                gap: var(--sl-spacing-x-small);
+                margin: 0;
+                padding: var(--sl-spacing-x-small) var(--sl-spacing-small);
+                background: var(--sl-color-gray-50);
+                border-radius: var(--sl-border-radius-medium);
+                font-size: var(--sl-font-size-small);
+            }
+            .invoice-number-sample {
+                font-family: var(--sl-font-mono);
+                font-weight: var(--sl-font-weight-semibold);
+                overflow-wrap: anywhere;
+            }
+            .invoice-number-sample mark {
+                padding: 0 var(--sl-spacing-3x-small);
+                border-radius: var(--sl-border-radius-small);
+                background-color: var(--sl-color-primary-100);
+                color: var(--sl-color-primary-800);
+            }
+            .invoice-number-help {
+                font-size: var(--sl-font-size-x-small);
             }
             .example {
                 margin: var(--sl-spacing-2x-small) 0 0;
@@ -593,14 +758,16 @@ export class SettingsForm extends LitElement {
             this.stripeCard(data),
             this.simpleCard(data, 'PAYMENT_PAYPAL', {
                 id: 'paypal', icon: 'paypal', title: 'PayPal',
-                description: html`
-                    To accept payments with PayPal, create a REST API app as explained in the
-                    <a href="https://www.paypal-community.com/t5/REST-APIs/How-do-I-generate-PayPal-Client-ID-amp-Secret-Key/td-p/3163643" target="_blank" rel="noopener noreferrer">PayPal community</a>,
-                    and test it. Then enter the <strong>live</strong> Client ID and Secret, and enable the live mode.
-                    To accept a currency that your account doesn't hold, enable the automatic currency conversion in the
-                    <a href="https://www.paypal.com/cgi-bin/customerprofileweb?cmd=_profile-pref" target="_blank" rel="noopener noreferrer">PayPal dashboard</a>
-                    (Profile → Settings → Account Settings → Payment Preferences → Block Payments).
-                `,
+                description: html`Accept payments with your PayPal account.`,
+                guide: setupGuide('How to get the Client ID and Secret', [
+                    html`In the ${externalLink('https://developer.paypal.com/dashboard/applications/live', 'PayPal Developer Dashboard')},
+                        open Apps & Credentials in Live mode and create a REST API app, as explained in the
+                        ${externalLink('https://developer.paypal.com/api/rest/', 'PayPal documentation')}.`,
+                    html`Enter the Client ID and Secret of the live app below, and set "Live mode" to Yes.`,
+                    html`To accept a currency that your account doesn't hold, allow the automatic conversion in the
+                        ${externalLink('https://www.paypal.com/cgi-bin/customerprofileweb?cmd=_profile-pref', 'PayPal dashboard')}:
+                        Profile, Settings, Account Settings, Payment Preferences, Block Payments.`,
+                ]),
             }),
             when(level.type !== 'EVENT', () => this.mollieCard(data), () => null),
             this.bankTransferCard(data),
@@ -614,7 +781,19 @@ export class SettingsForm extends LitElement {
         if (level.type !== 'ORGANIZATION') {
             return null;
         }
-        return sectionCard({icon: 'cash-coin', title: 'Custom offline payment methods'}, html`
+        return sectionCard({
+            icon: 'cash-coin', title: 'Custom offline payment methods',
+            actions: html`
+                <sl-button id="add-payment-method" variant="success" size="small"
+                           @click=${() => this.renderRoot.querySelector<OfflinePaymentConfigBlock>('offline-payment-config-block')?.add()}>
+                    <sl-icon slot="prefix" name="plus-circle"></sl-icon>
+                    Add payment method
+                </sl-button>
+            `,
+        }, html`
+            <p class="card-description text-muted">
+                Payments that the buyers make outside alf.io, following your instructions. Each event chooses which ones to offer.
+            </p>
             <offline-payment-config-block organization=${level.organizationId}></offline-payment-config-block>
         `);
     }
@@ -663,6 +842,19 @@ export class SettingsForm extends LitElement {
         });
     }
 
+    private stripeSteps(level: SettingsLevel): TemplateResult[] {
+        const steps = [
+            html`Copy the publishable key and the secret key from the Stripe dashboard into the fields below, as explained in the
+                ${externalLink('https://docs.stripe.com/keys', 'Stripe documentation')}.`,
+        ];
+        // Strong Customer Authentication is enabled for the whole system
+        if (level.type === 'SYSTEM') {
+            steps.push(html`To use Strong Customer Authentication (3D Secure 2), follow the
+                ${externalLink('https://alf.io/docs/configuration/payment/stripe-sca/', 'alf.io guide')}.`);
+        }
+        return steps;
+    }
+
     private stripeCard(data: LoadedSettings): TemplateResult | null {
         const settings = this.categorySettings(data, 'PAYMENT_STRIPE');
         if (settings.length === 0) {
@@ -671,16 +863,19 @@ export class SettingsForm extends LitElement {
         const level = data.level;
         if (level.type === 'ORGANIZATION' && data.platform?.enabled === true) {
             return sectionCard({icon: 'stripe', title: 'Stripe'}, html`
-                ${this.connectStatus(`/admin/configuration/payment/stripe/connect/${level.organizationId}`,
-                    'Connect with Stripe', data.platform.stripeConnected === true)}
+                ${this.connectStatus(html`
+                    <!-- Stripe's "Connect with Stripe" button, see https://codepen.io/stripe-connect/pen/BaQNbjK -->
+                    <a class="connect-button stripe-connect"
+                       href="/admin/configuration/payment/stripe/connect/${level.organizationId}">
+                        <span>Connect with</span>
+                        <img src="${resourcesPath}/images/payment/stripe-connect-wordmark-white.svg" alt="Stripe">
+                    </a>
+                `, data.platform.stripeConnected === true)}
             `);
         }
         return sectionCard({icon: 'stripe', title: 'Stripe'}, html`
-            <p class="card-description text-muted">
-                Find the API keys in the <a href="https://stripe.com/docs/dashboard#api-keys" target="_blank" rel="noopener noreferrer">Stripe dashboard</a>.
-                To enable Strong Customer Authentication (3D Secure 2), follow the
-                <a href="https://alf.io/docs/configuration/payment/stripe-sca/" target="_blank" rel="noopener noreferrer">alf.io guide</a>.
-            </p>
+            <p class="card-description text-muted">Accept credit cards and other payment methods with your Stripe account.</p>
+            ${setupGuide('How to get the API keys', this.stripeSteps(level))}
             <div data-card="stripe">${this.renderSettings(data, settings)}</div>
         `);
     }
@@ -696,8 +891,14 @@ export class SettingsForm extends LitElement {
             const platform = data.platform?.enabled === true;
             const visible = settings.filter((setting) => setting.key.includes('_CONNECT') === platform);
             return sectionCard({icon: 'credit-card-2-front', title: 'Mollie'}, html`
-                ${when(platform, () => this.connectStatus(`/admin/configuration/payment/mollie/connect/${level.organizationId}`,
-                    'Connect with Mollie', data.platform?.mollieConnected === true))}
+                ${when(platform, () => this.connectStatus(html`
+                    <!-- Mollie's own button, as its brand guidelines require -->
+                    <a class="connect-button" href="/admin/configuration/payment/mollie/connect/${level.organizationId}">
+                        <img src="${resourcesPath}/images/payment/mollie-connect-button.png"
+                             srcset="${resourcesPath}/images/payment/mollie-connect-button@2x.png 2x"
+                             width="200" height="45" alt="Connect via Mollie">
+                    </a>
+                `, data.platform?.mollieConnected === true))}
                 <div data-card="mollie">${this.renderSettings(data, visible)}</div>
             `);
         }
@@ -705,13 +906,13 @@ export class SettingsForm extends LitElement {
             html`<div data-card="mollie">${this.renderSettings(data, settings)}</div>`);
     }
 
-    private connectStatus(href: string, label: string, connected: boolean): TemplateResult {
+    /**
+     * @param button the provider's own "connect" button
+     */
+    private connectStatus(button: TemplateResult, connected: boolean): TemplateResult {
         return html`
             <div class="connect">
-                <sl-button variant="default" href=${href}>
-                    <sl-icon slot="prefix" name="link-45deg"></sl-icon>
-                    ${label}
-                </sl-button>
+                ${button}
                 ${when(connected,
                     () => html`<sl-badge variant="success" pill>Connected</sl-badge>`,
                     () => html`<sl-badge variant="neutral" pill>Not connected</sl-badge>`)}
@@ -726,7 +927,8 @@ export class SettingsForm extends LitElement {
         }
         return sectionCard({icon: 'bank', title: 'Bank transfer'}, html`
             <p class="card-description text-muted">
-                See the <a href="https://alf.io/docs/configuration/payment/bank-transfer/" target="_blank" rel="noopener noreferrer">bank transfer documentation</a>.
+                The buyers pay by bank transfer, and the reservation is confirmed once the payment has arrived.
+                ${externalLink('https://alf.io/docs/configuration/payment/bank-transfer/', 'Documentation')}
             </p>
             ${this.field({name: `settings.${DEFERRED_BANK_TRANSFER}`}, (deferredField: BoundField<string>) => {
                 // the payment instructions sent manually replace the ones computed by alf.io
@@ -833,7 +1035,7 @@ export class SettingsForm extends LitElement {
         const hasColors = event && data.settings.has(CHECK_IN_COLORS);
         return sectionCard({icon: 'qr-code-scan', title: 'Offline check-in and badge printing'}, html`
             <p class="card-description text-muted">
-                Settings of <a href="https://github.com/alfio-event/alf.io-PI" target="_blank" rel="noopener noreferrer">Alf.io-PI</a>,
+                Settings of ${externalLink('https://github.com/alfio-event/alf.io-PI', 'Alf.io-PI')},
                 the app for offline check-in and badge printing.
             </p>
             <div class="form-stack" data-card="check-in">
@@ -896,6 +1098,7 @@ export class SettingsForm extends LitElement {
         }
         return sectionCard({icon: options.icon, title: options.title}, html`
             ${when(options.description, () => html`<p class="card-description text-muted">${options.description}</p>`)}
+            ${options.guide ?? nothing}
             <div data-card=${options.id}>${this.renderSettings(data, settings)}</div>
         `);
     }
@@ -930,21 +1133,31 @@ export class SettingsForm extends LitElement {
         const inherited = data.inherited[setting.key];
         const inheritedValue = inherited?.value ?? undefined;
         let label = setting.description;
-        if (inheritedValue != null) {
-            // the "not set" option already shows the value that applies
+        let defaultValue: string | undefined = undefined;
+        if (setting.componentType === 'BOOLEAN') {
+            // the "not set" option shows the value that applies, or the default when that value is hidden
+            defaultValue = defaultValueOf(label);
             label = withoutDefaultValue(label);
         }
+        label = LABELS[setting.key] ?? label;
         const descriptor: SettingDescriptor = {
             id: setting.key,
             label,
             componentType: setting.componentType,
             inheritedValue,
+            defaultValue,
             inheritedSet: inherited?.set === true,
             secret: setting.secret === true,
             secretStored: setting.secretValueSet === true,
         };
         if (setting.key === 'COUNTRY_OF_BUSINESS') {
             descriptor.options = data.euCountries;
+        }
+        const special = SPECIAL_EDITORS[setting.key];
+        if (special != null) {
+            descriptor.editor = special.editor;
+            descriptor.label = special.label;
+            descriptor.helpText = special.helpText;
         }
         return this.field({name: `settings.${setting.key}`, validators},
             (field: BoundField<string>) => settingControl(field, this.submitted(), descriptor, data.level));
