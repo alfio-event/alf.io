@@ -4,7 +4,7 @@ import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
 import {Task} from '@lit/task';
 import {TanStackFormController} from '@tanstack/lit-form';
-import type {SlCheckbox} from '@shoelace-style/shoelace';
+import type {SlCheckbox, SlInput} from '@shoelace-style/shoelace';
 import {
     ConfigurationModification,
     ConfigurationSetting,
@@ -20,7 +20,8 @@ import {ConfirmationDialogService} from '../service/confirmation-dialog.ts';
 import {PAYMENT_PROXY_DESCRIPTIONS} from '../service/payment-proxy.ts';
 import {errorMessage} from '../service/helpers.ts';
 import {dispatchFeedback} from '../model/dom-events.ts';
-import {sectionCard} from '../components/section-card.ts';
+import {sectionCard, SectionCardOptions} from '../components/section-card.ts';
+import {emptyState} from '../components/empty-state.ts';
 import {externalLink} from '../components/external-link.ts';
 import {setupGuide} from '../components/setup-guide.ts';
 import {taskContent} from '../components/task-content.ts';
@@ -41,6 +42,7 @@ import {DEFAULT_LABEL_LAYOUT, labelLayoutPreview, validLabelLayout} from './labe
 import {json as jsonLanguage} from '@codemirror/lang-json';
 import {checkJsonSetting, JsonSchema, prettyJson, sameJson} from './json-setting-check.ts';
 import {classMap} from 'lit/directives/class-map.js';
+import {ref} from 'lit/directives/ref.js';
 import '../components/code-editor.ts';
 import './regenerate-invoices-dialog.ts';
 import type {RegenerateInvoicesDialog} from './regenerate-invoices-dialog.ts';
@@ -186,6 +188,25 @@ const LABELS: Record<string, string> = {
     STRIPE_SECRET_KEY: 'Secret key',
 };
 
+// the labels of the settings that have their own control, for the search
+const SEARCH_LABELS: Record<string, string> = {
+    PAYMENT_METHODS_BLACKLIST: "Payment methods that can't be used",
+    LABEL_LAYOUT: 'Badge layout',
+    CHECK_IN_COLOR_CONFIGURATION: 'Badge colors',
+    MAILER_TYPE: 'How should alf.io send e-mails?',
+    MAPS_PROVIDER: 'Which map should the event pages show?',
+};
+
+const REVOLUT_TITLE = 'Revolut';
+
+// dispatched by the admin's router before it leaves the page, see admin-application.js
+const BEFORE_LEAVE_EVENT = 'alfio-before-leave';
+
+interface BeforeLeaveDetail {
+    // true: leave the page
+    confirmations: Promise<boolean>[];
+}
+
 const PAYMENT_METHODS_DENY_LIST = 'PAYMENT_METHODS_BLACKLIST';
 const MAILER_TYPE = 'MAILER_TYPE';
 const MAPS_PROVIDER = 'MAPS_PROVIDER';
@@ -267,6 +288,18 @@ export class SettingsForm extends LitElement {
     @state() private invalid = false;
     @state() private generatingTickets = false;
     @state() private refreshCount = 0;
+    // the words typed in the search field, normalized (see searchable())
+    @state() private searchWords: string[] = [];
+    // the end of the form is on screen: the footer is in its place, not floating over the settings
+    @state() private atFormEnd = false;
+    private readonly formEndObserver = new IntersectionObserver((entries) => {
+        this.atFormEnd = entries.some((entry) => entry.isIntersecting);
+    });
+    private formEnd: Element | undefined;
+    // the text the search looks in, for each setting (settings.KEY) and extension parameter (extensions.xID)
+    private searchIndex = new Map<string, string>();
+    // the title of the card of each setting, filled in while rendering: the search looks in it too
+    private readonly cardTitles = new Map<string, string>();
     // the values right after the last load: what Cancel goes back to
     private initialValues: SettingsFormValues = {settings: {}, extensions: {}};
 
@@ -320,6 +353,7 @@ export class SettingsForm extends LitElement {
         args: () => [this.level, this.refreshCount] as const,
         onComplete: (data) => {
             this.initialValues = initialValues(data);
+            this.searchIndex = searchIndex(data);
             this.#form.api.reset(structuredClone(this.initialValues));
             this.invalid = false;
             this.lastData = data;
@@ -541,6 +575,52 @@ export class SettingsForm extends LitElement {
             .footer sl-divider {
                 margin-top: var(--sl-spacing-large);
             }
+            .footer.pending {
+                position: sticky;
+                bottom: 0;
+                z-index: 2;
+                margin-top: var(--sl-spacing-large);
+                padding-block: var(--sl-spacing-small) calc(var(--sl-spacing-small) + env(safe-area-inset-bottom, 0px));
+                background: var(--sl-color-neutral-0);
+            }
+            .footer.pending sl-divider {
+                margin-top: 0;
+            }
+            /* over the settings: separated from them by a shadow instead of the divider */
+            .footer.floating {
+                box-shadow: 0 -0.5rem 0.75rem -0.75rem rgb(0 0 0 / 0.25);
+            }
+            .footer.floating sl-divider {
+                visibility: hidden;
+            }
+            .form-end {
+                height: 1px;
+            }
+            .footer .changes {
+                align-self: center;
+                text-align: center;
+                font-weight: var(--sl-font-weight-semibold);
+                color: var(--sl-color-neutral-700);
+            }
+            .search-settings {
+                margin-bottom: var(--sl-spacing-large);
+            }
+            .no-results {
+                display: grid;
+                justify-items: center;
+                gap: var(--sl-spacing-small);
+            }
+            @media (max-width: 900px) {
+                /* above Cancel and Save */
+                .footer .row > .changes {
+                    display: block;
+                    grid-column: 1 / -1;
+                    order: -1;
+                }
+                .footer .row > .changes:empty {
+                    display: none;
+                }
+            }
             .footer-message {
                 margin: 0 0 var(--sl-spacing-small);
                 text-align: right;
@@ -597,6 +677,59 @@ export class SettingsForm extends LitElement {
         new FormMountController(this, this.#form.api);
     }
 
+    connectedCallback(): void {
+        super.connectedCallback();
+        window.addEventListener('beforeunload', this.onBeforeUnload);
+        window.addEventListener(BEFORE_LEAVE_EVENT, this.onBeforeLeave);
+        window.addEventListener('alfio-logout', this.stopLeaveConfirmation);
+    }
+
+    disconnectedCallback(): void {
+        super.disconnectedCallback();
+        this.stopLeaveConfirmation();
+        this.formEndObserver.disconnect();
+        this.formEnd = undefined;
+    }
+
+    private stopLeaveConfirmation = (): void => {
+        window.removeEventListener('beforeunload', this.onBeforeUnload);
+        window.removeEventListener(BEFORE_LEAVE_EVENT, this.onBeforeLeave);
+        window.removeEventListener('alfio-logout', this.stopLeaveConfirmation);
+    };
+
+    /**
+     * Reload, closing the tab, or leaving the admin: the browser asks with its own message
+     */
+    private onBeforeUnload = (event: BeforeUnloadEvent): void => {
+        if (this.changeCount() > 0) {
+            event.preventDefault();
+            // legacy browsers need returnValue to be set
+            event.returnValue = '';
+        }
+    };
+
+    /**
+     * Another page of the admin (see admin-application.js): the user confirms
+     */
+    private onBeforeLeave = (event: Event): void => {
+        if (this.changeCount() === 0) {
+            return;
+        }
+        (event as CustomEvent<BeforeLeaveDetail>).detail.confirmations.push(ConfirmationDialogService.requestConfirm(
+            'Leave without saving', `${changesDescription(this.changeCount())} will be lost.`, 'warning'));
+    };
+
+    private observeFormEnd = (element: Element | undefined): void => {
+        if (element === this.formEnd) {
+            return;
+        }
+        this.formEndObserver.disconnect();
+        this.formEnd = element;
+        if (element != null) {
+            this.formEndObserver.observe(element);
+        }
+    };
+
     render(): TemplateResult {
         return taskContent(this.loadTask, this.lastData, 'Failed to load the settings. Please try again.',
             (data) => this.renderContent(data));
@@ -625,6 +758,19 @@ export class SettingsForm extends LitElement {
                 <div class="creation-layout">
                     <alfio-section-nav label="Settings sections" .sections=${sections.map(({id, label}) => ({id, label}))}></alfio-section-nav>
                     <div class="creation-content">
+                        <sl-input id="search-settings" class="search-settings label-hidden" type="search" label="Search settings"
+                                  placeholder="Search settings" clearable autocomplete="off"
+                                  @sl-input=${(e: Event) => this.search((e.target as SlInput).value)}
+                                  @sl-clear=${() => this.search('')}
+                                  @keydown=${(e: KeyboardEvent) => this.onSearchKeyDown(e)}>
+                            <sl-icon slot="prefix" name="search"></sl-icon>
+                        </sl-input>
+                        ${when(sections.length === 0, () => html`
+                            <div class="no-results">
+                                ${emptyState('No settings match your search.')}
+                                <sl-button id="clear-search" variant="default" size="small" @click=${() => this.clearSearch()}>Clear search</sl-button>
+                            </div>
+                        `)}
                         ${repeat(sections, (section) => section.id, (section) => html`
                             <section id=${section.id} class="form-section" tabindex="-1" aria-labelledby="${section.id}-title">
                                 <h2 id="${section.id}-title">${section.label}</h2>
@@ -640,6 +786,7 @@ export class SettingsForm extends LitElement {
     }
 
     private renderFooter(): TemplateResult {
+        const changes = this.changeCount();
         return html`
             ${when(this.submitError, () => html`
                 <sl-alert id="submit-error" variant="danger" open closable @sl-after-hide=${() => { this.submitError = null; }}>
@@ -648,17 +795,19 @@ export class SettingsForm extends LitElement {
                 </sl-alert>
             `)}
             <!-- the footer stays inside the form, because Save submits it -->
-            <div class="footer">
+            <!-- once something has changed, it stays at the bottom of the screen, so that Save is always at hand -->
+            <div class=${classMap({footer: true, pending: changes > 0, floating: changes > 0 && !this.atFormEnd})}>
                 <sl-divider></sl-divider>
                 ${when(this.invalid, () => html`<p class="footer-message text-danger">${INVALID_FORM_MESSAGE}</p>`)}
                 <div class="row" style="--alfio-row-cols: 3">
                     <sl-button id="cancel-settings" variant="default" size="large" ?disabled=${this.saving}
                                @click=${() => void this.cancel()}>Cancel</sl-button>
-                    <div></div>
+                    <div class="changes" role="status">${when(changes > 0, () => changesDescription(changes))}</div>
                     <sl-button id="save-settings" type="submit" variant="warning" size="large"
                                ?loading=${this.saving} ?disabled=${this.saving}>Save</sl-button>
                 </div>
             </div>
+            <div class="form-end" ${ref(this.observeFormEnd)}></div>
         `;
     }
 
@@ -727,7 +876,7 @@ export class SettingsForm extends LitElement {
         // the generation can be forced only once it has been enabled, and saved, at this level
         const generation = data.settings.get(GENERATE_TICKETS_FOR_SUBSCRIPTIONS)?.setting;
         const canGenerate = generation != null && generation.id > -1 && generation.value === 'true';
-        return sectionCard({
+        return this.card({
             icon: 'collection', title: 'Subscriptions',
             actions: when(canGenerate, () => html`
                 <sl-button id="generate-tickets" variant="default" size="small" ?loading=${this.generatingTickets}
@@ -736,7 +885,7 @@ export class SettingsForm extends LitElement {
                     Generate tickets now
                 </sl-button>
             `, () => undefined),
-        }, html`<div data-card="subscriptions">${this.renderSettings(data, settings)}</div>`);
+        }, settings, () => html`<div data-card="subscriptions">${this.renderSettings(data, settings)}</div>`);
     }
 
     private emailCards(data: LoadedSettings, basic: boolean): (TemplateResult | null)[] {
@@ -751,8 +900,8 @@ export class SettingsForm extends LitElement {
             options = options.filter((setting) => setting.key === 'MAX_EMAIL_PER_CYCLE' || setting.key === 'MAIL_REPLY_TO');
         }
         return [
-            when(hasMailerType, () => sectionCard({icon: 'envelope', title: 'E-mail delivery'},
-                this.field({name: `settings.${MAILER_TYPE}`}, (field: BoundField<string>) => {
+            when(hasMailerType, () => this.card({icon: 'envelope', title: 'E-mail delivery'},
+                settings.filter((setting) => setting.key === MAILER_TYPE || isProviderSetting(setting)), () => this.field({name: `settings.${MAILER_TYPE}`}, (field: BoundField<string>) => {
                     const providerSettings = settings.filter((setting) => mailerOf(setting.key) === field.state.value);
                     let choices = MAILER_CHOICES;
                     if (data.level.type !== 'SYSTEM') {
@@ -767,8 +916,8 @@ export class SettingsForm extends LitElement {
                         panel: when(providerSettings.length > 0, () => this.renderSettings(data, providerSettings), () => undefined),
                     }, (value) => field.handleChange(value));
                 })), () => null),
-            when(options.length > 0, () => sectionCard({icon: 'envelope-paper', title: 'E-mail options'},
-                html`<div data-card="email-options">${this.renderSettings(data, options)}</div>`), () => null),
+            when(options.length > 0, () => this.card({icon: 'envelope-paper', title: 'E-mail options'}, options,
+                () => html`<div data-card="email-options">${this.renderSettings(data, options)}</div>`), () => null),
         ];
     }
 
@@ -802,7 +951,7 @@ export class SettingsForm extends LitElement {
         if (level.type !== 'ORGANIZATION') {
             return null;
         }
-        return sectionCard({
+        return this.card({
             icon: 'cash-coin', title: 'Custom offline payment methods',
             actions: html`
                 <sl-button id="add-payment-method" variant="success" size="small"
@@ -811,7 +960,7 @@ export class SettingsForm extends LitElement {
                     Add payment method
                 </sl-button>
             `,
-        }, html`
+        }, [], () => html`
             <p class="card-description text-muted">
                 Payments that the buyers make outside alf.io, following your instructions. Each event chooses which ones to offer.
             </p>
@@ -829,10 +978,10 @@ export class SettingsForm extends LitElement {
         }
         const others = settings.filter((setting) => setting.key !== PAYMENT_METHODS_DENY_LIST);
         const hasDenyList = settings.length > others.length;
-        return sectionCard({icon: 'wallet2', title: 'Payment options'}, html`
+        return this.card({icon: 'wallet2', title: 'Payment options'}, settings, () => html`
             <div class="form-stack" data-card="payment-options">
                 ${this.renderSettings(data, others)}
-                ${when(hasDenyList, () => this.renderDenyList())}
+                ${when(hasDenyList && this.shown(PAYMENT_METHODS_DENY_LIST), () => this.renderDenyList())}
             </div>
         `);
     }
@@ -883,7 +1032,7 @@ export class SettingsForm extends LitElement {
         }
         const level = data.level;
         if (level.type === 'ORGANIZATION' && data.platform?.enabled === true) {
-            return sectionCard({icon: 'stripe', title: 'Stripe'}, html`
+            return this.card({icon: 'stripe', title: 'Stripe'}, [], () => html`
                 ${this.connectStatus(html`
                     <!-- Stripe's "Connect with Stripe" button, see https://codepen.io/stripe-connect/pen/BaQNbjK -->
                     <a class="connect-button stripe-connect"
@@ -891,10 +1040,10 @@ export class SettingsForm extends LitElement {
                         <span>Connect with</span>
                         <img src="${resourcesPath}/images/payment/stripe-connect-wordmark-white.svg" alt="Stripe">
                     </a>
-                `, data.platform.stripeConnected === true)}
+                `, data.platform?.stripeConnected === true)}
             `);
         }
-        return sectionCard({icon: 'stripe', title: 'Stripe'}, html`
+        return this.card({icon: 'stripe', title: 'Stripe'}, settings, () => html`
             <p class="card-description text-muted">Accept credit cards and other payment methods with your Stripe account.</p>
             ${setupGuide('How to get the API keys', this.stripeSteps(level))}
             <div data-card="stripe">${this.renderSettings(data, settings)}</div>
@@ -911,7 +1060,7 @@ export class SettingsForm extends LitElement {
             // with the platform mode, the organization connects its own account; otherwise it enters its API key
             const platform = data.platform?.enabled === true;
             const visible = settings.filter((setting) => setting.key.includes('_CONNECT') === platform);
-            return sectionCard({icon: 'credit-card-2-front', title: 'Mollie'}, html`
+            return this.card({icon: 'credit-card-2-front', title: 'Mollie'}, visible, () => html`
                 ${when(platform, () => this.connectStatus(html`
                     <!-- Mollie's own button, as its brand guidelines require -->
                     <a class="connect-button" href="/admin/configuration/payment/mollie/connect/${level.organizationId}">
@@ -923,8 +1072,8 @@ export class SettingsForm extends LitElement {
                 <div data-card="mollie">${this.renderSettings(data, visible)}</div>
             `);
         }
-        return sectionCard({icon: 'credit-card-2-front', title: 'Mollie'},
-            html`<div data-card="mollie">${this.renderSettings(data, settings)}</div>`);
+        return this.card({icon: 'credit-card-2-front', title: 'Mollie'}, settings,
+            () => html`<div data-card="mollie">${this.renderSettings(data, settings)}</div>`);
     }
 
     /**
@@ -946,7 +1095,8 @@ export class SettingsForm extends LitElement {
         if (settings.length === 0) {
             return null;
         }
-        return sectionCard({icon: 'bank', title: 'Bank transfer'}, html`
+        const bankTransfer = settings.filter((setting) => !setting.key.startsWith('REVOLUT'));
+        return this.card({icon: 'bank', title: 'Bank transfer'}, bankTransfer, () => html`
             <p class="card-description text-muted">
                 The buyers pay by bank transfer, and the reservation is confirmed once the payment has arrived.
                 ${externalLink('https://alf.io/docs/configuration/payment/bank-transfer/', 'Documentation')}
@@ -973,20 +1123,21 @@ export class SettingsForm extends LitElement {
 
     private revolutCard(data: LoadedSettings): TemplateResult | null {
         const settings = this.categorySettings(data, 'PAYMENT_OFFLINE').filter((setting) => setting.key.startsWith('REVOLUT'));
-        if (settings.length === 0) {
+        // checked here, since the card is rendered with the field
+        if (settings.length === 0 || !this.cardMatches(REVOLUT_TITLE, settings)) {
             return null;
         }
         return this.field({name: `settings.${DEFERRED_BANK_TRANSFER}`}, (deferredField: BoundField<string>) => {
             if (deferredField.state.value === 'true') {
                 return html`${nothing}`;
             }
-            return sectionCard({icon: 'arrow-left-right', title: 'Revolut'}, html`
+            return html`${this.card({icon: 'arrow-left-right', title: REVOLUT_TITLE}, settings, () => html`
                 <p class="card-description text-muted">
                     If the bank account of the bank transfers is a Revolut account, alf.io can check the incoming payments
                     and confirm the reservations once they have been paid.
                 </p>
                 <div data-card="revolut">${this.renderSettings(data, settings)}</div>
-            `);
+            `) ?? nothing}`;
         });
     }
 
@@ -995,7 +1146,7 @@ export class SettingsForm extends LitElement {
         return [
             this.simpleCard(data, 'INVOICE', {id: 'invoice-options', icon: 'receipt', title: 'Invoice options'}),
             this.simpleCard(data, 'INVOICE_EU', {id: 'vat', icon: 'percent', title: 'VAT for business customers'}),
-            when(level.type === 'EVENT', () => sectionCard({
+            when(level.type === 'EVENT', () => this.card({
                 icon: 'arrow-repeat', title: 'Regenerate invoices',
                 actions: html`
                     <sl-button id="regenerate-invoices" variant="default" size="small"
@@ -1004,7 +1155,7 @@ export class SettingsForm extends LitElement {
                         Regenerate
                     </sl-button>
                 `,
-            }, html`
+            }, [], () => html`
                 <p class="card-description text-muted">
                     An invoice keeps the details it was created with. Regenerate the invoices of a period to apply the
                     current settings of the event to them. To change the details of a single invoice, regenerate it from
@@ -1029,8 +1180,11 @@ export class SettingsForm extends LitElement {
         if (!data.settings.has(MAPS_PROVIDER)) {
             return null;
         }
-        return sectionCard({icon: 'geo-alt', title: 'Maps'},
-            this.field({name: `settings.${MAPS_PROVIDER}`}, (field: BoundField<string>) => {
+        const settings = [MAPS_PROVIDER, ...Object.values(MAPS_KEYS)]
+            .map((key) => data.settings.get(key)?.setting)
+            .filter((setting): setting is ConfigurationSetting => setting != null);
+        return this.card({icon: 'geo-alt', title: 'Maps'}, settings,
+            () => this.field({name: `settings.${MAPS_PROVIDER}`}, (field: BoundField<string>) => {
                 const key = MAPS_KEYS[field.state.value];
                 const apiKey = data.settings.get(key ?? '')?.setting;
                 return choiceCards({
@@ -1054,21 +1208,21 @@ export class SettingsForm extends LitElement {
         const event = data.level.type === 'EVENT';
         const hasLabelLayout = event && data.settings.has(LABEL_LAYOUT);
         const hasColors = event && data.settings.has(CHECK_IN_COLORS);
-        return sectionCard({icon: 'qr-code-scan', title: 'Offline check-in and badge printing'}, html`
+        return this.card({icon: 'qr-code-scan', title: 'Offline check-in and badge printing'}, settings, () => html`
             <p class="card-description text-muted">
                 Settings of ${externalLink('https://github.com/alfio-event/alf.io-PI', 'Alf.io-PI')},
                 the app for offline check-in and badge printing.
             </p>
             <div class="form-stack" data-card="check-in">
                 ${this.renderSettings(data, options)}
-                ${when(hasLabelLayout, () => this.field({name: `settings.${LABEL_LAYOUT}`, validators: validateWith(validLabelLayout)},
+                ${when(hasLabelLayout && this.shown(LABEL_LAYOUT), () => this.field({name: `settings.${LABEL_LAYOUT}`, validators: validateWith(validLabelLayout)},
                     (field: BoundField<string>) => html`
                         <div class="row json-setting">
                             ${this.jsonEditor(field, LABEL_LAYOUT, 'Badge layout', 'The layout of the badges, in JSON.')}
                             ${labelLayoutPreview(field.state.value)}
                         </div>
                     `))}
-                ${when(hasColors, () => this.field({name: `settings.${CHECK_IN_COLORS}`, validators: validateWith(validCheckInColors)},
+                ${when(hasColors && this.shown(CHECK_IN_COLORS), () => this.field({name: `settings.${CHECK_IN_COLORS}`, validators: validateWith(validCheckInColors)},
                     (field: BoundField<string>) => html`
                         <div class="row json-setting">
                             ${this.jsonEditor(field, CHECK_IN_COLORS, 'Badge colors',
@@ -1098,19 +1252,23 @@ export class SettingsForm extends LitElement {
         `;
     }
 
-    private extensionCards(data: LoadedSettings): TemplateResult[] {
-        return data.extensions.map((parameters) => sectionCard({icon: 'plug', title: parameters[0].extensionDisplayName}, html`
-            <div class="form-stack" data-card="extension-${parameters[0].extensionId}">
-                ${repeat(parameters, (parameter) => parameter.id, (parameter) => this.renderExtensionSetting(data, parameter))}
-            </div>
-        `));
+    private extensionCards(data: LoadedSettings): (TemplateResult | null)[] {
+        return data.extensions.map((parameters) => {
+            const keys = parameters.map(extensionKey);
+            return this.card({icon: 'plug', title: parameters[0].extensionDisplayName}, keys, () => html`
+                <div class="form-stack" data-card="extension-${parameters[0].extensionId}">
+                    ${repeat(parameters.filter((parameter) => this.shown(extensionKey(parameter))), (parameter) => parameter.id,
+                        (parameter) => this.renderExtensionSetting(data, parameter))}
+                </div>
+            `);
+        });
     }
 
     private renderBasicCards(data: LoadedSettings): TemplateResult {
         const general = this.categorySettings(data, 'GENERAL').filter((setting) => setting.basic === true);
         return html`
-            ${when(general.length > 0, () => sectionCard({icon: 'sliders', title: 'Common options'},
-                html`<div data-card="general-options">${this.renderSettings(data, general)}</div>`))}
+            ${when(general.length > 0, () => this.card({icon: 'sliders', title: 'Common options'}, general,
+                () => html`<div data-card="general-options">${this.renderSettings(data, general)}</div>`))}
             ${this.emailCards(data, true)}
             ${this.mapsCard(data)}
             ${this.paymentOptionsCard(data, true)}
@@ -1118,6 +1276,44 @@ export class SettingsForm extends LitElement {
     }
 
     // ---------- settings ----------
+
+    /**
+     * A card with the given settings. While searching, it is shown only if its title or one of its settings
+     * matches, and renderSettings() shows only the matching settings.
+     */
+    private card(options: SectionCardOptions, settings: readonly (ConfigurationSetting | string)[], body: () => TemplateResult): TemplateResult | null {
+        const keys = settings.map(searchKey);
+        for (const key of keys) {
+            this.cardTitles.set(key, options.title);
+        }
+        if (!this.cardMatches(options.title, settings)) {
+            return null;
+        }
+        return sectionCard(options, body());
+    }
+
+    private cardMatches(title: string, settings: readonly (ConfigurationSetting | string)[]): boolean {
+        if (this.searchWords.length === 0) {
+            return true;
+        }
+        const titleText = searchable(title);
+        return this.matchesSearch(titleText) || settings.some((setting) => this.matchesSearch(`${titleText} ${this.searchIndex.get(searchKey(setting)) ?? ''}`));
+    }
+
+    /**
+     * The setting (KEY) or extension parameter (xID) matches the search, if any
+     */
+    private shown(key: string): boolean {
+        if (this.searchWords.length === 0) {
+            return true;
+        }
+        const fullKey = searchKey(key);
+        return this.matchesSearch(`${searchable(this.cardTitles.get(fullKey) ?? '')} ${this.searchIndex.get(fullKey) ?? ''}`);
+    }
+
+    private matchesSearch(text: string): boolean {
+        return this.searchWords.every((word) => text.includes(word));
+    }
 
     private simpleCard(data: LoadedSettings, category: string, options: CardOptions): TemplateResult | null {
         return this.settingsCard(data, this.categorySettings(data, category), options);
@@ -1127,7 +1323,7 @@ export class SettingsForm extends LitElement {
         if (settings.length === 0) {
             return null;
         }
-        return sectionCard({icon: options.icon, title: options.title}, html`
+        return this.card({icon: options.icon, title: options.title}, settings, () => html`
             ${when(options.description, () => html`<p class="card-description text-muted">${options.description}</p>`)}
             ${options.guide ?? nothing}
             <div data-card=${options.id}>${this.renderSettings(data, settings)}</div>
@@ -1142,8 +1338,9 @@ export class SettingsForm extends LitElement {
      * The yes/no settings side by side, then the values to type
      */
     private renderSettings(data: LoadedSettings, settings: ConfigurationSetting[]): TemplateResult {
-        const switches = settings.filter((setting) => setting.componentType === 'BOOLEAN');
-        const values = settings.filter((setting) => setting.componentType !== 'BOOLEAN');
+        const shown = settings.filter((setting) => this.shown(setting.key));
+        const switches = shown.filter((setting) => setting.componentType === 'BOOLEAN');
+        const values = shown.filter((setting) => setting.componentType !== 'BOOLEAN');
         return html`
             <div class="form-stack">
                 ${when(switches.length > 0, () => html`
@@ -1225,12 +1422,41 @@ export class SettingsForm extends LitElement {
 
     // ---------- actions ----------
 
+    private search(value: string): void {
+        this.searchWords = searchable(value).split(' ').filter((word) => word !== '').map((word) => ` ${word}`);
+    }
+
+    private clearSearch(): void {
+        const input = this.renderRoot.querySelector<SlInput>('#search-settings');
+        if (input != null) {
+            input.value = '';
+            input.focus();
+        }
+        this.search('');
+    }
+
+    private onSearchKeyDown(event: KeyboardEvent): void {
+        // Enter would submit the form
+        if (event.key === 'Enter') {
+            event.preventDefault();
+        }
+        if (event.key === 'Escape' && this.searchWords.length > 0) {
+            event.preventDefault();
+            this.clearSearch();
+        }
+    }
+
     private submit = async (event: Event): Promise<void> => {
         event.preventDefault();
         if (this.saving) {
             return;
         }
         this.submitError = null;
+        // every setting is checked, and an invalid one must be visible
+        if (this.searchWords.length > 0) {
+            this.clearSearch();
+            await this.updateComplete;
+        }
         const valid = await submitValidated(this.#form.api);
         this.invalid = !valid;
         if (!valid) {
@@ -1313,7 +1539,7 @@ export class SettingsForm extends LitElement {
             this.dispatchEvent(new CustomEvent(SETTINGS_CANCELLED_EVENT, {bubbles: true, composed: true}));
             return;
         }
-        if (this.hasChanges()) {
+        if (this.changeCount() > 0) {
             const confirmed = await ConfirmationDialogService.requestConfirm('Discard the changes',
                 'The changes you made to the settings will be lost.', 'warning');
             if (!confirmed) {
@@ -1321,18 +1547,29 @@ export class SettingsForm extends LitElement {
             }
         }
         if (this.cancelUrl !== '') {
+            // already confirmed: leaving doesn't ask again
+            this.#form.api.reset(structuredClone(this.initialValues));
             window.location.hash = this.cancelUrl;
             return;
         }
         this.#form.api.reset(structuredClone(this.initialValues));
         this.invalid = false;
         this.submitError = null;
+        this.clearSearch();
         this.renderRoot.querySelector<SectionNav>('alfio-section-nav')?.reset();
         window.scrollTo({top: 0});
     }
 
-    private hasChanges(): boolean {
-        return JSON.stringify(this.#form.api.state.values) !== JSON.stringify(this.initialValues);
+    /**
+     * How many settings and extension parameters differ from the ones loaded
+     */
+    private changeCount(): number {
+        const values = this.#form.api.state.values;
+        const changedSettings = Object.entries(this.initialValues.settings)
+            .filter(([key, value]) => (values.settings[key] ?? '') !== value);
+        const changedExtensions = Object.entries(this.initialValues.extensions)
+            .filter(([key, value]) => (values.extensions[key] ?? '') !== value);
+        return changedSettings.length + changedExtensions.length;
     }
 
     private async generateTickets(level: SettingsLevel): Promise<void> {
@@ -1374,6 +1611,47 @@ function initialValues(data: LoadedSettings): SettingsFormValues {
         extensions[extensionKey(parameter)] = parameter.value ?? '';
     }
     return {settings, extensions};
+}
+
+/**
+ * The text the search looks in for each setting: its labels, its description and its key
+ */
+function searchIndex(data: LoadedSettings): Map<string, string> {
+    const index = new Map<string, string>();
+    for (const [key, {setting}] of data.settings) {
+        const special = SPECIAL_EDITORS[key];
+        const texts = [LABELS[key], SEARCH_LABELS[key], special?.label, special?.helpText, setting.description, key.replaceAll('_', ' ')];
+        index.set(searchKey(key), searchable(texts.filter((text) => text != null).join(' ')));
+    }
+    for (const parameter of data.extensions.flat()) {
+        index.set(searchKey(extensionKey(parameter)), searchable(`${parameter.description ?? ''} ${parameter.name}`));
+    }
+    return index;
+}
+
+// the extension parameters' keys start with "x" followed by a digit, the settings' keys are in uppercase
+function searchKey(setting: ConfigurationSetting | string): string {
+    if (typeof setting !== 'string') {
+        return `settings.${setting.key}`;
+    }
+    if (/^x\d/.test(setting)) {
+        return `extensions.${setting}`;
+    }
+    return `settings.${setting}`;
+}
+
+// lower case, without accents and punctuation, each word preceded by a space: a word of the search matches the
+// beginning of a word ("vat" matches "VAT number", not "reservation"; "cafe" matches "Café")
+function searchable(text: string): string {
+    const words = text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().split(/[^\p{L}\p{N}]+/u);
+    return words.filter((word) => word !== '').map((word) => ` ${word}`).join('');
+}
+
+function changesDescription(count: number): string {
+    if (count === 1) {
+        return '1 unsaved change';
+    }
+    return `${count} unsaved changes`;
 }
 
 // the field name of an extension parameter: a key starting with a digit would be read as an array index

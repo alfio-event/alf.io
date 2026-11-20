@@ -656,7 +656,29 @@
 
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
-    admin.run(function($rootScope, $uibModal, $window, $state) {
+    admin.run(function($rootScope, $uibModal, $window, $state, $q) {
+        // A page can ask for confirmation before the admin navigates away from it (e.g. unsaved settings): it listens
+        // to the "alfio-before-leave" window event and adds to detail.confirmations a promise of true (leave) or false (stay).
+        var leaveConfirmed = false;
+        $rootScope.$on('$stateChangeStart', function(event, toState, toParams) {
+            if (leaveConfirmed) {
+                leaveConfirmed = false;
+                return;
+            }
+            var check = new CustomEvent('alfio-before-leave', {detail: {confirmations: []}});
+            $window.dispatchEvent(check);
+            if (check.detail.confirmations.length === 0) {
+                return;
+            }
+            // the URL goes back to the current page while the user decides
+            event.preventDefault();
+            $q.all(check.detail.confirmations).then(function(answers) {
+                if (answers.every(Boolean)) {
+                    leaveConfirmed = true;
+                    $state.go(toState, toParams);
+                }
+            });
+        });
         $rootScope.$on('ErrorNotAuthorized', function() {
             $uibModal.open({
                 size:'sm',

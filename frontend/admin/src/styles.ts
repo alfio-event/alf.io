@@ -958,7 +958,8 @@ export const creationLayout = css`
 
     .mobile-section-nav { display: none; }
 
-    .creation-content { min-width: 0; }
+    /* always the last column: the index renders nothing when there are no sections (e.g. nothing matches a search) */
+    .creation-content { min-width: 0; grid-column: -2 / -1; }
 
     .form-section { scroll-margin-top: 7rem; }
     .form-section:focus { outline: none; }
