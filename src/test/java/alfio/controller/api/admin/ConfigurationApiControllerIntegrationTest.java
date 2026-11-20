@@ -705,15 +705,18 @@ class ConfigurationApiControllerIntegrationTest {
             // not set by the system: the default applies
             assertEquals(new ConfigurationManager.InheritedSetting(false, "true"), forOrganization.get(notifyOrganizer));
 
-            // an owner sees nothing of the system
-            assertTrue(configurationApiController.loadOrganizationInheritedValues(organization.getId(), mockPrincipal).isEmpty());
+            // an owner sees only the yes/no settings of the system listed in SYSTEM_SETTINGS_SHOWN_TO_OWNERS
+            var forOrganizationAsOwner = configurationApiController.loadOrganizationInheritedValues(organization.getId(), mockPrincipal);
+            assertEquals(new ConfigurationManager.InheritedSetting(true, "true"), forOrganizationAsOwner.get(notifyFailed));
+            assertFalse(forOrganizationAsOwner.containsKey(smtpPassword), "not shown to the owners");
 
-            // at the event level, an owner sees only what the organization sets
+            // at the event level, an owner sees what the organization sets, then the system settings shown to owners
             var forEventAsOwner = configurationApiController.loadEventInheritedValues(event.getId(), mockPrincipal);
             assertEquals(new ConfigurationManager.InheritedSetting(true, "false"), forEventAsOwner.get(notifyOrganizer));
             assertEquals(new ConfigurationManager.InheritedSetting(true, null), forEventAsOwner.get(replyTo));
-            assertFalse(forEventAsOwner.containsKey(notifyFailed), "set by the system only");
-            assertFalse(forEventAsOwner.containsKey(smtpPassword), "set by the system only");
+            assertEquals(new ConfigurationManager.InheritedSetting(true, "true"), forEventAsOwner.get(notifyFailed),
+                "set by the system, and shown to the owners");
+            assertFalse(forEventAsOwner.containsKey(smtpPassword), "set by the system, not shown to the owners");
 
             // an administrator sees what applies to the event, including the values inherited from the system
             var forEventAsAdmin = configurationApiController.loadEventInheritedValues(event.getId(), adminPrincipal);
