@@ -128,7 +128,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         boolean platformMode = configurationLevel.getOrganizationId().isPresent() && configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault();
         var requestBuilder = HttpRequest.newBuilder().uri(URI.create(url));
         if(platformMode) {
-            return requestBuilder.header("Authorization", "Bearer " + accessTokenCache.get(configurationLevel.getOrganizationId().orElseThrow(), org -> {
+            return requestBuilder.header("Authorization", "Bearer " + accessTokenCache.get(configurationLevel.getOrganizationId().orElseThrow(), _ -> {
                 var accessTokenResponseDetails = mollieConnectManager.refreshAccessToken(configuration);
                 if(accessTokenResponseDetails.isSuccess()) {
                     return accessTokenResponseDetails.getAccessToken();
