@@ -1,9 +1,11 @@
 import {html, TemplateResult} from 'lit';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
+import {checkJsonSetting, JsonSchema} from './json-setting-check.ts';
 
 /**
- * The layout of the badges printed by Alf.io-PI (LABEL_LAYOUT)
+ * The layout of the badges printed by Alf.io-PI (LABEL_LAYOUT), as read by the server
+ * (CheckInApiController.LabelLayout)
  */
 interface LabelLayout {
     qrCode?: {
@@ -15,10 +17,33 @@ interface LabelLayout {
         secondRow?: string;
         thirdRow?: string[];
         additionalRows?: string[];
+        checkbox?: boolean;
     };
     general?: {
         printPartialID?: boolean;
     };
+    mediaName?: string;
+}
+
+// what the server reads: keep in sync with CheckInApiController.LabelLayout
+const LABEL_LAYOUT_SCHEMA: Record<string, JsonSchema> = {
+    qrCode: {object: {additionalInfo: {list: 'text'}, infoSeparator: 'text'}},
+    content: {
+        object: {
+            firstRow: 'text', secondRow: 'text', thirdRow: {list: 'text'}, additionalRows: {list: 'text'}, checkbox: 'yes/no',
+        },
+    },
+    general: {object: {printPartialID: 'yes/no'}},
+    mediaName: 'text',
+};
+
+/**
+ * Checks a badge layout against what the server reads, see checkJsonSetting()
+ *
+ * @return the message to display, or undefined if the layout is valid
+ */
+export function validLabelLayout(value: unknown): string | undefined {
+    return checkJsonSetting(value, LABEL_LAYOUT_SCHEMA);
 }
 
 export const DEFAULT_LABEL_LAYOUT = JSON.stringify({

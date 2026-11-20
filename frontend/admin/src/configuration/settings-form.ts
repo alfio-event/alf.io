@@ -28,6 +28,7 @@ import {choiceCards, ChoiceCardOption} from '../components/choice-cards.ts';
 import {FormSection, SectionNav} from '../components/section-nav.ts';
 import {
     BoundField,
+    fieldError,
     focusFirstError,
     FormMountController,
     INVALID_FORM_MESSAGE,
@@ -36,7 +37,11 @@ import {
 } from '../components/form-validation.ts';
 import {base, badges, choiceCards as choiceCardsStyles, creationLayout, form, modernLayout, row, textColors} from '../styles.ts';
 import {notSetLabel, REMOVE_SECRET, SettingDescriptor, settingControl, validJson} from './setting-control.ts';
-import {DEFAULT_LABEL_LAYOUT, labelLayoutPreview} from './label-layout-preview.ts';
+import {DEFAULT_LABEL_LAYOUT, labelLayoutPreview, validLabelLayout} from './label-layout-preview.ts';
+import {json as jsonLanguage} from '@codemirror/lang-json';
+import {checkJsonSetting, JsonSchema, prettyJson, sameJson} from './json-setting-check.ts';
+import {classMap} from 'lit/directives/class-map.js';
+import '../components/code-editor.ts';
 import './regenerate-invoices-dialog.ts';
 import type {RegenerateInvoicesDialog} from './regenerate-invoices-dialog.ts';
 import './offline-payment-config-block.ts';
@@ -159,7 +164,7 @@ interface RenderedSection extends FormSection {
 // settings edited elsewhere (Translations tab), or only through their own control
 const HIDDEN_SETTINGS = new Set(['SUPPORTED_LANGUAGES', 'TRANSLATION_OVERRIDE']);
 
-const JSON_SETTINGS = new Set(['LABEL_LAYOUT', 'CHECK_IN_COLOR_CONFIGURATION', 'OPENID_CONFIGURATION_JSON', 'WALLET_SERVICE_ACCOUNT_KEY']);
+const JSON_SETTINGS = new Set(['OPENID_CONFIGURATION_JSON', 'WALLET_SERVICE_ACCOUNT_KEY']);
 
 // settings edited with a special editor, with the label that the editor shows instead of the description
 const SPECIAL_EDITORS: Record<string, { editor: NonNullable<SettingDescriptor['editor']>, label: string, helpText?: string }> = {
@@ -219,6 +224,19 @@ const MAPS_KEYS: Record<string, string> = {
     GOOGLE: 'MAPS_CLIENT_API_KEY',
     HERE: 'MAPS_HERE_API_KEY',
 };
+
+// what the server reads: keep in sync with CheckInOutputColorConfiguration
+const CHECK_IN_COLORS_SCHEMA: Record<string, JsonSchema> = {
+    defaultColorName: 'text',
+    configurations: {list: {object: {colorName: 'text', categories: {list: 'whole number'}}}},
+};
+
+function validCheckInColors(value: unknown): string | undefined {
+    return checkJsonSetting(value, CHECK_IN_COLORS_SCHEMA);
+}
+
+// the JSON settings shown with a code editor: they are indented when loaded
+const PRETTY_JSON_SETTINGS = ['LABEL_LAYOUT', 'CHECK_IN_COLOR_CONFIGURATION'];
 
 const CHECK_IN_COLORS_EXAMPLE = `{
   "defaultColorName": "success",
@@ -417,8 +435,11 @@ export class SettingsForm extends LitElement {
                 outline: var(--sl-focus-ring);
                 outline-offset: var(--sl-focus-ring-offset);
             }
-            .label-layout {
+            .json-setting {
                 align-items: start;
+            }
+            .json-setting alfio-code-editor {
+                --alfio-code-editor-height: 22rem;
             }
             fieldset.invoice-number {
                 display: grid;
@@ -1040,23 +1061,18 @@ export class SettingsForm extends LitElement {
             </p>
             <div class="form-stack" data-card="check-in">
                 ${this.renderSettings(data, options)}
-                ${when(hasLabelLayout, () => this.field({name: `settings.${LABEL_LAYOUT}`, validators: validateWith(validJson)},
+                ${when(hasLabelLayout, () => this.field({name: `settings.${LABEL_LAYOUT}`, validators: validateWith(validLabelLayout)},
                     (field: BoundField<string>) => html`
-                        <div class="row label-layout">
-                            ${settingControl(field, this.submitted(), {
-                                id: LABEL_LAYOUT, label: 'Badge layout', componentType: 'TEXTAREA',
-                                helpText: 'The layout of the badges, in JSON.',
-                            }, data.level)}
+                        <div class="row json-setting">
+                            ${this.jsonEditor(field, LABEL_LAYOUT, 'Badge layout', 'The layout of the badges, in JSON.')}
                             ${labelLayoutPreview(field.state.value)}
                         </div>
                     `))}
-                ${when(hasColors, () => this.field({name: `settings.${CHECK_IN_COLORS}`, validators: validateWith(validJson)},
+                ${when(hasColors, () => this.field({name: `settings.${CHECK_IN_COLORS}`, validators: validateWith(validCheckInColors)},
                     (field: BoundField<string>) => html`
-                        <div class="row">
-                            ${settingControl(field, this.submitted(), {
-                                id: CHECK_IN_COLORS, label: 'Badge colors', componentType: 'TEXTAREA',
-                                helpText: 'The color shown by the check-in app for each ticket category, in JSON.',
-                            }, data.level)}
+                        <div class="row json-setting">
+                            ${this.jsonEditor(field, CHECK_IN_COLORS, 'Badge colors',
+                                'The color shown by the check-in app for each ticket category, in JSON.')}
                             <div>
                                 <p class="example-label">Example</p>
                                 <pre class="example">${CHECK_IN_COLORS_EXAMPLE}</pre>
@@ -1065,6 +1081,21 @@ export class SettingsForm extends LitElement {
                     `))}
             </div>
         `);
+    }
+
+    /**
+     * A JSON setting edited with a code editor; its validators show their message below it
+     */
+    private jsonEditor(field: BoundField<string>, id: string, label: string, helpText: string): TemplateResult {
+        const error = fieldError(field.state.meta, this.submitted());
+        return html`
+            <alfio-code-editor id=${id} class=${classMap({error: error != null, setting: true})}
+                               label=${label} .language=${jsonLanguage()}
+                               .value=${field.state.value ?? ''} ?invalid=${error != null}
+                               help-text=${error ?? helpText}
+                               @value-changed=${(e: CustomEvent<string>) => field.handleChange(e.detail)}
+                               @focusout=${() => field.handleBlur()}></alfio-code-editor>
+        `;
     }
 
     private extensionCards(data: LoadedSettings): TemplateResult[] {
@@ -1228,6 +1259,10 @@ export class SettingsForm extends LitElement {
                 if (value === (setting.value ?? '')) {
                     continue;
                 }
+                // indented when loaded: saved only if the content changed
+                if (PRETTY_JSON_SETTINGS.includes(key) && sameJson(value, setting.value ?? '')) {
+                    continue;
+                }
                 if (value.trim() === '') {
                     if (setting.value != null) {
                         removed.push(key);
@@ -1324,6 +1359,11 @@ function initialValues(data: LoadedSettings): SettingsFormValues {
     const settings: Record<string, string> = {};
     for (const [key, {setting}] of data.settings) {
         settings[key] = setting.value ?? '';
+    }
+    for (const key of PRETTY_JSON_SETTINGS) {
+        if (settings[key] != null) {
+            settings[key] = prettyJson(settings[key]);
+        }
     }
     // as the previous editor did, the badge layout of an event starts from the default one, which is saved with the settings
     if (data.level.type === 'EVENT' && settings[LABEL_LAYOUT] === '') {
