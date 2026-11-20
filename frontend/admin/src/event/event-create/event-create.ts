@@ -22,7 +22,7 @@ import {ConfigurationService} from '../../service/configuration.ts';
 import {LocalizationService} from '../../service/localization.ts';
 import {LocationService} from '../../service/location.ts';
 import {UtilService, AvailableCurrency} from '../../service/util.ts';
-import {PAYMENT_PROXY_DESCRIPTIONS, PaymentMethodDTO, PaymentProxyService} from '../../service/payment-proxy.ts';
+import {describePaymentProxy, PaymentProviderOption, PaymentProxyService} from '../../service/payment-proxy.ts';
 import {AdditionalFieldService} from '../../service/additional-field.ts';
 import {errorMessage, fetchJson, postJson, readRouteParams} from '../../service/helpers.ts';
 import {toDateTimeLocal} from '../../service/date-format.ts';
@@ -293,7 +293,7 @@ export class EventCreate extends LitElement {
 
     @state() private editingEvent: AlfioEvent | null = null;
 
-    @state() private paymentProxies: PaymentMethodDTO[] = [];
+    @state() private paymentProxies: PaymentProviderOption[] = [];
     @state() private subscriptionDescriptors: { id: string; title: string; description: string }[] = [];
     @state() private geolocation: { latitude: string | null; longitude: string | null; mapUrl: string | null } | null = null;
     @state() private mapLoading = false;
@@ -946,7 +946,7 @@ export class EventCreate extends LitElement {
 
     private renderPaymentMethods(values: EventFormValues): TemplateResult {
         const currency = values.currency;
-        const isCompatible = (p: PaymentMethodDTO): boolean => p.status === 'ACTIVE'
+        const isCompatible = (p: PaymentProviderOption): boolean => p.status === 'ACTIVE'
             && (p.onlyForCurrency == null || p.onlyForCurrency.length === 0 || p.onlyForCurrency.includes(currency));
         const compatible = this.paymentProxies.filter(isCompatible);
         const unavailable = this.paymentProxies.filter((p) => !isCompatible(p));
@@ -986,13 +986,13 @@ export class EventCreate extends LitElement {
                         ${repeat(selected.filter(proxy => !this.paymentLoading && this.paymentError == null && !compatible.some(method => method.paymentProxy === proxy)), proxy => proxy, proxy => html`
                             <sl-checkbox class="payment-proxy" checked
                                          @sl-change=${() => this.togglePaymentProxy(field, proxy, false)}>
-                                ${PAYMENT_PROXY_DESCRIPTIONS[proxy] ?? proxy} — unavailable for this organizer or currency; uncheck to remove
+                                ${describePaymentProxy(proxy)} — unavailable for this organizer or currency; uncheck to remove
                             </sl-checkbox>
                         `)}
                         ${repeat(compatible, (p) => p.paymentProxy, (p) => html`
                             <sl-checkbox class="payment-proxy" ?checked=${selected.includes(p.paymentProxy)}
                                          @sl-change=${(e: Event) => this.togglePaymentProxy(field, p.paymentProxy, (e.target as SlCheckbox).checked)}>
-                                ${PAYMENT_PROXY_DESCRIPTIONS[p.paymentProxy] ?? `${p.paymentProxy} (please check the configuration)`}
+                                ${p.description}
                             </sl-checkbox>
                         `)}
                         ${when(unavailable.length > 0, () => html`
@@ -1992,7 +1992,7 @@ export class EventCreate extends LitElement {
         this.subscriptionDescriptors = [];
         try {
             const [proxies, subscriptions] = await Promise.all([
-                PaymentProxyService.allProxies(organizationId),
+                PaymentProxyService.providers(organizationId),
                 fetchJson<Array<{ id: string; title: Record<string, string>; description: Record<string, string> }>>(`/admin/api/organization/${organizationId}/subscription/active`),
             ]);
             if (generation !== this.paymentGeneration || String(organizationId) !== this.values.organizationId) {
