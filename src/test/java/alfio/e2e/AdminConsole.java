@@ -76,7 +76,8 @@ class AdminConsole {
     void login() {
         driver.navigate().to(serverBaseUrl + "/authentication");
         // if a session is already active, the login page redirects to the admin
-        wait.until(or(presenceOfElementLocated(By.id("username")), urlContains("/admin")));
+        // a lambda, since ExpectedConditions.or() exposes Guava's Function, which is a forbidden API
+        wait.until(d -> !d.findElements(By.id("username")).isEmpty() || d.getCurrentUrl().contains("/admin"));
         if (driver.findElements(By.id("username")).isEmpty()) {
             return;
         }

@@ -340,7 +340,7 @@ class ConfigurationApiControllerIntegrationTest {
                     .stream()
                     .noneMatch(nonDeletePm -> nonDeletePm.getPaymentMethodId().equals(pm.getPaymentMethodId()))
             )
-            .collect(Collectors.toList());
+            .toList();
         assertEquals(1, deletedPaymentMethods.size());
         assertEquals("15146df3-2436-4d2e-90b9-0d6cb273e291", deletedPaymentMethods.getFirst().getPaymentMethodId());
     }
@@ -663,24 +663,24 @@ class ConfigurationApiControllerIntegrationTest {
 
     @Test
     void secretsAreNeverSentToTheBrowser() {
-        var stripeSecret = ConfigurationKeys.STRIPE_SECRET_KEY.getValue();
-        var stripePublic = ConfigurationKeys.STRIPE_PUBLIC_KEY.getValue();
-        configurationRepository.insertOrganizationLevel(organization.getId(), stripeSecret, "sk_test_never_shown", "");
-        configurationRepository.insertOrganizationLevel(organization.getId(), stripePublic, "pk_test_shown", "");
+        var saferPaySecret = ConfigurationKeys.SAFERPAY_API_PASSWORD.getValue();
+        var saferPayPublic = ConfigurationKeys.SAFERPAY_CUSTOMER_ID.getValue();
+        configurationRepository.insertOrganizationLevel(organization.getId(), saferPaySecret, "sk_test_never_shown", "");
+        configurationRepository.insertOrganizationLevel(organization.getId(), saferPayPublic, "pk_test_shown", "");
 
         var settings = configurationApiController.loadOrganizationConfiguration(organization.getId(), mockPrincipal).values().stream()
             .flatMap(List::stream)
             .collect(Collectors.toMap(Configuration::getKey, c -> c));
-        var secret = settings.get(stripeSecret);
+        var secret = settings.get(saferPaySecret);
         assertNull(secret.getValue());
         assertTrue(secret.isSecret());
         assertTrue(secret.isSecretValueSet(), "the page must know that a secret is stored");
-        assertEquals("pk_test_shown", settings.get(stripePublic).getValue());
-        assertFalse(settings.get(stripePublic).isSecret());
+        assertEquals("pk_test_shown", settings.get(saferPayPublic).getValue());
+        assertFalse(settings.get(saferPayPublic).isSecret());
 
         // nor by the endpoint returning a single value
-        assertEquals(HttpStatus.NO_CONTENT, configurationApiController.getSingleConfigForOrganization(organization.getId(), stripeSecret, mockPrincipal).getStatusCode());
-        assertEquals("pk_test_shown", configurationApiController.getSingleConfigForOrganization(organization.getId(), stripePublic, mockPrincipal).getBody());
+        assertEquals(HttpStatus.NO_CONTENT, configurationApiController.getSingleConfigForOrganization(organization.getId(), saferPaySecret, mockPrincipal).getStatusCode());
+        assertEquals("pk_test_shown", configurationApiController.getSingleConfigForOrganization(organization.getId(), saferPayPublic, mockPrincipal).getBody());
     }
 
     @Test

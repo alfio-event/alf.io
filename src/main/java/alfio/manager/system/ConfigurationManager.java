@@ -77,6 +77,8 @@ public class ConfigurationManager {
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ORGANIZATION);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> PURCHASE_CONTEXT_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.PURCHASE_CONTEXT);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> CATEGORY_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.TICKET_CATEGORY);
+    public static final String DELETE_NOT_ALLOWED_NON_OWNER_MSG = "User is not owner of the organization. Therefore, delete is not allowed.";
+    public static final String NOT_OWNER_ERROR_MESSAGE = "Cannot update settings, user is not owner";
 
     private final ConfigurationRepository configurationRepository;
     private final UserManager userManager;
@@ -109,9 +111,9 @@ public class ConfigurationManager {
                 return selectPath(configList);
             }
             case PURCHASE_CONTEXT: {
-                if (path instanceof EventConfigurationPath o) {
-                    configList.addAll(configurationRepository.findByEventAndKey(o.organizationId(),
-                        o.id(), keyAsString));
+                if (path instanceof EventConfigurationPath(int organizationId, int id)) {
+                    configList.addAll(configurationRepository.findByEventAndKey(organizationId,
+                        id, keyAsString));
                 } else {
                     SubscriptionDescriptorConfigurationPath o = (SubscriptionDescriptorConfigurationPath) path;
                     configList.addAll(configurationRepository.findBySubscriptionDescriptorAndKey(o.organizationId(), o.id(), keyAsString));
@@ -152,8 +154,8 @@ public class ConfigurationManager {
                 saveOrganizationConfiguration(orgPath.id(), pathKey.key().name(), value);
                 break;
             case PURCHASE_CONTEXT:
-                if (path instanceof EventConfigurationPath eventPath) {
-                    saveEventConfiguration(eventPath.id(), eventPath.organizationId(), pathKey.key().name(), value);
+                if (path instanceof EventConfigurationPath(int organizationId, int id)) {
+                    saveEventConfiguration(id, organizationId, pathKey.key().name(), value);
                 } else {
                     var subscriptionDescriptorPath = (SubscriptionDescriptorConfigurationPath) path;
                     saveSubscriptionDescriptorConfiguration(subscriptionDescriptorPath.id(), subscriptionDescriptorPath.organizationId(), pathKey.key().name(), value);
@@ -181,7 +183,7 @@ public class ConfigurationManager {
     }
 
     public void saveAllOrganizationConfiguration(int organizationId, List<ConfigurationModification> list, String username) {
-        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), "Cannot update settings, user is not owner");
+        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), NOT_OWNER_ERROR_MESSAGE);
         list.stream()
             .filter(ConfigurationManager::toBeSaved)
             .forEach(c -> saveOrganizationConfiguration(organizationId, c.getKey(), c.getValue()));
@@ -213,7 +215,7 @@ public class ConfigurationManager {
 
     public void saveAllSubscriptionDescriptorConfiguration(SubscriptionDescriptor sd, List<ConfigurationModification> list, String username) {
         User user = userManager.findUserByUsername(username);
-        Validate.isTrue(userManager.isOwnerOfOrganization(user, sd.getOrganizationId()), "Cannot update settings, user is not owner");
+        Validate.isTrue(userManager.isOwnerOfOrganization(user, sd.getOrganizationId()), NOT_OWNER_ERROR_MESSAGE);
         list.stream()
             .filter(ConfigurationManager::toBeSaved)
             .forEach(c -> saveSubscriptionDescriptorConfiguration(sd.getId(), sd.getOrganizationId(), c.getKey(), c.getValue()));
@@ -221,7 +223,7 @@ public class ConfigurationManager {
 
     public void saveAllEventConfiguration(int eventId, int organizationId, List<ConfigurationModification> list, String username) {
         User user = userManager.findUserByUsername(username);
-        Validate.isTrue(userManager.isOwnerOfOrganization(user, organizationId), "Cannot update settings, user is not owner");
+        Validate.isTrue(userManager.isOwnerOfOrganization(user, organizationId), NOT_OWNER_ERROR_MESSAGE);
         EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         Validate.notNull(event, "event does not exist");
         if(organizationId != event.getOrganizationId()) {
@@ -301,7 +303,7 @@ public class ConfigurationManager {
                 boolean absent = externalConfiguration.getSingle(key.getValue())
                     .or(() -> configurationRepository.findOptionalByKey(key.getValue())).isEmpty();
                 if (absent) {
-                    log.warn("cannot find a value for " + key.getValue());
+                    log.warn("cannot find a value for {}", key.getValue());
                 }
                 return absent;
             });
@@ -324,7 +326,7 @@ public class ConfigurationManager {
             .stream()
             .filter(pp -> paymentMethodsBlacklist.contains(pp.getKey()))
             .flatMap(pp -> pp.getSettingCategories().stream())
-            .collect(toList());
+            .toList();
 
         if(toBeRemoved.isEmpty()) {
             return result;
@@ -447,7 +449,7 @@ public class ConfigurationManager {
                 ConfigurationKeys.SettingCategory key = e.getKey();
                 Set<Configuration> entries = new TreeSet<>(e.getValue());
                 if(existing.containsKey(key)) {
-                    List<Configuration> configurations = existing.get(key).stream().filter(Predicate.not(Configuration::isInternal)).collect(Collectors.toList());
+                    List<Configuration> configurations = existing.get(key).stream().filter(Predicate.not(Configuration::isInternal)).toList();
                     configurations.forEach(entries::remove);
                     entries.addAll(configurations);
                 }
@@ -463,11 +465,11 @@ public class ConfigurationManager {
         final List<Configuration> existing = configurationRepository.findSystemConfiguration()
                 .stream()
                 .filter(c -> !ConfigurationKeys.fromString(c.getKey()).isInternal())
-                .collect(toList());
+                .toList();
         final List<Configuration> missing = Arrays.stream(ConfigurationKeys.visible())
                 .filter(k -> existing.stream().noneMatch(c -> c.getKey().equals(k.getValue())))
                 .map(mapEmptyKeys(ConfigurationPathLevel.SYSTEM))
-                .collect(toList());
+                .toList();
         List<Configuration> result = new ArrayList<>(existing);
         result.addAll(missing);
         return result.stream().sorted().collect(groupByCategory());
@@ -486,21 +488,21 @@ public class ConfigurationManager {
     }
 
     public void deleteOrganizationLevelByKey(String key, int organizationId, String username) {
-        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), "User is not owner of the organization. Therefore, delete is not allowed.");
+        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), DELETE_NOT_ALLOWED_NON_OWNER_MSG);
         configurationRepository.deleteOrganizationLevelByKey(key, organizationId);
     }
 
     public void deleteEventLevelByKey(String key, int eventId, String username) {
         EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         Validate.notNull(event, "Wrong event id");
-        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), "User is not owner of the organization. Therefore, delete is not allowed.");
+        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), DELETE_NOT_ALLOWED_NON_OWNER_MSG);
         configurationRepository.deleteEventLevelByKey(key, eventId);
     }
 
     public void deleteCategoryLevelByKey(String key, int eventId, int categoryId, String username) {
         EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         Validate.notNull(event, "Wrong event id");
-        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), "User is not owner of the organization. Therefore, delete is not allowed.");
+        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), DELETE_NOT_ALLOWED_NON_OWNER_MSG);
         configurationRepository.deleteCategoryLevelByKey(key, eventId, categoryId);
     }
 
@@ -753,7 +755,7 @@ public class ConfigurationManager {
         var result = new TreeMap<String, InheritedSetting>();
         for (var key : keys) {
             var value = values.get(key);
-            boolean set = value != null && !value.isBlank();
+            boolean set = StringUtils.isNotEmpty(value);
             if (key.isBooleanComponentType()) {
                 // the value of a yes/no setting is not sensitive: it is shown, e.g. "Same as the system (Yes)"
                 String applied = null;
@@ -871,7 +873,7 @@ public class ConfigurationManager {
     }
 
     public boolean noTaxesFlagDefinedFor(List<TicketCategory> categories) {
-        return !getCategoriesWithNoTaxes(categories.stream().map(TicketCategory::getId).collect(toList())).isEmpty();
+        return !getCategoriesWithNoTaxes(categories.stream().map(TicketCategory::getId).toList()).isEmpty();
     }
 
     public static class MaybeConfiguration {
@@ -922,7 +924,7 @@ public class ConfigurationManager {
             return getValue().flatMap(v -> {
                 try {
                     return Optional.of(Integer.parseInt(v));
-                } catch(NumberFormatException ex) {
+                } catch(NumberFormatException _) {
                     return Optional.empty();
                 }
             }).orElse(defaultValue);
