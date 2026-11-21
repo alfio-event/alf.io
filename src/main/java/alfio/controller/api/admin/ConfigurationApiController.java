@@ -80,7 +80,7 @@ public class ConfigurationApiController {
     @GetMapping(value = "/load")
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadConfiguration(Principal principal) {
         accessService.ensureAdmin(principal);
-        return configurationManager.loadAllSystemConfigurationIncludingMissing(principal.getName());
+        return ConfigurationManager.withoutSecretValues(configurationManager.loadAllSystemConfigurationIncludingMissing(principal.getName()));
     }
 
     @GetMapping("/basic-configuration-needed")
@@ -106,7 +106,7 @@ public class ConfigurationApiController {
     @GetMapping(value = "/organizations/{organizationId}/load")
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadOrganizationConfiguration(@PathVariable int organizationId, Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
-        return configurationManager.loadOrganizationConfig(organizationId, principal.getName());
+        return ConfigurationManager.withoutSecretValues(configurationManager.loadOrganizationConfig(organizationId, principal.getName()));
     }
 
     @PostMapping(value = "/organizations/{organizationId}/update")
@@ -123,7 +123,31 @@ public class ConfigurationApiController {
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfiguration(@PathVariable int eventId,
                                                                                               Principal principal) {
         accessService.checkEventOwnership(principal, eventId);
-        return configurationManager.loadEventConfig(eventId, principal.getName());
+        return ConfigurationManager.withoutSecretValues(configurationManager.loadEventConfig(eventId, principal.getName()));
+    }
+
+    /*
+     * What applies to the settings that the level being edited doesn't set: whether the level above sets them
+     * (never their value) and, for the yes/no settings, the value that applies
+     */
+
+    @GetMapping("/inherited-values")
+    public Map<String, ConfigurationManager.InheritedSetting> loadSystemInheritedValues(Principal principal) {
+        accessService.ensureAdmin(principal);
+        return configurationManager.loadInheritedSettingsForSystem();
+    }
+
+    @GetMapping("/organizations/{organizationId}/inherited-values")
+    public Map<String, ConfigurationManager.InheritedSetting> loadOrganizationInheritedValues(@PathVariable int organizationId, Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
+        return configurationManager.loadInheritedSettingsForOrganization(principal.getName());
+    }
+
+    @GetMapping("/events/{eventId}/inherited-values")
+    public Map<String, ConfigurationManager.InheritedSetting> loadEventInheritedValues(@PathVariable int eventId, Principal principal) {
+        accessService.checkEventOwnership(principal, eventId);
+        var event = eventRepository.findEventAndOrganizationIdById(eventId);
+        return configurationManager.loadInheritedSettingsForEvent(event.getOrganizationId(), principal.getName());
     }
 
     @GetMapping("/events/{eventName}/single/{key}")
@@ -182,7 +206,7 @@ public class ConfigurationApiController {
     @GetMapping(value = "/events/{eventId}/categories/{categoryId}/load")
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadCategoryConfiguration(@PathVariable int eventId, @PathVariable int categoryId, Principal principal) {
         accessService.checkCategoryOwnership(principal, eventId, categoryId);
-        return configurationManager.loadCategoryConfig(eventId, categoryId, principal.getName());
+        return ConfigurationManager.withoutSecretValues(configurationManager.loadCategoryConfig(eventId, categoryId, principal.getName()));
     }
 
     @DeleteMapping(value = "/organization/{organizationId}/key/{key}")

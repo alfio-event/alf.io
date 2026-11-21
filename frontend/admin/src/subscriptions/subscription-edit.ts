@@ -20,7 +20,7 @@ import {ConfigurationService} from '../service/configuration.ts';
 import {LocalizationService} from '../service/localization.ts';
 import {UtilService, AvailableCurrency} from '../service/util.ts';
 import {LocationService} from '../service/location.ts';
-import {PAYMENT_PROXY_DESCRIPTIONS, PaymentMethodDTO, PaymentProxyService} from '../service/payment-proxy.ts';
+import {PaymentProviderOption, PaymentProxyService} from '../service/payment-proxy.ts';
 import {errorMessage} from '../service/helpers.ts';
 import {ConfirmationDialogService} from '../service/confirmation-dialog.ts';
 import {toDateTimeLocal, zonedIsoFromDateTimeLocal} from '../service/date-format.ts';
@@ -136,7 +136,7 @@ interface LoadedData {
     organizations: readonly Organization[];
     languages: ContentLanguage[];
     currencies: AvailableCurrency[];
-    paymentProxies: { id: PaymentProxy; description: string }[];
+    paymentProxies: PaymentProviderOption[];
     timeZones: string[];
     ticketsGenerationJobActive: boolean;
     descriptionMaxLength: number;
@@ -203,7 +203,7 @@ export class SubscriptionEdit extends LitElement {
                 OrganizationService.loadAll(),
                 new LocalizationService().getEventsSupportedLanguages(),
                 UtilService.availableCurrencies(),
-                PaymentProxyService.selectableProxies(organizationId),
+                PaymentProxyService.selectableProviders(organizationId),
                 LocationService.timezones(),
                 ConfigurationService.loadSingleConfigForOrganization(organizationId, 'GENERATE_TICKETS_FOR_SUBSCRIPTIONS').catch(() => ''),
                 ConfigurationService.loadInstanceSettings().catch(() => ({descriptionMaxLength: 4096, baseUrl: ''})),
@@ -213,7 +213,7 @@ export class SubscriptionEdit extends LitElement {
                 organizations,
                 languages,
                 currencies,
-                paymentProxies: dedupeByDescription(proxies),
+                paymentProxies: proxies,
                 timeZones,
                 ticketsGenerationJobActive: ticketsGeneration === 'true',
                 descriptionMaxLength: instanceSettings.descriptionMaxLength,
@@ -605,9 +605,9 @@ export class SubscriptionEdit extends LitElement {
                 const error = fieldError(field.state.meta, submitted);
                 const selected = (field.state.value as string[]) ?? [];
                 return html`
-                    ${repeat(data.paymentProxies, (p) => p.id, (p) => html`
-                        <sl-checkbox class="payment-proxy" ?checked=${selected.includes(p.id)}
-                                     @sl-change=${(e: Event) => this.togglePaymentProxy(field, p.id, (e.target as SlCheckbox).checked)}>
+                    ${repeat(data.paymentProxies, (p) => p.paymentProxy, (p) => html`
+                        <sl-checkbox class="payment-proxy" ?checked=${selected.includes(p.paymentProxy)}
+                                     @sl-change=${(e: Event) => this.togglePaymentProxy(field, p.paymentProxy, (e.target as SlCheckbox).checked)}>
                             ${p.description}
                         </sl-checkbox>
                     `)}
@@ -1015,20 +1015,6 @@ function localizedValues(content: LocalizedContent | null | undefined, locales: 
     const result: LocalizedContent = {};
     for (const locale of locales) {
         result[locale] = content?.[locale] ?? '';
-    }
-    return result;
-}
-
-function dedupeByDescription(proxies: PaymentMethodDTO[]): { id: PaymentProxy; description: string }[] {
-    const seen = new Set<string>();
-    const result: { id: PaymentProxy; description: string }[] = [];
-    for (const proxy of proxies) {
-        const description = PAYMENT_PROXY_DESCRIPTIONS[proxy.paymentProxy]
-            ?? `Unknown provider (${proxy.paymentProxy}). Please check the configuration`;
-        if (!seen.has(description)) {
-            seen.add(description);
-            result.push({id: proxy.paymentProxy, description});
-        }
     }
     return result;
 }

@@ -31,10 +31,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -57,12 +60,17 @@ import alfio.model.TicketCategory;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
+import alfio.manager.system.ConfigurationManager;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.UserDefinedOfflinePaymentMethod;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
+import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.repository.user.UserRepository;
 import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
@@ -81,6 +89,10 @@ class ConfigurationApiControllerIntegrationTest {
     private ConfigurationRepository configurationRepository;
     @Autowired
     private OrganizationRepository organizationRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private AuthorityRepository authorityRepository;
     @Autowired
     private UserManager userManager;
     @Autowired
@@ -647,5 +659,73 @@ class ConfigurationApiControllerIntegrationTest {
                 mockPrincipal
             )
         );
+    }
+
+    @Test
+    void secretsAreNeverSentToTheBrowser() {
+        var stripeSecret = ConfigurationKeys.STRIPE_SECRET_KEY.getValue();
+        var stripePublic = ConfigurationKeys.STRIPE_PUBLIC_KEY.getValue();
+        configurationRepository.insertOrganizationLevel(organization.getId(), stripeSecret, "sk_test_never_shown", "");
+        configurationRepository.insertOrganizationLevel(organization.getId(), stripePublic, "pk_test_shown", "");
+
+        var settings = configurationApiController.loadOrganizationConfiguration(organization.getId(), mockPrincipal).values().stream()
+            .flatMap(List::stream)
+            .collect(Collectors.toMap(Configuration::getKey, c -> c));
+        var secret = settings.get(stripeSecret);
+        assertNull(secret.getValue());
+        assertTrue(secret.isSecret());
+        assertTrue(secret.isSecretValueSet(), "the page must know that a secret is stored");
+        assertEquals("pk_test_shown", settings.get(stripePublic).getValue());
+        assertFalse(settings.get(stripePublic).isSecret());
+
+        // nor by the endpoint returning a single value
+        assertEquals(HttpStatus.NO_CONTENT, configurationApiController.getSingleConfigForOrganization(organization.getId(), stripeSecret, mockPrincipal).getStatusCode());
+        assertEquals("pk_test_shown", configurationApiController.getSingleConfigForOrganization(organization.getId(), stripePublic, mockPrincipal).getBody());
+    }
+
+    @Test
+    void inheritedSettingsTellOnlyWhetherAValueIsSet() {
+        var notifyFailed = ConfigurationKeys.NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS.getValue();
+        var notifyOrganizer = ConfigurationKeys.NOTIFY_ORGANIZER_ON_RESERVATION.getValue();
+        var smtpPassword = ConfigurationKeys.SMTP_PASSWORD.getValue();
+        var replyTo = ConfigurationKeys.MAIL_REPLY_TO.getValue();
+        var adminPrincipal = Mockito.mock(Principal.class);
+        Mockito.when(adminPrincipal.getName()).thenReturn(UserManager.ADMIN_USERNAME);
+
+        configurationRepository.insert(notifyFailed, "true", "");
+        configurationRepository.insert(smtpPassword, "never-shown", "");
+        configurationRepository.insertOrganizationLevel(organization.getId(), notifyOrganizer, "false", "");
+        configurationRepository.insertOrganizationLevel(organization.getId(), replyTo, "org@example.com", "");
+        IntegrationTestUtil.initAdminUser(userRepository, authorityRepository);
+        try {
+            // an administrator sees what the system sets: the value of a yes/no setting, only "set" for the others
+            var forOrganization = configurationApiController.loadOrganizationInheritedValues(organization.getId(), adminPrincipal);
+            assertEquals(new ConfigurationManager.InheritedSetting(true, "true"), forOrganization.get(notifyFailed));
+            assertEquals(new ConfigurationManager.InheritedSetting(true, null), forOrganization.get(smtpPassword));
+            // not set by the system: the default applies
+            assertEquals(new ConfigurationManager.InheritedSetting(false, "true"), forOrganization.get(notifyOrganizer));
+
+            // an owner sees only the yes/no settings of the system listed in SYSTEM_SETTINGS_SHOWN_TO_OWNERS
+            var forOrganizationAsOwner = configurationApiController.loadOrganizationInheritedValues(organization.getId(), mockPrincipal);
+            assertEquals(new ConfigurationManager.InheritedSetting(true, "true"), forOrganizationAsOwner.get(notifyFailed));
+            assertFalse(forOrganizationAsOwner.containsKey(smtpPassword), "not shown to the owners");
+
+            // at the event level, an owner sees what the organization sets, then the system settings shown to owners
+            var forEventAsOwner = configurationApiController.loadEventInheritedValues(event.getId(), mockPrincipal);
+            assertEquals(new ConfigurationManager.InheritedSetting(true, "false"), forEventAsOwner.get(notifyOrganizer));
+            assertEquals(new ConfigurationManager.InheritedSetting(true, null), forEventAsOwner.get(replyTo));
+            assertEquals(new ConfigurationManager.InheritedSetting(true, "true"), forEventAsOwner.get(notifyFailed),
+                "set by the system, and shown to the owners");
+            assertFalse(forEventAsOwner.containsKey(smtpPassword), "set by the system, not shown to the owners");
+
+            // an administrator sees what applies to the event, including the values inherited from the system
+            var forEventAsAdmin = configurationApiController.loadEventInheritedValues(event.getId(), adminPrincipal);
+            assertEquals(new ConfigurationManager.InheritedSetting(true, "true"), forEventAsAdmin.get(notifyFailed));
+            assertEquals(new ConfigurationManager.InheritedSetting(true, "false"), forEventAsAdmin.get(notifyOrganizer));
+        } finally {
+            configurationRepository.deleteByKey(notifyFailed);
+            configurationRepository.deleteByKey(smtpPassword);
+            IntegrationTestUtil.removeAdminUser(userRepository, authorityRepository);
+        }
     }
 }

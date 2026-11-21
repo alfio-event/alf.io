@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -326,6 +327,30 @@ public enum ConfigurationKeys {
     }
 
     private static final Predicate<ConfigurationKeys> INTERNAL_PREDICATE = ConfigurationKeys::isInternal;
+
+    // values that are never sent to the browser: the admin pages only show whether they are set
+    private static final Set<ConfigurationKeys> SECRETS = EnumSet.of(
+        SYSTEM_API_KEY,
+        RECAPTCHA_SECRET,
+        CF_TURNSTILE_SECRET_KEY,
+        STRIPE_SECRET_KEY,
+        STRIPE_WEBHOOK_KEY,
+        STRIPE_WEBHOOK_PAYMENT_KEY,
+        SAFERPAY_API_PASSWORD,
+        SMTP_PASSWORD,
+        REVOLUT_API_KEY,
+        MAILGUN_KEY,
+        SENDGRID_API_KEY,
+        MAILJET_APIKEY_PRIVATE,
+        PAYPAL_CLIENT_SECRET,
+        PAYPAL_DEMO_MODE_PASSWORD,
+        MOLLIE_API_KEY,
+        MOLLIE_CONNECT_REFRESH_TOKEN,
+        MOLLIE_CONNECT_CLIENT_SECRET,
+        PASSBOOK_KEYSTORE,
+        PASSBOOK_KEYSTORE_PASSWORD,
+        WALLET_SERVICE_ACCOUNT_KEY
+    );
     private final String description;
     private final boolean internal;
     private final SettingCategory category;
@@ -392,6 +417,10 @@ public enum ConfigurationKeys {
             .filter(ConfigurationKeys::isBasic)
             .collect(toList());
 
+    }
+
+    public boolean isSecret() {
+        return SECRETS.contains(this);
     }
 
     public boolean isBooleanComponentType() {

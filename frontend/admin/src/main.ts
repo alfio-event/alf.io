@@ -59,6 +59,8 @@ export { AdditionalFieldEdit } from './purchase-context/additional-field/additio
 export { OfflinePaymentConfigBlock } from './configuration/offline-payment-config-block';
 export { OfflinePaymentDialog } from './configuration/offline-payment-dialog';
 export { ConfirmationDialog } from './configuration/confirmation-dialog';
+export { SettingsPage } from './configuration/settings-page';
+export { BasicSettingsDialog } from './configuration/basic-settings-dialog';
 export { CustomOfflinePaymentEventSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-event-selector';
 export { CustomOfflinePaymentSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-selector';
 export { CustomOfflinePaymentDeniedMethodsSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-denied-methods-selector';
