@@ -13,8 +13,8 @@ import {ConfigurationService} from '../../service/configuration.ts';
 import {GroupService} from '../../service/group.ts';
 import {LocalizationService} from '../../service/localization.ts';
 import {LocationService} from '../../service/location.ts';
-import {PaymentProxyService, PAYMENT_PROXY_DESCRIPTIONS} from '../../service/payment-proxy.ts';
-import type {PaymentMethodDTO} from '../../service/payment-proxy.ts';
+import {describePaymentProxy, PaymentProxyService} from '../../service/payment-proxy.ts';
+import type {PaymentProviderOption} from '../../service/payment-proxy.ts';
 import {errorMessage, fetchJson} from '../../service/helpers.ts';
 import {formatAmount} from '../../service/reservation-format.ts';
 import {dispatchFeedback} from '../../model/dom-events.ts';
@@ -49,7 +49,7 @@ interface EventDetailData {
     // all the languages of the instance
     languages: ContentLanguage[];
     descriptionMaxLength: number;
-    paymentProxies: PaymentMethodDTO[];
+    paymentProxies: PaymentProviderOption[];
 }
 
 interface WaitingQueueStatus {
@@ -124,7 +124,7 @@ export class EventDetail extends LitElement {
                 fetchJson<SubscriptionWithStatistics[]>(`/admin/api/organization/${organization.id}/subscription/list`).catch(() => []),
                 new LocalizationService().getEventsSupportedLanguages(),
                 ConfigurationService.loadInstanceSettings(),
-                PaymentProxyService.allProxies(organization.id).catch(() => [] as PaymentMethodDTO[]),
+                PaymentProxyService.providers(organization.id).catch(() => [] as PaymentProviderOption[]),
                 loadMapUrl,
             ]);
             // BASE_URL is embedded in the admin page (admin-index.ms)
@@ -479,7 +479,7 @@ export class EventDetail extends LitElement {
                             <a href="#/group/${event.organizationId}/edit/${event.attendeesList.groupId}">${event.attendeesList.groupName}</a>
                             can buy tickets for this event.
                         </span>
-                        <sl-button size="small" href="#/configuration/organization/${event.organizationId}/event/${event.id}">
+                        <sl-button size="small" href="#/events/${event.shortName}/configuration">
                             <sl-icon slot="prefix" name="wrench"></sl-icon>
                             Configure
                         </sl-button>
@@ -555,7 +555,14 @@ export class EventDetail extends LitElement {
         const unavailable = data.paymentProxies.filter((proxy) => proxy.status === 'ACTIVE'
             && proxy.onlyForCurrency != null && proxy.onlyForCurrency.length > 0 && !proxy.onlyForCurrency.includes(currency)
             && !proxy.onlyForCurrency.includes('*'));
-        const paymentMethods = (event.allowedPaymentProxies ?? []).map((proxy) => PAYMENT_PROXY_DESCRIPTIONS[proxy] ?? proxy).join(', ');
+        const describe = (proxy: string): string => {
+            const provider = data.paymentProxies.find((p) => p.paymentProxy === proxy);
+            if (provider != null) {
+                return provider.description;
+            }
+            return describePaymentProxy(proxy);
+        };
+        const paymentMethods = (event.allowedPaymentProxies ?? []).map(describe).join(', ');
         let ticketPrice = 'Free of charge';
         if (!event.freeOfCharge) {
             ticketPrice = formatAmount(event.regularPrice, currency);
@@ -579,7 +586,7 @@ export class EventDetail extends LitElement {
                         <sl-alert open variant="warning" class="unavailable-payment-methods">
                             <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
                             These payment methods don't accept ${currency}:
-                            ${unavailable.map((proxy) => PAYMENT_PROXY_DESCRIPTIONS[proxy.paymentProxy] ?? proxy.paymentMethodId ?? proxy.paymentProxy).join(', ')}.
+                            ${unavailable.map((proxy) => proxy.description).join(', ')}.
                             Check the <a href="#/configuration/organization/${event.organizationId}">organization configuration</a>.
                         </sl-alert>
                     `, () => nothing)}

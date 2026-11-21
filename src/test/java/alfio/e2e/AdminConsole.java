@@ -76,7 +76,8 @@ class AdminConsole {
     void login() {
         driver.navigate().to(serverBaseUrl + "/authentication");
         // if a session is already active, the login page redirects to the admin
-        wait.until(or(presenceOfElementLocated(By.id("username")), urlContains("/admin")));
+        // a lambda, since ExpectedConditions.or() exposes Guava's Function, which is a forbidden API
+        wait.until(d -> !d.findElements(By.id("username")).isEmpty() || d.getCurrentUrl().contains("/admin"));
         if (driver.findElements(By.id("username")).isEmpty()) {
             return;
         }
@@ -1709,6 +1710,243 @@ class AdminConsole {
             throw new UncheckedIOException(e);
         }
         wait.until(_ -> findInShadowRoot(findInShadowRoot(edit, "alfio-purchase-context-image"), ".preview-box img") != null);
+    }
+
+    //
+    // configuration (Lit components, see frontend/admin/src/configuration)
+    //
+
+    /**
+     * Opens the configuration page of an event (or of the system, with a null slug), and returns the settings
+     * form once it has been loaded
+     */
+    private WebElement openSettings(String slug) {
+        var route = "/admin#/configuration/system";
+        if (slug != null) {
+            route = "/admin#/events/" + slug + "/configuration";
+        }
+        driver.navigate().to(serverBaseUrl + route);
+        var page = wait.until(presenceOfElementLocated(By.tagName("alfio-settings-page")));
+        var form = findInShadowRoot(page, "alfio-settings-form");
+        findInShadowRoot(form, "#save-settings");
+        return form;
+    }
+
+    /**
+     * Sets a text setting of an event ("" removes it), saves, and waits for the confirmation
+     */
+    void saveEventSetting(String slug, String key, String value) {
+        var form = openSettings(slug);
+        var control = findInShadowRoot(form, "sl-input#" + key);
+        ((JavascriptExecutor) driver).executeScript(
+            "arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('sl-input', { bubbles: true, composed: true }));",
+            control, value);
+        listenToSuccessFeedback();
+        clickWithJs(driver, findInShadowRoot(form, "#save-settings"));
+        waitForSuccessFeedback(form);
+    }
+
+    String eventSettingValue(String slug, String key) {
+        var form = openSettings(slug);
+        return String.valueOf(findInShadowRoot(form, "sl-input#" + key).getDomProperty("value"));
+    }
+
+    /**
+     * Chooses an option of a yes/no setting of an event ("true", "false", or "" to remove it),
+     * saves, and waits for the confirmation
+     */
+    void saveEventYesNoSetting(String slug, String key, String choice) {
+        var form = openSettings(slug);
+        var control = findInShadowRoot(form, "sl-select#" + key);
+        ((JavascriptExecutor) driver).executeScript(
+            "arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('sl-change', { bubbles: true, composed: true }));",
+            control, choice);
+        listenToSuccessFeedback();
+        clickWithJs(driver, findInShadowRoot(form, "#save-settings"));
+        waitForSuccessFeedback(form);
+    }
+
+    /**
+     * @return the value of a yes/no setting of an event, and the label of its "not set" option,
+     * e.g. "|Same as the organization (Yes)"
+     */
+    String eventYesNoSetting(String slug, String key) {
+        var form = openSettings(slug);
+        var control = findInShadowRoot(form, "sl-select#" + key);
+        var notSet = findInShadowRoot(form, "sl-select#" + key + " sl-option[value='']");
+        return control.getDomProperty("value") + "|" + String.valueOf(notSet.getDomProperty("textContent")).trim();
+    }
+
+    /**
+     * Opens the configuration of the organization of the tests (or of the first one), chosen in the level select
+     *
+     * @return the settings form, and the id of the organization
+     */
+    private Map.Entry<WebElement, String> openOrganizationSettings() {
+        openSettings(null);
+        var page = wait.until(presenceOfElementLocated(By.tagName("alfio-settings-page")));
+        var levelSelect = findInShadowRoot(page, "#settings-level");
+        var value = (String) ((JavascriptExecutor) driver).executeScript(
+            "const options = Array.from(arguments[0].querySelectorAll('sl-option')).filter(o => o.value.startsWith('organization-'));" +
+                "const option = options.find(o => o.textContent.trim() === arguments[1]) || options[0];" +
+                "arguments[0].value = option.value;" +
+                "arguments[0].dispatchEvent(new Event('sl-change', { bubbles: true, composed: true }));" +
+                "return option.value;", levelSelect, String.valueOf(organizationName));
+        var organizationId = value.substring("organization-".length());
+        wait.until(_ -> String.valueOf(driver.getCurrentUrl()).endsWith("/configuration/organization/" + organizationId));
+        var newPage = wait.until(presenceOfElementLocated(By.tagName("alfio-settings-page")));
+        wait.until(_ -> value.equals(findInShadowRoot(newPage, "#settings-level").getDomProperty("value")));
+        var form = findInShadowRoot(newPage, "alfio-settings-form");
+        findInShadowRoot(form, "#save-settings");
+        return Map.entry(form, organizationId);
+    }
+
+    /**
+     * Types a secret of the organization of the tests, saves, and waits for the confirmation
+     */
+    void saveOrganizationSecret(String key, String value) {
+        var form = openOrganizationSettings().getKey();
+        var control = findInShadowRoot(form, "sl-input#" + key);
+        ((JavascriptExecutor) driver).executeScript(
+            "arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('sl-input', { bubbles: true, composed: true }));",
+            control, value);
+        listenToSuccessFeedback();
+        clickWithJs(driver, findInShadowRoot(form, "#save-settings"));
+        waitForSuccessFeedback(form);
+    }
+
+    /**
+     * Removes the saved secret of the organization of the tests, saves, and waits for the confirmation
+     */
+    void removeOrganizationSecret(String key) {
+        var form = openOrganizationSettings().getKey();
+        clickWithJs(driver, findInShadowRoot(form, "sl-input#" + key + " .remove-secret"));
+        findInShadowRoot(form, "sl-input#" + key + " .undo-remove-secret");
+        listenToSuccessFeedback();
+        clickWithJs(driver, findInShadowRoot(form, "#save-settings"));
+        waitForSuccessFeedback(form);
+    }
+
+    /**
+     * @return what the configuration of the organization of the tests shows of a secret, e.g.
+     * "value=|placeholder=Saved. Type a new value to replace it|removable=true", and whether the response of the
+     * server contains the given text: "|sent=false"
+     */
+    String organizationSecret(String key, String secretValue) {
+        var formAndId = openOrganizationSettings();
+        var form = formAndId.getKey();
+        var control = findInShadowRoot(form, "sl-input#" + key);
+        var removable = (Boolean) ((JavascriptExecutor) driver).executeScript(
+            "return arguments[0].querySelector('.remove-secret') != null;", control);
+        var sent = (Boolean) ((JavascriptExecutor) driver).executeAsyncScript(
+            "const done = arguments[arguments.length - 1];" +
+                "fetch('/admin/api/configuration/organizations/' + arguments[0] + '/load', { credentials: 'include' })" +
+                ".then(r => r.text()).then(text => done(text.includes(arguments[1])));", formAndId.getValue(), secretValue);
+        return "value=" + control.getDomProperty("value")
+            + "|placeholder=" + control.getDomAttribute("placeholder")
+            + "|removable=" + removable
+            + "|sent=" + sent;
+    }
+
+    /**
+     * Chooses the first event in the level select of the configuration page
+     *
+     * @return the route shown afterwards, and the value of the level select, e.g. "#/configuration/organization/1/event/2|event-2"
+     */
+    String chooseEventInConfigurationPage() {
+        openSettings(null);
+        var page = wait.until(presenceOfElementLocated(By.tagName("alfio-settings-page")));
+        var levelSelect = findInShadowRoot(page, "#settings-level");
+        var eventValue = (String) ((JavascriptExecutor) driver).executeScript(
+            "const option = Array.from(arguments[0].querySelectorAll('sl-option')).find(o => o.value.startsWith('event-'));" +
+                "arguments[0].value = option.value;" +
+                "arguments[0].dispatchEvent(new Event('sl-change', { bubbles: true, composed: true }));" +
+                "return option.value;", levelSelect);
+        wait.until(_ -> String.valueOf(driver.getCurrentUrl()).contains("/event/"));
+        var newPage = wait.until(presenceOfElementLocated(By.tagName("alfio-settings-page")));
+        wait.until(_ -> eventValue.equals(findInShadowRoot(newPage, "#settings-level").getDomProperty("value")));
+        var url = String.valueOf(driver.getCurrentUrl());
+        return url.substring(url.indexOf('#')) + "|" + findInShadowRoot(newPage, "#settings-level").getDomProperty("value");
+    }
+
+    /**
+     * Types an invalid value in a textarea of the system settings and tries to save
+     *
+     * @return the errors displayed by the form
+     */
+    String saveInvalidSystemSetting(String key, String value) {
+        var form = openSettings(null);
+        var control = findInShadowRoot(form, "sl-textarea#" + key);
+        ((JavascriptExecutor) driver).executeScript(
+            "arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('sl-input', { bubbles: true, composed: true }));",
+            control, value);
+        clickWithJs(driver, findInShadowRoot(form, "#save-settings"));
+        wait.until(_ -> findInShadowRoot(form, ".footer-message") != null);
+        return (String) ((JavascriptExecutor) driver).executeScript(
+            "return Array.from(arguments[0].shadowRoot.querySelectorAll('.error, .footer-message')).map(element => element.getAttribute('help-text') || element.textContent).join(' | ');", form);
+    }
+
+    /**
+     * Customizes the first translation listed in the Translations tab of an event
+     *
+     * @return the key of the customized translation
+     */
+    String customizeFirstEventTranslation(String slug, String text) {
+        var editor = openEventTranslations(slug);
+        var row = findInShadowRoot(editor, "tr.translation-row");
+        var key = row.getDomAttribute("data-key");
+        clickWithJs(driver, findInShadowRoot(editor, "tr.translation-row[data-key='" + key + "'] .edit-translation"));
+        var dialog = findInShadowRoot(editor, "alfio-translation-dialog");
+        var textarea = findInShadowRoot(dialog, "sl-textarea#translation-value");
+        ((JavascriptExecutor) driver).executeScript(
+            "arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('sl-input', { bubbles: true, composed: true }));",
+            textarea, text);
+        listenToSuccessFeedback();
+        clickWithJs(driver, findInShadowRoot(dialog, "#save-translation"));
+        waitForSuccessFeedback(dialog);
+        return key;
+    }
+
+    boolean eventTranslationCustomized(String slug, String key, String text) {
+        var editor = openEventTranslations(slug);
+        var row = findInShadowRoot(editor, "tr.translation-row[data-key='" + key + "']");
+        var value = String.valueOf(row.getDomProperty("textContent"));
+        return value.contains(text) && value.contains("Customized");
+    }
+
+    void resetEventTranslation(String slug, String key) {
+        var editor = openEventTranslations(slug);
+        listenToSuccessFeedback();
+        clickWithJs(driver, findInShadowRoot(editor, "tr.translation-row[data-key='" + key + "'] .reset-translation"));
+        waitForSuccessFeedback(editor);
+    }
+
+    private WebElement openEventTranslations(String slug) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/configuration");
+        // the hash change alone doesn't reload the page: start from a fresh state
+        driver.navigate().refresh();
+        var page = wait.until(presenceOfElementLocated(By.tagName("alfio-settings-page")));
+        clickWithJs(driver, findInShadowRoot(page, "sl-tab#tab-translations"));
+        var editor = findInShadowRoot(page, "alfio-translations-editor");
+        findInShadowRoot(editor, "tr.translation-row");
+        return editor;
+    }
+
+    // records the next success notification (alfio-feedback), see waitForSuccessFeedback()
+    private void listenToSuccessFeedback() {
+        ((JavascriptExecutor) driver).executeScript("""
+            window.__alfioE2ESuccess = false;
+            document.addEventListener('alfio-feedback', e => {
+                if (e.detail.type === 'success') { window.__alfioE2ESuccess = true; }
+            });
+            """);
+    }
+
+    private void waitForSuccessFeedback(WebElement host) {
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "no confirmation; errors: " + ((JavascriptExecutor) driver).executeScript(
+                "return Array.from(arguments[0].shadowRoot.querySelectorAll('sl-alert[variant=danger], .error')).map(element => element.getAttribute('help-text') || element.textContent).join(' | ');", host))
+            .until(d -> Boolean.TRUE.equals(((JavascriptExecutor) d).executeScript("return window.__alfioE2ESuccess === true;")));
     }
 
     //

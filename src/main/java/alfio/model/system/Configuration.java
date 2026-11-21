@@ -40,6 +40,8 @@ public class Configuration implements Comparable<Configuration> {
     private final ConfigurationPathLevel configurationPathLevel;
     private final boolean basic;
     private final boolean internal;
+    // a secret is sent to the browser without its value: this tells whether one is stored
+    private final boolean secretValueSet;
 
 
     @JsonCreator
@@ -55,6 +57,33 @@ public class Configuration implements Comparable<Configuration> {
         this.configurationPathLevel = configurationPathLevel;
         this.basic = this.configurationKey.isBasic();
         this.internal = this.configurationKey.isInternal();
+        this.secretValueSet = false;
+    }
+
+    private Configuration(Configuration secret) {
+        this.id = secret.id;
+        this.key = secret.key;
+        this.value = null;
+        this.configurationKey = secret.configurationKey;
+        this.description = secret.description;
+        this.configurationPathLevel = secret.configurationPathLevel;
+        this.basic = secret.basic;
+        this.internal = secret.internal;
+        this.secretValueSet = secret.value != null && !secret.value.isBlank();
+    }
+
+    public boolean isSecret() {
+        return configurationKey.isSecret();
+    }
+
+    /**
+     * @return this configuration, or, for a secret, a copy without the value, to be sent to the browser
+     */
+    public Configuration withoutSecretValue() {
+        if (!isSecret()) {
+            return this;
+        }
+        return new Configuration(this);
     }
 
     public ComponentType getComponentType() {

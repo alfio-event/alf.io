@@ -77,6 +77,8 @@ public class ConfigurationManager {
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ORGANIZATION);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> PURCHASE_CONTEXT_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.PURCHASE_CONTEXT);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> CATEGORY_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.TICKET_CATEGORY);
+    public static final String DELETE_NOT_ALLOWED_NON_OWNER_MSG = "User is not owner of the organization. Therefore, delete is not allowed.";
+    public static final String NOT_OWNER_ERROR_MESSAGE = "Cannot update settings, user is not owner";
 
     private final ConfigurationRepository configurationRepository;
     private final UserManager userManager;
@@ -109,9 +111,9 @@ public class ConfigurationManager {
                 return selectPath(configList);
             }
             case PURCHASE_CONTEXT: {
-                if (path instanceof EventConfigurationPath o) {
-                    configList.addAll(configurationRepository.findByEventAndKey(o.organizationId(),
-                        o.id(), keyAsString));
+                if (path instanceof EventConfigurationPath(int organizationId, int id)) {
+                    configList.addAll(configurationRepository.findByEventAndKey(organizationId,
+                        id, keyAsString));
                 } else {
                     SubscriptionDescriptorConfigurationPath o = (SubscriptionDescriptorConfigurationPath) path;
                     configList.addAll(configurationRepository.findBySubscriptionDescriptorAndKey(o.organizationId(), o.id(), keyAsString));
@@ -152,8 +154,8 @@ public class ConfigurationManager {
                 saveOrganizationConfiguration(orgPath.id(), pathKey.key().name(), value);
                 break;
             case PURCHASE_CONTEXT:
-                if (path instanceof EventConfigurationPath eventPath) {
-                    saveEventConfiguration(eventPath.id(), eventPath.organizationId(), pathKey.key().name(), value);
+                if (path instanceof EventConfigurationPath(int organizationId, int id)) {
+                    saveEventConfiguration(id, organizationId, pathKey.key().name(), value);
                 } else {
                     var subscriptionDescriptorPath = (SubscriptionDescriptorConfigurationPath) path;
                     saveSubscriptionDescriptorConfiguration(subscriptionDescriptorPath.id(), subscriptionDescriptorPath.organizationId(), pathKey.key().name(), value);
@@ -181,7 +183,7 @@ public class ConfigurationManager {
     }
 
     public void saveAllOrganizationConfiguration(int organizationId, List<ConfigurationModification> list, String username) {
-        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), "Cannot update settings, user is not owner");
+        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), NOT_OWNER_ERROR_MESSAGE);
         list.stream()
             .filter(ConfigurationManager::toBeSaved)
             .forEach(c -> saveOrganizationConfiguration(organizationId, c.getKey(), c.getValue()));
@@ -213,7 +215,7 @@ public class ConfigurationManager {
 
     public void saveAllSubscriptionDescriptorConfiguration(SubscriptionDescriptor sd, List<ConfigurationModification> list, String username) {
         User user = userManager.findUserByUsername(username);
-        Validate.isTrue(userManager.isOwnerOfOrganization(user, sd.getOrganizationId()), "Cannot update settings, user is not owner");
+        Validate.isTrue(userManager.isOwnerOfOrganization(user, sd.getOrganizationId()), NOT_OWNER_ERROR_MESSAGE);
         list.stream()
             .filter(ConfigurationManager::toBeSaved)
             .forEach(c -> saveSubscriptionDescriptorConfiguration(sd.getId(), sd.getOrganizationId(), c.getKey(), c.getValue()));
@@ -221,7 +223,7 @@ public class ConfigurationManager {
 
     public void saveAllEventConfiguration(int eventId, int organizationId, List<ConfigurationModification> list, String username) {
         User user = userManager.findUserByUsername(username);
-        Validate.isTrue(userManager.isOwnerOfOrganization(user, organizationId), "Cannot update settings, user is not owner");
+        Validate.isTrue(userManager.isOwnerOfOrganization(user, organizationId), NOT_OWNER_ERROR_MESSAGE);
         EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         Validate.notNull(event, "event does not exist");
         if(organizationId != event.getOrganizationId()) {
@@ -301,7 +303,7 @@ public class ConfigurationManager {
                 boolean absent = externalConfiguration.getSingle(key.getValue())
                     .or(() -> configurationRepository.findOptionalByKey(key.getValue())).isEmpty();
                 if (absent) {
-                    log.warn("cannot find a value for " + key.getValue());
+                    log.warn("cannot find a value for {}", key.getValue());
                 }
                 return absent;
             });
@@ -324,7 +326,7 @@ public class ConfigurationManager {
             .stream()
             .filter(pp -> paymentMethodsBlacklist.contains(pp.getKey()))
             .flatMap(pp -> pp.getSettingCategories().stream())
-            .collect(toList());
+            .toList();
 
         if(toBeRemoved.isEmpty()) {
             return result;
@@ -344,7 +346,7 @@ public class ConfigurationManager {
             return null;
         }
         var key = safeValueOf(keyAsString);
-        if (!key.supports(ORGANIZATION)) {
+        if (!key.supports(ORGANIZATION) || key.isSecret()) {
             return null;
         }
         return getFirstConfigurationResult(configurationRepository.findByOrganizationAndKey(organizationId, key.name()));
@@ -365,7 +367,7 @@ public class ConfigurationManager {
             return null;
         }
         var key = safeValueOf(keyAsString);
-        if (!key.supports(PURCHASE_CONTEXT)) {
+        if (!key.supports(PURCHASE_CONTEXT) || key.isSecret()) {
             return null;
         }
         return getFirstConfigurationResult(configurationRepository.findByEventAndKey(organizationId, eventId, key.name()));
@@ -447,7 +449,7 @@ public class ConfigurationManager {
                 ConfigurationKeys.SettingCategory key = e.getKey();
                 Set<Configuration> entries = new TreeSet<>(e.getValue());
                 if(existing.containsKey(key)) {
-                    List<Configuration> configurations = existing.get(key).stream().filter(Predicate.not(Configuration::isInternal)).collect(Collectors.toList());
+                    List<Configuration> configurations = existing.get(key).stream().filter(Predicate.not(Configuration::isInternal)).toList();
                     configurations.forEach(entries::remove);
                     entries.addAll(configurations);
                 }
@@ -463,11 +465,11 @@ public class ConfigurationManager {
         final List<Configuration> existing = configurationRepository.findSystemConfiguration()
                 .stream()
                 .filter(c -> !ConfigurationKeys.fromString(c.getKey()).isInternal())
-                .collect(toList());
+                .toList();
         final List<Configuration> missing = Arrays.stream(ConfigurationKeys.visible())
                 .filter(k -> existing.stream().noneMatch(c -> c.getKey().equals(k.getValue())))
                 .map(mapEmptyKeys(ConfigurationPathLevel.SYSTEM))
-                .collect(toList());
+                .toList();
         List<Configuration> result = new ArrayList<>(existing);
         result.addAll(missing);
         return result.stream().sorted().collect(groupByCategory());
@@ -486,21 +488,21 @@ public class ConfigurationManager {
     }
 
     public void deleteOrganizationLevelByKey(String key, int organizationId, String username) {
-        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), "User is not owner of the organization. Therefore, delete is not allowed.");
+        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), DELETE_NOT_ALLOWED_NON_OWNER_MSG);
         configurationRepository.deleteOrganizationLevelByKey(key, organizationId);
     }
 
     public void deleteEventLevelByKey(String key, int eventId, String username) {
         EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         Validate.notNull(event, "Wrong event id");
-        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), "User is not owner of the organization. Therefore, delete is not allowed.");
+        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), DELETE_NOT_ALLOWED_NON_OWNER_MSG);
         configurationRepository.deleteEventLevelByKey(key, eventId);
     }
 
     public void deleteCategoryLevelByKey(String key, int eventId, int categoryId, String username) {
         EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         Validate.notNull(event, "Wrong event id");
-        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), "User is not owner of the organization. Therefore, delete is not allowed.");
+        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), DELETE_NOT_ALLOWED_NON_OWNER_MSG);
         configurationRepository.deleteCategoryLevelByKey(key, eventId, categoryId);
     }
 
@@ -634,6 +636,154 @@ public class ConfigurationManager {
         return buildKeyConfigurationMapResult(keys, found);
     }
 
+    /**
+     * Removes the values of the secrets, before sending the settings to the browser
+     */
+    public static Map<ConfigurationKeys.SettingCategory, List<Configuration>> withoutSecretValues(Map<ConfigurationKeys.SettingCategory, List<Configuration>> settings) {
+        var result = new EnumMap<ConfigurationKeys.SettingCategory, List<Configuration>>(ConfigurationKeys.SettingCategory.class);
+        settings.forEach((category, list) -> result.put(category, list.stream().map(Configuration::withoutSecretValue).toList()));
+        return result;
+    }
+
+    /**
+     * What applies to the settings that the system doesn't set: the external configuration, and the defaults
+     * of the yes/no settings. For the administrators only.
+     */
+    public Map<String, InheritedSetting> loadInheritedSettingsForSystem() {
+        var keys = visibleKeys();
+        return inheritedSettings(keys, valuesOf(getFor(keys, ConfigurationLevel.external())), true);
+    }
+
+    /**
+     * The settings of the system whose value the owners who are not administrators can see, when their organization
+     * or event doesn't set them. Only yes/no settings that an organization or an event can set; the live mode of the
+     * payment providers is left out, as it describes the accounts of the system.
+     * Any other setting of the system stays hidden from them: add a key here to show it.
+     */
+    static final Set<ConfigurationKeys> SYSTEM_SETTINGS_SHOWN_TO_OWNERS = Collections.unmodifiableSet(EnumSet.of(
+        // general
+        DISPLAY_STATS_IN_EVENT_DETAIL, NOTIFY_ORGANIZER_ON_RESERVATION, OPTIONAL_DATA_REMINDER_ENABLED,
+        NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS, CHECK_IN_STATS,
+        // reservation page
+        DISPLAY_TICKETS_LEFT_INDICATOR, DISPLAY_EXPIRED_CATEGORIES, DISPLAY_DISCOUNT_CODE_BOX,
+        USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL, ENABLE_CUSTOMER_REFERENCE, ENABLE_ATTENDEE_AUTOCOMPLETE,
+        FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION, SEND_TICKETS_AUTOMATICALLY, ALLOW_TICKET_DOWNLOAD,
+        SEND_RESERVATION_EMAIL_IF_NECESSARY, ENABLE_TICKET_TRANSFER, ALLOW_FREE_TICKETS_CANCELLATION,
+        INCLUDE_CHECK_IN_URL_ICAL,
+        // payments
+        ON_SITE_ENABLED, STRIPE_CC_ENABLED, SAFERPAY_ENABLED, PAYPAL_ENABLED, MOLLIE_CC_ENABLED,
+        BANK_TRANSFER_ENABLED, DEFERRED_BANK_TRANSFER_ENABLED, SHOW_ONLY_BASIC_INSTRUCTIONS,
+        DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL, OFFLINE_PAYMENT_BUSINESS_DAYS,
+        AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT, REVOLUT_ENABLED, REVOLUT_MANUAL_REVIEW,
+        // waiting list
+        ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION, ENABLE_WAITING_QUEUE_NOTIFICATION,
+        // e-mails
+        ENABLE_HTML_EMAILS,
+        // invoices
+        USE_INVOICE_NUMBER_AS_ID, VAT_NUMBER_IS_REQUIRED, GENERATE_ONLY_INVOICE, REUSE_INVOICE_NUMBER_FOR_CREDIT_NOTE,
+        ENABLE_ITALY_E_INVOICING, ITALY_E_INVOICING_SEND_PROFORMA, ENABLE_EU_VAT_DIRECTIVE,
+        ENABLE_REVERSE_CHARGE_ONLINE, ENABLE_REVERSE_CHARGE_IN_PERSON, ENABLE_VIES_VALIDATION,
+        APPLY_VAT_FOREIGN_BUSINESS,
+        // subscriptions
+        GENERATE_TICKETS_FOR_SUBSCRIPTIONS
+    ));
+
+    /**
+     * What applies to the settings that an organization doesn't set: the settings of the system.
+     * The owners who are not administrators see only the settings in {@link #SYSTEM_SETTINGS_SHOWN_TO_OWNERS}.
+     */
+    public Map<String, InheritedSetting> loadInheritedSettingsForOrganization(String username) {
+        if (!userManager.isAdmin(userManager.findUserByUsername(username))) {
+            return systemSettingsShownToOwners(valuesOf(getFor(SYSTEM_SETTINGS_SHOWN_TO_OWNERS, ConfigurationLevel.system())));
+        }
+        var keys = visibleKeys();
+        return inheritedSettings(keys, valuesOf(getFor(keys, ConfigurationLevel.system())), true);
+    }
+
+    /**
+     * What applies to the settings that an event doesn't set: the settings of its organization, which for the
+     * administrators include those inherited from the system. The other owners get what the organization sets,
+     * and, for what it doesn't set, the settings of the system in {@link #SYSTEM_SETTINGS_SHOWN_TO_OWNERS}.
+     */
+    public Map<String, InheritedSetting> loadInheritedSettingsForEvent(int organizationId, String username) {
+        var keys = visibleKeys();
+        if (userManager.isAdmin(userManager.findUserByUsername(username))) {
+            return inheritedSettings(keys, valuesOf(getFor(keys, ConfigurationLevel.organization(organizationId))), true);
+        }
+        var organizationValues = new EnumMap<ConfigurationKeys, String>(ConfigurationKeys.class);
+        configurationRepository.findOrganizationConfiguration(organizationId)
+            .forEach(c -> organizationValues.put(c.getConfigurationKey(), c.getValue()));
+        var systemValues = valuesOf(getFor(SYSTEM_SETTINGS_SHOWN_TO_OWNERS, ConfigurationLevel.system()));
+        return inheritedSettingsForOwnerAtEvent(organizationValues, systemValues);
+    }
+
+    /**
+     * What an owner who is not an administrator sees of the settings of the system: the yes/no settings in
+     * {@link #SYSTEM_SETTINGS_SHOWN_TO_OWNERS}, with their default when the system doesn't set them
+     */
+    static Map<String, InheritedSetting> systemSettingsShownToOwners(Map<ConfigurationKeys, String> systemValues) {
+        return inheritedSettings(List.copyOf(SYSTEM_SETTINGS_SHOWN_TO_OWNERS), systemValues, true);
+    }
+
+    /**
+     * What applies to an event for an owner who is not an administrator: what the organization sets, otherwise
+     * the settings of the system that the owner can see
+     */
+    static Map<String, InheritedSetting> inheritedSettingsForOwnerAtEvent(Map<ConfigurationKeys, String> organizationValues,
+                                                                         Map<ConfigurationKeys, String> systemValues) {
+        var result = inheritedSettings(visibleKeys(), organizationValues, false);
+        systemSettingsShownToOwners(systemValues).forEach(result::putIfAbsent);
+        return result;
+    }
+
+    private static List<ConfigurationKeys> visibleKeys() {
+        return Arrays.asList(ConfigurationKeys.visible());
+    }
+
+    private static Map<ConfigurationKeys, String> valuesOf(Map<ConfigurationKeys, MaybeConfiguration> found) {
+        var values = new EnumMap<ConfigurationKeys, String>(ConfigurationKeys.class);
+        found.forEach((key, configuration) -> configuration.getValue().ifPresent(value -> values.put(key, value)));
+        return values;
+    }
+
+    /**
+     * @param withDefaults the yes/no settings without a value take their default
+     */
+    private static Map<String, InheritedSetting> inheritedSettings(List<ConfigurationKeys> keys,
+                                                                   Map<ConfigurationKeys, String> values,
+                                                                   boolean withDefaults) {
+        var result = new TreeMap<String, InheritedSetting>();
+        for (var key : keys) {
+            var value = values.get(key);
+            boolean set = StringUtils.isNotEmpty(value);
+            if (key.isBooleanComponentType()) {
+                // the value of a yes/no setting is not sensitive: it is shown, e.g. "Same as the system (Yes)"
+                String applied = null;
+                if (set) {
+                    applied = value;
+                } else if (withDefaults) {
+                    applied = key.getDefaultValue();
+                }
+                if (applied != null) {
+                    result.put(key.getValue(), new InheritedSetting(set, applied));
+                }
+            } else if (set) {
+                // the other values are never shown, the page only tells that one applies
+                result.put(key.getValue(), new InheritedSetting(true, null));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * What applies to a setting that a level doesn't set
+     *
+     * @param set the level above sets a value (otherwise, the value is the default)
+     * @param value the value, for the yes/no settings only
+     */
+    public record InheritedSetting(boolean set, String value) {
+    }
+
     private Map<ConfigurationKeys, MaybeConfiguration> buildKeyConfigurationMapResult(Collection<ConfigurationKeys> keys, List<ConfigurationKeyValuePathLevel> found) {
         var res = new EnumMap<ConfigurationKeys, MaybeConfiguration>(ConfigurationKeys.class);
 
@@ -723,7 +873,7 @@ public class ConfigurationManager {
     }
 
     public boolean noTaxesFlagDefinedFor(List<TicketCategory> categories) {
-        return !getCategoriesWithNoTaxes(categories.stream().map(TicketCategory::getId).collect(toList())).isEmpty();
+        return !getCategoriesWithNoTaxes(categories.stream().map(TicketCategory::getId).toList()).isEmpty();
     }
 
     public static class MaybeConfiguration {
@@ -774,7 +924,7 @@ public class ConfigurationManager {
             return getValue().flatMap(v -> {
                 try {
                     return Optional.of(Integer.parseInt(v));
-                } catch(NumberFormatException ex) {
+                } catch(NumberFormatException _) {
                     return Optional.empty();
                 }
             }).orElse(defaultValue);

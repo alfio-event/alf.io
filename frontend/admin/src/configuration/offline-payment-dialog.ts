@@ -1,421 +1,288 @@
-import type { SlDialog, SlRequestCloseEvent } from "@shoelace-style/shoelace";
-import { TanStackFormController } from "@tanstack/lit-form";
-import { customElement, property, query, state } from "lit/decorators.js";
-import { css, html, LitElement, nothing, type TemplateResult } from "lit";
-import { when } from "lit/directives/when.js";
-import {Task} from '@lit/task';
-import { repeat } from "lit/directives/repeat.js";
-import { dialog, form, modernLayout, row } from "../styles";
-import { classMap } from "lit/directives/class-map.js";
-import { type SlSelect } from '@shoelace-style/shoelace';
-import { LocalizationService } from "../service/localization";
+import {css, html, LitElement, TemplateResult} from 'lit';
+import {customElement, query, state} from 'lit/decorators.js';
+import {when} from 'lit/directives/when.js';
+import type {SlDialog, SlRequestCloseEvent} from '@shoelace-style/shoelace';
+import {TanStackFormController} from '@tanstack/lit-form';
+import {ContentLanguage, LocalizedContent} from '../model/purchase-context.ts';
+import {
+    BoundField,
+    fieldError,
+    focusFirstError,
+    FormMountController,
+    INVALID_FORM_MESSAGE,
+    submitValidated,
+    validateWith,
+} from '../components/form-validation.ts';
+import type {MultiLanguageTextChange, MultiLanguageTextLocalesChange} from '../components/multi-language-text.ts';
+import '../components/multi-language-text.ts';
+import {base, dialog, form, modernLayout, row, textColors} from '../styles.ts';
 
-type LocalizationFormFields = CustomOfflinePaymentLocalization & {
-    localizationKey: string;
-};
+export const OFFLINE_PAYMENT_SAVE_EVENT = 'alfio-offline-payment-save';
+
+export interface OfflinePaymentSaveDetail {
+    // null for a new payment method
+    paymentMethodId: string | null;
+    payment: CustomOfflinePayment;
+}
+
+interface PaymentMethodFormValues {
+    name: LocalizedContent;
+    description: LocalizedContent;
+    instructions: LocalizedContent;
+}
+
+type TextField = keyof PaymentMethodFormValues;
+
+const TEXT_FIELDS: TextField[] = ['name', 'description', 'instructions'];
 
 /**
- * Defines offline payment method form to be filled out
- * by organizers.
+ * Creates or edits a custom offline payment method: its name, description and instructions, in every language
+ * the organizer chooses. Fires "alfio-offline-payment-save": the host saves the payment method, then closes the
+ * dialog with close(), or shows an error with showError()
  */
 @customElement('offline-payment-dialog')
 export class OfflinePaymentDialog extends LitElement {
-    static styles = [
-        row,
-        dialog,
+
+    @state() private open = false;
+    @state() private paymentMethodId: string | null = null;
+    @state() private languages: ContentLanguage[] = [];
+    @state() private saving = false;
+    @state() private invalid = false;
+    @state() private error: string | null = null;
+    // names of the other payment methods of the organization, lower case: a name must be unique
+    private otherNames = new Set<string>();
+    @query('sl-dialog') private dialog!: SlDialog;
+
+    readonly #form = new TanStackFormController(this, {
+        defaultValues: emptyValues(),
+        onSubmit: async ({value}) => {
+            this.saving = true;
+            const localizations: CustomOfflinePayment['localizations'] = {};
+            for (const locale of Object.keys(value.name)) {
+                localizations[locale] = {
+                    paymentName: value.name[locale].trim(),
+                    paymentDescription: value.description[locale] ?? '',
+                    paymentInstructions: value.instructions[locale] ?? '',
+                };
+            }
+            this.dispatchEvent(new CustomEvent<OfflinePaymentSaveDetail>(OFFLINE_PAYMENT_SAVE_EVENT, {
+                detail: {
+                    paymentMethodId: this.paymentMethodId,
+                    payment: {paymentMethodId: this.paymentMethodId, localizations},
+                },
+                bubbles: true,
+                composed: true,
+            }));
+        },
+    });
+
+    static readonly styles = [
+        base,
+        textColors,
         form,
+        row,
         modernLayout,
+        dialog,
         css`
             sl-dialog {
-                --alfio-dialog-max-width: 48rem;
+                --alfio-dialog-max-width: 60rem;
+            }
+            .payment-method-form {
+                gap: var(--sl-spacing-x-large);
             }
         `,
     ];
 
-    @query("sl-dialog#offlinePaymentDialog")
-    dialog?: SlDialog;
+    constructor() {
+        super();
+        new FormMountController(this, this.#form.api);
+    }
 
     /**
-     * Used to edit the properties of an existing payment
-     * method object instead of creating a new one.
+     * @param method the payment method to edit, null to create a new one
+     * @param others the other payment methods of the organization
      */
-    @state()
-    editObject?: CustomOfflinePayment;
+    async show(method: CustomOfflinePayment | null, others: CustomOfflinePayment[], languages: ContentLanguage[]): Promise<void> {
+        this.paymentMethodId = method?.paymentMethodId ?? null;
+        this.languages = languages;
+        this.otherNames = new Set(others
+            .flatMap((other) => Object.values(other.localizations))
+            .map((localization) => localization.paymentName.trim().toLowerCase()));
+        this.saving = false;
+        this.invalid = false;
+        this.error = null;
+        this.#form.api.reset(valuesOf(method));
+        this.open = true;
+        await this.updateComplete;
+        await this.dialog.show();
+    }
 
-    /**
-     * Identifies the localization we are currently editing
-     * in the UI.
-     */
-    @state()
-    localizationKey?: string;
+    close(): void {
+        this.saving = false;
+        void this.dialog.hide();
+    }
 
-    @state()
-    availableLanguages: {locale: string, value: number, language: string, displayLanguage: string}[] = [];
+    showError(message: string): void {
+        this.saving = false;
+        this.error = message;
+    }
 
-    @state()
-    editingExistingLocalization: boolean = false;
-
-    /**
-     * The current payment methods known by the system.
-     * Used for name collision client-side validation.
-     */
-    @property({type: Array})
-    currentMethods: CustomOfflinePayment[] = [];
-
-
-    /**
-     * Allows component to access Alf.io supported languages
-     * for populating language dropdown.
-     */
-    localizationService?: LocalizationService = new LocalizationService();
-
-    #form = new TanStackFormController(this, {
-        defaultValues: {
-            localizationKey: "",
-            paymentName: "",
-            paymentDescription: "",
-            paymentInstructions: ""
-        } as LocalizationFormFields
-    });
-
-    private _updateLanguagesTask = new Task(this, {
-        task: async () => {
-            let response = await this.localizationService?.getEventsSupportedLanguages();
-            if(!response) { throw new Error("Failed to get languages"); }
-
-            return response
-        },
-        args: () => []
-    });
-
-    protected render(): TemplateResult {
+    render(): TemplateResult {
+        let label = 'Add payment method';
+        if (this.paymentMethodId != null) {
+            label = 'Edit payment method';
+        }
         return html`
-            <div>
-                <sl-dialog
-                    label=${this.dialogLabel()}
-                    id="offlinePaymentDialog"
-                    class="responsive-dialog"
-                    @sl-request-close=${this.onRequestClose}
-                    @sl-after-hide=${this.onAfterHide}
-                >
-                    ${this.renderPaymentMethodForm()}
-                </sl-dialog>
+            <sl-dialog class="responsive-dialog" label=${label}
+                       @sl-request-close=${this.onRequestClose}
+                       @sl-after-hide=${this.onAfterHide}>
+                ${when(this.open, () => this.renderForm())}
+            </sl-dialog>
+        `;
+    }
+
+    private renderForm(): TemplateResult {
+        return html`
+            <form id="offline-payment-form" class="form-stack payment-method-form" novalidate @submit=${this.submit}>
+                ${this.textField('name', 'Name', {
+                    validate: (value) => this.validateName(value),
+                    multiline: false,
+                })}
+                ${this.textField('description', 'Description', {
+                    validate: (value) => missingTranslation(value, 'Please enter the description in every language.'),
+                    multiline: true,
+                })}
+                ${this.textField('instructions', 'Payment instructions', {
+                    validate: (value) => missingTranslation(value, 'Please enter the instructions in every language.'),
+                    multiline: true,
+                })}
+                ${when(this.error, () => html`
+                    <sl-alert variant="danger" open>
+                        <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+                        ${this.error}
+                    </sl-alert>
+                `)}
+            </form>
+            <div slot="footer">
+                <sl-divider></sl-divider>
+                ${when(this.invalid, () => html`<p class="text-danger">${INVALID_FORM_MESSAGE}</p>`)}
+                <div class="row" style="--alfio-row-cols: 3">
+                    <sl-button variant="default" size="large" @click=${() => this.close()}>Cancel</sl-button>
+                    <div></div>
+                    <sl-button id="save-payment-method" variant="warning" size="large" ?loading=${this.saving}
+                               ?disabled=${this.saving} @click=${this.submit}>Save</sl-button>
+                </div>
             </div>
         `;
     }
 
-    private dialogLabel(): string {
-        if (this.editObject) {
-            return 'Edit payment method';
-        }
-        return 'Add payment method';
+    /**
+     * A text in every language of the payment method. Adding or removing a language applies to all the texts.
+     * Description and instructions are markdown: the instructions are shown to the buyer after the reservation.
+     */
+    private textField(name: TextField, label: string,
+                      options: { validate: (value: LocalizedContent) => string | undefined, multiline: boolean }): TemplateResult {
+        const submitted = this.#form.api.state.submissionAttempts > 0;
+        const validators = validateWith((value) => options.validate((value ?? {}) as LocalizedContent));
+        return html`${this.#form.field({name, validators}, (field: BoundField<LocalizedContent>) => html`
+            <alfio-multi-language-text id=${`payment-method-${name}`} label=${label} .card=${false}
+                                       .multiline=${options.multiline} .markdown=${options.multiline}
+                                       .languages=${this.languages}
+                                       .value=${field.state.value}
+                                       error=${fieldError(field.state.meta, submitted) ?? ''}
+                                       @change=${(e: CustomEvent<MultiLanguageTextChange>) => {
+                                           if (e.detail?.value != null) {
+                                               field.handleChange(e.detail.value);
+                                           }
+                                       }}
+                                       @locales-change=${(e: CustomEvent<MultiLanguageTextLocalesChange>) => this.syncLocales(name, e.detail.locales)}
+                                       @focusout=${() => field.handleBlur()}></alfio-multi-language-text>
+        `)}`;
     }
+
+    // the same languages for all the texts, keeping what has been typed
+    private syncLocales(source: TextField, locales: string[]): void {
+        for (const name of TEXT_FIELDS) {
+            if (name === source) {
+                continue;
+            }
+            const current = this.#form.api.getFieldValue(name) ?? {};
+            const next: LocalizedContent = {};
+            for (const locale of locales) {
+                next[locale] = current[locale] ?? '';
+            }
+            this.#form.api.setFieldValue(name, next, {dontUpdateMeta: true});
+        }
+    }
+
+    private validateName(value: LocalizedContent): string | undefined {
+        const missing = missingTranslation(value, 'Please enter the name in every language.');
+        if (missing != null) {
+            return missing;
+        }
+        if (Object.values(value).some((name) => this.otherNames.has(name.trim().toLowerCase()))) {
+            return 'Another payment method of the organization has this name.';
+        }
+        return undefined;
+    }
+
+    private submit = async (event: Event): Promise<void> => {
+        event.preventDefault();
+        if (this.saving) {
+            return;
+        }
+        this.error = null;
+        const valid = await submitValidated(this.#form.api);
+        this.invalid = !valid;
+        if (!valid) {
+            await this.updateComplete;
+            focusFirstError(this.renderRoot);
+        }
+    };
 
     // a click outside the dialog would discard what the user typed: only the close button and Cancel close it
     private onRequestClose = (event: SlRequestCloseEvent): void => {
-        if (event.target !== event.currentTarget) {
-            return;
-        }
-        if (event.detail.source === 'overlay') {
+        if (event.target === event.currentTarget && event.detail.source === 'overlay') {
             event.preventDefault();
         }
     };
 
     private onAfterHide = (event: Event): void => {
-        // nested Shoelace components (e.g. selects, the preview dialog) emit their own sl-after-hide
+        // nested Shoelace components (e.g. selects, tooltips) emit their own sl-after-hide
         if (event.target !== event.currentTarget) {
             return;
         }
-        this.#form.api.reset();
+        this.open = false;
     };
-
-    renderPaymentMethodForm(): TemplateResult {
-        const formErrors = this.#form.api.state.errors.filter(error => error != null && error !== '');
-        return html`<form
-            id="form"
-            class="form-stack"
-            @submit=${
-                async (e: Event) => {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    await this.#form.api.handleSubmit();
-                }
-            }
-        >
-            ${this.#form.field(
-                {
-                    name: `localizationKey`,
-                    validators: {
-                        onChange: ({ value }: {value: string}) => {
-                            if (!value) {
-                                return 'Language selection is required.';
-                            }
-                            return undefined;
-                        }
-                    },
-                },
-                (field) => {
-                    return html`
-                    <sl-select
-                        label="Language"
-                        class="${classMap({ error: this._hasError(field.state.meta) })}"
-                        required
-                        hoist
-                        ?disabled=${this.editingExistingLocalization}
-                        .value=${field.state.value}
-                        @sl-blur=${() => field.handleBlur()}
-                        @sl-change=${(event: Event) => {
-                            if (event.currentTarget) {
-                                const newValue = (event.currentTarget as SlSelect).value as string;
-                                field.handleChange(newValue);
-                            }
-                        }}>
-                        ${this._updateLanguagesTask.render({
-                            pending: () => html`<sl-option value="" disabled>Loading available languages...</sl-option>`,
-                            complete: (languages) => {
-                                if(this.editObject && !this.editingExistingLocalization) {
-                                    const existingLocalizations = Object.keys(this.editObject.localizations);
-                                    languages = languages.filter(item => !existingLocalizations.includes(item.locale));
-                                }
-
-                                return html`
-                                    ${repeat(languages, (language) => language.value, (language) => {
-                                        return html`
-                                        <sl-option value="${language.locale}">${language.displayLanguage}</sl-option>
-                                        `;
-                                    })}
-                                `
-                            },
-                            error: (_e) => html`<sl-option value="" disabled>Failed to load available languages...</sl-option>`
-                        })}
-                    </sl-select>
-                    `;
-                }
-            )}
-            ${this.#form.field(
-                {
-                    name: `paymentName`,
-                    validators: {
-                        onChange: ({ value }: {value: string}) => {
-                            if (value.length < 3) {
-                                return 'Name is too short.';
-                            }
-                            return undefined;
-                        }
-                    },
-                },
-                (field) => {
-                    return html`
-                    <div>
-                        <sl-input
-                            id="paymentMethodName"
-                            class="${classMap({ error: this._hasError(field.state.meta) })}"
-                            label="Name"
-                            required
-                            .value=${field.state.value}
-                            @sl-blur=${() => field.handleBlur()}
-                            @sl-change=${(event: InputEvent) => {
-                                if (event.currentTarget) {
-                                    const newValue = (event.currentTarget as HTMLInputElement).value;
-                                    field.handleChange(newValue);
-                                }
-                            }}
-                        >
-                        </sl-input>
-                    </div>`
-                },
-            )}
-            ${this.#form.field(
-                {
-                    name: `paymentDescription`,
-                    validators: {
-                    onChange: ({ value }: {value: string}) => {
-                        if (value.length < 3) {
-                            return 'Description is too short.';
-                        }
-                        return undefined;
-                    },
-                    },
-                },
-                (field) => {
-                    return html`
-                    <div>
-                        <sl-textarea
-                            label="Description"
-                            class="${classMap({ error: this._hasError(field.state.meta) })}"
-                            required
-                            rows="2"
-                            .value=${field.state.value}
-                            @sl-blur=${() => field.handleBlur()}
-                            @sl-change=${(event: InputEvent) => {
-                                if (event.currentTarget) {
-                                    const newValue = (event.currentTarget as HTMLInputElement).value;
-                                    field.handleChange(newValue);
-                                }
-                            }}
-                        >
-                            <div slot="help-text">
-                                <alfio-display-commonmark-preview
-                                    data-button-text="Preview"
-                                    .text=${field.state.value}
-                                >
-                                </alfio-display-commonmark-preview>
-                            </div>
-                        </sl-textarea>
-                    </div>`
-                },
-            )}
-            ${this.#form.field(
-                {
-                    name: `paymentInstructions`,
-                    validators: {
-                    onChange: ({ value }: {value: string}) => {
-                        if (value.length < 3) {
-                            return 'Instructions are too short.';
-                        }
-                        return undefined;
-                    },
-                    },
-                },
-                (field) => {
-                    return html`
-                    <div>
-                        <sl-textarea
-                            label="Instructions"
-                            class="${classMap({ error: this._hasError(field.state.meta) })}"
-                            required
-                            rows="2"
-                            .value=${field.state.value}
-                            @sl-blur=${() => field.handleBlur()}
-                            @sl-change=${(event: InputEvent) => {
-                                if (event.currentTarget) {
-                                    const newValue = (event.currentTarget as HTMLInputElement).value;
-                                    field.handleChange(newValue);
-                                }
-                            }}
-                        >
-                            <div slot="help-text">
-                                <alfio-display-commonmark-preview
-                                    data-button-text="Preview"
-                                    .text=${field.state.value}
-                                >
-                                </alfio-display-commonmark-preview>
-                            </div>
-                        </sl-textarea>
-                    </div>`
-                },
-            )}
-            ${when(formErrors.length > 0, () => html`
-                <sl-alert variant="danger" open>
-                    <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                    ${formErrors.join(' ')}
-                </sl-alert>
-            `, () => nothing)}
-            <!-- the footer stays inside the form, so that Save submits it -->
-            <div class="footer">
-                <sl-divider></sl-divider>
-                <div class="row" style="--alfio-row-cols: 3">
-                    <sl-button variant="default" size="large" @click=${() => this.closeDialog()}>Cancel</sl-button>
-                    <div></div>
-                    <sl-button
-                        variant="warning"
-                        type="submit"
-                        size="large"
-                        ?loading=${this.#form.api.state.isSubmitting}
-                        .disabled=${!this.#form.api.state.canSubmit}
-                    >
-                        Save
-                    </sl-button>
-                </div>
-            </div>
-        </form>
-        `;
-    }
-
-    async openDialog(editObject?: CustomOfflinePayment, localizationKey?: string) {
-        this.editObject = editObject;
-        this.localizationKey = localizationKey;
-
-        if(editObject && localizationKey) {
-            this.editingExistingLocalization = true;
-        } else {
-            this.editingExistingLocalization = false;
-        }
-
-        const curLocaleKey = this.localizationKey ?? '';
-
-        if(this.dialog) {
-            this.#form.api.update({
-                defaultValues: this._buildInitialFormValues(curLocaleKey),
-                onSubmit: async ({value}) => {
-                    let existingLocalizations: Record<string, CustomOfflinePaymentLocalization> = {};
-                    if (this.editObject) {
-                        existingLocalizations = {...this.editObject.localizations};
-                    }
-                    const newPaymentObj = {
-                        paymentMethodId: this.editObject?.paymentMethodId ?? null,
-                        localizations: {
-                            ...existingLocalizations,
-                        }
-                    };
-
-                    newPaymentObj.localizations[value.localizationKey] = {
-                        paymentName: value.paymentName,
-                        paymentDescription: value.paymentDescription,
-                        paymentInstructions: value.paymentInstructions
-                    };
-
-                    this.dispatchEvent(
-                        new CustomEvent("offlinePaymentDialogSave", {
-                            detail: {
-                                newPayment: newPaymentObj,
-                                oldPayment: this.editObject
-                            }
-                        })
-                    )
-                },
-                validators: {
-                    onSubmitAsync: async props => {
-                        if(
-                            !this.editObject
-                            && this.currentMethods.some(method => method.localizations.en.paymentName === props.value.paymentName)
-                        ) {
-                            return 'Chosen payment method name matches one already created for this organization. Please choose a different name';
-                        }
-
-                        return undefined;
-                    }
-                }
-            });
-            await this.dialog.show();
-        }
-    }
-
-    async closeDialog() {
-        this.#form.api.reset();
-        await this.dialog?.hide();
-    }
-
-    private _hasError(meta: any) {
-        return (meta.isTouched && meta.errors.length > 0);
-    }
-
-    private _buildInitialFormValues(localizationKey?: string) : LocalizationFormFields {
-        if(this.editObject && localizationKey) {
-            return {
-                localizationKey: localizationKey,
-                paymentName: this.editObject.localizations[localizationKey].paymentName,
-                paymentDescription: this.editObject.localizations[localizationKey].paymentDescription,
-                paymentInstructions: this.editObject.localizations[localizationKey].paymentInstructions
-            };
-        }
-
-        return {
-            localizationKey: "",
-            paymentName: "",
-            paymentDescription: "",
-            paymentInstructions: "",
-        }
-    }
 }
 
+function emptyValues(): PaymentMethodFormValues {
+    return {name: {}, description: {}, instructions: {}};
+}
+
+function valuesOf(method: CustomOfflinePayment | null): PaymentMethodFormValues {
+    const values = emptyValues();
+    for (const [locale, localization] of Object.entries(method?.localizations ?? {})) {
+        values.name[locale] = localization.paymentName;
+        values.description[locale] = localization.paymentDescription;
+        values.instructions[locale] = localization.paymentInstructions;
+    }
+    return values;
+}
+
+function missingTranslation(value: LocalizedContent, message: string): string | undefined {
+    const texts = Object.values(value);
+    if (texts.length === 0 || texts.some((text) => (text ?? '').trim() === '')) {
+        return message;
+    }
+    return undefined;
+}
+
+declare global {
+    interface HTMLElementTagNameMap {
+        'offline-payment-dialog': OfflinePaymentDialog;
+    }
+    interface GlobalEventHandlersEventMap {
+        'alfio-offline-payment-save': CustomEvent<OfflinePaymentSaveDetail>;
+    }
+}

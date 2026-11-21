@@ -44,18 +44,6 @@
         };
     });
 
-    filters.filter('mailSettingsFilter', function() {
-        return function(list, mailType) {
-            if(angular.isUndefined(mailType) || mailType === null) {
-                return [];
-            }
-            var referenceKey = mailType.toUpperCase();
-            return _.filter(list, function(e) {
-                return e.key.toUpperCase().indexOf(referenceKey) > -1;
-            });
-        };
-    });
-
     filters.filter('showSelectedCategories', function() {
         return function(categories, criteria) {
             if(criteria.active && criteria.expired && criteria.freeText === '') {

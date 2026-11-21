@@ -2617,6 +2617,76 @@
         "tags" : [ "configuration-api-controller" ]
       }
     },
+    "/admin/api/configuration/events/{eventId}/inherited-values" : {
+      "get" : {
+        "operationId" : "loadEventInheritedValues",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "eventId",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "$ref" : "#/components/schemas/InheritedSetting"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Internal Server Error"
+          }
+        },
+        "tags" : [ "configuration-api-controller" ]
+      }
+    },
     "/admin/api/configuration/events/{eventId}/load" : {
       "get" : {
         "operationId" : "loadEventConfiguration",
@@ -2975,6 +3045,67 @@
         "tags" : [ "configuration-api-controller" ]
       }
     },
+    "/admin/api/configuration/inherited-values" : {
+      "get" : {
+        "operationId" : "loadSystemInheritedValues",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "$ref" : "#/components/schemas/InheritedSetting"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Internal Server Error"
+          }
+        },
+        "tags" : [ "configuration-api-controller" ]
+      }
+    },
     "/admin/api/configuration/instance-settings" : {
       "get" : {
         "operationId" : "loadInstanceSettings",
@@ -3280,6 +3411,76 @@
               "*/*" : {
                 "schema" : {
                   "type" : "boolean"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Internal Server Error"
+          }
+        },
+        "tags" : [ "configuration-api-controller" ]
+      }
+    },
+    "/admin/api/configuration/organizations/{organizationId}/inherited-values" : {
+      "get" : {
+        "operationId" : "loadOrganizationInheritedValues",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "organizationId",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "$ref" : "#/components/schemas/InheritedSetting"
+                  }
                 }
               }
             },
@@ -29118,6 +29319,12 @@
           "key" : {
             "type" : "string"
           },
+          "secret" : {
+            "type" : "boolean"
+          },
+          "secretValueSet" : {
+            "type" : "boolean"
+          },
           "value" : {
             "type" : "string"
           }
@@ -29168,6 +29375,12 @@
           },
           "key" : {
             "type" : "string"
+          },
+          "secret" : {
+            "type" : "boolean"
+          },
+          "secretValueSet" : {
+            "type" : "boolean"
           },
           "value" : {
             "type" : "string"
@@ -31401,6 +31614,17 @@
             "type" : "string"
           },
           "lastName" : {
+            "type" : "string"
+          }
+        }
+      },
+      "InheritedSetting" : {
+        "type" : "object",
+        "properties" : {
+          "set" : {
+            "type" : "boolean"
+          },
+          "value" : {
             "type" : "string"
           }
         }

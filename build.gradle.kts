@@ -276,6 +276,7 @@ sonar {
 // Jackson 2 is on the classpath because java-jwt, biweekly, passkit4j and scribejava need it.
 // alf.io itself is on Jackson 3: both are visible to the compiler and `ObjectMapper` exists in
 // both, so an accidental Jackson 2 import compiles and silently uses an unconfigured mapper.
+// Guava is on the classpath only because the Google auth/http client libraries (Wallet) need it.
 tasks.withType<CheckForbiddenApis>().configureEach {
     bundledSignatures = emptySet()
     signatures = listOf(
@@ -283,7 +284,9 @@ tasks.withType<CheckForbiddenApis>().configureEach {
         "com.fasterxml.jackson.databind.**",
         "com.fasterxml.jackson.core.**",
         "com.fasterxml.jackson.dataformat.**",
-        "com.fasterxml.jackson.datatype.**"
+        "com.fasterxml.jackson.datatype.**",
+        "@defaultMessage Don't use Guava: use the JDK, Apache Commons or Spring utilities",
+        "com.google.common.**"
     )
 }
 
