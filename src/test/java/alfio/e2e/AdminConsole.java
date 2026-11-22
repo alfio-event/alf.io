@@ -997,6 +997,132 @@ class AdminConsole {
     }
 
     /**
+     * Opens the polls list of the event
+     */
+    WebElement openPollsList(String slug) {
+        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/polls/list");
+        var list = wait.until(presenceOfElementLocated(By.tagName("alfio-polls-list")));
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the polls list did not load: " + shadowText(list, ".container"))
+            .until(_ -> !findAllInShadowRoot(list, "h1").isEmpty() && !shadowText(list, "h1").isBlank());
+        return list;
+    }
+
+    /**
+     * Creates a poll restricted to selected attendees, with one option, from the polls list.
+     * @return the poll detail page the save lands on
+     */
+    WebElement createRestrictedPoll(String slug, String question, String option) {
+        var list = openPollsList(slug);
+        clickWithJs(driver, findInShadowRoot(list, "sl-button.create-poll"));
+        var edit = wait.until(presenceOfElementLocated(By.tagName("alfio-poll-edit")));
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the poll form did not load: " + shadowText(edit, ".container"))
+            .until(_ -> findInShadowRoot(edit, "#save-poll") != null);
+        // limit access to selected attendees, so that the participants page is reachable
+        chooseCard(edit, ".access-type", "restricted");
+        typeInShoelaceControl(findMultiLanguageControl(edit, "Question", "sl-input"), "input", question);
+        clickWithJs(driver, findInShadowRoot(edit, "sl-button.add-option"));
+        var optionInput = findMultiLanguageControl(edit, "Option title", "sl-input");
+        wait.until(_ -> optionInput.isDisplayed());
+        typeInShoelaceControl(optionInput, "input", option);
+        clickWithJs(driver, findInShadowRoot(edit, ".option-dialog sl-button[variant='warning']"));
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the option has not been added to the poll form: " + shadowText(edit, ".container"))
+            .until(_ -> !findAllInShadowRoot(edit, ".option-row").isEmpty());
+        clickWithJs(driver, findInShadowRoot(edit, "#save-poll"));
+        var detail = wait.until(presenceOfElementLocated(By.tagName("alfio-poll-detail")));
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the poll detail does not show the question: " + shadowText(detail, ".container"))
+            .until(_ -> shadowText(detail, "h1").contains(question));
+        return detail;
+    }
+
+    /**
+     * Opens the poll for voting from its detail page, and waits until the banner says so
+     */
+    void openPollForVoting(WebElement detail) {
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the poll is not in draft status: " + shadowText(detail, ".container"))
+            .until(_ -> shadowText(detail, ".container").contains("not yet open"));
+        clickWithJs(driver, findInShadowRoot(detail, ".status-actions sl-button[variant='success']"));
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the poll did not open: " + shadowText(detail, ".container"))
+            .until(_ -> shadowText(detail, ".container").contains("open for voting"));
+    }
+
+    /**
+     * Checks that the results card of the poll detail lists the given option
+     */
+    void verifyPollResults(WebElement detail, String option) {
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the results do not show the option " + option + ": " + shadowText(detail, ".container"))
+            .until(_ -> findAllInShadowRoot(detail, ".votes-table").stream()
+                .anyMatch(table -> String.valueOf(table.getDomProperty("textContent")).contains(option)));
+    }
+
+    /**
+     * Opens the participants page of the poll, through the "Manage participants" button of the detail page
+     */
+    WebElement openPollParticipants(WebElement detail) {
+        clickWithJs(driver, findInShadowRoot(detail, "sl-button.manage-participants"));
+        var page = wait.until(presenceOfElementLocated(By.tagName("alfio-poll-participants")));
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the participants page did not load: " + shadowText(page, ".container"))
+            .until(_ -> shadowText(page, ".container").contains("No participant added yet"));
+        return page;
+    }
+
+    /**
+     * Adds the attendee with the given last name to the poll, through the "Add participants" dialog,
+     * and waits until the participants table lists them
+     */
+    void addParticipantToPoll(WebElement participantsPage, String lastName) {
+        clickWithJs(driver, findInShadowRoot(participantsPage, "sl-button.add-participants-btn"));
+        var dialog = findInShadowRoot(participantsPage, "sl-dialog.add-participants");
+        wait.until(_ -> dialog.getDomAttribute("open") != null);
+        typeInShoelaceControl(findInShadowRoot(participantsPage, "sl-dialog.add-participants sl-input"), "input", lastName);
+        var row = new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "no attendee found for " + lastName + " in the add-participants dialog: " + shadowText(participantsPage, ".container"))
+            .until(_ -> participantRows(participantsPage, ".search-results").stream()
+                .filter(r -> String.valueOf(r.getDomProperty("textContent")).contains(lastName))
+                .findFirst()
+                .orElse(null));
+        var checkbox = row.findElements(By.cssSelector("sl-checkbox"));
+        assertFalse(checkbox.isEmpty(), () -> "no checkbox in the attendee row of " + lastName);
+        clickWithJs(driver, checkbox.getFirst());
+        clickWithJs(driver, findInShadowRoot(participantsPage, "sl-dialog.add-participants sl-button.confirm-add"));
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the participant " + lastName + " has not been added: " + shadowText(participantsPage, ".container"))
+            .until(_ -> participantRows(participantsPage, ".participants-table").stream()
+                .anyMatch(r -> String.valueOf(r.getDomProperty("textContent")).contains(lastName)));
+    }
+
+    /**
+     * Removes the participant with the given last name from the poll, and waits until the list is empty
+     */
+    void removeParticipantFromPoll(WebElement participantsPage, String lastName) {
+        var row = new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "no participant row for " + lastName + ": " + shadowText(participantsPage, ".container"))
+            .until(_ -> participantRows(participantsPage, ".participants-table").stream()
+                .filter(r -> String.valueOf(r.getDomProperty("textContent")).contains(lastName))
+                .findFirst()
+                .orElse(null));
+        var button = row.findElements(By.cssSelector("sl-button.remove-participant"));
+        assertFalse(button.isEmpty(), () -> "no remove button in the row of " + lastName);
+        clickWithJs(driver, button.getFirst());
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the participant " + lastName + " has not been removed: " + shadowText(participantsPage, ".container"))
+            .until(_ -> shadowText(participantsPage, ".container").contains("No participant added yet"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<WebElement> participantRows(WebElement page, String tableSelector) {
+        return (List<WebElement>) ((JavascriptExecutor) driver).executeScript(
+            "return Array.from(arguments[0].shadowRoot.querySelectorAll(arguments[1] + ' tbody tr'));", page, tableSelector);
+    }
+
+    /**
      * Opens the "Tickets" page of the first category of the event, through the link on the event detail page.
      */
     WebElement openCategoryTickets(String slug) {

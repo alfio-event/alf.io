@@ -16,8 +16,8 @@ export function patchJson(url: string, payload: any): Promise<Response> {
     return performRequest(url, 'PATCH', payload);
 }
 
-export function callDelete(url: string): Promise<Response> {
-    return performRequest(url, 'DELETE', null);
+export function callDelete(url: string, payload?: any): Promise<Response> {
+    return performRequest(url, 'DELETE', payload ?? null);
 }
 
 function performRequest(url: string, method: 'PUT' | 'POST' | 'PATCH' | 'DELETE', payload: any): Promise<Response> {

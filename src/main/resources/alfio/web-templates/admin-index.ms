@@ -65,7 +65,6 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/additional-fields-to-collect/additional-fields-to-collect.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/group/groups.js"></script>
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/polls/polls.js"></script>
 
 
 

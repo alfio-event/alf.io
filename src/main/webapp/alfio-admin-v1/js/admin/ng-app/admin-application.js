@@ -395,7 +395,7 @@
                 }
             }).state('events.single.polls-list', {
                 url:'/polls/list',
-                template: '<polls-list event="ctrl.event"></polls-list>',
+                template: '<alfio-polls-list data-event-name="{{ctrl.event.shortName}}"></alfio-polls-list>',
                 controller: function(getEvent) {
                     this.event = getEvent.data.event;
                 },
@@ -405,17 +405,18 @@
                 }
             }).state('events.single.polls-detail', {
                 url:'/polls/view/:pollId',
-                template: '<poll-detail event="ctrl.event"></poll-detail>',
-                controller: function(getEvent) {
+                template: '<alfio-poll-detail data-event-name="{{ctrl.event.shortName}}" data-poll-id="{{ctrl.pollId}}"></alfio-poll-detail>',
+                controller: ['getEvent', '$stateParams', function(getEvent, $stateParams) {
                     this.event = getEvent.data.event;
-                },
+                    this.pollId = $stateParams.pollId;
+                }],
                 controllerAs: 'ctrl',
                 data: {
                     view: 'POLL_DETAIL'
                 }
             }).state('events.single.polls-create', {
                 url:'/polls/new',
-                template: '<poll-edit event="ctrl.event"></poll-edit>',
+                template: '<alfio-poll-edit data-event-name="{{ctrl.event.shortName}}"></alfio-poll-edit>',
                 controller: function(getEvent) {
                     this.event = getEvent.data.event;
                 },
@@ -425,20 +426,22 @@
                 }
             }).state('events.single.polls-edit', {
                 url:'/polls/edit/:pollId',
-                template: '<poll-edit event="ctrl.event"></poll-edit>',
-                controller: function(getEvent) {
+                template: '<alfio-poll-edit data-event-name="{{ctrl.event.shortName}}" data-poll-id="{{ctrl.pollId}}"></alfio-poll-edit>',
+                controller: ['getEvent', '$stateParams', function(getEvent, $stateParams) {
                     this.event = getEvent.data.event;
-                },
+                    this.pollId = $stateParams.pollId;
+                }],
                 controllerAs: 'ctrl',
                 data: {
                     view: 'POLL_EDIT'
                 }
             }).state('events.single.polls-edit-participants', {
                 url:'/polls/:pollId/participants',
-                template: '<poll-participants event="ctrl.event"></poll-participants>',
-                controller: function(getEvent) {
+                template: '<alfio-poll-participants data-event-name="{{ctrl.event.shortName}}" data-poll-id="{{ctrl.pollId}}"></alfio-poll-participants>',
+                controller: ['getEvent', '$stateParams', function(getEvent, $stateParams) {
                     this.event = getEvent.data.event;
-                },
+                    this.pollId = $stateParams.pollId;
+                }],
                 controllerAs: 'ctrl',
                 data: {
                     view: 'POLL_EDIT_PARTICIPANTS'
