@@ -159,7 +159,14 @@ const theme = EditorView.theme({
     // the active line is painted over the selection layer: a light tint would wash the selection out on the
     // cursor line, a translucent darker one keeps it visible
     '.cm-activeLine': {
-        backgroundColor: 'color-mix(in srgb, var(--sl-color-primary-600) 6%, transparent)',
+        // Safari < 16.2 has no color-mix(): a neutral translucent tint
+        backgroundColor: 'rgba(0, 0, 0, 0.04)',
+    },
+    // style-mod accepts at-rules only at the top level, wrapping selectors
+    '@supports (background-color: color-mix(in srgb, red 50%, blue))': {
+        '.cm-activeLine': {
+            backgroundColor: 'color-mix(in srgb, var(--sl-color-primary-600) 6%, transparent)',
+        },
     },
     '.cm-activeLineGutter': {
         backgroundColor: 'var(--sl-color-primary-50)',

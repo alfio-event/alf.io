@@ -1,7 +1,21 @@
 import { defineConfig } from "vite";
 import { viteStaticCopy } from 'vite-plugin-static-copy'
+import legacy from '@vitejs/plugin-legacy';
+import browserslistToEsbuild from 'browserslist-to-esbuild';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+
+/**
+ * The admin must run on the same browsers as the public frontend: organizers use old laptops too.
+ * Single source of truth: the public frontend's .browserslistrc.
+ */
+const SUPPORTED_BROWSERS = readFileSync(fileURLToPath(new URL('../public/.browserslistrc', import.meta.url)), 'utf8')
+    .split('\n')
+    .map((line) => line.replace(/#.*$/, '').trim())
+    .filter((line) => line.length > 0)
+    // esbuild cannot transpile destructuring for Safari 14.0 (a WebKit bug fixed in 14.1).
+    // Every macOS / iOS version that got 14.0 was updated to 14.1.
+    .concat('not safari < 14.1', 'not ios_saf < 14.1');
 
 const EXTENSION_EVENTS_MODULE = 'virtual:extension-events';
 const EXTENSION_EVENTS_SOURCE = fileURLToPath(
@@ -67,8 +81,17 @@ export default defineConfig({
             ]
         }),
         extensionEvents(),
+        // sets build.target from the supported browsers and adds the polyfills they need (e.g. structuredClone).
+        // All of them support ES modules, so no separate legacy bundle is needed.
+        legacy({
+            modernTargets: SUPPORTED_BROWSERS,
+            modernPolyfills: true,
+            renderLegacyChunks: false,
+        }),
     ],
     build: {
+        // CSS imported by main.ts. Styles inside Lit's css`` templates are not processed: see docs/branding-guidelines.md
+        cssTarget: browserslistToEsbuild(SUPPORTED_BROWSERS),
         // generate .vite/manifest.json in outDir
         manifest: true,
         rollupOptions: {

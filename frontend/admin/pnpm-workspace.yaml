@@ -1,2 +1,4 @@
 allowBuilds:
+  # its postinstall only prints a funding message
+  core-js: false
   esbuild: true

@@ -1168,7 +1168,16 @@ export const choiceCards = css`
         outline-offset: var(--sl-focus-ring-offset);
     }
 
-    .choice-card:has(input:checked) {
+    /* Safari < 15.4 has no :has(): shows the ring on mouse focus too */
+    @supports not selector(:has(*)) {
+        .choice-card:focus-within {
+            outline: var(--sl-focus-ring);
+            outline-offset: var(--sl-focus-ring-offset);
+        }
+    }
+
+    /* a class, not :has(input:checked), which Safari < 15.4 does not support */
+    .choice-card.selected {
         border-color: var(--sl-color-primary-600);
         background: var(--sl-color-primary-50);
         box-shadow: inset 0 0 0 1px var(--sl-color-primary-600);
@@ -1184,7 +1193,7 @@ export const choiceCards = css`
         transition: color var(--sl-transition-fast);
     }
 
-    .choice-card:has(input:checked) .choice-card-icon {
+    .choice-card.selected .choice-card-icon {
         color: var(--sl-color-primary-600);
     }
 
@@ -1216,7 +1225,7 @@ export const choiceCards = css`
         transition: opacity var(--sl-transition-fast), transform var(--sl-transition-fast);
     }
 
-    .choice-card:has(input:checked) .choice-card-check {
+    .choice-card.selected .choice-card-check {
         opacity: 1;
         transform: scale(1);
     }

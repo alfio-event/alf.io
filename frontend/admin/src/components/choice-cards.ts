@@ -32,7 +32,7 @@ export function choiceCards<T extends string>(options: ChoiceCardsOptions<T>, on
             <legend>${options.label}</legend>
             <div class="choice-cards-grid">
                 ${repeat(options.options, option => option.value, option => html`
-                    <label class="choice-card" data-value=${option.value}>
+                    <label class="choice-card ${option.value === options.value ? 'selected' : ''}" data-value=${option.value}>
                         <input type="radio" name=${options.name} value=${option.value} .checked=${option.value === options.value}
                                @change=${() => onChange(option.value)} />
                         <span class="choice-card-icon"><sl-icon name=${option.icon}></sl-icon></span>

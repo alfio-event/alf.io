@@ -8,6 +8,8 @@ jobs:
     build:
         if: github.repository == 'alfio-event/alf.io'
         strategy:
+            # a failure on one browser must not cancel the others: each run reports all of them
+            fail-fast: false
             matrix:
                 browser: ['chrome', 'firefox', 'safari']
         runs-on: ubuntu-latest

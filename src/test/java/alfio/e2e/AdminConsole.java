@@ -2707,10 +2707,13 @@ class AdminConsole {
 
     /**
      * URL inputs normalize to https:// on blur.
+     * <p>
+     * No native click: Safari 14's driver rejects clicks on any element inside a shadow root ("click intercepted"),
+     * and sendKeys focuses the input anyway.
      */
     private void fillUrl(WebElement page, String id, String url) {
         var element = findInShadowRoot(findInShadowRoot(page, "sl-input#" + id), "input");
-        scrollToCenter(element).click();
+        scrollToCenter(element);
         clearInput(element);
         element.sendKeys(url);
         element.sendKeys(Keys.TAB);

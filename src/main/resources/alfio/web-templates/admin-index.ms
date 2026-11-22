@@ -12,6 +12,10 @@
     <script type="module" src="http://localhost:5173/src/main.ts" nonce="{{nonce}}"></script>
     {{/devModeEnabled}}
     {{#litAdminStatic}}
+        {{#litPolyfills}}
+        <!-- module scripts run in document order: the polyfills must come first -->
+        <script type="module" src="{{contextPath}}/frontend-admin/{{lit-polyfills-js}}" nonce="{{nonce}}"></script>
+        {{/litPolyfills}}
         <script type="module" src="{{contextPath}}/frontend-admin/{{lit-js}}" id="lit-js" nonce="{{nonce}}"></script>
         {{#lit-css}}
         <link rel="stylesheet" href="{{contextPath}}/frontend-admin/{{.}}" />

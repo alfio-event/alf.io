@@ -34,6 +34,8 @@
   },
   "devDependencies": {
     "@types/papaparse": "^5.5.2",
+    "@vitejs/plugin-legacy": "7.2.1",
+    "browserslist-to-esbuild": "2.1.1",
     "typescript": "5.9.3",
     "vite": "7.3.0",
     "vite-plugin-static-copy": "3.1.4"

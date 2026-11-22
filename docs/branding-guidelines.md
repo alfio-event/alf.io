@@ -235,6 +235,13 @@ Use Shoelace spacing tokens exclusively (`--sl-spacing-2x-small` through `--sl-s
 
 API keys, usernames in code context, and other technical identifiers use `font-family: var(--sl-font-mono)` at `font-size: var(--sl-font-size-small)`.
 
+## 11. Browser support
+
+The admin supports the same browsers as the public frontend (`frontend/public/.browserslistrc`), down to Safari 14.1: organizers often use old laptops. The E2E suite runs on Safari 14.1.
+
+- JavaScript syntax is transpiled and missing APIs (e.g. `structuredClone`, `Array.prototype.at`) are polyfilled by the build (`frontend/admin/vite.config.js`).
+- CSS inside Lit's `` css`...` `` templates is **not** processed. Don't use features newer than Safari 14.1 there without a fallback, e.g. `:has()` (15.4), `color-mix()` (16.2), CSS nesting (16.5), container queries (16), `@layer` (15.4). Prefer a class set from the template's state, or wrap the newer feature in `@supports`.
+
 ---
 
 ## Reference: CSS class index
