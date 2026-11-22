@@ -10,7 +10,7 @@ const NOTIFY_LABEL = 'Send a notification email to the reservation contact perso
 /**
  * A credit note can be issued if the customer has requested an invoice, and the payment has been received
  */
-export function canGenerateCreditNote(reservation: ReservationDetail): boolean {
+export function canGenerateCreditNote(reservation: Pick<ReservationDetail, 'invoiceRequested' | 'status'>): boolean {
     return reservation.invoiceRequested && reservation.status !== 'OFFLINE_PAYMENT';
 }
 
@@ -72,11 +72,12 @@ export function cancelReservationRequest(reservation: ReservationDetail,
 }
 
 /**
- * Removes a single ticket from the reservation
+ * Removes a single ticket from the reservation. The ticket may also be a CategoryTicket
+ * (GET /events/{eventName}/category/{categoryId}/ticket), which carries a fullName too
  */
-export function removeTicketRequest(reservation: ReservationDetail,
+export function removeTicketRequest(reservation: Pick<ReservationDetail, 'id' | 'invoiceRequested' | 'status' | 'currencyCode'>,
                                     paymentInfo: PaymentInfo | null,
-                                    ticket: Ticket): CancellationRequest {
+                                    ticket: Ticket & { fullName?: string | null }): CancellationRequest {
     const price = formatAmount(ticket.formattedFinalPrice, ticket.currencyCode);
     const supportRefund = paymentInfo?.supportRefund ?? false;
     const creditNote = canGenerateCreditNote(reservation);

@@ -111,12 +111,6 @@
             toggleActivation: function(id, active) {
                 return $http['put']('/admin/api/events/'+id+'/status?active='+active).error(HttpErrorHandler.handle);
             },
-            getTicketsForCategory: function(event, ticketCategory, page, search) {
-              return $http.get('/admin/api/events/'+event.shortName+'/category/'+ticketCategory.id+'/ticket', {params: {page: page, search: search}}).error(HttpErrorHandler.handle);
-            },
-            toggleTicketLocking: function(event, ticket, category) {
-                return $http['put']('/admin/api/events/' + event.shortName + '/categories/' + category.id + '/tickets/' + ticket.id +'/toggle-locking');
-            },
             getSelectedLanguages: function(eventName) {
                 return $http['get']('/admin/api/events/'+eventName+'/languages').error(HttpErrorHandler.handle);
             },
@@ -132,40 +126,6 @@
             findAllReservations: function(eventName, page, search, status) {
                 return $http.get('/admin/api/reservation/event/'+eventName+'/reservations/list', {params: {page: page, search: search, status: status}});
             },
-            removeTicketModal: function(event, reservationId, ticketId, invoiceRequested) {
-                var deferred = $q.defer();
-                var promise = deferred.promise;
-
-                var modal = $uibModal.open({
-                    size:'lg',
-                    template:'<tickets-remove event="event" can-generate-credit-note="invoiceRequested" reservation-id="reservationId" ticket-id="ticketId" on-success="success(result)" on-cancel="close()"></tickets-remove>',
-                    backdrop: 'static',
-                    controller: function($scope) {
-                        $scope.event = event;
-                        $scope.ticketId = ticketId;
-                        $scope.reservationId = reservationId;
-                        $scope.invoiceRequested = invoiceRequested;
-                        $scope.close = function() {
-                            $scope.$dismiss(false);
-                        };
-
-                        $scope.success = function (result) {
-                            $scope.$close(result);
-                        }
-                    }
-                });
-                return modal.result;
-            },
-
-            removeTickets: function(eventName, reservationId, ticketIds, ticketIdsToRefund, notify, issueCreditNote) {
-                return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/remove-tickets', {
-                    ticketIds: ticketIds,
-                    refundTo: ticketIdsToRefund,
-                    notify : notify,
-                    issueCreditNote: issueCreditNote
-                });
-            },
-
             createAdditionalService: function(eventId, additionalService) {
                 return $http.post('/admin/api/event/'+eventId+'/additional-services', additionalService).error(HttpErrorHandler.handle);
             }

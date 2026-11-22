@@ -86,6 +86,7 @@ export { PaymentMethod } from './components/payment-method';
 export { PendingPaymentsCount } from './components/pending-payments-count';
 export { PromoCode } from './event/promo-code/promo-code';
 export { ReservationsList } from './event/reservations-list/reservations-list';
+export { TicketsList } from './event/tickets-list/tickets-list';
 export { ComposeMessage } from './event/compose-message/compose-message';
 export { PaymentsList } from './event/payments-list/payments-list';
 export { PendingPayments } from './event/pending-payments/pending-payments';

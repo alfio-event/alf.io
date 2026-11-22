@@ -296,8 +296,10 @@
                 resolve: loadEvent
             })
             .state('events.single.ticketsList', {
-                url: '/category/:categoryId/tickets',
-                template: '<tickets-list event="$ctrl.event" category-id="$ctrl.categoryId"></tickets-list>',
+                url: '/category/:categoryId/tickets?search&page',
+                // The Lit component owns filtering and pagination; query changes must preserve its DOM.
+                reloadOnSearch: false,
+                template: '<alfio-tickets-list data-event-name="{{$ctrl.event.shortName}}" data-category-id="{{$ctrl.categoryId}}"></alfio-tickets-list>',
                 controller: ['loadEvent', '$stateParams', function(loadEvent, $stateParams) {
                     this.event = loadEvent.data.event;
                     this.categoryId = $stateParams.categoryId;

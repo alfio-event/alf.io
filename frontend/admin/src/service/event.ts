@@ -1,9 +1,10 @@
-import {EventWithOrganization, GroupLink, TicketsStatistics} from "../model/event.ts";
+import {CategoryTicket, EventWithOrganization, GroupLink, TicketsStatistics} from "../model/event.ts";
 import {EventModificationPayload, TicketCategoryModificationPayload} from "../model/event-modification.ts";
 import {ValidatedResponse} from "../model/validation.ts";
 import {DateTimeModification} from "../model/purchase-context.ts";
+import {PageAndContent} from "../model/reservation.ts";
 import {WaitingQueueSubscription} from "../model/waiting-queue.ts";
-import {callDelete, fetchJson, postJson, putJson, responseErrorMessage} from "./helpers.ts";
+import {callDelete, ensureOk, fetchJson, postJson, putJson, responseErrorMessage} from "./helpers.ts";
 
 export interface EventValidationResult extends Omit<ValidatedResponse<unknown>, "value"> {
 }
@@ -114,6 +115,23 @@ export class EventService {
         if (!response.ok) {
             throw new Error(await responseErrorMessage(response, `Unexpected status ${response.status}`));
         }
+    }
+
+    /**
+     * The tickets of a category, paginated and filtered server-side
+     * (GET /events/{eventName}/category/{categoryId}/ticket)
+     */
+    static loadCategoryTickets(eventName: string, categoryId: number, page: number, search: string): Promise<PageAndContent<CategoryTicket[]>> {
+        const params = new URLSearchParams({ page: String(page - 1), search });
+        return fetchJson(`/admin/api/events/${encodeURIComponent(eventName)}/category/${categoryId}/ticket?${params}`);
+    }
+
+    /**
+     * Locks/unlocks the assignment of a ticket to its attendee
+     * (PUT /events/{eventName}/categories/{categoryId}/tickets/{ticketId}/toggle-locking)
+     */
+    static async toggleTicketLocking(eventName: string, categoryId: number, ticketId: number): Promise<boolean> {
+        return ensureOk(await putJson(`/admin/api/events/${encodeURIComponent(eventName)}/categories/${categoryId}/tickets/${ticketId}/toggle-locking`, null));
     }
 
     static loadTicketsStatistics(eventName: string, from?: string, to?: string): Promise<TicketsStatistics> {

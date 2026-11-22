@@ -165,6 +165,50 @@ export type EventStatus = 'DRAFT' | 'PUBLIC' | 'DISABLED';
  */
 export type TicketStatus = 'FREE' | 'PENDING' | 'TO_BE_PAID' | 'ACQUIRED' | 'CANCELLED' | 'CHECKED_IN' | 'EXPIRED' | 'INVALIDATED' | 'RELEASED' | 'PRE_RESERVED';
 
+/**
+ * The reservation a ticket belongs to, as embedded in a CategoryTicket
+ */
+export interface CategoryTicketReservation {
+    id: string;
+    fullName: string | null;
+    email: string | null;
+    invoiceRequested: boolean;
+    paymentMethod: string | null;
+    // instant
+    confirmationTimestamp: string | null;
+}
+
+/**
+ * A ticket of a category, as returned by GET /admin/api/events/{eventName}/category/{categoryId}/ticket
+ * (TicketWithStatistic)
+ */
+export interface CategoryTicket {
+    id: number;
+    uuid: string;
+    status: TicketStatus;
+    firstName: string | null;
+    lastName: string | null;
+    fullName: string | null;
+    email: string | null;
+    // already formatted by the backend
+    formattedFinalPrice: string;
+    // in currency units, as a number
+    finalPrice: number | null;
+    appliedDiscount: number | null;
+    currencyCode: string | null;
+    lockedAssignment: boolean;
+    paid: boolean;
+    pending: boolean;
+    stuck: boolean;
+    promoCodeOrToken: string | null;
+    // wall-clock (event time zone): confirmation of the reservation
+    timestamp: string | null;
+    // wall-clock (event time zone): payment
+    transactionTimestamp: string | null;
+    transaction: { id: number; transactionId: string | null } | null;
+    ticketReservation: CategoryTicketReservation;
+}
+
 export interface EventStatistic {
     id: number;
     shortName: string;

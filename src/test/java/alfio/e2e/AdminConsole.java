@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import static alfio.e2e.E2EUtils.*;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.openqa.selenium.support.ui.ExpectedConditions.*;
 
@@ -993,6 +994,98 @@ class AdminConsole {
         var link = findInShadowRoot(categories, ".send-invitations-link");
         clickWithJs(driver, link);
         return wait.until(presenceOfElementLocated(By.tagName("alfio-send-invitations")));
+    }
+
+    /**
+     * Opens the "Tickets" page of the first category of the event, through the link on the event detail page.
+     */
+    WebElement openCategoryTickets(String slug) {
+        var detail = openEventDetail(slug);
+        // the link of the first category, rendered by alfio-event-categories
+        var categories = wait.until(_ -> findAllInShadowRoot(detail, "alfio-event-categories").stream()
+            .findFirst()
+            .filter(c -> !findAllInShadowRoot(c, ".tickets-link").isEmpty())
+            .orElse(null));
+        var link = findInShadowRoot(categories, ".tickets-link");
+        clickWithJs(driver, link);
+        return wait.until(presenceOfElementLocated(By.tagName("alfio-tickets-list")));
+    }
+
+    /**
+     * Checks that the tickets page (alfio-tickets-list) shows the given category in its title
+     */
+    void verifyTicketsPageTitle(WebElement ticketsPage, String categoryName) {
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "the tickets page does not show the category " + categoryName + ": " + shadowText(ticketsPage, "h1"))
+            .until(_ -> {
+                var title = shadowText(ticketsPage, "h1");
+                return title.contains("Tickets for") && title.contains(categoryName);
+            });
+    }
+
+    /**
+     * Waits until the tickets page lists a ticket whose row contains the given text (e.g. the customer name)
+     * @return the row (tr[data-ticket-uuid])
+     */
+    WebElement waitForTicketRow(WebElement ticketsPage, String text) {
+        return new WebDriverWait(driver, Duration.ofSeconds(30))
+            .ignoring(StaleElementReferenceException.class)
+            .withMessage(() -> "no ticket row for \"" + text + "\". Page: " + shadowText(ticketsPage, ".container")
+                + " | API: " + categoryTicketsJson(ticketsPage))
+            .until(_ -> shadowRows(ticketsPage).stream()
+                .filter(row -> String.valueOf(row.getDomProperty("textContent")).contains(text))
+                .findFirst()
+                .orElse(null));
+    }
+
+    /**
+     * The raw answer of the category-tickets API for the page's event and category, for failure messages
+     */
+    private String categoryTicketsJson(WebElement ticketsPage) {
+        return String.valueOf(((JavascriptExecutor) driver).executeAsyncScript("""
+            const [el, done] = arguments;
+            fetch(`/admin/api/events/${el.getAttribute('data-event-name')}/category/${el.getAttribute('data-category-id')}/ticket?page=0&search=`, { credentials: 'include' })
+                .then(r => r.text()).then(t => done(t), e => done(String(e)));
+            """, ticketsPage));
+    }
+
+    /**
+     * The status of the listed ticket whose row contains the given text, e.g. "PENDING"
+     */
+    String ticketStatus(WebElement ticketsPage, String text) {
+        return waitForTicketRow(ticketsPage, text).findElements(By.cssSelector(".ticket-status")).stream()
+            .findFirst()
+            .map(e -> e.getDomAttribute("data-status"))
+            .orElse(null);
+    }
+
+    /**
+     * Locks the listed ticket, and waits until the page shows the lock button as "Unlock"
+     */
+    void lockTicket(WebElement ticketsPage, String text) {
+        var row = waitForTicketRow(ticketsPage, text);
+        var button = row.findElements(By.cssSelector("sl-button.lock-button"));
+        assertFalse(button.isEmpty(), () -> "no lock button in the row of " + text);
+        clickWithJs(driver, button.getFirst());
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .ignoring(StaleElementReferenceException.class)
+            .withMessage(() -> "the ticket of " + text + " is not locked: " + shadowText(ticketsPage, ".tickets-table"))
+            .until(_ -> shadowRows(ticketsPage).stream()
+                .filter(r -> String.valueOf(r.getDomProperty("textContent")).contains(text))
+                .flatMap(r -> r.findElements(By.cssSelector("sl-button.lock-button")).stream())
+                .anyMatch(b -> b.getText().contains("Unlock")));
+    }
+
+    /**
+     * Removes the listed ticket through the confirmation dialog, and waits until the list is empty
+     */
+    void removeTicketFromList(WebElement ticketsPage, String text) {
+        var row = waitForTicketRow(ticketsPage, text);
+        var button = row.findElements(By.cssSelector("sl-button.remove-ticket"));
+        assertFalse(button.isEmpty(), () -> "no remove button in the row of " + text);
+        clickWithJs(driver, button.getFirst());
+        submitDialog(ticketsPage, "alfio-cancellation-dialog", "danger");
+        waitForEmptyState(ticketsPage, "No tickets have been found");
     }
 
     /**
