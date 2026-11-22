@@ -1,4 +1,4 @@
-import { callDelete, fetchJson, postJson, responseErrorMessage } from "./helpers";
+import { callDelete, fetchJson, postJson, responseErrorMessage, adminFetch } from './helpers';
 import {ConfigurationModification, SettingsByCategory} from "../model/configuration.ts";
 
 export class ConfigurationService {
@@ -51,7 +51,7 @@ export class ConfigurationService {
      * scan), by category id. Categories without a color are missing
      */
     static async loadBadgeColors(eventName: string): Promise<Map<number, string>> {
-        const response = await fetch(`/admin/api/configuration/events/${encodeURIComponent(eventName)}/single/CHECK_IN_COLOR_CONFIGURATION`, {
+        const response = await adminFetch(`/admin/api/configuration/events/${encodeURIComponent(eventName)}/single/CHECK_IN_COLOR_CONFIGURATION`, {
             credentials: 'include',
         });
         if (!response.ok) {

@@ -39,6 +39,7 @@ import '../../components/cancellation-dialog.ts';
 import './bulk-confirmation.ts';
 import {emptyState} from '../../components/empty-state.ts';
 import {taskContent} from '../../components/task-content.ts';
+import { adminUrl } from '../../admin-router';
 
 interface PendingPaymentRow {
     payment: PendingPayment;
@@ -396,7 +397,7 @@ export class PendingPayments extends LitElement {
     };
 
     private reservationHref(reservationId: string): string {
-        return `#/events/${this.eventName}/reservation/${reservationId}`;
+        return adminUrl(`/events/${this.eventName}/reservation/${reservationId}`);
     }
 }
 

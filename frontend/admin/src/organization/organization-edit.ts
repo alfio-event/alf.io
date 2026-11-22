@@ -20,6 +20,7 @@ import {
     validateWith,
 } from "../components/form-validation.ts";
 
+import { adminConfig } from '../admin-config';
 interface OrganizationForm {
     id: number | null;
     name: string;
@@ -203,7 +204,7 @@ export class OrganizationEdit extends LitElement {
     }
 
     private renderSlugField() {
-        const baseUrl = window.BASE_URL;
+        const baseUrl = adminConfig().baseUrl;
         return this.#form.field({
             name: 'slug',
             validators: validateWith(value => validateSlugFormat(value))
@@ -302,7 +303,7 @@ export class OrganizationEdit extends LitElement {
         } else {
             this.dialogTitle = 'New organization';
         }
-        this.isAdmin = window.IS_ADMIN;
+        this.isAdmin = adminConfig().isAdmin;
         this.slugCheckGeneration++;
         this.slugChecking = false;
         this.slugValid = true;

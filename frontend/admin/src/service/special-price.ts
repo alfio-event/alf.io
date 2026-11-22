@@ -1,6 +1,6 @@
 import Papa from 'papaparse';
 import {SendCodeModification, SpecialPrice} from "../model/special-price.ts";
-import {callDelete, ensureOk, postJson, responseErrorMessage} from "./helpers.ts";
+import { callDelete, ensureOk, postJson, responseErrorMessage, adminFetch } from './helpers.ts';
 
 // the header of the template, in this order: the columns of a row, without header, are code, assignee, email, language
 export const CSV_HEADER = ['code', 'assignee', 'email', 'language'];
@@ -68,7 +68,7 @@ export class SpecialPriceService {
      * The codes of the category for which an invitation has already been sent.
      */
     static async loadSentCodes(eventName: string, categoryId: number): Promise<SpecialPrice[]> {
-        const response = await fetch(`${SpecialPriceService.baseUrl(eventName, categoryId)}/sent-codes`, { credentials: 'include' });
+        const response = await adminFetch(`${SpecialPriceService.baseUrl(eventName, categoryId)}/sent-codes`);
         return await ensureOk<SpecialPrice[]>(response);
     }
 

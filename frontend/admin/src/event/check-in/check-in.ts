@@ -32,6 +32,8 @@ import {ListSearchController} from '../../components/list-search.ts';
 import {taskContent} from '../../components/task-content.ts';
 import {AddAttendeesDialog, AttendeesAddedDetail} from './add-attendees-dialog.ts';
 import './add-attendees-dialog.ts';
+import { adminUrl } from '../../admin-router';
+import { canScanQrCodes } from '../../service/qr-scanning.ts';
 
 type TabName = 'pending' | 'checked-in';
 
@@ -74,6 +76,12 @@ export class CheckIn extends LitElement {
         this.search = search;
         this.pages = { ...FIRST_PAGES };
         this.syncLocation();
+    });
+
+    // asked each time the page opens
+    private readonly scanSupportTask = new Task(this, {
+        task: () => canScanQrCodes(),
+        args: () => [] as const,
     });
 
     private readonly loadDataTask = new Task(this, {
@@ -300,6 +308,19 @@ export class CheckIn extends LitElement {
         }
     };
 
+    // the embedded scanner needs a browser that reads QR codes (see qr-scanning.ts)
+    private renderScanOptions(title: string): TemplateResult {
+        const android = html`<a href="https://play.google.com/store/apps/details?id=alfio.scan" target="_blank" rel="noopener">Android app</a>`;
+        const ios = html`<a href="https://itunes.apple.com/us/app/alf-io-scan/id1425492093" target="_blank" rel="noopener">iOS app</a>`;
+        if (this.scanSupportTask.value === true) {
+            return html`
+                Scan tickets for event <i>${title}</i> using the ${android}, ${ios}
+                or the <a id="scan-page-link" href=${adminUrl(`/events/${this.eventName}/check-in/scan`)}>embedded scan functionality</a>
+            `;
+        }
+        return html`Scan tickets for event <i>${title}</i> using the ${android} or the ${ios}`;
+    }
+
     private renderAppsInfo(title: string): TemplateResult | typeof nothing {
         if (!this.showAppsInfo) {
             return nothing;
@@ -307,12 +328,7 @@ export class CheckIn extends LitElement {
         return html`
             <sl-alert class="apps-info" variant="primary" open closable @sl-after-hide=${this.dismissAppsInfo}>
                 <sl-icon slot="icon" name="info-circle"></sl-icon>
-                <p>
-                    Scan tickets for event <i>${title}</i> using the
-                    <a href="https://play.google.com/store/apps/details?id=alfio.scan" target="_blank" rel="noopener">Android app</a>,
-                    <a href="https://itunes.apple.com/us/app/alf-io-scan/id1425492093" target="_blank" rel="noopener">iOS app</a>
-                    or the <a id="scan-page-link" href=${`#/events/${this.eventName}/check-in/scan`}>embedded scan functionality</a>
-                </p>
+                <p>${this.renderScanOptions(title)}</p>
                 <div class="store-badges">
                     <a href="https://play.google.com/store/apps/details?id=alfio.scan" target="_blank" rel="noopener">
                         <img class="google-play" alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png">
@@ -458,7 +474,7 @@ export class CheckIn extends LitElement {
 
     private renderReference(ticket: CheckInTicket): TemplateResult {
         return html`
-            <a href=${`#/events/${this.eventName}/reservation/${ticket.ticketsReservationId}`} title="View reservation">
+            <a href=${adminUrl(`/events/${this.eventName}/reservation/${ticket.ticketsReservationId}`)} title="View reservation">
                 ${ticket.publicUuid.substring(0, 8)}
             </a>
         `;

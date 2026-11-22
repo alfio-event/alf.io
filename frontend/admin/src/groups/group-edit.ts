@@ -25,6 +25,7 @@ import {
     validatedInput,
     validateWith,
 } from '../components/form-validation.ts';
+import { navigate, adminUrl } from '../admin-router';
 
 /**
  * A member of the group being edited. A member already saved on the server has an id and is
@@ -266,7 +267,7 @@ export class GroupEdit extends LitElement {
                 <div class="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" href=${`#/group/${this.organizationId}/all`}>Cancel</sl-button>
+                        <sl-button variant="default" size="large" href=${adminUrl(`/group/${this.organizationId}/all`)}>Cancel</sl-button>
                         <div></div>
                         <sl-button id="save-group" type="submit" variant="warning" size="large" ?loading=${this.saving}>Save</sl-button>
                     </div>
@@ -487,7 +488,7 @@ description: optional, for internal usage</pre>
                 await GroupService.update(this.organizationId, this.groupId, payload);
                 dispatchFeedback({type: 'success', message: `Group ${values.name} successfully updated`}, this);
             }
-            window.location.hash = `#/group/${this.organizationId}/all`;
+            navigate(`/group/${this.organizationId}/all`);
         } catch (error) {
             dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to save the group')}, this);
         } finally {
@@ -507,7 +508,7 @@ description: optional, for internal usage</pre>
         try {
             await GroupService.deactivateGroup(this.organizationId, this.groupId);
             dispatchFeedback({type: 'success', message: `Group ${name} successfully deleted`}, this);
-            window.location.hash = `#/group/${this.organizationId}/all`;
+            navigate(`/group/${this.organizationId}/all`);
         } catch (error) {
             dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to delete the group')}, this);
         }

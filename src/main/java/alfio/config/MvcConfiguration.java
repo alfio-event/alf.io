@@ -24,7 +24,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -68,14 +67,11 @@ import static org.springframework.security.web.servlet.util.matcher.PathPatternR
 public class MvcConfiguration implements WebMvcConfigurer {
 
     private final Environment environment;
-    private final String alfioVersion;
     private final JsonMapper objectMapper;
 
     public MvcConfiguration(Environment environment,
-                            @Value("${alfio.version}") String alfioVersion,
                             JsonMapper objectMapper) {
         this.environment = environment;
-        this.alfioVersion = alfioVersion;
         this.objectMapper = objectMapper;
     }
 
@@ -85,24 +81,18 @@ public class MvcConfiguration implements WebMvcConfigurer {
         int cacheMinutes = isLive ? 15 : 0;
 
         var defaultCacheControl = CacheControl.maxAge(Duration.ofDays(isLive ? 10 : 0)).mustRevalidate();
-        var alfioVersionPath = "/" + alfioVersion;
         
         registry
             .addResourceHandler("/robots.txt")
             .addResourceLocations("classpath:/public/robots.txt");
 
-        registry.addResourceHandler("/resources/font/*", alfioVersionPath + "/resources/font/*")
+        registry.addResourceHandler("/resources/font/*")
             .addResourceLocations("classpath:/font/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(defaultCacheControl);
 
-        registry.addResourceHandler("/resources/images/**", alfioVersionPath + "/resources/images/**")
+        registry.addResourceHandler("/resources/images/**")
             .addResourceLocations("classpath:/images/")
-            .setCachePeriod(cacheMinutes * 60)
-            .setCacheControl(defaultCacheControl);
-
-        registry.addResourceHandler(alfioVersionPath + "/resources/**")
-            .addResourceLocations("classpath:/alfio-admin-v1/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(defaultCacheControl);
 
@@ -111,7 +101,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(CacheControl.maxAge(Duration.ofDays(60)));
 
-        registry.addResourceHandler(alfioVersionPath + "/frontend-admin/**")
+        registry.addResourceHandler("/frontend-admin/**")
             .addResourceLocations("classpath:/resources/alfio-admin-frontend/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(CacheControl.maxAge(Duration.ofDays(60)));
@@ -124,7 +114,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
         private final RequestMatcher staticContentToIgnore;
 
-        ExcludeSessionRepositoryFilter(String alfioVersion) {
+        ExcludeSessionRepositoryFilter() {
             var methodMatcher = RequestMatchers.anyOf(
                 pathPattern(HttpMethod.GET, "/**"),
                 pathPattern(HttpMethod.HEAD, "/**"),
@@ -134,9 +124,8 @@ public class MvcConfiguration implements WebMvcConfigurer {
             var urlMatcher = RequestMatchers.anyOf(
                 pathPattern("/favicon.*"),
                 pathPattern("/resources/**"),
-                pathPattern("/" + alfioVersion + "/resources/**"),
                 pathPattern("/frontend-public/**"),
-                pathPattern("/" + alfioVersion + "/frontend-admin/**"),
+                pathPattern("/frontend-admin/**"),
                 pathPattern("/file/**"),
                 pathPattern("/payment/paypal/redirect/*")
             );
@@ -155,7 +144,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
     @Bean
     public ExcludeSessionRepositoryFilter excludeSessionRepositoryFilter() {
-        return new ExcludeSessionRepositoryFilter(alfioVersion);
+        return new ExcludeSessionRepositoryFilter();
     }
 
     @Override

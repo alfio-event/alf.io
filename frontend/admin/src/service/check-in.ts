@@ -7,7 +7,7 @@
  */
 
 import {CheckInTicket, TicketAndCheckInResult} from '../model/check-in.ts';
-import {postJson} from './helpers.ts';
+import { postJson, adminFetch } from './helpers.ts';
 
 const CHUNK_SIZE = 200;
 // set by the server on the "ticket-identifiers" response. Used as "changedSince" for the next sync
@@ -42,7 +42,7 @@ export class CheckInService {
         if (cache.since != null) {
             params = `?${new URLSearchParams({ changedSince: cache.since })}`;
         }
-        const response = await fetch(`${baseUrl(eventId)}/ticket-identifiers${params}`, { credentials: 'include' });
+        const response = await adminFetch(`${baseUrl(eventId)}/ticket-identifiers${params}`);
         await ensureSuccess(response);
         const since = response.headers.get(SERVER_TIME_HEADER);
         const ids: number[] = await response.json();
@@ -80,7 +80,7 @@ export class CheckInService {
      */
     static async getTicket(eventId: number, code: string): Promise<TicketAndCheckInResult> {
         const params = new URLSearchParams({ qrCode: code });
-        const response = await fetch(`${baseUrl(eventId)}/ticket/${ticketIdentifier(code)}?${params}`, { credentials: 'include' });
+        const response = await adminFetch(`${baseUrl(eventId)}/ticket/${ticketIdentifier(code)}?${params}`);
         await ensureSuccess(response);
         return response.json();
     }

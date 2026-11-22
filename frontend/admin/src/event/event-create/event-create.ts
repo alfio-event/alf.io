@@ -61,6 +61,7 @@ import {categoryDraftToPayload, dateTimeLocalToModification, newCategoryDraft, w
 import './copy-event-dialog.ts';
 import type {CopyEventDialog, CopyEventSelection} from './copy-event-dialog.ts';
 import '../custom-offline-payment-event-selector/custom-offline-payment-event-selector.ts';
+import { navigate, adminUrl } from '../../admin-router';
 
 type PriceModel = 'paid' | 'free';
 
@@ -253,9 +254,9 @@ function requiredNonNegativeNumber(value: unknown): string | undefined {
 }
 
 /**
- * The page of #/events/new: creates a new event (replaces the AngularJS CreateEventController +
+ * The page of /admin/events/new: creates a new event (replaces the AngularJS CreateEventController +
  * edit-event.html). The draft is persisted in the session storage while filling the form.
- * With the "data-event-name" attribute (#/events/{eventName}/edit), the same form edits an
+ * With the "data-event-name" attribute (/admin/events/{eventName}/edit), the same form edits an
  * existing event: it is pre-filled with the event's data and saved through the update endpoints.
  */
 /**
@@ -539,9 +540,9 @@ export class EventCreate extends LitElement {
         const submitted = this.#form.api.state.submissionAttempts > 0;
         const values = this.values;
         const editing = data.editing != null;
-        let cancelHref = '#/';
+        let cancelHref = adminUrl('/');
         if (editing) {
-            cancelHref = `#/events/${this.eventName}/detail`;
+            cancelHref = adminUrl(`/events/${this.eventName}/detail`);
         }
         return html`
             <form novalidate @submit=${this.submit}>
@@ -561,7 +562,7 @@ export class EventCreate extends LitElement {
                                     <sl-alert open variant="primary">
                                         <sl-icon slot="icon" name="info-circle"></sl-icon>
                                         The ticket categories of this event are managed on the
-                                        <a href="#/events/${this.eventName}/detail">event detail page</a>.
+                                        <a href=${adminUrl(`/events/${this.eventName}/detail`)}>event detail page</a>.
                                     </sl-alert>
                                 `)}
                             </section>
@@ -1741,7 +1742,7 @@ export class EventCreate extends LitElement {
         if (values.organizationId !== '') {
             void this.loadPaymentProxies(Number(values.organizationId));
         }
-        // #/events/new?eventName=... opens the copy dialog preselected, as the AngularJS page did
+        // /admin/events/new?eventName=... opens the copy dialog preselected, as the AngularJS page did
         if (!this.copyDialogAutoOpened && data.editing == null) {
             const eventName = readRouteParams().get('eventName');
             if (eventName != null && eventName !== '') {
@@ -2221,7 +2222,7 @@ export class EventCreate extends LitElement {
             } catch {
                 // session storage may be unavailable
             }
-            window.location.hash = `#/events/${payload.shortName}/detail`;
+            navigate(`/events/${payload.shortName}/detail`);
         } catch (error) {
             this.submitError = errorMessage(error, 'Unexpected error. Please retry and/or check the logs.');
         } finally {
@@ -2258,7 +2259,7 @@ export class EventCreate extends LitElement {
             this.dispatchEvent(new CustomEvent(EVENT_SECTION_SAVED, {bubbles: true, composed: true}));
             return;
         }
-        window.location.hash = `#/events/${event.shortName}/detail`;
+        navigate(`/events/${event.shortName}/detail`);
     }
 
     private async showSaveErrors(errors: ErrorDescriptor[]): Promise<void> {

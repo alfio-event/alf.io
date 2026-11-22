@@ -11,11 +11,12 @@ import {sectionCard} from '../components/section-card.ts';
 import {taskContent} from '../components/task-content.ts';
 import {emptyState} from '../components/empty-state.ts';
 
+import { adminConfig } from '../admin-config';
 @customElement('alfio-organization-list')
 export class OrganizationList extends LitElement {
 
     @state()
-    isAdmin: boolean = !!window.IS_ADMIN;
+    isAdmin: boolean = !!adminConfig().isAdmin;
 
     @state()
     refreshCount: number = 0;

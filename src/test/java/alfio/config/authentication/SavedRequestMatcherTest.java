@@ -34,6 +34,8 @@ class SavedRequestMatcherTest {
     void savePageNavigation() {
         assertTrue(matcher.matches(request("GET", "/admin/", BROWSER_ACCEPT)));
         assertTrue(matcher.matches(request("GET", "/admin", "*/*")));
+        // the admin routes on the client: a link to one of its pages leads there after login
+        assertTrue(matcher.matches(request("GET", "/admin/events/test/detail", BROWSER_ACCEPT)));
     }
 
     @Test

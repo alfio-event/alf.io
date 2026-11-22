@@ -56,7 +56,7 @@
 						<td>{{fullName}}<br/><a href="mailto:{{email}}" rel="notrack">{{email}}</a></td>
             			<td>{{totalAmount}} {{currencyCode}}</td>
 						<td>
-							<a href="{{baseUrl}}/admin/#/events/{{eventShortName}}/reservation/{{id}}" rel="notrack" align="center">
+							<a href="{{baseUrl}}/admin/events/{{eventShortName}}/reservation/{{id}}" rel="notrack" align="center">
 								View reservation
 							</a>
 			            </td>

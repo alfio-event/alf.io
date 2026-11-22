@@ -41,6 +41,8 @@ import {
     textColors,
 } from '../../styles.ts';
 
+import { adminConfig } from '../../admin-config';
+import { adminUrl } from '../../admin-router';
 interface EventDetailData {
     event: AlfioEvent;
     organization: Organization;
@@ -90,9 +92,9 @@ function firstText(content: LocalizedContent | null | undefined): string {
 }
 
 /**
- * The event detail page (#/events/{eventName}/detail): headline, status alerts, statistics, event
+ * The event detail page (/admin/events/{eventName}/detail): headline, status alerts, statistics, event
  * details, seats and payment info, online settings and the ticket categories. Editing reuses the
- * event creation form (#/events/{eventName}/edit renders <alfio-event-create> in edit mode).
+ * event creation form (/admin/events/{eventName}/edit renders <alfio-event-create> in edit mode).
  */
 @customElement('alfio-event-detail')
 export class EventDetail extends LitElement {
@@ -128,7 +130,7 @@ export class EventDetail extends LitElement {
                 loadMapUrl,
             ]);
             // BASE_URL is embedded in the admin page (admin-index.ms)
-            const baseUrl = window.BASE_URL.replace(/\/+$/, '');
+            const baseUrl = adminConfig().baseUrl.replace(/\/+$/, '');
             const groupNameById = new Map(groups.map((group) => [group.id, group.name]));
             for (const link of groupLinks) {
                 link.groupName = groupNameById.get(link.groupId) ?? '';
@@ -476,10 +478,10 @@ export class EventDetail extends LitElement {
                     <div class="alert-content">
                         <span>
                             Only the members of the group
-                            <a href="#/group/${event.organizationId}/edit/${event.attendeesList.groupId}">${event.attendeesList.groupName}</a>
+                            <a href=${adminUrl(`/group/${event.organizationId}/edit/${event.attendeesList.groupId}`)}>${event.attendeesList.groupName}</a>
                             can buy tickets for this event.
                         </span>
-                        <sl-button size="small" href="#/events/${event.shortName}/configuration">
+                        <sl-button size="small" href=${adminUrl(`/events/${event.shortName}/configuration`)}>
                             <sl-icon slot="prefix" name="wrench"></sl-icon>
                             Configure
                         </sl-button>
@@ -587,7 +589,7 @@ export class EventDetail extends LitElement {
                             <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
                             These payment methods don't accept ${currency}:
                             ${unavailable.map((proxy) => proxy.description).join(', ')}.
-                            Check the <a href="#/configuration/organization/${event.organizationId}">organization configuration</a>.
+                            Check the <a href=${adminUrl(`/configuration/organization/${event.organizationId}`)}>organization configuration</a>.
                         </sl-alert>
                     `, () => nothing)}
                 </div>

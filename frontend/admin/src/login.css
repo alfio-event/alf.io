@@ -1,0 +1,134 @@
+/*
+ * The login page (src/main/resources/alfio/web-templates/login.ms): a plain server-rendered form, styled with the
+ * Shoelace tokens of the admin. A separate entry of the build: the page doesn't load the admin's JavaScript.
+ */
+@import '@shoelace-style/shoelace/dist/themes/light.css';
+@import './main.css';
+
+.login {
+    max-width: 28rem;
+    margin: 0 auto;
+    padding: var(--sl-spacing-3x-large) var(--sl-spacing-medium);
+}
+
+.login-logo {
+    display: block;
+    margin: 0 auto var(--sl-spacing-x-large);
+    height: 3rem;
+    width: auto;
+}
+
+.login-card {
+    background: var(--sl-color-neutral-0);
+    border: 1px solid var(--sl-color-gray-200);
+    border-radius: var(--sl-border-radius-large);
+    padding: var(--sl-spacing-x-large);
+    box-shadow: var(--sl-shadow-small);
+}
+
+.login-card h1 {
+    margin: 0 0 var(--sl-spacing-2x-small);
+    font-size: var(--sl-font-size-x-large);
+    font-weight: var(--sl-font-weight-semibold);
+}
+
+.login-card .description {
+    margin: 0 0 var(--sl-spacing-large);
+    color: var(--sl-color-gray-600);
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sl-spacing-2x-small);
+    margin-bottom: var(--sl-spacing-medium);
+}
+
+.field label {
+    font-size: var(--sl-input-label-font-size-medium);
+    color: var(--sl-input-label-color);
+}
+
+.field input {
+    font: inherit;
+    font-size: var(--sl-input-font-size-medium);
+    height: var(--sl-input-height-medium);
+    padding: 0 var(--sl-input-spacing-medium);
+    color: var(--sl-input-color);
+    background: var(--sl-input-background-color);
+    border: solid var(--sl-input-border-width) var(--sl-input-border-color);
+    border-radius: var(--sl-input-border-radius-medium);
+}
+
+.field input:focus {
+    outline: none;
+    border-color: var(--sl-input-border-color-focus);
+    box-shadow: 0 0 0 var(--sl-focus-ring-width) var(--sl-input-focus-ring-color);
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--sl-spacing-large);
+}
+
+.submit {
+    font: inherit;
+    font-size: var(--sl-button-font-size-large);
+    font-weight: var(--sl-font-weight-semibold);
+    min-height: var(--sl-input-height-large);
+    padding: 0 var(--sl-spacing-x-large);
+    color: var(--sl-color-neutral-0);
+    background: var(--sl-color-primary-600);
+    border: none;
+    border-radius: var(--sl-input-border-radius-large);
+    cursor: pointer;
+}
+
+.submit:hover {
+    background: var(--sl-color-primary-500);
+}
+
+.submit:focus-visible {
+    outline: var(--sl-focus-ring);
+    outline-offset: var(--sl-focus-ring-offset);
+}
+
+.g-recaptcha {
+    margin-top: var(--sl-spacing-medium);
+}
+
+.message {
+    display: flex;
+    gap: var(--sl-spacing-small);
+    margin-bottom: var(--sl-spacing-medium);
+    padding: var(--sl-spacing-small) var(--sl-spacing-medium);
+    border: 1px solid;
+    border-left-width: 3px;
+    border-radius: var(--sl-border-radius-medium);
+}
+
+.message.danger {
+    color: var(--sl-color-danger-700);
+    background: var(--sl-color-danger-50);
+    border-color: var(--sl-color-danger-600);
+}
+
+.message.primary {
+    color: var(--sl-color-primary-800);
+    background: var(--sl-color-primary-50);
+    border-color: var(--sl-color-primary-600);
+}
+
+.mode-notice {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0;
+    border-radius: 0;
+}
+
+.mode-notice[hidden] {
+    display: none;
+}

@@ -1,7 +1,7 @@
 import {PurchaseContextType} from "../model/purchase-context.ts";
 import {EmailMessage} from "../model/email-message.ts";
 import {PageAndContent} from "../model/reservation.ts";
-import {fetchJson} from "./helpers.ts";
+import { fetchJson, adminFetch } from './helpers.ts';
 
 export class EmailLogService {
 
@@ -14,7 +14,7 @@ export class EmailLogService {
     }
 
     static async load(type: PurchaseContextType, publicIdentifier: string, messageId: number): Promise<EmailMessage> {
-        const response = await fetch(`${EmailLogService.baseUrl(type, publicIdentifier)}/${messageId}`, { credentials: 'include' });
+        const response = await adminFetch(`${EmailLogService.baseUrl(type, publicIdentifier)}/${messageId}`);
         if (!response.ok) {
             throw new Error(`Failed to load message ${messageId}`);
         }

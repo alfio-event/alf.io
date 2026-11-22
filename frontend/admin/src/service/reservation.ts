@@ -9,7 +9,7 @@ import {
     ReservationModification,
 } from '../model/reservation-detail.ts';
 import {AttendeeFieldValues} from '../components/attendee-fields.ts';
-import {callDelete, ensureOk, fetchJson, postJson, putJson, result} from './helpers.ts';
+import { callDelete, ensureOk, fetchJson, postJson, putJson, result, adminFetch } from './helpers.ts';
 
 export interface CancelReservationOptions {
     // true: issue a credit note, false: cancel the reservation
@@ -75,7 +75,7 @@ export class ReservationService {
     }
 
     async fullTicketData(ticketUuid: string): Promise<FullTicketData> {
-        return ensureOk(await fetch(this.url(`/ticket/${ticketUuid}/full-data`), { credentials: 'include' }));
+        return ensureOk(await adminFetch(this.url(`/ticket/${ticketUuid}/full-data`)));
     }
 
     billingDocumentUrl(documentId: number): string {
@@ -144,7 +144,7 @@ export class ReservationService {
     }
 
     private getData<T>(suffix: string): Promise<T> {
-        return result(fetch(this.url(suffix), { credentials: 'include' }));
+        return result(adminFetch(this.url(suffix)));
     }
 
     private url(suffix: string): string {

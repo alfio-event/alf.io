@@ -1,6 +1,6 @@
 import Papa from 'papaparse';
 import {AttendeesImportRequest, AttendeesImportStats, ImportedAttendee, ParsedAttendees} from '../model/attendees-import.ts';
-import {postJson, result} from './helpers.ts';
+import { postJson, result, adminFetch } from './helpers.ts';
 
 export const REQUIRED_COLUMNS = ['firstName', 'lastName', 'email', 'lang'];
 // the attendee ID in the organizer's system
@@ -22,7 +22,7 @@ export class AttendeesImportService {
     }
 
     static loadStats(eventName: string, requestId: string): Promise<AttendeesImportStats> {
-        return result(fetch(`/admin/api/event/${encodeURIComponent(eventName)}/attendees/import/${encodeURIComponent(requestId)}/status`, { credentials: 'include' }));
+        return result(adminFetch(`/admin/api/event/${encodeURIComponent(eventName)}/attendees/import/${encodeURIComponent(requestId)}/status`));
     }
 
     /**

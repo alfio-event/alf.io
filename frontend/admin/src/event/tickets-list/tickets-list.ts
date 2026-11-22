@@ -33,6 +33,7 @@ import {
     retroCompat,
     textColors,
 } from '../../styles.ts';
+import { navigate, adminUrl } from '../../admin-router';
 
 const ITEMS_PER_PAGE = 30;
 
@@ -50,7 +51,7 @@ interface TicketsListData {
 }
 
 /**
- * The tickets of one ticket category of an event (#/events/{eventName}/category/{categoryId}/tickets),
+ * The tickets of one ticket category of an event (/admin/events/{eventName}/category/{categoryId}/tickets),
  * with server-side search and pagination, ticket locking and ticket removal.
  */
 @customElement('alfio-tickets-list')
@@ -272,7 +273,7 @@ export class TicketsList extends LitElement {
                 </td>
                 <td class="hide-small">
                     ${when(ticket.promoCodeOrToken != null && ticket.promoCodeOrToken !== '', () => html`
-                        <a href="#/events/${this.eventName}/reservations/?search=${ticket.promoCodeOrToken}" title="Find all reservations">${ticket.promoCodeOrToken}</a>
+                        <a href=${adminUrl(`/events/${this.eventName}/reservations/?search=${ticket.promoCodeOrToken}`)} title="Find all reservations">${ticket.promoCodeOrToken}</a>
                     `)}
                 </td>
                 <td class="actions-cell">
@@ -309,12 +310,12 @@ export class TicketsList extends LitElement {
     }
 
     private reservationHref(ticket: CategoryTicket): string {
-        return `#/events/${this.eventName}/reservation/${ticket.ticketReservation.id}`;
+        return adminUrl(`/events/${this.eventName}/reservation/${ticket.ticketReservation.id}`);
     }
 
     private switchCategory(event: AlfioEvent, categoryId: number): void {
         if (categoryId !== this.categoryId) {
-            window.location.hash = `#/events/${event.shortName}/category/${categoryId}/tickets`;
+            navigate(`/events/${event.shortName}/category/${categoryId}/tickets`);
         }
     }
 

@@ -18,7 +18,6 @@ package alfio.controller;
 
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -41,9 +40,9 @@ public interface Constants {
     String CONTENT = "content";
     String PROPERTY = "property";
 
-    static void addCommonModelAttributes(Model model, HttpServletRequest request, String version, Environment environment) {
-        var contextPath = StringUtils.appendIfMissing(request.getContextPath(), "/") + version;
-        model.addAttribute("contextPath", contextPath);
+    static void addCommonModelAttributes(Model model, HttpServletRequest request, Environment environment) {
+        // the built files have content-hashed names: their paths don't need the version to bust caches
+        model.addAttribute("contextPath", request.getContextPath());
         model.addAttribute("demoModeEnabled", demoModeEnabled(environment));
         model.addAttribute("devModeEnabled", devModeEnabled(environment));
         model.addAttribute("prodModeEnabled", prodModeEnabled(environment));

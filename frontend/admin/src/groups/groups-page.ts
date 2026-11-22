@@ -6,6 +6,7 @@ import type {Organization} from '../model/organization.ts';
 import {OrganizationService} from '../service/organization.ts';
 import {base, form, modernLayout, textColors} from '../styles.ts';
 import {taskContent} from '../components/task-content.ts';
+import { adminRoute, navigate, ROUTE_CHANGED_EVENT } from '../admin-router';
 
 /**
  * The container of the groups screens: page title and the routed content (list, edit), projected
@@ -42,18 +43,18 @@ export class GroupsPage extends LitElement {
     connectedCallback(): void {
         super.connectedCallback();
         this.formRoute = this.isFormRoute();
-        window.addEventListener('hashchange', this.onHashChange);
+        window.addEventListener(ROUTE_CHANGED_EVENT, this.onRouteChange);
     }
 
     disconnectedCallback(): void {
         super.disconnectedCallback();
-        window.removeEventListener('hashchange', this.onHashChange);
+        window.removeEventListener(ROUTE_CHANGED_EVENT, this.onRouteChange);
     }
 
-    private onHashChange = (): void => {
+    private onRouteChange = (): void => {
         this.formRoute = this.isFormRoute();
         // the routed content can change without this component being recreated (e.g. going
-        // back from the edit page to #/group): re-sync the organization from the URL
+        // back from the edit page to /admin/group): re-sync the organization from the URL
         const orgs = this.loadOrganizationsTask.value;
         if (orgs != null) {
             this.syncSelectedOrganization(orgs);
@@ -61,7 +62,7 @@ export class GroupsPage extends LitElement {
     };
 
     private isFormRoute(): boolean {
-        return /^#\/group\/\d+\/(new|edit\/)/.test(window.location.hash);
+        return /^\/group\/\d+\/(new|edit\/)/.test(adminRoute());
     }
 
     render(): TemplateResult {
@@ -90,8 +91,8 @@ export class GroupsPage extends LitElement {
         if (orgs.length === 0) {
             return;
         }
-        if (/^#\/group\/?$/.test(window.location.hash)) {
-            window.location.hash = `#/group/${orgs[0].id}/all`;
+        if (/^\/group\/?$/.test(adminRoute().split('?')[0])) {
+            navigate(`/group/${orgs[0].id}/all`, { replace: true });
         }
     }
 }

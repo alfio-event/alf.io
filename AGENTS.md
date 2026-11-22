@@ -12,8 +12,7 @@ Commits are authored by the human contributor. Write commit messages without `Co
 
 - `src/main/java/alfio`: backend. `controller` → `manager` (business logic) → `repository` (database access).
 - `frontend/public`: public (attendee-facing) frontend, Angular.
-- `frontend/admin`: new admin frontend, Lit + Shoelace, built with Vite.
-- `src/main/webapp/alfio-admin-v1`: legacy AngularJS admin. Build new admin screens in `frontend/admin`.
+- `frontend/admin`: admin frontend, Lit + Shoelace, built with Vite. A single page application below `/admin`.
 - `src/main/resources/alfio/templates`: email and PDF templates. A change here counts as a backend change.
 
 ## Code style
@@ -56,7 +55,7 @@ Both frontends use pnpm. Gradle installs Node and pnpm itself, so `./gradlew bui
 
 Before any work in `frontend/admin`, read `docs/admin-style-guide.md`: its
 principles, the reusable building blocks, and the rules for forms, choices,
-buttons, dialogs, dates, CSV import and AngularJS migrations. Review your result
+buttons, dialogs, dates, CSV import and routing. Review your result
 against it before reporting.
 
 ## Translations

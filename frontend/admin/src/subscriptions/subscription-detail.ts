@@ -2,6 +2,7 @@ import {html, LitElement, TemplateResult} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 import {when} from 'lit/directives/when.js';
 import {base, modernLayout} from '../styles.ts';
+import { adminUrl } from '../admin-router';
 
 /**
  * The container of a single subscription's screens (reservations, e-mail log, additional
@@ -25,9 +26,9 @@ export class SubscriptionDetail extends LitElement {
 
     render(): TemplateResult {
         const backToReservations = this.backToReservations === 'true';
-        let href = `#/subscriptions/${this.organizationId}/list`;
+        let href = adminUrl(`/subscriptions/${this.organizationId}/list`);
         if (backToReservations) {
-            href = `#/subscriptions/${this.organizationId}/${this.subscriptionId}/reservations`;
+            href = adminUrl(`/subscriptions/${this.organizationId}/${this.subscriptionId}/reservations`);
         }
         return html`
             <sl-button variant="text" class="back-link" href=${href}>

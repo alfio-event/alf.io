@@ -54,6 +54,7 @@ import type {ImageChangeDetail} from '../components/purchase-context-image.ts';
 import '../components/multi-language-text.ts';
 import type {MultiLanguageTextChange, MultiLanguageTextLocalesChange} from '../components/multi-language-text.ts';
 import '../display-common-mark-preview/display-common-mark-preview.ts';
+import { navigate, adminUrl } from '../admin-router';
 
 type Preset = 'multipleEntries' | 'period' | 'custom';
 
@@ -339,7 +340,7 @@ export class SubscriptionEdit extends LitElement {
                         <div class="footer">
                             <sl-divider></sl-divider>
                             <div class="row" style="--alfio-row-cols: 3">
-                                <sl-button variant="default" size="large" href=${`#/subscriptions/${this.organizationId}/list`}>Cancel</sl-button>
+                                <sl-button variant="default" size="large" href=${adminUrl(`/subscriptions/${this.organizationId}/list`)}>Cancel</sl-button>
                                 <div></div>
                                 <sl-button id="save-subscription" type="submit" variant="warning" size="large" ?loading=${this.saving}>Save</sl-button>
                             </div>
@@ -353,7 +354,7 @@ export class SubscriptionEdit extends LitElement {
     /**
      * The full-width setup card: the organizer of the subscription. On creation it can be changed
      * here (as on the event page); an existing subscription keeps its organizer, fixed by the route
-     * (#/subscriptions/:organizationId/...)
+     * (/admin/subscriptions/:organizationId/...)
      */
     private renderSetupCard(data: LoadedData): TemplateResult {
         const organization = data.organizations.find((o) => o.id === this.organizationId);
@@ -395,7 +396,7 @@ export class SubscriptionEdit extends LitElement {
                 return;
             }
         }
-        window.location.hash = `#/subscriptions/${newOrganizationId}/create`;
+        navigate(`/subscriptions/${newOrganizationId}/create`);
     };
 
     /**
@@ -775,7 +776,7 @@ export class SubscriptionEdit extends LitElement {
             } else {
                 const id = await SubscriptionService.create(this.organizationId, payload);
                 dispatchFeedback({type: 'success', message: 'Subscription created'}, this);
-                window.location.hash = `#/subscriptions/${this.organizationId}/${id}/edit`;
+                navigate(`/subscriptions/${this.organizationId}/${id}/edit`);
             }
         } catch (error) {
             dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to save the subscription')}, this);

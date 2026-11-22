@@ -16,6 +16,7 @@ import type {AlfioChartType} from '../../components/chart.ts';
 import '../../components/chart.ts';
 import {allocationColor, allocationSegments} from './ticket-allocation.ts';
 import {modernLayout, textColors} from '../../styles.ts';
+import { adminUrl } from '../../admin-router';
 
 type TrendMode = 'twoWeeks' | 'all';
 
@@ -281,14 +282,14 @@ export class EventStatistics extends LitElement {
                 icon: 'ticket',
                 label: 'Tickets confirmed',
                 value: String(confirmed),
-                href: `#/events/${event.shortName}/reservations/`,
+                href: adminUrl(`/events/${event.shortName}/reservations/`),
             },
             {
                 className: 'tickets-pending',
                 icon: 'hourglass-split',
                 label: 'Tickets pending',
                 value: String(event.pendingTickets ?? 0),
-                href: `#/events/${event.shortName}/reservations/`,
+                href: adminUrl(`/events/${event.shortName}/reservations/`),
             },
         ];
         if (!event.freeOfCharge) {
@@ -308,7 +309,7 @@ export class EventStatistics extends LitElement {
             icon: 'people',
             label: 'Waiting list',
             value: waitingQueue,
-            href: `#/events/${event.shortName}/waiting-queue`,
+            href: adminUrl(`/events/${event.shortName}/waiting-queue`),
             smallScreensOnly: true,
         });
         if (supportsOfflinePayments(event.allowedPaymentProxies ?? [])) {
@@ -321,7 +322,7 @@ export class EventStatistics extends LitElement {
                 icon: 'credit-card',
                 label: 'Pending payments',
                 value: pendingPayments,
-                href: `#/events/${event.shortName}/pending-payments/`,
+                href: adminUrl(`/events/${event.shortName}/pending-payments/`),
                 smallScreensOnly: true,
             });
         }

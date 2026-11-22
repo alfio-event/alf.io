@@ -17,14 +17,15 @@ import './delete-event-dialog.ts';
 import type {DeleteEventDialog} from './delete-event-dialog.ts';
 import './linked-application-dialog.ts';
 import type {LinkedApplicationDialog} from './linked-application-dialog.ts';
+import { adminRoute, adminUrl, navigate, navigateToUrl, ROUTE_CHANGED_EVENT } from '../../admin-router';
 
 interface NavItem {
     id: string;
     label: string;
     icon: string;
-    // path below #/events/{eventName}/
+    // path below /admin/events/{eventName}/
     path: string;
-    // the pages, below #/events/{eventName}/, where the item is the current one
+    // the pages, below /admin/events/{eventName}/, where the item is the current one
     current: RegExp;
     count?: 'pending-payments' | 'waiting-list';
 }
@@ -43,11 +44,11 @@ interface ApplicationInfo {
     version: string;
 }
 
-// #/events/{eventName}/{page}
-const EVENT_ROUTE = /^#\/events\/([^/?]+)\/?(.*)$/;
+// /events/{eventName}/{page}, below /admin
+const EVENT_ROUTE = /^\/events\/([^/?]+)\/?(.*)$/;
 
 /**
- * The menu of the event pages (#/events/{eventName}/…): the event name and status, the main actions, and the
+ * The menu of the event pages (/admin/events/{eventName}/…): the event name and status, the main actions, and the
  * links to the pages of the event, with the current one highlighted. On a narrow screen, the links become a
  * "Go to" select above the page. The event is the one of the current route: the AngularJS layout can't bind it,
  * because its template is also a Mustache template.
@@ -66,7 +67,7 @@ export class EventSidebar extends LitElement {
     @state() private usePartnerCode = false;
     @state() private waitingListCount = 0;
     @state() private version = '';
-    // the page below #/events/{eventName}/, e.g. "reservations/"
+    // the page below /admin/events/{eventName}/, e.g. "reservations/"
     @state() private route = '';
     @state() private changingStatus = false;
 
@@ -77,23 +78,19 @@ export class EventSidebar extends LitElement {
 
     // discards the answers of a previous event
     private request = 0;
-    private navbarObserver: ResizeObserver | null = null;
 
     static readonly styles = [
         badges,
         css`
-            /* --event-sidebar-top: height of the fixed navbar; --event-sidebar-offset: the part of it that the layout
-               doesn't leave free (both set by updateOffsets()) */
             :host {
                 display: block;
                 height: 100%;
-                padding-top: var(--event-sidebar-offset, 0px);
                 box-sizing: border-box;
             }
-            /* the column of the layout sticks below the navbar (.event-sidebar-column, admin.css): the menu scrolls
-               within the height left */
+            /* the column of the layout (<alfio-event-layout>) sticks below the navbar, whose height the shell
+               publishes as --admin-navbar-height: the menu scrolls within the height left */
             .sidebar {
-                max-height: calc(100vh - var(--event-sidebar-top, 50px));
+                max-height: calc(100vh - var(--admin-navbar-height, 0px));
                 overflow-y: auto;
                 scrollbar-width: thin;
                 box-sizing: border-box;
@@ -215,11 +212,9 @@ export class EventSidebar extends LitElement {
                     border-bottom: 1px solid var(--sl-color-neutral-200);
                     margin-bottom: var(--sl-spacing-medium);
                 }
-                .actions .create-reservation {
-                    flex: 1 1 auto;
-                }
+                /* one action per row, full width */
                 .actions sl-dropdown {
-                    flex: 0 0 auto;
+                    flex: 1 1 100%;
                 }
                 nav, footer {
                     display: none;
@@ -233,40 +228,18 @@ export class EventSidebar extends LitElement {
 
     connectedCallback(): void {
         super.connectedCallback();
-        window.addEventListener('hashchange', this.onHashChange);
+        window.addEventListener(ROUTE_CHANGED_EVENT, this.onRouteChange);
         window.addEventListener(EVENT_CHANGED_EVENT, this.onEventChanged);
         document.body.append(this.exportDialog, this.deleteDialog, this.linkedApplicationDialog);
-        this.onHashChange();
+        this.onRouteChange();
         void this.loadVersion();
-        const navbar = document.querySelector('.navbar-fixed-top');
-        if (navbar != null) {
-            this.navbarObserver = new ResizeObserver(() => this.updateOffsets(navbar));
-            this.navbarObserver.observe(navbar);
-        }
-    }
-
-    /**
-     * The fixed navbar is taller when its items wrap: the menu starts below it, and sticks right below it
-     */
-    private updateOffsets(navbar: Element): void {
-        const navbarHeight = Math.round(navbar.getBoundingClientRect().height);
-        // the layout leaves room for a one-line navbar only (.menu-spacer)
-        const spacer = document.querySelector('.menu-spacer');
-        let reserved = 0;
-        if (spacer != null) {
-            reserved = Number.parseFloat(getComputedStyle(spacer).paddingTop) || 0;
-        }
-        this.style.setProperty('--event-sidebar-top', `${navbarHeight}px`);
-        this.style.setProperty('--event-sidebar-offset', `${Math.max(0, navbarHeight - reserved)}px`);
     }
 
     disconnectedCallback(): void {
         this.exportDialog.remove();
         this.deleteDialog.remove();
         this.linkedApplicationDialog.remove();
-        this.navbarObserver?.disconnect();
-        this.navbarObserver = null;
-        window.removeEventListener('hashchange', this.onHashChange);
+        window.removeEventListener(ROUTE_CHANGED_EVENT, this.onRouteChange);
         window.removeEventListener(EVENT_CHANGED_EVENT, this.onEventChanged);
         super.disconnectedCallback();
     }
@@ -297,7 +270,7 @@ export class EventSidebar extends LitElement {
         return html`
             <div class="sidebar">
                 <header>
-                    <p class="event-name"><a href="#/events/${event.shortName}/detail">${event.displayName}</a></p>
+                    <p class="event-name"><a href=${adminUrl(`/events/${event.shortName}/detail`)}>${event.displayName}</a></p>
                 </header>
                 ${this.renderActions(event)}
                 ${this.renderGoTo(groups)}
@@ -323,7 +296,7 @@ export class EventSidebar extends LitElement {
             <div class="actions">
                 ${when(!event.expired, () => html`
                     <sl-button class="create-reservation" id="sidebar-create-reservation" variant="success"
-                               href="#/events/${event.shortName}/reservation/new">
+                               href=${adminUrl(`/events/${event.shortName}/reservation/new`)}>
                         <sl-icon slot="prefix" name="plus-circle"></sl-icon>
                         Create reservation
                     </sl-button>
@@ -504,7 +477,7 @@ export class EventSidebar extends LitElement {
     }
 
     private href(event: AlfioEvent, item: NavItem): string {
-        return `#/events/${event.shortName}/${item.path}`;
+        return adminUrl(`/events/${event.shortName}/${item.path}`);
     }
 
     private isCurrent(item: NavItem): boolean {
@@ -561,8 +534,8 @@ export class EventSidebar extends LitElement {
         }
     }
 
-    private onHashChange = (): void => {
-        const match = EVENT_ROUTE.exec(window.location.hash);
+    private onRouteChange = (): void => {
+        const match = EVENT_ROUTE.exec(adminRoute());
         let route = '';
         let eventName = '';
         if (match != null) {
@@ -589,7 +562,7 @@ export class EventSidebar extends LitElement {
         if (item == null || this.isCurrent(item)) {
             return;
         }
-        window.location.hash = this.href(event, item);
+        navigateToUrl(this.href(event, item));
     };
 
     private onAction = (e: CustomEvent<{ item: { value: string } }>): void => {
@@ -599,7 +572,7 @@ export class EventSidebar extends LitElement {
         }
         const action = e.detail.item.value;
         if (action === 'copy') {
-            window.location.hash = `#/events/new?eventName=${encodeURIComponent(event.shortName)}`;
+            navigate(`/events/new?eventName=${encodeURIComponent(event.shortName)}`);
         } else if (action === 'unlist') {
             void this.unlist(event);
         } else if (action === 'delete') {

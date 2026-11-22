@@ -12,6 +12,7 @@ import {taskContent} from '../../components/task-content.ts';
 import {sectionCard} from '../../components/section-card.ts';
 import {statusBadge, StatusBadgeConfig} from '../../components/status-badge.ts';
 import {badges, base, modernLayout, modernTable, purchaseContextListPage, retroCompat} from '../../styles.ts';
+import { adminUrl } from '../../admin-router';
 
 const STATUS_BADGES: Record<PollStatus, StatusBadgeConfig> = {
     DRAFT: { label: 'Draft', variant: 'neutral', icon: 'pencil' },
@@ -25,7 +26,7 @@ interface PollsListData {
 }
 
 /**
- * The polls of an event (#/events/{eventName}/polls/list)
+ * The polls of an event (/admin/events/{eventName}/polls/list)
  */
 @customElement('alfio-polls-list')
 export class PollsList extends LitElement {
@@ -82,7 +83,7 @@ export class PollsList extends LitElement {
                 <div class="filter-toolbar">
                     <div class="filter-left"></div>
                     <div class="filter-right">
-                        <sl-button class="create-poll" variant="success" size="large" href=${`#/events/${this.eventName}/polls/new`}>
+                        <sl-button class="create-poll" variant="success" size="large" href=${adminUrl(`/events/${this.eventName}/polls/new`)}>
                             <sl-icon slot="prefix" name="plus-circle"></sl-icon>
                             Create new
                         </sl-button>
@@ -109,13 +110,13 @@ export class PollsList extends LitElement {
                                         ${repeat(data.polls, (poll) => poll.id, (poll) => html`
                                             <tr data-poll-id=${poll.id}>
                                                 <td>
-                                                    <a href=${`#/events/${this.eventName}/polls/view/${poll.id}`}>${firstLocalized(poll.title, firstLocale)}</a>
+                                                    <a href=${adminUrl(`/events/${this.eventName}/polls/view/${poll.id}`)}>${firstLocalized(poll.title, firstLocale)}</a>
                                                     <span class="poll-description">${firstLocalized(poll.description, firstLocale)}</span>
                                                 </td>
                                                 <td>${statusBadge(poll.status, STATUS_BADGES[poll.status], 'poll-status')}</td>
                                                 <td class="actions-cell">
                                                     <sl-button size="small" variant="default" outline
-                                                               href=${`#/events/${this.eventName}/polls/view/${poll.id}`}>
+                                                               href=${adminUrl(`/events/${this.eventName}/polls/view/${poll.id}`)}>
                                                         <sl-icon slot="prefix" name="eye"></sl-icon>
                                                         View
                                                     </sl-button>

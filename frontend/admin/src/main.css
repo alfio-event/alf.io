@@ -1,7 +1,86 @@
+/* Source Sans Pro, the files of the backend (src/main/resources/font), bundled by Vite next to this CSS */
+@font-face {
+    font-family: 'Source Sans Pro';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local('Source Sans Pro Regular'), local('SourceSansPro-Regular'), url('../../../src/main/resources/font/SourceSansPro-Regular.cyrillic-ext.woff2') format('woff2');
+    unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+
+@font-face {
+    font-family: 'Source Sans Pro';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local('Source Sans Pro Regular'), local('SourceSansPro-Regular'), url('../../../src/main/resources/font/SourceSansPro-Regular.cyrillic.woff2') format('woff2');
+    unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+    font-family: 'Source Sans Pro';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local('Source Sans Pro Regular'), local('SourceSansPro-Regular'), url('../../../src/main/resources/font/SourceSansPro-Regular.greek-ext.woff2') format('woff2');
+    unicode-range: U+1F00-1FFF;
+}
+
+@font-face {
+    font-family: 'Source Sans Pro';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local('Source Sans Pro Regular'), local('SourceSansPro-Regular'), url('../../../src/main/resources/font/SourceSansPro-Regular.greek.woff2') format('woff2');
+    unicode-range: U+0370-03FF;
+}
+
+@font-face {
+    font-family: 'Source Sans Pro';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local('Source Sans Pro Regular'), local('SourceSansPro-Regular'), url('../../../src/main/resources/font/SourceSansPro-Regular.vietnamese.woff2') format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+
+@font-face {
+    font-family: 'Source Sans Pro';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local('Source Sans Pro Regular'), local('SourceSansPro-Regular'), url('../../../src/main/resources/font/SourceSansPro-Regular.latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+    font-family: 'Source Sans Pro';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local('Source Sans Pro Regular'), local('SourceSansPro-Regular'), url('../../../src/main/resources/font/SourceSansPro-Regular.latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 :root {
-    font-size: 16px; /* reset bootstrap css, set default font size as defined in https://shoelace.style/tokens/typography#font-size */
+    font-size: 16px; /* default font size as defined in https://shoelace.style/tokens/typography#font-size */
     --sl-font-sans: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
     --sl-color-danger-600: var(--sl-color-red-700);
+}
+
+/* the document's base styles: the pages, in shadow DOM, inherit font, size, line height and color */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--sl-font-sans);
+    font-size: var(--sl-font-size-medium);
+    line-height: 1.42857143;
+    color: var(--sl-color-neutral-800);
+    background: var(--sl-color-neutral-0);
+    -webkit-font-smoothing: antialiased;
 }
 
 .sl-toast-stack {
@@ -9,4 +88,118 @@
     right: 16px;
     z-index: 9999;
     top: auto;
+}
+
+/* -- the shell, rendered in light DOM (shell/admin-app.ts, shell/event-layout.ts) -- */
+
+alfio-admin-app {
+    display: block;
+    min-height: 100vh;
+}
+
+/* the navbar is in the flow and sticks to the top; its height is published as --admin-navbar-height */
+alfio-admin-app > alfio-admin-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+alfio-admin-app > .skip-link {
+    position: absolute;
+    left: -9999px;
+    z-index: 1001;
+    padding: var(--sl-spacing-small) var(--sl-spacing-medium);
+    background: var(--sl-color-neutral-0);
+    color: var(--sl-color-primary-600);
+    border: 1px solid var(--sl-color-gray-300);
+    border-radius: var(--sl-border-radius-medium);
+}
+
+alfio-admin-app > .skip-link:focus {
+    left: var(--sl-spacing-medium);
+    top: var(--sl-spacing-small);
+}
+
+/* the gutter of every page (the pages' .container has none) */
+alfio-admin-app > .main-content {
+    display: block;
+    padding: var(--sl-spacing-medium) var(--sl-spacing-medium) 0;
+    outline: none;
+}
+
+alfio-admin-app > .main-content > .container {
+    max-width: 1170px;
+    margin: 0 auto var(--sl-spacing-medium) 0;
+}
+
+alfio-admin-app > .admin-footer {
+    padding: var(--sl-spacing-large) var(--sl-spacing-medium);
+    text-align: center;
+}
+
+/* centered below the pages, which are left-aligned */
+alfio-admin-app > .admin-footer > alfio-project-banner {
+    display: block;
+    max-width: 1170px;
+    margin: 0;
+}
+
+alfio-admin-app > .mode-notice {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+}
+
+alfio-admin-app > .mode-notice::part(base) {
+    border-radius: 0;
+}
+
+alfio-admin-app > .not-authorized-dialog {
+    --width: min(28rem, calc(100vw - 2 * var(--sl-spacing-medium)));
+}
+
+alfio-redirect,
+alfio-subscription-layout,
+alfio-organizations-page {
+    display: block;
+}
+
+/* the spinner of taskContent() while a layout loads its event or subscription */
+alfio-event-layout .loading,
+alfio-subscription-layout .loading {
+    display: grid;
+    place-items: center;
+    min-height: 12rem;
+}
+
+/* the event menu next to the page; below 992px it becomes a "Go to" select above it */
+alfio-event-layout {
+    display: grid;
+    grid-template-columns: minmax(14rem, 17rem) minmax(0, 1fr);
+    gap: var(--sl-spacing-large);
+}
+
+alfio-event-layout > .event-sidebar-column {
+    position: sticky;
+    top: var(--admin-navbar-height, 0px);
+    align-self: start;
+}
+
+alfio-event-layout > .event-page {
+    min-width: 0;
+    /* the pages keep a distance from the event menu (purchaseContextListPage in styles.ts) */
+    --alfio-event-page-offset: 122px;
+}
+
+@media (max-width: 991px) {
+    alfio-event-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+    }
+
+    alfio-event-layout > .event-sidebar-column {
+        position: static;
+    }
 }

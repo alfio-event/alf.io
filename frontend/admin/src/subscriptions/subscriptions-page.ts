@@ -6,6 +6,7 @@ import {Organization} from '../model/organization.ts';
 import {OrganizationService} from '../service/organization.ts';
 import {base, modernLayout, form, textColors} from '../styles.ts';
 import {taskContent} from '../components/task-content.ts';
+import { adminRoute, navigate, ROUTE_CHANGED_EVENT } from '../admin-router';
 
 /**
  * The container of the subscriptions screens: page title and the routed content (list, detail,
@@ -42,18 +43,18 @@ export class SubscriptionsPage extends LitElement {
     connectedCallback(): void {
         super.connectedCallback();
         this.formRoute = this.isFormRoute();
-        window.addEventListener('hashchange', this.onHashChange);
+        window.addEventListener(ROUTE_CHANGED_EVENT, this.onRouteChange);
     }
 
     disconnectedCallback(): void {
         super.disconnectedCallback();
-        window.removeEventListener('hashchange', this.onHashChange);
+        window.removeEventListener(ROUTE_CHANGED_EVENT, this.onRouteChange);
     }
 
-    private onHashChange = (): void => {
+    private onRouteChange = (): void => {
         this.formRoute = this.isFormRoute();
         // the routed content can change without this component being recreated (e.g. going
-        // back from the edit page to #/subscriptions): re-sync the organization from the URL
+        // back from the edit page to /admin/subscriptions): re-sync the organization from the URL
         const orgs = this.loadOrganizationsTask.value;
         if (orgs != null) {
             this.syncSelectedOrganization(orgs);
@@ -61,7 +62,7 @@ export class SubscriptionsPage extends LitElement {
     };
 
     private isFormRoute(): boolean {
-        return /^#\/subscriptions\/\d+\/(create|[^/]+\/edit)/.test(window.location.hash);
+        return /^\/subscriptions\/\d+\/(create|[^/]+\/edit)/.test(adminRoute());
     }
 
     render(): TemplateResult {
@@ -90,8 +91,8 @@ export class SubscriptionsPage extends LitElement {
         if (orgs.length === 0) {
             return;
         }
-        if (/^#\/subscriptions\/?$/.test(window.location.hash)) {
-            window.location.hash = `#/subscriptions/${orgs[0].id}/list`;
+        if (/^\/subscriptions\/?$/.test(adminRoute().split('?')[0])) {
+            navigate(`/subscriptions/${orgs[0].id}/list`, { replace: true });
         }
     }
 }

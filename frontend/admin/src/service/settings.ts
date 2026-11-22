@@ -1,4 +1,4 @@
-import {callDelete, postJson, putJson, responseErrorMessage} from './helpers.ts';
+import { callDelete, postJson, putJson, responseErrorMessage, adminFetch } from './helpers.ts';
 import {
     ConfigurationModification,
     EventBasicInfo,
@@ -32,7 +32,7 @@ export class SettingsService {
         } else if (level.type === 'EVENT') {
             url = `/admin/api/configuration/events/${level.eventId}/inherited-values`;
         }
-        const response = await fetch(url, {credentials: 'include'});
+        const response = await adminFetch(url);
         if (response.status === 403) {
             return {};
         }
@@ -46,7 +46,7 @@ export class SettingsService {
         } else if (level.type === 'EVENT') {
             url = `/admin/api/configuration/events/${level.eventId}/load`;
         }
-        const response = await fetch(url, {credentials: 'include'});
+        const response = await adminFetch(url);
         if (response.status === 403) {
             return {};
         }
@@ -80,7 +80,7 @@ export class SettingsService {
     }
 
     static async loadExtensionSettings(level: SettingsLevel): Promise<ExtensionSettingsById> {
-        const response = await fetch(SettingsService.extensionSettingsUrl(level), {credentials: 'include'});
+        const response = await adminFetch(SettingsService.extensionSettingsUrl(level));
         if (response.status === 403) {
             return {};
         }
@@ -101,14 +101,14 @@ export class SettingsService {
      * The countries of the European Union, by country code, for the VAT settings
      */
     static async loadEuCountries(): Promise<{ code: string; name: string }[]> {
-        const response = await fetch('/admin/api/configuration/eu-countries', {credentials: 'include'});
+        const response = await adminFetch('/admin/api/configuration/eu-countries');
         // each country is serialized as {"<code>": "<name>"}
         const countries = await SettingsService.json<Record<string, string>[]>(response, 'Failed to load the countries');
         return countries.flatMap((country) => Object.entries(country).map(([code, name]) => ({code, name})));
     }
 
     static async loadPlatformModeStatus(organizationId: number): Promise<PlatformModeStatus> {
-        const response = await fetch(`/admin/api/configuration/platform-mode/status/${organizationId}`, {credentials: 'include'});
+        const response = await adminFetch(`/admin/api/configuration/platform-mode/status/${organizationId}`);
         return SettingsService.json(response, 'Failed to load the status of the payment providers');
     }
 
@@ -116,7 +116,7 @@ export class SettingsService {
      * All the events the user can access
      */
     static async loadEvents(): Promise<EventBasicInfo[]> {
-        const response = await fetch('/admin/api/events/basic', {credentials: 'include'});
+        const response = await adminFetch('/admin/api/events/basic');
         return SettingsService.json(response, 'Failed to load the events');
     }
 
@@ -147,7 +147,7 @@ export class SettingsService {
         } else if (level.type === 'EVENT') {
             url = `/admin/api/configuration/events/${level.eventId}/translations-override`;
         }
-        const response = await fetch(url, {credentials: 'include'});
+        const response = await adminFetch(url);
         return SettingsService.json(response, 'Failed to load the translations');
     }
 
@@ -161,7 +161,7 @@ export class SettingsService {
      * The default translations of a language, without the customizations
      */
     static async loadBundle(locale: string): Promise<Record<string, string>> {
-        const response = await fetch(`/api/v2/public/i18n/bundle/${encodeURIComponent(locale)}?withSystemOverride=false`, {credentials: 'include'});
+        const response = await adminFetch(`/api/v2/public/i18n/bundle/${encodeURIComponent(locale)}?withSystemOverride=false`);
         return SettingsService.json(response, 'Failed to load the translations');
     }
 
@@ -171,7 +171,7 @@ export class SettingsService {
      * The date of the first invoice of an event (now, if there is none)
      */
     static async loadFirstInvoiceDate(eventId: number): Promise<string> {
-        const response = await fetch(`/admin/api/configuration/event/${eventId}/invoice-first-date`, {credentials: 'include'});
+        const response = await adminFetch(`/admin/api/configuration/event/${eventId}/invoice-first-date`);
         return SettingsService.json(response, 'Failed to load the date of the first invoice');
     }
 
@@ -179,7 +179,7 @@ export class SettingsService {
      * The ids of the invoices of an event generated between two instants (epoch milliseconds)
      */
     static async findMatchingInvoices(eventId: number, from: number, to: number): Promise<number[]> {
-        const response = await fetch(`/admin/api/configuration/event/${eventId}/matching-invoices?from=${from}&to=${to}`, {credentials: 'include'});
+        const response = await adminFetch(`/admin/api/configuration/event/${eventId}/matching-invoices?from=${from}&to=${to}`);
         return SettingsService.json(response, 'Failed to search the invoices');
     }
 

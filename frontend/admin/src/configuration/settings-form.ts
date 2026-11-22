@@ -50,6 +50,8 @@ import './offline-payment-config-block.ts';
 import type {OfflinePaymentConfigBlock} from './offline-payment-config-block.ts';
 import '../components/section-nav.ts';
 
+import { adminConfig } from '../admin-config';
+import { navigateToUrl } from '../admin-router';
 export const SETTINGS_SAVED_EVENT = 'alfio-settings-saved';
 export const SETTINGS_CANCELLED_EVENT = 'alfio-settings-cancelled';
 
@@ -217,7 +219,7 @@ const DEFERRED_BANK_TRANSFER = 'DEFERRED_BANK_TRANSFER_ENABLED';
 
 // the settings of each mail provider start with its prefix
 // the static resources of the server, e.g. the providers' images
-const resourcesPath = `${window.ALFIO_CONTEXT_PATH ?? ''}/resources`;
+const resourcesPath = `${adminConfig().contextPath}/resources`;
 
 const MAILER_PREFIXES: Record<string, string> = {
     smtp: 'SMTP_',
@@ -709,7 +711,7 @@ export class SettingsForm extends LitElement {
     };
 
     /**
-     * Another page of the admin (see admin-application.js): the user confirms
+     * Another page of the admin (see admin-router.ts): the user confirms
      */
     private onBeforeLeave = (event: Event): void => {
         if (this.changeCount() === 0) {
@@ -1549,7 +1551,7 @@ export class SettingsForm extends LitElement {
         if (this.cancelUrl !== '') {
             // already confirmed: leaving doesn't ask again
             this.#form.api.reset(structuredClone(this.initialValues));
-            window.location.hash = this.cancelUrl;
+            navigateToUrl(this.cancelUrl);
             return;
         }
         this.#form.api.reset(structuredClone(this.initialValues));

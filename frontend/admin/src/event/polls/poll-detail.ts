@@ -28,6 +28,7 @@ import {
     row,
     textColors,
 } from '../../styles.ts';
+import { navigate, adminUrl } from '../../admin-router';
 
 const STATS_REFRESH_MS = 2000;
 
@@ -37,7 +38,7 @@ interface PollDetailData {
 }
 
 /**
- * One poll of an event (#/events/{eventName}/polls/view/{pollId}): status, question, options,
+ * One poll of an event (/admin/events/{eventName}/polls/view/{pollId}): status, question, options,
  * live results and the link to the participants management.
  */
 @customElement('alfio-poll-detail')
@@ -164,7 +165,7 @@ export class PollDetail extends LitElement {
                     title: 'Participants',
                 }, html`
                     <p class="text-muted">Access to this poll is restricted to the allowed attendees.</p>
-                    <sl-button class="manage-participants" variant="primary" size="small" href=${`#/events/${this.eventName}/polls/${poll.id}/participants`}>
+                    <sl-button class="manage-participants" variant="primary" size="small" href=${adminUrl(`/events/${this.eventName}/polls/${poll.id}/participants`)}>
                         <sl-icon slot="prefix" name="gear"></sl-icon>
                         Manage participants
                     </sl-button>
@@ -194,9 +195,9 @@ export class PollDetail extends LitElement {
                 `)}
                 <sl-divider></sl-divider>
                 <div class="row" style="--alfio-row-cols: 3">
-                    <sl-button variant="default" size="large" href=${`#/events/${this.eventName}/polls/list`}>Back</sl-button>
+                    <sl-button variant="default" size="large" href=${adminUrl(`/events/${this.eventName}/polls/list`)}>Back</sl-button>
                     <div></div>
-                    <sl-button variant="warning" size="large" href=${`#/events/${this.eventName}/polls/edit/${poll.id}`}>Edit</sl-button>
+                    <sl-button variant="warning" size="large" href=${adminUrl(`/events/${this.eventName}/polls/edit/${poll.id}`)}>Edit</sl-button>
                 </div>
             </div>
         `;
@@ -446,7 +447,7 @@ export class PollDetail extends LitElement {
         this.busy = true;
         try {
             await PollService.deletePoll(this.eventName, this.pollId);
-            window.location.hash = `#/events/${this.eventName}/polls/list`;
+            navigate(`/events/${this.eventName}/polls/list`);
         } catch (e) {
             dispatchFeedback({ type: 'danger', message: errorMessage(e, 'Failed to delete the poll') }, this);
             this.busy = false;

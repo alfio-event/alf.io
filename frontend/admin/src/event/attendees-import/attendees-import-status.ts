@@ -10,6 +10,7 @@ import {localizedTitle} from '../../service/reservation-format.ts';
 import {badges, base, modernLayout, purchaseContextListPage, retroCompat, row, textColors} from '../../styles.ts';
 import {sectionCard} from '../../components/section-card.ts';
 import {taskContent} from '../../components/task-content.ts';
+import { adminUrl } from '../../admin-router';
 
 const REFRESH_INTERVAL_MS = 1000;
 
@@ -135,12 +136,12 @@ export class AttendeesImportStatus extends LitElement {
                                 ${stats.countError} of ${total} reservations could not be created. The application log contains the details.
                             </sl-alert>`)}
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" href=${`#/events/${event.shortName}/detail`}>
+                        <sl-button variant="default" size="large" href=${adminUrl(`/events/${event.shortName}/detail`)}>
                             <sl-icon slot="prefix" name="arrow-left"></sl-icon>
                             Back to event detail
                         </sl-button>
                         <div></div>
-                        <sl-button variant="primary" size="large" href=${`#/events/${event.shortName}/reservation/import`}>
+                        <sl-button variant="primary" size="large" href=${adminUrl(`/events/${event.shortName}/reservation/import`)}>
                             <sl-icon slot="prefix" name="upload"></sl-icon>
                             Import other attendees
                         </sl-button>

@@ -7,6 +7,7 @@ import {groupTemplatesByContext, TemplateContextGroup, TemplateDescriptor, templ
 import {badges, base, modernLayout, modernTable, textColors} from '../styles.ts';
 import {emptyState} from '../components/empty-state.ts';
 import {taskContent} from '../components/task-content.ts';
+import { adminUrl, navigateToUrl } from '../admin-router';
 
 /**
  * The list of the overridable templates ("customize templates"), grouped by context
@@ -167,12 +168,12 @@ export class TemplateList extends LitElement {
 
     private editUrl(name: string): string {
         if (this.system) {
-            return `#/show-resources/${name}/`;
+            return adminUrl(`/show-resources/${name}/`);
         }
         if (this.hasOrganization()) {
-            return `#/organizations/${this.organizationId}/show-resources/${name}/`;
+            return adminUrl(`/organizations/${this.organizationId}/show-resources/${name}/`);
         }
-        return `#/events/${this.eventName}/show-resources/${name}/`;
+        return adminUrl(`/events/${this.eventName}/show-resources/${name}/`);
     }
 
     /**
@@ -185,7 +186,7 @@ export class TemplateList extends LitElement {
             window.open(url, '_blank', 'noopener,noreferrer');
             return;
         }
-        window.location.hash = url;
+        navigateToUrl(url);
     }
 
     private hasOrganization(): boolean {

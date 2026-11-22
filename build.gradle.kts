@@ -237,14 +237,6 @@ dependencies {
     //errorprone("com.google.errorprone:error_prone_core:2.24.0")
 }
 
-sourceSets {
-    main {
-        resources {
-            srcDir("src/main/webapp")
-        }
-    }
-}
-
 // -- license configuration
 
 license {

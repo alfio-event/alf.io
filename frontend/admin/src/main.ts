@@ -48,6 +48,12 @@ if (import.meta.env.MODE === 'development') {
 } else if (import.meta.env.MODE === 'production') {
     setBasePath(`${document.getElementById('lit-js')?.getAttribute('src')?.replace(/assets.*/g, '')}shoelace/`);
 }
+export { AdminApp } from './shell/admin-app';
+export { AdminNavbar } from './shell/admin-navbar';
+export { EventLayout } from './shell/event-layout';
+export { SubscriptionLayout } from './shell/subscription-layout';
+export { Redirect } from './shell/redirect';
+export { OrganizationsPage } from './organization/organizations-page';
 export { ProjectBanner } from './project-banner/project-banner';
 export { AdditionalItemList } from './event/additional-item-list/additional-item-list';
 export { DisplayCommonMarkPreview } from './display-common-mark-preview/display-common-mark-preview';

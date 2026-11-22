@@ -1,4 +1,4 @@
-import {css, html, LitElement, TemplateResult} from 'lit';
+import {css, html, LitElement, nothing, TemplateResult} from 'lit';
 import {customElement, property, query, state} from 'lit/decorators.js';
 import {when} from 'lit/directives/when.js';
 import {Task} from '@lit/task';
@@ -12,10 +12,9 @@ import {formatAmount, localizedTitle} from '../../service/reservation-format.ts'
 import {badges, base, detailList, modernLayout, purchaseContextListPage, retroCompat, row} from '../../styles.ts';
 import {sectionCard} from '../../components/section-card.ts';
 import {taskContent} from '../../components/task-content.ts';
+import {canScanQrCodes, createQrDetector, QrDetector} from '../../service/qr-scanning.ts';
 
 const CAPTURE_INTERVAL_MS = 250;
-// sent by the worker when the frame doesn't contain a valid QR code
-const DECODE_ERROR = 'error decoding QR Code';
 // after "next scan", the code just processed is ignored until it has been out of sight for this long
 const SAME_CODE_GRACE_MS = 2000;
 
@@ -37,7 +36,7 @@ interface ScanResult {
 
 /**
  * Checks in attendees by scanning their QR code with the device camera.
- * Frames are decoded by the jsqrcode web worker served with the legacy admin.
+ * Frames are decoded by the browser (BarcodeDetector): where it's missing, the page points to the scan apps.
  */
 @customElement('alfio-check-in-scan')
 export class CheckInScan extends LitElement {
@@ -49,11 +48,9 @@ export class CheckInScan extends LitElement {
     @state() private actionInProgress = false;
     @state() private cameraError: string | null = null;
     @query('video') private video?: HTMLVideoElement;
-    @query('canvas') private canvas?: HTMLCanvasElement;
 
-    private readonly canReadCamera = navigator.mediaDevices?.getUserMedia != null;
     private stream: MediaStream | null = null;
-    private worker: Worker | null = null;
+    private detector: QrDetector | null = null;
     private captureTimer: ReturnType<typeof setTimeout> | undefined;
     private decoding = false;
     private ignoredCode: { code: string, seenAt: number } | null = null;
@@ -61,6 +58,12 @@ export class CheckInScan extends LitElement {
     private readonly loadEventTask = new Task(this, {
         task: async ([eventName]): Promise<AlfioEvent> => (await EventService.load(eventName)).event,
         args: () => [this.eventName] as const,
+    });
+
+    // asked each time the page opens
+    private readonly scanSupportTask = new Task(this, {
+        task: () => canScanQrCodes(),
+        args: () => [] as const,
     });
 
     static readonly styles = [
@@ -93,9 +96,6 @@ export class CheckInScan extends LitElement {
                 background: var(--sl-color-neutral-900);
                 border-radius: var(--sl-input-border-radius-medium);
             }
-            canvas {
-                display: none;
-            }
             .camera-select {
                 min-width: 12rem;
             }
@@ -118,8 +118,6 @@ export class CheckInScan extends LitElement {
     disconnectedCallback(): void {
         super.disconnectedCallback();
         this.stopScanning();
-        this.worker?.terminate();
-        this.worker = null;
     }
 
     render(): TemplateResult {
@@ -142,12 +140,29 @@ export class CheckInScan extends LitElement {
                         If you have an Android smartphone/tablet, please use the
                         <a href="https://play.google.com/store/apps/details?id=alfio.scan" target="_blank" rel="noopener">official application</a> instead.
                     </sl-alert>
-                    ${when(this.canReadCamera,
-                        () => this.renderScanner(event),
-                        () => this.renderError('Your browser does not support the camera API (navigator.mediaDevices).'))}
+                    ${this.renderScannerIfSupported(event)}
                 </div>
             </div>
         `;
+    }
+
+    private renderScannerIfSupported(event: AlfioEvent): TemplateResult | typeof nothing {
+        const supported = this.scanSupportTask.value;
+        if (supported == null) {
+            return nothing;
+        }
+        if (!supported) {
+            return html`
+                <sl-alert class="scan-not-supported" variant="primary" open>
+                    <sl-icon slot="icon" name="info-circle"></sl-icon>
+                    This browser can't read QR codes. Scan the tickets with the
+                    <a href="https://play.google.com/store/apps/details?id=alfio.scan" target="_blank" rel="noopener">Android app</a>
+                    or the <a href="https://itunes.apple.com/us/app/alf-io-scan/id1425492093" target="_blank" rel="noopener">iOS app</a>,
+                    or open this page in Chrome or Edge.
+                </sl-alert>
+            `;
+        }
+        return this.renderScanner(event);
     }
 
     private renderScanner(event: AlfioEvent): TemplateResult {
@@ -168,7 +183,6 @@ export class CheckInScan extends LitElement {
                     <video muted autoplay playsinline></video>
                 `)}
             </div>
-            <canvas></canvas>
             ${when(this.scanned != null, () => this.renderScanned(event, this.scanned!))}
         `;
     }
@@ -365,29 +379,29 @@ export class CheckInScan extends LitElement {
             return;
         }
         const video = this.video;
-        const canvas = this.canvas;
-        if (!this.decoding && video != null && canvas != null && video.videoWidth > 0) {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const context = canvas.getContext('2d', { willReadFrequently: true })!;
-            context.drawImage(video, 0, 0);
+        if (!this.decoding && video != null && video.videoWidth > 0) {
             this.decoding = true;
-            this.getWorker().postMessage(context.getImageData(0, 0, canvas.width, canvas.height));
+            void this.decode(video);
         }
         this.scheduleCapture();
     }
 
-    private getWorker(): Worker {
-        if (this.worker == null) {
-            this.worker = new Worker(decodeWorkerUrl());
-            this.worker.addEventListener('message', (message: MessageEvent<string>) => {
-                this.decoding = false;
-                if (message.data !== DECODE_ERROR && this.scanning && this.scanned == null && !this.isIgnored(message.data)) {
-                    void this.onCodeScanned(message.data);
-                }
-            });
+    private async decode(video: HTMLVideoElement): Promise<void> {
+        try {
+            if (this.detector == null) {
+                this.detector = createQrDetector();
+            }
+            const codes = await this.detector.detect(video);
+            const code = codes.find(c => c.rawValue !== '')?.rawValue;
+            if (code != null && this.scanning && this.scanned == null && !this.isIgnored(code)) {
+                void this.onCodeScanned(code);
+            }
+        } catch (e) {
+            // a frame that can't be read (e.g. the video is not ready yet): try with the next one
+            console.debug('error while decoding the frame', e);
+        } finally {
+            this.decoding = false;
         }
-        return this.worker;
     }
 
     private isIgnored(code: string): boolean {
@@ -437,17 +451,6 @@ function videoConstraints(deviceId: string): MediaTrackConstraints {
         return { deviceId: { exact: deviceId } };
     }
     return { facingMode: 'environment' };
-}
-
-/**
- * The worker is served next to the jsqrcode library, already loaded by the admin page
- */
-function decodeWorkerUrl(): string {
-    const library = document.querySelector<HTMLScriptElement>('script[src*="/jsqrcode/jsqrcode.min.js"]');
-    if (library != null) {
-        return library.src.replace(/jsqrcode\.min\.js.*$/, 'decode-worker.js');
-    }
-    return `${window.ALFIO_CONTEXT_PATH ?? ''}/resources/js/jsqrcode/decode-worker.js`;
 }
 
 declare global {

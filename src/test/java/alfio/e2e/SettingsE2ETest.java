@@ -73,7 +73,7 @@ class SettingsE2ETest extends BaseE2ETest {
     void choosingAnEventKeepsTheConfigurationPage() {
         adminConsole.login();
         var result = adminConsole.chooseEventInConfigurationPage();
-        assertTrue(result.startsWith("#/configuration/organization/"), () -> "expected the configuration page, got: " + result);
+        assertTrue(result.startsWith("/configuration/organization/"), () -> "expected the configuration page, got: " + result);
         var parts = result.split("\\|");
         assertTrue(parts[0].endsWith("/event/" + parts[1].substring("event-".length())), () -> "the level select should show the event: " + result);
     }

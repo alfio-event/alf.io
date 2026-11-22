@@ -141,7 +141,7 @@ public class PaymentProviderConnectFilter extends GenericFilterBean {
                 if(stateVerified && stateParams.code != null) {
                     AccessTokenResponseDetails connectResult = getConnector(provider).storeConnectedAccountId(stateParams.code, orgId);
                     if(connectResult.isSuccess()) {
-                        response.sendRedirect("/admin/#/configuration/organization/"+orgId);
+                        response.sendRedirect("/admin/configuration/organization/"+orgId);
                     }
                 } else if(stateVerified && StringUtils.isNotEmpty(stateParams.errorCode)) {
                     log.warn("error from {}. {}={}", provider, stateParams.errorCode, stateParams.errorDescription);

@@ -27,6 +27,7 @@ import {
     validatedInput,
     validateWith,
 } from '../../components/form-validation.ts';
+import { adminUrl } from '../../admin-router';
 
 interface ComposeFormValues {
     // the selected categories, if the message is not for all the attendees
@@ -329,7 +330,7 @@ export class ComposeMessage extends LitElement {
                                 `)}
                                 <sl-divider></sl-divider>
                                 <div class="row" style="--alfio-row-cols: 3">
-                                    <sl-button variant="default" size="large" href="#/events/${data.event.shortName}/detail">
+                                    <sl-button variant="default" size="large" href=${adminUrl(`/events/${data.event.shortName}/detail`)}>
                                         Cancel
                                     </sl-button>
                                     <div></div>

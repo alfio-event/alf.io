@@ -84,31 +84,31 @@ class AdminConsole {
         }
         driver.findElement(By.id("username")).sendKeys(username);
         driver.findElement(By.id("password")).sendKeys(password);
-        driver.findElement(By.cssSelector("button[type=submit].btn-success")).click();
+        driver.findElement(By.cssSelector("form[name=loginForm] button[type=submit]")).click();
         wait.until(urlContains("/admin"));
     }
 
     void logout() {
-        var logoutLinkLocator = By.xpath("//a[@data-ng-click and contains(., 'Log out')]");
-        var logoutLink = findDisplayed(logoutLinkLocator);
-        if (logoutLink == null) {
-            // on small screens the link is inside the collapsed menu
-            driver.findElement(By.cssSelector("button.navbar-toggle")).click();
-            logoutLink = wait.until(_ -> findDisplayed(logoutLinkLocator));
+        var navbar = wait.until(presenceOfElementLocated(By.tagName("alfio-admin-navbar")));
+        var accountMenu = findInShadowRoot(navbar, "sl-dropdown.account");
+        WebElement logout;
+        if (accountMenu.isDisplayed()) {
+            // "Log out" is in the menu of the user
+            clickWithJs(driver, findInShadowRoot(navbar, "sl-dropdown.account sl-button.account-trigger"));
+            logout = findInShadowRoot(navbar, "sl-dropdown.account sl-menu-item.logout");
+        } else {
+            // on small screens the button is in the menu drawer
+            clickWithJs(driver, findInShadowRoot(navbar, "sl-icon-button.menu-button"));
+            logout = findInShadowRoot(navbar, "sl-drawer button.logout");
         }
-        // a feedback toast (e.g. "The event has been published") may cover the link and intercept a native click
-        clickWithJs(driver, logoutLink);
+        var target = logout;
+        wait.until(_ -> target.isDisplayed());
+        // a feedback toast (e.g. "The event has been published") may cover the item and intercept a native click
+        clickWithJs(driver, target);
         // the page is reloaded after logout, and the user is sent back to the login page
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .withMessage(() -> "login page not displayed after logout. Current URL: " + driver.getCurrentUrl())
             .until(presenceOfElementLocated(By.id("username")));
-    }
-
-    private WebElement findDisplayed(By locator) {
-        return driver.findElements(locator).stream()
-            .filter(WebElement::isDisplayed)
-            .findFirst()
-            .orElse(null);
     }
 
     /**
@@ -116,7 +116,7 @@ class AdminConsole {
      * fixed allocation): the restricted category gets one token per seat, which the invitations are sent for.
      */
     void createEvent(EventDefinition event, boolean withRestrictedCategory) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/new");
+        driver.navigate().to(serverBaseUrl + "/admin/events/new");
         var page = wait.until(presenceOfElementLocated(By.tagName("alfio-event-create")));
         // waits for the form to be rendered after the initial data has loaded
         findInShadowRoot(page, "sl-select#organizationId");
@@ -162,7 +162,7 @@ class AdminConsole {
         wait.until(_ -> confirmButton.getDomAttribute("disabled") == null);
         clickWithJs(driver, confirmButton);
         // back to the event list
-        wait.until(urlMatches("/admin/?#/$"));
+        wait.until(urlMatches("/admin/?$"));
         LOGGER.info("event {} deleted", slug);
     }
 
@@ -253,7 +253,7 @@ class AdminConsole {
      * Opens the extensions log page and waits for the table (or the empty state) to be displayed.
      */
     void verifyExtensionLogs() {
-        driver.navigate().to(serverBaseUrl + "/admin#/extension/log");
+        driver.navigate().to(serverBaseUrl + "/admin/extension/log");
         var log = wait.until(presenceOfElementLocated(By.tagName("alfio-extension-log")));
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .ignoring(StaleElementReferenceException.class)
@@ -266,7 +266,7 @@ class AdminConsole {
      * Opens the "customize templates" page of the event and returns the list component.
      */
     WebElement openTemplateList(String slug) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/show-resources");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/show-resources");
         return wait.until(presenceOfElementLocated(By.tagName("alfio-template-list")));
     }
 
@@ -350,7 +350,7 @@ class AdminConsole {
      * Composes a message for all the attendees and sends it, after checking the preview.
      */
     void sendMessageToAttendees(String slug, String subject, String message, int expectedRecipients) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/compose-custom-message");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/compose-custom-message");
         var composer = wait.until(presenceOfElementLocated(By.tagName("alfio-compose-message")));
         // the editor has one tab for each language of the event
         var tabs = wait.until(_ -> {
@@ -389,7 +389,7 @@ class AdminConsole {
      * Messages are sent asynchronously, so we reload the page until they have been processed.
      */
     void verifyMessageSent(String slug, String subject) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/email-log");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/email-log");
         new WebDriverWait(driver, Duration.ofMinutes(3), Duration.ofSeconds(5))
             .ignoring(StaleElementReferenceException.class)
             .ignoring(NoSuchElementException.class)
@@ -416,7 +416,7 @@ class AdminConsole {
      * Then opens the first e-mail and checks that its content is displayed.
      */
     void viewEmail(String slug, String customerName) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/email-log");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/email-log");
         var emailLog = wait.until(presenceOfElementLocated(By.tagName("alfio-email-log")));
         var search = findInShadowRoot(findInShadowRoot(emailLog, "sl-input.list-search"), "input");
         wait.until(_ -> search.isDisplayed());
@@ -599,7 +599,7 @@ class AdminConsole {
      * Checks that the "Confirmed payments" page lists the expected number of payments.
      */
     void verifyConfirmedPayments(String slug, int expectedPayments) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/transactions/");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/transactions/");
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .ignoring(StaleElementReferenceException.class)
             .withMessage(() -> "expected " + expectedPayments + " confirmed payment(s) for " + slug)
@@ -640,7 +640,7 @@ class AdminConsole {
      * Nothing is displayed when there are no pending payments.
      */
     void verifyPendingPaymentsCount(String slug, int expected) {
-        driver.navigate().to(serverBaseUrl + "/admin#/");
+        driver.navigate().to(serverBaseUrl + "/admin/");
         waitForPendingPaymentsCount(slug, "summary", expected, summaryText(expected));
         openEventDetail(slug);
         waitForPendingPaymentsCount(slug, "badge", expected, badgeText(expected));
@@ -773,7 +773,7 @@ class AdminConsole {
     }
 
     WebElement openCheckIn(String slug) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/check-in");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/check-in");
         return wait.until(presenceOfElementLocated(By.tagName("alfio-check-in")));
     }
 
@@ -890,7 +890,7 @@ class AdminConsole {
      * @param contact the contact person of the reservation including all the attendees, or null to create one reservation per attendee
      */
     void importAttendees(String slug, String categoryName, Path csv, int expectedAttendees, ReservationContact contact, Duration timeout) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/import");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/reservation/import");
         var importPage = wait.until(presenceOfElementLocated(By.tagName("alfio-attendees-import")));
         var start = System.nanoTime();
         uploadFile(findInShadowRoot(findInShadowRoot(importPage, ".attendees-file"), "#file-input"), csv);
@@ -937,7 +937,7 @@ class AdminConsole {
      * The file is not saved: the download is intercepted in the page.
      */
     String downloadAttendeesImportTemplate(String slug) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/import");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/reservation/import");
         var importPage = wait.until(presenceOfElementLocated(By.tagName("alfio-attendees-import")));
         return downloadViaButton(findInShadowRoot(importPage, ".download-template"));
     }
@@ -1000,7 +1000,7 @@ class AdminConsole {
      * Opens the polls list of the event
      */
     WebElement openPollsList(String slug) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/polls/list");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/polls/list");
         var list = wait.until(presenceOfElementLocated(By.tagName("alfio-polls-list")));
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .withMessage(() -> "the polls list did not load: " + shadowText(list, ".container"))
@@ -1483,7 +1483,7 @@ class AdminConsole {
                              String existingCategoryName,
                              String newCategoryName,
                              int emptySeats) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/new");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/reservation/new");
         var page = wait.until(presenceOfElementLocated(By.tagName("alfio-reservation-create")));
         typeInShoelaceControl(findInShadowRoot(page, "#contact-first-name"), "input", contact.firstName());
         typeInShoelaceControl(findInShadowRoot(page, "#contact-last-name"), "input", contact.lastName());
@@ -1523,7 +1523,7 @@ class AdminConsole {
                                                String categoryName,
                                                String company,
                                                String diet) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/new");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/reservation/new");
         var page = wait.until(presenceOfElementLocated(By.tagName("alfio-reservation-create")));
         typeInShoelaceControl(findInShadowRoot(page, "#contact-first-name"), "input", contact.firstName());
         typeInShoelaceControl(findInShadowRoot(page, "#contact-last-name"), "input", contact.lastName());
@@ -1547,7 +1547,7 @@ class AdminConsole {
      * @return the ID of the new reservation, once the page has moved to its detail
      */
     String createReservationFromCsv(String slug, ReservationContact contact, String categoryName, String csv, int expectedAttendees) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/new");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/reservation/new");
         var page = wait.until(presenceOfElementLocated(By.tagName("alfio-reservation-create")));
         typeInShoelaceControl(findInShadowRoot(page, "#contact-first-name"), "input", contact.firstName());
         typeInShoelaceControl(findInShadowRoot(page, "#contact-last-name"), "input", contact.lastName());
@@ -1614,7 +1614,7 @@ class AdminConsole {
      * @return the ID of the new reservation, once the page has moved to its detail
      */
     String createReservationWithDiscount(String slug, ReservationContact contact, NewAttendee attendee, String categoryName, String discountOption) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/new");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/reservation/new");
         var page = wait.until(presenceOfElementLocated(By.tagName("alfio-reservation-create")));
         typeInShoelaceControl(findInShadowRoot(page, "#contact-first-name"), "input", contact.firstName());
         typeInShoelaceControl(findInShadowRoot(page, "#contact-last-name"), "input", contact.lastName());
@@ -1652,7 +1652,7 @@ class AdminConsole {
      * from the "Full data" dialog of the reservation detail
      */
     void editAttendeeFields(String slug, String reservationId, String company, String diet) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/" + reservationId);
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/reservation/" + reservationId);
         var reservationDetail = wait.until(presenceOfElementLocated(By.tagName("alfio-reservation-detail")));
         clickWithJs(driver, findInShadowRoot(reservationDetail, "tr[data-ticket-id] sl-button.full-data"));
         var dataDialog = findInShadowRoot(reservationDetail, "alfio-attendee-data-dialog");
@@ -1698,7 +1698,7 @@ class AdminConsole {
      * @return the validation errors displayed by the form, by control, once the form has refused to save
      */
     Map<String, String> saveEmptyReservation(String slug) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/reservation/new");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/reservation/new");
         var page = wait.until(presenceOfElementLocated(By.tagName("alfio-reservation-create")));
         clickWithJs(driver, findInShadowRoot(page, "#save-button"));
         var submitError = wait.until(_ -> findAllInShadowRoot(page, "#submit-error").stream().findFirst().orElse(null));
@@ -1831,7 +1831,7 @@ class AdminConsole {
     }
 
     private WebElement openPendingPayments(String slug) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/pending-payments/");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/pending-payments/");
         return wait.until(presenceOfElementLocated(By.tagName("alfio-pending-payments")));
     }
 
@@ -1840,7 +1840,7 @@ class AdminConsole {
     //
 
     WebElement openSubscriptions() {
-        driver.navigate().to(serverBaseUrl + "/admin#/subscriptions");
+        driver.navigate().to(serverBaseUrl + "/admin/subscriptions");
         // the page redirects to the list of the first organization
         return wait.until(presenceOfElementLocated(By.tagName("alfio-subscriptions-list")));
     }
@@ -1876,7 +1876,7 @@ class AdminConsole {
 
         clickWithJs(driver, findInShadowRoot(edit, "#save-subscription"));
         wait.until(urlContains("/edit"));
-        return driver.getCurrentUrl().replaceAll(".*#/subscriptions/\\d+/([0-9a-f-]{36})/edit.*", "$1");
+        return driver.getCurrentUrl().replaceAll(".*/admin/subscriptions/\\d+/([0-9a-f-]{36})/edit.*", "$1");
     }
 
     boolean subscriptionListed(String title) {
@@ -1940,15 +1940,15 @@ class AdminConsole {
      * form once it has been loaded
      */
     private WebElement openSettings(String slug) {
-        var route = "/admin#/configuration/system";
+        var route = "/admin/configuration/system";
         if (slug != null) {
-            route = "/admin#/events/" + slug + "/configuration";
+            route = "/admin/events/" + slug + "/configuration";
         }
         driver.navigate().to(serverBaseUrl + route);
         if (slug == null && !isAdmin()) {
             // only the administrators can change the settings of the system: the page sends the other users
             // to the settings of their first organization, and replaces the form it had rendered
-            wait.until(_ -> String.valueOf(driver.getCurrentUrl()).contains("#/configuration/organization/"));
+            wait.until(_ -> String.valueOf(driver.getCurrentUrl()).contains("/admin/configuration/organization/"));
         }
         var page = wait.until(presenceOfElementLocated(By.tagName("alfio-settings-page")));
         var form = findInShadowRoot(page, "alfio-settings-form");
@@ -1960,8 +1960,10 @@ class AdminConsole {
      * Whether the logged-in user is an administrator, who can also change the settings of the system
      */
     boolean isAdmin() {
-        wait.until(presenceOfElementLocated(By.tagName("body")));
-        return Boolean.TRUE.equals(((JavascriptExecutor) driver).executeScript("return window.IS_ADMIN === true;"));
+        var app = wait.until(presenceOfElementLocated(By.tagName("alfio-admin-app")));
+        // the server's configuration of the admin shell (see admin-config.ts)
+        return Boolean.TRUE.equals(((JavascriptExecutor) driver).executeScript(
+            "return JSON.parse(arguments[0].getAttribute('data-config')).isAdmin === true;", app));
     }
 
     /**
@@ -2083,7 +2085,7 @@ class AdminConsole {
     /**
      * Chooses the first event in the level select of the configuration page
      *
-     * @return the route shown afterwards, and the value of the level select, e.g. "#/configuration/organization/1/event/2|event-2"
+     * @return the route shown afterwards, and the value of the level select, e.g. "/configuration/organization/1/event/2|event-2"
      */
     String chooseEventInConfigurationPage() {
         openSettings(null);
@@ -2098,7 +2100,8 @@ class AdminConsole {
         var newPage = wait.until(presenceOfElementLocated(By.tagName("alfio-settings-page")));
         wait.until(_ -> eventValue.equals(findInShadowRoot(newPage, "#settings-level").getDomProperty("value")));
         var url = String.valueOf(driver.getCurrentUrl());
-        return url.substring(url.indexOf('#')) + "|" + findInShadowRoot(newPage, "#settings-level").getDomProperty("value");
+        // the route, below /admin
+        return url.substring(url.indexOf("/admin/") + "/admin".length()) + "|" + findInShadowRoot(newPage, "#settings-level").getDomProperty("value");
     }
 
     /**
@@ -2154,7 +2157,7 @@ class AdminConsole {
     }
 
     private WebElement openEventTranslations(String slug) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/configuration");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/configuration");
         // the hash change alone doesn't reload the page: start from a fresh state
         driver.navigate().refresh();
         var page = wait.until(presenceOfElementLocated(By.tagName("alfio-settings-page")));
@@ -2186,7 +2189,7 @@ class AdminConsole {
     //
 
     WebElement openGroups() {
-        driver.navigate().to(serverBaseUrl + "/admin#/group");
+        driver.navigate().to(serverBaseUrl + "/admin/group");
         // the page redirects to the list of the first organization
         return wait.until(presenceOfElementLocated(By.tagName("alfio-groups-list")));
     }
@@ -2451,11 +2454,165 @@ class AdminConsole {
         input.sendKeys(text);
     }
 
+    // -- navigation of the admin (shell/admin-app.ts, admin-router.ts)
+
+    /**
+     * Opens a link of the AngularJS admin (/admin/#/...), e.g. from an e-mail sent before the migration
+     * @return the URL the admin shows afterwards
+     */
+    String openLegacyLink(String hashRoute) {
+        driver.navigate().to(serverBaseUrl + "/admin/#" + hashRoute);
+        wait.until(presenceOfElementLocated(By.tagName("alfio-admin-app")));
+        wait.until(_ -> !String.valueOf(driver.getCurrentUrl()).contains("#"));
+        return currentUrl();
+    }
+
+    String currentUrl() {
+        return String.valueOf(driver.getCurrentUrl());
+    }
+
+    /**
+     * Opens the event detail page, as a user arriving from a bookmark
+     */
+    WebElement openEventDetailPage(String slug) {
+        return openEventDetail(slug);
+    }
+
+    /**
+     * Whether the page with the given tag is displayed, waiting for it to be rendered
+     */
+    boolean isPageDisplayed(String tag) {
+        return wait.until(presenceOfElementLocated(By.tagName(tag))).isDisplayed();
+    }
+
+    boolean isAdminShellDisplayed() {
+        return !driver.findElements(By.tagName("alfio-admin-app")).isEmpty();
+    }
+
+    /**
+     * Clicks a link of the event menu, e.g. "reservations", and waits for its page
+     */
+    void clickEventMenuLink(String id, String expectedTag) {
+        var sidebar = wait.until(presenceOfElementLocated(By.tagName("alfio-event-sidebar")));
+        clickWithJs(driver, findInShadowRoot(sidebar, "a#event-nav-" + id));
+        wait.until(presenceOfElementLocated(By.tagName(expectedTag)));
+    }
+
+    /**
+     * Changes a text setting of an event without saving it
+     */
+    void changeEventSettingWithoutSaving(String slug, String key, String value) {
+        var form = openSettings(slug);
+        var control = findInShadowRoot(form, "sl-input#" + key);
+        ((JavascriptExecutor) driver).executeScript(
+            "arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('sl-input', { bubbles: true, composed: true }));",
+            control, value);
+        // the form counts the changes once it has re-rendered
+        wait.until(_ -> shadowText(form, ".changes").contains("unsaved change"));
+    }
+
+    /**
+     * Answers the "Leave without saving" question of a page with unsaved changes
+     */
+    void answerLeaveConfirmation(boolean leave) {
+        var dialog = wait.until(presenceOfElementLocated(By.cssSelector("sl-dialog[label='Leave without saving']")));
+        wait.until(_ -> Boolean.parseBoolean(String.valueOf(dialog.getDomProperty("open"))));
+        var buttonSelector = "sl-button#close";
+        if (leave) {
+            buttonSelector = "sl-button#confirm";
+        }
+        var button = dialog.findElement(By.cssSelector(buttonSelector));
+        clickWithJs(driver, button);
+        wait.until(_ -> driver.findElements(By.cssSelector("sl-dialog[label='Leave without saving']")).isEmpty());
+    }
+
+    void back() {
+        driver.navigate().back();
+    }
+
+    void forward() {
+        driver.navigate().forward();
+    }
+
+    /**
+     * Clicks, inside the admin, a link to something that is not an admin page (an export, a public page),
+     * without target or download attribute: the browser must load it instead of the admin's router
+     */
+    void clickLinkOutsideTheAdmin(String path) {
+        var app = wait.until(presenceOfElementLocated(By.tagName("alfio-admin-app")));
+        ((JavascriptExecutor) driver).executeScript(
+            "const a = document.createElement('a'); a.id = 'e2e-outside-link'; a.href = arguments[1]; a.textContent = 'outside';" +
+                "arguments[0].querySelector('main').prepend(a); a.click();", app, path);
+    }
+
+    /**
+     * The session expires on the server (it's simulated by dropping the session cookie)
+     */
+    void expireSession() {
+        driver.manage().deleteAllCookies();
+    }
+
+    /**
+     * Clicks a link of the navbar ("Organizations", "Events"...), opening the menu drawer on small screens
+     */
+    void clickNavbarLink(String label) {
+        var navbar = wait.until(presenceOfElementLocated(By.tagName("alfio-admin-navbar")));
+        var menuButton = findInShadowRoot(navbar, "sl-icon-button.menu-button");
+        String container = ".links";
+        if (menuButton.isDisplayed()) {
+            clickWithJs(driver, menuButton);
+            var drawer = findInShadowRoot(navbar, "sl-drawer");
+            wait.until(_ -> Boolean.parseBoolean(String.valueOf(drawer.getDomProperty("open"))));
+            container = "sl-drawer .drawer-links";
+        }
+        var selector = container + " a";
+        // textContent: getText() is empty while the drawer is still sliding in; it must be visible once it's in
+        var link = wait.until(_ -> findAllInShadowRoot(navbar, selector).stream()
+            .filter(l -> String.valueOf(l.getDomProperty("textContent")).trim().startsWith(label) && l.isDisplayed())
+            .findFirst()
+            .orElse(null));
+        clickWithJs(driver, link);
+    }
+
+    /**
+     * Whether the menu drawer of the navbar is open
+     */
+    boolean isNavbarDrawerOpen() {
+        var navbar = wait.until(presenceOfElementLocated(By.tagName("alfio-admin-navbar")));
+        return Boolean.parseBoolean(String.valueOf(findInShadowRoot(navbar, "sl-drawer").getDomProperty("open")));
+    }
+
+    void resizeWindow(int width, int height) {
+        driver.manage().window().setSize(new Dimension(width, height));
+    }
+
+    Dimension windowSize() {
+        return driver.manage().window().getSize();
+    }
+
+    /**
+     * Waits until the URL ends with the given suffix (path, and query if given)
+     */
+    void waitForUrlEnding(String suffix) {
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "expected an URL ending with " + suffix + ", got " + driver.getCurrentUrl())
+            .until(_ -> String.valueOf(driver.getCurrentUrl()).endsWith(suffix));
+    }
+
+    /**
+     * Waits for the login page
+     */
+    void waitForLoginPage() {
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .withMessage(() -> "login page not displayed. Current URL: " + driver.getCurrentUrl())
+            .until(presenceOfElementLocated(By.id("username")));
+    }
+
     /**
      * Opens the event detail page and waits for the Lit component to have loaded the event
      */
     private WebElement openEventDetail(String slug) {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/" + slug + "/detail");
+        driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/detail");
         wait.until(presenceOfElementLocated(By.tagName("alfio-event-sidebar")));
         var detail = wait.until(presenceOfElementLocated(By.tagName("alfio-event-detail")));
         // the page title is rendered once the event has been loaded; a failed load shows an error alert instead
@@ -2555,7 +2712,7 @@ class AdminConsole {
     }
 
     private WebElement openExtensionList() {
-        driver.navigate().to(serverBaseUrl + "/admin#/extension/list");
+        driver.navigate().to(serverBaseUrl + "/admin/extension/list");
         return wait.until(presenceOfElementLocated(By.tagName("alfio-extension-list")));
     }
 
@@ -2618,7 +2775,7 @@ class AdminConsole {
     }
 
     void verifyEventCreationDraft() {
-        driver.navigate().to(serverBaseUrl + "/admin#/events/new");
+        driver.navigate().to(serverBaseUrl + "/admin/events/new");
         var page = wait.until(presenceOfElementLocated(By.tagName("alfio-event-create")));
         selectEventOrganizer(page);
         typeInShoelaceControl(findInShadowRoot(page, "sl-input#displayName"), "input", "Draft recovery check");

@@ -1,4 +1,4 @@
-import {callDelete, fetchJson, postJson, responseErrorMessage} from './helpers.ts';
+import { callDelete, fetchJson, postJson, responseErrorMessage, adminFetch } from './helpers.ts';
 import {ContentLanguage} from '../model/purchase-context.ts';
 import {ResourceScope, TemplateDescriptor, TemplateOverride, UploadedResourceMetadata} from '../model/template.ts';
 
@@ -103,7 +103,7 @@ export class TemplateService {
     }
 
     private static async metadata(baseUrl: string, fileName: string): Promise<UploadedResourceMetadata | null> {
-        const res = await fetch(`${baseUrl}/${encodeURIComponent(fileName)}/metadata`, {credentials: 'include'});
+        const res = await adminFetch(`${baseUrl}/${encodeURIComponent(fileName)}/metadata`);
         if (res.status === 404) {
             return null;
         }
@@ -114,7 +114,7 @@ export class TemplateService {
     }
 
     private static async resourceText(baseUrl: string, fileName: string): Promise<string | null> {
-        const res = await fetch(`${baseUrl}/${encodeURIComponent(fileName)}`, {credentials: 'include'});
+        const res = await adminFetch(`${baseUrl}/${encodeURIComponent(fileName)}`);
         if (res.status === 404) {
             return null;
         }
@@ -126,7 +126,7 @@ export class TemplateService {
 }
 
 async function fetchText(url: string): Promise<string> {
-    const res = await fetch(url, {credentials: 'include'});
+    const res = await adminFetch(url);
     if (!res.ok) {
         throw new Error(await responseErrorMessage(res, `unexpected status ${res.status}`));
     }

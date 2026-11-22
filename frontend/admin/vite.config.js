@@ -71,6 +71,8 @@ function parseEnumConstants(source) {
 }
 
 export default defineConfig({
+    // the build is served below {{contextPath}}/frontend-admin/: assets referenced by the CSS (fonts) are relative to it
+    base: './',
     plugins: [
         viteStaticCopy({
             targets: [
@@ -95,11 +97,17 @@ export default defineConfig({
         // generate .vite/manifest.json in outDir
         manifest: true,
         rollupOptions: {
-            // overwrite default .html entry
-            input: 'src/main.ts',
+            // overwrite default .html entry. The login page (login.ms) loads only its stylesheet
+            input: ['src/main.ts', 'src/login.css'],
         },
     },
     server: {
-        origin: 'http://127.0.0.1:8080',
+        // the URLs of the assets referenced by the sources (e.g. the fonts in main.css) point to this dev server,
+        // which the admin page loads its scripts from (admin-index.ms)
+        origin: 'http://localhost:5173',
+        fs: {
+            // main.css uses the fonts of the backend (src/main/resources/font)
+            allow: ['.', '../../src/main/resources/font'],
+        },
     },
 });

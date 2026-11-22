@@ -11,6 +11,7 @@ import {taskContent} from '../components/task-content.ts';
 import {sectionCard} from '../components/section-card.ts';
 import {organizationFilter} from '../components/organization-filter.ts';
 import {OrganizationService} from '../service/organization.ts';
+import { adminUrl, navigate } from '../admin-router';
 
 /**
  * The groups of an organization, as a card with one row each: the row opens the edit page.
@@ -84,10 +85,10 @@ export class GroupsList extends LitElement {
             <div class="filter-toolbar">
                 <div class="filter-left">
                     ${organizationFilter(this.loadOrganizationsTask.value, this.organizationId,
-                        (organizationId) => window.location.hash = `#/group/${organizationId}/all`)}
+                        (organizationId) => navigate(`/group/${organizationId}/all`))}
                 </div>
                 <div class="filter-right">
-                    <sl-button id="add-group" href=${`#/group/${this.organizationId}/new`} variant="success" size="large">
+                    <sl-button id="add-group" href=${adminUrl(`/group/${this.organizationId}/new`)} variant="success" size="large">
                         <sl-icon name="plus-circle" slot="prefix"></sl-icon>
                         Add new
                     </sl-button>
@@ -114,7 +115,7 @@ export class GroupsList extends LitElement {
 
     private renderGroup(group: Group): TemplateResult {
         return html`
-            <a class="event-row group-row" href=${`#/group/${this.organizationId}/edit/${group.id}`}
+            <a class="event-row group-row" href=${adminUrl(`/group/${this.organizationId}/edit/${group.id}`)}
                aria-label=${`Edit ${group.name}`}>
                 <div class="event-logo placeholder">
                     <sl-icon name="people" aria-label="No image"></sl-icon>

@@ -34,6 +34,7 @@ import './edit-payment-dialog.ts';
 import {emptyState} from '../../components/empty-state.ts';
 import {ListSearchController} from '../../components/list-search.ts';
 import {taskContent} from '../../components/task-content.ts';
+import { adminUrl } from '../../admin-router';
 
 interface PaymentsListData {
     event: AlfioEvent;
@@ -251,7 +252,7 @@ export class PaymentsList extends LitElement {
     }
 
     private reservationHref(reservationId: string): string {
-        return `#/events/${this.eventName}/reservation/${reservationId}`;
+        return adminUrl(`/events/${this.eventName}/reservation/${reservationId}`);
     }
 }
 

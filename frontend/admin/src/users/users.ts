@@ -46,6 +46,7 @@ import {
     validateWith,
 } from '../components/form-validation.ts';
 
+import { adminConfig } from '../admin-config';
 interface LoadResult {
     users: User[];
     roles: Role[];
@@ -94,7 +95,7 @@ export class Users extends LitElement {
     @property({attribute: 'alfio-title'}) alfioTitle: string = 'Users';
     @property() type: UserType = 'user';
 
-    @state() isAdmin: boolean = window.IS_ADMIN;
+    @state() isAdmin: boolean = adminConfig().isAdmin;
     @state() users: User[] = [];
     @state() roles: Role[] = [];
     @state() organizations: Organization[] = [];

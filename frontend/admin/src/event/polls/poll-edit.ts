@@ -30,6 +30,7 @@ import {
     row,
     textColors,
 } from '../../styles.ts';
+import { navigate } from '../../admin-router';
 
 interface PollForm {
     accessRestricted: boolean;
@@ -64,7 +65,7 @@ const TITLE_MESSAGE = 'The question is required in all selected languages';
 const OPTIONS_MESSAGE = 'Add at least one option, with a title in all selected languages';
 
 /**
- * Creates or edits a poll (#/events/{eventName}/polls/new, #/events/{eventName}/polls/edit/{pollId})
+ * Creates or edits a poll (/admin/events/{eventName}/polls/new, /admin/events/{eventName}/polls/edit/{pollId})
  */
 @customElement('alfio-poll-edit')
 export class PollEdit extends LitElement {
@@ -397,7 +398,7 @@ export class PollEdit extends LitElement {
             } else {
                 pollId = await PollService.create(this.eventName, payload);
             }
-            window.location.hash = `#/events/${this.eventName}/polls/view/${pollId}`;
+            navigate(`/events/${this.eventName}/polls/view/${pollId}`);
         } catch (e) {
             dispatchFeedback({ type: 'danger', message: errorMessage(e, 'Failed to save the poll') }, this);
             this.saving = false;
@@ -407,9 +408,9 @@ export class PollEdit extends LitElement {
     private cancel(): void {
         const pollId = this.lastData?.poll.id;
         if (pollId != null) {
-            window.location.hash = `#/events/${this.eventName}/polls/view/${pollId}`;
+            navigate(`/events/${this.eventName}/polls/view/${pollId}`);
         } else {
-            window.location.hash = `#/events/${this.eventName}/polls/list`;
+            navigate(`/events/${this.eventName}/polls/list`);
         }
     }
 }

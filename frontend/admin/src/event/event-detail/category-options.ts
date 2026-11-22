@@ -15,6 +15,7 @@ import {taskContent} from '../../components/task-content.ts';
 import {form, modernLayout, row, textColors} from '../../styles.ts';
 import '../custom-offline-payment-event-selector/custom-offline-payment-denied-methods-selector.ts';
 import type {CustomOfflinePaymentDeniedMethodsSelector} from '../custom-offline-payment-event-selector/custom-offline-payment-denied-methods-selector.ts';
+import { adminUrl } from '../../admin-router';
 
 /**
  * The category whose options are edited
@@ -208,7 +209,7 @@ export class CategoryOptions extends LitElement {
             ${when(data.groups.length === 0, () => html`
                 <p class="text-muted">
                     Only the members of a group can buy the tickets of a restricted category. This organization has no groups:
-                    <a href="#/group/${this.target.organizationId}/all">create one</a> to restrict the category.
+                    <a href=${adminUrl(`/group/${this.target.organizationId}/all`)}>create one</a> to restrict the category.
                 </p>
             `, () => html`
                 <div class="form-stack">

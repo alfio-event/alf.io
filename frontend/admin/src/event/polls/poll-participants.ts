@@ -14,6 +14,7 @@ import {emptyState} from '../../components/empty-state.ts';
 import {taskContent} from '../../components/task-content.ts';
 import {sectionCard} from '../../components/section-card.ts';
 import {badges, base, dialog, form, modernLayout, modernTable, purchaseContextListPage, retroCompat, row, textColors} from '../../styles.ts';
+import { adminUrl } from '../../admin-router';
 
 const SEARCH_DELAY_MS = 300;
 
@@ -24,7 +25,7 @@ interface ParticipantsData {
 }
 
 /**
- * The allowed participants of a restricted poll (#/events/{eventName}/polls/{pollId}/participants)
+ * The allowed participants of a restricted poll (/admin/events/{eventName}/polls/{pollId}/participants)
  */
 @customElement('alfio-poll-participants')
 export class PollParticipants extends LitElement {
@@ -174,7 +175,7 @@ export class PollParticipants extends LitElement {
                 `)}
                 <sl-divider></sl-divider>
                 <div class="row" style="--alfio-row-cols: 3">
-                    <sl-button variant="default" size="large" href=${`#/events/${this.eventName}/polls/view/${poll.id}`}>Back</sl-button>
+                    <sl-button variant="default" size="large" href=${adminUrl(`/events/${this.eventName}/polls/view/${poll.id}`)}>Back</sl-button>
                     <div></div>
                     <div></div>
                 </div>

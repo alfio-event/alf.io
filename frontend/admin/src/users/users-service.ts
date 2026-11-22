@@ -1,4 +1,4 @@
-import {fetchJson, postJson, putJson, callDelete} from '../service/helpers.ts';
+import { fetchJson, postJson, putJson, callDelete, adminFetch } from '../service/helpers.ts';
 import {User, Role, UserModification, BulkImportPayload, PasswordModification} from '../model/user.ts';
 import {Organization} from '../model/organization.ts';
 import {ValidatedResponse} from '../model/validation.ts';
@@ -54,7 +54,7 @@ export class UsersService {
     }
 
     static async retrieveSystemApiKey(): Promise<string> {
-        const response = await fetch('/admin/api/system/api-key', {
+        const response = await adminFetch('/admin/api/system/api-key', {
             method: 'GET',
             credentials: 'include',
         });

@@ -88,6 +88,7 @@ import './notify-attendees-dialog.ts';
 import './attendee-data-dialog.ts';
 import './activity-log.ts';
 
+import { adminConfig } from '../admin-config';
 interface PurchaseContextInfo {
     title: string;
     timeZone: string;
@@ -235,7 +236,7 @@ export class ReservationDetailPage extends LitElement {
     @query('alfio-notify-attendees-dialog') private notifyAttendeesDialog!: NotifyAttendeesDialog;
     @query('alfio-attendee-data-dialog') private attendeeDataDialog!: AttendeeDataDialog;
 
-    private readonly isOwner = window.USER_IS_OWNER;
+    private readonly isOwner = adminConfig().isOwner;
 
     private readonly loadDataTask = new Task(this, {
         task: async ([type, publicIdentifier, reservationId, organizationId]): Promise<ReservationData> => {
@@ -1581,7 +1582,7 @@ export class ReservationDetailPage extends LitElement {
 
     private reservationUrl(data: ReservationData): string {
         const reservation = data.descriptor.reservation;
-        let baseUrl = window.BASE_URL;
+        let baseUrl = adminConfig().baseUrl;
         if (!baseUrl) {
             baseUrl = window.location.href.substring(0, window.location.href.indexOf('/admin'));
         }

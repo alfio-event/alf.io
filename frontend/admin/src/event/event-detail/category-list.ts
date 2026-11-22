@@ -25,6 +25,7 @@ import {categoryDraftToPayload, newCategoryDraft, wallClockToDateTimeLocal} from
 import './online-settings.ts';
 import {allocationSegments} from './ticket-allocation.ts';
 import {badges, dialog, form, modernLayout, modernTable, row, textColors} from '../../styles.ts';
+import { navigate, adminUrl } from '../../admin-router';
 
 interface Selection {
     active: boolean;
@@ -542,7 +543,7 @@ export class EventCategories extends LitElement {
                         <sl-alert open variant="primary">
                             <sl-icon slot="icon" name="person-lock"></sl-icon>
                             Only the members of the group
-                            <a href="#/group/${event.organizationId}/edit/${category.attendeesList!.groupId}">${category.attendeesList!.groupName}</a>
+                            <a href=${adminUrl(`/group/${event.organizationId}/edit/${category.attendeesList!.groupId}`)}>${category.attendeesList!.groupName}</a>
                             can buy tickets of this category.
                         </sl-alert>
                     `, () => nothing)}
@@ -552,7 +553,7 @@ export class EventCategories extends LitElement {
                             <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
                             Some tickets of this category belong to reservations in an unknown state, usually after
                             an error of the payment provider.
-                            <a href="#/events/${event.shortName}/category/${category.id}/tickets">Fix them</a>
+                            <a href=${adminUrl(`/events/${event.shortName}/category/${category.id}/tickets`)}>Fix them</a>
                         </sl-alert>
                     `, () => nothing)}
                     ${this.renderProgress(category)}
@@ -583,7 +584,7 @@ export class EventCategories extends LitElement {
         }
         const canSendInvitations = (category.accessRestricted ?? false) && !category.expired;
         return html`
-            <sl-button variant="default" size="small" class="tickets-link" href="#/events/${event.shortName}/category/${category.id}/tickets">
+            <sl-button variant="default" size="small" class="tickets-link" href=${adminUrl(`/events/${event.shortName}/category/${category.id}/tickets`)}>
                 <sl-icon slot="prefix" name="ticket"></sl-icon>
                 Tickets
             </sl-button>
@@ -625,7 +626,7 @@ export class EventCategories extends LitElement {
     private async onCategoryMenu(category: TicketCategory, action: string): Promise<void> {
         const event = this.event;
         if (action === 'invitations') {
-            window.location.hash = `#/events/${event.shortName}/c/${category.id}/send-invitation`;
+            navigate(`/events/${event.shortName}/c/${category.id}/send-invitation`);
         } else if (action === 'online') {
             await this.editOnlineSettings(category);
         } else if (action === 'options') {
@@ -805,7 +806,7 @@ export class EventCategories extends LitElement {
                             ${repeat(groupTokens, (token) => token.id, (token) => html`
                                 <li>
                                     ${when(token.status === 'TAKEN', () => html`
-                                        <a href="#/events/${this.event.shortName}/reservations/?search=${token.code}" title="Find the reservation">${token.code}</a>
+                                        <a href=${adminUrl(`/events/${this.event.shortName}/reservations/?search=${token.code}`)} title="Find the reservation">${token.code}</a>
                                     `, () => html`<span>${token.code}</span>`)}
                                 </li>
                             `)}

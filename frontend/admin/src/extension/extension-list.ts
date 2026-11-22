@@ -13,6 +13,7 @@ import {emptyState} from '../components/empty-state.ts';
 import {taskContent} from '../components/task-content.ts';
 import {sectionCard} from '../components/section-card.ts';
 import {renderScope} from './extension-scope.ts';
+import { navigate } from '../admin-router';
 
 interface ListData {
     extensions: ExtensionSupport[];
@@ -204,7 +205,7 @@ export class ExtensionList extends LitElement {
     }
 
     private navigateTo(route: string): void {
-        window.location.hash = `#/extension/${route}`;
+        navigate(`/extension/${route}`);
     }
 }
 

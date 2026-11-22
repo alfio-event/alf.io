@@ -18,7 +18,7 @@ import {
     textColors,
 } from '../../styles.ts';
 import { PageAndContent, ReservationStatus, ReservationSummary } from '../../model/reservation.ts';
-import { readRouteParams, replaceRouteParams, toPageNumber } from '../../service/helpers.ts';
+import { readRouteParams, replaceRouteParams, toPageNumber, adminFetch } from '../../service/helpers.ts';
 import {
     formatAmount,
     formatFullName,
@@ -33,6 +33,7 @@ import {emptyState} from '../../components/empty-state.ts';
 import { ListSearchController } from '../../components/list-search.ts';
 import { taskContent } from '../../components/task-content.ts';
 import { sectionCard } from '../../components/section-card.ts';
+import { adminUrl } from '../../admin-router';
 
 type TabName = 'completed' | 'payment-pending' | 'in-process' | 'credited' | 'cancelled';
 interface Reservation extends ReservationSummary {
@@ -385,7 +386,7 @@ export class ReservationsList extends LitElement {
     ): Promise<PageAndContent<Reservation[]>> {
         const params = new URLSearchParams({ page: String(page - 1), search });
         statuses.forEach((status) => params.append('status', status));
-        const response = await fetch(`${baseUrl}?${params}`, { credentials: 'include' });
+        const response = await adminFetch(`${baseUrl}?${params}`);
         if (!response.ok) throw new Error('Failed to load reservations');
         return response.json();
     }
@@ -421,9 +422,9 @@ export class ReservationsList extends LitElement {
     }
     private reservationHref(reservation: Reservation, event: AlfioEvent | null): string {
         if (this.purchaseContextType === 'subscription' && !this.completedOnly) {
-            return `#/subscriptions/${this.organizationId}/${this.eventName}/reservation/${reservation.id}`;
+            return adminUrl(`/subscriptions/${this.organizationId}/${this.eventName}/reservation/${reservation.id}`);
         }
-        return `#/events/${reservation.eventPublicIdentifier ?? event?.shortName ?? this.eventName}/reservation/${reservation.id}`;
+        return adminUrl(`/events/${reservation.eventPublicIdentifier ?? event?.shortName ?? this.eventName}/reservation/${reservation.id}`);
     }
     private async loadEvent(eventName: string, purchaseContextType: 'event' | 'subscription'): Promise<AlfioEvent | null> {
         if (purchaseContextType !== 'event') {
@@ -442,7 +443,7 @@ export class ReservationsList extends LitElement {
         return this.eventName;
     }
     private newReservationHref(): string {
-        return `#/events/${this.eventName}/reservation/new`;
+        return adminUrl(`/events/${this.eventName}/reservation/new`);
     }
     private toTabName(value: string | null): TabName {
         return sections[Number(value) - 1]?.name ?? 'completed';

@@ -3,6 +3,60 @@ import {html, nothing, TemplateResult} from "lit";
 import {when} from "lit/directives/when.js";
 import {ContentLanguage} from "../model/purchase-context.ts";
 import {ApiResult} from "../model/reservation-detail.ts";
+import {adminConfig} from "../admin-config.ts";
+
+/** dispatched on window when the session has expired: the shell reloads the page, which leads to the login */
+export const NOT_LOGGED_IN_EVENT = 'alfio-not-logged-in';
+/** dispatched on window when the user may not do what they asked: the shell tells them */
+export const NOT_AUTHORIZED_EVENT = 'alfio-not-authorized';
+
+export interface AdminFetchOptions {
+    /**
+     * whether a 403 is reported to the shell. By default only for actions (not GET): pages read data the user
+     * may not see, and handle the 403 themselves.
+     */
+    notifyForbidden?: boolean;
+}
+
+/**
+ * fetch() for the admin API. It identifies the request as XHR, so that Spring Security answers 401 to an expired
+ * session instead of redirecting to the login page, and reports 401 (and 403, see AdminFetchOptions) to the shell.
+ */
+export async function adminFetch(url: string, init: RequestInit = {}, options: AdminFetchOptions = {}): Promise<Response> {
+    const headers = new Headers(init.headers);
+    headers.set('X-Requested-With', 'XMLHttpRequest');
+    const response = await fetch(url, { credentials: 'include', ...init, headers });
+    if (response.status === 401) {
+        // some endpoints answer 401 to a logged-in user who may not do something: ask whether the session expired
+        void notifyIfSessionExpired();
+    } else if (response.status === 403 && shouldNotifyForbidden(init, options)) {
+        window.dispatchEvent(new CustomEvent(NOT_AUTHORIZED_EVENT));
+    }
+    return response;
+}
+
+async function notifyIfSessionExpired(): Promise<void> {
+    try {
+        const response = await fetch(`${adminConfig().contextPath}/authentication-status`, {
+            credentials: 'include',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const status: { authenticated?: boolean } = await response.json();
+        if (status.authenticated !== true) {
+            window.dispatchEvent(new CustomEvent(NOT_LOGGED_IN_EVENT));
+        }
+    } catch {
+        // the server can't be reached: the page shows the error of its own request
+    }
+}
+
+function shouldNotifyForbidden(init: RequestInit, options: AdminFetchOptions): boolean {
+    if (options.notifyForbidden != null) {
+        return options.notifyForbidden;
+    }
+    const method = (init.method ?? 'GET').toUpperCase();
+    return method !== 'GET' && method !== 'HEAD';
+}
 
 export function postJson(url: string, payload: any): Promise<Response> {
     return performRequest(url, 'POST', payload);
@@ -36,24 +90,19 @@ function performRequest(url: string, method: 'PUT' | 'POST' | 'PATCH' | 'DELETE'
     if (payload instanceof URLSearchParams) {
         contentType = 'application/x-www-form-urlencoded';
     }
-    return fetch(url, {
+    return adminFetch(url, {
         method,
-        credentials: 'include',
         headers: {
             'Accept': 'application/json',
             'Content-Type': contentType,
-            'X-Requested-With': 'XMLHttpRequest',
             [xsrfName]: xsrfValue
         },
         body
-    })
+    });
 }
 
 export function fetchJson<T>(url: string) : Promise<T> {
-    return fetch(url, {
-        method: 'GET',
-        credentials: 'include'
-    }).then(r => r.json());
+    return adminFetch(url, { method: 'GET' }).then(r => r.json());
 }
 
 export async function ensureOk<T>(response: Response): Promise<T> {
@@ -156,10 +205,7 @@ export function renderIf(predicate: () => boolean, template: () => TemplateResul
 }
 
 export function supportedLanguages(): ContentLanguage[] {
-    if (window.SUPPORTED_LANGUAGES != null) {
-        return JSON.parse(window.SUPPORTED_LANGUAGES);
-    }
-    return [];
+    return adminConfig().supportedLanguages as ContentLanguage[];
 }
 
 export function toDateTimeModification(isoString: string): DateTimeModification {
@@ -207,19 +253,22 @@ export function asNumber(value?: string): number | null {
 }
 
 /**
- * Reads the query parameters of the current AngularJS route (i.e. after the "?" in the location hash)
+ * Reads the query parameters of the current page
  */
 export function readRouteParams(): URLSearchParams {
-    return <URLSearchParams>new URLSearchParams(window.location.hash.split('?')[1] ?? '');
+    return new URLSearchParams(window.location.search);
 }
 
 /**
- * Replaces the query parameters of the current AngularJS route without triggering a navigation.
- * The hosting state must declare "reloadOnSearch: false"
+ * Replaces the query parameters of the current page without triggering a navigation
  */
 export function replaceRouteParams(params: URLSearchParams): void {
-    const route = window.location.hash.split('?')[0];
-    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${route}?${params}`);
+    let query = params.toString();
+    if (query !== '') {
+        query = `?${query}`;
+    }
+    // keep the state: the shell stores the scroll position of the history entry in it
+    window.history.replaceState(window.history.state, '', `${window.location.pathname}${query}`);
 }
 
 export function toPageNumber(value: string | null): number {
@@ -266,13 +315,3 @@ export function supportsOfflinePayments(allowedPaymentProxies: string[]): boolea
     return allowedPaymentProxies.includes('OFFLINE');
 }
 
-declare global {
-    interface Window {
-        SUPPORTED_LANGUAGES: string | null;
-        USER_IS_OWNER: boolean;
-        isAdmin: boolean; // backwards compatibility
-        IS_ADMIN: boolean;
-        ALFIO_CONTEXT_PATH: string;
-        BASE_URL: string;
-    }
-}

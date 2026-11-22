@@ -9,7 +9,7 @@
  */
 
 import {BulkConfirmationResult, PendingPayment} from '../model/reservation.ts';
-import {callDelete, fetchJson, postJson} from './helpers.ts';
+import { callDelete, fetchJson, postJson, adminFetch } from './helpers.ts';
 
 export type PendingPaymentsListener = (count: number | null) => void;
 
@@ -80,10 +80,9 @@ async function load(eventName: string, entry: Entry): Promise<void> {
     }
     entry.inFlight = true;
     try {
-        const response = await fetch(`/admin/api/events/${encodeURIComponent(eventName)}/pending-payments-count`, {
+        const response = await adminFetch(`/admin/api/events/${encodeURIComponent(eventName)}/pending-payments-count`, {
             method: 'GET',
-            credentials: 'include',
-            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            headers: { 'Accept': 'application/json' }
         });
         if (response.status === 403 || response.status === 404) {
             // the current user cannot see this information. No point in retrying.

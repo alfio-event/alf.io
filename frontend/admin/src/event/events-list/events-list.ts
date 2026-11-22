@@ -12,6 +12,8 @@ import {emptyState} from '../../components/empty-state.ts';
 import '../../components/format-date.ts';
 import '../../components/pending-payments-count.ts';
 
+import { adminConfig } from '../../admin-config';
+import { adminUrl } from '../../admin-router';
 let sharedActiveEventsPromise: Promise<EventStatistic[]> | null = null;
 
 async function fetchActiveEvents(): Promise<EventStatistic[]> {
@@ -31,7 +33,7 @@ async function fetchActiveEvents(): Promise<EventStatistic[]> {
 export class EventsList extends LitElement {
 
     @state()
-    isOwner: boolean = !!window.USER_IS_OWNER;
+    isOwner: boolean = !!adminConfig().isOwner;
 
     private readonly loadEventsTask = new Task(this,
         async () => {
@@ -70,7 +72,7 @@ export class EventsList extends LitElement {
             ${when(this.isOwner, () => html`
                 <div class="filter-toolbar" style="justify-content: flex-end;">
                     <div class="filter-right">
-                        <sl-button href="#/events/new" variant="success" size="large">
+                        <sl-button href=${adminUrl(`/events/new`)} variant="success" size="large">
                             <sl-icon name="plus-circle" slot="prefix"></sl-icon>
                             Add new
                         </sl-button>
@@ -128,7 +130,7 @@ export class EventsList extends LitElement {
                     const nearlyFull = percentage >= 90;
                     const showLogo = !expired && ev.fileBlobId != null;
                     return html`
-                        <a class="event-row" href="#/events/${ev.shortName}/detail" aria-label="Open ${ev.displayName}">
+                        <a class="event-row" href=${adminUrl(`/events/${ev.shortName}/detail`)} aria-label="Open ${ev.displayName}">
                             <div class=${classMap({ 'event-logo': true, placeholder: !showLogo })}>
                                 ${when(showLogo,
                                     () => html`<img src="/file/${ev.fileBlobId}" alt="${ev.displayName} logo">`,

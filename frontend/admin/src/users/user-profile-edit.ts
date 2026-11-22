@@ -106,7 +106,6 @@ export class UserProfileEdit extends LitElement {
             .container {
                 box-sizing: border-box;
                 max-width: 640px;
-                padding-inline: var(--sl-spacing-medium);
             }
 
             .profile-username {

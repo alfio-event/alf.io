@@ -6,6 +6,7 @@ import {EventService} from '../../service/event.ts';
 import {errorMessage} from '../../service/helpers.ts';
 import {dispatchFeedback} from '../../model/dom-events.ts';
 import {dialog, form, row} from '../../styles.ts';
+import { navigate } from '../../admin-router';
 
 /**
  * Deletes an event with all its data. As a safety measure, the organizer types the short name of the event.
@@ -84,7 +85,7 @@ export class DeleteEventDialog extends LitElement {
             await EventService.deleteEvent(this.eventId);
             dispatchFeedback({type: 'success', message: `The event ${this.shortName} has been deleted`}, this);
             await this.dialog.hide();
-            window.location.hash = '#/';
+            navigate('/');
         } catch (error) {
             this.error = errorMessage(error, 'The event could not be deleted');
         } finally {

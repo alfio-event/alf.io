@@ -67,6 +67,7 @@ import {
     focusFirstError,
     INVALID_FORM_MESSAGE,
 } from '../../components/form-validation.ts';
+import { navigate, adminUrl } from '../../admin-router';
 
 type AttendeeStrategy = 'manual' | 'csv' | 'empty';
 
@@ -361,7 +362,7 @@ export class ReservationCreate extends LitElement {
             `;
         }
         return html`
-            <sl-button id="cancel-button" variant="default" size="large" href=${`#/events/${event.shortName}/detail`}>
+            <sl-button id="cancel-button" variant="default" size="large" href=${adminUrl(`/events/${event.shortName}/detail`)}>
                 Cancel
             </sl-button>
         `;
@@ -639,7 +640,7 @@ ${field.name}: a date, as YYYY-MM-DD`)}`,
 
     private renderDiscount(event: AlfioEvent): TemplateResult {
         const selected = this.discounts.find(discount => String(discount.id) === this.discountId);
-        const promoCodesLink = html`<a href=${`#/events/${event.shortName}/promo-codes`}>promo codes</a>`;
+        const promoCodesLink = html`<a href=${adminUrl(`/events/${event.shortName}/promo-codes`)}>promo codes</a>`;
         return sectionCard({ icon: 'percent', title: 'Discount' }, html`
             <div class="form-stack">
                 <div>
@@ -1067,7 +1068,7 @@ ${field.name}: a date, as YYYY-MM-DD`)}`,
             }));
             return;
         }
-        window.location.hash = `#/events/${detail.eventName}/reservation/${detail.reservationId}?fromCreation=true`;
+        navigate(`/events/${detail.eventName}/reservation/${detail.reservationId}?fromCreation=true`);
     }
 
     /**

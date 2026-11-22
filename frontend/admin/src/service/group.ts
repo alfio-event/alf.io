@@ -1,6 +1,6 @@
 import Papa from 'papaparse';
 import {Group, GroupMemberModification, GroupModification, LinkedGroup} from '../model/group.ts';
-import {callDelete, fetchJson, postJson, responseErrorMessage} from './helpers.ts';
+import { callDelete, fetchJson, postJson, responseErrorMessage, adminFetch } from './helpers.ts';
 
 export const GROUP_CSV_EMAIL_COLUMN = 'email';
 export const GROUP_CSV_DESCRIPTION_COLUMN = 'description';
@@ -23,7 +23,7 @@ export class GroupService {
      * The group linked to a category of an event, or null when there is none
      */
     static async loadCategoryLink(eventName: string, categoryId: number): Promise<LinkedGroup | null> {
-        const response = await fetch(`/admin/api/group/for/event/${eventName}/category/${categoryId}`, {credentials: 'include'});
+        const response = await adminFetch(`/admin/api/group/for/event/${eventName}/category/${categoryId}`);
         if (response.status === 204) {
             return null;
         }

@@ -18,6 +18,7 @@ import {OrganizationService} from '../service/organization.ts';
 import '../components/format-date.ts';
 import './linked-events-dialog.ts';
 import type {LinkedEventsDialog} from './linked-events-dialog.ts';
+import { adminUrl, navigate } from '../admin-router';
 
 interface SubscriptionsListData {
     subscriptions: SubscriptionWithStatistics[];
@@ -143,10 +144,10 @@ export class SubscriptionsList extends LitElement {
             <div class="filter-toolbar">
                 <div class="filter-left">
                     ${organizationFilter(this.loadOrganizationsTask.value, this.organizationId,
-                        (organizationId) => window.location.hash = `#/subscriptions/${organizationId}/list`)}
+                        (organizationId) => navigate(`/subscriptions/${organizationId}/list`))}
                 </div>
                 <div class="filter-right">
-                    <sl-button id="add-subscription" href=${`#/subscriptions/${this.organizationId}/create`}
+                    <sl-button id="add-subscription" href=${adminUrl(`/subscriptions/${this.organizationId}/create`)}
                                variant="success" size="large">
                         <sl-icon name="plus-circle" slot="prefix"></sl-icon>
                         Add new
@@ -196,7 +197,7 @@ export class SubscriptionsList extends LitElement {
         return html`
             <div class="subscription-item">
                 <a class="event-row subscription-row" title=${descriptor.id}
-                   href=${`#/subscriptions/${descriptor.organizationId}/${descriptor.id}/edit`}
+                   href=${adminUrl(`/subscriptions/${descriptor.organizationId}/${descriptor.id}/edit`)}
                    aria-label=${`Edit ${title}`}>
                     <div class=${classMap({ 'event-logo': true, placeholder: descriptor.fileBlobId == null })}>
                         ${when(descriptor.fileBlobId != null,
@@ -240,12 +241,12 @@ export class SubscriptionsList extends LitElement {
                         <sl-icon slot="prefix" name="link-45deg"></sl-icon> Linked events
                     </sl-button>
                     <sl-button variant="default" size="small"
-                               href=${`#/subscriptions/${descriptor.organizationId}/${descriptor.id}/additional-fields`}>
+                               href=${adminUrl(`/subscriptions/${descriptor.organizationId}/${descriptor.id}/additional-fields`)}>
                         <sl-icon slot="prefix" name="info-circle"></sl-icon> Data to collect
                     </sl-button>
                     ${when(sub.reservationsCount > 0, () => html`
                         <sl-button variant="default" size="small"
-                                   href=${`#/subscriptions/${descriptor.organizationId}/${descriptor.id}/reservations`}>
+                                   href=${adminUrl(`/subscriptions/${descriptor.organizationId}/${descriptor.id}/reservations`)}>
                             <sl-icon slot="prefix" name="ticket"></sl-icon> Reservations
                         </sl-button>
                     `, () => nothing)}

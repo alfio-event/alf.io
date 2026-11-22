@@ -15,6 +15,8 @@ import './translations-editor.ts';
 import '../template/template-list.ts';
 import '../event/promo-code/promo-code.ts';
 
+import { adminConfig } from '../admin-config';
+import { navigate, adminUrl } from '../admin-router';
 interface PageData {
     level: SettingsLevel;
     // the levels the user can choose, empty on the pages of an event (the event menu is the navigation there)
@@ -80,8 +82,8 @@ export class SettingsPage extends LitElement {
         args: () => [this.organizationId, this.eventId, this.eventName] as const,
         onComplete: (data) => {
             // only the administrators can change the settings of the system
-            if (data.level.type === 'SYSTEM' && !window.IS_ADMIN && data.organizations.length > 0) {
-                window.location.replace(`#/configuration/organization/${data.organizations[0].id}`);
+            if (data.level.type === 'SYSTEM' && !adminConfig().isAdmin && data.organizations.length > 0) {
+                navigate(`/configuration/organization/${data.organizations[0].id}`, { replace: true });
                 return;
             }
             if (this.lastData?.level.type !== data.level.type) {
@@ -166,7 +168,7 @@ export class SettingsPage extends LitElement {
             <div class="filter-toolbar">
                 <sl-select id="settings-level" class="level-select" label="Show the configuration of" hoist .value=${value}
                            @sl-change=${(e: Event) => this.goToLevel(data, String((e.target as SlSelect).value))}>
-                    ${when(window.IS_ADMIN, () => html`
+                    ${when(adminConfig().isAdmin, () => html`
                         <sl-option value="system">
                             <sl-icon slot="prefix" name="globe"></sl-icon>
                             System
@@ -204,7 +206,7 @@ export class SettingsPage extends LitElement {
         }
         let cancelUrl = '';
         if (level.type === 'EVENT' && this.eventPage()) {
-            cancelUrl = `#/events/${level.eventName}/detail`;
+            cancelUrl = adminUrl(`/events/${level.eventName}/detail`);
         }
         return html`<alfio-settings-form .level=${level} data-cancel-url=${cancelUrl}></alfio-settings-form>`;
     }
@@ -263,17 +265,17 @@ export class SettingsPage extends LitElement {
 
     private goToLevel(data: PageData, value: string): void {
         if (value === 'system') {
-            window.location.hash = '#/configuration/system';
+            navigate('/configuration/system');
             return;
         }
         if (value.startsWith('organization-')) {
-            window.location.hash = `#/configuration/organization/${value.substring('organization-'.length)}`;
+            navigate(`/configuration/organization/${value.substring('organization-'.length)}`);
             return;
         }
         const eventId = Number(value.substring('event-'.length));
         const event = data.events.find((e) => e.id === eventId);
         if (event != null) {
-            window.location.hash = `#/configuration/organization/${event.organizationId}/event/${event.id}`;
+            navigate(`/configuration/organization/${event.organizationId}/event/${event.id}`);
         }
     }
 }

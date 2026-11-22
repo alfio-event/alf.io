@@ -1,6 +1,6 @@
 # Admin frontend style guide
 
-Rules for every screen of `frontend/admin` (Lit + Shoelace), new or migrated from the AngularJS admin.
+Rules for every screen of `frontend/admin` (Lit + Shoelace).
 Read it before you start, and use it again to review the result. Frontend paths are relative to
 `frontend/admin/src`, the others to the repository root.
 
@@ -171,14 +171,15 @@ A detail page (e.g. the event detail) shows the item as section cards, and each 
 
 ### Event pages: the event menu
 
-Every page of an event (`#/events/{eventName}/…`) is shown next to `<alfio-event-sidebar>`
-(`event/event-sidebar/event-sidebar.ts`), which the AngularJS layout renders for the `events.single.*` states. It shows
+Every page of an event (`/admin/events/{eventName}/…`) is shown next to `<alfio-event-sidebar>`
+(`event/event-sidebar/event-sidebar.ts`), which `<alfio-event-layout>` (`shell/event-layout.ts`) renders. It shows
 the event name and status, "Create reservation", the Actions and Download menus, and the links to the pages grouped
 by task (Sales, Attendees, Setup), with the current page highlighted. Below `992px` the links become a "Go to" select
 above the page.
 
-- A new event page gets its link in `navGroups()`: its path below `#/events/{eventName}/` and the routes on which it
-  is the current page. Don't add a second navigation to the page itself.
+- A new event page gets its route in `EVENT_ROUTES` (`admin-routes.ts`, see [Routing](#11-routing)) and its link
+  in `navGroups()`: its path below `/admin/events/{eventName}/` and the routes on which it is the current page.
+  Don't add a second navigation to the page itself.
 - The menu reads the event from the route, and reloads it on `EVENT_CHANGED_EVENT`. A page that changes what the
   menu shows (e.g. the status) calls `dispatchEventChanged(eventName, this)` (`service/event.ts`).
 - Its column is sticky: a dialog rendered inside it would stay under the page. The menu's own dialogs are appended
@@ -358,9 +359,7 @@ Bootstrap-style `.row` rule, rename that one to `.bs-row`.
 
 ## 6. Dialogs
 
-- Write dialogs in Lit, with `sl-dialog`. When the page that opens a dialog is a Lit component, the dialog is
-  a Lit component too: replace any AngularJS dialog (`$uibModal`, `*-modal.html`) that wraps Lit content,
-  together with its controller.
+- Write dialogs in Lit, with `sl-dialog`.
 - Put the title in `label` and keep the header: its close (X) button lets the user close any dialog from the
   top right.
 - Set the width with `class="responsive-dialog"` (from the `dialog` block) and `--alfio-dialog-max-width`
@@ -380,7 +379,7 @@ Example: `event/check-in/add-attendees-dialog.ts`.
 
 ## 7. Shoelace instead of Bootstrap
 
-| AngularJS / Bootstrap                     | Lit / Shoelace                                                                                            |
+| Bootstrap                                 | Lit / Shoelace                                                                                            |
 |-------------------------------------------|-----------------------------------------------------------------------------------------------------------|
 | `<button class="btn btn-success">`        | `<sl-button variant="success">`                                                                           |
 | `<button class="btn btn-default">`        | `<sl-button variant="default">`                                                                           |
@@ -452,17 +451,30 @@ Example: `event/check-in/add-attendees-dialog.ts`.
   attributes. Before renaming one, search the tests for it and update them in the same change. Give the elements
   that tests interact with meaningful names, such as `#add-category` or `.choice-card[data-value="new"]`.
 
-## 11. Migrating an AngularJS screen
+## 11. Routing
 
-The admin moves to Lit one screen at a time, while users keep working with it.
+The admin is a single page application below `/admin` (`shell/admin-app.ts`), routed by `admin-router.ts`, the only
+module that uses `@lit-labs/router`.
 
-- Take a screenshot of the old screen before you start, and one of the new screen when you are done. Comparing
-  them, by eye or with a comparison script such as `compare-ui.sh`, also shows the differences that come from this
-  guide: those are expected. Fix the regressions (missing fields or content, clipped or misaligned elements), and
-  list the intentional differences in your report.
-- Remove what the new component replaces: the AngularJS template, controller, CSS and service methods, their
-  `<script>`/`<link>` tags in `src/main/resources/alfio/web-templates/admin-index.ms`, and any AngularJS dialog
-  wrapping Lit content (see [Dialogs](#6-dialogs)).
-- The running server serves the legacy files from `build/resources/main`: run `./gradlew processResources` after
-  changing them. It reads `admin-index.ms` once, so restart it after changing that file.
-- Cover the migrated flow with an E2E test (see the E2E section of `CONTRIBUTING.md`).
+- A page gets its route in `admin-routes.ts`: `ADMIN_ROUTES` for the top-level pages, `EVENT_ROUTES` and
+  `SUBSCRIPTION_ROUTES` for the pages of an event or subscription, which their layout (`shell/event-layout.ts`,
+  `shell/subscription-layout.ts`) renders after loading the event or subscription. Add the route to the tests in
+  `admin-routes.test.ts`, and give it a `title` for the browser tab.
+- The page receives the route params as `data-*` attributes. A route renders the same template whatever its params
+  and query: Lit keeps the element when only those change, so the page keeps its state.
+- Links: `href=${adminUrl('/events/x/detail')}`; the router handles the click. Navigate from code with
+  `navigate('/events/x/detail')`, or `navigateToUrl(url)` for a URL built with `adminUrl()`. Never set
+  `window.location`: a full reload loses the state of the shell.
+- A link to something that is not an admin page (an export, a public page) opens in a new tab or has `download`;
+  if it hasn't, the router lets the browser load it.
+- Filters and pagination live in the query: read it with `readRouteParams()`, update it with `replaceRouteParams()`
+  (`service/helpers.ts`). A component that depends on the route listens to `ROUTE_CHANGED_EVENT` and reads
+  `adminRoute()`.
+- A page with unsaved changes asks before the user leaves: it listens to `BEFORE_LEAVE_EVENT` and adds a
+  `Promise<boolean>` to `detail.confirmations` (see `configuration/settings-form.ts`).
+- Call the API with the helpers of `service/helpers.ts` (`fetchJson`, `postJson`, … or `adminFetch` for a custom
+  request): they report an expired session (the shell reloads the page, which leads to the login) and a refused
+  action (the shell explains it).
+- The shell and the layouts render in light DOM, so that the pages stay reachable from the document (E2E tests);
+  their styles are in `main.css`. Pages keep their shadow DOM.
+- Cover a new page with an E2E test (see the E2E section of `CONTRIBUTING.md`).

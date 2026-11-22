@@ -44,6 +44,7 @@ import {
     focusFirstError,
     INVALID_FORM_MESSAGE,
 } from '../../components/form-validation.ts';
+import { navigate, adminUrl } from '../../admin-router';
 
 // the backend refuses a single reservation with more attendees (see AdminReservationRequestManager)
 const MAX_ATTENDEES_PER_RESERVATION = 100;
@@ -197,7 +198,7 @@ export class AttendeesImport extends LitElement {
                     <div class="footer">
                         <sl-divider></sl-divider>
                         <div class="row" style="--alfio-row-cols: 3">
-                            <sl-button variant="default" size="large" href=${`#/events/${event.shortName}/detail`}>
+                            <sl-button variant="default" size="large" href=${adminUrl(`/events/${event.shortName}/detail`)}>
                                 Cancel
                             </sl-button>
                             <div></div>
@@ -554,7 +555,7 @@ ${field.name}: one of ${allowedValues(field).join(', ')}`)}`,
         this.submitting = true;
         try {
             const requestId = await AttendeesImportService.submit(event.shortName, this.buildRequest(event, this.parsed, values), this.oneReservationPerAttendee);
-            window.location.hash = `#/events/${event.shortName}/reservation/import/${requestId}/status`;
+            navigate(`/events/${event.shortName}/reservation/import/${requestId}/status`);
         } catch (error) {
             this.submitError = errorMessage(error, 'Unexpected error. Please retry and/or check the logs.');
         } finally {

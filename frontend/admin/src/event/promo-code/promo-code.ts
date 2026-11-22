@@ -56,6 +56,8 @@ import {
     validateWith,
 } from '../../components/form-validation.ts';
 
+import { adminConfig } from '../../admin-config';
+import { adminUrl } from '../../admin-router';
 const PROMO_CODE_PATTERN = /^[A-Za-z0-9_\-:@!$*,;]*$/;
 
 /**
@@ -803,7 +805,7 @@ export class PromoCode extends LitElement {
                                             ${when(data.event, () => html`
                                                 <sl-icon-button name="link-45deg" label="Copy link for ${code.promoCode}"
                                                     @click=${() => UtilService.copyValueToClipboard(
-                                                        () => `${window.BASE_URL.replace(/\/+$/, '')}/e/${encodeURIComponent(data.event!.shortName)}/c/${encodeURIComponent(code.promoCode)}`,
+                                                        () => `${adminConfig().baseUrl.replace(/\/+$/, '')}/e/${encodeURIComponent(data.event!.shortName)}/c/${encodeURIComponent(code.promoCode)}`,
                                                         'Code link', this
                                                     )}></sl-icon-button>
                                             `)}
@@ -1368,7 +1370,7 @@ export class PromoCode extends LitElement {
                             <tbody>
                                 ${repeat(detail.reservations, (r) => r.id, (reservation) => html`
                                     <tr>
-                                        <td><a href="/admin/#/events/${encodeURIComponent(detail.event.shortName)}/reservation/${encodeURIComponent(reservation.id)}" target="_blank" rel="noopener" class="username-link" title=${reservation.id} aria-label="Open reservation ${reservation.id}">${reservation.id.substring(0, 8).toUpperCase()}</a></td>
+                                        <td><a href="${adminUrl(`/events/${encodeURIComponent(detail.event.shortName)}/reservation/${encodeURIComponent(reservation.id)}`)}" target="_blank" rel="noopener" class="username-link" title=${reservation.id} aria-label="Open reservation ${reservation.id}">${reservation.id.substring(0, 8).toUpperCase()}</a></td>
                                         <td>${reservation.firstName} ${reservation.lastName}<small class="text-muted code-contact">${reservation.email}</small></td>
                                         <td>${reservation.paymentType}</td>
                                         <td>

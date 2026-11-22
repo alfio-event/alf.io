@@ -624,11 +624,12 @@ export const modernLayout = css`
         margin: 0 0 var(--sl-spacing-medium);
     }
 
+    /* left-aligned at the shell's gutter, like the pages next to the event menu */
     .container {
         width: 100%;
         max-width: 1170px;
         margin-right: auto;
-        margin-left: auto;
+        margin-left: 0;
     }
 
     /* vertical stack of form controls, spaced by the gap instead of the controls' top margin */
@@ -988,11 +989,12 @@ export const purchaseContextListPage = css`
         display: block;
     }
 
-    /* the left margin shrinks to the space left, so that the page never overflows its column */
+    /* the left margin (set next to the event menu by <alfio-event-layout>, see main.css) shrinks to the space
+       left, so that the page never overflows its column */
     .container {
-        --alfio-container-width: min(1140px, calc(100% - 2 * var(--sl-spacing-medium)));
+        --alfio-container-width: min(1140px, calc(100% - 2 * var(--alfio-event-page-offset, 0px)));
         width: var(--alfio-container-width);
-        margin-left: min(122px, calc(100% - var(--alfio-container-width)));
+        margin-left: min(var(--alfio-event-page-offset, 0px), calc(100% - var(--alfio-container-width)));
     }
 
     .page-title-row {
@@ -1017,6 +1019,13 @@ export const purchaseContextListPage = css`
     @media (max-width: 1200px) {
         .container {
             margin-inline: auto;
+        }
+    }
+
+    /* the event menu is above the page: the shell's gutter is enough */
+    @media (max-width: 991px) {
+        .container {
+            --alfio-container-width: 100%;
         }
     }
 

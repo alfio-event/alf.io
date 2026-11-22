@@ -27,6 +27,7 @@ import {
     validatedInput,
     validateWith,
 } from '../components/form-validation.ts';
+import { navigate } from '../admin-router';
 
 const NAME_PATTERN = /^[A-Za-z0-9]+$/;
 
@@ -353,7 +354,7 @@ export class ExtensionEdit extends LitElement {
     }
 
     private gotoList(): void {
-        window.location.hash = '#/extension/list';
+        navigate('/extension/list');
     }
 }
 

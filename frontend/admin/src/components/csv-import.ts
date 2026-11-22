@@ -2,6 +2,7 @@ import {html, TemplateResult} from 'lit';
 import {when} from 'lit/directives/when.js';
 import {FileUploadChangeEvent} from './file-upload.ts';
 import './file-upload.ts';
+import { adminUrl } from '../admin-router';
 
 export interface CsvImportOptions {
     // what the template contains
@@ -62,5 +63,5 @@ export function csvImport(options: CsvImportOptions): TemplateResult {
  * Link to the attendees' data to collect of the event
  */
 export function attendeeFieldsLink(eventName: string): TemplateResult {
-    return html`<a href=${`#/events/${eventName}/attendee-data-to-collect`}>attendees' data to collect</a>`;
+    return html`<a href=${adminUrl(`/events/${eventName}/attendee-data-to-collect`)}>attendees' data to collect</a>`;
 }

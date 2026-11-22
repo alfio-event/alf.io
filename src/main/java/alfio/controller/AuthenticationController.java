@@ -17,6 +17,7 @@
 package alfio.controller;
 
 import alfio.config.authentication.support.AuthenticationConstants;
+import alfio.controller.support.AdminFrontendManifest;
 import alfio.controller.support.CSPConfigurer;
 import alfio.controller.support.UserStatus;
 import alfio.manager.system.ConfigurationLevel;
@@ -51,15 +52,18 @@ public class AuthenticationController {
     private final Environment environment;
     private final CSPConfigurer cspConfigurer;
     private final TemplateManager templateManager;
+    private final AdminFrontendManifest frontendManifest;
 
     public AuthenticationController(ConfigurationManager configurationManager,
                                     Environment environment,
                                     CSPConfigurer cspConfigurer,
-                                    TemplateManager templateManager) {
+                                    TemplateManager templateManager,
+                                    AdminFrontendManifest frontendManifest) {
         this.configurationManager = configurationManager;
         this.environment = environment;
         this.cspConfigurer = cspConfigurer;
         this.templateManager = templateManager;
+        this.frontendManifest = frontendManifest;
     }
 
     @GetMapping(AuthenticationConstants.AUTHENTICATION_STATUS)
@@ -82,8 +86,7 @@ public class AuthenticationController {
                              Model model,
                              Principal principal,
                              HttpServletRequest request,
-                             HttpServletResponse response,
-                             @Value("${alfio.version}") String version) throws IOException {
+                             HttpServletResponse response) throws IOException {
 
         if(principal != null) {
             response.sendRedirect("/admin/");
@@ -94,8 +97,9 @@ public class AuthenticationController {
         model.addAttribute("hasRecaptchaApiKey", false);
 
         //
-        addCommonModelAttributes(model, request, version, environment);
+        addCommonModelAttributes(model, request, environment);
         model.addAttribute("request", request);
+        model.addAttribute("loginStylesheet", frontendManifest.loginStylesheet().orElse(null));
 
         //
 
