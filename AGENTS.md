@@ -43,7 +43,9 @@ The integration tests use TestContainers, so they need a working Docker (or Podm
 - Full build, as CI runs it: `./gradlew build`
 - One test class: `./gradlew test --tests 'alfio.manager.SomeIntegrationTest'`
 - Integration tests extend `BaseIntegrationTest` and are annotated with `@AlfioIntegrationTest`. Use an existing `*IntegrationTest` as a template.
-- E2E tests (`src/test/java/alfio/e2e`) run against a live server and are excluded from `./gradlew build`. See the E2E section of CONTRIBUTING.md to run them.
+- E2E tests (`src/test/java/alfio/e2e`) run against a live server and are excluded from `./gradlew build`. See the E2E section of CONTRIBUTING.md for the setup.
+  - Run them with `./e2e-test.sh` (e.g. `./e2e-test.sh --tests 'alfio.e2e.SettingsE2ETest'`): it opens a real Chrome window on a virtual display. Don't run `./gradlew e2eTest` directly, and don't make Chrome headless: headless hides failures that happen in CI, and on the desktop a covered Chrome window freezes its animations, so the tests time out at random.
+  - Run them as a non-administrator, as CI does (an organization owner), unless the test needs an administrator.
 - Local server: `./gradlew bootRun`. It also starts the Vite dev server for `frontend/admin`.
 
 ## Frontends

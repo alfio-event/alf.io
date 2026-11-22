@@ -60,10 +60,13 @@ Every E2E test class declares the payment methods it needs in `requiredPaymentPr
 
 #### Running E2E tests locally
 
-When run locally, E2E tests use Chrome, so you need to have it installed. You also need:
+When run locally, E2E tests open a real (not headless) Chrome window, so you need to have Chrome installed. On Linux, run them with `./e2e-test.sh`, which opens the window on a virtual display: it needs `xvfb-run` (Debian/Ubuntu: `apt install xvfb`). Elsewhere, run `./gradlew e2eTest` and keep the Chrome window uncovered while the tests run: a covered window stops its animations, and the tests time out waiting for the dialogs.
+
+You also need:
 
 - a running alf.io instance (e.g. started with `./gradlew bootRun`)
-- an admin user, and an organization with the payment providers required by the tests configured.
+- a user, and an organization with the payment providers required by the tests configured.
+  CI runs the tests with an organization owner, not an administrator: the tests that need an administrator are skipped for the other users.
   Bank Transfer is enough for most tests, Stripe (a free account in test mode, with the "Enable SCA" option turned on) is needed only by the tests that declare `PaymentProxy.STRIPE`
 
 Then set the following environment variables:
@@ -80,8 +83,10 @@ Then set the following environment variables:
 Run the E2E tests added or modified by your pull request, and save the output:
 
 ```shell
-./gradlew e2eTest --tests 'alfio.e2e.YourNewE2ETest' -Pverbose --console=plain 2>&1 | tee e2e-test.log
+./e2e-test.sh --tests 'alfio.e2e.YourNewE2ETest' 2>&1 | tee e2e-test.log
 ```
+
+(Without `xvfb-run`: `./gradlew e2eTest --tests 'alfio.e2e.YourNewE2ETest' -Pverbose --console=plain 2>&1 | tee e2e-test.log`.)
 
 Check that the log doesn't contain any credentials, then attach `e2e-test.log` to the pull request description.
 

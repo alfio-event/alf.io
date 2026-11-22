@@ -1726,10 +1726,23 @@ class AdminConsole {
             route = "/admin#/events/" + slug + "/configuration";
         }
         driver.navigate().to(serverBaseUrl + route);
+        if (slug == null && !isAdmin()) {
+            // only the administrators can change the settings of the system: the page sends the other users
+            // to the settings of their first organization, and replaces the form it had rendered
+            wait.until(_ -> String.valueOf(driver.getCurrentUrl()).contains("#/configuration/organization/"));
+        }
         var page = wait.until(presenceOfElementLocated(By.tagName("alfio-settings-page")));
         var form = findInShadowRoot(page, "alfio-settings-form");
         findInShadowRoot(form, "#save-settings");
         return form;
+    }
+
+    /**
+     * Whether the logged-in user is an administrator, who can also change the settings of the system
+     */
+    boolean isAdmin() {
+        wait.until(presenceOfElementLocated(By.tagName("body")));
+        return Boolean.TRUE.equals(((JavascriptExecutor) driver).executeScript("return window.IS_ADMIN === true;"));
     }
 
     /**

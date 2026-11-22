@@ -38,6 +38,8 @@ import static java.util.Map.entry;
 class E2EConfiguration {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(E2EConfiguration.class);
+    private static final int WINDOW_WIDTH = 1920;
+    private static final int WINDOW_HEIGHT = 1080;
 
     private static WebDriver buildRemoteDriver(URL url,
                                                String os,
@@ -94,12 +96,28 @@ class E2EConfiguration {
             var githubBuildNumber = "-" + env.getProperty("github.run.number", "NA");
             return sessionName -> build(browser, url, githubBuildNumber, sessionName);
         } else {
-            // Headless, since the local display may not drive CSS/JS animations (uib-bootstrap modals
-            // wait for the enter animation to finish before becoming visible).
-            LOGGER.info("e2e profile detected, outside of CI. Using local headless ChromeDriver");
-            var options = new ChromeOptions();
-            options.addArguments("--headless=new");
-            return _ -> new BrowserWebDriver(BrowserWebDriver.Browser.CHROME, new ChromeDriver(options));
+            return localChrome();
         }
+    }
+
+    /**
+     * A real, windowed Chrome, like the browsers CI drives on BrowserStack. Headless Chrome has a different
+     * viewport, timing and rendering, so it passes tests that fail in CI.
+     * <p>
+     * On a desktop, the compositor stops drawing a covered window and its animations freeze, so the dialogs
+     * never become usable: run the tests on a virtual display with e2e-test.sh.
+     */
+    private static BrowserWebDriver.Factory localChrome() {
+        LOGGER.info("e2e profile detected, outside of CI. Using local ChromeDriver");
+        var options = new ChromeOptions();
+        options.addArguments(
+            // a fixed size, so that the layout does not depend on the screen the tests run on
+            "--window-size=" + WINDOW_WIDTH + "," + WINDOW_HEIGHT,
+            // Chrome throttles the timers and the animations of the windows it believes hidden
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding",
+            "--disable-background-timer-throttling"
+        );
+        return _ -> new BrowserWebDriver(BrowserWebDriver.Browser.CHROME, new ChromeDriver(options));
     }
 }
