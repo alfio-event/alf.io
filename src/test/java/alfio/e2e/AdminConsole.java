@@ -347,9 +347,10 @@ class AdminConsole {
     }
 
     /**
-     * Composes a message for all the attendees and sends it, after checking the preview.
+     * Opens the compose page and writes the subject and the message in every language
+     * @return the compose page
      */
-    void sendMessageToAttendees(String slug, String subject, String message, int expectedRecipients) {
+    WebElement composeMessage(String slug, String subject, String message) {
         driver.navigate().to(serverBaseUrl + "/admin/events/" + slug + "/compose-custom-message");
         var composer = wait.until(presenceOfElementLocated(By.tagName("alfio-compose-message")));
         // the editor has one tab for each language of the event
@@ -361,8 +362,51 @@ class AdminConsole {
             clickWithJs(driver, tab);
             var locale = tab.getDomAttribute("panel");
             typeInShoelaceControl(findInShadowRoot(composer, "sl-input[name='subject-" + locale + "']"), "input", subject);
-            typeInShoelaceControl(findInShadowRoot(composer, "sl-textarea[name='message-" + locale + "']"), "textarea", message);
+            typeMessage(composer, locale, message);
         }
+        return composer;
+    }
+
+    /**
+     * Types the message in its editor: WYSIWYG (markdown) when the message is sent as HTML, code editor otherwise
+     */
+    private void typeMessage(WebElement composer, String locale, String message) {
+        var editor = findInShadowRoot(composer, "[name='message-" + locale + "']");
+        String content = ".cm-content";
+        if ("alfio-markdown-editor".equalsIgnoreCase(editor.getTagName())) {
+            content = ".ProseMirror";
+        }
+        var editable = findInShadowRoot(editor, content);
+        wait.until(_ -> editable.isDisplayed());
+        editable.click();
+        editable.sendKeys(message);
+    }
+
+    /**
+     * The variables shown as chips in the message editor of a language
+     */
+    List<String> messageVariableChips(WebElement composer, String locale) {
+        var editor = findInShadowRoot(composer, "alfio-markdown-editor[name='message-" + locale + "']");
+        return findAllInShadowRoot(editor, ".mustache-variable").stream().map(WebElement::getText).toList();
+    }
+
+    /**
+     * Opens the preview of the message
+     * @return the text of the preview dialog
+     */
+    String previewMessage(WebElement composer) {
+        clickWithJs(driver, findInShadowRoot(composer, "#preview-button"));
+        var previewDialog = findInShadowRoot(composer, "#preview-dialog");
+        wait.until(_ -> previewDialog.getDomAttribute("open") != null);
+        var htmlPreview = findInShadowRoot(composer, "#preview-dialog iframe.preview-html");
+        return String.valueOf(htmlPreview.getDomProperty("srcdoc"));
+    }
+
+    /**
+     * Composes a message for all the attendees and sends it, after checking the preview.
+     */
+    void sendMessageToAttendees(String slug, String subject, String message, int expectedRecipients) {
+        var composer = composeMessage(slug, subject, message);
         clickWithJs(driver, findInShadowRoot(composer, "#preview-button"));
 
         var previewDialog = findInShadowRoot(composer, "#preview-dialog");
@@ -1750,7 +1794,7 @@ class AdminConsole {
         var slDialog = findInShadowRoot(dialog, "sl-dialog");
         new WebDriverWait(driver, Duration.ofSeconds(30))
             .withMessage(() -> "attendee not added: " + findAllInShadowRoot(form, "#submit-error").stream().map(WebElement::getText).findFirst().orElse("dialog still open"))
-            .until(_ -> !Boolean.TRUE.equals(slDialog.getDomProperty("open")));
+            .until(_ -> !Boolean.parseBoolean(slDialog.getDomProperty("open")));
     }
 
     /**

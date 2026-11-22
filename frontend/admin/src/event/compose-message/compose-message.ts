@@ -5,7 +5,7 @@ import {when} from 'lit/directives/when.js';
 import {classMap} from 'lit/directives/class-map.js';
 import {Task} from '@lit/task';
 import {TanStackFormController} from '@tanstack/lit-form';
-import type {SlDialog, SlSelect, SlSwitch, SlTabGroup, SlTextarea} from '@shoelace-style/shoelace';
+import type {SlDialog, SlSelect, SlSwitch, SlTabGroup} from '@shoelace-style/shoelace';
 import {AlfioEvent} from '../../model/event.ts';
 import {Organization} from '../../model/organization.ts';
 import {MessageModification, MessagePreview} from '../../model/custom-message.ts';
@@ -28,6 +28,8 @@ import {
     validateWith,
 } from '../../components/form-validation.ts';
 import { adminUrl } from '../../admin-router';
+import {MustacheVariableDefinition} from '../../components/mustache-variable.ts';
+import {mustacheLanguage} from '../../components/mustache-language.ts';
 
 interface ComposeFormValues {
     // the selected categories, if the message is not for all the attendees
@@ -39,6 +41,8 @@ interface ComposeFormValues {
 interface LoadData {
     event: AlfioEvent;
     organization: Organization;
+    /** whether HTML e-mails are enabled: the message is markdown, otherwise plain text */
+    htmlEnabled: boolean;
 }
 
 interface TemplateVariable {
@@ -84,6 +88,10 @@ const TEMPLATE_VARIABLES: TemplateVariable[] = [
     {name: 'ticketURL', description: () => 'The URL of the ticket'},
     {name: 'ticketID', description: () => 'The ticket identifier'},
 ];
+
+function variableDefinitions(data: LoadData): MustacheVariableDefinition[] {
+    return TEMPLATE_VARIABLES.map(v => ({name: v.name, description: v.tooltip ?? v.description(data)}));
+}
 
 @customElement('alfio-compose-message')
 export class ComposeMessage extends LitElement {
@@ -132,9 +140,10 @@ export class ComposeMessage extends LitElement {
 
     private loadDataTask = new Task(this,
         async ([eventName]) => {
-            const [eventWithOrganization, languages] = await Promise.all([
+            const [eventWithOrganization, languages, htmlEnabled] = await Promise.all([
                 EventService.load(eventName),
-                CustomMessageService.loadLanguages(eventName)
+                CustomMessageService.loadLanguages(eventName),
+                CustomMessageService.loadHtmlEnabled(eventName),
             ]);
             this.languages = languages;
             this.#form.api.reset({
@@ -150,7 +159,7 @@ export class ComposeMessage extends LitElement {
             });
             this.allAttendees = true;
             this.attachTicket = false;
-            return eventWithOrganization;
+            return {...eventWithOrganization, htmlEnabled};
         },
         () => [this.eventName ?? ''] as const
     );
@@ -233,6 +242,27 @@ export class ComposeMessage extends LitElement {
                 margin-bottom: var(--sl-spacing-medium);
             }
 
+            /* the message is the main content of the page: a roomy editor */
+            alfio-code-editor {
+                --alfio-code-editor-height: 25rem;
+            }
+            alfio-markdown-editor {
+                --alfio-markdown-editor-min-height: 25rem;
+                --alfio-markdown-editor-max-height: 40rem;
+            }
+
+            .form-error-text {
+                color: var(--sl-color-danger-600);
+                font-size: var(--sl-font-size-small);
+                margin-top: var(--sl-spacing-x-small);
+            }
+
+            .message-format {
+                margin: var(--sl-spacing-x-small) 0 0;
+                color: var(--sl-color-gray-600);
+                font-size: var(--sl-font-size-small);
+            }
+
             .preview-text::part(textarea) {
                 white-space: pre-wrap;
             }
@@ -302,17 +332,9 @@ export class ComposeMessage extends LitElement {
                                             <div class="form-stack">
                                                 ${this.#form.field({ name: `messages[${index}].subject`, validators: validateWith(value => requiredValue(value)) },
                                                     field => validatedInput(field, this.submitted, { name: `subject-${m.locale}`, label: 'Subject', placeholder: m.subjectExample }))}
-                                                ${this.#form.field({ name: `messages[${index}].text`, validators: validateWith(value => requiredValue(value)) }, field => {
-                                                    const error = fieldError(field.state.meta, this.submitted);
-                                                    return html`
-                                                        <sl-textarea label="Message" name="message-${m.locale}" rows="15" resize="auto" required
-                                                                     class=${classMap({ error: error != null })}
-                                                                     help-text=${error ?? ''}
-                                                                     placeholder=${m.textExample} .value=${field.state.value}
-                                                                     @sl-input=${(e: Event) => field.handleChange((e.target as SlTextarea).value)}
-                                                                     @sl-blur=${() => field.handleBlur()}></sl-textarea>
-                                                    `;
-                                                })}
+                                                ${this.#form.field({ name: `messages[${index}].text`, validators: validateWith(value => requiredValue(value)) },
+                                                    field => this.renderMessageEditor(data, m.locale, field.state.value, fieldError(field.state.meta, this.submitted),
+                                                        value => field.handleChange(value), () => field.handleBlur()))}
                                             </div>
                                         </sl-tab-panel>
                                     `)}
@@ -344,6 +366,41 @@ export class ComposeMessage extends LitElement {
                 </div>
             </div>
             ${this.renderPreviewDialog(data)}
+        `;
+    }
+
+    /**
+     * The message is markdown when HTML e-mails are enabled: a WYSIWYG editor, with the variables as chips.
+     * Otherwise it's plain text: a code editor highlighting the Mustache tags.
+     */
+    private renderMessageEditor(data: LoadData,
+                                locale: string,
+                                value: string,
+                                error: string | undefined,
+                                onChange: (value: string) => void,
+                                onBlur: () => void): TemplateResult {
+        const variables = variableDefinitions(data);
+        if (data.htmlEnabled) {
+            return html`
+                <div>
+                    <alfio-markdown-editor label="Message" name="message-${locale}" .value=${value} .variables=${variables}
+                                           ?invalid=${error != null}
+                                           @value-changed=${(e: CustomEvent<string>) => onChange(e.detail)}
+                                           @focusout=${onBlur}></alfio-markdown-editor>
+                    ${when(error, () => html`<div class="form-error-text">${error}</div>`)}
+                </div>
+            `;
+        }
+        return html`
+            <div>
+                <alfio-code-editor label="Message" name="message-${locale}" wrap .value=${value}
+                                   .language=${mustacheLanguage(variables)}
+                                   ?invalid=${error != null}
+                                   help-text=${error ?? 'Type {{ to insert a variable'}
+                                   @value-changed=${(e: CustomEvent<string>) => onChange(e.detail)}
+                                   @focusout=${onBlur}></alfio-code-editor>
+                <p class="message-format">Sent as plain text: HTML e-mails are disabled.</p>
+            </div>
         `;
     }
 

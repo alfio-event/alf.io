@@ -76,6 +76,16 @@ public class CustomMessageManager {
     }
 
     /**
+     * Whether HTML e-mails are enabled for the event: the message is then markdown, rendered as HTML, and the admin
+     * edits it with a WYSIWYG editor; otherwise it's plain text.
+     */
+    public boolean isHtmlEnabled(String eventName, String username) {
+        var event = eventManager.getEventAndOrganizationId(eventName, username);
+        return configurationManager.getFor(ConfigurationKeys.ENABLE_HTML_EMAILS, event.getConfigurationLevel())
+            .getValueAsBooleanOrDefault();
+    }
+
+    /**
      * @param categoryIds the categories whose attendees will receive the message. Empty means all the attendees.
      */
     public void sendMessages(String eventName, Set<Integer> categoryIds, List<MessageModification> input, String username) {

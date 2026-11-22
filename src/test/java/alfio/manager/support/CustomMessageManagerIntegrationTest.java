@@ -130,6 +130,18 @@ class CustomMessageManagerIntegrationTest extends BaseIntegrationTest {
         assertFalse(html.contains("/v1/version/passes/"));
     }
 
+    @Test
+    void htmlIsEnabledByDefault() {
+        assertTrue(customMessageManager.isHtmlEnabled(event.getShortName(), username));
+    }
+
+    @Test
+    void htmlIsDisabledByTheEventSettings() {
+        configurationManager.saveAllEventConfiguration(event.getId(), event.getOrganizationId(),
+            List.of(new ConfigurationModification(null, ConfigurationKeys.ENABLE_HTML_EMAILS.name(), "false")), owner(username));
+        assertFalse(customMessageManager.isHtmlEnabled(event.getShortName(), username));
+    }
+
     private static MessageModification message(String text) {
         return new MessageModification(Locale.ENGLISH, "Subject", text, null, null, false);
     }

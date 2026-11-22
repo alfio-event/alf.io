@@ -7,6 +7,7 @@ import {Markdown} from '@tiptap/markdown';
 import {Table, TableCell, TableHeader, TableRow} from '@tiptap/extension-table';
 import {Plugin, PluginKey} from '@tiptap/pm/state';
 import type {SlInput, SlMenuItem} from '@shoelace-style/shoelace';
+import {MustacheVariableDefinition, MustacheVariables} from './mustache-variable.ts';
 
 export type AlfioMarkdownChange = CustomEvent<string>;
 
@@ -22,6 +23,9 @@ const skipMaxLength = new PluginKey('alfioSkipMaxLength');
  * Same shape as alfio-code-editor: "label" above the frame, "invalid" paints the frame red.
  * "max-length" caps the length of the markdown source: changes that would exceed it are
  * rejected, like the maxlength of a textarea.
+ *
+ * "variables" (Mustache variables, e.g. for e-mail templates) shows "{{name}}" as chips and adds an "Insert variable"
+ * menu; it is read when the editor is created. The variables stay text in the markdown.
  */
 @customElement('alfio-markdown-editor')
 export class MarkdownEditor extends LitElement {
@@ -33,6 +37,8 @@ export class MarkdownEditor extends LitElement {
     @property({type: Number, attribute: 'max-length'}) maxLength = 0;
     // the value is not valid: red border
     @property({type: Boolean, reflect: true}) invalid = false;
+    // the Mustache variables the content can use; empty: "{{…}}" is plain text
+    @property({attribute: false}) variables: MustacheVariableDefinition[] = [];
     @query('#editor-host') private editorHost!: HTMLDivElement | null;
 
     // bumped on every editor transaction, so the toolbar re-renders its active/disabled states
@@ -105,8 +111,9 @@ export class MarkdownEditor extends LitElement {
             background-color: var(--sl-color-primary-600);
         }
 
+        /* pages where the text is the main content set a taller editor */
         .editor-host {
-            max-height: 24rem;
+            max-height: var(--alfio-markdown-editor-max-height, 24rem);
             overflow: auto;
         }
 
@@ -116,7 +123,8 @@ export class MarkdownEditor extends LitElement {
             white-space: pre-wrap;
             overflow-wrap: break-word;
             outline: none;
-            min-height: 5rem;
+            min-height: var(--alfio-markdown-editor-min-height, 5rem);
+            box-sizing: border-box;
             padding: var(--sl-spacing-small) var(--sl-spacing-medium);
             font-size: var(--sl-font-size-small);
             color: var(--sl-color-neutral-800);
@@ -218,6 +226,35 @@ export class MarkdownEditor extends LitElement {
             background-color: var(--sl-color-primary-50);
         }
 
+        .editor-host .ProseMirror .mustache-variable {
+            display: inline-block;
+            padding: 0 var(--sl-spacing-2x-small);
+            border: 1px solid var(--sl-color-primary-200);
+            border-radius: var(--sl-border-radius-medium);
+            background-color: var(--sl-color-primary-50);
+            color: var(--sl-color-primary-700);
+            font-family: var(--sl-font-mono);
+            font-size: 0.9em;
+            line-height: 1.4;
+            white-space: nowrap;
+        }
+
+        .variable-menu sl-menu-item::part(label) {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .variable-menu code {
+            font-family: var(--sl-font-mono);
+            font-size: var(--sl-font-size-small);
+            color: var(--sl-color-primary-700);
+        }
+
+        .variable-menu small {
+            color: var(--sl-color-gray-600);
+            font-size: var(--sl-font-size-x-small);
+        }
+
     `;
 
     protected firstUpdated(): void {
@@ -278,6 +315,7 @@ export class MarkdownEditor extends LitElement {
                 TableCell,
                 Markdown.configure({markedOptions: {gfm: true, breaks: false}}),
                 maxLengthMarkdown,
+                ...this.variableExtensions(),
             ],
             content: this.value,
             contentType: 'markdown',
@@ -295,6 +333,42 @@ export class MarkdownEditor extends LitElement {
         this.lastMarkdown = this.editor.getMarkdown();
         // render the toolbar with the real editor states (enabled buttons, active marks)
         this.requestUpdate();
+    }
+
+    private variableExtensions() {
+        if (this.variables.length === 0) {
+            return [];
+        }
+        return [MustacheVariables];
+    }
+
+    private insertVariable(e: CustomEvent): void {
+        const name = (e.detail as { item: SlMenuItem }).item.value;
+        // plain text, decorated as a chip: it takes the marks of the text around it
+        this.editor?.chain().focus().insertContent(`{{${name}}}`).run();
+    }
+
+    private renderVariableMenu(): TemplateResult | typeof nothing {
+        if (this.variables.length === 0) {
+            return nothing;
+        }
+        return html`
+            <span class="toolbar-divider"></span>
+            <sl-dropdown hoist class="variable-menu">
+                <sl-button slot="trigger" size="small" caret ?disabled=${this.editor == null}>
+                    <sl-icon slot="prefix" name="braces"></sl-icon>
+                    Insert variable
+                </sl-button>
+                <sl-menu @sl-select=${this.insertVariable}>
+                    ${this.variables.map(v => html`
+                        <sl-menu-item value=${v.name}>
+                            <code>{{${v.name}}}</code>
+                            <small>${v.description}</small>
+                        </sl-menu-item>
+                    `)}
+                </sl-menu>
+            </sl-dropdown>
+        `;
     }
 
     private active(name: string, attributes?: Record<string, unknown>): boolean {
@@ -426,6 +500,7 @@ export class MarkdownEditor extends LitElement {
                 <sl-icon-button name="eraser" label="Clear formatting"
                                 ?disabled=${editor == null || !editor.can().clearNodes()}
                                 @click=${() => editor?.chain().focus().clearNodes().unsetAllMarks().run()}></sl-icon-button>
+                ${this.renderVariableMenu()}
             </div>
         `;
     }

@@ -11,7 +11,7 @@ import {LanguageSupport} from '@codemirror/language';
 export type AlfioCodeChange = CustomEvent<string>;
 
 /**
- * JavaScript editor based on CodeMirror, for the scripts of the extension editor.
+ * Code editor based on CodeMirror: JavaScript by default (the scripts of the extension editor), or the "language" given.
  * The "value" property provides the content; every change fires "value-changed" with the new content.
  * "language" replaces the default JavaScript support, e.g. to customize the completions; it is read when the editor is created.
  */
@@ -25,6 +25,8 @@ export class CodeEditor extends LitElement {
     // the value is not valid: red border, and the help text is the error message
     @property({ type: Boolean, reflect: true }) invalid = false;
     @property({ attribute: false }) language: LanguageSupport = javascript();
+    // wraps the long lines, for prose (e.g. the text of an e-mail); read when the editor is created
+    @property({ type: Boolean }) wrap = false;
     @query('#editor-host') private editorHost!: HTMLDivElement | null;
 
     private view: EditorView | null = null;
@@ -93,6 +95,7 @@ export class CodeEditor extends LitElement {
                 theme,
                 this.language,
                 basicSetup,
+                ...this.wrapExtensions(),
                 // keep Tab in the editor (indent) instead of moving the focus
                 keymap.of([{key: 'Tab', run: indentMore, preventDefault: true}]),
                 EditorView.updateListener.of((update) => {
@@ -108,6 +111,13 @@ export class CodeEditor extends LitElement {
         });
         this.docText = this.value;
         this.view = new EditorView({state, parent: this.editorHost!});
+    }
+
+    private wrapExtensions() {
+        if (this.wrap) {
+            return [EditorView.lineWrapping];
+        }
+        return [];
     }
 
     render(): TemplateResult {

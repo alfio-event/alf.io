@@ -9,6 +9,13 @@ export class CustomMessageService {
     }
 
     /**
+     * Whether HTML e-mails are enabled: the message is then markdown, rendered as HTML; otherwise plain text
+     */
+    static loadHtmlEnabled(eventName: string): Promise<boolean> {
+        return fetchJson(`/admin/api/events/${encodeURIComponent(eventName)}/messages/html-enabled`);
+    }
+
+    /**
      * @param categoryIds the categories whose attendees will receive the message. Empty means all the attendees.
      */
     static preview(eventName: string, categoryIds: number[], messages: MessageModification[]): Promise<Response> {

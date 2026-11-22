@@ -53,6 +53,15 @@ public class CustomMessagesApiController {
         return Optional.ofNullable(ex.getCause()).map(Throwable::getMessage).orElseGet(ex::getMessage);
     }
 
+    /**
+     * Whether HTML e-mails are enabled: true for a markdown message rendered as HTML, false for plain text
+     */
+    @GetMapping("/html-enabled")
+    public boolean htmlEnabled(@PathVariable String eventName, Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
+        return customMessageManager.isHtmlEnabled(eventName, principal.getName());
+    }
+
     @PostMapping("/preview")
     public Map<String, Object> preview(@PathVariable String eventName,
                                        @RequestParam(required = false, value = "categoryId") Integer categoryId,
