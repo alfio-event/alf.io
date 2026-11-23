@@ -8082,6 +8082,72 @@
         "tags" : [ "event-api-controller" ]
       }
     },
+    "/admin/api/events/{eventName}/messages/html-enabled" : {
+      "get" : {
+        "operationId" : "htmlEnabled",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "eventName",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "boolean"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Internal Server Error"
+          }
+        },
+        "tags" : [ "custom-messages-api-controller" ]
+      }
+    },
     "/admin/api/events/{eventName}/messages/preview" : {
       "post" : {
         "operationId" : "preview",
