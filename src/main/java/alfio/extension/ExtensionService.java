@@ -54,7 +54,7 @@ import static java.util.stream.Collectors.toSet;
 @AllArgsConstructor
 public class ExtensionService {
 
-    private static final String EVALUATE_RESULT = "res = GSON.fromJson(JSON.stringify(res), returnClass);";
+    private static final String EVALUATE_RESULT = "res = JSON.deserialize(JSON.stringify(res), returnClass);";
     private static final String PROCESS_EXTENSION_RESULT  = "var res = executeScript(extensionEvent); " + EVALUATE_RESULT;
     private static final String PROCESS_CAPABILITY_RESULT = "var res = executeCapability(capability); " + EVALUATE_RESULT;
     private static final String EXECUTE_SCRIPT = "executeScript(extensionEvent);";
