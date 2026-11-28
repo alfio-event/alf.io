@@ -160,7 +160,7 @@ export class ExtensionLogPage extends LitElement {
     private renderTable(data: LogData): TemplateResult {
         return html`
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
                             <th class="hide-small">Path</th>
@@ -173,11 +173,11 @@ export class ExtensionLogPage extends LitElement {
                     <tbody>
                         ${repeat(data.logs.left, (log) => log.id, (log) => html`
                             <tr>
-                                <td class="scope hide-small">${renderScope(log.effectivePath, data.organizations, data.events)}</td>
+                                <td class="scope hide-small" data-label="Path">${renderScope(log.effectivePath, data.organizations, data.events)}</td>
                                 <td class="script-name">${log.name}</td>
-                                <td>${this.logBadge(log.type)}</td>
-                                <td class="description">${log.description}</td>
-                                <td class="timestamp">
+                                <td data-label="Type">${this.logBadge(log.type)}</td>
+                                <td class="description" data-label="Description">${log.description}</td>
+                                <td class="timestamp" data-label="Date">
                                     <alfio-format-date date=${log.timestamp}></alfio-format-date>
                                 </td>
                             </tr>

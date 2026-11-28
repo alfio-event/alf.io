@@ -521,7 +521,7 @@ export class PromoCode extends LitElement {
             ${when(
                 !data.event?.freeOfCharge,
                 () => html`
-                    <div class="filter-toolbar" style="justify-content: flex-end;">
+                    <div class="filter-toolbar actions-only">
                         <div class="filter-right">${this.renderAddCodeButton(data)}</div>
                     </div>
                     ${this.renderSection(data, data.promocodes, false)}
@@ -749,7 +749,7 @@ export class PromoCode extends LitElement {
 
         return html`
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped table-stacked table-sortable">
                     <thead>
                         <tr>
                             ${sortableHeader('Code', 'code', state, setSort)}
@@ -777,21 +777,21 @@ export class PromoCode extends LitElement {
                                         </span>
                                         ${when(!code.expired && code.codeType === 'DYNAMIC', () => html`<span class="text-muted"> (auto)</span>`)}
                                     </td>
-                                    <td><span class="code-status ${status.color}"><sl-icon name=${status.icon}></sl-icon>${status.label}</span></td>
-                                    <td class="code-usage">
+                                    <td data-label="Status"><span class="code-status ${status.color}"><sl-icon name=${status.icon}></sl-icon>${status.label}</span></td>
+                                    <td class="code-usage" data-label="Usage">
                                         <strong>${code.useCount ?? '–'}</strong><span class="text-muted"> / ${code.maxUsage ?? '∞'}</span>
                                         ${when(code.maxUsage != null && code.maxUsage > 0 && code.useCount != null, () => html`
                                             <sl-progress-bar value=${Math.min(100, 100 * code.useCount! / code.maxUsage!)}
                                                 label="${code.promoCode}: ${code.useCount} of ${code.maxUsage} uses"></sl-progress-bar>
                                         `)}
                                     </td>
-                                    <td>
+                                    <td data-label="Start">
                                         <alfio-format-date
                                             time-zone=${data.event?.timeZone ?? 'UTC'}
                                             date=${this.codeDate(code, data, 'start')}
                                         ></alfio-format-date>
                                     </td>
-                                    <td>
+                                    <td data-label="End">
                                         <alfio-format-date
                                             time-zone=${data.event?.timeZone ?? 'UTC'}
                                             date=${this.codeDate(code, data, 'end')}
@@ -799,7 +799,7 @@ export class PromoCode extends LitElement {
                                     </td>
                                     ${when(!isAccess, () => this.renderDiscountAmount(code))}
                                     ${when(data.forEvent, () => this.renderCategories(code, data))}
-                                    <td>${code.description || '—'}<small class="text-muted code-contact">${code.emailReference}</small></td>
+                                    <td data-label="Description">${code.description || '—'}<small class="text-muted code-contact">${code.emailReference}</small></td>
                                     <td>
                                         <div class="actions-cell">
                                             ${when(data.event, () => html`
@@ -839,11 +839,11 @@ export class PromoCode extends LitElement {
 
     private renderDiscountAmount(code: PromoCodeDiscount): TemplateResult {
         if (code.discountType === 'PERCENTAGE') {
-            return html`<td><strong>-${code.discountAmount}%</strong></td>`;
+            return html`<td data-label="Amount"><strong>-${code.discountAmount}%</strong></td>`;
         }
         const currency = code.currencyCode ?? '';
         return html`
-            <td>
+            <td data-label="Amount">
                 -${code.formattedDiscountAmount ?? code.discountAmount}
                 ${currency}
                 ${when(code.discountType === 'FIXED_AMOUNT', () => html`<div class="text-muted">per ticket</div>`)}
@@ -853,12 +853,12 @@ export class PromoCode extends LitElement {
 
     private renderCategories(code: PromoCodeDiscount, data: LoadData): TemplateResult {
         if (code.codeType === 'ACCESS' && code.hiddenCategoryId) {
-            return html`<td><sl-badge variant="neutral" class="category-badge" pill>${this.categoryName(code.hiddenCategoryId, data)}</sl-badge></td>`;
+            return html`<td data-label="Categories"><sl-badge variant="neutral" class="category-badge" pill>${this.categoryName(code.hiddenCategoryId, data)}</sl-badge></td>`;
         }
 
         if (code.categories && code.categories.length > 0) {
             return html`
-                <td>
+                <td data-label="Categories">
                     ${repeat(code.categories, (id) => id, (id) => html`
                         <sl-badge variant="neutral" class="category-badge" pill>${this.categoryName(id, data)}</sl-badge>
                     `)}
@@ -867,7 +867,7 @@ export class PromoCode extends LitElement {
         }
 
         if (code.codeType !== 'ACCESS') {
-            return html`<td>All categories</td>`;
+            return html`<td data-label="Categories">All categories</td>`;
         }
 
         return html`<td></td>`;

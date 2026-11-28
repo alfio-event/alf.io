@@ -275,7 +275,7 @@ export class Users extends LitElement {
                         </div>
                     `,
                     () => html`
-                        <div class="filter-toolbar" style="justify-content: flex-end;">
+                        <div class="filter-toolbar actions-only">
                             <div class="filter-right">
                                 ${this.renderToolbarActions(orgs)}
                             </div>
@@ -621,9 +621,13 @@ where:
         if (filtered.length === 0) {
             return emptyState(`No ${this.entityPlural()} found`);
         }
+        let nameLabel = 'Name';
+        if (this.type === 'apikey') {
+            nameLabel = 'Description';
+        }
 
         return html`
-            <table class="table table-striped">
+            <table class="table table-striped table-stacked">
                 <thead>
                     <tr>
                         <th style="width: 12%">
@@ -653,9 +657,9 @@ where:
                                         </span>
                                     `)}
                             </td>
-                            <td>${when(this.type === 'user', () => html`${user.firstName} ${user.lastName}`, () => html`${user.description}`)}</td>
-                            <td>${repeat(user.roles, (role) => role, (role) => html`<sl-badge variant="primary" pill>${this.roleDesc(role)}</sl-badge>`)}</td>
-                            <td>${repeat(user.memberOf, (org: any) => org.id, (org: any) => html`<sl-badge variant="neutral" pill>${org.name}</sl-badge>`)}</td>
+                            <td data-label=${nameLabel}>${when(this.type === 'user', () => html`${user.firstName} ${user.lastName}`, () => html`${user.description}`)}</td>
+                            <td data-label="Role">${repeat(user.roles, (role) => role, (role) => html`<sl-badge variant="primary" pill>${this.roleDesc(role)}</sl-badge>`)}</td>
+                            <td data-label="Organization">${repeat(user.memberOf, (org: any) => org.id, (org: any) => html`<sl-badge variant="neutral" pill>${org.name}</sl-badge>`)}</td>
                             <td>
                                 <div class="actions-cell">
                                     ${when(user.enabled,

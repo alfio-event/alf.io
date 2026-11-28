@@ -935,7 +935,7 @@ export class ReservationDetailPage extends LitElement {
             actions: this.editToggle(drafts != null, () => this.toggleAttendees(category.id, tickets)),
         }, html`
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -952,11 +952,11 @@ export class ReservationDetailPage extends LitElement {
                             const log = checkIns.get(String(ticket.id));
                             return html`
                                 <tr data-ticket-id=${ticket.id}>
-                                    <td>${index + 1}</td>
+                                    <td data-label="#">${index + 1}</td>
                                     ${this.attendeeCell(category.id, ticket.id, draft, 'firstName', ticket.firstName, 'First name')}
                                     ${this.attendeeCell(category.id, ticket.id, draft, 'lastName', ticket.lastName, 'Last name')}
                                     ${this.attendeeCell(category.id, ticket.id, draft, 'emailAddress', ticket.email, 'E-mail')}
-                                    <td class="hide-small">
+                                    <td class="hide-small" data-label="Check-in">
                                         ${when(ticket.status === 'CHECKED_IN', () => html`<sl-badge variant="success" pill>Checked in</sl-badge>`)}
                                     </td>
                                     <td>
@@ -1019,7 +1019,7 @@ export class ReservationDetailPage extends LitElement {
     private attendeeCell(categoryId: number, ticketId: number, draft: AttendeeDraft | undefined, key: keyof AttendeeDraft,
                          value: string | null, label: string): TemplateResult {
         if (draft == null) {
-            return html`<td>${value ?? ''}</td>`;
+            return html`<td data-label=${label}>${value ?? ''}</td>`;
         }
         // only the attendees of the categories being edited are checked
         const validate = (fieldValue: unknown) => {
@@ -1036,7 +1036,7 @@ export class ReservationDetailPage extends LitElement {
             type = 'email';
         }
         return html`
-            <td class="attendee-cell">
+            <td class="attendee-cell" data-label=${label}>
                 ${this.#form.field({ name: `attendees.${categoryId}.${ticketId}.${key}`, validators: validateWith(validate) },
                     field => this.input(field, { name: key, label, type, className: 'label-hidden' }))}
             </td>
@@ -1098,7 +1098,7 @@ export class ReservationDetailPage extends LitElement {
         const service = this.service();
         return html`
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
                             <th>Type</th>
@@ -1110,9 +1110,9 @@ export class ReservationDetailPage extends LitElement {
                     <tbody>
                         ${repeat(documents, (document) => document.id, (document) => html`
                             <tr>
-                                <td>${BILLING_DOCUMENT_TYPES[document.type] ?? document.type}</td>
-                                <td class="monospace">${document.number}</td>
-                                <td class="timestamp">
+                                <td data-label="Type">${BILLING_DOCUMENT_TYPES[document.type] ?? document.type}</td>
+                                <td class="monospace" data-label="Number">${document.number}</td>
+                                <td class="timestamp" data-label="Date">
                                     <alfio-format-date date=${document.generationTimestamp} time-zone=${data.context.timeZone}></alfio-format-date>
                                 </td>
                                 <td>

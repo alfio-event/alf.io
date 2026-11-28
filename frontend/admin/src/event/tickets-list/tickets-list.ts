@@ -205,7 +205,7 @@ export class TicketsList extends LitElement {
     private renderTable(tickets: CategoryTicket[], event: AlfioEvent): TemplateResult {
         return html`
             <div class="table-responsive">
-                <table class="table table-striped tickets-table">
+                <table class="table table-striped tickets-table table-stacked">
                     <thead>
                         <tr>
                             <th class="status-column"><span class="sr-only">Status</span></th>
@@ -240,11 +240,11 @@ export class TicketsList extends LitElement {
         }
         return html`
             <tr data-ticket-uuid=${ticket.uuid}>
-                <td>${this.renderStatus(ticket.status)}</td>
+                <td class="stacked-inline">${this.renderStatus(ticket.status)}</td>
                 <td class="ticket-uuid">
                     <a href=${this.reservationHref(ticket)} title=${`View reservation ${ticket.uuid}`}>${ticket.uuid.substring(0, 8)}</a>
                 </td>
-                <td>
+                <td data-label="Reservation">
                     <a href=${this.reservationHref(ticket)}>${formatFullName(ticket.ticketReservation)}</a>
                     <span class="customer-email">${ticket.ticketReservation.email ?? ''}</span>
                     ${when(!ticket.pending, () => html`
@@ -253,13 +253,13 @@ export class TicketsList extends LitElement {
                         </span>
                     `)}
                 </td>
-                <td class=${classMap({ 'hide-small': true, 'assignee': true, 'text-warning': formatFullName(ticket) === '' })}>
+                <td class=${classMap({ 'hide-small': true, 'assignee': true, 'text-warning': formatFullName(ticket) === '' })} data-label="Assignee">
                     ${formatFullName(ticket)}
                     ${when(ticket.email != null && ticket.email !== '', () => html`
                         <span class="customer-email">${ticket.email}</span>
                     `)}
                 </td>
-                <td class="hide-small">
+                <td class="hide-small" data-label="Payment">
                     ${when(ticket.appliedDiscount != null && ticket.appliedDiscount > 0, () => html`
                         <span class="discount">- ${formatAmount(ticket.appliedDiscount, ticket.currencyCode)}</span>
                     `)}
@@ -271,7 +271,7 @@ export class TicketsList extends LitElement {
                         </span>
                     `)}
                 </td>
-                <td class="hide-small">
+                <td class="hide-small" data-label="Code">
                     ${when(ticket.promoCodeOrToken != null && ticket.promoCodeOrToken !== '', () => html`
                         <a href=${adminUrl(`/events/${this.eventName}/reservations/?search=${ticket.promoCodeOrToken}`)} title="Find all reservations">${ticket.promoCodeOrToken}</a>
                     `)}

@@ -46,7 +46,7 @@ The `page-title-row` is a flex container that keeps the heading top-aligned, wit
 
 ### Container
 
-Always wrap page content in `<div class="container">` (max-width 1170px, auto-centered).
+Always wrap page content in `<div class="container">` (max-width `--alfio-page-width`, 1170px, centered). Next to the event menu it fills the page's column. See "Page width and alignment" in [`admin-style-guide.md`](admin-style-guide.md#page-width-and-alignment).
 
 ## 2. Filter toolbar
 
@@ -67,10 +67,10 @@ The action buttons on the right share the size of "Add new" (`large`), so that t
 
 Filter selects should use `class="filter-select"` (resets default `margin-top`, sets a flex-basis of 170px). Pair each filter with a small clear button using `name="x-circle"` and `class="filter-clear-btn"`.
 
-When no filters apply, collapse to a right-aligned toolbar:
+When no filters apply, use `actions-only`: the buttons stay on the right, without the gray band.
 
 ```html
-<div class="filter-toolbar" style="justify-content: flex-end;">
+<div class="filter-toolbar actions-only">
     <div class="filter-right">
         <!-- action buttons only -->
     </div>
@@ -124,6 +124,25 @@ Wrap labels in `<sl-badge>` with `pill`:
 ### Actions column
 
 Group buttons in a `flex` container (`class="actions-cell"`) with `gap: var(--sl-spacing-2x-small)` and `justify-content: flex-end`. Use short labels ("Edit", "Reset", "QR", "Disable", "Delete").
+
+### On a phone: stacked rows
+
+Below 640px a list table with `table-stacked` shows each row as a block of "label  value" lines. The label comes from the cell's `data-label`; a cell without it (the identifier, the actions) spans the row. When to use it is in "Phones and tablets" of [`admin-style-guide.md`](admin-style-guide.md#phones-and-tablets).
+
+```html
+<table class="table table-striped table-stacked">
+    <thead><tr><th>ID</th><th>Customer</th><th class="hide-small">Email</th><th>Amount</th><th>Actions</th></tr></thead>
+    <tbody>
+        <tr>
+            <td class="reservation-id"><a href="…">1309E76F</a></td>
+            <td data-label="Customer">Jane Doe</td>
+            <td class="hide-small" data-label="Email">jane@example.org</td>
+            <td class="amount" data-label="Amount">EUR 122.00</td>
+            <td class="actions-cell">…</td>
+        </tr>
+    </tbody>
+</table>
+```
 
 ### Empty state
 
@@ -254,6 +273,7 @@ Classes from `modernLayout` (import `modernLayout` from `styles.ts`):
 | `page-separator` | Thin `<hr>` under title |
 | `page-description` | One-sentence description below the separator |
 | `filter-toolbar` | Toolbar bar with filters + actions |
+| `filter-toolbar actions-only` | Toolbar without filters: right-aligned buttons, no band |
 | `filter-left` / `filter-right` | Toolbar sub-columns |
 | `filter-select` | Select with reset margin-top |
 | `filter-clear-btn` | X button beside select |
@@ -278,7 +298,10 @@ Classes from `modernTable` (import `modernTable` from `styles.ts`):
 |---|---|
 | `table` | Responsive data table |
 | `table-striped` | Striped table variant |
-| `table-responsive` | Horizontal scroll wrapper |
+| `table-responsive` | Horizontal scroll wrapper; the container whose width `hide-small` follows |
+| `table-stacked` | Below 640px, each row becomes a block of "label  value" lines (`data-label` on the cells) |
+| `table-sortable` | With `table-stacked`: the sortable headers become a row of sort buttons |
+| `stacked-inline` | Cell of a stacked table shown in front of the next one (e.g. a status icon) |
 | `actions-cell` | Flex container for row buttons |
 | `username-link` | Styled clickable username |
 
@@ -290,6 +313,7 @@ Classes from other shared blocks:
 | `retroCompat` | `.text-center`, `.text-right` | Text alignment |
 | `retroCompat` | `.mt-*`, `.ms-*` | Margin utilities |
 | `retroCompat` | `.hidden-xs`, `.hidden-sm` | Responsive visibility |
+| `reservationTable` | `.hide-small` | Secondary column: hidden below 700px of window or 940px of table, shown again in a stacked row |
 | `row` | `.row` | CSS-grid with `--alfio-row-cols` |
 | `creationLayout` | `.creation-layout`, `.creation-content` | Two-column layout of a long creation form: section index + content |
 | `creationLayout` | `.section-nav`, `.mobile-section-nav` | Sticky section index (desktop) / "Jump to section" select (mobile), rendered by `<alfio-section-nav>` |

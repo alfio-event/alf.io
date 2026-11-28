@@ -65,7 +65,7 @@ export class OrganizationList extends LitElement {
                 <hr class="page-separator">
 
                 ${when(this.isAdmin, () => html`
-                    <div class="filter-toolbar" style="justify-content: flex-end;">
+                    <div class="filter-toolbar actions-only">
                         <div class="filter-right">
                             <sl-button variant="success" size="large" @click=${() => this.openNew()}>
                                 <sl-icon slot="prefix" name="plus-circle"></sl-icon> Add new
@@ -90,7 +90,7 @@ export class OrganizationList extends LitElement {
         }
         return html`
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
                             <th scope="col">Name</th>
@@ -103,8 +103,8 @@ export class OrganizationList extends LitElement {
                         ${repeat(orgs, (org) => org.id, (org) => html`
                             <tr>
                                 <td>${org.name}</td>
-                                <td class="hidden-xs"><div class="organization-description" title=${org.description}>${org.description}</div></td>
-                                <td>${org.email}</td>
+                                <td class="hidden-xs" data-label="Description"><div class="organization-description" title=${org.description}>${org.description}</div></td>
+                                <td data-label="E-mail">${org.email}</td>
                                 <td>
                                     <div class="actions-cell">
                                         <sl-button variant="default" size="small" class="edit-organization" data-organization-id=${org.id}

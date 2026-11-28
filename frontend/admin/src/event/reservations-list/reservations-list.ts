@@ -181,6 +181,12 @@ export class ReservationsList extends LitElement {
             .stuck-reservations .section-header > sl-icon {
                 color: var(--sl-color-warning-700);
             }
+            /* below 992px the event menu, above the page, already offers "Create reservation" */
+            @media (max-width: 991px) {
+                .create-reservation-toolbar {
+                    display: none;
+                }
+            }
             .stuck-message {
                 margin: 0;
                 padding: var(--sl-spacing-x-small) var(--sl-spacing-x-small) var(--sl-spacing-small);
@@ -253,7 +259,7 @@ export class ReservationsList extends LitElement {
                 <div class="filter-toolbar">
                     <div class="filter-left">${this.searchController.render('reservations')}</div>
                     ${when(this.purchaseContextType === 'event' && !data.event?.expired, () => html`
-                        <div class="filter-right">
+                        <div class="filter-right create-reservation-toolbar">
                             <sl-button variant="success" size="large" href=${this.newReservationHref()}>
                                 <sl-icon slot="prefix" name="plus-circle"></sl-icon>
                                 Create reservation
@@ -321,7 +327,7 @@ export class ReservationsList extends LitElement {
     private renderTable(reservations: Reservation[], event: AlfioEvent | null): TemplateResult {
         return html`
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -344,16 +350,16 @@ export class ReservationsList extends LitElement {
                                             ${reservationIdentifier(reservation, this.lastData?.useInvoiceNumberAsId ?? false)}
                                         </a>
                                     </td>
-                                    <td>${formatFullName(reservation)}</td>
-                                    <td class="email hide-small">${reservation.email ?? ''}</td>
-                                    <td class="hide-small">
+                                    <td data-label="Customer">${formatFullName(reservation)}</td>
+                                    <td class="email hide-small" data-label="Email">${reservation.email ?? ''}</td>
+                                    <td class="hide-small" data-label="Payment">
                                         <alfio-payment-method method=${reservation.paymentMethod ?? ''}></alfio-payment-method>
                                     </td>
-                                    <td class="amount">
+                                    <td class="amount" data-label="Amount">
                                         ${when(reservation.finalPriceCts > 0,
                                             () => formatAmount(reservation.paidAmount, reservation.currencyCode))}
                                     </td>
-                                    <td class="timestamp hide-small">
+                                    <td class="timestamp hide-small" data-label="Confirmation">
                                         <alfio-format-date
                                             date=${reservation.confirmationTimestamp ?? ''}
                                             time-zone=${event?.timeZone ?? 'UTC'}

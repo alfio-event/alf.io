@@ -200,7 +200,7 @@ export class AdditionalItemList extends LitElement {
             `;
         }
         return html`
-            <div class="filter-toolbar" style="justify-content: flex-end;">
+            <div class="filter-toolbar actions-only">
                 <div class="filter-right">
                     ${when(listData.allowDownload, () => html`
                         <sl-button variant="default" size="large" href=${`/admin/api/events/${model.event.publicIdentifier}/additional-services/${this.type}/export`} target="_blank" rel="noopener">

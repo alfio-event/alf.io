@@ -161,7 +161,7 @@ export class WaitingList extends LitElement {
         }
         return html`
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
                             <th>Name</th>
@@ -184,10 +184,10 @@ export class WaitingList extends LitElement {
         return html`
             <tr class="waiting-list-row" data-id=${subscription.id}>
                 <td class="subscriber-name">${subscription.fullName}</td>
-                <td class="email hide-small">${subscription.emailAddress}</td>
-                <td class="hide-small">${this.categoryName(data.event, subscription.selectedCategoryId)}</td>
-                <td class="language hide-small">${this.languageName(subscription.userLanguage)}</td>
-                <td class="timestamp hide-small">
+                <td class="email hide-small" data-label="Email">${subscription.emailAddress}</td>
+                <td class="hide-small" data-label="Category">${this.categoryName(data.event, subscription.selectedCategoryId)}</td>
+                <td class="language hide-small" data-label="Language">${this.languageName(subscription.userLanguage)}</td>
+                <td class="timestamp hide-small" data-label="Joined">
                     <alfio-format-date date=${subscription.creation} time-zone=${data.event.timeZone}></alfio-format-date>
                     ${when(subscription.subscriptionType != null, () => html`
                         <span class="subscription-type">${TYPES[subscription.subscriptionType as WaitingQueueSubscriptionType]}</span>

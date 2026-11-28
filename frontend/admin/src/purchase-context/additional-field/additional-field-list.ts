@@ -155,7 +155,7 @@ export class AdditionalFieldList extends LitElement {
                     </div>
                     <hr class="page-separator" />
                     <p class="page-description text-muted">${pageDescription(model)}</p>
-                    <div class="filter-toolbar" style="justify-content: flex-end;">
+                    <div class="filter-toolbar actions-only">
                         <div class="filter-right">${this.renderCreateButton(model)}</div>
                     </div>
                     ${this.iterateItems(model)}

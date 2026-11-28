@@ -372,7 +372,7 @@ export class CheckIn extends LitElement {
     private renderPendingTable(tickets: CheckInTicket[], event: AlfioEvent): TemplateResult {
         return html`
             <div class="table-responsive">
-                <table class="table table-striped pending-tickets">
+                <table class="table table-striped pending-tickets table-stacked">
                     <thead>
                         <tr>
                             <th class="status-column"><span class="sr-only">Status</span></th>
@@ -387,13 +387,13 @@ export class CheckIn extends LitElement {
                     <tbody>
                         ${repeat(tickets, (ticket) => ticket.id, (ticket) => html`
                             <tr data-ticket-uuid=${ticket.uuid}>
-                                <td>${this.renderStatus(ticket.status)}</td>
+                                <td class="stacked-inline">${this.renderStatus(ticket.status)}</td>
                                 <td class="attendee">${formatFullName(ticket)}</td>
-                                <td class="email hide-small">${ticket.email}</td>
-                                <td class="hide-small">${ticket.ticketCategory.name}</td>
-                                <td class="reservation-id">${this.renderReference(ticket)}</td>
+                                <td class="email hide-small" data-label="Email">${ticket.email}</td>
+                                <td class="hide-small" data-label="Category">${ticket.ticketCategory.name}</td>
+                                <td class="reservation-id" data-label="Ref Nr.">${this.renderReference(ticket)}</td>
                                 ${when(!event.freeOfCharge, () => html`
-                                    <td class="hide-small">
+                                    <td class="hide-small" data-label="Payment">
                                         <alfio-payment-method method=${ticket.ticketReservation.paymentMethod ?? ''}></alfio-payment-method>
                                     </td>
                                 `)}
@@ -418,7 +418,7 @@ export class CheckIn extends LitElement {
     private renderCheckedInTable(tickets: CheckInTicket[]): TemplateResult {
         return html`
             <div class="table-responsive">
-                <table class="table table-striped checked-in-tickets">
+                <table class="table table-striped checked-in-tickets table-stacked">
                     <thead>
                         <tr>
                             <th>Attendee</th>
@@ -434,14 +434,14 @@ export class CheckIn extends LitElement {
                         ${repeat(tickets, (ticket) => ticket.id, (ticket) => html`
                             <tr data-ticket-uuid=${ticket.uuid}>
                                 <td class="attendee">${formatFullName(ticket)}</td>
-                                <td class="email hide-small">${ticket.email}</td>
-                                <td class="hide-small">${ticket.ticketCategory.name}</td>
-                                <td class="reservation-id">${this.renderReference(ticket)}</td>
-                                <td class="hide-small">
+                                <td class="email hide-small" data-label="Email">${ticket.email}</td>
+                                <td class="hide-small" data-label="Category">${ticket.ticketCategory.name}</td>
+                                <td class="reservation-id" data-label="Ref Nr.">${this.renderReference(ticket)}</td>
+                                <td class="hide-small" data-label="Customer">
                                     ${formatFullName(ticket.ticketReservation)}
                                     <span class="customer-email">${ticket.ticketReservation.email ?? ''}</span>
                                 </td>
-                                <td class="hide-small">
+                                <td class="hide-small" data-label="Payment">
                                     <alfio-payment-method method=${ticket.ticketReservation.paymentMethod ?? ''}></alfio-payment-method>
                                 </td>
                                 <td class="actions-cell">

@@ -66,6 +66,12 @@
     font-size: 16px; /* default font size as defined in https://shoelace.style/tokens/typography#font-size */
     --sl-font-sans: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
     --sl-color-danger-600: var(--sl-color-red-700);
+    /* the two widths of the content, centered below the full-width navbar:
+       a page (.container), and the workspace of an event (event menu + page) */
+    --alfio-page-width: 1170px;
+    --alfio-event-menu-width: 17rem;
+    --alfio-workspace-gap: var(--sl-spacing-x-large);
+    --alfio-workspace-width: calc(var(--alfio-event-menu-width) + var(--alfio-workspace-gap) + var(--alfio-page-width));
 }
 
 /* the document's base styles: the pages, in shadow DOM, inherit font, size, line height and color */
@@ -128,8 +134,8 @@ alfio-admin-app > .main-content {
 }
 
 alfio-admin-app > .main-content > .container {
-    max-width: 1170px;
-    margin: 0 auto var(--sl-spacing-medium) 0;
+    max-width: var(--alfio-page-width);
+    margin: 0 auto var(--sl-spacing-medium);
 }
 
 alfio-admin-app > .admin-footer {
@@ -137,11 +143,11 @@ alfio-admin-app > .admin-footer {
     text-align: center;
 }
 
-/* centered below the pages, which are left-aligned */
+/* centered below the pages, which are centered too */
 alfio-admin-app > .admin-footer > alfio-project-banner {
     display: block;
-    max-width: 1170px;
-    margin: 0;
+    max-width: var(--alfio-page-width);
+    margin: 0 auto;
 }
 
 alfio-admin-app > .mode-notice {
@@ -174,11 +180,14 @@ alfio-subscription-layout .loading {
     min-height: 12rem;
 }
 
-/* the event menu next to the page; below 992px it becomes a "Go to" select above it */
+/* the event menu next to the page, centered as one workspace; below 992px the menu becomes a "Go to" select
+   above the page. The page fills its column: at full width the column is exactly --alfio-page-width */
 alfio-event-layout {
     display: grid;
-    grid-template-columns: minmax(14rem, 17rem) minmax(0, 1fr);
-    gap: var(--sl-spacing-large);
+    grid-template-columns: minmax(14rem, var(--alfio-event-menu-width)) minmax(0, 1fr);
+    gap: var(--alfio-workspace-gap);
+    max-width: var(--alfio-workspace-width);
+    margin-inline: auto;
 }
 
 alfio-event-layout > .event-sidebar-column {
@@ -189,8 +198,6 @@ alfio-event-layout > .event-sidebar-column {
 
 alfio-event-layout > .event-page {
     min-width: 0;
-    /* the pages keep a distance from the event menu (purchaseContextListPage in styles.ts) */
-    --alfio-event-page-offset: 122px;
 }
 
 @media (max-width: 991px) {
@@ -201,5 +208,10 @@ alfio-event-layout > .event-page {
 
     alfio-event-layout > .event-sidebar-column {
         position: static;
+    }
+
+    /* the menu's divider already separates it from the page: the page's title needs no extra space above */
+    alfio-event-layout > .event-page > * {
+        --alfio-page-top-margin: 0px;
     }
 }

@@ -212,15 +212,36 @@ export class EventSidebar extends LitElement {
                     border-bottom: 1px solid var(--sl-color-neutral-200);
                     margin-bottom: var(--sl-spacing-medium);
                 }
-                /* one action per row, full width */
+                .event-name {
+                    margin: 0;
+                }
+                /* the actions on one row: "Create reservation" takes the space left by the menus */
+                .actions {
+                    flex-wrap: nowrap;
+                }
+                .actions .create-reservation {
+                    flex: 1 1 auto;
+                    min-width: 0;
+                }
                 .actions sl-dropdown {
-                    flex: 1 1 100%;
+                    flex: 0 0 auto;
                 }
                 nav, footer {
                     display: none;
                 }
                 .go-to {
                     display: block;
+                }
+            }
+            /* on a phone, Download shows its icon only */
+            @media (max-width: 480px) {
+                .download-label {
+                    position: absolute;
+                    width: 1px;
+                    height: 1px;
+                    overflow: hidden;
+                    clip: rect(0, 0, 0, 0);
+                    white-space: nowrap;
                 }
             }
         `,
@@ -325,7 +346,7 @@ export class EventSidebar extends LitElement {
                     <sl-dropdown id="event-downloads" hoist>
                         <sl-button slot="trigger" caret>
                             <sl-icon slot="prefix" name="download"></sl-icon>
-                            Download
+                            <span class="download-label">Download</span>
                         </sl-button>
                         <sl-menu @sl-select=${this.onDownload}>
                             <sl-menu-item value="attendees">Attendees' data…</sl-menu-item>

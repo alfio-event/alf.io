@@ -96,7 +96,7 @@ export class EmailTable extends LitElement {
     private renderTable(messages: EmailMessage[]): TemplateResult {
         return html`
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
                             <th>Recipient</th>
@@ -111,15 +111,15 @@ export class EmailTable extends LitElement {
                         ${repeat(messages, (message) => message.id, (message) => html`
                             <tr>
                                 <td class="email">${message.recipient}</td>
-                                <td>
+                                <td data-label="Subject">
                                     <div class="subject">${message.subject}</div>
                                     <div class="message-preview hide-small">${message.message}</div>
                                 </td>
-                                <td>${emailStatusBadge(message.status)}</td>
-                                <td class="timestamp hide-small">
+                                <td data-label="Status">${emailStatusBadge(message.status)}</td>
+                                <td class="timestamp hide-small" data-label="Requested">
                                     <alfio-format-date date=${message.requestTimestamp} time-zone=${this.timeZone}></alfio-format-date>
                                 </td>
-                                <td class="timestamp hide-small">
+                                <td class="timestamp hide-small" data-label="Sent">
                                     <alfio-format-date date=${message.sentTimestamp ?? ''} time-zone=${this.timeZone}></alfio-format-date>
                                 </td>
                                 <td>

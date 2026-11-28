@@ -179,7 +179,7 @@ export class PaymentsList extends LitElement {
     private renderTable(payments: ReservationPaymentDetail[], data: PaymentsListData): TemplateResult {
         return html`
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -200,19 +200,19 @@ export class PaymentsList extends LitElement {
                                         ${reservationIdentifier(payment, data.useInvoiceNumberAsId)}
                                     </a>
                                 </td>
-                                <td>${formatFullName(payment)}</td>
-                                <td class="email hide-small">${payment.email ?? ''}</td>
-                                <td class="hide-small">
+                                <td data-label="Customer">${formatFullName(payment)}</td>
+                                <td class="email hide-small" data-label="Email">${payment.email ?? ''}</td>
+                                <td class="hide-small" data-label="Payment">
                                     <alfio-payment-method method=${payment.paymentMethod ?? ''}></alfio-payment-method>
                                 </td>
-                                <td class="amount">${formatAmount(payment.paidAmount, payment.currencyCode)}</td>
-                                <td class="timestamp hide-small">
+                                <td class="amount" data-label="Amount">${formatAmount(payment.paidAmount, payment.currencyCode)}</td>
+                                <td class="timestamp hide-small" data-label="Date">
                                     <alfio-format-date
                                         date=${payment.transactionTimestamp}
                                         time-zone=${data.event.timeZone}
                                     ></alfio-format-date>
                                 </td>
-                                <td class="notes hide-small">${payment.transactionNotes ?? ''}</td>
+                                <td class="notes hide-small" data-label="Notes">${payment.transactionNotes ?? ''}</td>
                                 <td class="actions-cell">
                                     <sl-button size="small" variant="default" outline
                                                @click=${() => this.editDialog.open(payment.id)}>

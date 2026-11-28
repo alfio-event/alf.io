@@ -22,7 +22,9 @@ The rules below apply these principles. When a case isn't covered, decide by the
    Neutral grays do the rest: borders, backgrounds, secondary text.
 4. **Calm layout.** One heading per level, an icon only on the section card header, one border around a group.
    Separate groups with spacing, a divider or a tinted panel.
-5. **Works on a phone.** Check every screen at 400px wide: nothing overflows horizontally.
+5. **Works on a phone and a tablet.** Check every screen at 400px, 768px and 1024px wide: nothing overflows
+   horizontally, and the content, not the controls, fills the first screen (see
+   [Phones and tablets](#phones-and-tablets)).
 6. **Plain words.** Labels name things. Help texts and tooltips say what happens, in one sentence, without
    examples. Plurals agree with the number: "1 attendee has", "2 attendees have".
 
@@ -80,6 +82,46 @@ Complete examples: `event/reservation-create/reservation-create.ts` (form with r
   with a count badge. Filter toolbar, tables and empty states are described in
   [`branding-guidelines.md`](branding-guidelines.md) (sections 2 to 4). Use `<alfio-pagination-bar>` for pages,
   not hand-made Previous/Next buttons.
+
+### Page width and alignment
+
+The navbar's background spans the whole window; its content (logo, links, account menu) lines up with the widest
+content, the workspace of an event (`--alfio-workspace-width`), so on a large monitor it doesn't drift to the
+edges. The content below it is always **centered**. Center the container, never its text: titles, forms and tables
+stay left-aligned inside it. The content comes in two widths, defined once as tokens in `main.css` (`:root`):
+
+- **A page**: `.container` (from `modernLayout`), at most `--alfio-page-width` (1170px), centered. The footer is
+  centered on the same axis.
+- **The workspace of an event**: `<alfio-event-layout>` centers the event menu and the page as one unit, at most
+  `--alfio-workspace-width` (menu + `--alfio-workspace-gap` + page width). Its page's `.container` fills the
+  column next to the menu, which at full width is exactly `--alfio-page-width`.
+
+A page that changes width is fine while it stays centered: it grows on both sides around the same axis. Don't
+left-align a page, don't push it away from the event menu with a margin, and don't hard-code a width: use the
+tokens. A narrower page (e.g. a single short form) may set a smaller `max-width` on its `.container`; it stays
+centered.
+
+### Phones and tablets
+
+A phone shows one column; a tablet in portrait shows the event menu above the page, in landscape beside it.
+The shared blocks already adapt the page: below `700px` the title, its margins and the padding of the section
+cards shrink (`modernLayout`). What each page decides:
+
+- **List tables become stacked rows** below `640px`. Add `table-stacked` to the table and `data-label` (the column
+  title) to each cell: every row becomes a block of "label  value" lines. Leave out `data-label` on the cell that
+  identifies the row (it becomes the row's title) and on the actions. A small cell such as a status icon takes
+  `stacked-inline`, which puts it in front of the next cell. A table with `sortableHeader()` also takes
+  `table-sortable`: its headers become a row of sort buttons. Header controls other than sorting (e.g. "Select
+  all") are hidden in a stacked table: keep such a table horizontal.
+- Keep horizontal scrolling for tables whose columns are meant to be compared (statistics, the order summary,
+  the preview of an import, the translations editor).
+- **Secondary columns** take `hide-small` (`reservationTable`): they go when the table is narrow, below `700px`
+  of window or `940px` of table (e.g. next to the event menu on a tablet), and come back, as lines, in a
+  stacked row. Keep the identifier, the main value (customer, amount) and the actions visible.
+- **A toolbar without filters** is `filter-toolbar actions-only`: just its buttons on the right, without the gray
+  band, which would take a row of the first screen for nothing.
+- **One copy of each action** on the screen: don't repeat in the page an action that the event menu or the
+  navbar already shows at that width.
 
 ### Creation pages with dependent choices
 
@@ -175,7 +217,12 @@ Every page of an event (`/admin/events/{eventName}/…`) is shown next to `<alfi
 (`event/event-sidebar/event-sidebar.ts`), which `<alfio-event-layout>` (`shell/event-layout.ts`) renders. It shows
 the event name and status, "Create reservation", the Actions and Download menus, and the links to the pages grouped
 by task (Sales, Attendees, Setup), with the current page highlighted. Below `992px` the links become a "Go to" select
-above the page.
+above the page, with the actions on one row ("Create reservation", Actions, and Download, icon only on a phone).
+The menu and the page are centered together, as one workspace (see
+[Page width and alignment](#page-width-and-alignment)).
+
+- Below `992px` the menu, above the page, already offers "Create reservation": a page that repeats it in its own
+  toolbar (e.g. the reservations) hides its copy there, so that the action appears once.
 
 - A new event page gets its route in `EVENT_ROUTES` (`admin-routes.ts`, see [Routing](#11-routing)) and its link
   in `navGroups()`: its path below `/admin/events/{eventName}/` and the routes on which it is the current page.

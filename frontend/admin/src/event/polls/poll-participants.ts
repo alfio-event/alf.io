@@ -92,7 +92,7 @@ export class PollParticipants extends LitElement {
             ${taskContent(this.loadDataTask, this.lastData, 'Failed to load the participants. Please try again.', (data) =>
                 this.renderContent(data),
             )}
-            <sl-dialog class="responsive-dialog add-participants" label="Add participants"
+            <sl-dialog class="responsive-dialog add-participants" label="Add participants" style="--alfio-dialog-max-width: 60rem"
                        ?open=${this.dialogOpen}
                        @sl-request-close=${this.onRequestClose}
                        @sl-hide=${() => this.closeDialog()}>
@@ -138,7 +138,7 @@ export class PollParticipants extends LitElement {
                             () => emptyState('No results found'),
                             () => html`
                                 <div class="table-responsive">
-                                    <table class="table table-striped participants-table">
+                                    <table class="table table-striped participants-table table-stacked">
                                         <thead>
                                             <tr>
                                                 <th>#</th>
@@ -152,11 +152,11 @@ export class PollParticipants extends LitElement {
                                         <tbody>
                                             ${repeat(filtered, (p) => p.id, (p, index) => html`
                                                 <tr data-participant-id=${p.id}>
-                                                    <td>${index + 1}</td>
-                                                    <td>${p.firstName}</td>
-                                                    <td>${p.lastName}</td>
-                                                    <td>${p.emailAddress}</td>
-                                                    <td class="hide-small">${p.categoryName}</td>
+                                                    <td data-label="#">${index + 1}</td>
+                                                    <td data-label="First name">${p.firstName}</td>
+                                                    <td data-label="Last name">${p.lastName}</td>
+                                                    <td data-label="E-Mail">${p.emailAddress}</td>
+                                                    <td class="hide-small" data-label="Ticket category">${p.categoryName}</td>
                                                     <td class="actions-cell">
                                                         <sl-button class="remove-participant" size="small" variant="danger" outline
                                                                    ?disabled=${this.busyId != null}

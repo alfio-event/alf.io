@@ -40,10 +40,15 @@ export class AdminNavbar extends LitElement {
                 background: var(--sl-color-neutral-0);
                 border-bottom: 1px solid var(--sl-color-gray-200);
             }
+            /* the background spans the window; the content lines up with the widest content below it, the
+               workspace of an event (see "Page width and alignment" in docs/admin-style-guide.md) */
             .bar {
                 display: flex;
                 align-items: center;
                 gap: var(--sl-spacing-medium);
+                box-sizing: border-box;
+                max-width: calc(var(--alfio-workspace-width, 100%) + 2 * var(--sl-spacing-medium));
+                margin-inline: auto;
                 padding: 0 var(--sl-spacing-medium);
                 min-height: 3.5rem;
             }

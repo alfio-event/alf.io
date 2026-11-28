@@ -70,7 +70,7 @@ export class EventsList extends LitElement {
         }
         return html`
             ${when(this.isOwner, () => html`
-                <div class="filter-toolbar" style="justify-content: flex-end;">
+                <div class="filter-toolbar actions-only">
                     <div class="filter-right">
                         <sl-button href=${adminUrl(`/events/new`)} variant="success" size="large">
                             <sl-icon name="plus-circle" slot="prefix"></sl-icon>

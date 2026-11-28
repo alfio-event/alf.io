@@ -75,7 +75,7 @@ export class ExtensionList extends LitElement {
                     <h1>Extensions</h1>
                 </div>
                 <hr class="page-separator"/>
-                <div class="filter-toolbar" style="justify-content: flex-end;">
+                <div class="filter-toolbar actions-only">
                     <div class="filter-right">
                         <sl-button variant="default" size="large" @click=${() => this.navigateTo('log')}>
                             <sl-icon slot="prefix" name="journal-text"></sl-icon> Show logs
@@ -98,7 +98,7 @@ export class ExtensionList extends LitElement {
             () => emptyState('No extensions have been found'),
             () => html`
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-striped table-stacked">
                         <thead>
                             <tr>
                                 <th>Path</th>
@@ -120,9 +120,9 @@ export class ExtensionList extends LitElement {
     private renderRow(ext: ExtensionSupport, data: ListData): TemplateResult {
         return html`
             <tr>
-                <td>${renderScope(ext.path, data.organizations, data.events)}</td>
-                <td>${ext.name}</td>
-                <td>${this.renderEnabledIcon(ext)}</td>
+                <td data-label="Path">${renderScope(ext.path, data.organizations, data.events)}</td>
+                <td data-label="Name">${ext.name}</td>
+                <td data-label="Enabled">${this.renderEnabledIcon(ext)}</td>
                 <td>
                     <div class="actions-cell">
                         <!-- the hidden name tells screen reader users which extension the button acts on -->

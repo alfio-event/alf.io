@@ -494,6 +494,8 @@ export const modernTable = css`
         position: relative;
         width: 100%;
         overflow-x: auto;
+        /* the tables adapt to the width they get (.hide-small in reservationTable), not to the window's */
+        container: table / inline-size;
     }
 
     .actions-cell {
@@ -501,6 +503,121 @@ export const modernTable = css`
         flex-wrap: wrap;
         gap: var(--sl-spacing-2x-small);
         justify-content: flex-end;
+    }
+
+    /* a list table on a phone: each row becomes a block of "label  value" lines, one per cell. Add .table-stacked
+       to the table and data-label (the column title) to each cell; a cell without data-label (the identifier, the
+       actions) spans the row without a label. Columns hidden by .hide-small are shown again, one below the other.
+       A table with sortable headers (sortableHeader(), service/table-sort.ts) adds .table-sortable: its headers
+       become a row of sort buttons above the rows */
+    @media (max-width: 640px) {
+        .table-stacked,
+        .table-stacked > tbody,
+        .table.table-stacked > tbody > tr,
+        .table.table-stacked > tbody > tr > td {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* the column titles stay for screen readers */
+        .table-stacked > thead {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+        }
+
+        .table-stacked.table-sortable > thead {
+            position: static;
+            display: block;
+            width: auto;
+            height: auto;
+            overflow: visible;
+            clip: auto;
+        }
+
+        .table-stacked.table-sortable > thead > tr {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: var(--sl-spacing-2x-small) var(--sl-spacing-medium);
+            padding: var(--sl-spacing-x-small) var(--sl-spacing-small);
+            border-bottom: 2px solid var(--sl-color-gray-300);
+        }
+
+        .table-stacked.table-sortable > thead > tr::before {
+            content: 'Sort by';
+            font-size: var(--sl-font-size-small);
+            color: var(--sl-color-gray-600);
+        }
+
+        .table-stacked.table-sortable > thead > tr > th {
+            padding: 0;
+            border: none;
+        }
+
+        .table-stacked.table-sortable > thead > tr > th:not(.sortable-header) {
+            display: none;
+        }
+
+        .table-stacked.table-sortable > thead > tr > th.sortable-header {
+            display: block;
+        }
+
+        .table.table-stacked > tbody > tr {
+            padding: var(--sl-spacing-small);
+            border-top: 1px solid var(--sl-color-gray-200);
+        }
+
+        .table.table-stacked > tbody > tr > td {
+            position: relative;
+            min-width: 0;
+            padding: var(--sl-spacing-3x-small) 0;
+            border-top: none;
+            text-align: left;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .table.table-stacked > tbody > tr > td[data-label] {
+            padding-left: calc(var(--alfio-stacked-label-width, 7.5rem) + var(--sl-spacing-small));
+        }
+
+        .table.table-stacked > tbody > tr > td[data-label]::before {
+            content: attr(data-label);
+            position: absolute;
+            left: 0;
+            width: var(--alfio-stacked-label-width, 7.5rem);
+            font-family: var(--sl-font-sans);
+            font-size: var(--sl-font-size-small);
+            font-weight: var(--sl-font-weight-normal);
+            color: var(--sl-color-gray-600);
+            overflow-wrap: normal;
+        }
+
+        /* a small cell (e.g. a status icon) shown in front of the next cell, on the same line */
+        .table.table-stacked > tbody > tr > td.stacked-inline {
+            float: left;
+            width: auto;
+            padding-right: var(--sl-spacing-x-small);
+        }
+
+        .table.table-stacked > tbody > tr > td.hide-small {
+            display: block;
+        }
+
+        .table.table-stacked > tbody > tr > td.actions-cell {
+            display: flex;
+            justify-content: flex-start;
+            padding-top: var(--sl-spacing-x-small);
+        }
+
+        .table.table-stacked > tbody > tr > td > .actions-cell {
+            justify-content: flex-start;
+            padding-top: var(--sl-spacing-2x-small);
+        }
     }
 
     /* content for screen readers only, e.g. the header of a column without a visible title */
@@ -619,17 +736,36 @@ export const modernLayout = css`
         font-weight: var(--sl-font-weight-normal);
     }
 
+    /* on a phone the page keeps its space for the content: smaller title and margins, thinner card padding */
+    @media (max-width: 700px) {
+        :host {
+            --alfio-page-top-margin: var(--sl-spacing-medium);
+        }
+
+        .page-title-row h1,
+        .page-title-row.secondary h1 {
+            font-size: var(--sl-font-size-x-large);
+        }
+
+        .page-separator {
+            margin-bottom: var(--sl-spacing-medium);
+        }
+
+        .section-body {
+            padding: min(var(--alfio-section-body-padding, var(--sl-spacing-small)), var(--sl-spacing-small));
+        }
+    }
+
     /* one sentence below the title, explaining what the page is for */
     .page-description {
         margin: 0 0 var(--sl-spacing-medium);
     }
 
-    /* left-aligned at the shell's gutter, like the pages next to the event menu */
+    /* centered below the full-width navbar; next to the event menu it fills the page's column */
     .container {
         width: 100%;
-        max-width: 1170px;
-        margin-right: auto;
-        margin-left: 0;
+        max-width: var(--alfio-page-width, 1170px);
+        margin-inline: auto;
     }
 
     /* vertical stack of form controls, spaced by the gap instead of the controls' top margin */
@@ -673,6 +809,14 @@ export const modernLayout = css`
         border: 1px solid var(--sl-color-gray-200);
         border-radius: var(--sl-input-border-radius);
         margin-bottom: var(--sl-spacing-medium);
+    }
+
+    /* a toolbar without filters: only its buttons, at the right, without the band around them */
+    .filter-toolbar.actions-only {
+        justify-content: flex-end;
+        padding: 0;
+        background: none;
+        border: none;
     }
 
     .filter-left {
@@ -989,14 +1133,6 @@ export const purchaseContextListPage = css`
         display: block;
     }
 
-    /* the left margin (set next to the event menu by <alfio-event-layout>, see main.css) shrinks to the space
-       left, so that the page never overflows its column */
-    .container {
-        --alfio-container-width: min(1140px, calc(100% - 2 * var(--alfio-event-page-offset, 0px)));
-        width: var(--alfio-container-width);
-        margin-left: min(var(--alfio-event-page-offset, 0px), calc(100% - var(--alfio-container-width)));
-    }
-
     .page-title-row {
         margin-top: calc(var(--alfio-page-top-margin) + var(--sl-spacing-small));
     }
@@ -1015,19 +1151,6 @@ export const purchaseContextListPage = css`
         align-items: center;
     }
 
-
-    @media (max-width: 1200px) {
-        .container {
-            margin-inline: auto;
-        }
-    }
-
-    /* the event menu is above the page: the shell's gutter is enough */
-    @media (max-width: 991px) {
-        .container {
-            --alfio-container-width: 100%;
-        }
-    }
 
     @media (max-width: 700px) {
         .section-body {
@@ -1113,6 +1236,16 @@ export const reservationTable = css`
     @media (max-width: 700px) {
         .hide-small {
             display: none;
+        }
+    }
+
+    /* the secondary columns also go when the table itself is narrow, e.g. next to the event menu on a tablet.
+       Without container queries (Safari < 16) the table scrolls horizontally instead */
+    @supports (container-type: inline-size) {
+        @container table (max-width: 940px) {
+            .hide-small {
+                display: none;
+            }
         }
     }
 `;

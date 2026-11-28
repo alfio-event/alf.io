@@ -445,7 +445,7 @@ the first line is the header, then one line per invitee:
             badge: html`<sl-badge id="preview-count" variant="primary" pill>${preview.length}</sl-badge>`,
         }, html`
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
                             <th>Code</th>
@@ -457,10 +457,10 @@ the first line is the header, then one line per invitee:
                     <tbody>
                         ${repeat(preview, (_, index) => index, row => html`
                             <tr class="invitation">
-                                <td>${row.code}</td>
-                                <td>${row.assignee}</td>
-                                <td>${row.email}</td>
-                                <td>${row.language}</td>
+                                <td data-label="Code">${row.code}</td>
+                                <td data-label="Assignee">${row.assignee}</td>
+                                <td data-label="Email">${row.email}</td>
+                                <td data-label="Language">${row.language}</td>
                             </tr>
                         `)}
                     </tbody>
@@ -491,7 +491,7 @@ the first line is the header, then one line per invitee:
         }, html`
             ${when(sentCodes.length > 0, () => html`
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-striped table-stacked">
                         <thead>
                             <tr>
                                 <th>Code</th>
@@ -503,9 +503,9 @@ the first line is the header, then one line per invitee:
                         <tbody>
                             ${repeat(sentCodes, code => code.id, code => html`
                                 <tr class="sent-code">
-                                    <td>${code.code}</td>
-                                    <td>${code.recipientName} <span class="text-muted">&lt;${code.recipientEmail}&gt;</span></td>
-                                    <td><alfio-format-date date=${code.sentTimestamp ?? ''} time-zone=${event.timeZone}>—</alfio-format-date></td>
+                                    <td data-label="Code">${code.code}</td>
+                                    <td data-label="Recipient">${code.recipientName} <span class="text-muted">&lt;${code.recipientEmail}&gt;</span></td>
+                                    <td data-label="Sent on"><alfio-format-date date=${code.sentTimestamp ?? ''} time-zone=${event.timeZone}>—</alfio-format-date></td>
                                     <td>
                                         <div class="actions-cell">
                                             ${when(code.status === 'FREE', () => html`

@@ -232,7 +232,7 @@ export class PendingPayments extends LitElement {
         };
         return html`
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped table-stacked table-sortable">
                     <thead>
                         <tr>
                             ${sortableHeader('ID', 'id', this.sort, onSort)}
@@ -260,14 +260,14 @@ export class PendingPayments extends LitElement {
                 <td class="reservation-id">
                     <a href=${this.reservationHref(reservation.id)}>${row.publicId}</a>
                 </td>
-                <td class="expiration">
+                <td class="expiration" data-label="Expires">
                     <alfio-format-date date=${reservation.validity} time-zone=${data.event.timeZone}></alfio-format-date>
                     ${when(row.overdue, () => html`<sl-badge variant="danger" pill>Overdue</sl-badge>`)}
                 </td>
-                <td>${row.customer}</td>
-                <td class="email hide-small">${reservation.email ?? ''}</td>
-                <td class="tickets hide-small">${row.payment.ticketsCount}</td>
-                <td class="amount">${when(transaction, () => formatAmount(transaction!.formattedAmount, transaction!.currency))}</td>
+                <td data-label="Customer">${row.customer}</td>
+                <td class="email hide-small" data-label="Email">${reservation.email ?? ''}</td>
+                <td class="tickets hide-small" data-label="Tickets">${row.payment.ticketsCount}</td>
+                <td class="amount" data-label="Amount">${when(transaction, () => formatAmount(transaction!.formattedAmount, transaction!.currency))}</td>
                 <td>
                     <div class="actions-cell">
                         ${when(this.hasMatchingTransaction(row.payment), () => html`
