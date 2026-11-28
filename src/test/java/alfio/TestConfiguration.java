@@ -27,18 +27,22 @@ import alfio.test.toolkit.PromoCodeDiscountIntegrationTestingToolkit;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import org.mockito.Mockito;
 import org.springframework.boot.jetty.servlet.JettyServletWebServerFactory;
 import org.springframework.boot.web.server.servlet.ServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
-import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.jdbc.JdbcIndexedSessionRepository;
+import org.springframework.session.jdbc.PostgreSqlJdbcIndexedSessionRepositoryCustomizer;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.sql.DataSource;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
@@ -70,9 +74,15 @@ public class TestConfiguration {
         return new CookieCsrfTokenRepository();
     }
 
+    /**
+     * The same session store as production, so that the tests exercise the removal of a user's sessions
+     */
     @Bean
-    FindByIndexNameSessionRepository<?> sessionsByPrincipalFinder() {
-        return Mockito.mock(FindByIndexNameSessionRepository.class);
+    JdbcIndexedSessionRepository sessionsByPrincipalFinder(DataSource dataSource, PlatformTransactionManager transactionManager) {
+        var repository = new JdbcIndexedSessionRepository(new JdbcTemplate(dataSource), new TransactionTemplate(transactionManager));
+        repository.setTableName("ALFIO_SPRING_SESSION");
+        new PostgreSqlJdbcIndexedSessionRepositoryCustomizer().customize(repository);
+        return repository;
     }
 
     @Bean

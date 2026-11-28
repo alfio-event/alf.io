@@ -346,11 +346,15 @@ public class UserManager {
     }
 
 
-    public void updateCurrentUserPassword(String newPassword, Principal principal) {
+    /**
+     * Updates the password of the current user and closes their other sessions, keeping the one that made the change
+     */
+    public void updateCurrentUserPassword(String newPassword, Principal principal, String currentSessionId) {
         var username = principal.getName();
         User user = userRepository.findByUsername(username).orElseThrow(IllegalStateException::new);
         Validate.isTrue(PasswordGenerator.isValid(newPassword), "invalid password");
         Validate.isTrue(userRepository.resetPassword(user.getId(), passwordEncoder.encode(newPassword)) == 1, "error during password update");
+        invalidateSessionsForUser(username, currentSessionId);
     }
 
 
@@ -371,8 +375,14 @@ public class UserManager {
     }
 
     private void invalidateSessionsForUser(String username) {
+        invalidateSessionsForUser(username, null);
+    }
+
+    private void invalidateSessionsForUser(String username, String sessionIdToKeep) {
         var sessionsToInvalidate = sessionsByPrincipalFinder.findByPrincipalName(username).keySet();
-        sessionsToInvalidate.forEach(sessionsByPrincipalFinder::deleteById);
+        sessionsToInvalidate.stream()
+            .filter(sessionId -> !sessionId.equals(sessionIdToKeep))
+            .forEach(sessionsByPrincipalFinder::deleteById);
     }
 
     public void enable(int userId, boolean status, Principal principal) {

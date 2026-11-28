@@ -31,6 +31,7 @@ import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -272,9 +273,9 @@ public class UsersApiController {
     }
 
     @PostMapping("/users/current/update-password")
-    public ValidationResult updateCurrentUserPassword(@RequestBody PasswordModification passwordModification, Principal principal) {
+    public ValidationResult updateCurrentUserPassword(@RequestBody PasswordModification passwordModification, Principal principal, HttpSession session) {
         return userManager.validateNewPassword(principal.getName(), passwordModification.oldPassword, passwordModification.newPassword, passwordModification.newPasswordConfirm)
-            .ifSuccess(() -> userManager.updateCurrentUserPassword(passwordModification.newPassword, principal));
+            .ifSuccess(() -> userManager.updateCurrentUserPassword(passwordModification.newPassword, principal, session.getId()));
     }
 
     @PostMapping("/users/current/edit")
