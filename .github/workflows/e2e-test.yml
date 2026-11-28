@@ -1,7 +1,8 @@
 name: "E2E Test"
 on:
     schedule:
-        - cron:  '0 4 * * *'
+        # off the full hour: GitHub delays scheduled runs more when they start on the hour
+        - cron:  '17 1 * * *'
     workflow_dispatch:
 
 jobs:

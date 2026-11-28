@@ -2587,6 +2587,8 @@ class AdminConsole {
         ((JavascriptExecutor) driver).executeScript(
             "const a = document.createElement('a'); a.id = 'e2e-outside-link'; a.href = arguments[1]; a.textContent = 'outside';" +
                 "arguments[0].querySelector('main').prepend(a); a.click();", app, path);
+        // some browsers (Safari) report the new URL before they replace the page: wait for the admin to go away
+        wait.until(stalenessOf(app));
     }
 
     /**
