@@ -52,6 +52,7 @@ import '../components/section-nav.ts';
 
 import { adminConfig } from '../admin-config';
 import { navigateToUrl } from '../admin-router';
+import { t, tHtml } from '../service/i18n';
 export const SETTINGS_SAVED_EVENT = 'alfio-settings-saved';
 export const SETTINGS_CANCELLED_EVENT = 'alfio-settings-cancelled';
 
@@ -90,34 +91,34 @@ interface SettingsGroup extends CardOptions {
 // the settings of the GENERAL category, by topic (each level shows only the keys it can change)
 const GENERAL_GROUPS: SettingsGroup[] = [
     {
-        id: 'website', icon: 'globe', title: 'Website',
-        description: html`The address of alf.io and the texts shown on the list of the events.`,
+        id: 'website', icon: 'globe', title: t('admin.event-detail.website'),
+        description: html`${t('admin.settings.website.description')}`,
         keys: ['BASE_URL', 'GLOBAL_PRIVACY_POLICY', 'GLOBAL_TERMS', 'ANNOUNCEMENT_BANNER_CONTENT', 'DESCRIPTION_MAXLENGTH'],
     },
     {
-        id: 'reservations', icon: 'ticket-perforated', title: 'Reservations',
-        description: html`How many tickets a buyer can take, and how long the tickets stay reserved.`,
+        id: 'reservations', icon: 'ticket-perforated', title: t('admin.event.menu.reservations'),
+        description: html`${t('admin.settings.reservations.description')}`,
         keys: ['MAX_AMOUNT_OF_TICKETS_BY_RESERVATION', 'RESERVATION_TIMEOUT', 'RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT',
             'SPECIAL_PRICE_CODE_LENGTH'],
     },
     {
-        id: 'reminders', icon: 'bell', title: 'Reminders to attendees',
-        description: html`E-mails sent before the event to the attendees whose ticket is not complete.`,
+        id: 'reminders', icon: 'bell', title: t('admin.settings.reminders'),
+        description: html`${t('admin.settings.reminders.description')}`,
         keys: ['ASSIGNMENT_REMINDER_START', 'ASSIGNMENT_REMINDER_INTERVAL', 'OPTIONAL_DATA_REMINDER_ENABLED'],
     },
     {
-        id: 'organizer', icon: 'person-workspace', title: 'Notifications and statistics for the organizer',
+        id: 'organizer', icon: 'person-workspace', title: t('admin.settings.organizer'),
         keys: ['NOTIFY_ORGANIZER_ON_RESERVATION', 'NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS', 'DISPLAY_STATS_IN_EVENT_DETAIL',
             'CHECK_IN_STATS'],
     },
     {
-        id: 'appearance', icon: 'palette', title: 'Appearance',
-        description: html`CSS added to the public pages.`,
+        id: 'appearance', icon: 'palette', title: t('admin.settings.appearance'),
+        description: html`${t('admin.settings.appearance.description')}`,
         keys: ['BASE_CUSTOM_CSS', 'EVENT_CUSTOM_CSS'],
     },
     {
-        id: 'bot-protection', icon: 'shield-check', title: 'Protection against bots',
-        description: html`A captcha on the login and on the reservation, with Google reCAPTCHA or Cloudflare Turnstile.`,
+        id: 'bot-protection', icon: 'shield-check', title: t('admin.settings.bot-protection'),
+        description: html`${t('admin.settings.bot-protection.description')}`,
         keys: ['ENABLE_CAPTCHA_FOR_LOGIN', 'RECAPTCHA_API_KEY', 'RECAPTCHA_SECRET', 'CF_TURNSTILE_ENABLED',
             'CF_TURNSTILE_PRE_CLEARANCE', 'CF_TURNSTILE_SITE_KEY', 'CF_TURNSTILE_SECRET_KEY'],
     },
@@ -172,31 +173,31 @@ const JSON_SETTINGS = new Set(['OPENID_CONFIGURATION_JSON', 'WALLET_SERVICE_ACCO
 
 // settings edited with a special editor, with the label that the editor shows instead of the description
 const SPECIAL_EDITORS: Record<string, { editor: NonNullable<SettingDescriptor['editor']>, label: string, helpText?: string }> = {
-    BASE_CUSTOM_CSS: {editor: 'css', label: 'CSS of all the public pages'},
-    EVENT_CUSTOM_CSS: {editor: 'css', label: 'CSS of the event and subscription pages'},
-    INVOICE_NUMBER_PATTERN: {editor: 'invoice-number', label: 'Invoice number'},
+    BASE_CUSTOM_CSS: {editor: 'css', label: t('admin.settings.css.all-pages')},
+    EVENT_CUSTOM_CSS: {editor: 'css', label: t('admin.settings.css.event-pages')},
+    INVOICE_NUMBER_PATTERN: {editor: 'invoice-number', label: t('admin.reservation.invoice-number')},
 };
 
 // clearer labels than the descriptions sent by the server, for the settings shown in a card that names the provider
 const LABELS: Record<string, string> = {
-    PAYPAL_ENABLED: 'Accept PayPal payments',
-    PAYPAL_LIVE_MODE: 'Live mode',
-    PAYPAL_CLIENT_ID: 'Client ID',
-    PAYPAL_CLIENT_SECRET: 'Client secret',
-    PAYPAL_DEMO_MODE_USERNAME: 'Demo mode username',
-    PAYPAL_DEMO_MODE_PASSWORD: 'Demo mode password',
-    STRIPE_CC_ENABLED: 'Accept Stripe payments',
-    STRIPE_PUBLIC_KEY: 'Publishable key',
-    STRIPE_SECRET_KEY: 'Secret key',
+    PAYPAL_ENABLED: t('admin.settings.paypal.enabled'),
+    PAYPAL_LIVE_MODE: t('admin.settings.paypal.live-mode'),
+    PAYPAL_CLIENT_ID: t('admin.settings.paypal.client-id'),
+    PAYPAL_CLIENT_SECRET: t('admin.settings.paypal.client-secret'),
+    PAYPAL_DEMO_MODE_USERNAME: t('admin.settings.paypal.demo-username'),
+    PAYPAL_DEMO_MODE_PASSWORD: t('admin.settings.paypal.demo-password'),
+    STRIPE_CC_ENABLED: t('admin.settings.stripe.enabled'),
+    STRIPE_PUBLIC_KEY: t('admin.settings.stripe.public-key'),
+    STRIPE_SECRET_KEY: t('admin.settings.stripe.secret-key'),
 };
 
 // the labels of the settings that have their own control, for the search
 const SEARCH_LABELS: Record<string, string> = {
-    PAYMENT_METHODS_BLACKLIST: "Payment methods that can't be used",
-    LABEL_LAYOUT: 'Badge layout',
-    CHECK_IN_COLOR_CONFIGURATION: 'Badge colors',
-    MAILER_TYPE: 'How should alf.io send e-mails?',
-    MAPS_PROVIDER: 'Which map should the event pages show?',
+    PAYMENT_METHODS_BLACKLIST: t('admin.settings.denied-payment-methods'),
+    LABEL_LAYOUT: t('admin.settings.badge-layout'),
+    CHECK_IN_COLOR_CONFIGURATION: t('admin.settings.badge-colors'),
+    MAILER_TYPE: t('admin.settings.mailer.question'),
+    MAPS_PROVIDER: t('admin.settings.maps.question'),
 };
 
 const REVOLUT_TITLE = 'Revolut';
@@ -229,17 +230,17 @@ const MAILER_PREFIXES: Record<string, string> = {
 };
 
 const MAILER_CHOICES: ChoiceCardOption<string>[] = [
-    {value: 'smtp', icon: 'hdd-network', title: 'SMTP server', description: 'Send through your own mail server.'},
-    {value: 'mailgun', icon: 'envelope-at', title: 'Mailgun', description: 'Send through the Mailgun API.'},
-    {value: 'mailjet', icon: 'envelope-paper', title: 'Mailjet', description: 'Send through the Mailjet API.'},
-    {value: 'sendgrid', icon: 'send', title: 'SendGrid', description: 'Send through the SendGrid API.'},
-    {value: 'disabled', icon: 'envelope-slash', title: 'Disabled', description: 'No e-mail is sent.'},
+    {value: 'smtp', icon: 'hdd-network', title: t('admin.settings.mailer.smtp'), description: t('admin.settings.mailer.smtp.description')},
+    {value: 'mailgun', icon: 'envelope-at', title: 'Mailgun', description: t('admin.settings.mailer.api.description', 'Mailgun')},
+    {value: 'mailjet', icon: 'envelope-paper', title: 'Mailjet', description: t('admin.settings.mailer.api.description', 'Mailjet')},
+    {value: 'sendgrid', icon: 'send', title: 'SendGrid', description: t('admin.settings.mailer.api.description', 'SendGrid')},
+    {value: 'disabled', icon: 'envelope-slash', title: t('admin.event.status.disabled'), description: t('admin.settings.mailer.disabled.description')},
 ];
 
 const MAPS_CHOICES: ChoiceCardOption<string>[] = [
-    {value: 'NONE', icon: 'slash-circle', title: 'None', description: 'The event pages show the address only.'},
-    {value: 'GOOGLE', icon: 'google', title: 'Google Maps', description: 'Needs a Google Maps API key.'},
-    {value: 'HERE', icon: 'map', title: 'HERE', description: 'Needs a HERE API key.'},
+    {value: 'NONE', icon: 'slash-circle', title: t('admin.category-dialog.badge-color.none'), description: t('admin.settings.maps.none.description')},
+    {value: 'GOOGLE', icon: 'google', title: 'Google Maps', description: t('admin.settings.maps.api-key', 'Google Maps')},
+    {value: 'HERE', icon: 'map', title: 'HERE', description: t('admin.settings.maps.api-key', 'HERE')},
 ];
 
 // the API key of each maps provider
@@ -718,7 +719,7 @@ export class SettingsForm extends LitElement {
             return;
         }
         (event as CustomEvent<BeforeLeaveDetail>).detail.confirmations.push(ConfirmationDialogService.requestConfirm(
-            'Leave without saving', `${changesDescription(this.changeCount())} will be lost.`, 'warning'));
+            t('admin.settings.leave.title'), t('admin.settings.leave.text', { count: this.changeCount() }), 'warning'));
     };
 
     private observeFormEnd = (element: Element | undefined): void => {
@@ -733,7 +734,7 @@ export class SettingsForm extends LitElement {
     };
 
     render(): TemplateResult {
-        return taskContent(this.loadTask, this.lastData, 'Failed to load the settings. Please try again.',
+        return taskContent(this.loadTask, this.lastData, t('admin.settings.load-failed'),
             (data) => this.renderContent(data));
     }
 
@@ -742,7 +743,7 @@ export class SettingsForm extends LitElement {
             return html`
                 <sl-alert open variant="primary">
                     <sl-icon slot="icon" name="info-circle"></sl-icon>
-                    You can't change the settings of ${levelDescription(data.level)}.
+                    ${t('admin.settings.read-only', levelDescription(data.level))}
                 </sl-alert>
             `;
         }
@@ -758,10 +759,10 @@ export class SettingsForm extends LitElement {
         return html`
             <form novalidate @submit=${this.submit}>
                 <div class="creation-layout">
-                    <alfio-section-nav label="Settings sections" .sections=${sections.map(({id, label}) => ({id, label}))}></alfio-section-nav>
+                    <alfio-section-nav label=${t('admin.settings.sections')} .sections=${sections.map(({id, label}) => ({id, label}))}></alfio-section-nav>
                     <div class="creation-content">
-                        <sl-input id="search-settings" class="search-settings label-hidden" type="search" label="Search settings"
-                                  placeholder="Search settings" clearable autocomplete="off"
+                        <sl-input id="search-settings" class="search-settings label-hidden" type="search" label=${t('admin.settings.search')}
+                                  placeholder=${t('admin.settings.search')} clearable autocomplete="off"
                                   @sl-input=${(e: Event) => this.search((e.target as SlInput).value)}
                                   @sl-clear=${() => this.search('')}
                                   @keydown=${(e: KeyboardEvent) => this.onSearchKeyDown(e)}>
@@ -769,8 +770,8 @@ export class SettingsForm extends LitElement {
                         </sl-input>
                         ${when(sections.length === 0, () => html`
                             <div class="no-results">
-                                ${emptyState('No settings match your search.')}
-                                <sl-button id="clear-search" variant="default" size="small" @click=${() => this.clearSearch()}>Clear search</sl-button>
+                                ${emptyState(t('admin.settings.search.none'))}
+                                <sl-button id="clear-search" variant="default" size="small" @click=${() => this.clearSearch()}>${t('admin.settings.search.clear')}</sl-button>
                             </div>
                         `)}
                         ${repeat(sections, (section) => section.id, (section) => html`
@@ -803,10 +804,10 @@ export class SettingsForm extends LitElement {
                 ${when(this.invalid, () => html`<p class="footer-message text-danger">${INVALID_FORM_MESSAGE}</p>`)}
                 <div class="row" style="--alfio-row-cols: 3">
                     <sl-button id="cancel-settings" variant="default" size="large" ?disabled=${this.saving}
-                               @click=${() => void this.cancel()}>Cancel</sl-button>
+                               @click=${() => void this.cancel()}>${t('admin.common.cancel')}</sl-button>
                     <div class="changes" role="status">${when(changes > 0, () => changesDescription(changes))}</div>
                     <sl-button id="save-settings" type="submit" variant="warning" size="large"
-                               ?loading=${this.saving} ?disabled=${this.saving}>Save</sl-button>
+                               ?loading=${this.saving} ?disabled=${this.saving}>${t('admin.common.save')}</sl-button>
                 </div>
             </div>
             <div class="form-end" ${ref(this.observeFormEnd)}></div>
@@ -817,12 +818,12 @@ export class SettingsForm extends LitElement {
 
     private sections(data: LoadedSettings): RenderedSection[] {
         const candidates: { id: string; label: string; cards: (TemplateResult | null)[] }[] = [
-            {id: 'general', label: 'General', cards: this.generalCards(data)},
-            {id: 'email', label: 'E-mail', cards: this.emailCards(data, false)},
-            {id: 'payments', label: 'Payments', cards: this.paymentCards(data)},
-            {id: 'invoices', label: 'Invoices', cards: this.invoiceCards(data)},
-            {id: 'integrations', label: 'Integrations', cards: this.integrationCards(data)},
-            {id: 'extensions', label: 'Extensions', cards: this.extensionCards(data)},
+            {id: 'general', label: t('admin.category-dialog.tab.general'), cards: this.generalCards(data)},
+            {id: 'email', label: t('admin.common.email'), cards: this.emailCards(data, false)},
+            {id: 'payments', label: t('admin.page-title.payments'), cards: this.paymentCards(data)},
+            {id: 'invoices', label: t('admin.settings.section.invoices'), cards: this.invoiceCards(data)},
+            {id: 'integrations', label: t('admin.settings.section.integrations'), cards: this.integrationCards(data)},
+            {id: 'extensions', label: t('admin.menu.extensions'), cards: this.extensionCards(data)},
         ];
         return candidates
             .map(({id, label, cards}) => ({id, label, cards: cards.filter((card): card is TemplateResult => card != null)}))
@@ -834,17 +835,17 @@ export class SettingsForm extends LitElement {
         const system = data.level.type === 'SYSTEM';
         return [
             ...this.generalOptionCards(data),
-            this.simpleCard(data, 'RESERVATION_UI', {id: 'reservation-process', icon: 'cart3', title: 'Reservation process'}),
-            this.simpleCard(data, 'WAITING_LIST', {id: 'waiting-list', icon: 'hourglass-split', title: 'Waiting list'}),
+            this.simpleCard(data, 'RESERVATION_UI', {id: 'reservation-process', icon: 'cart3', title: t('admin.settings.reservation-process')}),
+            this.simpleCard(data, 'WAITING_LIST', {id: 'waiting-list', icon: 'hourglass-split', title: t('admin.event.menu.waiting-list')}),
             this.subscriptionsCard(data),
-            when(system, () => this.simpleCard(data, 'IMPORT_ATTENDEE', {id: 'attendee-import', icon: 'person-plus', title: 'Attendee import'}), () => null),
+            when(system, () => this.simpleCard(data, 'IMPORT_ATTENDEE', {id: 'attendee-import', icon: 'person-plus', title: t('admin.settings.attendee-import')}), () => null),
             when(system, () => this.simpleCard(data, 'RESERVATION_EMBED', {
-                id: 'embedding', icon: 'code-slash', title: 'Embedding',
-                description: html`Allow other websites to show the reservation process in a frame.`,
+                id: 'embedding', icon: 'code-slash', title: t('admin.settings.embedding'),
+                description: html`${t('admin.settings.embedding.description')}`,
             }), () => null),
             when(system, () => this.simpleCard(data, 'OPENID', {
-                id: 'attendee-login', icon: 'person-badge', title: 'Attendee login',
-                description: html`Let attendees log in to save their profile.`,
+                id: 'attendee-login', icon: 'person-badge', title: t('admin.settings.attendee-login'),
+                description: html`${t('admin.settings.attendee-login.description')}`,
             }), () => null),
         ];
     }
@@ -858,7 +859,7 @@ export class SettingsForm extends LitElement {
         const others = this.categorySettings(data, 'GENERAL').filter((setting) => !grouped.has(setting.key));
         return [
             ...GENERAL_GROUPS.map((group) => this.settingsCard(data, this.generalSettings(data, group.keys), group)),
-            this.settingsCard(data, others, {id: 'general-options', icon: 'sliders', title: 'Other options'}),
+            this.settingsCard(data, others, {id: 'general-options', icon: 'sliders', title: t('admin.settings.other-options')}),
         ];
     }
 
@@ -879,12 +880,12 @@ export class SettingsForm extends LitElement {
         const generation = data.settings.get(GENERATE_TICKETS_FOR_SUBSCRIPTIONS)?.setting;
         const canGenerate = generation != null && generation.id > -1 && generation.value === 'true';
         return this.card({
-            icon: 'collection', title: 'Subscriptions',
+            icon: 'collection', title: t('admin.menu.subscriptions'),
             actions: when(canGenerate, () => html`
                 <sl-button id="generate-tickets" variant="default" size="small" ?loading=${this.generatingTickets}
                            @click=${() => void this.generateTickets(data.level)}>
                     <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
-                    Generate tickets now
+                    ${t('admin.settings.generate-tickets')}
                 </sl-button>
             `, () => undefined),
         }, settings, () => html`<div data-card="subscriptions">${this.renderSettings(data, settings)}</div>`);
@@ -902,23 +903,23 @@ export class SettingsForm extends LitElement {
             options = options.filter((setting) => setting.key === 'MAX_EMAIL_PER_CYCLE' || setting.key === 'MAIL_REPLY_TO');
         }
         return [
-            when(hasMailerType, () => this.card({icon: 'envelope', title: 'E-mail delivery'},
+            when(hasMailerType, () => this.card({icon: 'envelope', title: t('admin.settings.email-delivery')},
                 settings.filter((setting) => setting.key === MAILER_TYPE || isProviderSetting(setting)), () => this.field({name: `settings.${MAILER_TYPE}`}, (field: BoundField<string>) => {
                     const providerSettings = settings.filter((setting) => mailerOf(setting.key) === field.state.value);
                     let choices = MAILER_CHOICES;
                     if (data.level.type !== 'SYSTEM') {
-                        choices = [{value: '', icon: 'arrow-up-circle', title: notSetLabel(data.level), description: 'Use the delivery settings of the level above.'}, ...MAILER_CHOICES];
+                        choices = [{value: '', icon: 'arrow-up-circle', title: notSetLabel(data.level), description: t('admin.settings.mailer.inherited.description')}, ...MAILER_CHOICES];
                     }
                     return choiceCards({
                         name: 'mailer-type',
                         className: 'mailer-type',
-                        label: 'How should alf.io send e-mails?',
+                        label: t('admin.settings.mailer.question'),
                         value: field.state.value,
                         options: choices,
                         panel: when(providerSettings.length > 0, () => this.renderSettings(data, providerSettings), () => undefined),
                     }, (value) => field.handleChange(value));
                 })), () => null),
-            when(options.length > 0, () => this.card({icon: 'envelope-paper', title: 'E-mail options'}, options,
+            when(options.length > 0, () => this.card({icon: 'envelope-paper', title: t('admin.settings.email-options')}, options,
                 () => html`<div data-card="email-options">${this.renderSettings(data, options)}</div>`), () => null),
         ];
     }
@@ -930,15 +931,14 @@ export class SettingsForm extends LitElement {
             this.stripeCard(data),
             this.simpleCard(data, 'PAYMENT_PAYPAL', {
                 id: 'paypal', icon: 'paypal', title: 'PayPal',
-                description: html`Accept payments with your PayPal account.`,
-                guide: setupGuide('How to get the Client ID and Secret', [
-                    html`In the ${externalLink('https://developer.paypal.com/dashboard/applications/live', 'PayPal Developer Dashboard')},
-                        open Apps & Credentials in Live mode and create a REST API app, as explained in the
-                        ${externalLink('https://developer.paypal.com/api/rest/', 'PayPal documentation')}.`,
-                    html`Enter the Client ID and Secret of the live app below, and set "Live mode" to Yes.`,
-                    html`To accept a currency that your account doesn't hold, allow the automatic conversion in the
-                        ${externalLink('https://www.paypal.com/cgi-bin/customerprofileweb?cmd=_profile-pref', 'PayPal dashboard')}:
-                        Profile, Settings, Account Settings, Payment Preferences, Block Payments.`,
+                description: html`${t('admin.settings.paypal.description')}`,
+                guide: setupGuide(t('admin.settings.paypal.guide'), [
+                    html`${tHtml('admin.settings.paypal.guide.step1',
+                        externalLink('https://developer.paypal.com/dashboard/applications/live', t('admin.settings.paypal.developer-dashboard')),
+                        externalLink('https://developer.paypal.com/api/rest/', t('admin.settings.paypal.documentation')))}`,
+                    html`${t('admin.settings.paypal.guide.step2')}`,
+                    html`${tHtml('admin.settings.paypal.guide.step3',
+                        externalLink('https://www.paypal.com/cgi-bin/customerprofileweb?cmd=_profile-pref', t('admin.settings.paypal.dashboard')))}`,
                 ]),
             }),
             when(level.type !== 'EVENT', () => this.mollieCard(data), () => null),
@@ -954,17 +954,17 @@ export class SettingsForm extends LitElement {
             return null;
         }
         return this.card({
-            icon: 'cash-coin', title: 'Custom offline payment methods',
+            icon: 'cash-coin', title: t('admin.payment-method.custom-offline'),
             actions: html`
                 <sl-button id="add-payment-method" variant="success" size="small"
                            @click=${() => this.renderRoot.querySelector<OfflinePaymentConfigBlock>('offline-payment-config-block')?.add()}>
                     <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-                    Add payment method
+                    ${t('admin.settings.add-payment-method')}
                 </sl-button>
             `,
         }, [], () => html`
             <p class="card-description text-muted">
-                Payments that the buyers make outside alf.io, following your instructions. Each event chooses which ones to offer.
+                ${t('admin.settings.custom-offline.description')}
             </p>
             <offline-payment-config-block organization=${level.organizationId}></offline-payment-config-block>
         `);
@@ -980,7 +980,7 @@ export class SettingsForm extends LitElement {
         }
         const others = settings.filter((setting) => setting.key !== PAYMENT_METHODS_DENY_LIST);
         const hasDenyList = settings.length > others.length;
-        return this.card({icon: 'wallet2', title: 'Payment options'}, settings, () => html`
+        return this.card({icon: 'wallet2', title: t('admin.settings.payment-options')}, settings, () => html`
             <div class="form-stack" data-card="payment-options">
                 ${this.renderSettings(data, others)}
                 ${when(hasDenyList && this.shown(PAYMENT_METHODS_DENY_LIST), () => this.renderDenyList())}
@@ -1000,7 +1000,7 @@ export class SettingsForm extends LitElement {
             };
             return html`
                 <fieldset class="payment-methods" id=${PAYMENT_METHODS_DENY_LIST}>
-                    <legend>Payment methods that can't be used</legend>
+                    <legend>${t('admin.settings.denied-payment-methods')}</legend>
                     ${repeat(Object.keys(PAYMENT_PROXY_DESCRIPTIONS), (method) => method, (method) => html`
                         <sl-checkbox class="denied-payment-method" value=${method} ?checked=${denied.includes(method)}
                                      @sl-change=${(e: Event) => toggle(method, (e.target as SlCheckbox).checked)}>
@@ -1016,13 +1016,11 @@ export class SettingsForm extends LitElement {
 
     private stripeSteps(level: SettingsLevel): TemplateResult[] {
         const steps = [
-            html`Copy the publishable key and the secret key from the Stripe dashboard into the fields below, as explained in the
-                ${externalLink('https://docs.stripe.com/keys', 'Stripe documentation')}.`,
+            html`${tHtml('admin.settings.stripe.guide.step1', externalLink('https://docs.stripe.com/keys', t('admin.settings.stripe.documentation')))}`,
         ];
         // Strong Customer Authentication is enabled for the whole system
         if (level.type === 'SYSTEM') {
-            steps.push(html`To use Strong Customer Authentication (3D Secure 2), follow the
-                ${externalLink('https://alf.io/docs/configuration/payment/stripe-sca/', 'alf.io guide')}.`);
+            steps.push(html`${tHtml('admin.settings.stripe.guide.sca', externalLink('https://alf.io/docs/configuration/payment/stripe-sca/', t('admin.settings.stripe.alfio-guide')))}`);
         }
         return steps;
     }
@@ -1039,15 +1037,15 @@ export class SettingsForm extends LitElement {
                     <!-- Stripe's "Connect with Stripe" button, see https://codepen.io/stripe-connect/pen/BaQNbjK -->
                     <a class="connect-button stripe-connect"
                        href="/admin/configuration/payment/stripe/connect/${level.organizationId}">
-                        <span>Connect with</span>
+                        <span>${t('admin.settings.connect-with')}</span>
                         <img src="${resourcesPath}/images/payment/stripe-connect-wordmark-white.svg" alt="Stripe">
                     </a>
                 `, data.platform?.stripeConnected === true)}
             `);
         }
         return this.card({icon: 'stripe', title: 'Stripe'}, settings, () => html`
-            <p class="card-description text-muted">Accept credit cards and other payment methods with your Stripe account.</p>
-            ${setupGuide('How to get the API keys', this.stripeSteps(level))}
+            <p class="card-description text-muted">${t('admin.settings.stripe.description')}</p>
+            ${setupGuide(t('admin.settings.stripe.guide'), this.stripeSteps(level))}
             <div data-card="stripe">${this.renderSettings(data, settings)}</div>
         `);
     }
@@ -1068,7 +1066,7 @@ export class SettingsForm extends LitElement {
                     <a class="connect-button" href="/admin/configuration/payment/mollie/connect/${level.organizationId}">
                         <img src="${resourcesPath}/images/payment/mollie-connect-button.png"
                              srcset="${resourcesPath}/images/payment/mollie-connect-button@2x.png 2x"
-                             width="200" height="45" alt="Connect via Mollie">
+                             width="200" height="45" alt=${t('admin.settings.mollie.connect')}>
                     </a>
                 `, data.platform?.mollieConnected === true))}
                 <div data-card="mollie">${this.renderSettings(data, visible)}</div>
@@ -1086,8 +1084,8 @@ export class SettingsForm extends LitElement {
             <div class="connect">
                 ${button}
                 ${when(connected,
-                    () => html`<sl-badge variant="success" pill>Connected</sl-badge>`,
-                    () => html`<sl-badge variant="neutral" pill>Not connected</sl-badge>`)}
+                    () => html`<sl-badge variant="success" pill>${t('admin.settings.connected')}</sl-badge>`,
+                    () => html`<sl-badge variant="neutral" pill>${t('admin.settings.not-connected')}</sl-badge>`)}
             </div>
         `;
     }
@@ -1098,10 +1096,10 @@ export class SettingsForm extends LitElement {
             return null;
         }
         const bankTransfer = settings.filter((setting) => !setting.key.startsWith('REVOLUT'));
-        return this.card({icon: 'bank', title: 'Bank transfer'}, bankTransfer, () => html`
+        return this.card({icon: 'bank', title: t('admin.settings.bank-transfer')}, bankTransfer, () => html`
             <p class="card-description text-muted">
-                The buyers pay by bank transfer, and the reservation is confirmed once the payment has arrived.
-                ${externalLink('https://alf.io/docs/configuration/payment/bank-transfer/', 'Documentation')}
+                ${t('admin.settings.bank-transfer.description')}
+                ${externalLink('https://alf.io/docs/configuration/payment/bank-transfer/', t('admin.settings.documentation'))}
             </p>
             ${this.field({name: `settings.${DEFERRED_BANK_TRANSFER}`}, (deferredField: BoundField<string>) => {
                 // the payment instructions sent manually replace the ones computed by alf.io
@@ -1135,8 +1133,7 @@ export class SettingsForm extends LitElement {
             }
             return html`${this.card({icon: 'arrow-left-right', title: REVOLUT_TITLE}, settings, () => html`
                 <p class="card-description text-muted">
-                    If the bank account of the bank transfers is a Revolut account, alf.io can check the incoming payments
-                    and confirm the reservations once they have been paid.
+                    ${t('admin.settings.revolut.description')}
                 </p>
                 <div data-card="revolut">${this.renderSettings(data, settings)}</div>
             `) ?? nothing}`;
@@ -1146,22 +1143,20 @@ export class SettingsForm extends LitElement {
     private invoiceCards(data: LoadedSettings): (TemplateResult | null)[] {
         const level = data.level;
         return [
-            this.simpleCard(data, 'INVOICE', {id: 'invoice-options', icon: 'receipt', title: 'Invoice options'}),
-            this.simpleCard(data, 'INVOICE_EU', {id: 'vat', icon: 'percent', title: 'VAT for business customers'}),
+            this.simpleCard(data, 'INVOICE', {id: 'invoice-options', icon: 'receipt', title: t('admin.settings.invoice-options')}),
+            this.simpleCard(data, 'INVOICE_EU', {id: 'vat', icon: 'percent', title: t('admin.settings.vat')}),
             when(level.type === 'EVENT', () => this.card({
-                icon: 'arrow-repeat', title: 'Regenerate invoices',
+                icon: 'arrow-repeat', title: t('admin.settings.regenerate-invoices'),
                 actions: html`
                     <sl-button id="regenerate-invoices" variant="default" size="small"
                                @click=${() => this.openRegenerateInvoices(level)}>
                         <sl-icon slot="prefix" name="arrow-repeat"></sl-icon>
-                        Regenerate
+                        ${t('admin.reservation.billing.regenerate')}
                     </sl-button>
                 `,
             }, [], () => html`
                 <p class="card-description text-muted">
-                    An invoice keeps the details it was created with. Regenerate the invoices of a period to apply the
-                    current settings of the event to them. To change the details of a single invoice, regenerate it from
-                    its reservation.
+                    ${t('admin.settings.regenerate-invoices.description')}
                 </p>
             `), () => null),
         ];
@@ -1185,14 +1180,14 @@ export class SettingsForm extends LitElement {
         const settings = [MAPS_PROVIDER, ...Object.values(MAPS_KEYS)]
             .map((key) => data.settings.get(key)?.setting)
             .filter((setting): setting is ConfigurationSetting => setting != null);
-        return this.card({icon: 'geo-alt', title: 'Maps'}, settings,
+        return this.card({icon: 'geo-alt', title: t('admin.settings.maps')}, settings,
             () => this.field({name: `settings.${MAPS_PROVIDER}`}, (field: BoundField<string>) => {
                 const key = MAPS_KEYS[field.state.value];
                 const apiKey = data.settings.get(key ?? '')?.setting;
                 return choiceCards({
                     name: 'maps-provider',
                     className: 'maps-provider',
-                    label: 'Which map should the event pages show?',
+                    label: t('admin.settings.maps.question'),
                     value: field.state.value,
                     options: MAPS_CHOICES,
                     panel: when(apiKey != null, () => this.renderSettings(data, [apiKey!]), () => undefined),
@@ -1210,27 +1205,26 @@ export class SettingsForm extends LitElement {
         const event = data.level.type === 'EVENT';
         const hasLabelLayout = event && data.settings.has(LABEL_LAYOUT);
         const hasColors = event && data.settings.has(CHECK_IN_COLORS);
-        return this.card({icon: 'qr-code-scan', title: 'Offline check-in and badge printing'}, settings, () => html`
+        return this.card({icon: 'qr-code-scan', title: t('admin.settings.check-in')}, settings, () => html`
             <p class="card-description text-muted">
-                Settings of ${externalLink('https://github.com/alfio-event/alf.io-PI', 'Alf.io-PI')},
-                the app for offline check-in and badge printing.
+                ${tHtml('admin.settings.check-in.description', externalLink('https://github.com/alfio-event/alf.io-PI', 'Alf.io-PI'))}
             </p>
             <div class="form-stack" data-card="check-in">
                 ${this.renderSettings(data, options)}
                 ${when(hasLabelLayout && this.shown(LABEL_LAYOUT), () => this.field({name: `settings.${LABEL_LAYOUT}`, validators: validateWith(validLabelLayout)},
                     (field: BoundField<string>) => html`
                         <div class="row json-setting">
-                            ${this.jsonEditor(field, LABEL_LAYOUT, 'Badge layout', 'The layout of the badges, in JSON.')}
+                            ${this.jsonEditor(field, LABEL_LAYOUT, t('admin.settings.badge-layout'), t('admin.settings.badge-layout.help'))}
                             ${labelLayoutPreview(field.state.value)}
                         </div>
                     `))}
                 ${when(hasColors && this.shown(CHECK_IN_COLORS), () => this.field({name: `settings.${CHECK_IN_COLORS}`, validators: validateWith(validCheckInColors)},
                     (field: BoundField<string>) => html`
                         <div class="row json-setting">
-                            ${this.jsonEditor(field, CHECK_IN_COLORS, 'Badge colors',
-                                'The color shown by the check-in app for each ticket category, in JSON.')}
+                            ${this.jsonEditor(field, CHECK_IN_COLORS, t('admin.settings.badge-colors'),
+                                t('admin.settings.badge-colors.help'))}
                             <div>
-                                <p class="example-label">Example</p>
+                                <p class="example-label">${t('admin.settings.example')}</p>
                                 <pre class="example">${CHECK_IN_COLORS_EXAMPLE}</pre>
                             </div>
                         </div>
@@ -1269,7 +1263,7 @@ export class SettingsForm extends LitElement {
     private renderBasicCards(data: LoadedSettings): TemplateResult {
         const general = this.categorySettings(data, 'GENERAL').filter((setting) => setting.basic === true);
         return html`
-            ${when(general.length > 0, () => this.card({icon: 'sliders', title: 'Common options'}, general,
+            ${when(general.length > 0, () => this.card({icon: 'sliders', title: t('admin.settings.common-options')}, general,
                 () => html`<div data-card="general-options">${this.renderSettings(data, general)}</div>`))}
             ${this.emailCards(data, true)}
             ${this.mapsCard(data)}
@@ -1398,7 +1392,7 @@ export class SettingsForm extends LitElement {
         // it is often left empty on the events that don't use the extension
         let helpText: string | undefined = undefined;
         if (parameter.mandatory) {
-            helpText = 'The extension needs this value to work.';
+            helpText = t('admin.settings.extension.mandatory');
         }
         const descriptor: SettingDescriptor = {
             id: `extension-${parameter.id}`,
@@ -1526,11 +1520,11 @@ export class SettingsForm extends LitElement {
             for (const id of removedExtensions) {
                 await SettingsService.deleteExtensionSetting(level, id);
             }
-            dispatchFeedback({type: 'success', message: 'The settings have been saved'}, this);
+            dispatchFeedback({type: 'success', message: t('admin.settings.saved')}, this);
             this.dispatchEvent(new CustomEvent(SETTINGS_SAVED_EVENT, {bubbles: true, composed: true}));
             this.refreshCount++;
         } catch (e) {
-            this.submitError = errorMessage(e, 'Failed to save the settings. Please try again.');
+            this.submitError = errorMessage(e, t('admin.settings.save-failed'));
         } finally {
             this.saving = false;
         }
@@ -1542,8 +1536,8 @@ export class SettingsForm extends LitElement {
             return;
         }
         if (this.changeCount() > 0) {
-            const confirmed = await ConfirmationDialogService.requestConfirm('Discard the changes',
-                'The changes you made to the settings will be lost.', 'warning');
+            const confirmed = await ConfirmationDialogService.requestConfirm(t('admin.settings.discard.title'),
+                t('admin.settings.discard.text'), 'warning');
             if (!confirmed) {
                 return;
             }
@@ -1578,9 +1572,9 @@ export class SettingsForm extends LitElement {
         this.generatingTickets = true;
         try {
             await SettingsService.generateTicketsForSubscribers(level);
-            dispatchFeedback({type: 'success', message: 'The tickets will be generated within a minute'}, this);
+            dispatchFeedback({type: 'success', message: t('admin.settings.tickets-scheduled')}, this);
         } catch (e) {
-            dispatchFeedback({type: 'danger', message: errorMessage(e, 'Failed to schedule the generation of the tickets')}, this);
+            dispatchFeedback({type: 'danger', message: errorMessage(e, t('admin.settings.error.generate-tickets'))}, this);
         } finally {
             this.generatingTickets = false;
         }
@@ -1650,10 +1644,7 @@ function searchable(text: string): string {
 }
 
 function changesDescription(count: number): string {
-    if (count === 1) {
-        return '1 unsaved change';
-    }
-    return `${count} unsaved changes`;
+    return t('admin.settings.unsaved-changes', { count });
 }
 
 // the field name of an extension parameter: a key starting with a digit would be read as an array index
@@ -1686,7 +1677,7 @@ export function levelDescription(level: SettingsLevel): string {
     if (level.type === 'EVENT') {
         return level.eventDisplayName;
     }
-    return 'the system';
+    return t('admin.settings.the-system');
 }
 
 declare global {

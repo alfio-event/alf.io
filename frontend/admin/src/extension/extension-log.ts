@@ -8,7 +8,7 @@ import {ExtensionEvent, ExtensionLog, ExtensionLogType} from '../model/extension
 import type {Organization} from '../model/organization.ts';
 import {PageAndContent} from '../model/reservation.ts';
 import {ExtensionService} from '../service/extension.ts';
-import {humanize, readRouteParams, replaceRouteParams, toPageNumber} from '../service/helpers.ts';
+import {readRouteParams, replaceRouteParams, toPageNumber} from '../service/helpers.ts';
 import {base, badges, modernLayout, modernTable, reservationTable, retroCompat, textColors} from '../styles.ts';
 import {AlfioPageChange} from '../components/pagination-bar.ts';
 import {ListSearchController} from '../components/list-search.ts';
@@ -17,9 +17,17 @@ import {emptyState} from '../components/empty-state.ts';
 import {renderScope} from './extension-scope.ts';
 import '../components/pagination-bar.ts';
 import '../components/format-date.ts';
+import { t, i18nKey } from '../service/i18n';
 
 const ITEMS_PER_PAGE = 50;
 const LOG_TYPES: ExtensionLogType[] = ['SUCCESS', 'INFO', 'WARNING', 'ERROR'];
+
+const LOG_TYPE_LABELS: Record<ExtensionLogType, string> = {
+    SUCCESS: i18nKey('admin.extension-log.type.success'),
+    INFO: i18nKey('admin.extension-log.type.info'),
+    WARNING: i18nKey('admin.extension-log.type.warning'),
+    ERROR: i18nKey('admin.extension-log.type.error'),
+};
 
 interface LogData {
     logs: PageAndContent<ExtensionLog[]>;
@@ -112,24 +120,24 @@ export class ExtensionLogPage extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row">
-                    <h1>Extension logs</h1>
+                    <h1>${t('admin.extension-log.title')}</h1>
                 </div>
                 <hr class="page-separator"/>
-                <p class="page-description text-muted">Messages written by the extension scripts while they run, newest first.</p>
+                <p class="page-description text-muted">${t('admin.extension-log.description')}</p>
                 <div class="filter-toolbar">
                     <div class="filter-left">
-                        ${this.searchController.render('logs')}
-                        <sl-select class="filter-select type-filter label-hidden" label="Filter by type"
-                                   placeholder="All types" clearable hoist
+                        ${this.searchController.render(t('admin.extension-log.items'))}
+                        <sl-select class="filter-select type-filter label-hidden" label=${t('admin.extension-log.filter')}
+                                   placeholder=${t('admin.extension-log.all-types')} clearable hoist
                                    .value=${this.type ?? ''}
                                    @sl-change=${(e: Event) => this.onTypeChange(String((e.target as SlSelect).value))}>
                             ${repeat(LOG_TYPES, (type) => type, (type) => html`
-                                <sl-option value=${type}>${humanize(type)}</sl-option>
+                                <sl-option value=${type}>${t(LOG_TYPE_LABELS[type])}</sl-option>
                             `)}
                         </sl-select>
                     </div>
                 </div>
-                ${taskContent(this.loadTask, this.lastData, 'Failed to load the logs. Please try again.',
+                ${taskContent(this.loadTask, this.lastData, t('admin.extension-log.load-failed'),
                     (data) => this.renderContent(data))}
             </div>
         `;
@@ -150,7 +158,7 @@ export class ExtensionLogPage extends LitElement {
                         .page=${this.page}
                         .total=${logs.right}
                         page-size=${ITEMS_PER_PAGE}
-                        item-label="log entries"
+                        item-label=${t('admin.extension-log.entries')}
                         @alfio-page-change=${this.onPageChange}
                     ></alfio-pagination-bar>
                 `)}
@@ -163,21 +171,21 @@ export class ExtensionLogPage extends LitElement {
                 <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
-                            <th class="hide-small">Path</th>
-                            <th>Name</th>
-                            <th>Type</th>
-                            <th>Description</th>
-                            <th>Date</th>
+                            <th class="hide-small">${t('admin.extensions.path')}</th>
+                            <th>${t('admin.common.name')}</th>
+                            <th>${t('admin.common.type')}</th>
+                            <th>${t('admin.common.description')}</th>
+                            <th>${t('admin.common.date')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${repeat(data.logs.left, (log) => log.id, (log) => html`
                             <tr>
-                                <td class="scope hide-small" data-label="Path">${renderScope(log.effectivePath, data.organizations, data.events)}</td>
+                                <td class="scope hide-small" data-label=${t('admin.extensions.path')}>${renderScope(log.effectivePath, data.organizations, data.events)}</td>
                                 <td class="script-name">${log.name}</td>
-                                <td data-label="Type">${this.logBadge(log.type)}</td>
-                                <td class="description" data-label="Description">${log.description}</td>
-                                <td class="timestamp" data-label="Date">
+                                <td data-label=${t('admin.common.type')}>${this.logBadge(log.type)}</td>
+                                <td class="description" data-label=${t('admin.common.description')}>${log.description}</td>
+                                <td class="timestamp" data-label=${t('admin.common.date')}>
                                     <alfio-format-date date=${log.timestamp}></alfio-format-date>
                                 </td>
                             </tr>
@@ -190,9 +198,9 @@ export class ExtensionLogPage extends LitElement {
 
     private emptyMessage(): string {
         if (this.search !== '' || this.type != null) {
-            return 'No log entries match your filters';
+            return t('admin.extension-log.none-matching');
         }
-        return 'No log entries found';
+        return t('admin.extension-log.none');
     }
 
     private logBadge(type: ExtensionLogType): TemplateResult {
@@ -204,7 +212,7 @@ export class ExtensionLogPage extends LitElement {
         } else if (type === 'WARNING') {
             variant = 'warning';
         }
-        return html`<sl-badge variant=${variant} pill>${humanize(type)}</sl-badge>`;
+        return html`<sl-badge variant=${variant} pill>${t(LOG_TYPE_LABELS[type])}</sl-badge>`;
     }
 
     private onTypeChange(value: string): void {

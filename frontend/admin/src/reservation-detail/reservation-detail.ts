@@ -89,6 +89,7 @@ import './attendee-data-dialog.ts';
 import './activity-log.ts';
 
 import { adminConfig } from '../admin-config';
+import { formatNumber, t, tHtml } from '../service/i18n.ts';
 interface PurchaseContextInfo {
     title: string;
     timeZone: string;
@@ -171,9 +172,9 @@ export interface ReservationChangedDetail {
 }
 
 const BILLING_DOCUMENT_TYPES: Record<BillingDocumentType, string> = {
-    RECEIPT: 'Receipt',
-    INVOICE: 'Invoice',
-    CREDIT_NOTE: 'Credit note',
+    RECEIPT: t('admin.reservation.billing.receipt'),
+    INVOICE: t('admin.reservation.billing.invoice'),
+    CREDIT_NOTE: t('admin.reservation.billing.credit-note'),
 };
 
 type CustomerType = 'private' | 'company';
@@ -427,7 +428,7 @@ export class ReservationDetailPage extends LitElement {
     ];
 
     render(): TemplateResult {
-        return taskContent(this.loadDataTask, this.lastData, 'Failed to load the reservation. Please try again.',
+        return taskContent(this.loadDataTask, this.lastData, t('admin.reservation.load-failed'),
             (data) => this.renderContent(data));
     }
 
@@ -437,8 +438,8 @@ export class ReservationDetailPage extends LitElement {
             <div class="container">
                 ${when(!this.embedded, () => html`
                     <div class="page-title-row secondary">
-                        <h1>Reservation ${shortReservationId(reservation.id)}</h1>
-                        <sl-copy-button hoist value=${reservation.id} copy-label="Copy the full reservation ID"></sl-copy-button>
+                        <h1>${t('admin.reservation.title', shortReservationId(reservation.id))}</h1>
+                        <sl-copy-button hoist value=${reservation.id} copy-label=${t('admin.reservation.copy-id')}></sl-copy-button>
                         ${reservationStatusBadge(reservation.status)}
                     </div>
                     <hr class="page-separator" />
@@ -447,11 +448,11 @@ export class ReservationDetailPage extends LitElement {
                 ${this.renderNotices(data)}
                 ${this.renderToolbar(data)}
                 <sl-tab-group>
-                    ${this.renderTab('details', 'Details', 'card-text', null, true)}
+                    ${this.renderTab('details', t('admin.promo-code.details'), 'card-text', null, true)}
                     ${when(this.isOwner && data.context.visible, () => html`
-                        ${when(this.displayBillingDocuments(data), () => this.renderTab('billing-documents', 'Billing documents', 'receipt', data.billingDocuments.length))}
-                        ${this.renderTab('emails', 'E-mails', 'envelope', data.emails.length)}
-                        ${this.renderTab('history', 'History', 'clock-history', null)}
+                        ${when(this.displayBillingDocuments(data), () => this.renderTab('billing-documents', t('admin.reservation.tab.billing-documents'), 'receipt', data.billingDocuments.length))}
+                        ${this.renderTab('emails', t('admin.reservation.tab.emails'), 'envelope', data.emails.length)}
+                        ${this.renderTab('history', t('admin.invitations.tab.history'), 'clock-history', null)}
                     `)}
                     <sl-tab-panel name="details" active>${this.renderDetails(data)}</sl-tab-panel>
                     ${when(this.isOwner && data.context.visible, () => html`
@@ -461,7 +462,7 @@ export class ReservationDetailPage extends LitElement {
                                                data-purchase-context-type=${this.purchaseContextType}
                                                data-public-identifier=${this.publicIdentifier}
                                                data-time-zone=${data.context.timeZone}
-                                               data-empty-message="No e-mails have been sent for this reservation"></alfio-email-table>
+                                               data-empty-message=${t('admin.reservation.emails.none')}></alfio-email-table>
                         </sl-tab-panel>
                         <sl-tab-panel name="history">${this.renderHistory(data)}</sl-tab-panel>
                     `)}
@@ -499,46 +500,43 @@ export class ReservationDetailPage extends LitElement {
                 ${when(this.fromCreation === 'true' && this.creationNoticeVisible, () => html`
                     <sl-alert open closable variant="success" @sl-after-hide=${() => { this.creationNoticeVisible = false; }}>
                         <sl-icon slot="icon" name="check2-circle"></sl-icon>
-                        <strong>The reservation has been created.</strong><br />
-                        Nobody has been notified yet: use the "Send e-mail" button to send the notifications.
+                        <strong>${t('admin.reservation.notice.created')}</strong><br />
+                        ${t('admin.reservation.notice.created.help')}
                     </sl-alert>
                 `)}
                 ${when(reservation.status === 'PENDING', () => html`
                     <sl-alert open variant="primary">
                         <sl-icon slot="icon" name="info-circle"></sl-icon>
-                        You can confirm this reservation, or leave it pending and send the link to the contact person for the payment.
-                        Change the expiration date to give them more time.
+                        ${t('admin.reservation.notice.pending')}
                     </sl-alert>
                 `)}
                 ${when(reservation.status === 'STUCK', () => html`
                     <sl-alert open variant="danger">
                         <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                        This reservation is in an unknown state. This could happen when there are troubles after receiving a response
-                        from the payment gateway. Please check the payment status on the payment gateway's dashboard, then confirm or cancel this reservation.
+                        ${t('admin.reservation.notice.stuck')}
                     </sl-alert>
                 `)}
                 ${when(this.ticketsToResend.length > 0, () => html`
                     <sl-alert open closable variant="warning" class="resend-tickets" @sl-after-hide=${() => { this.ticketsToResend = []; }}>
                         <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                        <strong>The tickets you have modified are no longer valid.</strong>
-                        Send the new tickets to their attendees.
+                        <strong>${t('admin.reservation.notice.resend')}</strong>
+                        ${t('admin.reservation.notice.resend.help')}
                         <sl-button size="small" variant="primary" outline ?disabled=${this.busy}
                                    @click=${() => this.resendTickets(data)}>
                             <sl-icon slot="prefix" name="envelope"></sl-icon>
-                            Send tickets…
+                            ${t('admin.reservation.send-tickets')}
                         </sl-button>
                     </sl-alert>
                 `)}
                 ${when(transaction?.potentialMatch, () => html`
                     <sl-alert open variant="primary" data-testid="matching-transaction">
                         <sl-icon slot="icon" name="arrow-left-right"></sl-icon>
-                        <strong>A matching transaction has been found.</strong>
-                        The payment provider has received a payment of ${formatAmount(transaction!.formattedAmount, transaction!.currency)}
-                        which matches this reservation.
+                        <strong>${t('admin.reservation.notice.match')}</strong>
+                        ${t('admin.reservation.notice.match.help', formatAmount(transaction!.formattedAmount, transaction!.currency))}
                         <sl-button size="small" variant="primary" outline ?disabled=${this.busy}
                                    @click=${() => this.reviewMatchingTransaction(data)}>
                             <sl-icon slot="prefix" name="arrow-left-right"></sl-icon>
-                            Review match
+                            ${t('admin.pending-payments.review-match')}
                         </sl-button>
                     </sl-alert>
                 `)}
@@ -553,11 +551,11 @@ export class ReservationDetailPage extends LitElement {
         return html`
             <div class="filter-toolbar">
                 <div class="filter-left">
-                    <sl-input class="share-link" label="URL to share" readonly .value=${url}
-                              help-text="The customer can see and manage the reservation at this address">
+                    <sl-input class="share-link" label=${t('admin.reservation.share-url')} readonly .value=${url}
+                              help-text=${t('admin.reservation.share-url.help')}>
                         <sl-icon slot="prefix" name="link-45deg"></sl-icon>
-                        <sl-copy-button hoist slot="suffix" value=${url} copy-label="Copy URL"></sl-copy-button>
-                        <sl-icon-button slot="suffix" name="box-arrow-up-right" label="Open" href=${url} target="_blank" rel="noopener"></sl-icon-button>
+                        <sl-copy-button hoist slot="suffix" value=${url} copy-label=${t('admin.reservation.copy-url')}></sl-copy-button>
+                        <sl-icon-button slot="suffix" name="box-arrow-up-right" label=${t('admin.common.open')} href=${url} target="_blank" rel="noopener"></sl-icon-button>
                     </sl-input>
                 </div>
                 <div class="filter-right">
@@ -571,17 +569,17 @@ export class ReservationDetailPage extends LitElement {
                         <sl-dropdown hoist placement="bottom-end">
                             <sl-button slot="trigger" caret ?disabled=${this.busy}>
                                 <sl-icon slot="prefix" name="envelope"></sl-icon>
-                                Send e-mail
+                                ${t('admin.reservation.send-email')}
                             </sl-button>
                             <sl-menu @sl-select=${(e: CustomEvent) => this.sendEmail(data, e.detail.item.value)}>
                                 <sl-menu-item value="customer">
                                     <sl-icon slot="prefix" name="person"></sl-icon>
-                                    Reservation to the contact person
+                                    ${t('admin.reservation.send-email.customer')}
                                 </sl-menu-item>
                                 ${when(this.purchaseContextType === 'event', () => html`
                                     <sl-menu-item value="attendees">
                                         <sl-icon slot="prefix" name="ticket-perforated"></sl-icon>
-                                        Tickets to the attendees…
+                                        ${t('admin.reservation.send-email.attendees')}
                                     </sl-menu-item>
                                 `)}
                             </sl-menu>
@@ -589,17 +587,17 @@ export class ReservationDetailPage extends LitElement {
                     `)}
                     ${when(this.canCancel(data), () => html`
                         <sl-dropdown hoist placement="bottom-end">
-                            <sl-icon-button slot="trigger" name="three-dots-vertical" label="More actions" ?disabled=${this.busy}></sl-icon-button>
+                            <sl-icon-button slot="trigger" name="three-dots-vertical" label=${t('admin.common.more-actions')} ?disabled=${this.busy}></sl-icon-button>
                             <sl-menu @sl-select=${(e: CustomEvent) => this.cancel(data, e.detail.item.value === 'credit')}>
                                 ${when(isOfflinePayment(reservation.status), () => html`
                                     <sl-menu-item value="credit">
                                         <sl-icon slot="prefix" name="arrow-counterclockwise"></sl-icon>
-                                        Issue credit note
+                                        ${t('admin.pending-payments.issue-credit-note')}
                                     </sl-menu-item>
                                 `)}
                                 <sl-menu-item value="cancel" class="danger">
                                     <sl-icon slot="prefix" name="trash"></sl-icon>
-                                    Cancel reservation
+                                    ${t('admin.reservation.cancel')}
                                 </sl-menu-item>
                             </sl-menu>
                         </sl-dropdown>
@@ -621,7 +619,7 @@ export class ReservationDetailPage extends LitElement {
                 ${when(subscriptionDetails, () => html`<div class="wide">${this.renderSubscriptionCard(subscriptionDetails!)}</div>`)}
                 ${when(isNotPaid(reservation.status) && !isFree(data), () => html`<div class="wide">${this.renderAdvancedBilling(data)}</div>`)}
                 <div class="wide">
-                    ${sectionCard({ icon: 'receipt', title: 'Order summary' },
+                    ${sectionCard({ icon: 'receipt', title: t('admin.reservation.order-summary') },
                         orderSummaryTable(descriptor.orderSummary, reservation.currencyCode ?? data.context.currency))}
                 </div>
                 ${when(this.purchaseContextType === 'event',
@@ -633,12 +631,12 @@ export class ReservationDetailPage extends LitElement {
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
                         ${when(this.embedded,
-                            () => html`<sl-button variant="default" size="large" @click=${this.close}>Close</sl-button>`,
+                            () => html`<sl-button variant="default" size="large" @click=${this.close}>${t('admin.common.close')}</sl-button>`,
                             () => html`<sl-button variant="default" size="large" ?disabled=${!this.dirty(data) || this.busy}
-                                                  @click=${() => this.#form.api.reset(initialDrafts(data))}>Cancel</sl-button>`)}
+                                                  @click=${() => this.#form.api.reset(initialDrafts(data))}>${t('admin.common.cancel')}</sl-button>`)}
                         <div></div>
                         <sl-button type="submit" variant="warning" size="large" ?loading=${this.busy} ?disabled=${!this.dirty(data) || this.busy}>
-                            Save
+                            ${t('admin.common.save')}
                         </sl-button>
                     </div>
                 </div>
@@ -649,22 +647,22 @@ export class ReservationDetailPage extends LitElement {
     private renderReservationCard(data: ReservationData): TemplateResult {
         const reservation = data.descriptor.reservation;
         const expirationEditable = reservation.status !== 'COMPLETE' && reservation.status !== 'CANCELLED';
-        return sectionCard({ icon: 'info-circle', title: 'Reservation' }, html`
+        return sectionCard({ icon: 'info-circle', title: t('admin.page-title.reservation') }, html`
             ${renderDetailList([
-                !isFree(data) && { label: 'Payment method', value: this.paymentMethod(data) },
-                reservation.hasInvoiceNumber && { label: 'Invoice number', value: reservation.invoiceNumber },
+                !isFree(data) && { label: t('admin.reservation.payment-method'), value: this.paymentMethod(data) },
+                reservation.hasInvoiceNumber && { label: t('admin.reservation.invoice-number'), value: reservation.invoiceNumber },
                 !expirationEditable && {
-                    label: 'Expiration',
+                    label: t('admin.additional-items.expiration'),
                     value: html`<alfio-format-date date=${reservation.validity} time-zone=${data.context.timeZone}></alfio-format-date>`,
                 },
             ])}
             ${when(expirationEditable, () => html`
                 ${this.#form.field({ name: 'expiration', validators: validateWith(value => requiredValue(value)) }, field => this.input(field, {
                     name: 'expiration',
-                    label: 'Expiration',
+                    label: t('admin.additional-items.expiration'),
                     type: 'datetime-local',
                     prefixIcon: 'calendar-event',
-                    helpText: `Time zone: ${data.context.timeZone}`,
+                    helpText: t('admin.reservation.time-zone', data.context.timeZone),
                 }))}
             `)}
         `);
@@ -673,24 +671,24 @@ export class ReservationDetailPage extends LitElement {
     private renderPaymentCard(data: ReservationData): TemplateResult {
         const paymentInfo = data.paymentInfo;
         if (paymentInfo == null) {
-            return sectionCard({ icon: 'cash-coin', title: 'Payment' }, emptyState('No payments have been found'));
+            return sectionCard({ icon: 'cash-coin', title: t('admin.common.payment') }, emptyState(t('admin.reservation.payment.none')));
         }
         const transaction = paymentInfo.transaction;
         const information = paymentInfo.paymentInformation;
         const currency = transaction?.currency ?? data.context.currency;
         const canRefund = this.isOwner && paymentInfo.supportRefund && data.descriptor.reservation.status !== 'STUCK';
-        return sectionCard({ icon: 'cash-coin', title: 'Payment' }, html`
+        return sectionCard({ icon: 'cash-coin', title: t('admin.common.payment') }, html`
             ${when(transaction?.complete,
                 () => renderDetailList([
-                    { label: 'Payment ID', value: transaction!.transactionId ?? '', monospace: true },
-                    { label: 'Date', value: html`<alfio-format-date date=${transaction!.timestamp} time-zone=${data.context.timeZone}></alfio-format-date>` },
-                    information != null && { label: 'Paid amount', value: html`<strong>${formatAmount(information.paidAmount, currency)}</strong>` },
-                    information != null && paymentInfo.supportRefund && { label: 'Refunded amount', value: formatAmount(information.refundedAmount ?? '0.00', currency) },
+                    { label: t('admin.matching-transaction.payment-id'), value: transaction!.transactionId ?? '', monospace: true },
+                    { label: t('admin.common.date'), value: html`<alfio-format-date date=${transaction!.timestamp} time-zone=${data.context.timeZone}></alfio-format-date>` },
+                    information != null && { label: t('admin.matching-transaction.paid-amount'), value: html`<strong>${formatAmount(information.paidAmount, currency)}</strong>` },
+                    information != null && paymentInfo.supportRefund && { label: t('admin.reservation.payment.refunded'), value: formatAmount(information.refundedAmount ?? '0.00', currency) },
                 ]),
-                () => emptyState('The payment has not been completed yet'))}
+                () => emptyState(t('admin.reservation.payment.not-completed')))}
             ${when(canRefund, () => html`
                 <div class="refund-form">
-                    <sl-input type="number" name="refundAmount" label="Refund an arbitrary amount" min="0" step="0.01"
+                    <sl-input type="number" name="refundAmount" label=${t('admin.reservation.payment.refund-amount')} min="0" step="0.01"
                               .value=${this.refundAmount}
                               @sl-input=${(e: Event) => { this.refundAmount = (e.target as SlInput).value; }}>
                         <span slot="suffix">${currency}</span>
@@ -698,7 +696,7 @@ export class ReservationDetailPage extends LitElement {
                     <sl-button variant="warning" ?disabled=${this.busy || !(Number(this.refundAmount) > 0)}
                                @click=${() => this.refund(data, currency)}>
                         <sl-icon slot="prefix" name="arrow-counterclockwise"></sl-icon>
-                        Refund
+                        ${t('admin.reservation.payment.refund')}
                     </sl-button>
                 </div>
             `)}
@@ -711,24 +709,24 @@ export class ReservationDetailPage extends LitElement {
         const eInvoicing = data.descriptor.additionalInfo?.invoicingAdditionalInfo?.italianEInvoicing;
         return sectionCard({
             icon: 'person',
-            title: 'Contact',
+            title: t('admin.reservation.contact'),
             className: 'contact',
             actions: this.editToggle(draft != null, () => this.toggleContact(data)),
         }, when(draft,
             () => this.renderContactForm(data, draft!),
             () => renderDetailList([
-                { label: 'Customer', value: this.customerTypeLabel(data.descriptor) },
-                isCompany(data.descriptor) && { label: 'Company', value: html`<strong>${data.descriptor.additionalInfo?.billingAddressCompany ?? ''}</strong>` },
-                { label: 'Name', value: formatFullName(reservation) },
-                { label: 'E-mail', value: reservation.email },
-                { label: 'Language', value: reservation.userLanguage },
-                !!reservation.vatNr && { label: 'Tax ID (VAT / GST)', value: reservation.vatNr },
-                !!reservation.vatCountryCode && { label: 'Country', value: reservation.vatCountryCode },
+                { label: t('admin.common.customer'), value: this.customerTypeLabel(data.descriptor) },
+                isCompany(data.descriptor) && { label: t('admin.reservation.company'), value: html`<strong>${data.descriptor.additionalInfo?.billingAddressCompany ?? ''}</strong>` },
+                { label: t('admin.common.name'), value: formatFullName(reservation) },
+                { label: t('admin.common.email'), value: reservation.email },
+                { label: t('admin.reservation-create.language'), value: reservation.userLanguage },
+                !!reservation.vatNr && { label: t('admin.reservation.tax-id'), value: reservation.vatNr },
+                !!reservation.vatCountryCode && { label: t('admin.reservation.country'), value: reservation.vatCountryCode },
                 !!eInvoicing?.referenceType && { label: 'Codice fiscale', value: eInvoicing.fiscalCode },
                 eInvoicing?.referenceType === 'ADDRESSEE_CODE' && { label: 'Codice destinatario', value: eInvoicing.addresseeCode },
                 eInvoicing?.referenceType === 'PEC' && { label: 'PEC', value: eInvoicing.pec },
-                eInvoicing?.referenceType === 'NONE' && { label: 'E-invoicing', value: 'Nessun codice destinatario o PEC' },
-                !!reservation.billingAddress && { label: 'Billing address', value: html`<pre class="billing-address">${reservation.billingAddress}</pre>` },
+                eInvoicing?.referenceType === 'NONE' && { label: t('admin.reservation.e-invoicing'), value: 'Nessun codice destinatario o PEC' },
+                !!reservation.billingAddress && { label: t('admin.reservation.billing-address'), value: html`<pre class="billing-address">${reservation.billingAddress}</pre>` },
             ])));
     }
 
@@ -744,11 +742,11 @@ export class ReservationDetailPage extends LitElement {
         const eInvoicing = data.descriptor.additionalInfo?.invoicingAdditionalInfo?.italianEInvoicing;
         return html`
             <div class="form-stack">
-                <sl-radio-group name="customerType" label="Customer" value=${draft.customerType}
-                                help-text="Invoices are issued to the company, if any"
+                <sl-radio-group name="customerType" label=${t('admin.common.customer')} value=${draft.customerType}
+                                help-text=${t('admin.reservation.customer-type.help')}
                                 @sl-change=${(e: Event) => this.#form.api.setFieldValue('contact.customerType', (e.target as SlRadioGroup).value as CustomerType)}>
-                    <sl-radio-button value="private"><sl-icon slot="prefix" name="person"></sl-icon>Private person</sl-radio-button>
-                    <sl-radio-button value="company"><sl-icon slot="prefix" name="building"></sl-icon>Company</sl-radio-button>
+                    <sl-radio-button value="private"><sl-icon slot="prefix" name="person"></sl-icon>${t('admin.reservation.private-person')}</sl-radio-button>
+                    <sl-radio-button value="company"><sl-icon slot="prefix" name="building"></sl-icon>${t('admin.reservation.company')}</sl-radio-button>
                 </sl-radio-group>
                 ${when(draft.customerType === 'company', () => html`
                     ${this.#form.field({
@@ -759,25 +757,25 @@ export class ReservationDetailPage extends LitElement {
                             }
                             return requiredValue(value);
                         })),
-                    }, field => this.input(field, { name: 'companyName', label: 'Company name', prefixIcon: 'building' }))}
-                    ${formField(draft, 'vatNr', { label: 'Tax ID (VAT / GST)' }, onChange)}
+                    }, field => this.input(field, { name: 'companyName', label: t('admin.reservation.company-name'), prefixIcon: 'building' }))}
+                    ${formField(draft, 'vatNr', { label: t('admin.reservation.tax-id') }, onChange)}
                 `)}
                 <div class="row">
                     ${this.#form.field({ name: 'contact.firstName', validators: validateWith(value => ifContact(() => requiredValue(value))) },
-                        field => this.input(field, { name: 'firstName', label: 'First name' }))}
+                        field => this.input(field, { name: 'firstName', label: t('admin.common.first-name') }))}
                     ${this.#form.field({ name: 'contact.lastName', validators: validateWith(value => ifContact(() => requiredValue(value))) },
-                        field => this.input(field, { name: 'lastName', label: 'Last name' }))}
+                        field => this.input(field, { name: 'lastName', label: t('admin.common.last-name') }))}
                 </div>
                 ${this.#form.field({ name: 'contact.emailAddress', validators: validateWith(value => ifContact(() => emailAddress(value))) },
-                    field => this.input(field, { name: 'emailAddress', label: 'E-mail', type: 'email', prefixIcon: 'envelope' }))}
+                    field => this.input(field, { name: 'emailAddress', label: t('admin.common.email'), type: 'email', prefixIcon: 'envelope' }))}
                 ${selectField(draft, 'userLanguage', {
-                    label: 'Language',
+                    label: t('admin.reservation-create.language'),
                     options: data.context.locales.map(locale => ({ value: locale, label: locale })),
                 }, onChange)}
                 ${this.renderAddressFields(draft, onChange)}
                 ${when(eInvoicing?.referenceType, () => html`
                     ${formField(draft, 'fiscalCode', { label: 'Codice fiscale' }, onChange)}
-                    ${selectField(draft, 'referenceType', { label: 'Italian e-invoicing', options: E_INVOICING_REFERENCE_TYPES }, onChange)}
+                    ${selectField(draft, 'referenceType', { label: t('admin.reservation.italian-e-invoicing'), options: E_INVOICING_REFERENCE_TYPES }, onChange)}
                     ${when(draft.referenceType === 'ADDRESSEE_CODE', () => formField(draft, 'addresseeCode', { label: 'Codice destinatario' }, onChange))}
                     ${when(draft.referenceType === 'PEC', () => this.#form.field({
                         name: 'contact.pec',
@@ -796,22 +794,22 @@ export class ReservationDetailPage extends LitElement {
     private renderAddressFields(draft: ContactDraft, onChange: () => void): TemplateResult {
         if (!draft.structuredAddress) {
             return html`
-                ${formField(draft, 'billingAddress', { label: 'Billing address', type: 'textarea' }, onChange)}
+                ${formField(draft, 'billingAddress', { label: t('admin.reservation.billing-address'), type: 'textarea' }, onChange)}
                 <sl-button variant="text" size="small" class="address-switch"
                            @click=${() => { draft.structuredAddress = true; onChange(); }}>
                     <sl-icon slot="prefix" name="pencil"></sl-icon>
-                    Enter the address field by field
+                    ${t('admin.reservation.structured-address')}
                 </sl-button>
                 ${this.renderCountryField(draft, onChange)}
             `;
         }
         return html`
-            ${formField(draft, 'addressLine1', { label: 'Address' }, onChange)}
-            ${formField(draft, 'addressLine2', { label: 'Address (second line)' }, onChange)}
+            ${formField(draft, 'addressLine1', { label: t('admin.reservation.address') }, onChange)}
+            ${formField(draft, 'addressLine2', { label: t('admin.reservation.address-2') }, onChange)}
             <div class="row" style="--alfio-row-cols: 3">
-                ${formField(draft, 'zip', { label: 'ZIP code' }, onChange)}
-                ${formField(draft, 'city', { label: 'City' }, onChange)}
-                ${formField(draft, 'state', { label: 'State / province' }, onChange)}
+                ${formField(draft, 'zip', { label: t('admin.reservation.zip') }, onChange)}
+                ${formField(draft, 'city', { label: t('admin.reservation.city') }, onChange)}
+                ${formField(draft, 'state', { label: t('admin.reservation.state') }, onChange)}
             </div>
             ${this.renderCountryField(draft, onChange)}
         `;
@@ -819,19 +817,19 @@ export class ReservationDetailPage extends LitElement {
 
     private customerTypeLabel(descriptor: ReservationDescriptor): TemplateResult {
         if (isCompany(descriptor)) {
-            return html`<sl-icon name="building" aria-hidden="true"></sl-icon> Company`;
+            return html`<sl-icon name="building" aria-hidden="true"></sl-icon> ${t('admin.reservation.company')}`;
         }
-        return html`<sl-icon name="person" aria-hidden="true"></sl-icon> Private person`;
+        return html`<sl-icon name="person" aria-hidden="true"></sl-icon> ${t('admin.reservation.private-person')}`;
     }
 
     private renderCountryField(draft: ContactDraft, onChange: () => void): TemplateResult {
         const countries = Object.entries(this.countries);
         // sl-select ignores a value set before its options: render it once the countries have been loaded
         if (countries.length === 0) {
-            return html`<sl-input label="Country" disabled .value=${draft.vatCountryCode}><sl-spinner slot="suffix"></sl-spinner></sl-input>`;
+            return html`<sl-input label=${t('admin.reservation.country')} disabled .value=${draft.vatCountryCode}><sl-spinner slot="suffix"></sl-spinner></sl-input>`;
         }
         return selectField(draft, 'vatCountryCode', {
-            label: 'Country',
+            label: t('admin.reservation.country'),
             options: countries
                 .sort(([, a], [, b]) => a.localeCompare(b))
                 .map(([code, name]) => ({ value: code, label: `${code} - ${name}` })),
@@ -852,39 +850,39 @@ export class ReservationDetailPage extends LitElement {
         };
         return sectionCard({
             icon: 'card-checklist',
-            title: 'Subscription',
+            title: t('admin.page-title.subscription'),
             actions: this.editToggle(draft != null, () => this.toggleSubscription()),
         }, when(draft,
             () => html`
                 <div class="form-stack">
                     <div class="row">
                         ${this.#form.field({ name: 'subscription.firstName', validators: validateWith(value => ifSubscription(() => requiredValue(value))) },
-                            field => this.input(field, { name: 'firstName', label: "Owner's first name" }))}
+                            field => this.input(field, { name: 'firstName', label: t('admin.reservation.subscription.owner-first-name') }))}
                         ${this.#form.field({ name: 'subscription.lastName', validators: validateWith(value => ifSubscription(() => requiredValue(value))) },
-                            field => this.input(field, { name: 'lastName', label: "Owner's last name" }))}
+                            field => this.input(field, { name: 'lastName', label: t('admin.reservation.subscription.owner-last-name') }))}
                     </div>
                     ${this.#form.field({ name: 'subscription.email', validators: validateWith(value => ifSubscription(() => emailAddress(value))) },
-                        field => this.input(field, { name: 'email', label: 'E-mail', type: 'email', prefixIcon: 'envelope' }))}
-                    ${when(maxAllowed != null && maxAllowed > 0, () => formField(draft!, 'maxAllowed', { label: 'Max allowed usages', type: 'number', icon: 'hash' }, onChange))}
+                        field => this.input(field, { name: 'email', label: t('admin.common.email'), type: 'email', prefixIcon: 'envelope' }))}
+                    ${when(maxAllowed != null && maxAllowed > 0, () => formField(draft!, 'maxAllowed', { label: t('admin.reservation.subscription.max-usages'), type: 'number', icon: 'hash' }, onChange))}
                     <div class="row">
                         ${when(subscription.validityFrom, () => this.#form.field({
                             name: 'subscription.validityFrom',
                             validators: validateWith(value => ifSubscription(() => requiredValue(value))),
-                        }, field => this.input(field, { name: 'validityFrom', label: 'Valid from', type: 'datetime-local', helpText: `Time zone: ${timeZone}` })))}
+                        }, field => this.input(field, { name: 'validityFrom', label: t('admin.category-dialog.valid-from'), type: 'datetime-local', helpText: t('admin.reservation.time-zone', timeZone) })))}
                         ${when(subscription.validityTo, () => this.#form.field({
                             name: 'subscription.validityTo',
                             validators: validateWith(value => ifSubscription(() => requiredValue(value))),
-                        }, field => this.input(field, { name: 'validityTo', label: 'Valid to', type: 'datetime-local', helpText: `Time zone: ${timeZone}` })))}
+                        }, field => this.input(field, { name: 'validityTo', label: t('admin.additional-item.valid-to'), type: 'datetime-local', helpText: t('admin.reservation.time-zone', timeZone) })))}
                     </div>
                 </div>
             `,
             () => renderDetailList([
-                { label: 'PIN', value: html`<span class="monospace">${subscription.pin}</span> <sl-copy-button hoist value=${subscription.pin} copy-label="Copy PIN"></sl-copy-button>` },
-                { label: 'Owner', value: formatFullName(subscription) },
-                { label: 'E-mail', value: subscription.email },
-                { label: 'Usages', value: this.usages(details) },
+                { label: 'PIN', value: html`<span class="monospace">${subscription.pin}</span> <sl-copy-button hoist value=${subscription.pin} copy-label=${t('admin.reservation.subscription.copy-pin')}></sl-copy-button>` },
+                { label: t('admin.reservation.subscription.owner'), value: formatFullName(subscription) },
+                { label: t('admin.common.email'), value: subscription.email },
+                { label: t('admin.reservation.subscription.usages'), value: this.usages(details) },
                 subscription.validityFrom != null && {
-                    label: 'Validity',
+                    label: t('admin.category-dialog.validity'),
                     value: html`<alfio-format-date date=${subscription.validityFrom} end=${subscription.validityTo ?? ''} time-zone=${timeZone}></alfio-format-date>`,
                 },
             ])));
@@ -899,7 +897,7 @@ export class ReservationDetailPage extends LitElement {
                 <sl-button variant="text" size="large" class="advanced-billing-toggle"
                            @click=${() => this.updateDrafts({ showAdvancedBilling: true })}>
                     <sl-icon slot="prefix" name="sliders"></sl-icon>
-                    Show advanced invoice options
+                    ${t('admin.reservation.advanced.show')}
                 </sl-button>
             `;
         }
@@ -908,19 +906,19 @@ export class ReservationDetailPage extends LitElement {
             <sl-button size="small" variant="default" outline
                        @click=${() => this.updateDrafts({ showAdvancedBilling: false, vatApplied: initialDrafts(data).vatApplied })}>
                 <sl-icon slot="prefix" name="eye-slash"></sl-icon>
-                Hide
+                ${t('admin.common.hide')}
             </sl-button>
         `;
-        return sectionCard({ icon: 'exclamation-triangle', title: 'Advanced invoice data', className: 'danger-zone', actions: hide }, html`
-            <p class="text-danger">Change these options with care: they might affect the total price of the reservation, or lead to inconsistencies.</p>
+        return sectionCard({ icon: 'exclamation-triangle', title: t('admin.reservation.advanced.title'), className: 'danger-zone', actions: hide }, html`
+            <p class="text-danger">${t('admin.reservation.advanced.warning')}</p>
             ${when(vatApplied != null,
                 () => html`
                     <sl-switch .checked=${vatApplied!}
-                               help-text="When off, the reservation is exempt from VAT/GST"
+                               help-text=${t('admin.reservation.advanced.vat.help')}
                                @sl-change=${(e: Event) => this.updateDrafts({ vatApplied: (e.target as SlSwitch).checked })}>
-                        Apply VAT/GST
+                        ${t('admin.reservation.advanced.vat')}
                     </sl-switch>`,
-                () => html`<span class="text-muted">VAT/GST not applicable</span>`)}
+                () => html`<span class="text-muted">${t('admin.reservation.advanced.vat.not-applicable')}</span>`)}
         `);
     }
 
@@ -930,7 +928,7 @@ export class ReservationDetailPage extends LitElement {
         const fields = fieldsForCategory(data.attendeeFields, category.id);
         return sectionCard({
             icon: 'people',
-            title: `Attendees for ${category.name}`,
+            title: t('admin.reservation.attendees-for', category.name),
             badge: html`<sl-badge variant="primary" pill>${tickets.length}</sl-badge>`,
             actions: this.editToggle(drafts != null, () => this.toggleAttendees(category.id, tickets)),
         }, html`
@@ -939,11 +937,11 @@ export class ReservationDetailPage extends LitElement {
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>First name</th>
-                            <th>Last name</th>
-                            <th>E-mail</th>
-                            <th class="hide-small">Check-in</th>
-                            <th>Actions</th>
+                            <th>${t('admin.common.first-name')}</th>
+                            <th>${t('admin.common.last-name')}</th>
+                            <th>${t('admin.common.email')}</th>
+                            <th class="hide-small">${t('admin.page-title.check-in')}</th>
+                            <th>${t('admin.common.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -953,11 +951,11 @@ export class ReservationDetailPage extends LitElement {
                             return html`
                                 <tr data-ticket-id=${ticket.id}>
                                     <td data-label="#">${index + 1}</td>
-                                    ${this.attendeeCell(category.id, ticket.id, draft, 'firstName', ticket.firstName, 'First name')}
-                                    ${this.attendeeCell(category.id, ticket.id, draft, 'lastName', ticket.lastName, 'Last name')}
-                                    ${this.attendeeCell(category.id, ticket.id, draft, 'emailAddress', ticket.email, 'E-mail')}
-                                    <td class="hide-small" data-label="Check-in">
-                                        ${when(ticket.status === 'CHECKED_IN', () => html`<sl-badge variant="success" pill>Checked in</sl-badge>`)}
+                                    ${this.attendeeCell(category.id, ticket.id, draft, 'firstName', ticket.firstName, t('admin.common.first-name'))}
+                                    ${this.attendeeCell(category.id, ticket.id, draft, 'lastName', ticket.lastName, t('admin.common.last-name'))}
+                                    ${this.attendeeCell(category.id, ticket.id, draft, 'emailAddress', ticket.email, t('admin.common.email'))}
+                                    <td class="hide-small" data-label=${t('admin.page-title.check-in')}>
+                                        ${when(ticket.status === 'CHECKED_IN', () => html`<sl-badge variant="success" pill>${t('admin.allocation.checked-in')}</sl-badge>`)}
                                     </td>
                                     <td>
                                         <div class="actions-cell">
@@ -965,20 +963,20 @@ export class ReservationDetailPage extends LitElement {
                                                 <sl-button class="full-data" size="small" variant="default" outline
                                                            @click=${() => this.showFullData(data, ticket, fields)}>
                                                     <sl-icon slot="prefix" name="card-list"></sl-icon>
-                                                    Full data
+                                                    ${t('admin.reservation.full-data')}
                                                 </sl-button>
                                             `)}
                                             ${when(log, () => html`
                                                 <sl-button size="small" variant="default" outline @click=${() => this.showCheckInLog(ticket, log!)}>
                                                     <sl-icon slot="prefix" name="clock-history"></sl-icon>
-                                                    Check-in log
+                                                    ${t('admin.reservation.check-in-log')}
                                                 </sl-button>
                                             `)}
                                             ${when(ticket.status !== 'CHECKED_IN', () => html`
                                                 <sl-button size="small" variant="danger" outline ?disabled=${this.busy}
                                                            @click=${() => this.removeTicket(data, ticket)}>
                                                     <sl-icon slot="prefix" name="trash"></sl-icon>
-                                                    Remove
+                                                    ${t('admin.common.remove')}
                                                 </sl-button>
                                             `)}
                                         </div>
@@ -992,9 +990,8 @@ export class ReservationDetailPage extends LitElement {
             ${when(drafts != null && this.ticketsToInvalidate(tickets, drafts).length > 0, () => html`
                 <sl-alert open variant="warning" class="invalidation-warning">
                     <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                    <strong>Changing the name or the e-mail invalidates the ticket</strong> of
-                    ${this.ticketsToInvalidate(tickets, drafts!).map(ticket => formatFullName(ticket) || ticket.email).join(', ')}:
-                    the QR code they have received will no longer work. After saving, send them the new ticket.
+                    ${tHtml('admin.reservation.invalidation-warning', html`<strong>${t('admin.reservation.invalidation-warning.strong')}</strong>`,
+                        this.ticketsToInvalidate(tickets, drafts!).map(ticket => formatFullName(ticket) || ticket.email).join(', '))}
                 </sl-alert>
             `)}
         `);
@@ -1048,7 +1045,7 @@ export class ReservationDetailPage extends LitElement {
     }
 
     private renderSubscriptionReservations(data: ReservationData): TemplateResult {
-        return sectionCard({ icon: 'calendar-check', title: 'Reservations completed using this subscription' }, html`
+        return sectionCard({ icon: 'calendar-check', title: t('admin.reservation.subscription.reservations') }, html`
             <alfio-reservations-list data-event-name=${this.publicIdentifier}
                                      data-purchase-context-type="subscription"
                                      data-completed-only
@@ -1064,26 +1061,26 @@ export class ReservationDetailPage extends LitElement {
             ${when(data.descriptor.reservation.status !== 'CANCELLED', () => html`
                 <div class="tab-toolbar">
                     <sl-button variant="warning" size="small" ?disabled=${this.busy}
-                               @click=${() => this.perform(() => service.regenerateBillingDocument(), 'Billing document regenerated', 'Failed to regenerate the billing document')}>
+                               @click=${() => this.perform(() => service.regenerateBillingDocument(), t('admin.reservation.billing.regenerated'), t('admin.reservation.billing.regenerate-failed'))}>
                         <sl-icon slot="prefix" name="arrow-repeat"></sl-icon>
-                        Regenerate
+                        ${t('admin.reservation.billing.regenerate')}
                     </sl-button>
                 </div>
             `)}
-            ${sectionCard({ icon: 'receipt', title: 'Active', badge: html`<sl-badge variant="primary" pill>${valid.length}</sl-badge>` },
+            ${sectionCard({ icon: 'receipt', title: t('admin.categories.filter.active'), badge: html`<sl-badge variant="primary" pill>${valid.length}</sl-badge>` },
                 this.billingDocumentsTable(data, valid, (document) => html`
                     <sl-button size="small" variant="danger" outline ?disabled=${this.busy}
                                @click=${() => this.invalidateDocument(document)}>
                         <sl-icon slot="prefix" name="x-octagon"></sl-icon>
-                        Invalidate
+                        ${t('admin.reservation.billing.invalidate')}
                     </sl-button>
                 `))}
-            ${sectionCard({ icon: 'archive', title: 'Not active', badge: html`<sl-badge variant="neutral" pill>${notValid.length}</sl-badge>` },
+            ${sectionCard({ icon: 'archive', title: t('admin.reservation.billing.not-active'), badge: html`<sl-badge variant="neutral" pill>${notValid.length}</sl-badge>` },
                 this.billingDocumentsTable(data, notValid, (document) => html`
                     <sl-button size="small" variant="warning" outline ?disabled=${this.busy}
-                               @click=${() => this.perform(() => service.restoreBillingDocument(document.id), 'Billing document restored', 'Failed to restore the billing document')}>
+                               @click=${() => this.perform(() => service.restoreBillingDocument(document.id), t('admin.reservation.billing.restored'), t('admin.reservation.billing.restore-failed'))}>
                         <sl-icon slot="prefix" name="arrow-counterclockwise"></sl-icon>
-                        Restore
+                        ${t('admin.reservation.billing.restore')}
                     </sl-button>
                 `))}
         `;
@@ -1093,7 +1090,7 @@ export class ReservationDetailPage extends LitElement {
                                   documents: BillingDocument[],
                                   action: (document: BillingDocument) => TemplateResult): TemplateResult {
         if (documents.length === 0) {
-            return emptyState('No documents found');
+            return emptyState(t('admin.reservation.billing.none'));
         }
         const service = this.service();
         return html`
@@ -1101,18 +1098,18 @@ export class ReservationDetailPage extends LitElement {
                 <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
-                            <th>Type</th>
-                            <th>Number</th>
-                            <th>Date</th>
-                            <th>Actions</th>
+                            <th>${t('admin.common.type')}</th>
+                            <th>${t('admin.reservation.billing.number')}</th>
+                            <th>${t('admin.common.date')}</th>
+                            <th>${t('admin.common.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${repeat(documents, (document) => document.id, (document) => html`
                             <tr>
-                                <td data-label="Type">${BILLING_DOCUMENT_TYPES[document.type] ?? document.type}</td>
-                                <td class="monospace" data-label="Number">${document.number}</td>
-                                <td class="timestamp" data-label="Date">
+                                <td data-label=${t('admin.common.type')}>${BILLING_DOCUMENT_TYPES[document.type] ?? document.type}</td>
+                                <td class="monospace" data-label=${t('admin.reservation.billing.number')}>${document.number}</td>
+                                <td class="timestamp" data-label=${t('admin.common.date')}>
                                     <alfio-format-date date=${document.generationTimestamp} time-zone=${data.context.timeZone}></alfio-format-date>
                                 </td>
                                 <td>
@@ -1120,7 +1117,7 @@ export class ReservationDetailPage extends LitElement {
                                         <sl-button size="small" variant="default" outline href=${service.billingDocumentUrl(document.id)}
                                                    target="_blank" rel="noopener">
                                             <sl-icon slot="prefix" name="download"></sl-icon>
-                                            Download
+                                            ${t('admin.event.menu.download')}
                                         </sl-button>
                                         ${action(document)}
                                     </div>
@@ -1134,7 +1131,7 @@ export class ReservationDetailPage extends LitElement {
     }
 
     private renderHistory(data: ReservationData): TemplateResult {
-        return sectionCard({ icon: 'clock-history', title: 'What happened to this reservation' }, html`
+        return sectionCard({ icon: 'clock-history', title: t('admin.reservation.history') }, html`
             <alfio-activity-log .entries=${data.audit}
                                 .attendees=${attendeeNames(data.descriptor)}
                                 time-zone=${data.context.timeZone}
@@ -1146,14 +1143,14 @@ export class ReservationDetailPage extends LitElement {
         if (editing) {
             return html`
                 <sl-button size="small" variant="default" outline @click=${toggle}>
-                    Cancel
+                    ${t('admin.common.cancel')}
                 </sl-button>
             `;
         }
         return html`
             <sl-button size="small" variant="default" outline ?disabled=${this.busy} @click=${toggle}>
                 <sl-icon slot="prefix" name="pencil"></sl-icon>
-                Edit
+                ${t('admin.common.edit')}
             </sl-button>
         `;
     }
@@ -1253,7 +1250,7 @@ export class ReservationDetailPage extends LitElement {
             }
             return this.ticketsToInvalidate(entry.value, drafts).map(ticket => ticket.id);
         });
-        const saved = await this.perform(() => this.service().update(this.toModification(data, drafts)), 'Reservation updated successfully', 'Failed to update the reservation');
+        const saved = await this.perform(() => this.service().update(this.toModification(data, drafts)), t('admin.reservation.updated'), t('admin.reservation.update-failed'));
         if (saved && invalidated.length > 0) {
             this.ticketsToResend = [...new Set([...this.ticketsToResend, ...invalidated])];
         }
@@ -1331,7 +1328,7 @@ export class ReservationDetailPage extends LitElement {
             await this.confirmPaymentDialog.openForConfirmation(this.reservationId);
             return;
         }
-        await this.perform(() => this.service().confirm(), 'Reservation confirmed successfully', 'Failed to confirm the reservation', true);
+        await this.perform(() => this.service().confirm(), t('admin.reservation.confirmed'), t('admin.reservation.confirm-failed'), true);
     }
 
     private async reviewMatchingTransaction(data: ReservationData): Promise<void> {
@@ -1342,15 +1339,15 @@ export class ReservationDetailPage extends LitElement {
         } else if (choice === 'discard') {
             await this.perform(
                 () => PendingPaymentsService.discardMatchingTransaction(this.publicIdentifier, this.reservationId, transaction.id),
-                'Transaction flagged as not valid',
-                'Failed to flag the transaction as not valid');
+                t('admin.pending-payments.flagged'),
+                t('admin.pending-payments.flag-failed'));
         }
     }
 
     private async sendEmail(data: ReservationData, recipient: 'customer' | 'attendees'): Promise<void> {
         const service = this.service();
         if (recipient === 'customer') {
-            await this.perform(() => service.notifyCustomer(), 'E-mail sent to the contact person', 'Failed to send the e-mail', false, false);
+            await this.perform(() => service.notifyCustomer(), t('admin.reservation.email-sent'), t('admin.reservation.email-failed'), false, false);
             return;
         }
         await this.notifyAttendees(data);
@@ -1368,7 +1365,7 @@ export class ReservationDetailPage extends LitElement {
         if (ticketIds == null || ticketIds.length === 0) {
             return;
         }
-        const sent = await this.perform(() => this.service().notifyAttendees(ticketIds), 'Tickets sent to the attendees', 'Failed to send the tickets', false, false);
+        const sent = await this.perform(() => this.service().notifyAttendees(ticketIds), t('admin.reservation.tickets-sent'), t('admin.reservation.tickets-failed'), false, false);
         if (sent) {
             this.ticketsToResend = this.ticketsToResend.filter(id => !ticketIds.includes(id));
         }
@@ -1380,16 +1377,16 @@ export class ReservationDetailPage extends LitElement {
         if (choice == null) {
             return;
         }
-        let message = 'Reservation cancelled successfully';
+        let message = t('admin.reservation.cancelled');
         if (credit) {
-            message = 'Credit note issued successfully';
+            message = t('admin.pending-payments.credit.done');
         } else if (data.descriptor.reservation.status === 'CREDIT_NOTE_ISSUED') {
-            message += '. A credit note has been generated, see the billing documents.';
+            message = t('admin.reservation.cancelled-credit-note');
         }
         await this.perform(
             () => this.service().cancel({ credit, ...cancellationChoice(choice, data.paymentInfo) }),
             message,
-            'Failed to cancel the reservation');
+            t('admin.reservation.cancel-failed'));
     }
 
     private async removeTicket(data: ReservationData, ticket: Ticket): Promise<void> {
@@ -1400,31 +1397,31 @@ export class ReservationDetailPage extends LitElement {
         let creditNoteGenerated = false;
         await this.perform(async () => {
             creditNoteGenerated = await this.service().removeTicket(ticket.id, ticketRemovalChoice(choice, data.paymentInfo));
-        }, 'Ticket removed successfully', 'Failed to remove the ticket');
+        }, t('admin.reservation.ticket-removed'), t('admin.tickets.remove-failed'));
         if (creditNoteGenerated) {
-            dispatchFeedback({ type: 'neutral', message: 'A credit note has been generated, see the billing documents.' }, this);
+            dispatchFeedback({ type: 'neutral', message: t('admin.tickets.credit-note') }, this);
         }
     }
 
     private async refund(data: ReservationData, currency: string): Promise<void> {
         const amount = formatAmount(this.refundAmount, currency);
-        if (!await ConfirmationDialogService.requestConfirm('Refund', `Are you sure you want to refund ${amount}?`, 'warning')) {
+        if (!await ConfirmationDialogService.requestConfirm(t('admin.reservation.payment.refund'), t('admin.reservation.refund.confirm', amount), 'warning')) {
             return;
         }
-        let message = 'Refund successful';
+        let message = t('admin.reservation.refund.done');
         if (data.descriptor.reservation.invoiceRequested) {
-            message += '. A credit note has been generated, see the billing documents.';
+            message = t('admin.reservation.refund.done-credit-note');
         }
-        await this.perform(() => this.service().refund(this.refundAmount), message, 'Failed to refund the payment');
+        await this.perform(() => this.service().refund(this.refundAmount), message, t('admin.reservation.refund.failed'));
         this.refundAmount = '';
     }
 
     private async invalidateDocument(document: BillingDocument): Promise<void> {
         const label = `${BILLING_DOCUMENT_TYPES[document.type] ?? document.type} ${document.number}`;
-        if (!await ConfirmationDialogService.requestConfirm('Invalidate document', `Invalidate ${label}? You can restore it later.`, 'danger')) {
+        if (!await ConfirmationDialogService.requestConfirm(t('admin.reservation.billing.invalidate.title'), t('admin.reservation.billing.invalidate.text', label), 'danger')) {
             return;
         }
-        await this.perform(() => this.service().invalidateBillingDocument(document.id), 'Billing document invalidated', 'Failed to invalidate the billing document');
+        await this.perform(() => this.service().invalidateBillingDocument(document.id), t('admin.reservation.billing.invalidated'), t('admin.reservation.billing.invalidate-failed'));
     }
 
     /**
@@ -1440,7 +1437,7 @@ export class ReservationDetailPage extends LitElement {
                 language: data.descriptor.reservation.userLanguage || locale,
             });
             if (saved === true) {
-                dispatchFeedback({ type: 'success', message: 'Attendee data updated' }, this);
+                dispatchFeedback({ type: 'success', message: t('admin.reservation.attendee-data-updated') }, this);
                 this.notifyChange(false);
                 void this.loadDataTask.run();
             }
@@ -1448,9 +1445,9 @@ export class ReservationDetailPage extends LitElement {
         }
         void this.infoDialog.open({
             icon: 'card-list',
-            title: `Data of ${formatFullName(ticket)}`,
-            description: 'Information collected from the attendee.',
-            errorMessage: 'Failed to load the attendee data',
+            title: t('admin.reservation.attendee-data.title', formatFullName(ticket)),
+            description: t('admin.reservation.attendee-data.description'),
+            errorMessage: t('admin.reservation.attendee-data.load-failed'),
             body: async () => {
                 const fullData = await this.service().fullTicketData(ticket.uuid);
                 const field = (item: AdditionalFieldValue) => ({
@@ -1459,9 +1456,9 @@ export class ReservationDetailPage extends LitElement {
                 });
                 return renderDetailList([
                     ...fullData.ticketFieldConfigurationBeforeStandard.map(field),
-                    { label: 'First name', value: fullData.firstName },
-                    { label: 'Last name', value: fullData.lastName },
-                    { label: 'E-mail', value: fullData.email },
+                    { label: t('admin.common.first-name'), value: fullData.firstName },
+                    { label: t('admin.common.last-name'), value: fullData.lastName },
+                    { label: t('admin.common.email'), value: fullData.email },
                     ...fullData.ticketFieldConfigurationAfterStandard.map(field),
                 ]);
             },
@@ -1471,8 +1468,8 @@ export class ReservationDetailPage extends LitElement {
     private showCheckInLog(ticket: Ticket, entries: AuditEntry[]): void {
         void this.infoDialog.open({
             icon: 'clock-history',
-            title: `Check-in log for ${formatFullName(ticket)}`,
-            description: 'Check-in operations performed on this ticket.',
+            title: t('admin.reservation.check-in-log.title', formatFullName(ticket)),
+            description: t('admin.reservation.check-in-log.description'),
             body: () => html`<alfio-activity-log compact .entries=${entries} .attendees=${attendeeNames(this.lastData!.descriptor)}
                                                   time-zone=${this.lastData!.context.timeZone}></alfio-activity-log>`,
         });
@@ -1534,9 +1531,9 @@ export class ReservationDetailPage extends LitElement {
 
     private confirmLabel(data: ReservationData): string {
         if (isOfflinePayment(data.descriptor.reservation.status)) {
-            return 'Confirm payment received';
+            return t('admin.reservation.confirm-payment');
         }
-        return 'Mark as completed';
+        return t('admin.reservation.mark-completed');
     }
 
     private canCancel(data: ReservationData): boolean {
@@ -1567,9 +1564,9 @@ export class ReservationDetailPage extends LitElement {
     private usages(details: SubscriptionWithUsageDetails): string {
         const usage = details.usageDetails;
         if (usage.total != null && usage.total > 0) {
-            return `${usage.used.toLocaleString()} of ${usage.total.toLocaleString()}`;
+            return t('admin.reservation.subscription.usage', formatNumber(usage.used), formatNumber(usage.total));
         }
-        return usage.used.toLocaleString();
+        return formatNumber(usage.used);
     }
 
     private paymentMethod(data: ReservationData): TemplateResult {
@@ -1635,7 +1632,7 @@ export class ReservationDetailPage extends LitElement {
  */
 function attendeeNames(descriptor: ReservationDescriptor): Map<string, string> {
     return new Map(descriptor.ticketsByCategory.flatMap(entry => entry.value)
-        .map(ticket => [String(ticket.id), formatFullName(ticket) || ticket.email || 'an attendee']));
+        .map(ticket => [String(ticket.id), formatFullName(ticket) || ticket.email || t('admin.reservation.an-attendee')]));
 }
 
 function emptyDrafts(): Drafts {

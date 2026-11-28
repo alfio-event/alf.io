@@ -31,6 +31,7 @@ import {
     textColors,
 } from '../../styles.ts';
 import { navigate } from '../../admin-router';
+import { t } from '../../service/i18n';
 
 interface PollForm {
     accessRestricted: boolean;
@@ -45,14 +46,14 @@ const ACCESS_CHOICES: ChoiceCardOption<AccessType>[] = [
     {
         value: 'all',
         icon: 'people',
-        title: 'All attendees',
-        description: 'Every attendee of the event can vote in this poll.',
+        title: t('admin.poll-edit.access.all'),
+        description: t('admin.poll-edit.access.all.description'),
     },
     {
         value: 'restricted',
         icon: 'person-lock',
-        title: 'Selected attendees only',
-        description: 'Only the attendees allowed in the Participants section can vote in this poll.',
+        title: t('admin.poll-edit.access.restricted'),
+        description: t('admin.poll-edit.access.restricted.description'),
     },
 ];
 
@@ -61,8 +62,8 @@ interface LoadedPoll {
     poll: Poll;
 }
 
-const TITLE_MESSAGE = 'The question is required in all selected languages';
-const OPTIONS_MESSAGE = 'Add at least one option, with a title in all selected languages';
+const TITLE_MESSAGE = t('admin.poll-edit.error.question');
+const OPTIONS_MESSAGE = t('admin.poll-edit.error.options');
 
 /**
  * Creates or edits a poll (/admin/events/{eventName}/polls/new, /admin/events/{eventName}/polls/edit/{pollId})
@@ -162,10 +163,10 @@ export class PollEdit extends LitElement {
 
     render(): TemplateResult {
         return html`
-            ${taskContent(this.loadDataTask, this.lastData, 'Failed to load the poll. Please try again.', (data) =>
+            ${taskContent(this.loadDataTask, this.lastData, t('admin.poll-edit.load-failed'), (data) =>
                 this.renderForm(data),
             )}
-            <sl-dialog class="responsive-dialog option-dialog" label=${this.optionIndex == null ? 'Add option' : 'Edit option'}
+            <sl-dialog class="responsive-dialog option-dialog" label=${when(this.optionIndex == null, () => t('admin.poll-edit.add-option'), () => t('admin.poll-edit.edit-option'))}
                        ?open=${this.optionDraft != null}
                        @sl-request-close=${this.onRequestClose}
                        @sl-hide=${() => { this.optionDraft = null; this.optionError = ''; }}>
@@ -183,11 +184,11 @@ export class PollEdit extends LitElement {
             <div class="container">
                 <form @submit=${(e: Event) => { e.preventDefault(); void this.submit(); }}>
                     <div class="page-title-row">
-                        <h1>${editing ? 'Edit poll' : 'Create poll'}</h1>
+                        <h1>${when(editing, () => t('admin.page-title.edit-poll'), () => t('admin.poll-edit.create'))}</h1>
                     </div>
                     <hr class="page-separator" />
                     <div class="access-choice">
-                        <p class="text-muted">You can decide whether or not to limit access to the poll to selected attendees.</p>
+                        <p class="text-muted">${t('admin.poll-edit.access.help')}</p>
                         ${this.#form.field({ name: 'accessRestricted' }, (field) => {
                             let accessType: AccessType = 'all';
                             if (field.state.value === true) {
@@ -196,7 +197,7 @@ export class PollEdit extends LitElement {
                             return choiceCards({
                                 name: 'poll-access-type',
                                 className: 'access-type',
-                                label: 'Who can participate?',
+                                label: t('admin.poll-edit.access.question'),
                                 value: accessType,
                                 options: ACCESS_CHOICES,
                             }, (value) => field.handleChange(value === 'restricted'));
@@ -207,7 +208,7 @@ export class PollEdit extends LitElement {
                         validators: validateWith((value) => isCompleteLocalized(value as LocalizedContent) ? undefined : TITLE_MESSAGE),
                     }, (field) => html`
                         <alfio-multi-language-text
-                            label="Question"
+                            label=${t('admin.poll-edit.question')}
                             icon="chat-left-question"
                             .multiline=${false}
                             .languages=${supportedLanguages()}
@@ -220,7 +221,7 @@ export class PollEdit extends LitElement {
                     `)}
                     ${this.#form.field({ name: 'description' }, (field) => html`
                         <alfio-multi-language-text
-                            label="Description"
+                            label=${t('admin.common.description')}
                             icon="text-paragraph"
                             .languages=${supportedLanguages()}
                             .contextLanguages=${event.contentLanguages}
@@ -239,9 +240,9 @@ export class PollEdit extends LitElement {
                             return undefined;
                         }),
                     }, (field) => html`
-                        ${sectionCard({ icon: 'list-ul', title: 'Options' }, html`
-                            <p class="text-muted">The options to choose from. The attendee can choose one of the provided options.</p>
-                            ${when((field.state.value ?? []).length === 0, () => html`<p class="text-muted">No options yet.</p>`)}
+                        ${sectionCard({ icon: 'list-ul', title: t('admin.categories.options') }, html`
+                            <p class="text-muted">${t('admin.poll-edit.options.help')}</p>
+                            ${when((field.state.value ?? []).length === 0, () => html`<p class="text-muted">${t('admin.poll-edit.options.none')}</p>`)}
                             ${repeat(field.state.value ?? [], (option, index) => option.id ?? index, (option, index) => html`
                                 <div class="option-row" data-option-index=${index}>
                                     <div>
@@ -256,13 +257,13 @@ export class PollEdit extends LitElement {
                                     <sl-button class="edit-option" size="small" variant="default" outline
                                                @click=${() => this.openOptionDialog(index)}>
                                         <sl-icon slot="prefix" name="pencil"></sl-icon>
-                                        Edit
+                                        ${t('admin.common.edit')}
                                     </sl-button>
                                 </div>
                             `)}
                             <sl-button class="add-option" variant="text" @click=${() => this.openOptionDialog(null)}>
                                 <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-                                Add option
+                                ${t('admin.poll-edit.add-option')}
                             </sl-button>
                             ${when(fieldError(field.state.meta, submitted) != null, () => html`
                                 <div class="form-error-text">${fieldError(field.state.meta, submitted)}</div>
@@ -271,13 +272,13 @@ export class PollEdit extends LitElement {
                     `)}
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" type="button" @click=${() => this.cancel()}>Cancel</sl-button>
+                        <sl-button variant="default" size="large" type="button" @click=${() => this.cancel()}>${t('admin.common.cancel')}</sl-button>
                         <div>
                             ${when(submitted && !this.#form.api.state.isValid, () => html`
-                                <span class="form-error-text">Please fill in the fields highlighted in red.</span>
+                                <span class="form-error-text">${t('admin.validation.invalid-form')}</span>
                             `)}
                         </div>
-                        <sl-button id="save-poll" variant="warning" size="large" type="submit" ?loading=${this.saving}>Save</sl-button>
+                        <sl-button id="save-poll" variant="warning" size="large" type="submit" ?loading=${this.saving}>${t('admin.common.save')}</sl-button>
                     </div>
                 </form>
             </div>
@@ -288,10 +289,10 @@ export class PollEdit extends LitElement {
         const draft = this.optionDraft!;
         const event = this.lastData?.event;
         return html`
-            <p class="text-muted">Translations are all mandatory for the title.</p>
+            <p class="text-muted">${t('admin.poll-edit.option.help')}</p>
             <div class="form-stack">
                 <alfio-multi-language-text
-                    label="Option title"
+                    label=${t('admin.poll-edit.option.title')}
                     .card=${false}
                     .multiline=${false}
                     .languages=${supportedLanguages()}
@@ -301,7 +302,7 @@ export class PollEdit extends LitElement {
                     @change=${(e: CustomEvent<MultiLanguageTextChange>) => this.updateOptionDraft('title', e.detail.value)}
                 ></alfio-multi-language-text>
                 <alfio-multi-language-text
-                    label="Description"
+                    label=${t('admin.common.description')}
                     .card=${false}
                     .languages=${supportedLanguages()}
                     .contextLanguages=${event?.contentLanguages}
@@ -312,9 +313,9 @@ export class PollEdit extends LitElement {
             <div slot="footer">
                 <sl-divider></sl-divider>
                 <div class="row" style="--alfio-row-cols: 3">
-                    <sl-button variant="default" size="large" @click=${() => { this.optionDraft = null; this.optionError = ''; }}>Cancel</sl-button>
+                    <sl-button variant="default" size="large" @click=${() => { this.optionDraft = null; this.optionError = ''; }}>${t('admin.common.cancel')}</sl-button>
                     <div></div>
-                    <sl-button variant="warning" size="large" @click=${() => this.saveOption()}>Save</sl-button>
+                    <sl-button variant="warning" size="large" @click=${() => this.saveOption()}>${t('admin.common.save')}</sl-button>
                 </div>
             </div>
         `;
@@ -400,7 +401,7 @@ export class PollEdit extends LitElement {
             }
             navigate(`/events/${this.eventName}/polls/view/${pollId}`);
         } catch (e) {
-            dispatchFeedback({ type: 'danger', message: errorMessage(e, 'Failed to save the poll') }, this);
+            dispatchFeedback({ type: 'danger', message: errorMessage(e, t('admin.poll-edit.save-failed')) }, this);
             this.saving = false;
         }
     }

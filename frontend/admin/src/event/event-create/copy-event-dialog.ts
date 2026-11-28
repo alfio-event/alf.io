@@ -13,6 +13,7 @@ import {dialog as dialogStyles, form, modernLayout, row, textColors} from '../..
 import {sectionCard} from '../../components/section-card.ts';
 import {taskContent} from '../../components/task-content.ts';
 import '../../components/format-date.ts';
+import { t } from '../../service/i18n';
 
 /**
  * What the user picked in the copy dialog: the event to copy from, the dates of the new event,
@@ -45,11 +46,9 @@ function itemTitle(item: AdditionalItem): string {
         return `#${item.id}`;
     }
     const first = titles[0];
-    let label = first.value;
+    let label = t('admin.copy-event.additional-option', first.value);
     if (item.type === 'DONATION') {
-        label += ' (Donation)';
-    } else {
-        label += ' (Additional option)';
+        label = t('admin.copy-event.donation', first.value);
     }
     if (titles.length > 1) {
         label += ` (${titles.map((t) => t.locale).join(', ')})`;
@@ -174,19 +173,19 @@ export class CopyEventDialog extends LitElement {
             return html``;
         }
         return html`
-            <sl-dialog class="responsive-dialog" style="--alfio-dialog-max-width: 46rem" label="Copy from previous event"
+            <sl-dialog class="responsive-dialog" style="--alfio-dialog-max-width: 46rem" label=${t('admin.event-form.copy-from-previous')}
                        @sl-request-close=${this.onRequestClose} @sl-after-hide=${this.onAfterHide}>
                 <div class="dialog-form">
                     ${taskContent(this.loadEventsTask, this.loadEventsTask.value ?? null,
-                        'Failed to load the events. Please try again.',
+                        t('admin.copy-event.load-failed'),
                         (data) => this.renderBody(data))}
                 </div>
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${this.cancel}>Cancel</sl-button>
+                        <sl-button variant="default" size="large" @click=${this.cancel}>${t('admin.common.cancel')}</sl-button>
                         <div></div>
-                        <sl-button id="copy-event-confirm" variant="warning" size="large" @click=${this.onSubmit}>Copy</sl-button>
+                        <sl-button id="copy-event-confirm" variant="warning" size="large" @click=${this.onSubmit}>${t('admin.common.copy')}</sl-button>
                     </div>
                 </div>
             </sl-dialog>
@@ -196,9 +195,9 @@ export class CopyEventDialog extends LitElement {
     private renderBody(data: LoadedEvents): TemplateResult {
         const events = data.events;
         return html`
-            ${sectionCard({ icon: 'clipboard', title: 'Event to copy from' }, html`
+            ${sectionCard({ icon: 'clipboard', title: t('admin.copy-event.source') }, html`
                 ${when(this.selectedEvent == null, () => html`
-                    <sl-select id="copy-event-source" label="Search event" placeholder="Select an event" hoist clearable
+                    <sl-select id="copy-event-source" label=${t('admin.copy-event.search')} placeholder=${t('admin.copy-event.search.placeholder')} hoist clearable
                                class=${classMap({ error: this.errorOf('source') !== '' })}
                                help-text=${this.errorOf('source')}
                                @sl-change=${(e: Event) => this.onSourceChange(events, String((e.target as SlSelect).value))}>
@@ -218,26 +217,26 @@ export class CopyEventDialog extends LitElement {
                         </div>
                         <sl-button variant="default" size="small" @click=${this.clearSelection}>
                             <sl-icon slot="prefix" name="x-circle"></sl-icon>
-                            Change
+                            ${t('admin.common.change')}
                         </sl-button>
                     </div>
                 `)}
             `)}
-            ${sectionCard({ icon: 'calendar-range', title: 'Dates of the new event' }, html`
+            ${sectionCard({ icon: 'calendar-range', title: t('admin.copy-event.dates') }, html`
                 <div class="row" style="--alfio-row-cols: 2">
-                    <sl-input id="copy-event-begin" label="Begin" type="datetime-local" required
+                    <sl-input id="copy-event-begin" label=${t('admin.event-form.begin')} type="datetime-local" required
                               class=${classMap({ error: this.errorOf('begin') !== '' })}
                               help-text=${this.errorOf('begin')}
                               .value=${this.begin}
                               @sl-input=${(e: Event) => this.setDate('begin', (e.target as SlInput).value)}></sl-input>
-                    <sl-input id="copy-event-end" label="End" type="datetime-local" required
+                    <sl-input id="copy-event-end" label=${t('admin.event-detail.end')} type="datetime-local" required
                               class=${classMap({ error: this.errorOf('end') !== '' })}
                               help-text=${this.errorOf('end')}
                               .value=${this.end}
                               @sl-input=${(e: Event) => this.setDate('end', (e.target as SlInput).value)}></sl-input>
                 </div>
             `)}
-            ${when(this.additionalFields.length > 0, () => sectionCard({ icon: 'list-check', title: 'Copy additional fields' }, html`
+            ${when(this.additionalFields.length > 0, () => sectionCard({ icon: 'list-check', title: t('admin.copy-event.additional-fields') }, html`
                 ${repeat(this.additionalFields, (f) => f.name, (f) => html`
                     <sl-checkbox ?checked=${this.selectedFieldNames.has(f.name)}
                                  @sl-change=${(e: Event) => this.toggleField(f.name, (e.target as SlCheckbox).checked)}>
@@ -245,7 +244,7 @@ export class CopyEventDialog extends LitElement {
                     </sl-checkbox>
                 `)}
             `))}
-            ${when(this.additionalServices.length > 0, () => sectionCard({ icon: 'cart-plus', title: 'Copy additional options and donations' }, html`
+            ${when(this.additionalServices.length > 0, () => sectionCard({ icon: 'cart-plus', title: t('admin.copy-event.additional-options') }, html`
                 ${repeat(this.additionalServices, (s) => s.id, (s) => html`
                     <sl-checkbox ?checked=${this.selectedServiceIds.has(s.id)}
                                  @sl-change=${(e: Event) => this.toggleService(s.id, (e.target as SlCheckbox).checked)}>
@@ -322,16 +321,16 @@ export class CopyEventDialog extends LitElement {
         e.preventDefault();
         const errors: Record<string, string> = {};
         if (this.selectedEvent == null) {
-            errors.source = 'Please select an event to copy from';
+            errors.source = t('admin.copy-event.source.required');
         }
         if (this.begin.trim() === '') {
-            errors.begin = 'Please fill in this field';
+            errors.begin = t('admin.validation.required');
         }
         if (this.end.trim() === '') {
-            errors.end = 'Please fill in this field';
+            errors.end = t('admin.validation.required');
         }
         if (errors.begin == null && errors.end == null && this.begin >= this.end) {
-            errors.end = 'The end must be after the begin';
+            errors.end = t('admin.validation.end-after-begin');
         }
         this.errors = errors;
         if (Object.keys(errors).length > 0 || this.selectedEvent == null) {

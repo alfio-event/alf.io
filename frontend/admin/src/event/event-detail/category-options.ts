@@ -16,6 +16,7 @@ import {form, modernLayout, row, textColors} from '../../styles.ts';
 import '../custom-offline-payment-event-selector/custom-offline-payment-denied-methods-selector.ts';
 import type {CustomOfflinePaymentDeniedMethodsSelector} from '../custom-offline-payment-event-selector/custom-offline-payment-denied-methods-selector.ts';
 import { adminUrl } from '../../admin-router';
+import { t, tHtml, i18nKey } from '../../service/i18n';
 
 /**
  * The category whose options are edited
@@ -45,20 +46,21 @@ const PAYMENT_METHODS_DENY_LIST = 'PAYMENT_METHODS_BLACKLIST';
 const MAX_TICKETS_PER_RESERVATION = 'MAX_AMOUNT_OF_TICKETS_BY_RESERVATION';
 
 const GROUP_TYPES: { value: LinkedGroupType; label: string }[] = [
-    {value: 'ONCE_PER_VALUE', label: 'One ticket per e-mail address'},
-    {value: 'LIMITED_QUANTITY', label: 'A limited number of tickets per e-mail address'},
-    {value: 'UNLIMITED', label: 'Unlimited'},
+    {value: 'ONCE_PER_VALUE', label: t('admin.category-options.group-type.once')},
+    {value: 'LIMITED_QUANTITY', label: t('admin.category-options.group-type.limited')},
+    {value: 'UNLIMITED', label: t('admin.category-options.group-type.unlimited')},
 ];
 
 const GROUP_MATCH_TYPES: { value: LinkedGroupMatchType; label: string }[] = [
-    {value: 'FULL', label: 'Full e-mail address'},
-    {value: 'EMAIL_DOMAIN', label: 'Full e-mail address, then its domain'},
+    {value: 'FULL', label: t('admin.category-options.match-type.full')},
+    {value: 'EMAIL_DOMAIN', label: t('admin.category-options.match-type.domain')},
 ];
 
-const LEVEL_NAMES: Record<string, string> = {
-    SYSTEM: 'system',
-    ORGANIZATION: 'organization',
-    PURCHASE_CONTEXT: 'event',
+/** "Same as the event", with the value set at a level above the category */
+const INHERITED_LABELS: Record<string, string> = {
+    SYSTEM: i18nKey('admin.category-options.inherited.system'),
+    ORGANIZATION: i18nKey('admin.category-options.inherited.organization'),
+    PURCHASE_CONTEXT: i18nKey('admin.category-options.inherited.event'),
 };
 
 /**
@@ -123,7 +125,7 @@ export class CategoryOptions extends LitElement {
 
     render(): TemplateResult {
         return taskContent(this.loadTask, this.loadTask.value ?? null,
-            'Failed to load the options of the category. Please try again.',
+            t('admin.category-options.load-failed'),
             (data) => this.renderContent(data));
     }
 
@@ -131,8 +133,8 @@ export class CategoryOptions extends LitElement {
         const settings = data.settings.filter(({setting}) => setting.key !== PAYMENT_METHODS_DENY_LIST);
         const denyList = data.settings.find(({setting}) => setting.key === PAYMENT_METHODS_DENY_LIST);
         return html`
-            ${when(settings.length > 0, () => sectionCard({icon: 'sliders', title: 'Sales'}, html`
-                <p class="text-muted">Leave an option on "Same as the event" to apply the settings of the event.</p>
+            ${when(settings.length > 0, () => sectionCard({icon: 'sliders', title: t('admin.event-menu.group.sales')}, html`
+                <p class="text-muted">${t('admin.category-options.sales.help')}</p>
                 <div class="form-stack">
                     ${repeat(settings, ({setting}) => setting.key, ({setting}) => this.renderSetting(setting))}
                 </div>
@@ -150,8 +152,8 @@ export class CategoryOptions extends LitElement {
                 <sl-select id=${setting.key} label=${setting.description} hoist .value=${value}
                            @sl-change=${(e: Event) => this.setValue(setting.key, String((e.target as SlSelect).value))}>
                     <sl-option value="">${inheritedLabel(setting)}</sl-option>
-                    <sl-option value="true">Yes</sl-option>
-                    <sl-option value="false">No</sl-option>
+                    <sl-option value="true">${t('admin.common.yes')}</sl-option>
+                    <sl-option value="false">${t('admin.common.no')}</sl-option>
                 </sl-select>
             `;
         }
@@ -160,7 +162,7 @@ export class CategoryOptions extends LitElement {
             helpText = error;
         }
         return html`
-            <sl-input id=${setting.key} label=${setting.description} placeholder="Same as the event"
+            <sl-input id=${setting.key} label=${setting.description} placeholder=${t('admin.category-options.same-as-event')}
                       class=${classMap({error: error != null})} help-text=${helpText}
                       .value=${value}
                       @sl-input=${(e: Event) => this.setValue(setting.key, (e.target as SlInput).value)}></sl-input>
@@ -178,8 +180,8 @@ export class CategoryOptions extends LitElement {
         if (methods.length === 0 && !customOffline) {
             return nothing;
         }
-        return sectionCard({icon: 'credit-card', title: 'Payment methods'}, html`
-            <p class="text-muted">Select the payment methods of the event that this category doesn't accept.</p>
+        return sectionCard({icon: 'credit-card', title: t('admin.event-detail.payment-methods')}, html`
+            <p class="text-muted">${t('admin.category-options.payment-methods.help')}</p>
             <div class="payment-methods">
                 ${repeat(methods, (method) => method, (method) => html`
                     <sl-checkbox class="denied-payment-method" value=${method} ?checked=${denied.includes(method)}
@@ -205,19 +207,18 @@ export class CategoryOptions extends LitElement {
         if (link != null) {
             groupValue = String(link.groupId);
         }
-        return sectionCard({icon: 'people', title: 'Restricted to a group'}, html`
+        return sectionCard({icon: 'people', title: t('admin.category-options.group')}, html`
             ${when(data.groups.length === 0, () => html`
                 <p class="text-muted">
-                    Only the members of a group can buy the tickets of a restricted category. This organization has no groups:
-                    <a href=${adminUrl(`/group/${this.target.organizationId}/all`)}>create one</a> to restrict the category.
+                    ${tHtml('admin.category-options.group.none', html`<a href=${adminUrl(`/group/${this.target.organizationId}/all`)}>${t('admin.category-options.group.create-one')}</a>`)}
                 </p>
             `, () => html`
                 <div class="form-stack">
-                    <sl-select id="group" label="Who can buy the tickets of this category" hoist .value=${groupValue}
+                    <sl-select id="group" label=${t('admin.category-options.group.who')} hoist .value=${groupValue}
                                @sl-change=${(e: Event) => this.selectGroup(String((e.target as SlSelect).value))}>
-                        <sl-option value="">Anyone</sl-option>
+                        <sl-option value="">${t('admin.category-options.group.anyone')}</sl-option>
                         ${repeat(data.groups, (group) => group.id, (group) => html`
-                            <sl-option value=${String(group.id)}>Members of ${group.name}</sl-option>
+                            <sl-option value=${String(group.id)}>${t('admin.category-options.group.members-of', group.name)}</sl-option>
                         `)}
                     </sl-select>
                     ${when(link != null, () => this.renderLinkOptions(link!), () => nothing)}
@@ -234,17 +235,17 @@ export class CategoryOptions extends LitElement {
         }
         return html`
             <div class="row" style="--alfio-row-cols: 2">
-                <sl-select id="matchType" label="Recognize members by" hoist .value=${link.matchType}
+                <sl-select id="matchType" label=${t('admin.category-options.group.match-by')} hoist .value=${link.matchType}
                            @sl-change=${(e: Event) => this.updateLink({matchType: (e.target as SlSelect).value as LinkedGroupMatchType})}>
                     ${repeat(GROUP_MATCH_TYPES, (type) => type.value, (type) => html`<sl-option value=${type.value}>${type.label}</sl-option>`)}
                 </sl-select>
-                <sl-select id="allocationType" label="Tickets per member" hoist .value=${link.type}
+                <sl-select id="allocationType" label=${t('admin.category-options.group.tickets-per-member')} hoist .value=${link.type}
                            @sl-change=${(e: Event) => this.updateLink({type: (e.target as SlSelect).value as LinkedGroupType})}>
                     ${repeat(GROUP_TYPES, (type) => type.value, (type) => html`<sl-option value=${type.value}>${type.label}</sl-option>`)}
                 </sl-select>
             </div>
             ${when(link.type === 'LIMITED_QUANTITY', () => html`
-                <sl-input id="maxAllocation" label="Max tickets per member" type="number" min="1" step="1" required
+                <sl-input id="maxAllocation" label=${t('admin.category-options.group.max-tickets-per-member')} type="number" min="1" step="1" required
                           class=${classMap({error: error != null})} help-text=${error ?? ''}
                           .value=${maxAllocation}
                           @sl-input=${(e: Event) => this.setMaxAllocation((e.target as SlInput).value)}></sl-input>
@@ -329,11 +330,11 @@ export class CategoryOptions extends LitElement {
         const errors: Record<string, string> = {};
         const maxTickets = (this.values[MAX_TICKETS_PER_RESERVATION] ?? '').trim();
         if (maxTickets !== '' && !isPositiveInteger(maxTickets)) {
-            errors[MAX_TICKETS_PER_RESERVATION] = 'Please enter a whole number, at least 1, or leave it empty';
+            errors[MAX_TICKETS_PER_RESERVATION] = t('admin.validation.positive-integer-or-empty');
         }
         const link = this.link;
         if (link != null && link.type === 'LIMITED_QUANTITY' && !isPositiveInteger(String(link.maxAllocation ?? ''))) {
-            errors.maxAllocation = 'Please enter a whole number, at least 1';
+            errors.maxAllocation = t('admin.validation.positive-integer');
         }
         this.errors = errors;
         return Object.keys(errors).length === 0;
@@ -427,17 +428,16 @@ function categoryValue(setting: ConfigurationSetting): string {
  */
 function inheritedLabel(setting: ConfigurationSetting): string {
     if (setting.configurationPathLevel === 'TICKET_CATEGORY' || setting.value == null || setting.value === '') {
-        return 'Same as the event';
+        return t('admin.category-options.same-as-event');
     }
     let value = setting.value;
     if (setting.componentType === 'BOOLEAN') {
-        value = 'No';
+        value = t('admin.common.no');
         if (setting.value === 'true') {
-            value = 'Yes';
+            value = t('admin.common.yes');
         }
     }
-    const level = LEVEL_NAMES[setting.configurationPathLevel] ?? 'event';
-    return `Same as the event: ${value} (${level} settings)`;
+    return t(INHERITED_LABELS[setting.configurationPathLevel] ?? INHERITED_LABELS.PURCHASE_CONTEXT, value);
 }
 
 function splitList(value: string): string[] {

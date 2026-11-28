@@ -1,4 +1,5 @@
 import {postJson, readAsDataUrl, responseErrorMessage} from './helpers.ts';
+import { t } from './i18n';
 
 /**
  * An image ready for upload: rasterized and possibly resized, as the AngularJS create-event
@@ -24,7 +25,7 @@ function drawImage(image: CanvasImageSource & { width: number, height: number })
     cnv.height = image.height;
     const canvasCtx = cnv.getContext('2d');
     if (canvasCtx == null) {
-        throw new Error('Canvas 2D context is not available');
+        throw new Error(t('admin.image-upload.error.canvas'));
     }
     canvasCtx.drawImage(image, 0, 0, image.width, image.height);
     return cnv;
@@ -34,7 +35,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error('The image could not be loaded'));
+        img.onerror = () => reject(new Error(t('admin.image-upload.error.load')));
         img.src = src;
     });
 }
@@ -49,7 +50,7 @@ async function transformSvg(file: File): Promise<TransformedImage> {
         .parseFromString(await file.text(), 'text/xml')
         .getElementsByTagName('svg')[0];
     if (svgRoot == null) {
-        throw new Error('The SVG file is not valid');
+        throw new Error(t('admin.image-upload.error.svg'));
     }
     const img = new Image();
     if (svgRoot.hasAttribute('height')) {
@@ -76,7 +77,7 @@ async function transformSvg(file: File): Promise<TransformedImage> {
 function loadImageInto(img: HTMLImageElement, src: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error('The image could not be loaded'));
+        img.onerror = () => reject(new Error(t('admin.image-upload.error.load')));
         img.src = src;
     });
 }
@@ -130,7 +131,7 @@ export async function uploadImage(image: TransformedImage): Promise<string> {
         name: image.name,
     });
     if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, 'Failed to upload the image'));
+        throw new Error(await responseErrorMessage(response, t('admin.image-upload.failed')));
     }
     // the backend returns the file digest as a JSON string
     return await response.json();

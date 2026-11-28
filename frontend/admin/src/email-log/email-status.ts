@@ -1,13 +1,14 @@
 import {TemplateResult} from 'lit';
 import {EmailMessageStatus} from '../model/email-message.ts';
 import {statusBadge, StatusBadgeConfig} from '../components/status-badge.ts';
+import { t } from '../service/i18n';
 
 const STATUSES: Record<EmailMessageStatus, StatusBadgeConfig> = {
-    WAITING: { label: 'Waiting', variant: 'neutral', icon: 'hourglass-split' },
-    IN_PROCESS: { label: 'Sending', variant: 'primary', icon: 'send' },
-    RETRY: { label: 'Retrying', variant: 'warning', icon: 'arrow-repeat' },
-    SENT: { label: 'Sent', variant: 'success', icon: 'check2' },
-    ERROR: { label: 'Error', variant: 'danger', icon: 'exclamation-triangle' },
+    WAITING: { label: t('admin.email-log.status.waiting'), variant: 'neutral', icon: 'hourglass-split' },
+    IN_PROCESS: { label: t('admin.email-log.status.sending'), variant: 'primary', icon: 'send' },
+    RETRY: { label: t('admin.email-log.status.retrying'), variant: 'warning', icon: 'arrow-repeat' },
+    SENT: { label: t('admin.email-log.sent'), variant: 'success', icon: 'check2' },
+    ERROR: { label: t('admin.check-in-scan.status.error'), variant: 'danger', icon: 'exclamation-triangle' },
 };
 
 /**

@@ -1,4 +1,5 @@
 import {escapeHtml} from "./helpers.ts";
+import { t } from './i18n';
 
 export class ConfirmationDialogService {
     public static requestConfirm(title: string,
@@ -12,9 +13,9 @@ export class ConfirmationDialogService {
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sl-spacing-small);">
-                        <sl-button variant="default" id="close" size="large">Cancel</sl-button>
+                        <sl-button variant="default" id="close" size="large">${escapeHtml(t('admin.common.cancel'))}</sl-button>
                         <div></div>
-                        <sl-button variant="${variant}" size="large" id="confirm">Confirm</sl-button>
+                        <sl-button variant="${variant}" size="large" id="confirm">${escapeHtml(t('admin.common.confirm'))}</sl-button>
                     </div>
                 </div>
               </sl-dialog>

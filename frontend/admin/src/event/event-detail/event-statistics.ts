@@ -17,6 +17,7 @@ import '../../components/chart.ts';
 import {allocationColor, allocationSegments} from './ticket-allocation.ts';
 import {modernLayout, textColors} from '../../styles.ts';
 import { adminUrl } from '../../admin-router';
+import { formatNumber, t, i18nKey } from '../../service/i18n.ts';
 
 type TrendMode = 'twoWeeks' | 'all';
 
@@ -47,8 +48,11 @@ function formatChartDate(date: string): string {
     return formatDate(date, {style: 'day-month'}) || date;
 }
 
-function formatNumber(amount: number): string {
-    return new Intl.NumberFormat('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(amount);
+/** the tooltip of each dataset of the trend chart: created, confirmed */
+const TREND_TOOLTIPS = [i18nKey('admin.statistics.trend.created'), i18nKey('admin.statistics.trend.confirmed')];
+
+function formatAmount(amount: number): string {
+    return formatNumber(amount, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
 
 /**
@@ -257,12 +261,12 @@ export class EventStatistics extends LitElement {
             }
         } catch (error) {
             this.statistics = null;
-            this.statisticsError = errorMessage(error, 'Failed to load the reservations statistics');
+            this.statisticsError = errorMessage(error, t('admin.statistics.load-failed'));
         }
     }
 
     render(): TemplateResult {
-        return sectionCard({icon: 'bar-chart', title: 'Statistics'}, html`
+        return sectionCard({icon: 'bar-chart', title: t('admin.statistics.title')}, html`
             <div class="stats-grid">
                 ${repeat(this.tiles(), (tile) => tile.className, (tile) => this.renderTile(tile))}
             </div>
@@ -280,15 +284,15 @@ export class EventStatistics extends LitElement {
             {
                 className: 'tickets-confirmed',
                 icon: 'ticket',
-                label: 'Tickets confirmed',
-                value: String(confirmed),
+                label: t('admin.statistics.tickets-confirmed'),
+                value: formatNumber(confirmed),
                 href: adminUrl(`/events/${event.shortName}/reservations/`),
             },
             {
                 className: 'tickets-pending',
                 icon: 'hourglass-split',
-                label: 'Tickets pending',
-                value: String(event.pendingTickets ?? 0),
+                label: t('admin.statistics.tickets-pending'),
+                value: formatNumber(event.pendingTickets ?? 0),
                 href: adminUrl(`/events/${event.shortName}/reservations/`),
             },
         ];
@@ -296,18 +300,18 @@ export class EventStatistics extends LitElement {
             tiles.push({
                 className: 'gross-income',
                 icon: 'cash-stack',
-                label: 'Gross income',
-                value: html`<span class="stat-currency">${event.currency}</span>${formatNumber(event.grossIncome ?? 0)}`,
+                label: t('admin.statistics.gross-income'),
+                value: html`<span class="stat-currency">${event.currency}</span>${formatAmount(event.grossIncome ?? 0)}`,
             });
         }
         let waitingQueue = '—';
         if (this.waitingQueueCount != null) {
-            waitingQueue = String(this.waitingQueueCount);
+            waitingQueue = formatNumber(this.waitingQueueCount);
         }
         tiles.push({
             className: 'waiting-list',
             icon: 'people',
-            label: 'Waiting list',
+            label: t('admin.event.menu.waiting-list'),
             value: waitingQueue,
             href: adminUrl(`/events/${event.shortName}/waiting-queue`),
             smallScreensOnly: true,
@@ -315,12 +319,12 @@ export class EventStatistics extends LitElement {
         if (supportsOfflinePayments(event.allowedPaymentProxies ?? [])) {
             let pendingPayments = '—';
             if (this.pendingPaymentsCount != null) {
-                pendingPayments = String(this.pendingPaymentsCount);
+                pendingPayments = formatNumber(this.pendingPaymentsCount);
             }
             tiles.push({
                 className: 'pending-payments',
                 icon: 'credit-card',
-                label: 'Pending payments',
+                label: t('admin.page-title.pending-payments'),
                 value: pendingPayments,
                 href: adminUrl(`/events/${event.shortName}/pending-payments/`),
                 smallScreensOnly: true,
@@ -383,23 +387,23 @@ export class EventStatistics extends LitElement {
         return html`
             <div class="graph-panel ticket-status">
                 <div class="graph-header">
-                    <h4>Ticket status</h4>
+                    <h4>${t('admin.statistics.ticket-status')}</h4>
                 </div>
                 ${when(slices.length > 0, () => html`
                     <div class="graph-canvas">
-                        <alfio-chart type="doughnut" .data=${data} .options=${options} aria-label="Ticket status of the event"></alfio-chart>
+                        <alfio-chart type="doughnut" .data=${data} .options=${options} aria-label=${t('admin.statistics.ticket-status.chart')}></alfio-chart>
                     </div>
                     <ul class="legend">
                         ${repeat(slices, (slice) => slice.key, (slice) => html`
-                            <li><span class="swatch" style="background: ${slice.color}"></span>${slice.label}: ${slice.value}</li>
+                            <li><span class="swatch" style="background: ${slice.color}"></span>${slice.label}: ${formatNumber(slice.value)}</li>
                         `)}
                     </ul>
                     ${when((event.notAllocatedTickets ?? 0) > 0, () => html`
                         <p class="not-on-sale-hint text-muted">
-                            No category can sell the ${event.notAllocatedTickets} tickets not on sale. Add a category without a limit, or raise a limit.
+                            ${t('admin.statistics.not-on-sale-hint', { count: event.notAllocatedTickets ?? 0 })}
                         </p>
                     `, () => nothing)}
-                `, () => emptyState('No tickets yet'))}
+                `, () => emptyState(t('admin.statistics.no-tickets')))}
             </div>
         `;
     }
@@ -411,23 +415,23 @@ export class EventStatistics extends LitElement {
         return html`
             <div class="graph-panel reservations-trend">
                 <div class="graph-header">
-                    <h4>Reservations trend</h4>
-                    <sl-radio-group class="trend-period label-hidden" label="Period" size="small" value=${this.trendMode}
+                    <h4>${t('admin.statistics.trend')}</h4>
+                    <sl-radio-group class="trend-period label-hidden" label=${t('admin.statistics.period')} size="small" value=${this.trendMode}
                                     @sl-change=${(e: Event) => { this.trendMode = (e.target as SlRadioGroup).value as TrendMode; }}>
-                        <sl-radio-button value="twoWeeks">Last two weeks</sl-radio-button>
-                        <sl-radio-button value="all">Entire sale period</sl-radio-button>
+                        <sl-radio-button value="twoWeeks">${t('admin.statistics.period.two-weeks')}</sl-radio-button>
+                        <sl-radio-button value="all">${t('admin.statistics.period.all')}</sl-radio-button>
                     </sl-radio-group>
                 </div>
                 ${when(this.statisticsError != null, () => html`
                     <sl-alert open variant="danger">
                         <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
                         ${this.statisticsError}
-                        <sl-button size="small" @click=${() => void this.loadStatistics()}>Retry</sl-button>
+                        <sl-button size="small" @click=${() => void this.loadStatistics()}>${t('admin.common.retry')}</sl-button>
                     </sl-alert>
                 `, () => nothing)}
                 ${when(hasData,
                     () => this.renderTrendChart(statistics!),
-                    () => when(statistics != null, () => emptyState('No reservations in this period'), () => nothing))}
+                    () => when(statistics != null, () => emptyState(t('admin.statistics.no-reservations')), () => nothing))}
             </div>
         `;
     }
@@ -447,13 +451,13 @@ export class EventStatistics extends LitElement {
             labels: labels.map(formatChartDate),
             datasets: [
                 {
-                    label: 'Created',
+                    label: t('admin.statistics.created'),
                     data: labels.map((label) => countOf(statistics.reserved, label)),
                     backgroundColor: reservedColor,
                     borderColor: reservedColor,
                 },
                 {
-                    label: 'Confirmed',
+                    label: t('admin.statistics.confirmed'),
                     data: labels.map((label) => countOf(statistics.sold, label)),
                     backgroundColor: soldColor,
                     borderColor: soldColor,
@@ -468,7 +472,7 @@ export class EventStatistics extends LitElement {
                 legend: {position: 'bottom', labels: {boxWidth: 12}},
                 tooltip: {
                     callbacks: {
-                        label: (item) => ` ${item.dataset.label} reservations: ${item.parsed.y}`,
+                        label: (item) => ` ${t(TREND_TOOLTIPS[item.datasetIndex], formatNumber(item.parsed.y ?? 0))}`,
                     },
                 },
             },
@@ -479,7 +483,7 @@ export class EventStatistics extends LitElement {
         return html`
             <div class="graph-canvas">
                 <alfio-chart type=${chartType} .data=${data} .options=${options}
-                             aria-label="Reservations created and confirmed per day"></alfio-chart>
+                             aria-label=${t('admin.statistics.trend.chart')}></alfio-chart>
             </div>
         `;
     }

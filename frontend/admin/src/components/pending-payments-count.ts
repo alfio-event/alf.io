@@ -2,6 +2,7 @@ import {css, html, LitElement, nothing, PropertyValues} from 'lit';
 import {customElement, property, state} from 'lit/decorators.js';
 import {subscribePendingPayments} from '../service/pending-payments.ts';
 import {badges} from '../styles.ts';
+import { t, tHtmlPlural, formatNumber } from '../service/i18n';
 
 /**
  * Displays the number of pending payments for an event. Nothing is rendered while there are no pending payments,
@@ -98,23 +99,17 @@ export class PendingPaymentsCount extends LitElement {
 
     private renderSummary(count: number) {
         if (count === 0) {
-            return html`<span class="summary empty">No pending payments</span>`;
+            return html`<span class="summary empty">${t('admin.pending-payments.none')}</span>`;
         }
         return html`
             <span class="summary">
                 <sl-icon name="exclamation-circle" aria-hidden="true"></sl-icon>
-                <strong>${count}</strong>
-                <span>${this.pendingLabel(count)}</span>
+                ${tHtmlPlural('admin.pending-payments.count', count, html`<strong>${formatNumber(count)}</strong>`)}
             </span>
         `;
     }
 
-    private pendingLabel(count: number): string {
-        if (count === 1) {
-            return 'payment pending';
-        }
-        return 'payments pending';
-    }
+
 }
 
 declare global {

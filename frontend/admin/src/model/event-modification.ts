@@ -1,11 +1,12 @@
 import {DateTimeModification, LocalizedContent, PaymentProxy} from "./purchase-context.ts";
+import { t } from '../service/i18n';
 
 export type EventFormat = 'IN_PERSON' | 'ONLINE' | 'HYBRID';
 
 export const EVENT_FORMATS: { value: EventFormat; label: string }[] = [
-    { value: 'IN_PERSON', label: 'In person' },
-    { value: 'ONLINE', label: 'Online' },
-    { value: 'HYBRID', label: 'Hybrid (in person + online)' },
+    { value: 'IN_PERSON', label: t('admin.event.format.in-person') },
+    { value: 'ONLINE', label: t('admin.event.format.online') },
+    { value: 'HYBRID', label: t('admin.event.format.hybrid') },
 ];
 
 /**

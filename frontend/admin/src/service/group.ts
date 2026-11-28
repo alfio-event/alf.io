@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import {Group, GroupMemberModification, GroupModification, LinkedGroup} from '../model/group.ts';
 import { callDelete, fetchJson, postJson, responseErrorMessage, adminFetch } from './helpers.ts';
+import { t } from './i18n';
 
 export const GROUP_CSV_EMAIL_COLUMN = 'email';
 export const GROUP_CSV_DESCRIPTION_COLUMN = 'description';
@@ -28,7 +29,7 @@ export class GroupService {
             return null;
         }
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, 'Failed to load the group of the category'));
+            throw new Error(await responseErrorMessage(response, t('admin.group.error.load-category-group')));
         }
         return response.json();
     }
@@ -39,7 +40,7 @@ export class GroupService {
     static async link(link: LinkedGroup): Promise<void> {
         const response = await postJson(`/admin/api/group/${link.groupId}/link`, link);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, 'Failed to link the group'));
+            throw new Error(await responseErrorMessage(response, t('admin.group.error.link')));
         }
     }
 
@@ -50,7 +51,7 @@ export class GroupService {
         }
         const response = await callDelete(url);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, 'Failed to remove the group'));
+            throw new Error(await responseErrorMessage(response, t('admin.group.error.unlink')));
         }
     }
 
@@ -64,7 +65,7 @@ export class GroupService {
     static async create(organizationId: number, group: GroupModification): Promise<number> {
         const response = await postJson(`/admin/api/group/for/${organizationId}/new`, group);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, 'Failed to create the group'));
+            throw new Error(await responseErrorMessage(response, t('admin.group.error.create')));
         }
         return Number(await response.text());
     }
@@ -72,21 +73,21 @@ export class GroupService {
     static async update(organizationId: number, groupId: number, group: GroupModification): Promise<void> {
         const response = await postJson(`/admin/api/group/for/${organizationId}/update/${groupId}`, group);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, 'Failed to update the group'));
+            throw new Error(await responseErrorMessage(response, t('admin.group.error.update')));
         }
     }
 
     static async deactivateGroup(organizationId: number, groupId: number): Promise<void> {
         const response = await callDelete(`/admin/api/group/for/${organizationId}/id/${groupId}`);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, 'Failed to delete the group'));
+            throw new Error(await responseErrorMessage(response, t('admin.group.error.delete')));
         }
     }
 
     static async deactivateMember(organizationId: number, groupId: number, memberId: number): Promise<void> {
         const response = await callDelete(`/admin/api/group/for/${organizationId}/id/${groupId}/member/${memberId}`);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, 'Failed to remove the member'));
+            throw new Error(await responseErrorMessage(response, t('admin.group.error.remove-member')));
         }
     }
 
@@ -112,7 +113,7 @@ export class GroupService {
         const columnIndex = (name: string): number => header.findIndex(h => h.trim().toLowerCase() === name);
         const emailColumn = columnIndex(GROUP_CSV_EMAIL_COLUMN);
         if (emailColumn < 0) {
-            throw new Error(`The file must have a "${GROUP_CSV_EMAIL_COLUMN}" column`);
+            throw new Error(t('admin.group.error.missing-column', GROUP_CSV_EMAIL_COLUMN));
         }
         const descriptionColumn = columnIndex(GROUP_CSV_DESCRIPTION_COLUMN);
         const items: GroupMemberModification[] = [];

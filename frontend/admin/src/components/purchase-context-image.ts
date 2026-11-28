@@ -7,6 +7,7 @@ import {errorMessage} from '../service/helpers.ts';
 import {transformImageFile, uploadImage} from '../service/image.ts';
 import './file-upload.ts';
 import type {FileUploadChangeEvent} from './file-upload.ts';
+import { t } from '../service/i18n';
 
 export interface ImageChangeDetail {
     // null when the image was removed
@@ -42,7 +43,7 @@ export class PurchaseContextImage extends LitElement {
     maxSize: number = 1048576;
 
     @property({type: String})
-    label: string = 'Drop your image here or click to select';
+    label: string = t('admin.image-upload.label');
 
     // set after a successful upload
     @property({attribute: false})
@@ -146,16 +147,16 @@ export class PurchaseContextImage extends LitElement {
                 <div class="preview-box">
                     ${when(preview != null,
                         () => html`
-                            <img src=${preview} alt="Image preview">
+                            <img src=${preview} alt=${t('admin.image-upload.preview')}>
                             <sl-button variant="danger" size="small" class="remove-image" @click=${this.removeImage}>
                                 <sl-icon slot="prefix" name="trash"></sl-icon>
-                                Remove
+                                ${t('admin.common.remove')}
                             </sl-button>
                         `,
                         () => html`
                             <div class="preview-placeholder">
-                                <sl-icon name="image" aria-label="No image"></sl-icon>
-                                <span>No image selected</span>
+                                <sl-icon name="image" aria-label=${t('admin.image-upload.no-image')}></sl-icon>
+                                <span>${t('admin.image-upload.none-selected')}</span>
                             </div>
                         `)}
                     ${when(this.uploading, () => html`<sl-spinner class="preview-spinner"></sl-spinner>`, () => nothing)}
@@ -191,7 +192,7 @@ export class PurchaseContextImage extends LitElement {
                 fileType: transformed.type,
             });
         } catch (error) {
-            this.error = errorMessage(error, 'Failed to upload the image');
+            this.error = errorMessage(error, t('admin.image-upload.failed'));
         } finally {
             this.uploading = false;
             this.uploadResetCount++;

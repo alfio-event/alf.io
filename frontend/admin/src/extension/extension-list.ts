@@ -14,6 +14,7 @@ import {taskContent} from '../components/task-content.ts';
 import {sectionCard} from '../components/section-card.ts';
 import {renderScope} from './extension-scope.ts';
 import { navigate } from '../admin-router';
+import { t, tHtml } from '../service/i18n';
 
 interface ListData {
     extensions: ExtensionSupport[];
@@ -72,20 +73,20 @@ export class ExtensionList extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row">
-                    <h1>Extensions</h1>
+                    <h1>${t('admin.menu.extensions')}</h1>
                 </div>
                 <hr class="page-separator"/>
                 <div class="filter-toolbar actions-only">
                     <div class="filter-right">
                         <sl-button variant="default" size="large" @click=${() => this.navigateTo('log')}>
-                            <sl-icon slot="prefix" name="journal-text"></sl-icon> Show logs
+                            <sl-icon slot="prefix" name="journal-text"></sl-icon> ${t('admin.extensions.show-logs')}
                         </sl-button>
                         <sl-button variant="success" size="large" @click=${() => this.navigateTo('new')}>
-                            <sl-icon slot="prefix" name="plus-circle"></sl-icon> Add new
+                            <sl-icon slot="prefix" name="plus-circle"></sl-icon> ${t('admin.common.add-new-entity')}
                         </sl-button>
                     </div>
                 </div>
-                ${taskContent(this.loadTask, this.lastData, 'Failed to load extensions. Please try again.',
+                ${taskContent(this.loadTask, this.lastData, t('admin.extensions.load-failed'),
                     (data) => this.renderTable(data))}
             </div>
             ${this.renderDeleteDialog()}
@@ -94,17 +95,17 @@ export class ExtensionList extends LitElement {
 
     private renderTable(data: ListData): TemplateResult {
         const count = html`<sl-badge variant="primary" pill>${data.extensions.length}</sl-badge>`;
-        return sectionCard({icon: 'puzzle', title: 'Extensions', badge: count}, when(data.extensions.length === 0,
-            () => emptyState('No extensions have been found'),
+        return sectionCard({icon: 'puzzle', title: t('admin.menu.extensions'), badge: count}, when(data.extensions.length === 0,
+            () => emptyState(t('admin.extensions.none')),
             () => html`
                 <div class="table-responsive">
                     <table class="table table-striped table-stacked">
                         <thead>
                             <tr>
-                                <th>Path</th>
-                                <th>Name</th>
-                                <th>Enabled</th>
-                                <th><span class="sr-only">Actions</span></th>
+                                <th>${t('admin.extensions.path')}</th>
+                                <th>${t('admin.common.name')}</th>
+                                <th>${t('admin.extensions.enabled')}</th>
+                                <th><span class="sr-only">${t('admin.common.actions')}</span></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -120,18 +121,18 @@ export class ExtensionList extends LitElement {
     private renderRow(ext: ExtensionSupport, data: ListData): TemplateResult {
         return html`
             <tr>
-                <td data-label="Path">${renderScope(ext.path, data.organizations, data.events)}</td>
-                <td data-label="Name">${ext.name}</td>
-                <td data-label="Enabled">${this.renderEnabledIcon(ext)}</td>
+                <td data-label=${t('admin.extensions.path')}>${renderScope(ext.path, data.organizations, data.events)}</td>
+                <td data-label=${t('admin.common.name')}>${ext.name}</td>
+                <td data-label=${t('admin.extensions.enabled')}>${this.renderEnabledIcon(ext)}</td>
                 <td>
                     <div class="actions-cell">
                         <!-- the hidden name tells screen reader users which extension the button acts on -->
                         <sl-button variant="default" size="small"
                                    @click=${() => this.navigateTo(`${ext.path}/${ext.name}/edit`)}>
-                            <sl-icon slot="prefix" name="pencil"></sl-icon> Edit<span class="sr-only"> ${ext.name}</span>
+                            <sl-icon slot="prefix" name="pencil"></sl-icon> ${t('admin.common.edit')}<span class="sr-only"> ${ext.name}</span>
                         </sl-button>
                         <sl-button variant="danger" size="small" @click=${() => this.openDeleteDialog(ext)}>
-                            <sl-icon slot="prefix" name="trash"></sl-icon> Delete<span class="sr-only"> ${ext.name}</span>
+                            <sl-icon slot="prefix" name="trash"></sl-icon> ${t('admin.common.delete')}<span class="sr-only"> ${ext.name}</span>
                         </sl-button>
                     </div>
                 </td>
@@ -141,14 +142,14 @@ export class ExtensionList extends LitElement {
 
     private renderEnabledIcon(ext: ExtensionSupport): TemplateResult {
         if (ext.enabled) {
-            return html`<sl-badge pill variant="success">Enabled</sl-badge>`;
+            return html`<sl-badge pill variant="success">${t('admin.extensions.enabled')}</sl-badge>`;
         }
         return html``;
     }
 
     private renderDeleteDialog(): TemplateResult {
         return html`
-            <sl-dialog id="deleteDialog" class="responsive-dialog" label="Delete extension" @sl-request-close=${(e: CustomEvent) => {
+            <sl-dialog id="deleteDialog" class="responsive-dialog" label=${t('admin.extensions.delete.title')} @sl-request-close=${(e: CustomEvent) => {
                 // ignore the close while the deletion is in progress
                 if (this.deleting) {
                     e.preventDefault();
@@ -156,19 +157,19 @@ export class ExtensionList extends LitElement {
             }}>
                 ${when(this.deleteTarget != null, () => html`
                     <div class="confirm-dialog-body">
-                        <p>The extension <b>${this.deleteTarget!.name}</b> will be removed.</p>
-                        <p>This operation <strong>cannot be undone</strong>.</p>
+                        <p>${tHtml('admin.extensions.delete.text', html`<b>${this.deleteTarget!.name}</b>`)}</p>
+                        <p>${tHtml('admin.extensions.delete.warning', html`<strong>${t('admin.extensions.delete.cannot-be-undone')}</strong>`)}</p>
                     </div>
                 `)}
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
                         <sl-button variant="default" size="large" @click=${() => this.deleteDialog.hide()}>
-                            Cancel
+                            ${t('admin.common.cancel')}
                         </sl-button>
                         <div></div>
                         <sl-button variant="warning" size="large" ?loading=${this.deleting} ?disabled=${this.deleting} @click=${() => this.confirmDelete()}>
-                            Delete
+                            ${t('admin.common.delete')}
                         </sl-button>
                     </div>
                 </div>
@@ -189,10 +190,10 @@ export class ExtensionList extends LitElement {
         this.deleting = true;
         try {
             await ExtensionService.delete(target.path, target.name);
-            dispatchFeedback({type: 'success', message: 'Extension has been deleted'}, this);
+            dispatchFeedback({type: 'success', message: t('admin.extensions.deleted')}, this);
             this.refresh();
         } catch (error) {
-            dispatchFeedback({type: 'danger', message: 'Failed to delete the extension'}, this);
+            dispatchFeedback({type: 'danger', message: t('admin.extensions.delete-failed')}, this);
         } finally {
             this.deleting = false;
             this.deleteDialog.hide();

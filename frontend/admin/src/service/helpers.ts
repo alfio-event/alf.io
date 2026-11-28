@@ -4,6 +4,7 @@ import {when} from "lit/directives/when.js";
 import {ContentLanguage} from "../model/purchase-context.ts";
 import {ApiResult} from "../model/reservation-detail.ts";
 import {adminConfig} from "../admin-config.ts";
+import { t } from './i18n';
 
 /** dispatched on window when the session has expired: the shell reloads the page, which leads to the login */
 export const NOT_LOGGED_IN_EVENT = 'alfio-not-logged-in';
@@ -107,7 +108,7 @@ export function fetchJson<T>(url: string) : Promise<T> {
 
 export async function ensureOk<T>(response: Response): Promise<T> {
     if (!response.ok) {
-        throw new Error((await response.text()) || `unexpected status ${response.status}`);
+        throw new Error((await response.text()) || t('admin.error.unexpected-status', response.status));
     }
     return response.json();
 }
@@ -118,7 +119,7 @@ export async function ensureOk<T>(response: Response): Promise<T> {
 export async function result<T>(request: Promise<Response>): Promise<T> {
     const body = await ensureOk<ApiResult<T>>(await request);
     if (!body.success) {
-        throw new Error(body.errors?.map(e => e.description).join(', ') || 'An unexpected error has occurred');
+        throw new Error(body.errors?.map(e => e.description).join(', ') || t('admin.error.unexpected-error'));
     }
     return body.data;
 }

@@ -8,6 +8,7 @@ import {dialog} from '../../styles.ts';
 import {ReservationChangedDetail} from '../../reservation-detail/reservation-detail.ts';
 import '../reservation-create/reservation-create.ts';
 import '../../reservation-detail/reservation-detail.ts';
+import { t } from '../../service/i18n';
 
 type Step = 'create' | 'confirm' | 'fix';
 
@@ -51,7 +52,8 @@ export class AddAttendeesDialog extends LitElement {
 
     render(): TemplateResult {
         return html`
-            <sl-dialog class="responsive-dialog" label="Add new attendees"
+            <sl-dialog class="responsive-dialog" label=${t('admin.check-in.add-attendees')}
+
                        @sl-request-close=${this.onRequestClose}
                        @sl-after-hide=${this.onAfterHide}>
                 ${choose(this.step, [

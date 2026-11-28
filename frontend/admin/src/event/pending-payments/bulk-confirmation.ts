@@ -10,6 +10,7 @@ import {dispatchFeedback} from '../../model/dom-events.ts';
 import {sectionCard} from '../../components/section-card.ts';
 import {FileUploadChangeEvent} from '../../components/file-upload.ts';
 import '../../components/file-upload.ts';
+import { t, tHtml, formatNumber } from '../../service/i18n';
 
 const PAYMENTS_CONFIRMED_EVENT = 'alfio-payments-confirmed';
 
@@ -98,18 +99,18 @@ export class BulkConfirmation extends LitElement {
 
     render(): TemplateResult {
         return html`
-            ${sectionCard({ icon: 'file-earmark-spreadsheet', title: 'Bulk confirmation' }, html`
-                    <p class="card-description">Upload a CSV file with the received payments.</p>
+            ${sectionCard({ icon: 'file-earmark-spreadsheet', title: t('admin.bulk-confirmation.title') }, html`
+                    <p class="card-description">${t('admin.bulk-confirmation.description')}</p>
                     <div class="row">
                         <div class="upload">
                             ${keyed(this.uploadCount, html`
-                                <alfio-file-upload accept=".csv,text/csv" label="Choose a CSV file or drag it here"
+                                <alfio-file-upload accept=".csv,text/csv" label=${t('admin.bulk-confirmation.upload-label')}
                                                    @change=${(e: FileUploadChangeEvent) => { this.file = e.detail.file; }}></alfio-file-upload>
                             `)}
                             <sl-button variant="warning" size="large" ?loading=${this.uploading} ?disabled=${this.file == null}
                                        @click=${this.upload}>
                                 <sl-icon slot="prefix" name="upload"></sl-icon>
-                                Upload and confirm
+                                ${t('admin.bulk-confirmation.upload')}
                             </sl-button>
                         </div>
                         ${this.renderFormat()}
@@ -122,12 +123,11 @@ export class BulkConfirmation extends LitElement {
     private renderFormat(): TemplateResult {
         return html`
             <div class="format">
-                <h4>File format</h4>
+                <h4>${t('admin.bulk-confirmation.format')}</h4>
                 <p>
-                    No header row. Use commas (<code>,</code>) as separator, double quotes (<code>"</code>) as quote
-                    character and backslash (<code>\\</code>) as escape character.
+                    ${tHtml('admin.bulk-confirmation.format.text', html`<code>,</code>`, html`<code>"</code>`, html`<code>\\</code>`)}
                 </p>
-                <p>Each row contains the (partial or full) reservation code and the paid amount:</p>
+                <p>${t('admin.bulk-confirmation.format.rows')}</p>
                 <pre><span class="reservation-code">abcd-efghi-jklm</span>,<span class="amount-value">10.00</span></pre>
             </div>
         `;
@@ -139,18 +139,18 @@ export class BulkConfirmation extends LitElement {
         return html`
             <div class="results">
                 <div class="results-summary">
-                    <h4>Upload results</h4>
-                    <sl-badge variant="success" pill>${confirmed} confirmed</sl-badge>
-                    ${when(failed > 0, () => html`<sl-badge variant="danger" pill>${failed} failed</sl-badge>`)}
+                    <h4>${t('admin.bulk-confirmation.results')}</h4>
+                    <sl-badge variant="success" pill>${t('admin.bulk-confirmation.confirmed', formatNumber(confirmed))}</sl-badge>
+                    ${when(failed > 0, () => html`<sl-badge variant="danger" pill>${t('admin.attendees-import.status.failed', formatNumber(failed))}</sl-badge>`)}
                 </div>
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>Row</th>
-                                <th>Status</th>
-                                <th>Reservation ID</th>
-                                <th>Message</th>
+                                <th>${t('admin.bulk-confirmation.row')}</th>
+                                <th>${t('admin.common.status')}</th>
+                                <th>${t('admin.bulk-confirmation.reservation-id')}</th>
+                                <th>${t('admin.compose.message')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -171,9 +171,9 @@ export class BulkConfirmation extends LitElement {
 
     private renderStatus(result: BulkConfirmationResult): TemplateResult {
         if (result.left) {
-            return html`<sl-icon class="status-success" name="check-circle-fill" label="Confirmed"></sl-icon>`;
+            return html`<sl-icon class="status-success" name="check-circle-fill" label=${t('admin.statistics.confirmed')}></sl-icon>`;
         }
-        return html`<sl-icon class="status-error" name="exclamation-triangle-fill" label="Failed"></sl-icon>`;
+        return html`<sl-icon class="status-error" name="exclamation-triangle-fill" label=${t('admin.bulk-confirmation.failed')}></sl-icon>`;
     }
 
     private upload = async (): Promise<void> => {
@@ -187,7 +187,7 @@ export class BulkConfirmation extends LitElement {
             this.uploadCount++;
             this.dispatchEvent(new CustomEvent(PAYMENTS_CONFIRMED_EVENT, { bubbles: true, composed: true }));
         } catch {
-            dispatchFeedback({ type: 'danger', message: 'Failed to process the uploaded file' }, this);
+            dispatchFeedback({ type: 'danger', message: t('admin.bulk-confirmation.process-failed') }, this);
         } finally {
             this.uploading = false;
         }

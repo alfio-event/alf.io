@@ -7,6 +7,7 @@ import type {SlSelect} from '@shoelace-style/shoelace';
 import {TicketCategory} from '../model/event.ts';
 import {EventService} from '../service/event.ts';
 import {errorMessage} from '../service/helpers.ts';
+import { t } from '../service/i18n';
 
 /**
  * Ticket categories of an event, which can be reloaded without reloading the page,
@@ -39,7 +40,7 @@ export class TicketCategoriesController implements ReactiveController {
             const { event } = await EventService.load(eventName);
             this.categories = event.ticketCategories;
         } catch (error) {
-            this.error = errorMessage(error, 'Failed to reload the categories. Please try again.');
+            this.error = errorMessage(error, t('admin.category-select.reload-failed'));
         } finally {
             this.refreshing = false;
             this.host.requestUpdate();
@@ -73,7 +74,7 @@ export function ticketCategorySelect(controller: TicketCategoriesController, opt
     return html`
         <div class="input-with-action">
             <sl-select id=${ifDefined(options.id)} class=${classMap({ [options.className ?? '']: options.className != null, error: options.error != null })}
-                       label="Category" placeholder="Select a category" required hoist
+                       label=${t('admin.category-select.label')} placeholder=${t('admin.category-select.placeholder')} required hoist
                        help-text=${options.error ?? ''}
                        .value=${options.value}
                        @sl-change=${(e: Event) => options.onChange(String((e.target as SlSelect).value))}
@@ -82,10 +83,10 @@ export function ticketCategorySelect(controller: TicketCategoriesController, opt
                     <sl-option value=${String(category.id)}>${category.name}</sl-option>
                 `)}
             </sl-select>
-            <sl-tooltip content="Reload the categories" placement="top-end">
+            <sl-tooltip content=${t('admin.category-select.reload')} placement="top-end">
                 <sl-button class="refresh-categories" variant="default" ?loading=${controller.refreshing} @click=${options.onRefresh}>
                     <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
-                    Refresh
+                    ${t('admin.common.refresh')}
                 </sl-button>
             </sl-tooltip>
         </div>

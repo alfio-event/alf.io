@@ -5,6 +5,7 @@ import type {SlDialog} from '@shoelace-style/shoelace';
 import {badges, base, detailList, dialog, modernLayout, modernTable, retroCompat, row, textColors} from '../styles.ts';
 import {dispatchFeedback} from '../model/dom-events.ts';
 import {dialogTitle} from './prompt-dialog.ts';
+import { t } from '../service/i18n';
 
 export interface InfoDialogContent {
     icon: string;
@@ -51,7 +52,7 @@ export class InfoDialog extends LitElement {
         try {
             this.body = await content.body();
         } catch {
-            dispatchFeedback({ type: 'danger', message: content.errorMessage ?? 'Failed to load the details' }, this);
+            dispatchFeedback({ type: 'danger', message: content.errorMessage ?? t('admin.load-error.details') }, this);
             await this.dialog.hide();
         }
     }
@@ -67,7 +68,7 @@ export class InfoDialog extends LitElement {
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => this.dialog.hide()}>Close</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.dialog.hide()}>${t('admin.common.close')}</sl-button>
                     </div>
                 </div>
             </sl-dialog>

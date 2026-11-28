@@ -6,6 +6,7 @@ import {SettingsLevel} from '../model/configuration.ts';
 import {BoundField, fieldError} from '../components/form-validation.ts';
 import {invoiceNumberControl} from './invoice-number-setting.ts';
 import './css-setting.ts';
+import { t } from '../service/i18n';
 
 /**
  * What a control needs to know about a setting, either a setting of alf.io or a parameter of an extension
@@ -45,12 +46,12 @@ export const REMOVE_SECRET = '\u0000remove-secret';
  */
 export function notSetLabel(level: SettingsLevel): string {
     if (level.type === 'ORGANIZATION') {
-        return 'Same as the system';
+        return t('admin.setting.same-as-system');
     }
     if (level.type === 'EVENT') {
-        return 'Same as the organization';
+        return t('admin.setting.same-as-organization');
     }
-    return 'Default';
+    return t('admin.setting.default');
 }
 
 /**
@@ -61,14 +62,14 @@ function notSetYesNoLabel(level: SettingsLevel, inheritedValue: string | undefin
     let value = inheritedValue;
     if (value == null && defaultValue != null) {
         // the value of the level above is hidden from this user: only the default is known
-        label = 'Same as default';
+        label = t('admin.setting.same-as-default');
         value = defaultValue;
     }
     if (value === 'true') {
-        return `${label} (Yes)`;
+        return t('admin.setting.inherited-yes', label);
     }
     if (value === 'false') {
-        return `${label} (No)`;
+        return t('admin.setting.inherited-no', label);
     }
     return label;
 }
@@ -96,8 +97,8 @@ export function settingControl(field: BoundField<string>, submitted: boolean, se
                        @sl-change=${(e: Event) => field.handleChange(String((e.target as SlSelect).value))}
                        @sl-blur=${() => field.handleBlur()}>
                 <sl-option value="">${notSetYesNoLabel(level, setting.inheritedValue, setting.defaultValue)}</sl-option>
-                <sl-option value="true">Yes</sl-option>
-                <sl-option value="false">No</sl-option>
+                <sl-option value="true">${t('admin.common.yes')}</sl-option>
+                <sl-option value="false">${t('admin.common.no')}</sl-option>
             </sl-select>
         `;
     }
@@ -159,9 +160,9 @@ export function settingControl(field: BoundField<string>, submitted: boolean, se
 function inheritedPlaceholder(setting: SettingDescriptor, level: SettingsLevel): string | typeof nothing {
     if (setting.inheritedSet === true) {
         if (level.type === 'SYSTEM') {
-            return 'Set in the server configuration';
+            return t('admin.setting.server-configuration');
         }
-        return `${notSetLabel(level)} (a value is set)`;
+        return t('admin.setting.inherited-set', notSetLabel(level));
     }
     // nothing is set above: an empty field is enough, a "Same as the system" placeholder reads like a value
     return nothing;
@@ -178,9 +179,9 @@ function secretControl(field: BoundField<string>, setting: SettingDescriptor, le
     let placeholder = inheritedPlaceholder(setting, level);
     if (removing) {
         value = '';
-        placeholder = 'Removed when you save';
+        placeholder = t('admin.setting.secret.removing');
     } else if (setting.secretStored === true) {
-        placeholder = 'Saved. Type a new value to replace it';
+        placeholder = t('admin.setting.secret.saved');
     }
     const help = secretHelp(field, setting, removing, helpText);
     if (setting.componentType === 'TEXTAREA') {
@@ -209,8 +210,8 @@ function secretHelp(field: BoundField<string>, setting: SettingDescriptor, remov
     if (removing) {
         return html`
             <div slot="help-text" class="secret-help">
-                The saved value will be removed.
-                <sl-button class="undo-remove-secret" variant="text" size="small" @click=${() => field.handleChange('')}>Undo</sl-button>
+                ${t('admin.setting.secret.will-be-removed')}
+                <sl-button class="undo-remove-secret" variant="text" size="small" @click=${() => field.handleChange('')}>${t('admin.common.undo')}</sl-button>
             </div>
         `;
     }
@@ -220,7 +221,7 @@ function secretHelp(field: BoundField<string>, setting: SettingDescriptor, remov
         }
         return html`<div slot="help-text">${helpText}</div>`;
     }
-    let text = 'For security, the saved value is never shown.';
+    let text = t('admin.setting.secret.never-shown');
     if (helpText !== '') {
         text = helpText;
     }
@@ -229,7 +230,7 @@ function secretHelp(field: BoundField<string>, setting: SettingDescriptor, remov
             ${text}
             <sl-button class="remove-secret" variant="text" size="small" @click=${() => field.handleChange(REMOVE_SECRET)}>
                 <sl-icon slot="prefix" name="trash"></sl-icon>
-                Remove the saved value
+                ${t('admin.setting.secret.remove')}
             </sl-button>
         </div>
     `;
@@ -247,6 +248,6 @@ export function validJson(value: unknown): string | undefined {
         JSON.parse(text);
         return undefined;
     } catch {
-        return 'Please enter valid JSON';
+        return t('admin.json-check.invalid');
     }
 }

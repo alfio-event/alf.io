@@ -12,6 +12,7 @@ import {taskContent} from '../components/task-content.ts';
 import {emptyState} from '../components/empty-state.ts';
 
 import { adminConfig } from '../admin-config';
+import { t } from '../service/i18n';
 @customElement('alfio-organization-list')
 export class OrganizationList extends LitElement {
 
@@ -60,7 +61,7 @@ export class OrganizationList extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row">
-                    <h1>Organizations</h1>
+                    <h1>${t('admin.menu.system.organizations')}</h1>
                 </div>
                 <hr class="page-separator">
 
@@ -68,16 +69,16 @@ export class OrganizationList extends LitElement {
                     <div class="filter-toolbar actions-only">
                         <div class="filter-right">
                             <sl-button variant="success" size="large" @click=${() => this.openNew()}>
-                                <sl-icon slot="prefix" name="plus-circle"></sl-icon> Add new
+                                <sl-icon slot="prefix" name="plus-circle"></sl-icon> ${t('admin.common.add-new-entity')}
                             </sl-button>
                         </div>
                     </div>
                 `)}
 
-                ${taskContent(this.loadOrganizationsTask, this.organizations, 'Failed to load the organizations. Please try again.',
+                ${taskContent(this.loadOrganizationsTask, this.organizations, t('admin.load-error.organizations'),
                     (orgs) => sectionCard({
                         icon: 'building',
-                        title: 'Organizations',
+                        title: t('admin.menu.system.organizations'),
                         badge: html`<sl-badge variant="primary" pill>${orgs.length}</sl-badge>`,
                     }, this.renderTable(orgs)))}
             </div>
@@ -86,31 +87,31 @@ export class OrganizationList extends LitElement {
 
     private renderTable(orgs: ReadonlyArray<Organization>): TemplateResult {
         if (orgs.length === 0) {
-            return emptyState('No organizations found');
+            return emptyState(t('admin.organization.none'));
         }
         return html`
             <div class="table-responsive">
                 <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
-                            <th scope="col">Name</th>
-                            <th scope="col" class="hidden-xs" style="width: 35%">Description</th>
-                            <th scope="col" style="width: 30%">E-mail</th>
-                            <th scope="col" style="width: 10%"><span class="sr-only">Actions</span></th>
+                            <th scope="col">${t('admin.common.name')}</th>
+                            <th scope="col" class="hidden-xs" style="width: 35%">${t('admin.common.description')}</th>
+                            <th scope="col" style="width: 30%">${t('admin.common.email')}</th>
+                            <th scope="col" style="width: 10%"><span class="sr-only">${t('admin.common.actions')}</span></th>
                         </tr>
                     </thead>
                     <tbody>
                         ${repeat(orgs, (org) => org.id, (org) => html`
                             <tr>
                                 <td>${org.name}</td>
-                                <td class="hidden-xs" data-label="Description"><div class="organization-description" title=${org.description}>${org.description}</div></td>
-                                <td data-label="E-mail">${org.email}</td>
+                                <td class="hidden-xs" data-label=${t('admin.common.description')}><div class="organization-description" title=${org.description}>${org.description}</div></td>
+                                <td data-label=${t('admin.common.email')}>${org.email}</td>
                                 <td>
                                     <div class="actions-cell">
                                         <sl-button variant="default" size="small" class="edit-organization" data-organization-id=${org.id}
                                                    @click=${() => this.edit(org)}>
                                             <sl-icon slot="prefix" name="pencil"></sl-icon>
-                                            Edit<span class="sr-only"> ${org.name}</span>
+                                            ${t('admin.common.edit')}<span class="sr-only"> ${org.name}</span>
                                         </sl-button>
                                     </div>
                                 </td>
@@ -153,7 +154,7 @@ export class OrganizationList extends LitElement {
             this.refresh();
             dispatchFeedback({
                 type: 'success',
-                message: 'Operation completed successfully'
+                message: t('admin.common.operation-completed')
             }, this);
         }
     }

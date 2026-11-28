@@ -7,6 +7,7 @@ import {errorMessage} from '../../service/helpers.ts';
 import {dispatchFeedback} from '../../model/dom-events.ts';
 import {dialog, form, row} from '../../styles.ts';
 import { navigate } from '../../admin-router';
+import { t, tHtml } from '../../service/i18n';
 
 /**
  * Deletes an event with all its data. As a safety measure, the organizer types the short name of the event.
@@ -40,15 +41,14 @@ export class DeleteEventDialog extends LitElement {
     render(): TemplateResult {
         const confirmed = this.typedName.trim() === this.shortName;
         return html`
-            <sl-dialog class="responsive-dialog" label="Delete the event" style="--alfio-dialog-max-width: 36rem"
+            <sl-dialog class="responsive-dialog" label=${t('admin.event-menu.delete')} style="--alfio-dialog-max-width: 36rem"
                        @sl-request-close=${this.onRequestClose} @sl-after-hide=${this.onAfterHide}>
                 ${when(this.opened, () => html`
                     <div class="form-stack">
                         <p>
-                            All the data of the event <strong>${this.shortName}</strong> will be deleted: reservations,
-                            tickets, payments and settings. This cannot be undone.
+                            ${tHtml('admin.event-menu.delete.text', html`<strong>${this.shortName}</strong>`)}
                         </p>
-                        <sl-input id="delete-confirmation" label="Type ${this.shortName} to confirm" autocomplete="off"
+                        <sl-input id="delete-confirmation" label=${t('admin.event-menu.delete.type-to-confirm', this.shortName)} autocomplete="off"
                                   .value=${this.typedName}
                                   @sl-input=${(e: Event) => { this.typedName = (e.target as SlInput).value; }}></sl-input>
                         ${when(this.error != null, () => html`
@@ -62,12 +62,12 @@ export class DeleteEventDialog extends LitElement {
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => void this.dialog.hide()}>Cancel</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => void this.dialog.hide()}>${t('admin.common.cancel')}</sl-button>
                         <div></div>
                         <sl-button id="confirm-delete-event" variant="danger" size="large"
                                    ?disabled=${!confirmed} ?loading=${this.deleting} @click=${this.delete}>
                             <sl-icon slot="prefix" name="trash"></sl-icon>
-                            Delete
+                            ${t('admin.common.delete')}
                         </sl-button>
                     </div>
                 </div>
@@ -83,11 +83,11 @@ export class DeleteEventDialog extends LitElement {
         this.error = null;
         try {
             await EventService.deleteEvent(this.eventId);
-            dispatchFeedback({type: 'success', message: `The event ${this.shortName} has been deleted`}, this);
+            dispatchFeedback({type: 'success', message: t('admin.event-menu.delete.done', this.shortName)}, this);
             await this.dialog.hide();
             navigate('/');
         } catch (error) {
-            this.error = errorMessage(error, 'The event could not be deleted');
+            this.error = errorMessage(error, t('admin.error.delete-event'));
         } finally {
             this.deleting = false;
         }

@@ -1,5 +1,6 @@
 import {AlfioEvent} from "../model/event.ts";
 import {ReservationSummary} from "../model/reservation.ts";
+import { formatNumber } from './i18n.ts';
 
 /**
  * Full name of a person (customer, attendee…)
@@ -43,7 +44,7 @@ export function formatAmount(amount: number | string | null | undefined, currenc
         // already formatted by the backend
         return `${currencyCode} ${amount}`;
     }
-    return `${currencyCode} ${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount)}`;
+    return `${currencyCode} ${formatNumber(amount, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function localizedTitle(event: AlfioEvent): string {

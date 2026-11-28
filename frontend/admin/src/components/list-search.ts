@@ -1,6 +1,7 @@
 import {html, ReactiveController, ReactiveControllerHost, TemplateResult} from 'lit';
 import {createRef, ref} from 'lit/directives/ref.js';
 import type {SlInput} from '@shoelace-style/shoelace';
+import { t } from '../service/i18n';
 
 const SEARCH_DELAY_MS = 250;
 
@@ -39,8 +40,8 @@ export class ListSearchController implements ReactiveController {
             <sl-input
                 ${ref(this.field)}
                 class="list-search label-hidden"
-                label="Filter ${itemLabel}"
-                placeholder="Filter ${itemLabel}"
+                label=${t('admin.list.filter', itemLabel)}
+                placeholder=${t('admin.list.filter', itemLabel)}
                 clearable
                 .value=${this.input}
                 @sl-input=${this.onInput}

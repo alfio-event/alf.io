@@ -12,6 +12,7 @@ import {sectionCard} from '../components/section-card.ts';
 import {organizationFilter} from '../components/organization-filter.ts';
 import {OrganizationService} from '../service/organization.ts';
 import { adminUrl, navigate } from '../admin-router';
+import { t } from '../service/i18n';
 
 /**
  * The groups of an organization, as a card with one row each: the row opens the edit page.
@@ -90,13 +91,13 @@ export class GroupsList extends LitElement {
                 <div class="filter-right">
                     <sl-button id="add-group" href=${adminUrl(`/group/${this.organizationId}/new`)} variant="success" size="large">
                         <sl-icon name="plus-circle" slot="prefix"></sl-icon>
-                        Add new
+                        ${t('admin.common.add-new-entity')}
                     </sl-button>
                 </div>
             </div>
-            ${sectionCard({icon: 'people', title: 'Groups', badge: count, className: 'list-card'},
+            ${sectionCard({icon: 'people', title: t('admin.menu.groups'), badge: count, className: 'list-card'},
                 taskContent(this.loadGroupsTask, this.loadGroupsTask.value ?? null,
-                    'Failed to load the groups. Please try again.',
+                    t('admin.group.list.load-failed'),
                     (loaded) => this.renderGroups(loaded)))}
         `;
     }
@@ -106,7 +107,7 @@ export class GroupsList extends LitElement {
             return html`<div class="state-message"><sl-spinner></sl-spinner></div>`;
         }
         if (groups.length === 0) {
-            return emptyState('No groups have been found');
+            return emptyState(t('admin.group.list.none'));
         }
         return html`
             ${repeat(groups, (group) => group.id, (group) => this.renderGroup(group))}
@@ -116,9 +117,9 @@ export class GroupsList extends LitElement {
     private renderGroup(group: Group): TemplateResult {
         return html`
             <a class="event-row group-row" href=${adminUrl(`/group/${this.organizationId}/edit/${group.id}`)}
-               aria-label=${`Edit ${group.name}`}>
+               aria-label=${t('admin.promo-code.edit-code', group.name)}>
                 <div class="event-logo placeholder">
-                    <sl-icon name="people" aria-label="No image"></sl-icon>
+                    <sl-icon name="people" aria-label=${t('admin.image-upload.no-image')}></sl-icon>
                 </div>
                 <div class="event-main">
                     <div class="event-heading">

@@ -170,7 +170,10 @@ public class GroupManager {
         List<String> duplicates = grouped.entrySet().stream().filter(e -> e.getValue().size() > 1).map(Map.Entry::getKey).toList();
 
         return new Result.Builder<Integer>()
-            .checkPrecondition(duplicates::isEmpty, ErrorCode.lazy(() -> ErrorCode.custom("value.duplicate", duplicates.stream().limit(10).collect(Collectors.joining(", ")))))
+            .checkPrecondition(duplicates::isEmpty, ErrorCode.lazy(() -> {
+                var values = duplicates.stream().limit(10).collect(Collectors.joining(", "));
+                return ErrorCode.translatable("value.duplicate", "admin.error.group.duplicate-values", values, values);
+            }))
             .build(() -> Arrays.stream(groupRepository.insert(groupId, members)).sum());
     }
 

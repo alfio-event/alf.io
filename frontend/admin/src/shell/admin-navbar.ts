@@ -5,7 +5,8 @@ import { repeat } from 'lit/directives/repeat.js';
 import type SlDrawer from '@shoelace-style/shoelace/dist/components/drawer/drawer.js';
 import { AdminConfig, adminConfigContext } from '../admin-config';
 import { adminRoute, adminUrl, navigate, ROUTE_CHANGED_EVENT } from '../admin-router';
-import { postJson } from '../service/helpers';
+import { postJson, supportedLanguages } from '../service/helpers';
+import { currentLanguage, languageName, t } from '../service/i18n';
 import { badges, base } from '../styles';
 
 interface NavLink {
@@ -20,7 +21,8 @@ interface NavLink {
 export const LOGOUT_EVENT = 'alfio-logout';
 
 /**
- * The top bar of the admin: the sections, the account and the logout. Below 992px the links move into a drawer.
+ * The top bar of the admin: the sections, the account, the language and the logout. Below 992px the links move into
+ * a drawer.
  */
 @customElement('alfio-admin-navbar')
 export class AdminNavbar extends LitElement {
@@ -152,6 +154,15 @@ export class AdminNavbar extends LitElement {
             .drawer-links button:hover {
                 color: var(--sl-color-primary-700);
             }
+            .drawer-links button[aria-pressed='true'] {
+                color: var(--sl-color-primary-600);
+                font-weight: var(--sl-font-weight-semibold);
+            }
+            .drawer-heading {
+                padding: var(--sl-spacing-small) var(--sl-spacing-medium) 0;
+                color: var(--sl-color-gray-600);
+                font-size: var(--sl-font-size-small);
+            }
             .drawer-user {
                 display: flex;
                 align-items: center;
@@ -191,28 +202,30 @@ export class AdminNavbar extends LitElement {
                 <a class="logo" href=${adminUrl('/')}>
                     <img alt="alf.io" src="${this.config.contextPath}/resources/images/alfio-logo.svg" width="100" height="50">
                 </a>
-                <nav aria-label="Main">
+                <nav aria-label=${t('admin.navbar.main-navigation')}>
                     <ul class="links">
                         ${repeat(links, link => link.route, link => html`<li>${this.renderLink(link)}</li>`)}
                     </ul>
                 </nav>
                 <sl-dropdown class="account" placement="bottom-end" @sl-select=${this.onAccountSelect}>
-                    <sl-button slot="trigger" class="account-trigger" variant="text" caret title="Logged in as ${this.config.username}">
-                        <sl-icon name="person-circle" label="Account"></sl-icon>
+                    <sl-button slot="trigger" class="account-trigger" variant="text" caret title=${t('admin.navbar.logged-in-as', this.config.username)}>
+                        <sl-icon name="person-circle" label=${t('admin.navbar.account')}></sl-icon>
                         <span class="username">${this.config.username}</span>
                     </sl-button>
                     <sl-menu>
                         ${this.renderAccountMenuItem()}
+                        ${this.renderLanguageMenuItem()}
+                        <sl-divider></sl-divider>
                         <sl-menu-item class="logout" value="logout">
                             <sl-icon slot="prefix" name="box-arrow-right"></sl-icon>
-                            Log out
+                            ${t('admin.navbar.log-out')}
                         </sl-menu-item>
                     </sl-menu>
                 </sl-dropdown>
-                <sl-icon-button class="menu-button" name="list" label="Menu" @click=${this.openDrawer}></sl-icon-button>
+                <sl-icon-button class="menu-button" name="list" label=${t('admin.navbar.menu')} @click=${this.openDrawer}></sl-icon-button>
             </div>
             <sl-drawer label="alf.io" placement="end">
-                <nav aria-label="Main">
+                <nav aria-label=${t('admin.navbar.main-navigation')}>
                     <ul class="drawer-links">
                         ${repeat(links, link => link.route, link => html`<li>${this.renderLink(link)}</li>`)}
                     </ul>
@@ -220,16 +233,28 @@ export class AdminNavbar extends LitElement {
                 <sl-divider></sl-divider>
                 <div class="drawer-user">
                     <sl-icon name="person-circle"></sl-icon>
-                    <span class="username" title="Logged in as ${this.config.username}">${this.config.username}</span>
+                    <span class="username" title=${t('admin.navbar.logged-in-as', this.config.username)}>${this.config.username}</span>
                 </div>
                 <ul class="drawer-links">
                     ${this.renderAccountLink()}
                     <li>
                         <button type="button" class="logout" @click=${this.logout}>
                             <sl-icon name="box-arrow-right"></sl-icon>
-                            Log out
+                            ${t('admin.navbar.log-out')}
                         </button>
                     </li>
+                </ul>
+                <sl-divider></sl-divider>
+                <div class="drawer-heading" id="drawer-language">${t('admin.navbar.language')}</div>
+                <ul class="drawer-links language-links" aria-labelledby="drawer-language">
+                    ${repeat(this.languages(), language => language.code, language => html`
+                        <li>
+                            <button type="button" lang=${language.code} aria-pressed=${String(language.current)}
+                                    @click=${() => this.switchLanguage(language.code)}>
+                                ${language.name}
+                            </button>
+                        </li>
+                    `)}
                 </ul>
             </sl-drawer>
         `;
@@ -242,7 +267,7 @@ export class AdminNavbar extends LitElement {
         }
         let beta: TemplateResult | typeof nothing = nothing;
         if (link.beta === true) {
-            beta = html`<sl-badge variant="neutral" pill>beta</sl-badge>`;
+            beta = html`<sl-badge variant="neutral" pill>${t('admin.common.beta')}</sl-badge>`;
         }
         return html`<a href=${adminUrl(link.route)} aria-current=${current}>${link.label} ${beta}</a>`;
     }
@@ -254,15 +279,57 @@ export class AdminNavbar extends LitElement {
         return html`
             <sl-menu-item class="edit-account" value="edit-account">
                 <sl-icon slot="prefix" name="pencil"></sl-icon>
-                Edit account
+                ${t('admin.navbar.edit-account')}
             </sl-menu-item>
-            <sl-divider></sl-divider>
         `;
+    }
+
+    /**
+     * The languages of the admin, each one named in its own language, so that a user who landed on a language they
+     * don't read can still find theirs. Names only: a flag stands for a country, not for a language.
+     */
+    private renderLanguageMenuItem(): TemplateResult {
+        return html`
+            <sl-menu-item class="language">
+                <sl-icon slot="prefix" name="translate"></sl-icon>
+                ${t('admin.navbar.language')}
+                <sl-menu slot="submenu">
+                    ${repeat(this.languages(), language => language.code, language => html`
+                        <sl-menu-item type="checkbox" value=${`lang:${language.code}`} lang=${language.code}
+                                      ?checked=${language.current}>
+                            ${language.name}
+                        </sl-menu-item>
+                    `)}
+                </sl-menu>
+            </sl-menu-item>
+        `;
+    }
+
+    private languages(): Array<{ code: string; name: string; current: boolean }> {
+        const current = currentLanguage();
+        return supportedLanguages()
+            .map(language => ({ code: language.language, name: languageName(language.language), current: language.language === current }))
+            .sort((a, b) => a.name.localeCompare(b.name, current));
+    }
+
+    /**
+     * The server renders the page in the chosen language and keeps it for the session (MvcConfiguration): this is the
+     * one navigation that reloads the page
+     */
+    private switchLanguage(code: string): void {
+        if (code === currentLanguage()) {
+            return;
+        }
+        const url = new URL(window.location.href);
+        url.searchParams.set('lang', code);
+        window.location.assign(url.toString());
     }
 
     private onAccountSelect = (e: CustomEvent<{ item: { value: string } }>): void => {
         const action = e.detail.item.value;
-        if (action === 'edit-account') {
+        if (action.startsWith('lang:')) {
+            this.switchLanguage(action.substring('lang:'.length));
+        } else if (action === 'edit-account') {
             navigate('/profile/edit');
         } else if (action === 'logout') {
             void this.logout();
@@ -281,7 +348,7 @@ export class AdminNavbar extends LitElement {
             <li>
                 <a class="edit-account" href=${adminUrl('/profile/edit')} aria-current=${current}>
                     <sl-icon name="pencil"></sl-icon>
-                    Edit account
+                    ${t('admin.navbar.edit-account')}
                 </a>
             </li>
         `;
@@ -289,25 +356,25 @@ export class AdminNavbar extends LitElement {
 
     private links(): NavLink[] {
         const links: NavLink[] = [
-            { label: 'Events', route: '/', current: /^\/($|\?|events\/)/ },
+            { label: t('admin.menu.events'), route: '/', current: /^\/($|\?|events\/)/ },
         ];
         if (!this.config.isOwner) {
             return links;
         }
         links.push(
-            { label: 'Subscriptions', route: '/subscriptions', current: /^\/subscriptions/, beta: true },
-            { label: 'Organizations', route: '/organizations/', current: /^\/organizations/ },
+            { label: t('admin.menu.subscriptions'), route: '/subscriptions', current: /^\/subscriptions/, beta: true },
+            { label: t('admin.menu.system.organizations'), route: '/organizations/', current: /^\/organizations/ },
         );
         if (this.config.isDBAuthentication) {
-            links.push({ label: 'Users', route: '/users/', current: /^\/users/ });
+            links.push({ label: t('admin.user.list.title'), route: '/users/', current: /^\/users/ });
         }
         links.push(
-            { label: 'API keys', route: '/api-keys/', current: /^\/api-keys/ },
-            { label: 'Groups', route: '/group', current: /^\/group/ },
-            { label: 'Configuration', route: '/configuration/system', current: /^\/(configuration|show-resources)/ },
+            { label: t('admin.menu.api-keys'), route: '/api-keys/', current: /^\/api-keys/ },
+            { label: t('admin.menu.groups'), route: '/group', current: /^\/group/ },
+            { label: t('admin.menu.settings'), route: '/configuration/system', current: /^\/(configuration|show-resources)/ },
         );
         if (this.config.isAdmin) {
-            links.push({ label: 'Extensions', route: '/extension/list', current: /^\/extension/ });
+            links.push({ label: t('admin.menu.extensions'), route: '/extension/list', current: /^\/extension/ });
         }
         return links;
     }

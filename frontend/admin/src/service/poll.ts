@@ -1,5 +1,6 @@
 import {Poll, PollParticipant, PollStatistics} from '../model/poll.ts';
 import {callDelete, ensureOk, fetchJson, postJson, putJson, responseErrorMessage} from './helpers.ts';
+import { t } from './i18n';
 
 /**
  * The poll admin API (PollAdminApiController): the answers are plain JSON, not Result wrappers.
@@ -29,7 +30,7 @@ export class PollService {
     static async updateStatus(eventName: string, pollId: number, status: 'OPEN' | 'CLOSED'): Promise<Poll> {
         const response = await putJson(`/admin/api/${encodeURIComponent(eventName)}/poll/${pollId}`, {status});
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, `Unexpected status ${response.status}`));
+            throw new Error(await responseErrorMessage(response, t('admin.error.unexpected-status', response.status)));
         }
         return response.json();
     }

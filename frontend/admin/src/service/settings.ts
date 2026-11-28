@@ -10,6 +10,7 @@ import {
     SettingsLevel,
     TranslationsOverride,
 } from '../model/configuration.ts';
+import { t } from './i18n';
 
 /**
  * The settings of the system, of an organization or of an event (the "Configuration" pages), and the tools
@@ -36,7 +37,7 @@ export class SettingsService {
         if (response.status === 403) {
             return {};
         }
-        return SettingsService.json(response, 'Failed to load the settings');
+        return SettingsService.json(response, t('admin.settings.error.load'));
     }
 
     static async loadSettings(level: SettingsLevel): Promise<SettingsByCategory> {
@@ -50,7 +51,7 @@ export class SettingsService {
         if (response.status === 403) {
             return {};
         }
-        return SettingsService.json(response, 'Failed to load the settings');
+        return SettingsService.json(response, t('admin.settings.error.load'));
     }
 
     /**
@@ -63,7 +64,7 @@ export class SettingsService {
         } else if (level.type === 'EVENT') {
             url = `/admin/api/configuration/organizations/${level.organizationId}/events/${level.eventId}/update`;
         }
-        await SettingsService.ensureOk(postJson(url, settings), 'Failed to save the settings');
+        await SettingsService.ensureOk(postJson(url, settings), t('admin.settings.error.save'));
     }
 
     /**
@@ -76,7 +77,7 @@ export class SettingsService {
         } else if (level.type === 'EVENT') {
             url = `/admin/api/configuration/event/${level.eventId}/key/${encodeURIComponent(key)}`;
         }
-        await SettingsService.ensureOk(callDelete(url), 'Failed to remove the setting');
+        await SettingsService.ensureOk(callDelete(url), t('admin.settings.error.remove'));
     }
 
     static async loadExtensionSettings(level: SettingsLevel): Promise<ExtensionSettingsById> {
@@ -84,17 +85,17 @@ export class SettingsService {
         if (response.status === 403) {
             return {};
         }
-        return SettingsService.json(response, 'Failed to load the settings of the extensions');
+        return SettingsService.json(response, t('admin.settings.error.load-extensions'));
     }
 
     static async saveExtensionSettings(level: SettingsLevel, settings: ExtensionSettingModification[]): Promise<void> {
         await SettingsService.ensureOk(postJson(`${SettingsService.extensionSettingsUrl(level)}/bulk-update`, settings),
-            'Failed to save the settings of the extensions');
+            t('admin.settings.error.save-extensions'));
     }
 
     static async deleteExtensionSetting(level: SettingsLevel, id: number): Promise<void> {
         await SettingsService.ensureOk(callDelete(`${SettingsService.extensionSettingsUrl(level)}/${id}`),
-            'Failed to remove the setting of the extension');
+            t('admin.settings.error.remove-extension'));
     }
 
     /**
@@ -103,13 +104,13 @@ export class SettingsService {
     static async loadEuCountries(): Promise<{ code: string; name: string }[]> {
         const response = await adminFetch('/admin/api/configuration/eu-countries');
         // each country is serialized as {"<code>": "<name>"}
-        const countries = await SettingsService.json<Record<string, string>[]>(response, 'Failed to load the countries');
+        const countries = await SettingsService.json<Record<string, string>[]>(response, t('admin.load-error.countries'));
         return countries.flatMap((country) => Object.entries(country).map(([code, name]) => ({code, name})));
     }
 
     static async loadPlatformModeStatus(organizationId: number): Promise<PlatformModeStatus> {
         const response = await adminFetch(`/admin/api/configuration/platform-mode/status/${organizationId}`);
-        return SettingsService.json(response, 'Failed to load the status of the payment providers');
+        return SettingsService.json(response, t('admin.settings.error.load-payment-providers'));
     }
 
     /**
@@ -117,7 +118,7 @@ export class SettingsService {
      */
     static async loadEvents(): Promise<EventBasicInfo[]> {
         const response = await adminFetch('/admin/api/events/basic');
-        return SettingsService.json(response, 'Failed to load the events');
+        return SettingsService.json(response, t('admin.load-error.events'));
     }
 
     /**
@@ -132,7 +133,7 @@ export class SettingsService {
             params.set('eventId', String(level.eventId));
         }
         await SettingsService.ensureOk(putJson(`/admin/api/configuration/generate-tickets-for-subscriptions?${params}`, {}),
-            'Failed to schedule the generation of the tickets');
+            t('admin.settings.error.generate-tickets'));
     }
 
     // ---------- translations ----------
@@ -148,7 +149,7 @@ export class SettingsService {
             url = `/admin/api/configuration/events/${level.eventId}/translations-override`;
         }
         const response = await adminFetch(url);
-        return SettingsService.json(response, 'Failed to load the translations');
+        return SettingsService.json(response, t('admin.settings.error.load-translations'));
     }
 
     static async saveTranslationsOverride(level: SettingsLevel, translations: TranslationsOverride): Promise<void> {
@@ -162,7 +163,7 @@ export class SettingsService {
      */
     static async loadBundle(locale: string): Promise<Record<string, string>> {
         const response = await adminFetch(`/api/v2/public/i18n/bundle/${encodeURIComponent(locale)}?withSystemOverride=false`);
-        return SettingsService.json(response, 'Failed to load the translations');
+        return SettingsService.json(response, t('admin.settings.error.load-translations'));
     }
 
     // ---------- invoices ----------
@@ -172,7 +173,7 @@ export class SettingsService {
      */
     static async loadFirstInvoiceDate(eventId: number): Promise<string> {
         const response = await adminFetch(`/admin/api/configuration/event/${eventId}/invoice-first-date`);
-        return SettingsService.json(response, 'Failed to load the date of the first invoice');
+        return SettingsService.json(response, t('admin.settings.error.load-first-invoice-date'));
     }
 
     /**
@@ -180,7 +181,7 @@ export class SettingsService {
      */
     static async findMatchingInvoices(eventId: number, from: number, to: number): Promise<number[]> {
         const response = await adminFetch(`/admin/api/configuration/event/${eventId}/matching-invoices?from=${from}&to=${to}`);
-        return SettingsService.json(response, 'Failed to search the invoices');
+        return SettingsService.json(response, t('admin.settings.error.search-invoices'));
     }
 
     /**
@@ -190,7 +191,7 @@ export class SettingsService {
      */
     static async regenerateInvoices(eventId: number, invoiceIds: number[]): Promise<boolean> {
         const response = await postJson(`/admin/api/configuration/event/${eventId}/regenerate-invoices`, invoiceIds);
-        return SettingsService.json(response, 'Failed to schedule the regeneration of the invoices');
+        return SettingsService.json(response, t('admin.settings.error.regenerate-invoices'));
     }
 
     // ---------- helpers ----------

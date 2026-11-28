@@ -1,4 +1,5 @@
 import {slColor} from '../../components/chart.ts';
+import { t } from '../../service/i18n';
 
 /**
  * The states of the tickets of an event, shown by the ticket status chart and by the bar of each
@@ -17,12 +18,12 @@ interface AllocationDefinition {
 // Sold and checked in are the strongest colors: they are what the organizer looks for. Pending is calm, as the
 // reservations in progress are normal. Only "Not on sale" asks for attention, because it needs an action
 const DEFINITIONS: Record<AllocationKey, AllocationDefinition> = {
-    checkedIn: {label: 'Checked in', token: '--sl-color-success-700', fallback: '#15803d'},
-    sold: {label: 'Sold', token: '--sl-color-success-500', fallback: '#22c55e'},
-    pending: {label: 'Pending', token: '--sl-color-sky-400', fallback: '#38bdf8'},
-    availableDynamic: {label: 'Available', token: '--sl-color-gray-300', fallback: '#d1d5db'},
-    availableFixed: {label: 'Kept for categories with a limit', token: '--sl-color-gray-200', fallback: '#e5e7eb'},
-    notAssigned: {label: 'Not on sale', token: '--sl-color-warning-500', fallback: '#f59e0b'},
+    checkedIn: {label: t('admin.allocation.checked-in'), token: '--sl-color-success-700', fallback: '#15803d'},
+    sold: {label: t('admin.allocation.sold'), token: '--sl-color-success-500', fallback: '#22c55e'},
+    pending: {label: t('admin.allocation.pending'), token: '--sl-color-sky-400', fallback: '#38bdf8'},
+    availableDynamic: {label: t('admin.allocation.available'), token: '--sl-color-gray-300', fallback: '#d1d5db'},
+    availableFixed: {label: t('admin.allocation.kept-for-limited'), token: '--sl-color-gray-200', fallback: '#e5e7eb'},
+    notAssigned: {label: t('admin.allocation.not-on-sale'), token: '--sl-color-warning-500', fallback: '#f59e0b'},
 };
 
 /**

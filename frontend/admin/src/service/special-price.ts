@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import {SendCodeModification, SpecialPrice} from "../model/special-price.ts";
 import { callDelete, ensureOk, postJson, responseErrorMessage, adminFetch } from './helpers.ts';
+import { t } from './i18n';
 
 // the header of the template, in this order: the columns of a row, without header, are code, assignee, email, language
 export const CSV_HEADER = ['code', 'assignee', 'email', 'language'];
@@ -49,7 +50,7 @@ export class SpecialPriceService {
             name,
         });
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, 'The invitations cannot be read.'));
+            throw new Error(await responseErrorMessage(response, t('admin.invitations.error.load')));
         }
         return await response.json();
     }
@@ -60,7 +61,7 @@ export class SpecialPriceService {
     static async sendCodes(eventName: string, categoryId: number, codes: SendCodeModification[]): Promise<void> {
         const response = await postJson(`${SpecialPriceService.baseUrl(eventName, categoryId)}/send-codes`, codes);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, 'The invitations have not been sent.'));
+            throw new Error(await responseErrorMessage(response, t('admin.invitations.error.send')));
         }
     }
 
@@ -78,7 +79,7 @@ export class SpecialPriceService {
     static async clearRecipient(eventName: string, categoryId: number, codeId: number): Promise<void> {
         const response = await callDelete(`${SpecialPriceService.baseUrl(eventName, categoryId)}/codes/${codeId}/recipient`);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, 'The recipient has not been cleared.'));
+            throw new Error(await responseErrorMessage(response, t('admin.invitations.error.clear-recipient')));
         }
     }
 }
@@ -110,7 +111,7 @@ function detectHeader(content: string): boolean {
     // a header with wrong names or order would be read as a data row by the backend: at least two cells match
     // the column names (a data row can have one, e.g. a code literally named "code", but not two)
     if (cells.filter(cell => CSV_HEADER.includes(cell)).length >= 2) {
-        throw new Error(`The first line must be the header: ${CSV_HEADER.join(', ')}. Download the template and fill it in.`);
+        throw new Error(t('admin.invitations.error.header', CSV_HEADER.join(', ')));
     }
     return false;
 }

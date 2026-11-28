@@ -23494,14 +23494,6 @@
           "schema" : {
             "type" : "string"
           }
-        }, {
-          "in" : "query",
-          "name" : "withSystemOverride",
-          "required" : false,
-          "schema" : {
-            "type" : "boolean",
-            "default" : true
-          }
         } ],
         "responses" : {
           "200" : {

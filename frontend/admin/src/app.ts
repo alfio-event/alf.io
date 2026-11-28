@@ -1,0 +1,139 @@
+// The admin application, loaded by main.ts once the translations are ready.
+// see
+// https://github.com/shoelace-style/rollup-example/blob/master/src/index.js
+// +
+// https://shoelace.style/getting-started/installation?id=bundling#bundling
+import { setBasePath } from '@shoelace-style/shoelace/dist/utilities/base-path.js';
+import "@shoelace-style/shoelace/dist/components/format-date/format-date.js";
+import "@shoelace-style/shoelace/dist/components/format-number/format-number.js";
+import "@shoelace-style/shoelace/dist/components/format-bytes/format-bytes.js";
+import "@shoelace-style/shoelace/dist/components/divider/divider.js";
+import "@shoelace-style/shoelace/dist/components/dialog/dialog.js";
+import "@shoelace-style/shoelace/dist/components/icon-button/icon-button.js";
+import "@shoelace-style/shoelace/dist/components/tab-group/tab-group.js";
+import "@shoelace-style/shoelace/dist/components/tab/tab.js";
+import "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel.js";
+import '@shoelace-style/shoelace/dist/components/card/card.js';
+import '@shoelace-style/shoelace/dist/components/button/button.js';
+import '@shoelace-style/shoelace/dist/components/icon/icon.js';
+import '@shoelace-style/shoelace/dist/components/alert/alert';
+import '@shoelace-style/shoelace/dist/components/input/input';
+import '@shoelace-style/shoelace/dist/components/textarea/textarea';
+import '@shoelace-style/shoelace/dist/components/select/select';
+import '@shoelace-style/shoelace/dist/components/option/option';
+import '@shoelace-style/shoelace/dist/components/qr-code/qr-code.js';
+import '@shoelace-style/shoelace/dist/components/badge/badge.js';
+import '@shoelace-style/shoelace/dist/components/tooltip/tooltip.js';
+import '@shoelace-style/shoelace/dist/components/radio/radio.js';
+import '@shoelace-style/shoelace/dist/components/radio-group/radio-group.js';
+import '@shoelace-style/shoelace/dist/components/radio-button/radio-button.js';
+import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
+import '@shoelace-style/shoelace/dist/components/button-group/button-group.js';
+import '@shoelace-style/shoelace/dist/components/menu/menu.js';
+import '@shoelace-style/shoelace/dist/components/menu-item/menu-item.js';
+import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
+import '@shoelace-style/shoelace/dist/components/spinner/spinner.js';
+import '@shoelace-style/shoelace/dist/components/progress-bar/progress-bar.js';
+import '@shoelace-style/shoelace/dist/components/drawer/drawer.js';
+import '@shoelace-style/shoelace/dist/components/details/details.js';
+import '@shoelace-style/shoelace/dist/components/switch/switch.js';
+import '@shoelace-style/shoelace/dist/components/copy-button/copy-button.js';
+// the texts of the Shoelace components (close buttons, the labels for screen readers…), chosen by <html lang>.
+// Shoelace has no Bulgarian and Romanian translation: they get the English texts
+import '@shoelace-style/shoelace/dist/translations/cs.js';
+import '@shoelace-style/shoelace/dist/translations/da.js';
+import '@shoelace-style/shoelace/dist/translations/de.js';
+import '@shoelace-style/shoelace/dist/translations/es.js';
+import '@shoelace-style/shoelace/dist/translations/fr.js';
+import '@shoelace-style/shoelace/dist/translations/it.js';
+import '@shoelace-style/shoelace/dist/translations/nl.js';
+import '@shoelace-style/shoelace/dist/translations/pl.js';
+import '@shoelace-style/shoelace/dist/translations/pt.js';
+import '@shoelace-style/shoelace/dist/translations/sv.js';
+import '@shoelace-style/shoelace/dist/translations/tr.js';
+
+
+
+// see https://vitejs.dev/guide/env-and-mode
+if (import.meta.env.MODE === 'development') {
+    setBasePath('http://localhost:5173/shoelace/');
+} else if (import.meta.env.MODE === 'production') {
+    setBasePath(`${document.getElementById('lit-js')?.getAttribute('src')?.replace(/assets.*/g, '')}shoelace/`);
+}
+export { AdminApp } from './shell/admin-app';
+export { AdminNavbar } from './shell/admin-navbar';
+export { EventLayout } from './shell/event-layout';
+export { SubscriptionLayout } from './shell/subscription-layout';
+export { Redirect } from './shell/redirect';
+export { OrganizationsPage } from './organization/organizations-page';
+export { ProjectBanner } from './project-banner/project-banner';
+export { AdditionalItemList } from './event/additional-item-list/additional-item-list';
+export { DisplayCommonMarkPreview } from './display-common-mark-preview/display-common-mark-preview';
+export { AdditionalItemEdit } from './event/additional-item-edit/additional-item-edit';
+export { FeedbackVisualizer } from './feedback-visualizer/feedback-visualizer';
+export { AdditionalFieldList } from './purchase-context/additional-field/additional-field-list.ts';
+export { AdditionalFieldStatistics } from './purchase-context/additional-field/additional-field-statistics.ts';
+export { AdditionalFieldEdit } from './purchase-context/additional-field/additional-field-edit.ts';
+export { OfflinePaymentConfigBlock } from './configuration/offline-payment-config-block';
+export { OfflinePaymentDialog } from './configuration/offline-payment-dialog';
+export { ConfirmationDialog } from './configuration/confirmation-dialog';
+export { SettingsPage } from './configuration/settings-page';
+export { BasicSettingsDialog } from './configuration/basic-settings-dialog';
+export { CustomOfflinePaymentEventSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-event-selector';
+export { CustomOfflinePaymentSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-selector';
+export { CustomOfflinePaymentDeniedMethodsSelector } from './event/custom-offline-payment-event-selector/custom-offline-payment-denied-methods-selector';
+export { EventsList } from './event/events-list/events-list';
+export { EventsPage } from './event/events-page/events-page';
+export { EventCreate } from './event/event-create/event-create';
+export { EventCategoryDialog } from './event/event-create/category-dialog';
+export { CopyEventDialog } from './event/event-create/copy-event-dialog';
+export { EventDetail } from './event/event-detail/event-detail';
+export { EventSidebar } from './event/event-sidebar/event-sidebar';
+export { EventStatistics } from './event/event-detail/event-statistics';
+export { EventCategories } from './event/event-detail/category-list';
+export { OrganizationList } from './organization/organization-list.ts';
+export { OrganizationEdit } from './organization/organization-edit.ts';
+export { Users } from './users/users.ts';
+export { UserProfileEdit } from './users/user-profile-edit.ts';
+export { FileUpload } from './components/file-upload';
+export { PurchaseContextImage } from './components/purchase-context-image';
+export { MultiLanguageText } from './components/multi-language-text';
+export { FormatDate } from './components/format-date';
+export { PaginationBar } from './components/pagination-bar';
+export { PaymentMethod } from './components/payment-method';
+export { PendingPaymentsCount } from './components/pending-payments-count';
+export { PromoCode } from './event/promo-code/promo-code';
+export { ReservationsList } from './event/reservations-list/reservations-list';
+export { TicketsList } from './event/tickets-list/tickets-list';
+export { PollsList } from './event/polls/polls-list';
+export { PollDetail } from './event/polls/poll-detail';
+export { PollEdit } from './event/polls/poll-edit';
+export { PollParticipants } from './event/polls/poll-participants';
+export { ComposeMessage } from './event/compose-message/compose-message';
+export { PaymentsList } from './event/payments-list/payments-list';
+export { PendingPayments } from './event/pending-payments/pending-payments';
+export { WaitingList } from './event/waiting-list/waiting-list';
+export { EmailLog } from './email-log/email-log';
+export { EmailTable } from './email-log/email-table';
+export { ExtensionList } from './extension/extension-list';
+export { ExtensionEdit } from './extension/extension-edit';
+export { ExtensionLogPage } from './extension/extension-log';
+export { CodeEditor } from './components/code-editor';
+export { MarkdownEditor } from './components/markdown-editor';
+export { ReservationDetailPage } from './reservation-detail/reservation-detail';
+export { CheckIn } from './event/check-in/check-in';
+export { CheckInScan } from './event/check-in/check-in-scan';
+export { AttendeesImport } from './event/attendees-import/attendees-import';
+export { AttendeesImportStatus } from './event/attendees-import/attendees-import-status';
+export { SendInvitations } from './event/send-invitations/send-invitations';
+export { ReservationCreate } from './event/reservation-create/reservation-create';
+export { TemplateList } from './template/template-list';
+export { TemplateEdit } from './template/template-edit';
+export { SubscriptionsPage } from './subscriptions/subscriptions-page';
+export { SubscriptionsList } from './subscriptions/subscriptions-list';
+export { SubscriptionDetail } from './subscriptions/subscription-detail';
+export { SubscriptionEdit } from './subscriptions/subscription-edit';
+export { LinkedEventsDialog } from './subscriptions/linked-events-dialog';
+export { GroupsPage } from './groups/groups-page';
+export { GroupsList } from './groups/groups-list';
+export { GroupEdit } from './groups/group-edit';

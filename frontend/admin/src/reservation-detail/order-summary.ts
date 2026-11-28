@@ -3,6 +3,7 @@ import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
 import {OrderSummary, SummaryRow} from '../model/reservation-detail.ts';
 import {humanize} from '../service/helpers.ts';
+import { t, i18nKey } from '../service/i18n';
 
 /* styles of orderSummaryTable(). Use with "modernTable" and "reservationTable" */
 export const orderSummary = css`
@@ -32,21 +33,21 @@ export function orderSummaryTable(summary: OrderSummary, currencyCode: string): 
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Item</th>
-                        <th class="hide-small">Type</th>
-                        <th class="quantity">Qty</th>
-                        <th class="amount">Price</th>
-                        <th class="amount">Subtotal (${currencyCode})</th>
+                        <th>${t('admin.order-summary.item')}</th>
+                        <th class="hide-small">${t('admin.common.type')}</th>
+                        <th class="quantity">${t('admin.order-summary.quantity')}</th>
+                        <th class="amount">${t('admin.category-dialog.price')}</th>
+                        <th class="amount">${t('admin.order-summary.subtotal', currencyCode)}</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${repeat(summary.summary, (row, index) => `${row.type}-${index}`, (row) => renderRow(row))}
-                    ${when(showTaxes && summary.vatStatus === 'NOT_INCLUDED', () => taxesRow('Taxes', summary))}
+                    ${when(showTaxes && summary.vatStatus === 'NOT_INCLUDED', () => taxesRow(t('admin.event-form.taxes'), summary))}
                     <tr class="total-row">
-                        <td colspan="4">Total</td>
+                        <td colspan="4">${t('admin.poll.total')}</td>
                         <td class="amount">${summary.totalPrice}</td>
                     </tr>
-                    ${when(showTaxes && summary.vatStatus === 'INCLUDED', () => taxesRow('Taxes (included)', summary))}
+                    ${when(showTaxes && summary.vatStatus === 'INCLUDED', () => taxesRow(t('admin.order-summary.taxes-included'), summary))}
                 </tbody>
             </table>
         </div>
@@ -57,7 +58,7 @@ function renderRow(row: SummaryRow): TemplateResult {
     if (row.type === 'TAX_DETAIL') {
         return html`
             <tr class="summary-row">
-                <td colspan="4">Taxes</td>
+                <td colspan="4">${t('admin.event-form.taxes')}</td>
                 <td class="amount">${row.subTotal}</td>
             </tr>
         `;
@@ -65,12 +66,33 @@ function renderRow(row: SummaryRow): TemplateResult {
     return html`
         <tr>
             <td>${row.name}</td>
-            <td class="hide-small">${humanize(row.type)}</td>
+            <td class="hide-small">${rowTypeLabel(row.type)}</td>
             <td class="quantity">${row.amount}</td>
             <td class="amount">${row.price}</td>
             <td class="amount">${row.subTotal}</td>
         </tr>
     `;
+}
+
+const ROW_TYPE_LABELS: Record<string, string> = {
+    TICKET: i18nKey('admin.order-summary.type.ticket'),
+    SUBSCRIPTION: i18nKey('admin.order-summary.type.subscription'),
+    PROMOTION_CODE: i18nKey('admin.order-summary.type.promotion-code'),
+    DYNAMIC_DISCOUNT: i18nKey('admin.order-summary.type.dynamic-discount'),
+    ADDITIONAL_SERVICE: i18nKey('admin.order-summary.type.additional-service'),
+    APPLIED_SUBSCRIPTION: i18nKey('admin.order-summary.type.applied-subscription'),
+    TAX_DETAIL: i18nKey('admin.order-summary.type.tax-detail'),
+};
+
+/**
+ * The label of the type of a row; a type added by a newer backend falls back to its humanized name
+ */
+function rowTypeLabel(type: string): string {
+    const key = ROW_TYPE_LABELS[type];
+    if (key == null) {
+        return humanize(type);
+    }
+    return t(key);
 }
 
 function taxesRow(label: string, summary: OrderSummary): TemplateResult {

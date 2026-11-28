@@ -10,6 +10,7 @@ import {emailStatusBadge} from './email-status.ts';
 import {EmailMessageDialog} from './email-message-dialog.ts';
 import '../components/format-date.ts';
 import './email-message-dialog.ts';
+import { t } from '../service/i18n';
 
 /**
  * Table of e-mails. "View" displays the selected e-mail in a dialog.
@@ -22,7 +23,7 @@ export class EmailTable extends LitElement {
     @property({ type: String, attribute: 'data-purchase-context-type' }) purchaseContextType: PurchaseContextType = 'event';
     @property({ type: String, attribute: 'data-public-identifier' }) publicIdentifier = '';
     @property({ type: String, attribute: 'data-time-zone' }) timeZone = 'UTC';
-    @property({ type: String, attribute: 'data-empty-message' }) emptyMessage = 'No e-mails found';
+    @property({ type: String, attribute: 'data-empty-message' }) emptyMessage = t('admin.email-log.none');
     @query('alfio-email-message-dialog') private messageDialog!: EmailMessageDialog;
 
     static readonly styles = [
@@ -99,27 +100,27 @@ export class EmailTable extends LitElement {
                 <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
-                            <th>Recipient</th>
-                            <th>Subject</th>
-                            <th>Status</th>
-                            <th class="hide-small">Requested</th>
-                            <th class="hide-small">Sent</th>
-                            <th>Actions</th>
+                            <th>${t('admin.invitations.recipient')}</th>
+                            <th>${t('admin.compose.subject')}</th>
+                            <th>${t('admin.common.status')}</th>
+                            <th class="hide-small">${t('admin.email-log.requested')}</th>
+                            <th class="hide-small">${t('admin.email-log.sent')}</th>
+                            <th>${t('admin.common.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${repeat(messages, (message) => message.id, (message) => html`
                             <tr>
                                 <td class="email">${message.recipient}</td>
-                                <td data-label="Subject">
+                                <td data-label=${t('admin.compose.subject')}>
                                     <div class="subject">${message.subject}</div>
                                     <div class="message-preview hide-small">${message.message}</div>
                                 </td>
-                                <td data-label="Status">${emailStatusBadge(message.status)}</td>
-                                <td class="timestamp hide-small" data-label="Requested">
+                                <td data-label=${t('admin.common.status')}>${emailStatusBadge(message.status)}</td>
+                                <td class="timestamp hide-small" data-label=${t('admin.email-log.requested')}>
                                     <alfio-format-date date=${message.requestTimestamp} time-zone=${this.timeZone}></alfio-format-date>
                                 </td>
-                                <td class="timestamp hide-small" data-label="Sent">
+                                <td class="timestamp hide-small" data-label=${t('admin.email-log.sent')}>
                                     <alfio-format-date date=${message.sentTimestamp ?? ''} time-zone=${this.timeZone}></alfio-format-date>
                                 </td>
                                 <td>
@@ -127,7 +128,7 @@ export class EmailTable extends LitElement {
                                         <sl-button size="small" variant="default" outline
                                                    @click=${() => this.messageDialog.open(message.id)}>
                                             <sl-icon slot="prefix" name="eye"></sl-icon>
-                                            View
+                                            ${t('admin.common.view')}
                                         </sl-button>
                                     </div>
                                 </td>

@@ -5,6 +5,7 @@ import type {SlDialog, SlRequestCloseEvent} from '@shoelace-style/shoelace';
 import {SettingsLevel} from '../model/configuration.ts';
 import {base, dialog, textColors} from '../styles.ts';
 import './settings-form.ts';
+import { t } from '../service/i18n';
 
 const SYSTEM: SettingsLevel = {type: 'SYSTEM'};
 
@@ -40,12 +41,12 @@ export class BasicSettingsDialog extends LitElement {
 
     render(): TemplateResult {
         return html`
-            <sl-dialog class="responsive-dialog" label="Basic configuration"
+            <sl-dialog class="responsive-dialog" label=${t('admin.basic-settings.title')}
                        @sl-request-close=${this.onRequestClose}
                        @sl-after-hide=${this.onAfterHide}>
                 ${when(this.opened, () => html`
                     <p class="intro text-muted">
-                        alf.io needs these settings to run. You can change them, and all the others, later in the configuration.
+                        ${t('admin.basic-settings.description')}
                     </p>
                     <alfio-settings-form data-basic .level=${SYSTEM}
                                          @alfio-settings-saved=${() => window.location.reload()}

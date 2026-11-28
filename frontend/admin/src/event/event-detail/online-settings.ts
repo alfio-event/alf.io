@@ -28,6 +28,7 @@ import '../../components/localized-markdown.ts';
 import '../../components/format-date.ts';
 import {dateTimeLocalToModification, wallClockToDateTimeLocal} from '../event-create/category-dialog.ts';
 import {badges, dialog, form, modernLayout, modernTable, row, textColors} from '../../styles.ts';
+import { t, tHtml } from '../../service/i18n';
 
 /**
  * What the online settings dialog edits: the settings of the event, or of one of its categories
@@ -187,7 +188,7 @@ export class OnlineSettingsDialog extends LitElement {
     render(): TemplateResult {
         const context = this.context;
         return html`
-            <sl-dialog class="responsive-dialog online-settings-dialog" label=${context?.label ?? 'Online settings'}
+            <sl-dialog class="responsive-dialog online-settings-dialog" label=${context?.label ?? t('admin.categories.online-settings')}
                        @sl-request-close=${this.onRequestClose}
                        @sl-after-hide=${this.onAfterHide}>
                 ${when(context != null, () => this.renderForm(context!), () => nothing)}
@@ -201,20 +202,20 @@ export class OnlineSettingsDialog extends LitElement {
         return html`
             <form novalidate class="dialog-form" @submit=${this.onSubmit}>
                 <section>
-                    <h3>Meeting links</h3>
-                    <p class="group-help text-muted">Attendees are sent to the link that is active when they join.</p>
+                    <h3>${t('admin.online-settings.meeting-links')}</h3>
+                    <p class="group-help text-muted">${t('admin.online-settings.meeting-links.help')}</p>
                     <div class="links">
                         ${repeat(links, (_, index) => index, (_, index) => this.renderLink(index, links.length, submitted))}
                         <sl-button class="add-link" variant="text" @click=${this.addLink}>
                             <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-                            Add meeting link
+                            ${t('admin.online-settings.add-link')}
                         </sl-button>
                     </div>
                 </section>
                 <section>
                     ${this.#form.field({name: 'requirements'}, (field) => html`
                         <alfio-multi-language-text class="requirements"
-                                                   label="Prerequisites for attending"
+                                                   label=${t('admin.online-settings.prerequisites')}
                                                    .card=${false}
                                                    markdown
                                                    .languages=${context.languages}
@@ -228,10 +229,10 @@ export class OnlineSettingsDialog extends LitElement {
             <div slot="footer">
                 <sl-divider></sl-divider>
                 <div class="row" style="--alfio-row-cols: 3">
-                    <sl-button variant="default" size="large" @click=${this.close}>Cancel</sl-button>
+                    <sl-button variant="default" size="large" @click=${this.close}>${t('admin.common.cancel')}</sl-button>
                     <div></div>
                     <sl-button class="save-online-settings" variant="warning" size="large" ?loading=${this.saving}
-                               @click=${this.onSubmit}>Save</sl-button>
+                               @click=${this.onSubmit}>${t('admin.common.save')}</sl-button>
                 </div>
                 ${when(this.submitError != null, () => html`<div class="footer-error">${this.submitError}</div>`, () => nothing)}
             </div>
@@ -250,14 +251,14 @@ export class OnlineSettingsDialog extends LitElement {
                 ${this.#form.field({name: `${path}.link`, validators: validateWith(requiredHttpsUrl)},
                     (field) => validatedInput(field, submitted, {
                         className: `meeting-link ${labelClass}`.trim(),
-                        label: 'Meeting link',
+                        label: t('admin.online-settings.link'),
                         type: 'url',
                         prefixIcon: 'link-45deg',
                     }))}
                 ${this.#form.field({name: `${path}.validFrom`, validators: validateWith(requiredValue)},
                     (field) => validatedInput(field, submitted, {
                         className: `link-valid-from ${labelClass}`.trim(),
-                        label: 'Active from',
+                        label: t('admin.online-settings.active-from'),
                         type: 'datetime-local',
                     }))}
                 ${this.#form.field({
@@ -269,10 +270,10 @@ export class OnlineSettingsDialog extends LitElement {
                     },
                 }, (field) => validatedInput(field, submitted, {
                     className: `link-valid-to ${labelClass}`.trim(),
-                    label: 'Active until',
+                    label: t('admin.online-settings.active-until'),
                     type: 'datetime-local',
                 }))}
-                <sl-icon-button class="remove-link" name="trash" label="Remove meeting link ${index + 1}"
+                <sl-icon-button class="remove-link" name="trash" label=${t('admin.online-settings.remove-link', index + 1)}
                                 ?disabled=${count <= 1}
                                 @click=${() => this.removeLink(index)}></sl-icon-button>
             </div>
@@ -287,7 +288,7 @@ export class OnlineSettingsDialog extends LitElement {
         const validFrom = this.#form.api.state.values.callLinks[index]?.validFrom ?? '';
         // datetime-local values compare as strings
         if (validFrom !== '' && String(value) <= validFrom) {
-            return 'Please choose a time after the start';
+            return t('admin.validation.after-start');
         }
         return undefined;
     }
@@ -363,7 +364,7 @@ export class OnlineSettingsDialog extends LitElement {
             this.saved = true;
             await this.dialog?.hide();
         } catch (error) {
-            this.submitError = errorMessage(error, 'The online settings could not be saved');
+            this.submitError = errorMessage(error, t('admin.online-settings.save-failed'));
         } finally {
             this.saving = false;
         }
@@ -458,25 +459,25 @@ export class GuestLinkDialog extends LitElement {
     render(): TemplateResult {
         const submitted = this.#form.api.state.submissionAttempts > 0;
         return html`
-            <sl-dialog class="responsive-dialog" label="Create a join link for a guest"
+            <sl-dialog class="responsive-dialog" label=${t('admin.online-settings.guest-link.title')}
                        @sl-request-close=${this.onRequestClose}
                        @sl-after-hide=${this.onAfterHide}>
                 ${when(this.isOpen, () => html`
                     <form novalidate class="form-stack" @submit=${this.onSubmit}>
                         ${this.#form.field({name: 'firstName', validators: validateWith(requiredValue)},
-                            (field) => validatedInput(field, submitted, {label: 'First name', className: 'guest-first-name'}))}
+                            (field) => validatedInput(field, submitted, {label: t('admin.common.first-name'), className: 'guest-first-name'}))}
                         ${this.#form.field({name: 'lastName', validators: validateWith(requiredValue)},
-                            (field) => validatedInput(field, submitted, {label: 'Last name', className: 'guest-last-name'}))}
+                            (field) => validatedInput(field, submitted, {label: t('admin.common.last-name'), className: 'guest-last-name'}))}
                         ${this.#form.field({name: 'email', validators: validateWith(emailAddress)},
-                            (field) => validatedInput(field, submitted, {label: 'E-mail', type: 'email', prefixIcon: 'envelope', className: 'guest-email'}))}
+                            (field) => validatedInput(field, submitted, {label: t('admin.common.email'), type: 'email', prefixIcon: 'envelope', className: 'guest-email'}))}
                     </form>
                 `, () => nothing)}
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => void this.dialog?.hide()}>Cancel</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => void this.dialog?.hide()}>${t('admin.common.cancel')}</sl-button>
                         <div></div>
-                        <sl-button variant="warning" size="large" @click=${this.onSubmit}>Create link</sl-button>
+                        <sl-button variant="warning" size="large" @click=${this.onSubmit}>${t('admin.online-settings.guest-link.create')}</sl-button>
                     </div>
                     ${when(this.submitError != null, () => html`<div class="footer-error">${this.submitError}</div>`, () => nothing)}
                 </div>
@@ -511,10 +512,10 @@ export class GuestLinkDialog extends LitElement {
 }
 
 const STATIC_CAPABILITIES: Record<string, string> = {
-    GENERATE_MEETING_LINK: 'Generate meeting link',
-    CREATE_VIRTUAL_ROOM: 'Create virtual room',
-    CREATE_GUEST_LINK: 'Create join link for a guest',
-    CREATE_ANONYMOUS_GUEST_LINK: 'Create join link for an anonymous guest',
+    GENERATE_MEETING_LINK: t('admin.online-settings.capability.generate-link'),
+    CREATE_VIRTUAL_ROOM: t('admin.online-settings.capability.virtual-room'),
+    CREATE_GUEST_LINK: t('admin.online-settings.capability.guest-link'),
+    CREATE_ANONYMOUS_GUEST_LINK: t('admin.online-settings.capability.anonymous-guest-link'),
 };
 
 interface CapabilityAction {
@@ -604,7 +605,7 @@ export class EventOnlineSettings extends LitElement {
                 <sl-dropdown hoist placement="bottom-end">
                     <sl-button slot="trigger" class="capabilities" size="small" caret ?loading=${this.runningCapability}>
                         <sl-icon slot="prefix" name="plug"></sl-icon>
-                        Extensions
+                        ${t('admin.menu.extensions')}
                     </sl-button>
                     <sl-menu @sl-select=${(e: CustomEvent) => void this.runCapability(actions[Number(e.detail.item.value)])}>
                         ${repeat(actions, (action) => `${action.id}-${action.selector}`, (action, index) => html`
@@ -616,29 +617,27 @@ export class EventOnlineSettings extends LitElement {
             ${when(canEdit, () => html`
                 <sl-button class="edit-online-settings" size="small" @click=${this.edit}>
                     <sl-icon slot="prefix" name="pencil"></sl-icon>
-                    Edit
+                    ${t('admin.common.edit')}
                 </sl-button>
             `, () => nothing)}
         `;
         return html`
-            ${sectionCard({icon: 'camera-video', title: 'Online settings', actions: headerActions}, html`
+            ${sectionCard({icon: 'camera-video', title: t('admin.categories.online-settings'), actions: headerActions}, html`
                 ${when(links.length === 0, () => html`
                     <sl-alert open variant="warning" class="missing-meeting-links">
                         <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                        The meeting links are missing: add them before
-                        <alfio-format-date date=${event.formattedBegin} time-zone=${event.timeZone}></alfio-format-date>,
-                        or the attendees won't be able to join.
+                        ${tHtml('admin.online-settings.missing-links', html`<alfio-format-date date=${event.formattedBegin} time-zone=${event.timeZone}></alfio-format-date>`)}
                     </sl-alert>
                 `, () => html`
                     <div>
-                        <h4>Meeting links</h4>
+                        <h4>${t('admin.online-settings.meeting-links')}</h4>
                         <div class="table-responsive">
                             <table class="table">
                                 <thead>
                                     <tr>
-                                        <th>Link</th>
-                                        <th>Active from</th>
-                                        <th>Active until</th>
+                                        <th>${t('admin.markdown.link')}</th>
+                                        <th>${t('admin.online-settings.active-from')}</th>
+                                        <th>${t('admin.online-settings.active-until')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -656,7 +655,7 @@ export class EventOnlineSettings extends LitElement {
                 `)}
                 ${when(Object.keys(requirements).length > 0, () => html`
                     <div>
-                        <h4>Prerequisites for attending</h4>
+                        <h4>${t('admin.online-settings.prerequisites')}</h4>
                         <alfio-localized-markdown .value=${requirements} .languages=${event.contentLanguages ?? []}></alfio-localized-markdown>
                     </div>
                 `, () => nothing)}
@@ -668,7 +667,7 @@ export class EventOnlineSettings extends LitElement {
                             <code>${this.capabilityResult}</code>
                             <sl-button size="small" @click=${this.copyCapabilityResult}>
                                 <sl-icon slot="prefix" name="clipboard"></sl-icon>
-                                Copy
+                                ${t('admin.common.copy')}
                             </sl-button>
                         </div>
                     </sl-alert>
@@ -688,7 +687,7 @@ export class EventOnlineSettings extends LitElement {
         const saved = await dialogElement.open({
             eventName: event.shortName,
             categoryId: null,
-            label: 'Online settings',
+            label: t('admin.categories.online-settings'),
             metadata: event.metadata,
             eventBegin: wallClockToDateTimeLocal(event.formattedBegin),
             eventEnd: wallClockToDateTimeLocal(event.formattedEnd),
@@ -696,7 +695,7 @@ export class EventOnlineSettings extends LitElement {
             contextLanguages: event.contentLanguages ?? [],
         });
         if (saved) {
-            dispatchFeedback({type: 'success', message: 'The online settings have been saved'}, this);
+            dispatchFeedback({type: 'success', message: t('admin.online-settings.saved')}, this);
             this.reload();
         }
     };
@@ -721,13 +720,13 @@ export class EventOnlineSettings extends LitElement {
             const result = await EventService.executeCapability(this.event.shortName, action.id, params);
             if (action.id === 'GENERATE_MEETING_LINK') {
                 // the link has been saved in the settings of the event
-                dispatchFeedback({type: 'success', message: 'The meeting link has been generated'}, this);
+                dispatchFeedback({type: 'success', message: t('admin.online-settings.link-generated')}, this);
                 this.reload();
             } else {
                 this.capabilityResult = result;
             }
         } catch (error) {
-            dispatchFeedback({type: 'danger', message: errorMessage(error, 'The extension could not complete the action')}, this);
+            dispatchFeedback({type: 'danger', message: errorMessage(error, t('admin.error.extension-action'))}, this);
         } finally {
             this.runningCapability = false;
         }
@@ -735,7 +734,7 @@ export class EventOnlineSettings extends LitElement {
 
     private copyCapabilityResult = (): void => {
         const value = this.capabilityResult ?? '';
-        void UtilService.copyValueToClipboard(() => value, 'Link', this);
+        void UtilService.copyValueToClipboard(() => value, t('admin.markdown.link'), this);
     };
 
     private reload(): void {

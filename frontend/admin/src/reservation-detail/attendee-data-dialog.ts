@@ -12,6 +12,7 @@ import {formatFullName} from '../service/reservation-format.ts';
 import {dialogTitle, PromptDialog} from '../components/prompt-dialog.ts';
 import {attendeeFields, AttendeeFieldValues, Country, valuesForFields} from '../components/attendee-fields.ts';
 import {detailList as renderDetailList} from '../components/detail-list.ts';
+import { t } from '../service/i18n';
 
 export interface AttendeeDataRequest {
     service: ReservationService;
@@ -82,24 +83,24 @@ export class AttendeeDataDialog extends PromptDialog<boolean> {
         const ticket = this.request?.ticket;
         let name = '';
         if (ticket != null) {
-            name = formatFullName(ticket) || ticket.email || 'the attendee';
+            name = formatFullName(ticket) || ticket.email || t('admin.attendee-data.the-attendee');
         }
         return html`
-            <sl-dialog class="responsive-dialog" label=${`Data of ${name}`}
+            <sl-dialog class="responsive-dialog" label=${t('admin.reservation.attendee-data.title', name)}
                        @sl-request-close=${this.onRequestClose}
                        @sl-after-hide=${this.afterHide}>
-                ${dialogTitle('card-list', `Data of ${name}`, 'Fields left empty can be filled in later by the attendee.')}
+                ${dialogTitle('card-list', t('admin.reservation.attendee-data.title', name), t('admin.attendee-data.help'))}
                 ${this.renderBody()}
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
                         <sl-button variant="default" size="large" @click=${() => this.close(null)}>
-                            Cancel
+                            ${t('admin.common.cancel')}
                         </sl-button>
                         <div></div>
                         <sl-button id="save-attendee-data" variant="warning" size="large" ?loading=${this.saving}
                                    ?disabled=${this.loading || this.loadError != null} @click=${this.save}>
-                            Save
+                            ${t('admin.common.save')}
                         </sl-button>
                     </div>
                 </div>
@@ -132,7 +133,7 @@ export class AttendeeDataDialog extends PromptDialog<boolean> {
             }, values => { this.values = values; })}
             ${when(this.otherData.length > 0, () => html`
                 <div class="other-data">
-                    <h4>Other data</h4>
+                    <h4>${t('admin.attendee-data.other')}</h4>
                     ${renderDetailList(this.otherData)}
                 </div>
             `)}
@@ -166,7 +167,7 @@ export class AttendeeDataDialog extends PromptDialog<boolean> {
                 this.countries = await UtilService.countries(request.language).catch(() => []);
             }
         } catch (error) {
-            this.loadError = errorMessage(error, 'Failed to load the attendee data');
+            this.loadError = errorMessage(error, t('admin.reservation.attendee-data.load-failed'));
         } finally {
             this.loading = false;
         }
@@ -183,7 +184,7 @@ export class AttendeeDataDialog extends PromptDialog<boolean> {
             await request.service.updateAttendeeFields(request.ticket.uuid, valuesForFields(request.fields, this.values));
             this.close(true);
         } catch (error) {
-            this.saveError = errorMessage(error, 'Failed to save the attendee data');
+            this.saveError = errorMessage(error, t('admin.attendee-data.save-failed'));
         } finally {
             this.saving = false;
         }

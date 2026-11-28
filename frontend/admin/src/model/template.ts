@@ -1,3 +1,4 @@
+import { t } from '../service/i18n';
 /**
  * The context a template belongs to, as defined by the backend (TemplateResource.Context):
  * it groups the templates in the "customize templates" list.
@@ -34,10 +35,10 @@ export interface TemplateRecipientInfo {
  */
 export function templateRecipientInfo(recipient: string): TemplateRecipientInfo {
     if (recipient === 'ORGANIZER') {
-        return {label: 'organizer', variant: 'warning'};
+        return {label: t('admin.template.recipient.organizer'), variant: 'warning'};
     }
     if (recipient === 'ATTENDEE') {
-        return {label: 'attendee', variant: 'primary'};
+        return {label: t('admin.template.recipient.attendee'), variant: 'primary'};
     }
     return {label: recipient.toLowerCase(), variant: 'primary'};
 }
@@ -53,10 +54,10 @@ export interface TemplateContextInfo {
 export const TEMPLATE_CONTEXT_ORDER: TemplateContext[] = ['EMAIL', 'TICKET', 'BILLING', 'SUBSCRIPTION'];
 
 export const TEMPLATE_CONTEXTS: Record<TemplateContext, TemplateContextInfo> = {
-    EMAIL: {label: 'Emails', icon: 'envelope'},
-    TICKET: {label: 'Tickets', icon: 'ticket-perforated'},
-    BILLING: {label: 'Invoices and receipts', icon: 'receipt'},
-    SUBSCRIPTION: {label: 'Subscriptions', icon: 'calendar2-check'},
+    EMAIL: {label: t('admin.template.context.email'), icon: 'envelope'},
+    TICKET: {label: t('admin.template.context.ticket'), icon: 'ticket-perforated'},
+    BILLING: {label: t('admin.template.context.billing'), icon: 'receipt'},
+    SUBSCRIPTION: {label: t('admin.menu.subscriptions'), icon: 'calendar2-check'},
 };
 
 /**

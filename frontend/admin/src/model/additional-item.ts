@@ -1,4 +1,5 @@
 import {DateTimeModification} from "./purchase-context.ts";
+import { t } from '../service/i18n';
 
 export type AdditionalItemType = 'DONATION' | 'SUPPLEMENT';
 export type AdditionalItemTaxType = 'INHERITED' | 'NONE' | 'CUSTOM_INCLUDED' | 'CUSTOM_EXCLUDED';
@@ -10,14 +11,13 @@ export type SupplementPolicy =
     'OPTIONAL_MAX_AMOUNT_PER_TICKET' |
     'OPTIONAL_MAX_AMOUNT_PER_RESERVATION';
 
-// temporary until we get the i18n translations
 export const supplementPolicyDescriptions: {[key: string]: string} = {
-    'MANDATORY_ONE_FOR_TICKET': 'Mandatory fixed fee, 1 per ticket',
-    'MANDATORY_PERCENTAGE_RESERVATION': 'Mandatory percentage fee, entire reservation (including user-selected Additional Items, if any)',
-    'MANDATORY_PERCENTAGE_FOR_TICKET': 'Mandatory percentage fee for tickets',
-    'OPTIONAL_UNLIMITED_AMOUNT': 'User-selected item',
-    'OPTIONAL_MAX_AMOUNT_PER_TICKET': 'User-selected item, limited quantity per ticket',
-    'OPTIONAL_MAX_AMOUNT_PER_RESERVATION': 'User-selected item, limited quantity per reservation',
+    'MANDATORY_ONE_FOR_TICKET': t('admin.additional-item.policy.mandatory-one-for-ticket'),
+    'MANDATORY_PERCENTAGE_RESERVATION': t('admin.additional-item.policy.mandatory-percentage-reservation'),
+    'MANDATORY_PERCENTAGE_FOR_TICKET': t('admin.additional-item.policy.mandatory-percentage-for-ticket'),
+    'OPTIONAL_UNLIMITED_AMOUNT': t('admin.additional-item.policy.optional-unlimited'),
+    'OPTIONAL_MAX_AMOUNT_PER_TICKET': t('admin.additional-item.policy.optional-max-per-ticket'),
+    'OPTIONAL_MAX_AMOUNT_PER_RESERVATION': t('admin.additional-item.policy.optional-max-per-reservation'),
 }
 
 export function isMandatory(supplementPolicy: SupplementPolicy): boolean {
@@ -32,8 +32,8 @@ export function isMandatoryPercentage(supplementPolicy: SupplementPolicy): boole
 }
 
 export const taxTypeDescriptions: {[key: string]: string} = {
-    'INHERITED': 'Use Event settings',
-    'NONE': 'Do not apply taxes on this items'
+    'INHERITED': t('admin.additional-item.tax.inherited'),
+    'NONE': t('admin.additional-item.tax.none')
 }
 
 // export type AdditionalItemStatus = 'FREE' | 'PENDING' | 'TO_BE_PAID' | 'ACQUIRED' | 'CANCELLED' | 'CHECKED_IN' | 'EXPIRED' | 'INVALIDATED' | 'RELEASED';

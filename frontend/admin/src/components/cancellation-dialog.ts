@@ -6,6 +6,7 @@ import type {SlCheckbox} from '@shoelace-style/shoelace';
 import {base, detailList, dialog, modernLayout, retroCompat, row} from '../styles.ts';
 import {dialogTitle, PromptDialog} from './prompt-dialog.ts';
 import {DetailEntry, detailList as renderDetailList} from './detail-list.ts';
+import { t } from '../service/i18n';
 
 export interface CancellationChoice {
     refund: boolean;
@@ -98,7 +99,8 @@ export class CancellationDialog extends PromptDialog<CancellationChoice> {
             <div slot="footer">
                 <sl-divider></sl-divider>
                 <div class="row" style="--alfio-row-cols: 3">
-                    <sl-button variant="default" size="large" @click=${() => this.close(null)}>Cancel</sl-button>
+                    <sl-button variant="default" size="large" @click=${() => this.close(null)}>${t('admin.common.cancel')}</sl-button>
+
                     <div></div>
                     <sl-button variant=${request.variant} size="large" @click=${() => this.close(this.choice)}>
                         <sl-icon name=${request.icon} slot="prefix"></sl-icon>

@@ -26,6 +26,7 @@ import {taskContent} from '../../components/task-content.ts';
 import {EventExportDialog} from '../event-sidebar/export-dialog.ts';
 import '../../components/format-date.ts';
 import '../event-sidebar/export-dialog.ts';
+import { currentLanguage, t, tHtml } from '../../service/i18n.ts';
 
 interface WaitingListData {
     event: AlfioEvent;
@@ -33,11 +34,12 @@ interface WaitingListData {
 }
 
 const TYPES: Record<WaitingQueueSubscriptionType, string> = {
-    PRE_SALES: 'Before the sales started',
-    SOLD_OUT: 'While sold out',
+    PRE_SALES: t('admin.waiting-list.type.pre-sales'),
+    SOLD_OUT: t('admin.waiting-list.type.sold-out'),
 };
 
-const languageNames = new Intl.DisplayNames(['en'], { type: 'language' });
+// in the language of the admin UI
+const languageNames = new Intl.DisplayNames([currentLanguage()], { type: 'language' });
 
 /**
  * The people waiting on the waiting list of an event, to be notified when tickets become available.
@@ -111,7 +113,7 @@ export class WaitingList extends LitElement {
     ];
 
     render(): TemplateResult {
-        return taskContent(this.loadDataTask, this.lastData, 'Failed to load the waiting list. Please try again.',
+        return taskContent(this.loadDataTask, this.lastData, t('admin.waiting-list.load-failed'),
             (data) => this.renderContent(data));
     }
 
@@ -120,22 +122,22 @@ export class WaitingList extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row secondary">
-                    <h1>Waiting list for <i>${localizedTitle(data.event)}</i></h1>
+                    <h1>${tHtml('admin.waiting-list.title', html`<i>${localizedTitle(data.event)}</i>`)}</h1>
                 </div>
                 <hr class="page-separator" />
                 <p class="page-description text-muted">
-                    The people who asked to be notified when tickets become available.
+                    ${t('admin.waiting-list.description')}
                 </p>
                 <div class="filter-toolbar">
                     <div class="filter-left">
-                        ${this.searchController.render('people')}
+                        ${this.searchController.render(t('admin.waiting-list.items'))}
                     </div>
                     ${when(data.subscriptions.length > 0, () => html`
                         <div class="filter-right">
                             <sl-button id="download-waiting-list" variant="default" size="large"
                                        @click=${() => void this.exportDialog.show(this.eventName, 'waiting-list')}>
                                 <sl-icon slot="prefix" name="download"></sl-icon>
-                                Download
+                                ${t('admin.event.menu.download')}
                             </sl-button>
                         </div>
                     `)}
@@ -143,7 +145,7 @@ export class WaitingList extends LitElement {
                 ${this.renderRemovedAlert()}
                 ${sectionCard({
                     icon: 'people',
-                    title: 'People',
+                    title: t('admin.waiting-list.people'),
                     badge: html`<sl-badge variant="primary" pill>${filtered.length}</sl-badge>`,
                     className: 'list-card',
                 }, this.renderList(data, filtered))}
@@ -154,22 +156,22 @@ export class WaitingList extends LitElement {
 
     private renderList(data: WaitingListData, subscriptions: WaitingQueueSubscription[]): TemplateResult {
         if (data.subscriptions.length === 0) {
-            return emptyState('Nobody is on the waiting list');
+            return emptyState(t('admin.waiting-list.none'));
         }
         if (subscriptions.length === 0) {
-            return emptyState('Nobody matches the filter');
+            return emptyState(t('admin.waiting-list.none-matching'));
         }
         return html`
             <div class="table-responsive">
                 <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th class="hide-small">Email</th>
-                            <th class="hide-small">Category</th>
-                            <th class="hide-small">Language</th>
-                            <th class="hide-small">Joined</th>
-                            <th><span class="sr-only">Actions</span></th>
+                            <th>${t('admin.common.name')}</th>
+                            <th class="hide-small">${t('admin.common.email-short')}</th>
+                            <th class="hide-small">${t('admin.category-select.label')}</th>
+                            <th class="hide-small">${t('admin.reservation-create.language')}</th>
+                            <th class="hide-small">${t('admin.waiting-list.joined')}</th>
+                            <th><span class="sr-only">${t('admin.common.actions')}</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -184,10 +186,10 @@ export class WaitingList extends LitElement {
         return html`
             <tr class="waiting-list-row" data-id=${subscription.id}>
                 <td class="subscriber-name">${subscription.fullName}</td>
-                <td class="email hide-small" data-label="Email">${subscription.emailAddress}</td>
-                <td class="hide-small" data-label="Category">${this.categoryName(data.event, subscription.selectedCategoryId)}</td>
-                <td class="language hide-small" data-label="Language">${this.languageName(subscription.userLanguage)}</td>
-                <td class="timestamp hide-small" data-label="Joined">
+                <td class="email hide-small" data-label=${t('admin.common.email-short')}>${subscription.emailAddress}</td>
+                <td class="hide-small" data-label=${t('admin.category-select.label')}>${this.categoryName(data.event, subscription.selectedCategoryId)}</td>
+                <td class="language hide-small" data-label=${t('admin.reservation-create.language')}>${this.languageName(subscription.userLanguage)}</td>
+                <td class="timestamp hide-small" data-label=${t('admin.waiting-list.joined')}>
                     <alfio-format-date date=${subscription.creation} time-zone=${data.event.timeZone}></alfio-format-date>
                     ${when(subscription.subscriptionType != null, () => html`
                         <span class="subscription-type">${TYPES[subscription.subscriptionType as WaitingQueueSubscriptionType]}</span>
@@ -205,7 +207,7 @@ export class WaitingList extends LitElement {
                        ?disabled=${this.changing != null && !changing}
                        @click=${() => void this.removeSubscriber(subscription)}>
                 <sl-icon slot="prefix" name="trash"></sl-icon>
-                Remove
+                ${t('admin.common.remove')}
             </sl-button>
         `;
     }
@@ -221,13 +223,12 @@ export class WaitingList extends LitElement {
                 <sl-icon slot="icon" name="check2-circle"></sl-icon>
                 <div class="alert-content">
                     <span>
-                        ${removed.fullName} (${removed.emailAddress}) has been removed from the waiting list,
-                        and can't join it again with this email address.
+                        ${t('admin.waiting-list.removed', removed.fullName, removed.emailAddress)}
                     </span>
                     <sl-button variant="default" size="small" class="undo-remove" ?loading=${this.changing === removed.id}
                                @click=${() => void this.restoreSubscriber(removed)}>
                         <sl-icon slot="prefix" name="arrow-counterclockwise"></sl-icon>
-                        Undo
+                        ${t('admin.common.undo')}
                     </sl-button>
                 </div>
             </sl-alert>
@@ -246,7 +247,7 @@ export class WaitingList extends LitElement {
 
     private categoryName(event: AlfioEvent, categoryId: number | null): string {
         if (categoryId == null) {
-            return 'Any';
+            return t('admin.waiting-list.any-category');
         }
         const category = event.ticketCategories.find((c) => c.id === categoryId);
         if (category == null) {
@@ -266,7 +267,7 @@ export class WaitingList extends LitElement {
     private async removeSubscriber(subscription: WaitingQueueSubscription): Promise<void> {
         const done = await this.change(subscription,
             () => EventService.removeFromWaitingQueue(this.eventName, subscription.id),
-            'Failed to remove the person from the waiting list');
+            t('admin.waiting-list.remove-failed'));
         if (done) {
             this.removed = subscription;
         }
@@ -275,10 +276,10 @@ export class WaitingList extends LitElement {
     private async restoreSubscriber(subscription: WaitingQueueSubscription): Promise<void> {
         const done = await this.change(subscription,
             () => EventService.restoreInWaitingQueue(this.eventName, subscription.id),
-            'Failed to put the person back on the waiting list');
+            t('admin.waiting-list.restore-failed'));
         if (done) {
             this.removed = null;
-            dispatchFeedback({ type: 'success', message: `${subscription.fullName} is back on the waiting list` }, this);
+            dispatchFeedback({ type: 'success', message: t('admin.waiting-list.restored', subscription.fullName) }, this);
         }
     }
 

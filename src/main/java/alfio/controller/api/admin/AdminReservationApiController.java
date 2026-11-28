@@ -217,7 +217,7 @@ public class AdminReservationApiController {
                 .filter(t -> t.getId() == ticketId)
                 .findFirst()
                 .map(Result::success)
-                .orElse(Result.error(ErrorCode.custom("not_found", "not found")))
+                .orElse(Result.error(ErrorCode.translatable("not_found", "admin.error.not-found", "not found")))
         );
     }
 
@@ -352,7 +352,7 @@ public class AdminReservationApiController {
     private TicketReservationDescriptor toReservationDescriptor(String reservationId, Triple<TicketReservation, List<Ticket>, PurchaseContext> triple) {
         List<SerializablePair<TicketCategory, List<Ticket>>> tickets = triple.getMiddle().stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
             .map(entry -> SerializablePair.of(eventManager.getTicketCategoryById(entry.getKey(), triple.getRight().event().orElseThrow().getId()), entry.getValue()))
-            .collect(Collectors.toList());
+            .toList();
         TicketReservation reservation = triple.getLeft();
         return new TicketReservationDescriptor(reservation,
             ticketReservationManager.loadAdditionalInfo(reservationId),

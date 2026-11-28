@@ -24,6 +24,7 @@ import {
     ValidatedInputOptions,
     validateWith,
 } from "../components/form-validation.ts";
+import { t, tHtml } from '../service/i18n';
 
 const PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E])(?!.*\s).{10,}$/;
 
@@ -142,11 +143,11 @@ export class UserProfileEdit extends LitElement {
         return html`
             <div class="container">
                 <div class="first-element page-title-row">
-                    <h1>Edit your account</h1>
+                    <h1>${t('admin.account.title')}</h1>
                 </div>
                 <hr class="page-separator">
 
-                ${taskContent(this.loadProfileTask, this.profile, 'Failed to load your profile. Please try again.',
+                ${taskContent(this.loadProfileTask, this.profile, t('admin.account.load-failed'),
                     () => this.renderProfile())}
             </div>
 
@@ -156,7 +157,7 @@ export class UserProfileEdit extends LitElement {
 
     private renderProfile(): TemplateResult {
         return html`
-            ${sectionCard({ icon: 'person-fill', title: 'Personal information' }, html`
+            ${sectionCard({ icon: 'person-fill', title: t('admin.account.personal-information') }, html`
                 <div class="form-stack">
                     <div class="profile-username text-muted">
                         <sl-icon name="person"></sl-icon> ${this.profileUsername}
@@ -165,27 +166,27 @@ export class UserProfileEdit extends LitElement {
                 </div>
                 <sl-divider></sl-divider>
                 <div class="row" style="--alfio-row-cols: 3">
-                    <sl-button variant="default" size="large" ?disabled=${this.saving} @click=${this.resetProfileForm}>Cancel</sl-button>
+                    <sl-button variant="default" size="large" ?disabled=${this.saving} @click=${this.resetProfileForm}>${t('admin.common.cancel')}</sl-button>
                     <div></div>
                     <sl-button id="save-profile" variant="warning" size="large" ?loading=${this.saving} @click=${this.submitProfile}>
-                        Save
+                        ${t('admin.common.save')}
                     </sl-button>
                 </div>
             `)}
 
-            ${sectionCard({ icon: 'lock-fill', title: 'Password' }, html`
+            ${sectionCard({ icon: 'lock-fill', title: t('admin.users.password') }, html`
                 ${when(this.isAdminProfile, () => html`
                     <sl-alert variant="warning" open>
                         <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
                         <div>
-                            You are the administrator: <strong>nobody can reset your password if you lose it</strong>.
+                            ${tHtml('admin.account.administrator-warning', html`<strong>${t('admin.account.administrator-warning.strong')}</strong>`)}
                         </div>
                     </sl-alert>
                 `)}
 
                 <div class="actions">
                     <sl-button id="change-password-btn" variant="primary" @click=${this.openChangePasswordDialog}>
-                        <sl-icon slot="prefix" name="key"></sl-icon> Change password
+                        <sl-icon slot="prefix" name="key"></sl-icon> ${t('admin.account.change-password')}
                     </sl-button>
                 </div>
             `)}
@@ -198,12 +199,12 @@ export class UserProfileEdit extends LitElement {
         return html`
             <div class="row" style="--alfio-row-cols: 2">
                 ${this.#profileForm.field({ name: 'firstName', validators: validateWith(value => minLength(value, 2)) },
-                    field => input(field, { id: 'firstName', label: 'First name', prefixIcon: 'person' }))}
+                    field => input(field, { id: 'firstName', label: t('admin.common.first-name'), prefixIcon: 'person' }))}
                 ${this.#profileForm.field({ name: 'lastName', validators: validateWith(value => minLength(value, 2)) },
-                    field => input(field, { id: 'lastName', label: 'Last name', prefixIcon: 'person' }))}
+                    field => input(field, { id: 'lastName', label: t('admin.common.last-name'), prefixIcon: 'person' }))}
             </div>
             ${this.#profileForm.field({ name: 'emailAddress', validators: validateWith(value => emailAddress(value)) },
-                field => input(field, { id: 'emailAddress', label: 'E-mail', type: 'email', prefixIcon: 'envelope' }))}
+                field => input(field, { id: 'emailAddress', label: t('admin.common.email'), type: 'email', prefixIcon: 'envelope' }))}
         `;
     }
 
@@ -223,51 +224,51 @@ export class UserProfileEdit extends LitElement {
                 return missing;
             }
             if (!PASSWORD_REGEX.test(String(value))) {
-                return 'The new password does not meet the requirements listed above.';
+                return t('admin.account.error.requirements');
             }
             return undefined;
         };
         const validateConfirmation = (value: unknown) => {
             if (value !== this.#passwordForm.api.state.values.newPassword) {
-                return '"New password" and "Confirm new password" do not match.';
+                return t('admin.account.error.mismatch');
             }
             return undefined;
         };
         return html`
             ${this.#passwordForm.field({ name: 'oldPassword', validators: validateWith(value => requiredValue(value)) },
-                field => input(field, { id: 'oldPassword', label: 'Current password', prefixIcon: 'lock' }))}
+                field => input(field, { id: 'oldPassword', label: t('admin.account.current-password'), prefixIcon: 'lock' }))}
             ${this.#passwordForm.field({ name: 'newPassword', validators: validateWith(validateNewPassword) },
-                field => input(field, { id: 'newPassword', label: 'New password', prefixIcon: 'lock-fill' }))}
+                field => input(field, { id: 'newPassword', label: t('admin.account.new-password'), prefixIcon: 'lock-fill' }))}
             ${this.#passwordForm.field({
                 name: 'newPasswordConfirm',
                 // checked again when the new password changes
                 validators: { ...validateWith(validateConfirmation), onChangeListenTo: ['newPassword'] },
-            }, field => input(field, { id: 'newPasswordConfirm', label: 'Confirm new password', prefixIcon: 'lock-fill' }))}
+            }, field => input(field, { id: 'newPasswordConfirm', label: t('admin.account.confirm-password'), prefixIcon: 'lock-fill' }))}
         `;
     }
 
     private renderChangePasswordDialog(): TemplateResult | typeof nothing {
         return html`
-            <sl-dialog id="change-password" class="responsive-dialog" label="Change password"
+            <sl-dialog id="change-password" class="responsive-dialog" label=${t('admin.account.change-password')}
                        @sl-request-close=${this.onPasswordDialogRequestClose}>
                 <div class="form-stack">
                     ${when(this.passwordSuccess, () => html`
                         <sl-alert variant="success" open>
                             <sl-icon slot="icon" name="check-circle"></sl-icon>
-                            Password changed successfully.
+                            ${t('admin.account.password-changed')}
                         </sl-alert>
                     `)}
 
                     <sl-alert variant="primary" open>
                         <sl-icon slot="icon" name="info-circle"></sl-icon>
                         <div>
-                            <strong>Password requirements:</strong> at least 10 characters with:
+                            ${tHtml('admin.account.requirements', html`<strong>${t('admin.account.requirements.title')}</strong>`)}
                             <ul class="password-requirements">
-                                <li>at least one uppercase letter <code>A-Z</code></li>
-                                <li>at least one lowercase letter <code>a-z</code></li>
-                                <li>at least one digit <code>0-9</code></li>
-                                <li>at least one punctuation character <code>!"#$%&'()*+,-./:;<=>?@[\]^_\`{|}~</code></li>
-                                <li>no spaces</li>
+                                <li>${tHtml('admin.account.requirements.uppercase', html`<code>A-Z</code>`)}</li>
+                                <li>${tHtml('admin.account.requirements.lowercase', html`<code>a-z</code>`)}</li>
+                                <li>${tHtml('admin.account.requirements.digit', html`<code>0-9</code>`)}</li>
+                                <li>${tHtml('admin.account.requirements.punctuation', html`<code>!"#$%&'()*+,-./:;<=>?@[\]^_\`{|}~</code>`)}</li>
+                                <li>${t('admin.account.requirements.no-spaces')}</li>
                             </ul>
                         </div>
                     </sl-alert>
@@ -278,11 +279,11 @@ export class UserProfileEdit extends LitElement {
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${this.closeChangePasswordDialog}>Cancel</sl-button>
+                        <sl-button variant="default" size="large" @click=${this.closeChangePasswordDialog}>${t('admin.common.cancel')}</sl-button>
                         <div></div>
                         <sl-button id="save-password" variant="warning" size="large" ?loading=${this.changingPassword}
                                    @click=${this.submitPassword}>
-                            Save
+                            ${t('admin.common.save')}
                         </sl-button>
                     </div>
                 </div>
@@ -302,19 +303,19 @@ export class UserProfileEdit extends LitElement {
     private getPasswordErrorMessage(field: string): string {
         switch (field) {
             case 'alfio.new-password-invalid':
-                return 'The new password does not meet the requirements listed above.';
+                return t('admin.account.error.requirements');
             case 'alfio.new-password-does-not-match':
-                return '"New password" and "Confirm new password" do not match.';
+                return t('admin.account.error.mismatch');
             case 'alfio.old-password-invalid':
-                return 'The current password is not correct.';
+                return t('admin.account.error.current-password');
             case 'newPassword':
-                return 'The new password does not meet the requirements listed above.';
+                return t('admin.account.error.requirements');
             case 'newPasswordConfirm':
-                return '"New password" and "Confirm new password" do not match.';
+                return t('admin.account.error.mismatch');
             case 'oldPassword':
-                return 'The current password is not correct.';
+                return t('admin.account.error.current-password');
             default:
-                return 'An error occurred.';
+                return t('admin.account.error.generic');
         }
     }
 
@@ -386,9 +387,9 @@ export class UserProfileEdit extends LitElement {
             });
 
             this.profileUsername = this.profileUsername;
-            dispatchFeedback({type: 'success', message: 'Profile updated successfully.'}, this);
+            dispatchFeedback({type: 'success', message: t('admin.account.updated')}, this);
         } catch {
-            dispatchFeedback({type: 'danger', message: 'Failed to update profile. Please try again.'}, this);
+            dispatchFeedback({type: 'danger', message: t('admin.account.update-failed')}, this);
         } finally {
             this.saving = false;
         }
@@ -405,7 +406,7 @@ export class UserProfileEdit extends LitElement {
             if (result.success) {
                 this.passwordSuccess = true;
                 this.#passwordForm.api.reset({oldPassword: '', newPassword: '', newPasswordConfirm: ''});
-                dispatchFeedback({type: 'success', message: 'Password changed successfully.'}, this);
+                dispatchFeedback({type: 'success', message: t('admin.account.password-changed')}, this);
             } else {
                 const errors = this.mapPasswordValidationErrors(result.validationErrors);
                 const messages: Record<string, string> = {};
@@ -415,7 +416,7 @@ export class UserProfileEdit extends LitElement {
                 this.showServerErrors(this.#passwordForm.api, messages);
             }
         } catch {
-            dispatchFeedback({type: 'danger', message: 'Failed to change password. Please try again.'}, this);
+            dispatchFeedback({type: 'danger', message: t('admin.account.password-change-failed')}, this);
         } finally {
             this.changingPassword = false;
         }

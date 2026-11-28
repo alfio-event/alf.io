@@ -10,7 +10,8 @@ import {PageAndContent} from '../../model/reservation.ts';
 import {dispatchFeedback} from '../../model/dom-events.ts';
 import {EventService} from '../../service/event.ts';
 import {ReservationService} from '../../service/reservation.ts';
-import {errorMessage, humanize, readRouteParams, replaceRouteParams, toPageNumber} from '../../service/helpers.ts';
+import {errorMessage, readRouteParams, replaceRouteParams, toPageNumber} from '../../service/helpers.ts';
+import {ticketStatusLabel} from '../../model/ticket-status.ts';
 import {formatAmount, formatFullName} from '../../service/reservation-format.ts';
 import {removeTicketRequest, ticketRemovalChoice} from '../../reservation-detail/cancellation.ts';
 import {CancellationDialog} from '../../components/cancellation-dialog.ts';
@@ -34,6 +35,7 @@ import {
     textColors,
 } from '../../styles.ts';
 import { navigate, adminUrl } from '../../admin-router';
+import { t, tHtml } from '../../service/i18n';
 
 const ITEMS_PER_PAGE = 30;
 
@@ -137,7 +139,7 @@ export class TicketsList extends LitElement {
     }
 
     render(): TemplateResult {
-        return taskContent(this.loadDataTask, this.lastData, 'Failed to load the tickets. Please try again.', (data) =>
+        return taskContent(this.loadDataTask, this.lastData, t('admin.tickets.load-failed'), (data) =>
             this.renderContent(data),
         );
     }
@@ -150,7 +152,7 @@ export class TicketsList extends LitElement {
                 <div class="container">
                     <sl-alert open variant="danger">
                         <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                        The category does not exist anymore.
+                        ${t('admin.tickets.category-missing')}
                     </sl-alert>
                 </div>
             `;
@@ -158,7 +160,7 @@ export class TicketsList extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row">
-                    <h1>Tickets for <i>${category.name}</i></h1>
+                    <h1>${tHtml('admin.tickets.title', html`<i>${category.name}</i>`)}</h1>
                 </div>
                 <hr class="page-separator" />
                 <div class="filter-toolbar">
@@ -169,18 +171,18 @@ export class TicketsList extends LitElement {
                 </div>
                 ${sectionCard({
                     icon: 'ticket-perforated',
-                    title: 'Tickets',
+                    title: t('admin.page-title.tickets'),
                     badge: html`<sl-badge variant="primary" pill>${data.tickets.right}</sl-badge>`,
                 }, html`
                     ${when(data.tickets.right === 0,
-                        () => emptyState('No tickets have been found'),
+                        () => emptyState(t('admin.tickets.none')),
                         () => html`
                             ${this.renderTable(data.tickets.left, event)}
                             <alfio-pagination-bar
                                 .page=${this.page}
                                 .total=${data.tickets.right}
                                 page-size=${ITEMS_PER_PAGE}
-                                item-label="tickets"
+                                item-label=${t('admin.tickets.items')}
                                 @alfio-page-change=${(e: AlfioPageChange) => this.changePage(e.detail.page)}
                             ></alfio-pagination-bar>
                         `)}
@@ -192,7 +194,7 @@ export class TicketsList extends LitElement {
 
     private renderCategorySelect(event: AlfioEvent, category: TicketCategory): TemplateResult {
         return html`
-            <sl-select class="filter-select category-select label-hidden" label="Category" hoist
+            <sl-select class="filter-select category-select label-hidden" label=${t('admin.category-select.label')} hoist
                        .value=${String(category.id)}
                        @sl-change=${(e: Event) => this.switchCategory(event, Number((e.target as SlSelect).value))}>
                 ${repeat(event.ticketCategories, (c) => c.id, (c) => html`
@@ -208,13 +210,13 @@ export class TicketsList extends LitElement {
                 <table class="table table-striped tickets-table table-stacked">
                     <thead>
                         <tr>
-                            <th class="status-column"><span class="sr-only">Status</span></th>
-                            <th>Ticket</th>
-                            <th>Reservation</th>
-                            <th class="hide-small">Assignee</th>
-                            <th class="hide-small">Payment</th>
-                            <th class="hide-small">Code</th>
-                            <th><span class="sr-only">Actions</span></th>
+                            <th class="status-column"><span class="sr-only">${t('admin.common.status')}</span></th>
+                            <th>${t('admin.common.ticket')}</th>
+                            <th>${t('admin.page-title.reservation')}</th>
+                            <th class="hide-small">${t('admin.tickets.assignee')}</th>
+                            <th class="hide-small">${t('admin.common.payment')}</th>
+                            <th class="hide-small">${t('admin.promo-code.column.code')}</th>
+                            <th><span class="sr-only">${t('admin.common.actions')}</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -227,39 +229,37 @@ export class TicketsList extends LitElement {
 
     private renderRow(ticket: CategoryTicket, event: AlfioEvent): TemplateResult {
         let lockIcon = 'lock';
-        let lockLabel = 'Lock';
-        let lockTooltip = 'Forbid ticket reassignment';
+        let lockLabel = t('admin.tickets.lock');
+        let lockTooltip = t('admin.tickets.lock.help');
         if (ticket.lockedAssignment) {
             lockIcon = 'unlock';
-            lockLabel = 'Unlock';
-            lockTooltip = 'Allow ticket reassignment';
+            lockLabel = t('admin.tickets.unlock');
+            lockTooltip = t('admin.tickets.unlock.help');
         }
         let transactionLabel = '';
         if (ticket.transaction != null) {
-            transactionLabel = `TX ${ticket.transaction.transactionId ?? ticket.transaction.id}`;
+            transactionLabel = t('admin.tickets.transaction', ticket.transaction.transactionId ?? ticket.transaction.id);
         }
         return html`
             <tr data-ticket-uuid=${ticket.uuid}>
                 <td class="stacked-inline">${this.renderStatus(ticket.status)}</td>
                 <td class="ticket-uuid">
-                    <a href=${this.reservationHref(ticket)} title=${`View reservation ${ticket.uuid}`}>${ticket.uuid.substring(0, 8)}</a>
+                    <a href=${this.reservationHref(ticket)} title=${t('admin.tickets.view-reservation', ticket.uuid)}>${ticket.uuid.substring(0, 8)}</a>
                 </td>
-                <td data-label="Reservation">
+                <td data-label=${t('admin.page-title.reservation')}>
                     <a href=${this.reservationHref(ticket)}>${formatFullName(ticket.ticketReservation)}</a>
                     <span class="customer-email">${ticket.ticketReservation.email ?? ''}</span>
                     ${when(!ticket.pending, () => html`
-                        <span class="confirmation">Confirmed on
-                            <alfio-format-date date=${ticket.ticketReservation.confirmationTimestamp ?? ''} time-zone=${event.timeZone}></alfio-format-date>
-                        </span>
+                        <span class="confirmation">${tHtml('admin.tickets.confirmed-on', html`<alfio-format-date date=${ticket.ticketReservation.confirmationTimestamp ?? ''} time-zone=${event.timeZone}></alfio-format-date>`)}</span>
                     `)}
                 </td>
-                <td class=${classMap({ 'hide-small': true, 'assignee': true, 'text-warning': formatFullName(ticket) === '' })} data-label="Assignee">
+                <td class=${classMap({ 'hide-small': true, 'assignee': true, 'text-warning': formatFullName(ticket) === '' })} data-label=${t('admin.tickets.assignee')}>
                     ${formatFullName(ticket)}
                     ${when(ticket.email != null && ticket.email !== '', () => html`
                         <span class="customer-email">${ticket.email}</span>
                     `)}
                 </td>
-                <td class="hide-small" data-label="Payment">
+                <td class="hide-small" data-label=${t('admin.common.payment')}>
                     ${when(ticket.appliedDiscount != null && ticket.appliedDiscount > 0, () => html`
                         <span class="discount">- ${formatAmount(ticket.appliedDiscount, ticket.currencyCode)}</span>
                     `)}
@@ -271,9 +271,9 @@ export class TicketsList extends LitElement {
                         </span>
                     `)}
                 </td>
-                <td class="hide-small" data-label="Code">
+                <td class="hide-small" data-label=${t('admin.promo-code.column.code')}>
                     ${when(ticket.promoCodeOrToken != null && ticket.promoCodeOrToken !== '', () => html`
-                        <a href=${adminUrl(`/events/${this.eventName}/reservations/?search=${ticket.promoCodeOrToken}`)} title="Find all reservations">${ticket.promoCodeOrToken}</a>
+                        <a href=${adminUrl(`/events/${this.eventName}/reservations/?search=${ticket.promoCodeOrToken}`)} title=${t('admin.tickets.find-reservations')}>${ticket.promoCodeOrToken}</a>
                     `)}
                 </td>
                 <td class="actions-cell">
@@ -291,7 +291,7 @@ export class TicketsList extends LitElement {
                                    ?disabled=${this.busyTicketId != null}
                                    @click=${() => void this.removeTicket(ticket)}>
                             <sl-icon slot="prefix" name="trash"></sl-icon>
-                            Remove
+                            ${t('admin.common.remove')}
                         </sl-button>
                     `)}
                 </td>
@@ -301,7 +301,7 @@ export class TicketsList extends LitElement {
 
     private renderStatus(status: TicketStatus): TemplateResult {
         const config = STATUS_ICONS[status] ?? { icon: 'gear', className: 'text-muted' };
-        const label = humanize(status);
+        const label = ticketStatusLabel(status);
         return html`
             <sl-tooltip content=${label}>
                 <sl-icon class="ticket-status ${config.className}" name=${config.icon} label=${label} data-status=${status}></sl-icon>
@@ -335,7 +335,7 @@ export class TicketsList extends LitElement {
             await EventService.toggleTicketLocking(this.eventName, this.categoryId, ticket.id);
             void this.loadDataTask.run();
         } catch (e) {
-            dispatchFeedback({ type: 'danger', message: errorMessage(e, 'Failed to change the ticket lock') }, this);
+            dispatchFeedback({ type: 'danger', message: errorMessage(e, t('admin.tickets.lock-failed')) }, this);
         } finally {
             this.busyTicketId = null;
         }
@@ -351,13 +351,13 @@ export class TicketsList extends LitElement {
                 return;
             }
             const creditNoteGenerated = await service.removeTicket(ticket.id, ticketRemovalChoice(choice, paymentInfo));
-            dispatchFeedback({ type: 'success', message: 'Ticket removed' }, this);
+            dispatchFeedback({ type: 'success', message: t('admin.tickets.removed') }, this);
             if (creditNoteGenerated) {
-                dispatchFeedback({ type: 'neutral', message: 'A credit note has been generated, see the billing documents.' }, this);
+                dispatchFeedback({ type: 'neutral', message: t('admin.tickets.credit-note') }, this);
             }
             void this.loadDataTask.run();
         } catch (e) {
-            dispatchFeedback({ type: 'danger', message: errorMessage(e, 'Failed to remove the ticket') }, this);
+            dispatchFeedback({ type: 'danger', message: errorMessage(e, t('admin.tickets.remove-failed')) }, this);
         } finally {
             this.busyTicketId = null;
         }

@@ -5,5 +5,7 @@ export default defineConfig({
     test: {
         include: ['src/**/*.test.ts'],
         environment: 'node',
+        // the English texts of the admin, see service/i18n.ts
+        setupFiles: ['src/test-setup.ts'],
     },
 });

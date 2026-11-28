@@ -7,6 +7,7 @@ import {formatAmount, shortReservationId} from '../../service/reservation-format
 import {dialogTitle, PromptDialog} from '../../components/prompt-dialog.ts';
 import {detailList as renderDetailList} from '../../components/detail-list.ts';
 import '../../components/format-date.ts';
+import { t } from '../../service/i18n';
 
 export type MatchingTransactionChoice = 'confirm' | 'discard';
 
@@ -44,23 +45,23 @@ export class MatchingTransactionDialog extends PromptDialog<MatchingTransactionC
 
     render(): TemplateResult {
         return html`
-            <sl-dialog class="responsive-dialog" label="Matching transaction"
+            <sl-dialog class="responsive-dialog" label=${t('admin.matching-transaction.title')}
                        @sl-after-hide=${this.onAfterHide}>
                 ${dialogTitle('arrow-left-right',
-                    `Matching transaction for ${shortReservationId(this.reservationId)}`,
-                    'The payment provider has received a payment which matches this reservation.')}
+                    t('admin.matching-transaction.for', shortReservationId(this.reservationId)),
+                    t('admin.matching-transaction.description'))}
                 ${when(this.transaction, () => this.renderTransaction(this.transaction!))}
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => this.close(null)}>Cancel</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.close(null)}>${t('admin.common.cancel')}</sl-button>
                         <sl-button variant="danger" size="large" outline @click=${() => this.close('discard')}>
                             <sl-icon name="x-octagon" slot="prefix"></sl-icon>
-                            Flag as not valid
+                            ${t('admin.matching-transaction.flag')}
                         </sl-button>
                         <sl-button variant="warning" size="large" @click=${() => this.close('confirm')}>
                             <sl-icon name="check2" slot="prefix"></sl-icon>
-                            Confirm
+                            ${t('admin.common.confirm')}
                         </sl-button>
                     </div>
                 </div>
@@ -70,9 +71,9 @@ export class MatchingTransactionDialog extends PromptDialog<MatchingTransactionC
 
     private renderTransaction(transaction: MatchingTransaction): TemplateResult {
         return renderDetailList([
-            { label: 'Payment ID', value: transaction.transactionId ?? '', monospace: true },
-            { label: 'Received on', value: html`<alfio-format-date date=${transaction.timestamp} time-zone=${this.timeZone}></alfio-format-date>` },
-            { label: 'Paid amount', value: html`<strong>${formatAmount(transaction.priceInCents / 100, transaction.currency)}</strong>` },
+            { label: t('admin.matching-transaction.payment-id'), value: transaction.transactionId ?? '', monospace: true },
+            { label: t('admin.matching-transaction.received-on'), value: html`<alfio-format-date date=${transaction.timestamp} time-zone=${this.timeZone}></alfio-format-date>` },
+            { label: t('admin.matching-transaction.paid-amount'), value: html`<strong>${formatAmount(transaction.priceInCents / 100, transaction.currency)}</strong>` },
         ]);
     }
 }

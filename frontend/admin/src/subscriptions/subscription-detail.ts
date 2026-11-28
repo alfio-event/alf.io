@@ -3,6 +3,7 @@ import {customElement, property} from 'lit/decorators.js';
 import {when} from 'lit/directives/when.js';
 import {base, modernLayout} from '../styles.ts';
 import { adminUrl } from '../admin-router';
+import { t } from '../service/i18n';
 
 /**
  * The container of a single subscription's screens (reservations, e-mail log, additional
@@ -33,7 +34,7 @@ export class SubscriptionDetail extends LitElement {
         return html`
             <sl-button variant="text" class="back-link" href=${href}>
                 <sl-icon slot="prefix" name="arrow-left"></sl-icon>
-                ${when(backToReservations, () => 'Back to reservations', () => 'Back to list')}
+                ${when(backToReservations, () => t('admin.subscriptions.back-to-reservations'), () => t('admin.subscriptions.back-to-list'))}
             </sl-button>
             <slot></slot>
         `;

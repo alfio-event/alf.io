@@ -61,7 +61,7 @@ public final class AdminAttendeeFields {
         values.forEach((name, fieldValues) -> {
             var field = attendeeFields.get(name.toLowerCase(Locale.ROOT));
             if (field == null) {
-                errors.add(ErrorCode.custom("error.notfound." + name, name + " not found"));
+                errors.add(ErrorCode.translatable("error.notfound." + name, "admin.error.field.not-found", name + " not found", name));
                 return;
             }
             var nonNullValues = Objects.requireNonNullElse(fieldValues, List.<String>of());
@@ -110,25 +110,25 @@ public final class AdminAttendeeFields {
             return Optional.empty();
         }
         if (!field.rulesApply(categoryId)) {
-            return Optional.of(ErrorCode.custom("error.category." + name, name + " is not available for the ticket category"));
+            return Optional.of(ErrorCode.translatable("error.category." + name, "admin.error.field.not-for-category", name + " is not available for the ticket category", name));
         }
         if (field.isCheckboxField()) {
             if (values.size() > field.getCount()) {
-                return Optional.of(ErrorCode.custom(ERROR_VALUE + name, name + " has more values than options"));
+                return Optional.of(ErrorCode.translatable(ERROR_VALUE + name, "admin.error.field.too-many-values", name + " has more values than options", name));
             }
         } else if (values.size() > 1) {
-            return Optional.of(ErrorCode.custom(ERROR_VALUE + name, name + " accepts a single value"));
+            return Optional.of(ErrorCode.translatable(ERROR_VALUE + name, "admin.error.field.single-value", name + " accepts a single value", name));
         }
         if (hasOptions(field) && !new HashSet<>(field.getRestrictedValues()).containsAll(filled)) {
-            return Optional.of(ErrorCode.custom(ERROR_VALUE + name, name + " contains a value which is not one of its options"));
+            return Optional.of(ErrorCode.translatable(ERROR_VALUE + name, "admin.error.field.not-an-option", name + " contains a value which is not one of its options", name));
         }
         if (field.isTextField()) {
             var value = filled.getFirst();
             if (field.isMaxLengthDefined() && value.length() > field.getMaxLength()) {
-                return Optional.of(ErrorCode.custom("error.length." + name, name + " must be at most " + field.getMaxLength() + " characters long"));
+                return Optional.of(ErrorCode.translatable("error.length." + name, "admin.error.field.too-long", name + " must be at most " + field.getMaxLength() + " characters long", name, field.getMaxLength()));
             }
             if (field.isMinLengthDefined() && value.length() < field.getMinLength()) {
-                return Optional.of(ErrorCode.custom("error.length." + name, name + " must be at least " + field.getMinLength() + " characters long"));
+                return Optional.of(ErrorCode.translatable("error.length." + name, "admin.error.field.too-short", name + " must be at least " + field.getMinLength() + " characters long", name, field.getMinLength()));
             }
         }
         return Optional.empty();

@@ -2,6 +2,7 @@ import {PurchaseContextType} from "../model/purchase-context.ts";
 import {EmailMessage} from "../model/email-message.ts";
 import {PageAndContent} from "../model/reservation.ts";
 import { fetchJson, adminFetch } from './helpers.ts';
+import { t } from './i18n';
 
 export class EmailLogService {
 
@@ -16,7 +17,7 @@ export class EmailLogService {
     static async load(type: PurchaseContextType, publicIdentifier: string, messageId: number): Promise<EmailMessage> {
         const response = await adminFetch(`${EmailLogService.baseUrl(type, publicIdentifier)}/${messageId}`);
         if (!response.ok) {
-            throw new Error(`Failed to load message ${messageId}`);
+            throw new Error(t('admin.load-error.email-message', messageId));
         }
         return response.json();
     }

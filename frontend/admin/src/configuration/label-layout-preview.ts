@@ -2,6 +2,7 @@ import {html, TemplateResult} from 'lit';
 import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
 import {checkJsonSetting, JsonSchema} from './json-setting-check.ts';
+import { t } from '../service/i18n';
 
 /**
  * The layout of the badges printed by Alf.io-PI (LABEL_LAYOUT), as read by the server
@@ -76,13 +77,13 @@ export function labelLayoutPreview(value: string): TemplateResult {
     }
     const qrCode = (layout.qrCode?.additionalInfo ?? []).join(layout.qrCode?.infoSeparator ?? '::');
     return html`
-        <figure class="label-preview" aria-label="Badge preview">
-            <figcaption class="example-label">Preview</figcaption>
+        <figure class="label-preview" aria-label=${t('admin.label-preview.title')}>
+            <figcaption class="example-label">${t('admin.common.preview')}</figcaption>
             <div class="label-sample">
                 <div class="label-text">
                     <strong class="label-first-row">${sampleValue(layout.content?.firstRow, 'firstName')}</strong>
                     <span class="label-second-row">${sampleValue(layout.content?.secondRow, 'lastName')}</span>
-                    ${repeat(otherRows, (row, index) => `${index}-${row}`, (row) => html`<span class="label-other-row">Sample ${row}</span>`)}
+                    ${repeat(otherRows, (row, index) => `${index}-${row}`, (row) => html`<span class="label-other-row">${t('admin.label-preview.sample', row)}</span>`)}
                 </div>
                 <div class="label-code">
                     <sl-qr-code value=${qrCode || 'ticket'} size="72" error-correction="Q"></sl-qr-code>
@@ -113,5 +114,5 @@ function sampleValue(key: string | undefined, defaultKey: string): string {
     if (field === 'lastName') {
         return 'Lovelace';
     }
-    return `Sample ${field}`;
+    return t('admin.label-preview.sample', field);
 }

@@ -1,4 +1,5 @@
 import {AdditionalItem} from "./additional-item.ts";
+import { t } from '../service/i18n';
 
 export interface AdditionalField {
     id?: number;
@@ -70,15 +71,15 @@ export type AdditionalFieldContext = 'ATTENDEE' | 'ADDITIONAL_SERVICE' | 'SUBSCR
 export type AdditionalFieldType = 'input:text' | 'input:tel' | 'vat:eu' | 'textarea' | 'country' | 'select' | 'checkbox' | 'radio' | 'input:dateOfBirth';
 
 export const additionalFieldTypesWithDescription = {
-    'input:text': 'Single-line text input',
-    'input:tel': 'Phone number input',
-    'vat:eu': 'European VAT number input',
-    'textarea': 'Multi-line text input',
-    'country': 'Country selection drop-down',
-    'select': 'Single-choice drop-down',
-    'radio': 'Single-choice radio buttons',
-    'checkbox': 'Multiple-choice checkboxes',
-    'input:dateOfBirth': 'Date of birth input'
+    'input:text': t('admin.additional-field.type.text'),
+    'input:tel': t('admin.additional-field.type.phone'),
+    'vat:eu': t('admin.additional-field.type.vat'),
+    'textarea': t('admin.additional-field.type.textarea'),
+    'country': t('admin.additional-field.type.country'),
+    'select': t('admin.additional-field.type.select'),
+    'radio': t('admin.additional-field.type.radio'),
+    'checkbox': t('admin.additional-field.type.checkbox'),
+    'input:dateOfBirth': t('admin.additional-field.type.date-of-birth')
 };
 
 export function supportsPlaceholder(fieldType: AdditionalFieldType) {

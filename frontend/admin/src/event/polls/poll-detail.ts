@@ -29,6 +29,7 @@ import {
     textColors,
 } from '../../styles.ts';
 import { navigate, adminUrl } from '../../admin-router';
+import { t, tHtml, formatNumber } from '../../service/i18n';
 
 const STATS_REFRESH_MS = 2000;
 
@@ -128,7 +129,7 @@ export class PollDetail extends LitElement {
 
     render(): TemplateResult {
         return html`
-            ${taskContent(this.loadDataTask, this.lastData, 'Failed to load the poll. Please try again.', (data) =>
+            ${taskContent(this.loadDataTask, this.lastData, t('admin.poll-edit.load-failed'), (data) =>
                 this.renderContent(data),
             )}
             <sl-dialog class="responsive-dialog poll-presentation" label=${this.pollTitle()}
@@ -152,42 +153,42 @@ export class PollDetail extends LitElement {
                 ${this.renderStatusBanner(poll)}
                 ${when(this.statistics != null, () => sectionCard({
                     icon: 'bar-chart',
-                    title: 'Results',
+                    title: t('admin.poll.results'),
                     actions: html`
                         <sl-button size="small" variant="default" outline @click=${() => { this.presentationOpen = true; }}>
                             <sl-icon slot="prefix" name="easel"></sl-icon>
-                            Presentation view
+                            ${t('admin.poll.presentation')}
                         </sl-button>
                     `,
                 }, this.renderVotesTable(data, this.statistics!)))}
                 ${when(poll.accessRestricted, () => sectionCard({
                     icon: 'people',
-                    title: 'Participants',
+                    title: t('admin.poll.participants'),
                 }, html`
-                    <p class="text-muted">Access to this poll is restricted to the allowed attendees.</p>
+                    <p class="text-muted">${t('admin.poll.participants.help')}</p>
                     <sl-button class="manage-participants" variant="primary" size="small" href=${adminUrl(`/events/${this.eventName}/polls/${poll.id}/participants`)}>
                         <sl-icon slot="prefix" name="gear"></sl-icon>
-                        Manage participants
+                        ${t('admin.poll.participants.manage')}
                     </sl-button>
                 `))}
-                ${sectionCard({ icon: 'chat-left-question', title: 'Question' }, html`
-                    <p class="text-muted">The question you'd like to ask to your attendees.</p>
+                ${sectionCard({ icon: 'chat-left-question', title: t('admin.poll-edit.question') }, html`
+                    <p class="text-muted">${t('admin.poll.question.help')}</p>
                     ${detailList(event.contentLanguages.map((lang) => ({
                         label: lang.displayLanguage,
                         value: poll.title[lang.locale] ?? '',
                     })))}
                 `)}
-                ${sectionCard({ icon: 'text-paragraph', title: 'Description' }, html`
-                    <p class="text-muted">Optional. If you need to explain what the poll is about, or how it works.</p>
+                ${sectionCard({ icon: 'text-paragraph', title: t('admin.common.description') }, html`
+                    <p class="text-muted">${t('admin.poll.description.help')}</p>
                     ${detailList(event.contentLanguages.map((lang) => ({
                         label: lang.displayLanguage,
                         value: poll.description[lang.locale] ?? '',
                     })))}
                 `)}
-                ${sectionCard({ icon: 'list-ul', title: 'Options' }, html`
-                    <p class="text-muted">The options to choose from. The attendee can choose one of the provided options.</p>
+                ${sectionCard({ icon: 'list-ul', title: t('admin.categories.options') }, html`
+                    <p class="text-muted">${t('admin.poll-edit.options.help')}</p>
                     ${when(poll.options.length === 0,
-                        () => html`<p class="text-muted">No options yet.</p>`,
+                        () => html`<p class="text-muted">${t('admin.poll-edit.options.none')}</p>`,
                         () => html`
                             ${repeat(poll.options, (option) => option.id ?? Object.keys(option.title).join(), (option) =>
                                 this.renderOption(data, option))}
@@ -195,9 +196,9 @@ export class PollDetail extends LitElement {
                 `)}
                 <sl-divider></sl-divider>
                 <div class="row" style="--alfio-row-cols: 3">
-                    <sl-button variant="default" size="large" href=${adminUrl(`/events/${this.eventName}/polls/list`)}>Back</sl-button>
+                    <sl-button variant="default" size="large" href=${adminUrl(`/events/${this.eventName}/polls/list`)}>${t('admin.common.back')}</sl-button>
                     <div></div>
-                    <sl-button variant="warning" size="large" href=${adminUrl(`/events/${this.eventName}/polls/edit/${poll.id}`)}>Edit</sl-button>
+                    <sl-button variant="warning" size="large" href=${adminUrl(`/events/${this.eventName}/polls/edit/${poll.id}`)}>${t('admin.common.edit')}</sl-button>
                 </div>
             </div>
         `;
@@ -205,14 +206,14 @@ export class PollDetail extends LitElement {
 
     private renderStatusBanner(poll: Poll): TemplateResult {
         let variant: 'warning' | 'success' | 'neutral' = 'neutral';
-        let message = 'This poll is closed';
+        let message = t('admin.poll.status.closed');
         let icon = 'info-circle';
         if (poll.status === 'DRAFT') {
             variant = 'warning';
-            message = 'This poll is not yet open';
+            message = t('admin.poll.status.draft');
         } else if (poll.status === 'OPEN') {
             variant = 'success';
-            message = 'This poll is currently open for voting';
+            message = t('admin.poll.status.open');
             icon = 'check-circle';
         }
         return html`
@@ -223,19 +224,19 @@ export class PollDetail extends LitElement {
                     ${when(poll.status === 'OPEN', () => html`
                         <sl-button variant="default" size="large" ?disabled=${this.busy} ?loading=${this.busy}
                                    @click=${() => void this.changeStatus('CLOSED')}>
-                            Close
+                            ${t('admin.common.close')}
                         </sl-button>
                     `, () => html`
                         <sl-button variant="success" size="large" ?disabled=${this.busy} ?loading=${this.busy}
                                    @click=${() => void this.changeStatus('OPEN')}>
-                            Open
+                            ${t('admin.poll.open')}
                         </sl-button>
                     `)}
                     ${when(poll.status !== 'OPEN', () => html`
                         <sl-button variant="danger" size="large" ?disabled=${this.busy}
                                    @click=${() => void this.deletePoll(poll)}>
                             <sl-icon slot="prefix" name="trash"></sl-icon>
-                            Delete
+                            ${t('admin.common.delete')}
                         </sl-button>
                     `)}
                 </div>
@@ -260,7 +261,7 @@ export class PollDetail extends LitElement {
                            ?disabled=${this.busy}
                            @click=${() => void this.removeOption(data, option)}>
                     <sl-icon slot="prefix" name="trash"></sl-icon>
-                    Remove
+                    ${t('admin.common.remove')}
                 </sl-button>
             </div>
         `;
@@ -288,8 +289,8 @@ export class PollDetail extends LitElement {
                 <table class="table table-striped votes-table">
                     <thead>
                         <tr>
-                            <th>Option</th>
-                            <th class="text-right">Votes</th>
+                            <th>${t('admin.poll.option')}</th>
+                            <th class="text-right">${t('admin.poll.votes')}</th>
                             <th class="text-right">%</th>
                         </tr>
                     </thead>
@@ -304,16 +305,15 @@ export class PollDetail extends LitElement {
                     </tbody>
                     <tfoot>
                         <tr>
-                            <th>Total</th>
-                            <th class="text-right">${statistics.totalVotes}</th>
+                            <th>${t('admin.poll.total')}</th>
+                            <th class="text-right">${formatNumber(statistics.totalVotes)}</th>
                             <th class="text-right">100%</th>
                         </tr>
                     </tfoot>
                 </table>
             </div>
             <p class="text-muted">
-                ${statistics.totalVotes} of ${statistics.allowedParticipants} allowed participants voted
-                (${formatPercentage(statistics.participationPercentage)}%).
+                ${t('admin.poll.participation', formatNumber(statistics.totalVotes), formatNumber(statistics.allowedParticipants), formatPercentage(statistics.participationPercentage))}
             </p>
         `;
     }
@@ -333,7 +333,7 @@ export class PollDetail extends LitElement {
         const chartData: ChartData = {
             labels: statistics?.optionStatistics.map((s) => optionTitle(s.optionId)) ?? [],
             datasets: [{
-                label: 'Votes',
+                label: t('admin.poll.votes'),
                 data: statistics?.optionStatistics.map((s) => s.votes) ?? [],
                 backgroundColor: slColor('--sl-color-primary-500', '#4a90d9'),
                 borderWidth: 1,
@@ -357,12 +357,12 @@ export class PollDetail extends LitElement {
         };
         return html`
             <p class="text-center">
-                Total votes: <strong>${statistics?.totalVotes ?? 0}</strong>
+                ${tHtml('admin.poll.total-votes', html`<strong>${formatNumber(statistics?.totalVotes ?? 0)}</strong>`)}
                 <span class="text-muted">/ ${statistics?.allowedParticipants ?? 0}</span>
                 — ${formatPercentage(statistics?.participationPercentage ?? '0')}%
             </p>
             <div class="chart-container">
-                <alfio-chart type="bar" .data=${chartData} .options=${chartOptions} aria-label="Votes per poll option"></alfio-chart>
+                <alfio-chart type="bar" .data=${chartData} .options=${chartOptions} aria-label=${t('admin.poll.chart')}></alfio-chart>
             </div>
             ${when(statistics != null, () => this.renderVotesTable(data, statistics!))}
         `;
@@ -401,10 +401,10 @@ export class PollDetail extends LitElement {
             this.loadStatistics();
             dispatchFeedback({
                 type: 'success',
-                message: status === 'OPEN' ? 'The poll is now open for voting' : 'The poll is now closed',
+                message: statusChangedMessage(status),
             }, this);
         } catch (e) {
-            dispatchFeedback({ type: 'danger', message: errorMessage(e, 'Failed to change the poll status') }, this);
+            dispatchFeedback({ type: 'danger', message: errorMessage(e, t('admin.poll.status-change-failed')) }, this);
         } finally {
             this.busy = false;
         }
@@ -414,8 +414,8 @@ export class PollDetail extends LitElement {
         const firstLocale = data.event.firstContentLanguage.locale;
         const title = firstLocalized(option.title, firstLocale);
         const confirmed = await ConfirmationDialogService.requestConfirm(
-            'Remove option',
-            `Are you sure you want to remove ${title}? This operation cannot be undone.`,
+            t('admin.poll.remove-option'),
+            t('admin.poll.remove-option.text', title),
             'danger',
         );
         if (!confirmed) {
@@ -426,9 +426,9 @@ export class PollDetail extends LitElement {
             const updated = await PollService.removeOption(this.eventName, this.pollId, option.id!);
             this.lastData = { ...data, poll: updated };
             this.loadStatistics();
-            dispatchFeedback({ type: 'success', message: 'Option removed' }, this);
+            dispatchFeedback({ type: 'success', message: t('admin.poll.option-removed') }, this);
         } catch (e) {
-            dispatchFeedback({ type: 'danger', message: errorMessage(e, 'Failed to remove the option') }, this);
+            dispatchFeedback({ type: 'danger', message: errorMessage(e, t('admin.poll.remove-option-failed')) }, this);
         } finally {
             this.busy = false;
         }
@@ -437,8 +437,8 @@ export class PollDetail extends LitElement {
     private async deletePoll(poll: Poll): Promise<void> {
         const firstLocale = this.lastData?.event.firstContentLanguage.locale ?? 'en';
         const confirmed = await ConfirmationDialogService.requestConfirm(
-            'Delete poll',
-            `Are you sure you want to delete ${firstLocalized(poll.title, firstLocale)}? This operation cannot be undone.`,
+            t('admin.poll.delete'),
+            t('admin.poll.delete.text', firstLocalized(poll.title, firstLocale)),
             'danger',
         );
         if (!confirmed) {
@@ -449,10 +449,17 @@ export class PollDetail extends LitElement {
             await PollService.deletePoll(this.eventName, this.pollId);
             navigate(`/events/${this.eventName}/polls/list`);
         } catch (e) {
-            dispatchFeedback({ type: 'danger', message: errorMessage(e, 'Failed to delete the poll') }, this);
+            dispatchFeedback({ type: 'danger', message: errorMessage(e, t('admin.poll.delete-failed')) }, this);
             this.busy = false;
         }
     }
+}
+
+function statusChangedMessage(status: 'OPEN' | 'CLOSED'): string {
+    if (status === 'OPEN') {
+        return t('admin.poll.now-open');
+    }
+    return t('admin.poll.now-closed');
 }
 
 declare global {

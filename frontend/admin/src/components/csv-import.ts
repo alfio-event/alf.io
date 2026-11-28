@@ -3,6 +3,7 @@ import {when} from 'lit/directives/when.js';
 import {FileUploadChangeEvent} from './file-upload.ts';
 import './file-upload.ts';
 import { adminUrl } from '../admin-router';
+import { t } from '../service/i18n';
 
 export interface CsvImportOptions {
     // what the template contains
@@ -25,19 +26,19 @@ export function csvImport(options: CsvImportOptions): TemplateResult {
     return html`
         <div class="import-steps">
             <div class="import-step featured-card">
-                <h4><span class="step-number">1</span>Download the template</h4>
+                <h4><span class="step-number">1</span>${t('admin.csv-import.step.download')}</h4>
                 <div class="template-download">
                     <sl-icon name="file-earmark-spreadsheet"></sl-icon>
                     <p class="text-muted">${options.templateDescription}</p>
                     <sl-button class="download-template" variant="primary" size="large" @click=${options.onDownloadTemplate}>
                         <sl-icon slot="prefix" name="download"></sl-icon>
-                        Download template
+                        ${t('admin.csv-import.download-template')}
                     </sl-button>
                 </div>
             </div>
             <div class="import-step upload">
-                <h4><span class="step-number">2</span>Fill it in and upload it</h4>
-                <alfio-file-upload class="attendees-file" accept=".csv,text/csv" label="Choose the filled-in template or drag it here"
+                <h4><span class="step-number">2</span>${t('admin.csv-import.step.upload')}</h4>
+                <alfio-file-upload class="attendees-file" accept=".csv,text/csv" label=${t('admin.csv-import.upload-label')}
                                    @change=${options.onFileChange}></alfio-file-upload>
                 ${when(options.error, () => html`
                     <sl-alert class="csv-error" variant="danger" open>
@@ -53,7 +54,7 @@ export function csvImport(options: CsvImportOptions): TemplateResult {
                 `)}
             </div>
         </div>
-        <sl-details summary="File specifications" class="file-specs">
+        <sl-details summary=${t('admin.csv-import.file-specifications')} class="file-specs">
             ${options.specs}
         </sl-details>
     `;
@@ -63,5 +64,5 @@ export function csvImport(options: CsvImportOptions): TemplateResult {
  * Link to the attendees' data to collect of the event
  */
 export function attendeeFieldsLink(eventName: string): TemplateResult {
-    return html`<a href=${adminUrl(`/events/${eventName}/attendee-data-to-collect`)}>attendees' data to collect</a>`;
+    return html`<a href=${adminUrl(`/events/${eventName}/attendee-data-to-collect`)}>${t('admin.csv-import.attendee-fields-link')}</a>`;
 }

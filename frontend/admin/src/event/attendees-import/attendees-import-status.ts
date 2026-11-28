@@ -11,6 +11,7 @@ import {badges, base, modernLayout, purchaseContextListPage, retroCompat, row, t
 import {sectionCard} from '../../components/section-card.ts';
 import {taskContent} from '../../components/task-content.ts';
 import { adminUrl } from '../../admin-router';
+import { t, tHtml, formatNumber } from '../../service/i18n';
 
 const REFRESH_INTERVAL_MS = 1000;
 
@@ -73,7 +74,7 @@ export class AttendeesImportStatus extends LitElement {
     }
 
     render(): TemplateResult {
-        return taskContent(this.loadEventTask, this.loadEventTask.value ?? null, 'Failed to load the event. Please try again.',
+        return taskContent(this.loadEventTask, this.loadEventTask.value ?? null, t('admin.load-error.event-retry'),
             event => this.renderContent(event));
     }
 
@@ -81,14 +82,14 @@ export class AttendeesImportStatus extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row secondary">
-                    <h1>Import status for <i>${localizedTitle(event)}</i></h1>
+                    <h1>${tHtml('admin.attendees-import.status.title', html`<i>${localizedTitle(event)}</i>`)}</h1>
                 </div>
                 <hr class="page-separator" />
-                <p class="page-description text-muted">The reservations are created in the background (one for each attendee, or one for all of them): the import goes on even if you leave this page.</p>
+                <p class="page-description text-muted">${t('admin.attendees-import.status.description')}</p>
                 ${when(this.statsError, () => html`
                     <sl-alert variant="danger" open>
                         <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                        Failed to load the import status. Please reload the page.
+                        ${t('admin.attendees-import.status.load-failed')}
                     </sl-alert>
                 `)}
                 ${when(this.stats != null,
@@ -107,9 +108,9 @@ export class AttendeesImportStatus extends LitElement {
             percentage = Math.floor(processed * 100 / total);
         }
         let icon = 'hourglass-split';
-        let title = 'Import in progress';
+        let title = t('admin.attendees-import.status.in-progress');
         if (completed) {
-            title = 'Import completed';
+            title = t('admin.attendees-import.status.completed');
             icon = 'check-circle';
             if (stats.countError > 0) {
                 icon = 'exclamation-triangle';
@@ -117,33 +118,33 @@ export class AttendeesImportStatus extends LitElement {
         }
         return sectionCard({ icon, title }, html`
             <div class="import-status">
-                <sl-progress-bar value=${percentage} label="Processed reservations">${processed} / ${total}</sl-progress-bar>
+                <sl-progress-bar value=${percentage} label=${t('admin.attendees-import.status.processed')}>${processed} / ${total}</sl-progress-bar>
                 <div class="counters">
-                    <sl-badge id="imported-count" variant="success" pill>${stats.countSuccess} created</sl-badge>
-                    ${when(stats.countError > 0, () => html`<sl-badge id="failed-count" variant="danger" pill>${stats.countError} failed</sl-badge>`)}
-                    ${when(stats.countPending > 0, () => html`<sl-badge variant="neutral" pill>${stats.countPending} pending</sl-badge>`)}
+                    <sl-badge id="imported-count" variant="success" pill>${t('admin.attendees-import.status.created', formatNumber(stats.countSuccess))}</sl-badge>
+                    ${when(stats.countError > 0, () => html`<sl-badge id="failed-count" variant="danger" pill>${t('admin.attendees-import.status.failed', formatNumber(stats.countError))}</sl-badge>`)}
+                    ${when(stats.countPending > 0, () => html`<sl-badge variant="neutral" pill>${t('admin.attendees-import.status.pending', formatNumber(stats.countPending))}</sl-badge>`)}
                 </div>
                 ${when(completed, () => html`
                     ${when(stats.countError === 0,
                         () => html`
                             <sl-alert id="import-result" variant="success" open>
                                 <sl-icon slot="icon" name="check2-circle"></sl-icon>
-                                All the reservations have been created.
+                                ${t('admin.attendees-import.status.all-created')}
                             </sl-alert>`,
                         () => html`
                             <sl-alert id="import-result" variant="warning" open>
                                 <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                                ${stats.countError} of ${total} reservations could not be created. The application log contains the details.
+                                ${t('admin.attendees-import.status.some-failed', formatNumber(stats.countError), formatNumber(total))}
                             </sl-alert>`)}
                     <div class="row" style="--alfio-row-cols: 3">
                         <sl-button variant="default" size="large" href=${adminUrl(`/events/${event.shortName}/detail`)}>
                             <sl-icon slot="prefix" name="arrow-left"></sl-icon>
-                            Back to event detail
+                            ${t('admin.attendees-import.status.back')}
                         </sl-button>
                         <div></div>
                         <sl-button variant="primary" size="large" href=${adminUrl(`/events/${event.shortName}/reservation/import`)}>
                             <sl-icon slot="prefix" name="upload"></sl-icon>
-                            Import other attendees
+                            ${t('admin.attendees-import.status.import-more')}
                         </sl-button>
                     </div>
                 `)}

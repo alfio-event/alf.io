@@ -13,6 +13,7 @@ import {badges, base, detailList, modernLayout, purchaseContextListPage, retroCo
 import {sectionCard} from '../../components/section-card.ts';
 import {taskContent} from '../../components/task-content.ts';
 import {canScanQrCodes, createQrDetector, QrDetector} from '../../service/qr-scanning.ts';
+import { t, tHtml, i18nKey } from '../../service/i18n';
 
 const CAPTURE_INTERVAL_MS = 250;
 // after "next scan", the code just processed is ignored until it has been out of sight for this long
@@ -22,11 +23,33 @@ type BadgeVariant = 'success' | 'warning' | 'danger';
 
 // badge displayed next to the attendee name. Any other status is an error
 const STATUS_BADGES: Partial<Record<CheckInStatus, { variant: BadgeVariant, label: string }>> = {
-    SUCCESS: { variant: 'success', label: 'Checked in' },
-    OK_READY_TO_BE_CHECKED_IN: { variant: 'success', label: 'Ready to check in' },
-    MUST_PAY: { variant: 'warning', label: 'Payment due' },
-    ALREADY_CHECK_IN: { variant: 'warning', label: 'Already checked in' },
+    SUCCESS: { variant: 'success', label: t('admin.allocation.checked-in') },
+    OK_READY_TO_BE_CHECKED_IN: { variant: 'success', label: t('admin.check-in-scan.status.ready') },
+    MUST_PAY: { variant: 'warning', label: t('admin.check-in-scan.status.must-pay') },
+    ALREADY_CHECK_IN: { variant: 'warning', label: t('admin.check-in-scan.status.already-checked-in') },
 };
+
+// the label of the other statuses, all errors
+const ERROR_LABELS: Partial<Record<CheckInStatus, string>> = {
+    EVENT_NOT_FOUND: i18nKey('admin.check-in-scan.status.event-not-found'),
+    TICKET_NOT_FOUND: i18nKey('admin.check-in-scan.status.ticket-not-found'),
+    EMPTY_TICKET_CODE: i18nKey('admin.check-in-scan.status.empty-code'),
+    INVALID_TICKET_CODE: i18nKey('admin.check-in-scan.status.invalid-code'),
+    INVALID_TICKET_STATE: i18nKey('admin.check-in-scan.status.invalid-state'),
+    INVALID_TICKET_CATEGORY_CHECK_IN_DATE: i18nKey('admin.check-in-scan.status.invalid-date'),
+    BADGE_SCAN_ALREADY_DONE: i18nKey('admin.check-in-scan.status.badge-already-scanned'),
+    OK_READY_FOR_BADGE_SCAN: i18nKey('admin.check-in-scan.status.ready-for-badge'),
+    BADGE_SCAN_SUCCESS: i18nKey('admin.check-in-scan.status.badge-scanned'),
+    ERROR: i18nKey('admin.check-in-scan.status.error'),
+};
+
+function statusLabel(status: CheckInStatus): string {
+    const key = ERROR_LABELS[status];
+    if (key == null) {
+        return humanize(status);
+    }
+    return t(key);
+}
 
 interface ScanResult {
     code: string;
@@ -121,7 +144,7 @@ export class CheckInScan extends LitElement {
     }
 
     render(): TemplateResult {
-        return taskContent(this.loadEventTask, this.loadEventTask.value ?? null, 'Failed to load the event. Please try again.',
+        return taskContent(this.loadEventTask, this.loadEventTask.value ?? null, t('admin.load-error.event-retry'),
             (event) => this.renderContent(event));
     }
 
@@ -129,16 +152,15 @@ export class CheckInScan extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row secondary">
-                    <h1>Scan tickets for <i>${localizedTitle(event)}</i></h1>
+                    <h1>${tHtml('admin.check-in-scan.title', html`<i>${localizedTitle(event)}</i>`)}</h1>
                 </div>
                 <hr class="page-separator" />
-                <p class="page-description text-muted">Check in attendees by scanning the QR code on their ticket with the camera of this device.</p>
+                <p class="page-description text-muted">${t('admin.check-in-scan.description')}</p>
                 <div class="scan-container">
                     <sl-alert class="overheating-warning" variant="warning" open>
                         <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                        Please note that HTML5 check-in functionality could cause overheating on some mobile devices. Use it at your own risk.<br>
-                        If you have an Android smartphone/tablet, please use the
-                        <a href="https://play.google.com/store/apps/details?id=alfio.scan" target="_blank" rel="noopener">official application</a> instead.
+                        ${t('admin.check-in-scan.overheating')}<br>
+                        ${tHtml('admin.check-in-scan.android', html`<a href="https://play.google.com/store/apps/details?id=alfio.scan" target="_blank" rel="noopener">${t('admin.check-in-scan.official-application')}</a>`)}
                     </sl-alert>
                     ${this.renderScannerIfSupported(event)}
                 </div>
@@ -155,10 +177,9 @@ export class CheckInScan extends LitElement {
             return html`
                 <sl-alert class="scan-not-supported" variant="primary" open>
                     <sl-icon slot="icon" name="info-circle"></sl-icon>
-                    This browser can't read QR codes. Scan the tickets with the
-                    <a href="https://play.google.com/store/apps/details?id=alfio.scan" target="_blank" rel="noopener">Android app</a>
-                    or the <a href="https://itunes.apple.com/us/app/alf-io-scan/id1425492093" target="_blank" rel="noopener">iOS app</a>,
-                    or open this page in Chrome or Edge.
+                    ${tHtml('admin.check-in-scan.not-supported',
+                        html`<a href="https://play.google.com/store/apps/details?id=alfio.scan" target="_blank" rel="noopener">${t('admin.check-in.android-app')}</a>`,
+                        html`<a href="https://itunes.apple.com/us/app/alf-io-scan/id1425492093" target="_blank" rel="noopener">${t('admin.check-in.ios-app')}</a>`)}
                 </sl-alert>
             `;
         }
@@ -170,16 +191,16 @@ export class CheckInScan extends LitElement {
             ${when(this.cameraError != null, () => this.renderError(this.cameraError!))}
             ${when(!this.scanning && this.scanned == null, () => html`
                 <div class="featured-card">
-                    <h2><sl-icon name="qr-code-scan"></sl-icon> Ready to scan</h2>
-                    <small class="text-muted">The browser will ask for permission to use the camera.</small>
+                    <h2><sl-icon name="qr-code-scan"></sl-icon> ${t('admin.check-in-scan.ready')}</h2>
+                    <small class="text-muted">${t('admin.check-in-scan.permission')}</small>
                     <sl-button id="scan-button" variant="primary" size="large" @click=${this.startScanning}>
                         <sl-icon slot="prefix" name="camera-video"></sl-icon>
-                        Start scanning
+                        ${t('admin.check-in-scan.start')}
                     </sl-button>
                 </div>
             `)}
             <div ?hidden=${!this.scanning}>
-                ${sectionCard({ icon: 'camera-video', title: 'Point the camera at the QR code', actions: this.renderCameraActions() }, html`
+                ${sectionCard({ icon: 'camera-video', title: t('admin.check-in-scan.point-camera'), actions: this.renderCameraActions() }, html`
                     <video muted autoplay playsinline></video>
                 `)}
             </div>
@@ -190,39 +211,39 @@ export class CheckInScan extends LitElement {
     private renderCameraActions(): TemplateResult {
         return html`
             ${when(this.cameras.length > 1, () => html`
-                <sl-select class="camera-select label-hidden" size="small" label="Camera" hoist .value=${this.selectedCamera} @sl-change=${this.onCameraChange}>
+                <sl-select class="camera-select label-hidden" size="small" label=${t('admin.check-in-scan.camera')} hoist .value=${this.selectedCamera} @sl-change=${this.onCameraChange}>
                     ${this.cameras.map((camera, index) => html`
-                        <sl-option value=${camera.deviceId}>${camera.label || `Camera ${index + 1}`}</sl-option>
+                        <sl-option value=${camera.deviceId}>${camera.label || t('admin.check-in-scan.camera-number', index + 1)}</sl-option>
                     `)}
                 </sl-select>
             `)}
             <sl-button id="stop-button" variant="default" size="small" @click=${this.stopScanning}>
                 <sl-icon slot="prefix" name="stop-circle"></sl-icon>
-                Stop
+                ${t('admin.check-in-scan.stop')}
             </sl-button>
         `;
     }
 
     private renderScanned(event: AlfioEvent, scanned: ScanResult): TemplateResult {
         if (scanned.loading || scanned.data == null) {
-            return sectionCard({ icon: 'hourglass-split', title: 'Checking ticket' }, html`
+            return sectionCard({ icon: 'hourglass-split', title: t('admin.check-in-scan.checking') }, html`
                 <div class="loading"><sl-spinner></sl-spinner></div>
             `);
         }
         const { ticket, result } = scanned.data;
-        const badge = STATUS_BADGES[result.status] ?? { variant: 'danger', label: humanize(result.status) };
+        const badge = STATUS_BADGES[result.status] ?? { variant: 'danger', label: statusLabel(result.status) };
         return sectionCard({
             icon: 'person-badge',
-            title: ticket?.fullName || 'Ticket',
+            title: ticket?.fullName || t('admin.common.ticket'),
             badge: html`<sl-badge class="scan-status" variant=${badge.variant} pill>${badge.label}</sl-badge>`,
         }, html`
             <div class="scanned-ticket">
                 ${this.renderResult(scanned.data)}
                 ${when(ticket != null, () => html`
                     <dl class="detail-list">
-                        <dt>Email</dt><dd>${ticket!.email ?? ''}</dd>
-                        ${when(ticket!.categoryName, () => html`<dt>Category</dt><dd>${ticket!.categoryName}</dd>`)}
-                        ${when(ticket!.userLanguage, () => html`<dt>Language</dt><dd>${ticket!.userLanguage}</dd>`)}
+                        <dt>${t('admin.common.email-short')}</dt><dd>${ticket!.email ?? ''}</dd>
+                        ${when(ticket!.categoryName, () => html`<dt>${t('admin.category-select.label')}</dt><dd>${ticket!.categoryName}</dd>`)}
+                        ${when(ticket!.userLanguage, () => html`<dt>${t('admin.reservation-create.language')}</dt><dd>${ticket!.userLanguage}</dd>`)}
                     </dl>
                 `)}
                 ${this.renderScannedActions(event, scanned)}
@@ -238,13 +259,13 @@ export class CheckInScan extends LitElement {
         const nextScan = html`
             <sl-button id="next-scan-button" variant="primary" size="large" ?disabled=${this.actionInProgress} @click=${this.nextScan}>
                 <sl-icon slot="prefix" name="qr-code-scan"></sl-icon>
-                Next scan
+                ${t('admin.check-in-scan.next')}
             </sl-button>`;
         return html`
             <div class="row scan-actions">
                 <sl-button variant="default" size="large" ?disabled=${this.actionInProgress} @click=${this.stopScanning}>
                     <sl-icon slot="prefix" name="stop-circle"></sl-icon>
-                    Stop scanning
+                    ${t('admin.check-in-scan.stop-scanning')}
                 </sl-button>
                 ${when(confirm != null, () => html`${nextScan}${confirm}`, () => html`<div></div>${nextScan}`)}
             </div>
@@ -259,7 +280,7 @@ export class CheckInScan extends LitElement {
                 <sl-button id="confirm-check-in-button" variant="warning" size="large" ?loading=${this.actionInProgress}
                            @click=${() => this.checkIn(event, scanned.code)}>
                     <sl-icon slot="prefix" name="check2"></sl-icon>
-                    Confirm check-in
+                    ${t('admin.check-in-scan.confirm-check-in')}
                 </sl-button>`;
         }
         if (status === 'MUST_PAY') {
@@ -267,7 +288,7 @@ export class CheckInScan extends LitElement {
                 <sl-button id="confirm-payment-button" variant="warning" size="large" ?loading=${this.actionInProgress}
                            @click=${() => this.confirmPayment(event, scanned.code)}>
                     <sl-icon slot="prefix" name="cash-coin"></sl-icon>
-                    Confirm payment
+                    ${t('admin.check-in-scan.confirm-payment')}
                 </sl-button>`;
         }
         return null;
@@ -276,21 +297,21 @@ export class CheckInScan extends LitElement {
     private renderResult({ result }: TicketAndCheckInResult): TemplateResult {
         switch (result.status) {
             case 'SUCCESS':
-                return this.renderAlert('success', 'check2-circle', 'Check in has been completed!');
+                return this.renderAlert('success', 'check2-circle', t('admin.check-in-scan.result.success'));
             case 'OK_READY_TO_BE_CHECKED_IN':
-                return this.renderAlert('success', 'check2-circle', 'Ticket is ok, ready to be checked in.');
+                return this.renderAlert('success', 'check2-circle', t('admin.check-in-scan.result.ready'));
             case 'MUST_PAY': {
                 const amount = formatAmount(result.dueAmount, result.currency);
-                let message = 'Ticket is ok, but customer must still pay the ticket.';
+                let message = t('admin.check-in-scan.result.must-pay');
                 if (amount) {
-                    message = `Ticket is ok, but customer must still pay the ticket (${amount}).`;
+                    message = t('admin.check-in-scan.result.must-pay-amount', amount);
                 }
                 return this.renderAlert('warning', 'cash-coin', message);
             }
             case 'ALREADY_CHECK_IN':
-                return this.renderAlert('warning', 'exclamation-triangle', result.message || 'Ticket already checked in.');
+                return this.renderAlert('warning', 'exclamation-triangle', result.message || t('admin.check-in-scan.result.already-checked-in'));
             default:
-                return this.renderError(result.message || result.status);
+                return this.renderError(result.message || statusLabel(result.status));
         }
     }
 
@@ -364,7 +385,7 @@ export class CheckInScan extends LitElement {
             this.scheduleCapture();
         } catch (e) {
             console.error('error while loading camera', e);
-            this.cameraError = 'Error while loading the camera. Please make sure that the page has access to it.';
+            this.cameraError = t('admin.check-in-scan.camera-error');
             this.stopScanning();
         }
     }
@@ -438,7 +459,7 @@ export class CheckInScan extends LitElement {
             this.scanned = { code, loading: false, data };
         } catch (e) {
             console.error(e);
-            this.scanned = { code, loading: false, data: { ticket: null, result: { status: 'ERROR', message: 'Unexpected error. Please try again.' } } };
+            this.scanned = { code, loading: false, data: { ticket: null, result: { status: 'ERROR', message: t('admin.check-in-scan.unexpected-error') } } };
         } finally {
             this.actionInProgress = false;
         }

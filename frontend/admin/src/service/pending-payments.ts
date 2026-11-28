@@ -10,6 +10,7 @@
 
 import {BulkConfirmationResult, PendingPayment} from '../model/reservation.ts';
 import { callDelete, fetchJson, postJson, adminFetch } from './helpers.ts';
+import { t } from './i18n';
 
 export type PendingPaymentsListener = (count: number | null) => void;
 
@@ -89,7 +90,7 @@ async function load(eventName: string, entry: Entry): Promise<void> {
             entry.disabled = true;
             entry.count = null;
         } else if (!response.ok) {
-            throw new Error(`unexpected status ${response.status}`);
+            throw new Error(t('admin.error.unexpected-status', response.status));
         } else {
             const count = Number(await response.json());
             entry.count = 0;
@@ -205,7 +206,7 @@ async function changed(eventName: string, request: Promise<Response>): Promise<v
 
 async function ensureSuccess(response: Response): Promise<void> {
     if (!response.ok) {
-        throw new Error((await response.text()) || `unexpected status ${response.status}`);
+        throw new Error((await response.text()) || t('admin.error.unexpected-status', response.status));
     }
 }
 

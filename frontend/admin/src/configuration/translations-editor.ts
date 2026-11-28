@@ -19,6 +19,7 @@ import '../components/pagination-bar.ts';
 import {badges, base, form, modernLayout, modernTable, textColors} from '../styles.ts';
 import {TranslationDialog, TranslationSavedDetail} from './translation-dialog.ts';
 import './translation-dialog.ts';
+import { t } from '../service/i18n';
 
 const PAGE_SIZE = 50;
 
@@ -163,18 +164,18 @@ export class TranslationsEditor extends LitElement {
     ];
 
     render(): TemplateResult {
-        return taskContent(this.loadTask, this.lastData, 'Failed to load the translations. Please try again.',
+        return taskContent(this.loadTask, this.lastData, t('admin.translations.load-failed'),
             (data) => this.renderContent(data));
     }
 
     private renderContent(data: TranslationsData): TemplateResult {
         return html`
             <p class="page-description text-muted">
-                Customize the texts of the public pages and of the e-mails. A customization also applies to the levels below this one.
+                ${t('admin.translations.description')}
             </p>
             <div class="filter-toolbar">
-                ${this.searchController.render('translations')}
-                <sl-select class="language-select label-hidden" label="Language" hoist .value=${this.locale}
+                ${this.searchController.render(t('admin.translations.items'))}
+                <sl-select class="language-select label-hidden" label=${t('admin.reservation-create.language')} hoist .value=${this.locale}
                            @sl-change=${(e: Event) => this.selectLanguage(String((e.target as SlSelect).value))}>
                     <!-- the icon shows what the select is for; its label is for the screen readers only, so the controls align -->
                     <sl-icon slot="prefix" name="translate"></sl-icon>
@@ -184,10 +185,10 @@ export class TranslationsEditor extends LitElement {
                 </sl-select>
                 <sl-switch id="only-customized" ?checked=${this.onlyCustomized}
                            @sl-change=${(e: Event) => { this.onlyCustomized = (e.target as SlSwitch).checked; this.page = 1; }}>
-                    Only customized
+                    ${t('admin.translations.only-customized')}
                 </sl-switch>
             </div>
-            ${taskContent(this.bundleTask, this.currentBundle(), 'Failed to load the texts of the language. Please try again.',
+            ${taskContent(this.bundleTask, this.currentBundle(), t('admin.translations.load-language-failed'),
                 (bundle) => this.renderList(data, bundle))}
             <alfio-translation-dialog @alfio-translation-saved=${this.onTranslationSaved}></alfio-translation-dialog>
         `;
@@ -201,7 +202,7 @@ export class TranslationsEditor extends LitElement {
         const languageName = this.languageName(data, bundle.locale);
         return sectionCard({
             icon: 'translate',
-            title: `${languageName} texts`,
+            title: t('admin.translations.texts', languageName),
             badge: html`<sl-badge variant="primary" pill>${rows.length}</sl-badge>`,
             className: 'list-card',
         }, html`
@@ -210,9 +211,9 @@ export class TranslationsEditor extends LitElement {
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>English</th>
+                                <th>${this.languageName(data, 'en')}</th>
                                 <th>${languageName}</th>
-                                <th><span class="sr-only">Actions</span></th>
+                                <th><span class="sr-only">${t('admin.common.actions')}</span></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -220,7 +221,7 @@ export class TranslationsEditor extends LitElement {
                         </tbody>
                     </table>
                 </div>
-                <alfio-pagination-bar page=${page} total=${rows.length} page-size=${PAGE_SIZE} item-label="texts"
+                <alfio-pagination-bar page=${page} total=${rows.length} page-size=${PAGE_SIZE} item-label=${t('admin.translations.texts-items')}
                                       @alfio-page-change=${(e: AlfioPageChange) => { this.page = e.detail.page; }}></alfio-pagination-bar>
             `)}
         `);
@@ -235,20 +236,20 @@ export class TranslationsEditor extends LitElement {
                 </td>
                 <td class="translation-value">
                     <span class="translation-text">${row.value}</span>
-                    ${when(row.customized, () => html`<sl-badge variant="primary" pill>Customized</sl-badge>`)}
+                    ${when(row.customized, () => html`<sl-badge variant="primary" pill>${t('admin.translations.customized')}</sl-badge>`)}
                 </td>
                 <td class="actions-cell">
                     <sl-button class="edit-translation" size="small" variant="default"
                                @click=${() => void this.dialog.show({...row, languageName})}>
                         <sl-icon slot="prefix" name="pencil"></sl-icon>
-                        Edit
+                        ${t('admin.common.edit')}
                     </sl-button>
                     ${when(row.customized, () => html`
                         <sl-button class="reset-translation" size="small" variant="danger" outline
                                    ?loading=${this.removing === row.key} ?disabled=${this.removing != null}
                                    @click=${() => void this.reset(row.key)}>
                             <sl-icon slot="prefix" name="trash"></sl-icon>
-                            Reset
+                            ${t('admin.common.reset')}
                         </sl-button>
                     `)}
                 </td>
@@ -289,9 +290,9 @@ export class TranslationsEditor extends LitElement {
 
     private emptyMessage(): string {
         if (this.onlyCustomized && this.search.trim() === '') {
-            return 'No text of this language has been customized';
+            return t('admin.translations.none-customized');
         }
-        return 'No text matches the filter';
+        return t('admin.translations.none-matching');
     }
 
     private selectLanguage(locale: string): void {
@@ -309,9 +310,9 @@ export class TranslationsEditor extends LitElement {
             await SettingsService.saveTranslationsOverride(this.level, translations);
             this.customized = translations;
             this.dialog.close();
-            dispatchFeedback({type: 'success', message: 'The translation has been saved'}, this);
+            dispatchFeedback({type: 'success', message: t('admin.translations.saved')}, this);
         } catch (e) {
-            this.dialog.showError(errorMessage(e, 'Failed to save the translation. Please try again.'));
+            this.dialog.showError(errorMessage(e, t('admin.translations.save-failed')));
         }
     };
 
@@ -325,9 +326,9 @@ export class TranslationsEditor extends LitElement {
         try {
             await SettingsService.saveTranslationsOverride(this.level, translations);
             this.customized = translations;
-            dispatchFeedback({type: 'success', message: 'The standard translation applies again'}, this);
+            dispatchFeedback({type: 'success', message: t('admin.translations.reset')}, this);
         } catch (e) {
-            dispatchFeedback({type: 'danger', message: errorMessage(e, 'Failed to reset the translation. Please try again.')}, this);
+            dispatchFeedback({type: 'danger', message: errorMessage(e, t('admin.translations.reset-failed'))}, this);
         } finally {
             this.removing = null;
         }

@@ -1,4 +1,5 @@
 import {DateTimeModification} from "../model/purchase-context.ts";
+import {currentFormattingLocale} from "./i18n.ts";
 
 /**
  * A date coming from the backend. Accepted shapes:
@@ -30,9 +31,10 @@ export interface DateFormatPreferences {
 
 export const DATE_FORMAT_CHANGED_EVENT = 'alfio-date-format-changed';
 
-// e.g. "Jun 30, 2026, 14:00"
+// e.g. "Jun 30, 2026, 14:00" in English, "30. Juni 2026, 14:00" in German.
+// The translations are loaded before this module (main.ts): the locale is the one of the admin's language
 const DEFAULT_PREFERENCES: DateFormatPreferences = {
-    locale: 'en-US',
+    locale: currentFormattingLocale(),
     date: { year: 'numeric', month: 'short', day: '2-digit' },
     time: { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' },
 };

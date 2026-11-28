@@ -13,11 +13,12 @@ import {sectionCard} from '../../components/section-card.ts';
 import {statusBadge, StatusBadgeConfig} from '../../components/status-badge.ts';
 import {badges, base, modernLayout, modernTable, purchaseContextListPage, retroCompat} from '../../styles.ts';
 import { adminUrl } from '../../admin-router';
+import { t } from '../../service/i18n';
 
 const STATUS_BADGES: Record<PollStatus, StatusBadgeConfig> = {
-    DRAFT: { label: 'Draft', variant: 'neutral', icon: 'pencil' },
-    OPEN: { label: 'Open', variant: 'success', icon: 'check-circle' },
-    CLOSED: { label: 'Closed', variant: 'neutral', icon: 'x-circle' },
+    DRAFT: { label: t('admin.polls.status.draft'), variant: 'neutral', icon: 'pencil' },
+    OPEN: { label: t('admin.polls.status.open'), variant: 'success', icon: 'check-circle' },
+    CLOSED: { label: t('admin.polls.status.closed'), variant: 'neutral', icon: 'x-circle' },
 };
 
 interface PollsListData {
@@ -66,7 +67,7 @@ export class PollsList extends LitElement {
     ];
 
     render(): TemplateResult {
-        return taskContent(this.loadDataTask, this.lastData, 'Failed to load the polls. Please try again.', (data) =>
+        return taskContent(this.loadDataTask, this.lastData, t('admin.polls.load-failed'), (data) =>
             this.renderContent(data),
         );
     }
@@ -76,34 +77,34 @@ export class PollsList extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row">
-                    <h1>Polls</h1>
+                    <h1>${t('admin.event.menu.polls')}</h1>
                 </div>
                 <hr class="page-separator" />
-                <p class="page-description text-muted">Engage your attendees during your event.</p>
+                <p class="page-description text-muted">${t('admin.polls.description')}</p>
                 <div class="filter-toolbar">
                     <div class="filter-left"></div>
                     <div class="filter-right">
                         <sl-button class="create-poll" variant="success" size="large" href=${adminUrl(`/events/${this.eventName}/polls/new`)}>
                             <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-                            Create new
+                            ${t('admin.polls.create')}
                         </sl-button>
                     </div>
                 </div>
                 ${sectionCard({
                     icon: 'bar-chart',
-                    title: 'Polls',
+                    title: t('admin.event.menu.polls'),
                     badge: html`<sl-badge variant="primary" pill>${data.polls.length}</sl-badge>`,
                 }, html`
                     ${when(data.polls.length === 0,
-                        () => emptyState('No polls yet'),
+                        () => emptyState(t('admin.polls.none')),
                         () => html`
                             <div class="table-responsive">
                                 <table class="table table-striped polls-table">
                                     <thead>
                                         <tr>
-                                            <th>Poll</th>
-                                            <th>Status</th>
-                                            <th><span class="sr-only">Actions</span></th>
+                                            <th>${t('admin.page-title.poll')}</th>
+                                            <th>${t('admin.common.status')}</th>
+                                            <th><span class="sr-only">${t('admin.common.actions')}</span></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -118,7 +119,7 @@ export class PollsList extends LitElement {
                                                     <sl-button size="small" variant="default" outline
                                                                href=${adminUrl(`/events/${this.eventName}/polls/view/${poll.id}`)}>
                                                         <sl-icon slot="prefix" name="eye"></sl-icon>
-                                                        View
+                                                        ${t('admin.common.view')}
                                                     </sl-button>
                                                 </td>
                                             </tr>

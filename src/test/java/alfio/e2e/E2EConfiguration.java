@@ -116,8 +116,11 @@ class E2EConfiguration {
             // Chrome throttles the timers and the animations of the windows it believes hidden
             "--disable-backgrounding-occluded-windows",
             "--disable-renderer-backgrounding",
-            "--disable-background-timer-throttling"
+            "--disable-background-timer-throttling",
+            // the admin follows the browser's language: the tests look for the English texts
+            "--lang=en"
         );
+        options.setExperimentalOption("prefs", Map.of("intl.accept_languages", "en"));
         return _ -> new BrowserWebDriver(BrowserWebDriver.Browser.CHROME, new ChromeDriver(options));
     }
 }

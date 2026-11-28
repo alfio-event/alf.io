@@ -1,4 +1,5 @@
 import {fetchJson} from "./helpers.ts";
+import { t } from './i18n';
 
 export interface GeolocationResult {
     latitude: string | null;
@@ -37,7 +38,7 @@ function loadGoogleMaps(apiKey: string | null): Promise<void> {
         script.src = `https://maps.googleapis.com/maps/api/js?libraries=places&callback=${callbackName}${keyParam}`;
         script.onerror = () => {
             googleMapsLoading = null;
-            reject(new Error('The map provider could not be loaded'));
+            reject(new Error(t('admin.location.error.provider')));
         };
         document.head.appendChild(script);
     });
@@ -57,7 +58,7 @@ async function geocodeWithGoogle(location: string, apiKey: string | null): Promi
             if (status === 'OK' && res.length > 0) {
                 resolve(res);
             } else {
-                reject(new Error(`Geocoding failed: ${status}`));
+                reject(new Error(t('admin.location.error.geocoding', status)));
             }
         });
     });
@@ -70,12 +71,12 @@ async function geocodeWithGoogle(location: string, apiKey: string | null): Promi
 async function geocodeWithHere(location: string, apiKey: string): Promise<{ latitude: string; longitude: string }> {
     const response = await fetch(`https://geocoder.ls.hereapi.com/6.2/geocode.json?apiKey=${encodeURIComponent(apiKey)}&searchtext=${encodeURIComponent(location)}`);
     if (!response.ok) {
-        throw new Error(`Geocoding failed: ${response.status}`);
+        throw new Error(t('admin.location.error.geocoding', response.status));
     }
     const data = await response.json();
     const result = data?.Response?.View?.[0]?.Result?.[0]?.Location?.DisplayPosition;
     if (result == null) {
-        throw new Error('Geocoding returned no result');
+        throw new Error(t('admin.location.error.no-result'));
     }
     return { latitude: `${result.Latitude}`, longitude: `${result.Longitude}` };
 }

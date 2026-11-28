@@ -62,6 +62,7 @@ import './copy-event-dialog.ts';
 import type {CopyEventDialog, CopyEventSelection} from './copy-event-dialog.ts';
 import '../custom-offline-payment-event-selector/custom-offline-payment-event-selector.ts';
 import { navigate, adminUrl } from '../../admin-router';
+import { t, tHtml, formatNumber, translateErrorCode } from '../../service/i18n';
 
 type PriceModel = 'paid' | 'free';
 
@@ -113,27 +114,27 @@ const PRICE_MODEL_CHOICES: ChoiceCardOption<PriceModel>[] = [
     {
         value: 'paid',
         icon: 'cash-coin',
-        title: 'Entry fee requested',
-        description: 'Attendees pay for their ticket when they reserve it.',
+        title: t('admin.event-form.price-model.paid'),
+        description: t('admin.event-form.price-model.paid.description'),
     },
     {
         value: 'free',
         icon: 'gift',
-        title: 'Free of charge',
-        description: 'Tickets are free: no payment method is needed.',
+        title: t('admin.event-detail.free-of-charge'),
+        description: t('admin.event-form.price-model.free.description'),
     },
 ];
 
 const FORMAT_CHOICES: ChoiceCardOption<EventFormat>[] = [
-    {value: 'IN_PERSON', icon: 'geo-alt', title: 'In person', description: 'Attendees join at a physical venue.'},
-    {value: 'ONLINE', icon: 'camera-video', title: 'Online', description: 'Attendees join remotely.'},
-    {value: 'HYBRID', icon: 'broadcast', title: 'Hybrid', description: 'Offer both venue and online access.'},
+    {value: 'IN_PERSON', icon: 'geo-alt', title: t('admin.event.format.in-person'), description: t('admin.event-form.format.in-person.description')},
+    {value: 'ONLINE', icon: 'camera-video', title: t('admin.event.format.online'), description: t('admin.event-form.format.online.description')},
+    {value: 'HYBRID', icon: 'broadcast', title: t('admin.event.format.hybrid-short'), description: t('admin.event-form.format.hybrid.description')},
 ];
 
 const FORM_SECTIONS = [
-    {id: 'event-details', label: 'Event details'},
-    {id: 'tickets', label: 'Tickets and payments'},
-    {id: 'event-page', label: 'Event page'},
+    {id: 'event-details', label: t('admin.event-detail.details')},
+    {id: 'tickets', label: t('admin.event-form.section.tickets')},
+    {id: 'event-page', label: t('admin.event-form.section.event-page')},
 ];
 
 const SHORT_NAME_PATTERN = /^[A-Za-z0-9]{1,}([-_]*[A-Za-z0-9]+)+$/;
@@ -207,13 +208,13 @@ function optionalUrl(value: unknown): string | undefined {
         return undefined;
     }
     if (!/^https?:\/\//i.test(text)) {
-        return 'The URL must start with http:// or https://';
+        return t('admin.validation.http-url');
     }
     try {
         new URL(text);
         return undefined;
     } catch {
-        return 'Please enter a valid URL';
+        return t('admin.validation.url');
     }
 }
 
@@ -224,7 +225,7 @@ function requiredPositiveInteger(value: unknown): string | undefined {
     }
     const parsed = Number(value);
     if (!Number.isInteger(parsed) || parsed < 1) {
-        return 'Please enter a number, at least 1';
+        return t('admin.validation.number-at-least-one');
     }
     return undefined;
 }
@@ -236,7 +237,7 @@ function requiredPositiveNumber(value: unknown): string | undefined {
     }
     const parsed = Number(value);
     if (Number.isNaN(parsed) || parsed <= 0) {
-        return 'Please enter a number greater than 0';
+        return t('admin.validation.number-positive');
     }
     return undefined;
 }
@@ -248,7 +249,7 @@ function requiredNonNegativeNumber(value: unknown): string | undefined {
     }
     const parsed = Number(value);
     if (Number.isNaN(parsed) || parsed < 0) {
-        return 'Please enter a number, 0 or more';
+        return t('admin.validation.number-non-negative');
     }
     return undefined;
 }
@@ -491,21 +492,21 @@ export class EventCreate extends LitElement {
         if (this.isSectionMode()) {
             return html`
                 ${taskContent(this.loadDataTask, this.loadDataTask.value ?? null,
-                    'Failed to load the event. Please try again.',
+                    t('admin.load-error.event-retry'),
                     (data) => this.renderSectionForm(data))}
             `;
         }
         // known before the event has been loaded, so that the page never shows the creation title meanwhile
         const editing = this.eventName !== '';
-        let title: TemplateResult = html`Create new event`;
-        let pageDescription = 'Set up your event, configure tickets and prepare the event page.';
-        let loadErrorMessage = 'Failed to load the data needed to create the event. Please try again.';
+        let title: TemplateResult = html`${t('admin.event-form.create.title')}`;
+        let pageDescription = t('admin.event-form.create.description');
+        let loadErrorMessage = t('admin.event-form.create.load-failed');
         let titleRowClass = 'page-title-row';
         if (editing) {
             // the same title as the other pages of an event, e.g. "Reservations for <i>name</i>"
-            title = html`Edit <i>${this.editingEvent?.displayName ?? ''}</i>`;
-            pageDescription = 'Change the event settings and save. The categories are managed on the event detail page.';
-            loadErrorMessage = 'Failed to load the event. Please try again.';
+            title = html`${tHtml('admin.event-form.edit.title', html`<i>${this.editingEvent?.displayName ?? ''}</i>`)}`;
+            pageDescription = t('admin.event-form.edit.description');
+            loadErrorMessage = t('admin.load-error.event-retry');
             titleRowClass = 'page-title-row secondary';
         }
         return html`
@@ -515,12 +516,12 @@ export class EventCreate extends LitElement {
                     ${when(!editing, () => html`
                         <div class="page-actions"><sl-button variant="default" size="medium" @click=${this.openCopyDialog}>
                             <sl-icon slot="prefix" name="clipboard"></sl-icon>
-                            Copy from previous event
+                            ${t('admin.event-form.copy-from-previous')}
                         </sl-button>
                         <sl-dropdown hoist>
-                            <sl-button slot="trigger" caret>More</sl-button>
+                            <sl-button slot="trigger" caret>${t('admin.common.more')}</sl-button>
                             <sl-menu @sl-select=${() => void this.confirmReset()}>
-                                <sl-menu-item id="reset-button">Reset</sl-menu-item>
+                                <sl-menu-item id="reset-button">${t('admin.common.reset')}</sl-menu-item>
                             </sl-menu>
                         </sl-dropdown></div>
                     `, () => nothing)}
@@ -549,25 +550,24 @@ export class EventCreate extends LitElement {
                 ${this.renderOrganizer(data)}
                 ${when(values.organizationId !== '', () => html`
                     <div class="creation-layout">
-                        <alfio-section-nav label="Event form sections" .sections=${FORM_SECTIONS}></alfio-section-nav>
+                        <alfio-section-nav label=${t('admin.event-form.sections')} .sections=${FORM_SECTIONS}></alfio-section-nav>
                         <div class="creation-content">
                             <section id="event-details" class="form-section" tabindex="-1" aria-labelledby="event-details-title">
-                                <h2 id="event-details-title">Event details</h2>
+                                <h2 id="event-details-title">${t('admin.event-detail.details')}</h2>
                                 ${this.renderBasicInfo(data)}
                             </section>
                             <section id="tickets" class="form-section" tabindex="-1" aria-labelledby="tickets-title">
-                                <h2 id="tickets-title">Tickets and payments</h2>
+                                <h2 id="tickets-title">${t('admin.event-form.section.tickets')}</h2>
                                 ${this.renderSeatsAndPayments(data, submitted)}
                                 ${when(!editing, () => this.renderCategories(), () => html`
                                     <sl-alert open variant="primary">
                                         <sl-icon slot="icon" name="info-circle"></sl-icon>
-                                        The ticket categories of this event are managed on the
-                                        <a href=${adminUrl(`/events/${this.eventName}/detail`)}>event detail page</a>.
+                                        ${tHtml('admin.event-form.categories-on-detail', html`<a href=${adminUrl(`/events/${this.eventName}/detail`)}>${t('admin.event-form.categories-on-detail.link')}</a>`)}
                                     </sl-alert>
                                 `)}
                             </section>
                             <section id="event-page" class="form-section" tabindex="-1" aria-labelledby="event-page-title">
-                                <h2 id="event-page-title">Event page</h2>
+                                <h2 id="event-page-title">${t('admin.event-form.section.event-page')}</h2>
                                 ${this.renderDescription(data)}
                                 ${this.renderUrls(data)}
                                 ${this.renderLogo()}
@@ -581,14 +581,14 @@ export class EventCreate extends LitElement {
                             <div class="footer">
                                 <sl-divider></sl-divider>
                                 <div class="row" style="--alfio-row-cols: 3">
-                                    <sl-button id="cancel-button" variant="default" size="large" href=${cancelHref}>Cancel</sl-button>
+                                    <sl-button id="cancel-button" variant="default" size="large" href=${cancelHref}>${t('admin.common.cancel')}</sl-button>
                                     <div></div>
-                                    <sl-button id="save-button" type="submit" variant="warning" size="large" ?loading=${this.submitting}>Save</sl-button>
+                                    <sl-button id="save-button" type="submit" variant="warning" size="large" ?loading=${this.submitting}>${t('admin.common.save')}</sl-button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                `, () => html`<sl-button variant="default" size="large" href=${cancelHref}>Cancel</sl-button>`)}
+                `, () => html`<sl-button variant="default" size="large" href=${cancelHref}>${t('admin.common.cancel')}</sl-button>`)}
             </form>
         `;
     }
@@ -628,9 +628,9 @@ export class EventCreate extends LitElement {
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
                         <sl-button id="cancel-button" variant="default" size="large"
-                                   @click=${() => this.dispatchEvent(new CustomEvent(EVENT_SECTION_CANCELLED, {bubbles: true, composed: true}))}>Cancel</sl-button>
+                                   @click=${() => this.dispatchEvent(new CustomEvent(EVENT_SECTION_CANCELLED, {bubbles: true, composed: true}))}>${t('admin.common.cancel')}</sl-button>
                         <div></div>
-                        <sl-button id="save-button" type="submit" variant="warning" size="large" ?loading=${this.submitting} ?disabled=${this.submitting}>Save</sl-button>
+                        <sl-button id="save-button" type="submit" variant="warning" size="large" ?loading=${this.submitting} ?disabled=${this.submitting}>${t('admin.common.save')}</sl-button>
                     </div>
                 </div>
             </form>
@@ -643,14 +643,14 @@ export class EventCreate extends LitElement {
     }
 
     private renderOrganizer(data: LoadedData): TemplateResult {
-        return sectionCard({icon: 'building', title: 'Event setup'}, html`
+        return sectionCard({icon: 'building', title: t('admin.event-form.setup')}, html`
             <div class="organizer-field">
                 ${this.#form.field({ name: 'organizationId', validators: validateWith(requiredValue) }, (field) => {
                     const error = this.error(field.state.meta);
                     return html`
-                        <sl-select id="organizationId" label="Event organizer" placeholder="Select an organizer" required hoist ?disabled=${data.organizations.length === 1}
+                        <sl-select id="organizationId" label=${t('admin.event-form.organizer')} placeholder=${t('admin.event-form.organizer.placeholder')} required hoist ?disabled=${data.organizations.length === 1}
                                    class=${classMap({ error: error != null })}
-                                   help-text=${error ?? 'The organizer determines available payment methods and subscriptions.'}
+                                   help-text=${error ?? t('admin.event-form.organizer.help')}
                                    .value=${field.state.value ?? ''}
                                    @sl-change=${(e: Event) => this.onOrganizationChange(field, String((e.target as SlSelect).value))}
                                    @sl-blur=${() => field.handleBlur()}>
@@ -666,13 +666,13 @@ export class EventCreate extends LitElement {
     }
 
     private renderBasicInfo(data: LoadedData): TemplateResult {
-        return sectionCard({ icon: 'info-circle', title: 'Name and schedule' }, html`
+        return sectionCard({ icon: 'info-circle', title: t('admin.event-form.name-and-schedule') }, html`
             <div class="form-stack">
                 <div>
                     ${this.#form.field({ name: 'displayName', validators: validateWith(requiredValue) }, (field) => {
                         const error = this.error(field.state.meta);
                         return html`
-                            <sl-input id="displayName" name="displayName" label="Event name" required
+                            <sl-input id="displayName" name="displayName" label=${t('admin.event-form.name')} required
                                       class=${classMap({ error: error != null })}
                                       help-text=${error ?? ''}
                                       .value=${field.state.value ?? ''}
@@ -687,7 +687,7 @@ export class EventCreate extends LitElement {
                 ${this.#form.field({name: 'format', validators: validateWith(requiredValue)}, field => choiceCards({
                     name: 'event-format',
                     className: 'event-format',
-                    label: 'How will attendees join?',
+                    label: t('admin.event-form.format.question'),
                     value: field.state.value,
                     options: FORMAT_CHOICES,
                     panel: this.renderFormatPanel(),
@@ -695,7 +695,7 @@ export class EventCreate extends LitElement {
                 ${this.#form.field({ name: 'timeZone', validators: validateWith(requiredValue) }, (field) => {
                     const error = this.error(field.state.meta);
                     return html`
-                        <sl-select id="timeZone" label="Event time zone" placeholder="Select a time zone" required hoist
+                        <sl-select id="timeZone" label=${t('admin.event-form.time-zone')} placeholder=${t('admin.event-form.time-zone.placeholder')} required hoist
                                    class=${classMap({ error: error != null })}
                                    help-text=${error ?? ''}
                                    .value=${field.state.value ?? ''}
@@ -710,14 +710,14 @@ export class EventCreate extends LitElement {
                 })}
                 <div class="row" style="--alfio-row-cols: 2">
                     ${this.#form.field({ name: 'begin', validators: validateWith(requiredValue) }, (field) =>
-                        this.textInput(field, { id: 'begin', label: 'Begin', type: 'datetime-local' }))}
+                        this.textInput(field, { id: 'begin', label: t('admin.event-form.begin'), type: 'datetime-local' }))}
                     ${this.#form.field({
                         name: 'end',
                         validators: {
                             ...validateWith((value) => this.validateEnd(value)),
                             onChangeListenTo: ['begin'],
                         },
-                    }, (field) => this.textInput(field, { id: 'end', label: 'End', type: 'datetime-local' }))}
+                    }, (field) => this.textInput(field, { id: 'end', label: t('admin.event-detail.end'), type: 'datetime-local' }))}
                 </div>
             </div>
         `);
@@ -725,7 +725,7 @@ export class EventCreate extends LitElement {
 
     private renderFormatPanel(): TemplateResult {
         if (this.values.format === 'ONLINE') {
-            return html`<p class="text-muted">No physical venue is needed for an online event.</p>`;
+            return html`<p class="text-muted">${t('admin.event-form.location.online')}</p>`;
         }
         return this.renderLocation();
     }
@@ -744,8 +744,8 @@ export class EventCreate extends LitElement {
                     }, (field) => {
                         const error = this.error(field.state.meta);
                         return html`
-                            <sl-textarea id="location" name="location" label="Event location" rows="3" resize="auto" required
-                                         placeholder="Please enter the address of the location. This will be used for displaying the map on the event page."
+                            <sl-textarea id="location" name="location" label=${t('admin.event-form.location')} rows="3" resize="auto" required
+                                         placeholder=${t('admin.event-form.location.placeholder')}
                                          class=${classMap({ error: error != null })}
                                          help-text=${error ?? ''}
                                          .value=${field.state.value ?? ''}
@@ -763,10 +763,10 @@ export class EventCreate extends LitElement {
                         <span class="text-danger">${this.mapError}</span>
                     `, () => nothing)}
                     ${when(!this.mapLoading && this.mapError == null && mapUrl != null, () => html`
-                        <img class="event-logo" src=${mapUrl} alt="Map of the event location">
+                        <img class="event-logo" src=${mapUrl} alt=${t('admin.event-form.location.map')}>
                     `, () => nothing)}
                     ${when(!this.mapLoading && this.mapError == null && mapUrl == null, () => html`
-                        <sl-icon name="map" class="map-loading" aria-label="No map preview"></sl-icon>
+                        <sl-icon name="map" class="map-loading" aria-label=${t('admin.event-form.location.no-map')}></sl-icon>
                     `, () => nothing)}
                 </div>
             </div>
@@ -780,7 +780,7 @@ export class EventCreate extends LitElement {
                 validators: validateWith((value) => this.validateDescription(value, data.descriptionMaxLength)),
             }, (field) => html`
                 <alfio-multi-language-text
-                    label="Event description"
+                    label=${t('admin.event-form.description')}
                     icon="text-paragraph"
                     max-length=${data.descriptionMaxLength}
                     .markdown=${true}
@@ -795,8 +795,8 @@ export class EventCreate extends LitElement {
     }
 
     private renderUrls(data: LoadedData): TemplateResult {
-        return sectionCard({ icon: 'link-45deg', title: 'Public links' }, html`
-            <p class="text-muted">Define how users can access your event and where the relevant links should point.</p>
+        return sectionCard({ icon: 'link-45deg', title: t('admin.event-form.public-links') }, html`
+            <p class="text-muted">${t('admin.event-form.public-links.help')}</p>
             <div class="form-stack">
                 <div class="row" style="--alfio-row-cols: 2">
                     ${this.#form.field({
@@ -812,10 +812,10 @@ export class EventCreate extends LitElement {
                         const editing = data.editing != null;
                         let urlHelp = `${data.baseUrl}/event/${field.state.value}/`;
                         if (editing) {
-                            urlHelp = `${urlHelp} (can't be changed once the event is created)`;
+                            urlHelp = t('admin.event-form.url.readonly', urlHelp);
                         }
                         return html`
-                            <sl-input id="shortName" name="shortName" label="Event URL" ?required=${!editing} ?readonly=${editing}
+                            <sl-input id="shortName" name="shortName" label=${t('admin.event-form.url')} ?required=${!editing} ?readonly=${editing}
                                       class=${classMap({ error: error != null })}
                                       help-text=${error ?? ''}
                                       .value=${field.state.value ?? ''}
@@ -827,19 +827,19 @@ export class EventCreate extends LitElement {
                         `;
                     })}
                     ${this.#form.field({ name: 'websiteUrl', validators: validateWith(requiredUrl) }, (field) =>
-                        this.textInput(field, { id: 'websiteUrl', label: 'Website link', type: 'url', prefixIcon: 'link-45deg' }))}
+                        this.textInput(field, { id: 'websiteUrl', label: t('admin.event-form.website'), type: 'url', prefixIcon: 'link-45deg' }))}
                 </div>
                 <div class="row" style="--alfio-row-cols: 2">
                     ${this.#form.field({ name: 'termsAndConditionsUrl', validators: validateWith(requiredUrl) }, (field) =>
-                        this.textInput(field, { id: 'termsAndConditionsUrl', label: 'Terms and Conditions URL', type: 'url', prefixIcon: 'link-45deg' }))}
+                        this.textInput(field, { id: 'termsAndConditionsUrl', label: t('admin.event-form.terms'), type: 'url', prefixIcon: 'link-45deg' }))}
                     ${this.#form.field({ name: 'privacyPolicyUrl', validators: validateWith(optionalUrl) }, (field) =>
                         this.textInput(field, {
                             id: 'privacyPolicyUrl',
-                            label: 'Privacy policy URL (recommended)',
+                            label: t('admin.event-form.privacy-policy'),
                             type: 'url',
                             prefixIcon: 'link-45deg',
                             optional: true,
-                            helpText: 'Strongly recommended so attendees can understand how their data is used.',
+                            helpText: t('admin.event-form.privacy-policy.help'),
                         }))}
                 </div>
             </div>
@@ -847,15 +847,15 @@ export class EventCreate extends LitElement {
     }
 
     private renderLogo(): TemplateResult {
-        return sectionCard({ icon: 'image', title: 'Event logo' }, html`
-            <p class="text-muted">Upload the event logo in PNG, JPG, GIF or SVG format. Maximum size: 1 MB.</p>
+        return sectionCard({ icon: 'image', title: t('admin.event-form.logo') }, html`
+            <p class="text-muted">${t('admin.event-form.logo.help')}</p>
             <alfio-purchase-context-image
-                id="event-logo" tabindex="-1" aria-label="Event logo (required)"
+                id="event-logo" tabindex="-1" aria-label=${t('admin.event-form.logo.required')}
                 aria-invalid=${this.logoError != null} aria-describedby="logo-error"
                 current-image=${this.currentImageAttr()}
                 accept="image/*"
                 max-size="1048576"
-                label="Drop image here or click to upload"
+                label=${t('admin.event-form.logo.upload')}
                 @image-change=${this.onImageChange}></alfio-purchase-context-image>
             ${when(this.logoError != null, () => html`
                 <sl-alert id="logo-error" variant="danger" open class="logo-error">
@@ -874,14 +874,14 @@ export class EventCreate extends LitElement {
         if (!paid) {
             priceClass += ' price-model-free';
         }
-        return sectionCard({ icon: 'ticket-perforated', title: 'Capacity and admission' }, html`
+        return sectionCard({ icon: 'ticket-perforated', title: t('admin.event-form.capacity') }, html`
             <div class="form-stack">
                 ${this.#form.field({ name: 'availableSeats', validators: validateWith(requiredPositiveInteger) }, (field) =>
-                    this.textInput(field, { id: 'availableSeats', label: 'Max tickets', type: 'number', helpText: 'The total number of seats of the event.' }))}
+                    this.textInput(field, { id: 'availableSeats', label: t('admin.event-detail.max-tickets'), type: 'number', helpText: t('admin.event-form.seats.help') }))}
                 ${this.#form.field({ name: 'priceModel', validators: validateWith(requiredValue) }, (field) => choiceCards({
                     name: 'price-model',
                     className: priceClass,
-                    label: 'Ticket price model',
+                    label: t('admin.event-form.price-model'),
                     value: field.state.value,
                     options: PRICE_MODEL_CHOICES,
                     panel,
@@ -896,9 +896,9 @@ export class EventCreate extends LitElement {
      */
     private renderPricePanel(data: LoadedData, submitted: boolean): TemplateResult {
         const values = this.values;
-        let vatHelp = `Including ${values.vatPercentage || '0'}% VAT`;
+        let vatHelp = t('admin.price.including-vat', values.vatPercentage || '0');
         if (values.vatIncluded) {
-            vatHelp = 'VAT included';
+            vatHelp = t('admin.price.vat-included');
         }
         return html`
             <div class="form-stack">
@@ -909,7 +909,7 @@ export class EventCreate extends LitElement {
                             ...validateWith((value) => this.ifPaid(requiredValue, value)),
                             onChangeListenTo: ['priceModel'],
                         },
-                    }, (f) => validatedSelect(f, submitted, { id: 'currency', label: 'Currency', placeholder: 'Select a currency' }, html`
+                    }, (f) => validatedSelect(f, submitted, { id: 'currency', label: t('admin.event-form.currency'), placeholder: t('admin.event-form.currency.placeholder') }, html`
                         ${repeat(data.currencies, (c) => c.code, (c) => html`
                             <sl-option value=${c.code}>${c.code} – ${c.name}</sl-option>
                         `)}
@@ -920,23 +920,23 @@ export class EventCreate extends LitElement {
                             ...validateWith((value) => this.ifPaid(requiredPositiveNumber, value)),
                             onChangeListenTo: ['priceModel'],
                         },
-                    }, (f) => this.textInput(f, { id: 'regularPrice', label: 'Regular price', type: 'number', suffix: values.currency || undefined }))}
+                    }, (f) => this.textInput(f, { id: 'regularPrice', label: t('admin.event-form.regular-price'), type: 'number', suffix: values.currency || undefined }))}
                     ${this.#form.field({
                         name: 'vatPercentage',
                         validators: {
                             ...validateWith((value) => this.ifPaid(requiredNonNegativeNumber, value)),
                             onChangeListenTo: ['priceModel'],
                         },
-                    }, (f) => this.textInput(f, { id: 'vatPercentage', label: 'Taxes', type: 'number', suffix: '%' }))}
-                    <sl-input class="final-price" label="Price after taxes" readonly
+                    }, (f) => this.textInput(f, { id: 'vatPercentage', label: t('admin.event-form.taxes'), type: 'number', suffix: '%' }))}
+                    <sl-input class="final-price" label=${t('admin.event-form.price-after-taxes')} readonly
                               help-text=${vatHelp}
                               .value=${this.finalPriceText()}></sl-input>
                 </div>
                 ${this.#form.field({ name: 'vatIncluded' }, (f) => html`
                     <sl-switch id="vatIncluded" ?checked=${f.state.value}
-                               help-text="Whether the regular price already includes the taxes."
+                               help-text=${t('admin.event-form.price-includes-taxes.help')}
                                @sl-change=${(e: Event) => f.handleChange((e.target as SlSwitch).checked)}>
-                        Price includes taxes
+                        ${t('admin.event-form.price-includes-taxes')}
                     </sl-switch>
                 `)}
                 ${this.renderPaymentMethods(values)}
@@ -957,18 +957,18 @@ export class EventCreate extends LitElement {
                 validators: {
                     ...validateWith((value) => this.ifPaid(() => {
                         if (this.paymentLoading || this.paymentError != null) {
-                            return 'Wait for the organizer payment methods to load, or retry.';
+                            return t('admin.event-form.payment-methods.loading-error');
                         }
                         if (Array.isArray(value) && value.length > 0) {
                             if (value.some(proxy => !this.paymentProxies.some(method => method.paymentProxy === proxy && isCompatible(method)))) {
-                                return 'Remove unavailable payment methods or change the organizer or currency.';
+                                return t('admin.event-form.payment-methods.unavailable-error');
                             }
                             if (value.includes('CUSTOM_OFFLINE') && this.customOfflineMethods.length === 0) {
-                                return 'Select at least one custom offline payment method.';
+                                return t('admin.event-form.payment-methods.custom-offline-error');
                             }
                             return undefined;
                         }
-                        return 'Please select at least one payment method';
+                        return t('admin.event-form.payment-methods.required');
                     }, value)),
                     onChangeListenTo: ['priceModel', 'currency', 'organizationId'],
                 },
@@ -977,17 +977,17 @@ export class EventCreate extends LitElement {
                 const selected = (field.state.value as string[]) ?? [];
                 return html`
                     <div>
-                        <strong>Accepted payment methods</strong>
-                        ${when(this.paymentLoading, () => html`<p role="status"><sl-spinner></sl-spinner> Loading payment methods…</p>`)}
+                        <strong>${t('admin.event-form.payment-methods')}</strong>
+                        ${when(this.paymentLoading, () => html`<p role="status"><sl-spinner></sl-spinner> ${t('admin.event-form.payment-methods.loading')}</p>`)}
                         ${when(this.paymentError != null, () => html`
                             <sl-alert variant="danger" open><sl-icon slot="icon" name="exclamation-triangle"></sl-icon>${this.paymentError}
-                                <sl-button size="small" @click=${() => void this.loadPaymentProxies(Number(values.organizationId))}>Retry</sl-button>
+                                <sl-button size="small" @click=${() => void this.loadPaymentProxies(Number(values.organizationId))}>${t('admin.common.retry')}</sl-button>
                             </sl-alert>
                         `)}
                         ${repeat(selected.filter(proxy => !this.paymentLoading && this.paymentError == null && !compatible.some(method => method.paymentProxy === proxy)), proxy => proxy, proxy => html`
                             <sl-checkbox class="payment-proxy" checked
                                          @sl-change=${() => this.togglePaymentProxy(field, proxy, false)}>
-                                ${describePaymentProxy(proxy)} — unavailable for this organizer or currency; uncheck to remove
+                                ${t('admin.event-form.payment-methods.unavailable', describePaymentProxy(proxy))}
                             </sl-checkbox>
                         `)}
                         ${repeat(compatible, (p) => p.paymentProxy, (p) => html`
@@ -999,15 +999,14 @@ export class EventCreate extends LitElement {
                         ${when(unavailable.length > 0, () => html`
                             <p class="text-muted">
                                 <sl-icon name="info-circle"></sl-icon>
-                                The following methods are not available: ${unavailable.map((p) => p.paymentProxy).join(', ')}.
-                                Please check that the provider supports the selected currency, or the organization configuration.
+                                ${t('admin.event-form.payment-methods.not-available', unavailable.map((p) => p.paymentProxy).join(', '))}
                             </p>
                         `)}
                         ${when(error != null, () => html`<div class="form-error-text">${error}</div>`, () => nothing)}
                     </div>
                     ${cache(when(selected.includes('CUSTOM_OFFLINE') && compatible.some(method => method.paymentProxy === 'CUSTOM_OFFLINE'), () => html`
                         <div>
-                            <strong>Custom payment methods</strong>
+                            <strong>${t('admin.event-form.custom-payment-methods')}</strong>
                             ${keyed(values.organizationId, html`<custom-offline-payment-event-selector
                                 id="custom-offline-payment-event-selector"
                                 organization=${Number(values.organizationId) || -1}
@@ -1030,21 +1029,21 @@ export class EventCreate extends LitElement {
                     return undefined;
                 }
                 if (Array.isArray(value) && value.some(id => !this.subscriptionDescriptors.some(subscription => subscription.id === id))) {
-                    return 'Remove subscriptions that are unavailable for this organizer.';
+                    return t('admin.event-form.subscriptions.unavailable-error');
                 }
                 return undefined;
             }) }, (field) => {
                 const selected = (field.state.value as string[]) ?? [];
                 return html`
                     <div>
-                        <strong>Subscriptions</strong>
+                        <strong>${t('admin.menu.subscriptions')}</strong>
                         ${repeat(selected.filter(id => !this.paymentLoading && this.paymentError == null && !this.subscriptionDescriptors.some(subscription => subscription.id === id)), id => id, id => html`
                             <sl-checkbox class="subscription" checked @sl-change=${() => this.toggleSubscription(field, id, false)}>
-                                Unavailable subscription — uncheck to remove
+                                ${t('admin.event-form.subscriptions.unavailable')}
                             </sl-checkbox>
                         `)}
                         ${when(this.error(field.state.meta), () => html`<p class="form-error-text">${this.error(field.state.meta)}</p>`)}
-                        <p class="text-muted">Select the subscriptions that can be used for this event.</p>
+                        <p class="text-muted">${t('admin.event-form.subscriptions.help')}</p>
                         ${repeat(this.subscriptionDescriptors, (s) => s.id, (s) => html`
                             <sl-checkbox class="subscription" ?checked=${selected.includes(s.id)}
                                          @sl-change=${(e: Event) => this.toggleSubscription(field, s.id, (e.target as SlCheckbox).checked)}>
@@ -1067,15 +1066,15 @@ export class EventCreate extends LitElement {
             percentage = Math.min(100, Math.round(allocated * 100 / seats));
         }
         return html`
-            ${sectionCard({ icon: 'grid-3x3-gap', title: 'Categories' }, html`
-                <p class="text-muted">Define all the ticket categories for the event. At least one category is required in order to create the event.</p>
+            ${sectionCard({ icon: 'grid-3x3-gap', title: t('admin.categories.title') }, html`
+                <p class="text-muted">${t('admin.event-form.categories.help')}</p>
                 ${when(categories.length > 0 && !Number.isNaN(seats) && seats > 0, () => html`
                     <div class="seats-progress">
                         <div class="sales-meta">
-                            <span>Allocated seats: ${allocated} of ${seats}</span>
+                            <span>${t('admin.event-form.categories.allocated', formatNumber(allocated), formatNumber(seats))}</span>
                             <span>${percentage}%</span>
                         </div>
-                        <sl-progress-bar value=${percentage} aria-label="${percentage}% of the seats allocated"></sl-progress-bar>
+                        <sl-progress-bar value=${percentage} aria-label=${t('admin.event-form.categories.allocated-percentage', percentage)}></sl-progress-bar>
                     </div>
                 `)}
                 ${this.#form.field({
@@ -1097,7 +1096,7 @@ export class EventCreate extends LitElement {
             ${repeat(categories, (c) => c.key, (category, index) => this.renderCategoryCard(category, index, categories.length))}
             <sl-button id="add-category" class="section-card-add" variant="default" size="large" @click=${this.addCategory}>
                 <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-                Add new category
+                ${t('admin.event-form.categories.add')}
             </sl-button>
         `;
     }
@@ -1107,29 +1106,29 @@ export class EventCreate extends LitElement {
         // only the exceptions: a limit, an unlisted category
         const metaParts: string[] = [];
         if (category.bounded) {
-            metaParts.push(`up to ${category.maxTickets} tickets`);
+            metaParts.push(t('admin.event-form.category.up-to', { count: Number(category.maxTickets) || 0 }));
         }
         if (category.tokenGenerationRequested) {
-            metaParts.push('unlisted');
+            metaParts.push(t('admin.event-form.category.unlisted'));
         }
-        let meta = 'no limit';
+        let meta = t('admin.event-form.category.no-limit');
         if (metaParts.length > 0) {
             meta = metaParts.join(', ');
         }
         const actions = html`
             <sl-button variant="default" size="small" class="edit-category" @click=${() => void this.editCategory(category)}>
                 <sl-icon slot="prefix" name="pencil"></sl-icon>
-                Edit
+                ${t('admin.common.edit')}
             </sl-button>
             ${when(count > 1, () => html`
-                <sl-icon-button name="arrow-up" label="Move up" ?disabled=${index === 0}
+                <sl-icon-button name="arrow-up" label=${t('admin.common.move-up')} ?disabled=${index === 0}
                                 @click=${() => this.moveCategory(index, -1)}></sl-icon-button>
-                <sl-icon-button name="arrow-down" label="Move down" ?disabled=${index === count - 1}
+                <sl-icon-button name="arrow-down" label=${t('admin.common.move-down')} ?disabled=${index === count - 1}
                                 @click=${() => this.moveCategory(index, 1)}></sl-icon-button>
             `)}
             <sl-button variant="danger" size="small" class="remove-category" @click=${() => this.removeCategory(index)}>
                 <sl-icon slot="prefix" name="trash"></sl-icon>
-                Remove
+                ${t('admin.common.remove')}
             </sl-button>
         `;
         return sectionCard({
@@ -1177,7 +1176,7 @@ export class EventCreate extends LitElement {
         if (category.name.trim() !== '') {
             return category.name;
         }
-        return `Category #${index + 1}`;
+        return t('admin.event-form.category.untitled', index + 1);
     }
 
     // ---------- field helpers and validators ----------
@@ -1210,7 +1209,7 @@ export class EventCreate extends LitElement {
             return missing;
         }
         if (this.values.begin !== '' && String(value) <= this.values.begin) {
-            return 'The end must be after the begin';
+            return t('admin.validation.end-after-begin');
         }
         return undefined;
     }
@@ -1222,7 +1221,7 @@ export class EventCreate extends LitElement {
         }
         const categories = (value ?? []) as CategoryDraft[];
         if (categories.length === 0) {
-            return 'Please define at least one category';
+            return t('admin.event-form.categories.required');
         }
         for (const category of categories) {
             const conflict = this.categoryConflict(category);
@@ -1235,7 +1234,7 @@ export class EventCreate extends LitElement {
             const allocated = categories.filter((c) => c.bounded)
                 .reduce((sum, c) => sum + (Number.parseInt(c.maxTickets, 10) || 0), 0);
             if (allocated > seats) {
-                return `The categories cannot allocate more than the ${seats} seats of the event`;
+                return t('admin.event-form.categories.too-many-seats', formatNumber(seats));
             }
         }
         return undefined;
@@ -1254,7 +1253,7 @@ export class EventCreate extends LitElement {
                 return missing;
             }
             if (text.length > maxLength) {
-                return `Please enter at most ${maxLength} characters`;
+                return t('admin.validation.max-length', { count: maxLength });
             }
         }
         return undefined;
@@ -1267,7 +1266,7 @@ export class EventCreate extends LitElement {
         }
         const shortName = String(value).trim();
         if (!SHORT_NAME_PATTERN.test(shortName)) {
-            return 'Only letters, numbers and - _ (no spaces; the last character must be a letter or a number)';
+            return t('admin.event-form.url.invalid');
         }
         // when editing, the current URL of the event is of course already taken by the event itself
         if (this.editingEvent != null && shortName === this.editingEvent.shortName) {
@@ -1277,7 +1276,7 @@ export class EventCreate extends LitElement {
             if (this.lastCheckedShortNameValid) {
                 return undefined;
             }
-            return 'This URL is already taken, please choose another one';
+            return t('admin.event-form.url.taken');
         }
         this.shortNameChecking = true;
         try {
@@ -1287,11 +1286,11 @@ export class EventCreate extends LitElement {
                 this.lastCheckedShortNameValid = unique;
             }
             if (!unique) {
-                return 'This URL is already taken, please choose another one';
+                return t('admin.event-form.url.taken');
             }
             return undefined;
         } catch {
-            return 'Could not verify the event URL. Please try again.';
+            return t('admin.event-form.url.check-failed');
         } finally {
             if (this.values.shortName.trim() === shortName) {
                 this.shortNameChecking = false;
@@ -1340,8 +1339,8 @@ export class EventCreate extends LitElement {
             return;
         }
         if (this.customOfflineMethods.length > 0) {
-            const confirmed = await ConfirmationDialogService.requestConfirm('Change organizer?',
-                'The selected custom offline payment methods belong to the current organizer and will be cleared. Other event information will be kept.', 'warning');
+            const confirmed = await ConfirmationDialogService.requestConfirm(t('admin.event-form.change-organizer.title'),
+                t('admin.event-form.change-organizer.text'), 'warning');
             if (!confirmed) {
                 const select = this.renderRoot.querySelector<SlSelect>('#organizationId');
                 if (select != null) {
@@ -1407,7 +1406,7 @@ export class EventCreate extends LitElement {
                 this.#form.api.setFieldValue('timeZone', result.timeZone);
             }
         } catch (error) {
-            this.mapError = errorMessage(error, 'The location could not be geocoded');
+            this.mapError = errorMessage(error, t('admin.event-form.location.geocoding-failed'));
             this.geolocation = null;
         } finally {
             this.mapLoading = false;
@@ -1469,29 +1468,29 @@ export class EventCreate extends LitElement {
     private categoryConflict(category: CategoryDraft): string | undefined {
         const values = this.values;
         if (category.expiration <= category.inception || (values.end !== '' && category.expiration > values.end)) {
-            return 'Review the sales dates after changing the event schedule.';
+            return t('admin.event-form.conflict.dates');
         }
         if (values.format === 'HYBRID' && category.ticketAccessType === '') {
-            return 'Choose whether these tickets provide venue or online access.';
+            return t('admin.event-form.conflict.access-type');
         }
         if (values.format !== 'HYBRID' && category.ticketAccessType !== '' && category.ticketAccessType !== values.format) {
-            return 'Review ticket access after changing the event format.';
+            return t('admin.event-form.conflict.format');
         }
         if (values.priceModel === 'paid') {
             if (category.currency != null && category.currency !== values.currency) {
-                return 'Review this custom price in the new currency.';
+                return t('admin.event-form.conflict.currency');
             }
             if (category.price.trim() === '' || !Number.isFinite(Number(category.price)) || Number(category.price) < 0) {
-                return 'Set a valid ticket price for this paid event.';
+                return t('admin.event-form.conflict.price');
             }
         }
         const extraTranslation = Object.entries(category.description).some(([locale, text]) =>
             !(locale in values.description) && text.trim() !== '');
         if (extraTranslation) {
-            return 'This category has a translation outside the event languages. Add the event language or edit the category.';
+            return t('admin.event-form.conflict.languages');
         }
         if (category.bounded && Number(category.maxTickets) > Number(values.availableSeats)) {
-            return 'Review this allocation after changing the event capacity.';
+            return t('admin.event-form.conflict.capacity');
         }
         return undefined;
     }
@@ -1697,9 +1696,9 @@ export class EventCreate extends LitElement {
             this.#form.api.setFieldValue('paymentProxies', (event.allowedPaymentProxies ?? []).map(String));
             this.#form.api.setFieldValue('format', (event.format as EventFormat) ?? 'IN_PERSON');
             this.#form.api.setFieldValue('categories', categories);
-            dispatchFeedback({ type: 'success', message: `Copied the settings from ${event.displayName}` }, this);
+            dispatchFeedback({ type: 'success', message: t('admin.event-form.copied', event.displayName) }, this);
         } catch (error) {
-            dispatchFeedback({ type: 'danger', message: errorMessage(error, 'Failed to copy the event') }, this);
+            dispatchFeedback({ type: 'danger', message: errorMessage(error, t('admin.event-form.copy-failed')) }, this);
         }
     }
 
@@ -1799,7 +1798,7 @@ export class EventCreate extends LitElement {
         const empty = emptyValues();
         const values = {...this.values, organizationId: ''};
         const hasData = JSON.stringify(values) !== JSON.stringify(empty) || this.fileBlobId != null;
-        if (hasData && !await ConfirmationDialogService.requestConfirm('Reset event?', 'This will discard the event information you have entered.', 'warning')) {
+        if (hasData && !await ConfirmationDialogService.requestConfirm(t('admin.event-form.reset.title'), t('admin.event-form.reset.text'), 'warning')) {
             return;
         }
         this.reset();
@@ -2007,7 +2006,7 @@ export class EventCreate extends LitElement {
             }));
         } catch (error) {
             if (generation === this.paymentGeneration) {
-                this.paymentError = errorMessage(error, 'Could not load payment methods. Please retry.');
+                this.paymentError = errorMessage(error, t('admin.event-form.payment-methods.load-failed'));
             }
         } finally {
             if (generation === this.paymentGeneration) {
@@ -2028,7 +2027,7 @@ export class EventCreate extends LitElement {
         this.categoriesError = null;
         this.logoError = null;
         if (this.logoRequired() && !this.hasLogo()) {
-            this.logoError = 'Please upload an event logo.';
+            this.logoError = t('admin.event-form.logo.missing');
         }
         if (!await submitValidated(this.#form.api)) {
             this.submitError = INVALID_FORM_MESSAGE;
@@ -2186,7 +2185,7 @@ export class EventCreate extends LitElement {
      */
     private async save(values: EventFormValues): Promise<void> {
         if (this.logoRequired() && !this.hasLogo()) {
-            this.logoError = 'Please upload an event logo.';
+            this.logoError = t('admin.event-form.logo.missing');
             this.submitError = INVALID_FORM_MESSAGE;
             await this.updateComplete;
             const logo = this.renderRoot.querySelector<HTMLElement>('#event-logo');
@@ -2207,7 +2206,7 @@ export class EventCreate extends LitElement {
             const check = await EventService.check(payload);
             if (!check.success) {
                 this.applyServerErrors(check.validationErrors ?? []);
-                this.submitError = 'Please correct the errors highlighted in the form.';
+                this.submitError = t('admin.validation.correct-errors');
                 await this.updateComplete;
                 focusFirstError(this.renderRoot);
                 return;
@@ -2224,7 +2223,7 @@ export class EventCreate extends LitElement {
             }
             navigate(`/events/${payload.shortName}/detail`);
         } catch (error) {
-            this.submitError = errorMessage(error, 'Unexpected error. Please retry and/or check the logs.');
+            this.submitError = errorMessage(error, t('admin.error.unexpected-retry'));
         } finally {
             this.submitting = false;
         }
@@ -2254,7 +2253,7 @@ export class EventCreate extends LitElement {
                 return;
             }
         }
-        dispatchFeedback({type: 'success', message: `Event ${payload.displayName} updated`}, this);
+        dispatchFeedback({type: 'success', message: t('admin.event-form.updated', payload.displayName)}, this);
         if (sectionMode) {
             this.dispatchEvent(new CustomEvent(EVENT_SECTION_SAVED, {bubbles: true, composed: true}));
             return;
@@ -2264,7 +2263,7 @@ export class EventCreate extends LitElement {
 
     private async showSaveErrors(errors: ErrorDescriptor[]): Promise<void> {
         this.applyServerErrors(errors);
-        this.submitError = 'Please correct the errors highlighted in the form.';
+        this.submitError = t('admin.validation.correct-errors');
         if (this.isSectionMode() && this.categoriesError != null) {
             // in a section there is no category list to display them
             this.submitError = this.categoriesError;
@@ -2278,26 +2277,26 @@ export class EventCreate extends LitElement {
         for (const error of errors) {
             const field = error.fieldName;
             if (field === 'ticketCategories' || field.startsWith('ticketCategories[')) {
-                categoryMessages.push(error.message ?? error.code ?? 'Invalid category');
+                categoryMessages.push(translateErrorCode(error.code, error.message || t('admin.event-form.server.invalid-category')));
                 continue;
             }
             if (field === 'imageUrl' || field === 'fileBlobId') {
-                this.logoError = error.message || 'Event logo is missing';
+                this.logoError = translateErrorCode(error.code, error.message || t('admin.event-form.server.logo-missing'));
                 continue;
             }
             if (field === 'locationDescriptor') {
-                setServerError(this.#form.api, 'location', error.message || 'The location could not be geocoded');
+                setServerError(this.#form.api, 'location', translateErrorCode(error.code, error.message || t('admin.event-form.location.geocoding-failed')));
                 continue;
             }
             if (field === 'allowedPaymentProxies') {
-                setServerError(this.#form.api, 'paymentProxies', error.message ?? 'Please select valid payment methods');
+                setServerError(this.#form.api, 'paymentProxies', translateErrorCode(error.code, error.message || t('admin.event-form.server.payment-methods')));
                 continue;
             }
             const formField = SERVER_ERROR_FIELD_MAP[field];
             if (formField != null) {
-                setServerError(this.#form.api, formField, error.message ?? 'Invalid value');
+                setServerError(this.#form.api, formField, translateErrorCode(error.code, error.message || t('admin.event-form.server.invalid-value')));
             } else {
-                categoryMessages.push(`${field}: ${error.message ?? error.code ?? 'invalid'}`);
+                categoryMessages.push(`${field}: ${translateErrorCode(error.code, error.message || error.code || t('admin.event-form.server.invalid'))}`);
             }
         }
         if (categoryMessages.length > 0) {

@@ -9,7 +9,8 @@ import {CheckInTicket} from '../../model/check-in.ts';
 import {dispatchFeedback} from '../../model/dom-events.ts';
 import {EventService} from '../../service/event.ts';
 import {CheckInService, isCheckedIn, matchesSearch} from '../../service/check-in.ts';
-import {humanize, readRouteParams, replaceRouteParams, toPageNumber} from '../../service/helpers.ts';
+import {readRouteParams, replaceRouteParams, toPageNumber} from '../../service/helpers.ts';
+import {ticketStatusLabel} from '../../model/ticket-status.ts';
 import {formatFullName, localizedTitle} from '../../service/reservation-format.ts';
 import {
     badges,
@@ -34,6 +35,7 @@ import {AddAttendeesDialog, AttendeesAddedDetail} from './add-attendees-dialog.t
 import './add-attendees-dialog.ts';
 import { adminUrl } from '../../admin-router';
 import { canScanQrCodes } from '../../service/qr-scanning.ts';
+import { t, tHtml } from '../../service/i18n';
 
 type TabName = 'pending' | 'checked-in';
 
@@ -219,7 +221,7 @@ export class CheckIn extends LitElement {
     };
 
     render(): TemplateResult {
-        return taskContent(this.loadDataTask, this.lastData, 'Failed to load attendees. Please try again.',
+        return taskContent(this.loadDataTask, this.lastData, t('admin.check-in.load-failed'),
             (data) => this.renderContent(data));
     }
 
@@ -231,25 +233,25 @@ export class CheckIn extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row secondary">
-                    <h1>Check-in for <i>${title}</i></h1>
+                    <h1>${tHtml('admin.check-in.title', html`<i>${title}</i>`)}</h1>
                 </div>
                 <hr class="page-separator" />
                 ${this.renderAppsInfo(title)}
                 ${when(this.progress != null, () => html`
-                    <sl-progress-bar class="download-progress" label="Loading attendees"
+                    <sl-progress-bar class="download-progress" label=${t('admin.check-in.loading')}
                                      value=${Math.round(100 * this.progress![0] / this.progress![1])}></sl-progress-bar>
                 `)}
                 <div class="filter-toolbar">
-                    <div class="filter-left">${this.searchController.render('attendees')}</div>
+                    <div class="filter-left">${this.searchController.render(t('admin.check-in.items'))}</div>
                     <div class="filter-right">
                         <sl-button id="refresh-button" variant="default" size="large" ?loading=${this.loadDataTask.status === TaskStatus.PENDING}
                                    @click=${() => this.loadDataTask.run()}>
                             <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
-                            Refresh
+                            ${t('admin.common.refresh')}
                         </sl-button>
                         <sl-button id="add-attendees-button" variant="success" size="large" @click=${this.addAttendees}>
                             <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-                            Add new attendees
+                            ${t('admin.check-in.add-attendees')}
                         </sl-button>
                     </div>
                 </div>
@@ -257,23 +259,23 @@ export class CheckIn extends LitElement {
                     <sl-tab slot="nav" panel="pending" ?active=${this.selectedTab === 'pending'}>
                         <span class="tab-label">
                             <sl-icon name="qr-code"></sl-icon>
-                            Pending
+                            ${t('admin.allocation.pending')}
                             <sl-badge variant="primary" pill>${pending.length}</sl-badge>
                         </span>
                     </sl-tab>
                     <sl-tab slot="nav" panel="checked-in" ?active=${this.selectedTab === 'checked-in'}>
                         <span class="tab-label">
                             <sl-icon name="check-circle"></sl-icon>
-                            Checked in
+                            ${t('admin.allocation.checked-in')}
                             <sl-badge variant="primary" pill>${checkedIn.length}</sl-badge>
                         </span>
                     </sl-tab>
                     <sl-tab-panel name="pending" ?active=${this.selectedTab === 'pending'}>
-                        ${this.renderSection('pending', pending, 'No attendees to check in',
+                        ${this.renderSection('pending', pending, t('admin.check-in.none-pending'),
                             (tickets) => this.renderPendingTable(tickets, data.event))}
                     </sl-tab-panel>
                     <sl-tab-panel name="checked-in" ?active=${this.selectedTab === 'checked-in'}>
-                        ${this.renderSection('checked-in', checkedIn, 'No attendees have been checked in yet',
+                        ${this.renderSection('checked-in', checkedIn, t('admin.check-in.none-checked-in'),
                             (tickets) => this.renderCheckedInTable(tickets))}
                     </sl-tab-panel>
                 </sl-tab-group>
@@ -281,13 +283,13 @@ export class CheckIn extends LitElement {
             <sl-dialog id="qr-code-dialog" class="responsive-dialog" label=${this.qrCodeTicket?.fullName ?? ''}
                        @sl-after-hide=${this.onQrCodeDialogHidden}>
                 ${when(this.qrCodeTicket != null, () => html`
-                    <img class="qr-code" alt="QR code of the ticket of ${this.qrCodeTicket!.fullName}"
+                    <img class="qr-code" alt=${t('admin.check-in.qr-code.alt', this.qrCodeTicket!.fullName)}
                          src=${`/event/${encodeURIComponent(this.eventName)}/ticket/${this.qrCodeTicket!.publicUuid}/code.png`}>
                 `)}
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => this.qrCodeDialog.hide()}>Close</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.qrCodeDialog.hide()}>${t('admin.common.close')}</sl-button>
                     </div>
                 </div>
             </sl-dialog>
@@ -310,15 +312,15 @@ export class CheckIn extends LitElement {
 
     // the embedded scanner needs a browser that reads QR codes (see qr-scanning.ts)
     private renderScanOptions(title: string): TemplateResult {
-        const android = html`<a href="https://play.google.com/store/apps/details?id=alfio.scan" target="_blank" rel="noopener">Android app</a>`;
-        const ios = html`<a href="https://itunes.apple.com/us/app/alf-io-scan/id1425492093" target="_blank" rel="noopener">iOS app</a>`;
+        const android = html`<a href="https://play.google.com/store/apps/details?id=alfio.scan" target="_blank" rel="noopener">${t('admin.check-in.android-app')}</a>`;
+        const ios = html`<a href="https://itunes.apple.com/us/app/alf-io-scan/id1425492093" target="_blank" rel="noopener">${t('admin.check-in.ios-app')}</a>`;
         if (this.scanSupportTask.value === true) {
             return html`
-                Scan tickets for event <i>${title}</i> using the ${android}, ${ios}
-                or the <a id="scan-page-link" href=${adminUrl(`/events/${this.eventName}/check-in/scan`)}>embedded scan functionality</a>
+                ${tHtml('admin.check-in.apps.with-embedded', html`<i>${title}</i>`, android, ios,
+                    html`<a id="scan-page-link" href=${adminUrl(`/events/${this.eventName}/check-in/scan`)}>${t('admin.check-in.apps.embedded')}</a>`)}
             `;
         }
-        return html`Scan tickets for event <i>${title}</i> using the ${android} or the ${ios}`;
+        return html`${tHtml('admin.check-in.apps', html`<i>${title}</i>`, android, ios)}`;
     }
 
     private renderAppsInfo(title: string): TemplateResult | typeof nothing {
@@ -331,13 +333,13 @@ export class CheckIn extends LitElement {
                 <p>${this.renderScanOptions(title)}</p>
                 <div class="store-badges">
                     <a href="https://play.google.com/store/apps/details?id=alfio.scan" target="_blank" rel="noopener">
-                        <img class="google-play" alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png">
+                        <img class="google-play" alt=${t('admin.check-in.google-play')} src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png">
                     </a>
                     <a href="https://itunes.apple.com/us/app/alf-io-scan/id1425492093" target="_blank" rel="noopener">
-                        <img alt="Download on the App Store" src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83">
+                        <img alt=${t('admin.check-in.app-store')} src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83">
                     </a>
                 </div>
-                <small class="text-muted">Google Play and the Google Play logo are trademarks of Google LLC.</small>
+                <small class="text-muted">${t('admin.check-in.google-trademark')}</small>
             </sl-alert>
         `;
     }
@@ -360,7 +362,7 @@ export class CheckIn extends LitElement {
                                 .page=${page}
                                 .total=${tickets.length}
                                 page-size=${ITEMS_PER_PAGE}
-                                item-label="attendees"
+                                item-label=${t('admin.check-in.items')}
                                 @alfio-page-change=${(e: AlfioPageChange) => this.changePage(name, e.detail.page)}
                             ></alfio-pagination-bar>
                         `)}
@@ -375,13 +377,13 @@ export class CheckIn extends LitElement {
                 <table class="table table-striped pending-tickets table-stacked">
                     <thead>
                         <tr>
-                            <th class="status-column"><span class="sr-only">Status</span></th>
-                            <th>Attendee</th>
-                            <th class="hide-small">Email</th>
-                            <th class="hide-small">Category</th>
-                            <th>Ref Nr.</th>
-                            ${when(!event.freeOfCharge, () => html`<th class="hide-small">Payment</th>`)}
-                            <th><span class="sr-only">Actions</span></th>
+                            <th class="status-column"><span class="sr-only">${t('admin.common.status')}</span></th>
+                            <th>${t('admin.common.attendee')}</th>
+                            <th class="hide-small">${t('admin.common.email-short')}</th>
+                            <th class="hide-small">${t('admin.category-select.label')}</th>
+                            <th>${t('admin.check-in.reference')}</th>
+                            ${when(!event.freeOfCharge, () => html`<th class="hide-small">${t('admin.common.payment')}</th>`)}
+                            <th><span class="sr-only">${t('admin.common.actions')}</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -389,11 +391,11 @@ export class CheckIn extends LitElement {
                             <tr data-ticket-uuid=${ticket.uuid}>
                                 <td class="stacked-inline">${this.renderStatus(ticket.status)}</td>
                                 <td class="attendee">${formatFullName(ticket)}</td>
-                                <td class="email hide-small" data-label="Email">${ticket.email}</td>
-                                <td class="hide-small" data-label="Category">${ticket.ticketCategory.name}</td>
-                                <td class="reservation-id" data-label="Ref Nr.">${this.renderReference(ticket)}</td>
+                                <td class="email hide-small" data-label=${t('admin.common.email-short')}>${ticket.email}</td>
+                                <td class="hide-small" data-label=${t('admin.category-select.label')}>${ticket.ticketCategory.name}</td>
+                                <td class="reservation-id" data-label=${t('admin.check-in.reference')}>${this.renderReference(ticket)}</td>
                                 ${when(!event.freeOfCharge, () => html`
-                                    <td class="hide-small" data-label="Payment">
+                                    <td class="hide-small" data-label=${t('admin.common.payment')}>
                                         <alfio-payment-method method=${ticket.ticketReservation.paymentMethod ?? ''}></alfio-payment-method>
                                     </td>
                                 `)}
@@ -404,7 +406,7 @@ export class CheckIn extends LitElement {
                                                ?loading=${this.busyTicketId === ticket.id}
                                                @click=${() => this.manualCheckIn(ticket)}>
                                         <sl-icon slot="prefix" name="check2"></sl-icon>
-                                        Check-in
+                                        ${t('admin.page-title.check-in')}
                                     </sl-button>
                                 </td>
                             </tr>
@@ -421,27 +423,27 @@ export class CheckIn extends LitElement {
                 <table class="table table-striped checked-in-tickets table-stacked">
                     <thead>
                         <tr>
-                            <th>Attendee</th>
-                            <th class="hide-small">Email</th>
-                            <th class="hide-small">Category</th>
-                            <th>Ref Nr.</th>
-                            <th class="hide-small">Customer</th>
-                            <th class="hide-small">Payment</th>
-                            <th><span class="sr-only">Actions</span></th>
+                            <th>${t('admin.common.attendee')}</th>
+                            <th class="hide-small">${t('admin.common.email-short')}</th>
+                            <th class="hide-small">${t('admin.category-select.label')}</th>
+                            <th>${t('admin.check-in.reference')}</th>
+                            <th class="hide-small">${t('admin.common.customer')}</th>
+                            <th class="hide-small">${t('admin.common.payment')}</th>
+                            <th><span class="sr-only">${t('admin.common.actions')}</span></th>
                         </tr>
                     </thead>
                     <tbody>
                         ${repeat(tickets, (ticket) => ticket.id, (ticket) => html`
                             <tr data-ticket-uuid=${ticket.uuid}>
                                 <td class="attendee">${formatFullName(ticket)}</td>
-                                <td class="email hide-small" data-label="Email">${ticket.email}</td>
-                                <td class="hide-small" data-label="Category">${ticket.ticketCategory.name}</td>
-                                <td class="reservation-id" data-label="Ref Nr.">${this.renderReference(ticket)}</td>
-                                <td class="hide-small" data-label="Customer">
+                                <td class="email hide-small" data-label=${t('admin.common.email-short')}>${ticket.email}</td>
+                                <td class="hide-small" data-label=${t('admin.category-select.label')}>${ticket.ticketCategory.name}</td>
+                                <td class="reservation-id" data-label=${t('admin.check-in.reference')}>${this.renderReference(ticket)}</td>
+                                <td class="hide-small" data-label=${t('admin.common.customer')}>
                                     ${formatFullName(ticket.ticketReservation)}
                                     <span class="customer-email">${ticket.ticketReservation.email ?? ''}</span>
                                 </td>
-                                <td class="hide-small" data-label="Payment">
+                                <td class="hide-small" data-label=${t('admin.common.payment')}>
                                     <alfio-payment-method method=${ticket.ticketReservation.paymentMethod ?? ''}></alfio-payment-method>
                                 </td>
                                 <td class="actions-cell">
@@ -451,7 +453,7 @@ export class CheckIn extends LitElement {
                                                ?loading=${this.busyTicketId === ticket.id}
                                                @click=${() => this.revertCheckIn(ticket)}>
                                         <sl-icon slot="prefix" name="arrow-counterclockwise"></sl-icon>
-                                        Revert check-in
+                                        ${t('admin.check-in.revert')}
                                     </sl-button>
                                 </td>
                             </tr>
@@ -464,7 +466,7 @@ export class CheckIn extends LitElement {
 
     private renderStatus(status: TicketStatus): TemplateResult {
         const config = STATUS_ICONS[status] ?? { icon: 'gear', className: 'text-muted' };
-        const label = humanize(status);
+        const label = ticketStatusLabel(status);
         return html`
             <sl-tooltip content=${label}>
                 <sl-icon class="ticket-status ${config.className}" name=${config.icon} label=${label} data-status=${status}></sl-icon>
@@ -474,7 +476,7 @@ export class CheckIn extends LitElement {
 
     private renderReference(ticket: CheckInTicket): TemplateResult {
         return html`
-            <a href=${adminUrl(`/events/${this.eventName}/reservation/${ticket.ticketsReservationId}`)} title="View reservation">
+            <a href=${adminUrl(`/events/${this.eventName}/reservation/${ticket.ticketsReservationId}`)} title=${t('admin.check-in.view-reservation')}>
                 ${ticket.publicUuid.substring(0, 8)}
             </a>
         `;
@@ -484,7 +486,7 @@ export class CheckIn extends LitElement {
         return html`
             <sl-button class="qr-code-button" size="small" variant="default" outline @click=${() => this.showQrCode(ticket)}>
                 <sl-icon slot="prefix" name="qr-code"></sl-icon>
-                QR code
+                ${t('admin.check-in.qr-code')}
             </sl-button>
         `;
     }
@@ -514,7 +516,7 @@ export class CheckIn extends LitElement {
 
     private emptyMessage(defaultMessage: string): string {
         if (this.search) {
-            return 'No attendees match your filter';
+            return t('admin.check-in.none-matching');
         }
         return defaultMessage;
     }
@@ -527,12 +529,12 @@ export class CheckIn extends LitElement {
     // the filter is kept on purpose: the operator may be checking in a whole group
     private manualCheckIn(ticket: CheckInTicket): Promise<void> {
         return this.performAction(ticket, () => CheckInService.manualCheckIn(ticket),
-            `${ticket.fullName} checked in!`, `Can't check-in ${ticket.fullName}`);
+            t('admin.check-in.done', ticket.fullName), t('admin.check-in.failed', ticket.fullName));
     }
 
     private revertCheckIn(ticket: CheckInTicket): Promise<void> {
         return this.performAction(ticket, () => CheckInService.revertCheckIn(ticket),
-            `Reverted ${ticket.fullName}`, `Can't revert the check-in of ${ticket.fullName}`);
+            t('admin.check-in.reverted', ticket.fullName), t('admin.check-in.revert-failed', ticket.fullName));
     }
 
     private async performAction(ticket: CheckInTicket,

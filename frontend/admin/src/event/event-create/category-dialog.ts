@@ -16,6 +16,7 @@ import type {MultiLanguageTextChange} from '../../components/multi-language-text
 import '../event-detail/category-options.ts';
 import type {CategoryOptions, CategoryOptionsTarget} from '../event-detail/category-options.ts';
 import {errorMessage} from '../../service/helpers.ts';
+import { t, tHtml, formatNumber } from '../../service/i18n';
 
 /**
  * A ticket category of the event being created, as edited in the category dialog.
@@ -191,14 +192,14 @@ const VALIDITY_CHOICES: ChoiceCardOption<ValidityMode>[] = [
     {
         value: 'event',
         icon: 'calendar-range',
-        title: 'For the whole event',
-        description: 'The ticket shows the dates of the event.',
+        title: t('admin.category-dialog.validity.event'),
+        description: t('admin.category-dialog.validity.event.description'),
     },
     {
         value: 'custom',
         icon: 'calendar-day',
-        title: 'For specific dates',
-        description: 'For example, a one-day pass of a multi-day event.',
+        title: t('admin.category-dialog.validity.custom'),
+        description: t('admin.category-dialog.validity.custom.description'),
     },
 ];
 
@@ -206,14 +207,14 @@ const CHECK_IN_CHOICES: ChoiceCardOption<CheckInMode>[] = [
     {
         value: 'anytime',
         icon: 'clock',
-        title: 'At any time',
-        description: 'Tickets can be scanned whenever attendees arrive.',
+        title: t('admin.category-dialog.check-in.any-time'),
+        description: t('admin.category-dialog.check-in.any-time.description'),
     },
     {
         value: 'custom',
         icon: 'clock-history',
-        title: 'Only at specific times',
-        description: 'Tickets scanned outside these times are refused.',
+        title: t('admin.category-dialog.check-in.specific-times'),
+        description: t('admin.category-dialog.check-in.specific-times.description'),
     },
 ];
 
@@ -221,14 +222,14 @@ const CHECK_IN_STRATEGY_CHOICES: ChoiceCardOption<string>[] = [
     {
         value: 'ONCE_PER_EVENT',
         icon: 'ticket-perforated',
-        title: 'Once',
-        description: 'The first scan of the ticket checks attendees in for the whole event.',
+        title: t('admin.category-dialog.check-in.once'),
+        description: t('admin.category-dialog.check-in.once.description'),
     },
     {
         value: 'ONCE_PER_DAY',
         icon: 'person-badge',
-        title: 'Every day',
-        description: 'With the ticket on the first day, then with the badge printed at check-in.',
+        title: t('admin.category-dialog.check-in.every-day'),
+        description: t('admin.category-dialog.check-in.every-day.description'),
     },
 ];
 
@@ -246,8 +247,8 @@ export interface CategoryDialogOptions {
 }
 
 const TICKET_ACCESS_TYPES = [
-    { value: 'IN_PERSON', label: 'In person' },
-    { value: 'ONLINE', label: 'Online' },
+    { value: 'IN_PERSON', label: t('admin.event.format.in-person') },
+    { value: 'ONLINE', label: t('admin.event.format.online') },
 ];
 
 /**
@@ -268,7 +269,7 @@ export class EventCategoryDialog extends LitElement {
     // validation messages, by field
     @state() private errors: Record<string, string> = {};
     // decided when the dialog opens, so that typing the name of a new category doesn't change it
-    @state() private label = 'New category';
+    @state() private label = t('admin.category-dialog.new');
     @state() private optionsTarget: CategoryOptionsTarget | null = null;
     @state() private saving = false;
     @state() private saveError: string | null = null;
@@ -369,9 +370,9 @@ export class EventCategoryDialog extends LitElement {
         }
         this.loadBadgeColor(options.configuration);
         this.errors = {};
-        this.label = 'New category';
+        this.label = t('admin.category-dialog.new');
         if (existing.name.trim() !== '') {
-            this.label = `Edit category ${existing.name}`;
+            this.label = t('admin.category-dialog.edit', existing.name);
         }
         this.isOpen = true;
         const promise = new Promise<CategoryDraft | null>((resolve) => {
@@ -390,7 +391,7 @@ export class EventCategoryDialog extends LitElement {
         }
         const hybrid = context.format === 'HYBRID' || draft.ticketAccessType !== '';
         const error = (field: string): string => this.errors[field] ?? '';
-        let codeHelp = 'Allowed characters: letters, numbers, and -:_@!$*,; — no spaces';
+        let codeHelp = t('admin.category-dialog.code.help');
         if (error('code') !== '') {
             codeHelp = error('code');
         }
@@ -398,15 +399,15 @@ export class EventCategoryDialog extends LitElement {
             <sl-dialog class="responsive-dialog" style="--alfio-dialog-max-width: 60rem" label=${this.label}
                        @sl-request-close=${this.onRequestClose} @sl-after-hide=${this.onAfterHide}>
                 ${this.renderBody(this.renderValidity(draft, context), html`<form class="dialog-form" novalidate @submit=${this.onSubmit}>
-                    ${sectionCard({ icon: 'tag', title: 'Base information' }, html`
+                    ${sectionCard({ icon: 'tag', title: t('admin.category-dialog.base-information') }, html`
                         <div class="form-stack">
-                            <sl-input id="name" name="name" label="Name" required
+                            <sl-input id="name" name="name" label=${t('admin.common.name')} required
                                       class=${classMap({ error: error('name') !== '' })}
                                       help-text=${error('name')}
                                       .value=${draft.name}
                                       @sl-input=${(e: Event) => this.updateDraft('name', (e.target as SlInput).value)}></sl-input>
                             ${when(hybrid, () => html`
-                                <sl-select id="accessType" label="Ticket holders can access the event" required hoist
+                                <sl-select id="accessType" label=${t('admin.category-dialog.access-type')} required hoist
                                            class=${classMap({ error: error('ticketAccessType') !== '' })}
                                            help-text=${error('ticketAccessType')}
                                            .value=${draft.ticketAccessType}
@@ -415,7 +416,7 @@ export class EventCategoryDialog extends LitElement {
                                 </sl-select>
                             `)}
                             <alfio-multi-language-text
-                                label="Description"
+                                label=${t('admin.common.description')}
                                 icon="text-paragraph"
                                 .card=${false}
                                 max-length=${context.descriptionMaxLength}
@@ -428,39 +429,39 @@ export class EventCategoryDialog extends LitElement {
                             ></alfio-multi-language-text>
                         </div>
                     `)}
-                    ${sectionCard({ icon: 'ticket-perforated', title: 'Tickets and sales' }, html`
+                    ${sectionCard({ icon: 'ticket-perforated', title: t('admin.category-dialog.tickets-and-sales') }, html`
                         <div class="form-stack">
-                            <sl-select id="tokenGenerationRequested" label="Visibility" required hoist
+                            <sl-select id="tokenGenerationRequested" label=${t('admin.category-dialog.visibility')} required hoist
                                        help-text=${this.visibilityHelp(draft)}
                                        .value=${this.visibilityValue(draft)}
                                        @sl-change=${this.onVisibilityChange}>
-                                <sl-option value="public">Listed on the event page</sl-option>
-                                <sl-option value="hidden">Unlisted</sl-option>
+                                <sl-option value="public">${t('admin.category-dialog.visibility.public')}</sl-option>
+                                <sl-option value="hidden">${t('admin.event.status.unlisted')}</sl-option>
                             </sl-select>
                             <sl-switch id="bounded" ?checked=${draft.bounded} ?disabled=${draft.tokenGenerationRequested}
                                        help-text=${this.limitHelp(draft)}
-                                       @sl-change=${this.onBoundedChange}>Limit the number of tickets</sl-switch>
+                                       @sl-change=${this.onBoundedChange}>${t('admin.category-dialog.limit')}</sl-switch>
                             ${when(draft.bounded, () => html`
-                                <sl-input id="maxTickets" name="maxTickets" label="Number of tickets" type="number" min="1" step="1" required
+                                <sl-input id="maxTickets" name="maxTickets" label=${t('admin.category-dialog.max-tickets')} type="number" min="1" step="1" required
                                           class=${classMap({ error: error('maxTickets') !== '' })}
                                           help-text=${error('maxTickets')}
                                           .value=${draft.maxTickets}
                                           @sl-input=${(e: Event) => this.updateDraft('maxTickets', (e.target as SlInput).value)}></sl-input>
                             `)}
                             <div class="row" style="--alfio-row-cols: 2">
-                                <sl-input id="inception" label="On sale from" type="datetime-local" required
+                                <sl-input id="inception" label=${t('admin.category-dialog.on-sale-from')} type="datetime-local" required
                                           class=${classMap({ error: error('inception') !== '' })}
                                           help-text=${error('inception')}
                                           .value=${draft.inception}
                                           @sl-input=${(e: Event) => this.updateDraft('inception', (e.target as SlInput).value)}></sl-input>
-                                <sl-input id="expiration" label="On sale until" type="datetime-local" required
+                                <sl-input id="expiration" label=${t('admin.category-dialog.on-sale-until')} type="datetime-local" required
                                           class=${classMap({ error: error('expiration') !== '' })}
                                           help-text=${error('expiration')}
                                           .value=${draft.expiration}
                                           @sl-input=${(e: Event) => this.updateDraft('expiration', (e.target as SlInput).value)}></sl-input>
                             </div>
                             ${when(!context.freeOfCharge, () => html`
-                                <sl-input id="price" name="price" label="Price" type="number" min="0" step="0.01" required
+                                <sl-input id="price" name="price" label=${t('admin.category-dialog.price')} type="number" min="0" step="0.01" required
                                           class=${classMap({ error: error('price') !== '' })}
                                           help-text=${error('price')}
                                           .value=${draft.price}
@@ -470,15 +471,15 @@ export class EventCategoryDialog extends LitElement {
                             `)}
                         </div>
                     `)}
-                    ${sectionCard({ icon: 'link-45deg', title: 'Direct reservation link' }, html`
+                    ${sectionCard({ icon: 'link-45deg', title: t('admin.category-dialog.direct-link') }, html`
                         <div class="form-stack">
-                            <sl-input id="code" name="code" label="Code (optional)" placeholder="Leave empty for none"
+                            <sl-input id="code" name="code" label=${t('admin.category-dialog.code')} placeholder=${t('admin.category-dialog.code.placeholder')}
                                       class=${classMap({ error: error('code') !== '' })}
                                       help-text=${codeHelp}
                                       .value=${draft.code}
                                       @sl-input=${(e: Event) => this.updateDraft('code', (e.target as SlInput).value)}></sl-input>
                             ${when(draft.code.trim() !== '', () => html`
-                                <p class="text-muted access-url">Access URL: <code>${context.baseUrl}/e/${context.shortName}/c/${draft.code.trim()}</code></p>
+                                <p class="text-muted access-url">${tHtml('admin.category-dialog.access-url', html`<code>${context.baseUrl}/e/${context.shortName}/c/${draft.code.trim()}</code>`)}</p>
                             `)}
                         </div>
                     `)}
@@ -492,9 +493,9 @@ export class EventCategoryDialog extends LitElement {
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${this.cancel}>Cancel</sl-button>
+                        <sl-button variant="default" size="large" @click=${this.cancel}>${t('admin.common.cancel')}</sl-button>
                         <div></div>
-                        <sl-button id="category-save" variant="warning" size="large" ?loading=${this.saving} ?disabled=${this.saving} @click=${this.onSubmit}>Save</sl-button>
+                        <sl-button id="category-save" variant="warning" size="large" ?loading=${this.saving} ?disabled=${this.saving} @click=${this.onSubmit}>${t('admin.common.save')}</sl-button>
                     </div>
                 </div>
             </sl-dialog>
@@ -508,10 +509,10 @@ export class EventCategoryDialog extends LitElement {
         const target = this.optionsTarget;
         return html`
             <sl-tab-group>
-                <sl-tab slot="nav" panel="general" class="general-tab" ?active=${this.initialTab === 'general'}>General</sl-tab>
-                <sl-tab slot="nav" panel="validity" class="validity-tab" ?active=${this.initialTab === 'validity'}>Ticket validity</sl-tab>
+                <sl-tab slot="nav" panel="general" class="general-tab" ?active=${this.initialTab === 'general'}>${t('admin.category-dialog.tab.general')}</sl-tab>
+                <sl-tab slot="nav" panel="validity" class="validity-tab" ?active=${this.initialTab === 'validity'}>${t('admin.category-dialog.tab.validity')}</sl-tab>
                 ${when(target != null, () => html`
-                    <sl-tab slot="nav" panel="options" class="options-tab" ?active=${this.initialTab === 'options'}>Options</sl-tab>
+                    <sl-tab slot="nav" panel="options" class="options-tab" ?active=${this.initialTab === 'options'}>${t('admin.categories.options')}</sl-tab>
                 `)}
                 <sl-tab-panel name="general">${general}</sl-tab-panel>
                 <sl-tab-panel name="validity">${validity}</sl-tab-panel>
@@ -533,8 +534,8 @@ export class EventCategoryDialog extends LitElement {
         if (this.validityMode === 'custom') {
             validityPanel = html`
                 <div class="row" style="--alfio-row-cols: 2">
-                    ${this.dateInput('ticketValidityStart', 'Valid from', draft.ticketValidityStart, error('ticketValidityStart'))}
-                    ${this.dateInput('ticketValidityEnd', 'Valid until', draft.ticketValidityEnd, error('ticketValidityEnd'))}
+                    ${this.dateInput('ticketValidityStart', t('admin.category-dialog.valid-from'), draft.ticketValidityStart, error('ticketValidityStart'))}
+                    ${this.dateInput('ticketValidityEnd', t('admin.category-dialog.valid-until'), draft.ticketValidityEnd, error('ticketValidityEnd'))}
                 </div>
             `;
         }
@@ -542,31 +543,31 @@ export class EventCategoryDialog extends LitElement {
         if (this.checkInMode === 'custom') {
             checkInPanel = html`
                 <div class="row" style="--alfio-row-cols: 2">
-                    ${this.dateInput('validCheckInFrom', 'Check-in from', draft.validCheckInFrom, error('validCheckInFrom'))}
-                    ${this.dateInput('validCheckInTo', 'Check-in until', draft.validCheckInTo, error('validCheckInTo'))}
+                    ${this.dateInput('validCheckInFrom', t('admin.category-dialog.check-in-from'), draft.validCheckInFrom, error('validCheckInFrom'))}
+                    ${this.dateInput('validCheckInTo', t('admin.category-dialog.check-in-until'), draft.validCheckInTo, error('validCheckInTo'))}
                 </div>
             `;
         }
         return html`
             <div class="dialog-form">
-                ${sectionCard({ icon: 'calendar-check', title: 'Validity' }, html`
+                ${sectionCard({ icon: 'calendar-check', title: t('admin.category-dialog.validity') }, html`
                     <div class="form-stack">
                         ${choiceCards({
                             name: 'ticket-validity',
-                            label: 'When is the ticket valid?',
+                            label: t('admin.category-dialog.validity.question'),
                             value: this.validityMode,
                             options: VALIDITY_CHOICES,
                             className: 'validity-choice',
                             panel: validityPanel,
                         }, mode => this.onValidityModeChange(mode))}
-                        <p class="text-muted validity-note">Shown on the ticket PDF, the Apple Wallet pass and the calendar invitation.</p>
+                        <p class="text-muted validity-note">${t('admin.category-dialog.validity.note')}</p>
                     </div>
                 `)}
-                ${sectionCard({ icon: 'qr-code-scan', title: 'Check-in' }, html`
+                ${sectionCard({ icon: 'qr-code-scan', title: t('admin.page-title.check-in') }, html`
                     <div class="form-stack">
                         ${choiceCards({
                             name: 'check-in-window',
-                            label: 'When can attendees check in?',
+                            label: t('admin.category-dialog.check-in.when'),
                             value: this.checkInMode,
                             options: CHECK_IN_CHOICES,
                             className: 'check-in-choice',
@@ -574,7 +575,7 @@ export class EventCategoryDialog extends LitElement {
                         }, mode => this.onCheckInModeChange(mode))}
                         ${when(this.isMultiDay(context), () => choiceCards({
                             name: 'check-in-strategy',
-                            label: 'How often do attendees check in?',
+                            label: t('admin.category-dialog.check-in.how-often'),
                             value: draft.ticketCheckInStrategy,
                             options: CHECK_IN_STRATEGY_CHOICES,
                             className: 'check-in-strategy-choice',
@@ -598,16 +599,16 @@ export class EventCategoryDialog extends LitElement {
     }
 
     private renderBadgeColor(draft: CategoryDraft): TemplateResult {
-        let help = 'The check-in app shows this color when it scans a ticket of this category, so that your staff can spot it.';
+        let help = t('admin.category-dialog.badge-color.help');
         if (this.badgeColorLoading) {
-            help = 'Loading the current color…';
+            help = t('admin.category-dialog.badge-color.loading');
         }
         if (this.badgeColorError != null) {
             help = this.badgeColorError;
         }
         const selected = findBadgeColor(draft.badgeColor);
         return html`
-            <sl-select id="badgeColor" label="Badge color" placeholder="None" hoist
+            <sl-select id="badgeColor" label=${t('admin.category-dialog.badge-color')} placeholder=${t('admin.category-dialog.badge-color.none')} hoist
                        help-text=${help}
                        ?disabled=${this.badgeColorLoading || this.badgeColorError != null}
                        .value=${draft.badgeColor}
@@ -654,7 +655,7 @@ export class EventCategoryDialog extends LitElement {
             })
             .catch(error => {
                 if (openCount === this.openCount) {
-                    this.badgeColorError = errorMessage(error, 'Failed to load the badge color');
+                    this.badgeColorError = errorMessage(error, t('admin.category-dialog.badge-color.load-failed'));
                 }
             })
             .finally(() => {
@@ -719,32 +720,32 @@ export class EventCategoryDialog extends LitElement {
             const from = draft.ticketValidityStart;
             const to = draft.ticketValidityEnd;
             if (!hasValue(from)) {
-                errors.ticketValidityStart = 'Please fill in this field';
+                errors.ticketValidityStart = t('admin.validation.required');
             } else if (begin !== '' && from < begin) {
-                errors.ticketValidityStart = 'The ticket cannot be valid before the event starts';
+                errors.ticketValidityStart = t('admin.category-dialog.error.validity-before-event');
             }
             if (!hasValue(to)) {
-                errors.ticketValidityEnd = 'Please fill in this field';
+                errors.ticketValidityEnd = t('admin.validation.required');
             } else if (end !== '' && to > end) {
-                errors.ticketValidityEnd = 'The ticket cannot be valid after the event ends';
+                errors.ticketValidityEnd = t('admin.category-dialog.error.validity-after-event');
             } else if (hasValue(from) && to <= from) {
-                errors.ticketValidityEnd = 'The end of the validity must be after its start';
+                errors.ticketValidityEnd = t('admin.category-dialog.error.validity-order');
             }
         }
         if (this.checkInMode === 'custom') {
             const from = draft.validCheckInFrom;
             const to = draft.validCheckInTo;
             if (!hasValue(from)) {
-                errors.validCheckInFrom = 'Please fill in this field';
+                errors.validCheckInFrom = t('admin.validation.required');
             }
             if (!hasValue(to)) {
-                errors.validCheckInTo = 'Please fill in this field';
+                errors.validCheckInTo = t('admin.validation.required');
             } else if (end !== '' && to > end) {
-                errors.validCheckInTo = 'Check-in cannot end after the event';
+                errors.validCheckInTo = t('admin.category-dialog.error.check-in-after-event');
             } else if (begin !== '' && to <= begin) {
-                errors.validCheckInTo = 'Check-in must end after the event starts';
+                errors.validCheckInTo = t('admin.category-dialog.error.check-in-before-event');
             } else if (hasValue(from) && to <= from) {
-                errors.validCheckInTo = 'The end of check-in must be after its start';
+                errors.validCheckInTo = t('admin.category-dialog.error.check-in-order');
             }
         }
         return errors;
@@ -759,16 +760,16 @@ export class EventCategoryDialog extends LitElement {
 
     private visibilityHelp(draft: CategoryDraft): string {
         if (draft.tokenGenerationRequested) {
-            return 'Only people with an invitation, the category link or an access code can buy it.';
+            return t('admin.category-dialog.visibility.hidden.help');
         }
-        return 'Anyone can buy it from the event page.';
+        return t('admin.category-dialog.visibility.public.help');
     }
 
     private limitHelp(draft: CategoryDraft): string {
         if (draft.tokenGenerationRequested) {
-            return 'Unlisted categories always have a limit: each ticket gets its own invitation code.';
+            return t('admin.category-dialog.limit.unlisted-help');
         }
-        return "These tickets are kept for this category. Other categories can't sell them, even if some are left over.";
+        return t('admin.category-dialog.limit.help');
     }
 
     private updateDraft<K extends keyof CategoryDraft>(key: K, value: CategoryDraft[K]): void {
@@ -830,48 +831,48 @@ export class EventCategoryDialog extends LitElement {
         }
         const errors: Record<string, string> = {};
         if (draft.name.trim() === '') {
-            errors.name = 'Please fill in this field';
+            errors.name = t('admin.validation.required');
         }
         if (context.format !== 'HYBRID' && draft.ticketAccessType !== '' && draft.ticketAccessType !== context.format) {
-            errors.ticketAccessType = 'Select access matching the event format.';
+            errors.ticketAccessType = t('admin.category-dialog.error.access-type-format');
         }
         if (context.format === 'HYBRID' && draft.ticketAccessType === '') {
-            errors.ticketAccessType = 'Please select an option';
+            errors.ticketAccessType = t('admin.validation.select-option');
         }
         if (draft.bounded) {
             const maxTickets = Number.parseInt(draft.maxTickets, 10);
             if (draft.maxTickets.trim() === '' || Number.isNaN(maxTickets) || maxTickets < 1) {
-                errors.maxTickets = 'Please enter a number of tickets, at least 1';
+                errors.maxTickets = t('admin.category-dialog.error.max-tickets');
             } else {
                 const seats = Number.parseInt(context.availableSeats, 10);
                 const others = context.categories
                     .filter((c) => c.key !== draft.key && c.bounded)
                     .reduce((sum, c) => sum + (Number.parseInt(c.maxTickets, 10) || 0), 0);
                 if (!Number.isNaN(seats) && others + maxTickets > seats) {
-                    errors.maxTickets = `The categories cannot allocate more than the ${seats} seats of the event`;
+                    errors.maxTickets = t('admin.event-form.categories.too-many-seats', formatNumber(seats));
                 }
             }
         }
         if (draft.inception.trim() === '') {
-            errors.inception = 'Please fill in this field';
+            errors.inception = t('admin.validation.required');
         }
         if (draft.expiration.trim() === '') {
-            errors.expiration = 'Please fill in this field';
+            errors.expiration = t('admin.validation.required');
         }
         if (errors.inception == null && errors.expiration == null && draft.inception >= draft.expiration) {
-            errors.expiration = 'The end of the sale must be after its start';
+            errors.expiration = t('admin.category-dialog.error.sale-order');
         }
         if (errors.expiration == null && context.eventEnd !== '' && draft.expiration > context.eventEnd) {
-            errors.expiration = 'The category cannot stay on sale after the end of the event';
+            errors.expiration = t('admin.category-dialog.error.sale-after-event');
         }
         if (!context.freeOfCharge) {
             const price = Number(draft.price);
             if (draft.price.trim() === '' || Number.isNaN(price) || price < 0) {
-                errors.price = 'Please enter a price, 0 or more';
+                errors.price = t('admin.category-dialog.error.price');
             }
         }
         if (draft.code.trim() !== '' && !CODE_PATTERN.test(draft.code.trim())) {
-            errors.code = 'Spaces and other special characters are not allowed';
+            errors.code = t('admin.category-dialog.error.code');
         }
         const validityErrors = this.validateValidity(draft, context);
         this.errors = { ...errors, ...validityErrors };
@@ -894,7 +895,7 @@ export class EventCategoryDialog extends LitElement {
             try {
                 await options.save();
             } catch (error) {
-                this.saveError = errorMessage(error, 'Failed to save the options of the category');
+                this.saveError = errorMessage(error, t('admin.category-dialog.save-options-failed'));
                 return;
             } finally {
                 this.saving = false;

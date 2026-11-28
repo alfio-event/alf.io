@@ -7,6 +7,7 @@ import {OrganizationService} from '../service/organization.ts';
 import {base, modernLayout, form, textColors} from '../styles.ts';
 import {taskContent} from '../components/task-content.ts';
 import { adminRoute, navigate, ROUTE_CHANGED_EVENT } from '../admin-router';
+import { t } from '../service/i18n';
 
 /**
  * The container of the subscriptions screens: page title and the routed content (list, detail,
@@ -70,13 +71,13 @@ export class SubscriptionsPage extends LitElement {
             <div class="container">
                 ${when(!this.formRoute, () => html`
                     <div class="page-title-row">
-                        <h1>Subscriptions</h1>
+                        <h1>${t('admin.menu.subscriptions')}</h1>
                     </div>
                     <hr class="page-separator">
-                    <p class="page-description text-muted">Subscriptions give access to the events they are linked to.</p>
+                    <p class="page-description text-muted">${t('admin.subscriptions.description')}</p>
                 `, () => nothing)}
                 ${taskContent(this.loadOrganizationsTask, this.loadOrganizationsTask.value ?? null,
-                    'Failed to load the organizations. Please try again.',
+                    t('admin.load-error.organizations'),
                     () => html``)}
                 <slot></slot>
             </div>

@@ -10,6 +10,7 @@ import {EmailLogService} from '../service/email-log.ts';
 import {dialogTitle} from '../components/prompt-dialog.ts';
 import {emailStatusBadge} from './email-status.ts';
 import '../components/format-date.ts';
+import { formatNumber, t } from '../service/i18n.ts';
 
 /**
  * Shows the content and the delivery status of an e-mail. Read-only.
@@ -65,7 +66,7 @@ export class EmailMessageDialog extends LitElement {
         try {
             this.message = await EmailLogService.load(this.purchaseContextType, this.publicIdentifier, messageId);
         } catch {
-            dispatchFeedback({ type: 'danger', message: 'Failed to load the e-mail' }, this);
+            dispatchFeedback({ type: 'danger', message: t('admin.email-log.message.load-failed') }, this);
             await this.dialog.hide();
         }
     }
@@ -81,7 +82,7 @@ export class EmailMessageDialog extends LitElement {
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => this.dialog.hide()}>Close</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.dialog.hide()}>${t('admin.common.close')}</sl-button>
                     </div>
                 </div>
             </sl-dialog>
@@ -93,39 +94,39 @@ export class EmailMessageDialog extends LitElement {
             <div class="dialog-form form-stack">
                 <div class="section-card">
                     <div class="dialog-section-header">
-                        <sl-icon name="send"></sl-icon>Delivery
+                        <sl-icon name="send"></sl-icon>${t('admin.email-log.delivery')}
                         <sl-badge variant="neutral" pill>${this.timeZone}</sl-badge>
                     </div>
                     <div class="section-body">
                         <dl class="detail-list">
-                            <dt>Status</dt>
+                            <dt>${t('admin.common.status')}</dt>
                             <dd>${emailStatusBadge(message.status)}</dd>
-                            <dt>Recipient</dt>
+                            <dt>${t('admin.invitations.recipient')}</dt>
                             <dd>${message.recipient}</dd>
                             ${when(message.cc?.length > 0, () => html`
                                 <dt>CC</dt>
                                 <dd>${message.cc.join(', ')}</dd>
                             `)}
-                            <dt>Requested</dt>
+                            <dt>${t('admin.email-log.requested')}</dt>
                             <dd><alfio-format-date date=${message.requestTimestamp} time-zone=${this.timeZone}></alfio-format-date></dd>
-                            <dt>Sent</dt>
+                            <dt>${t('admin.email-log.sent')}</dt>
                             <dd>
-                                <alfio-format-date date=${message.sentTimestamp ?? ''} time-zone=${this.timeZone}>Not sent yet</alfio-format-date>
+                                <alfio-format-date date=${message.sentTimestamp ?? ''} time-zone=${this.timeZone}>${t('admin.email-log.not-sent')}</alfio-format-date>
                             </dd>
                             ${when(message.attempts > 0, () => html`
-                                <dt>Attempts</dt>
-                                <dd>${message.attempts.toLocaleString()}</dd>
+                                <dt>${t('admin.email-log.attempts')}</dt>
+                                <dd>${formatNumber(message.attempts)}</dd>
                             `)}
-                            <dt>Checksum</dt>
+                            <dt>${t('admin.email-log.checksum')}</dt>
                             <dd class="checksum">
                                 <span class="monospace">${message.checksum}</span>
-                                <sl-copy-button hoist value=${message.checksum} copy-label="Copy checksum"></sl-copy-button>
+                                <sl-copy-button hoist value=${message.checksum} copy-label=${t('admin.email-log.copy-checksum')}></sl-copy-button>
                             </dd>
                         </dl>
                     </div>
                 </div>
                 <div class="section-card">
-                    <div class="dialog-section-header"><sl-icon name="card-text"></sl-icon>Message</div>
+                    <div class="dialog-section-header"><sl-icon name="card-text"></sl-icon>${t('admin.compose.message')}</div>
                     <div class="section-body">
                         <pre class="message-body">${message.message}</pre>
                     </div>
@@ -136,9 +137,9 @@ export class EmailMessageDialog extends LitElement {
 
     private description(): string {
         if (this.message == null) {
-            return 'Loading the e-mail…';
+            return t('admin.email-log.loading');
         }
-        return `Content and delivery status of the e-mail sent to ${this.message.recipient}.`;
+        return t('admin.email-log.message.description', this.message.recipient);
     }
 }
 

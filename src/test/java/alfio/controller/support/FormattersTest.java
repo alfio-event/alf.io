@@ -27,6 +27,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -82,6 +83,30 @@ class FormattersTest {
             assertEquals(value.strip(), locale.toLanguageTag(), fileName + ": 'locale' must be a language tag such as de-DE, found '" + value + "'");
             assertEquals(language.getLanguage(), locale.getLanguage(), fileName + ": 'locale' must match the language of the file");
             assertFalse(locale.getCountry().isEmpty(), fileName + ": 'locale' must include the country, e.g. de-DE");
+        }
+    }
+
+    /**
+     * The server reads every text with MessageFormat (alwaysUseMessageFormat): a text it cannot parse, such as
+     * i18next's "{{count}}", would break the translations of the whole admin and public frontend for that language.
+     */
+    @Test
+    void everyTextIsAValidMessageFormat() throws IOException {
+        for (var language : ContentLanguage.ALL_LANGUAGES) {
+            var fileName = "/alfio/i18n/public_" + language.getLanguage() + ".properties";
+            if (language.equals(ContentLanguage.ENGLISH)) {
+                fileName = "/alfio/i18n/public.properties";
+            }
+            var properties = new Properties();
+            try (var stream = getClass().getResourceAsStream(fileName)) {
+                assertNotNull(stream, fileName + " not found");
+                properties.load(new InputStreamReader(stream, StandardCharsets.UTF_8));
+            }
+            for (var key : properties.stringPropertyNames()) {
+                var text = properties.getProperty(key);
+                var file = fileName;
+                assertDoesNotThrow(() -> new MessageFormat(text, language.locale()), () -> file + ": " + key + " is not a valid MessageFormat: " + text);
+            }
         }
     }
 

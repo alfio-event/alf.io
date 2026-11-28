@@ -89,6 +89,14 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* shown by main.ts when the translations cannot be loaded: Shoelace is not loaded yet */
+.admin-loading-error {
+    max-width: var(--alfio-page-width);
+    margin: var(--sl-spacing-4x-large) auto;
+    padding: 0 var(--sl-spacing-medium);
+    text-align: center;
+}
+
 .sl-toast-stack {
     bottom: 16px;
     right: 16px;

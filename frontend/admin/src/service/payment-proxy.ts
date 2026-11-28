@@ -1,5 +1,6 @@
 import {fetchJson} from "./helpers.ts";
 import {PaymentProxy} from "../model/purchase-context.ts";
+import { t } from './i18n';
 
 export interface PaymentMethodDTO {
     paymentProxy: PaymentProxy;
@@ -9,20 +10,20 @@ export interface PaymentMethodDTO {
 }
 
 export const PAYMENT_PROXY_DESCRIPTIONS: Record<string, string> = {
-    'STRIPE': 'Stripe: Credit cards',
-    'ON_SITE': 'On site (cash) payment',
-    'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)',
+    'STRIPE': t('admin.payment-method.stripe'),
+    'ON_SITE': t('admin.payment-method.on-site'),
+    'OFFLINE': t('admin.payment-method.offline'),
     'PAYPAL': 'PayPal',
-    'MOLLIE': 'Mollie: Credit cards, iDEAL, Bancontact, ING Home Pay, Belfius, KBC/CBC, Przelewy24',
+    'MOLLIE': t('admin.payment-method.mollie'),
     'SAFERPAY': 'Saferpay By SIX Payments',
-    'CUSTOM_OFFLINE': 'Custom Offline Payment Methods'
+    'CUSTOM_OFFLINE': t('admin.payment-method.custom-offline')
 };
 
 /**
  * Labels of the payment methods a provider reports (StaticPaymentMethods on the backend), in display order
  */
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
-    'CREDIT_CARD': 'Credit cards',
+    'CREDIT_CARD': t('admin.payment-method.credit-cards'),
     'APPLE_PAY': 'Apple Pay',
     'IDEAL': 'iDEAL | WERO',
     'BANCONTACT': 'Bancontact',
@@ -52,7 +53,7 @@ export interface PaymentProviderOption {
 }
 
 export function describePaymentProxy(proxy: string): string {
-    return PAYMENT_PROXY_DESCRIPTIONS[proxy] ?? `${proxy} (please check the configuration)`;
+    return PAYMENT_PROXY_DESCRIPTIONS[proxy] ?? t('admin.payment-method.unknown', proxy);
 }
 
 function describeProvider(proxy: PaymentProxy, methods: PaymentMethodDTO[]): string {

@@ -119,6 +119,14 @@ public final class ValidationResult {
             return code;
         }
 
+        /**
+         * The code of a validation error is the translation key of its description (e.g. error.shortname)
+         */
+        @Override
+        public String getMessageKey() {
+            return code;
+        }
+
         @Override
         public String getDescription() {
             return message;

@@ -13,6 +13,7 @@ import {shortReservationId} from '../../service/reservation-format.ts';
 import {formatDate, toDateTimeLocal} from '../../service/date-format.ts';
 import {dialogTitle} from '../../components/prompt-dialog.ts';
 import {FormMountController, requiredValue, submitValidated, validatedInput, validateWith} from '../../components/form-validation.ts';
+import { t, i18nKey } from '../../service/i18n';
 
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -41,19 +42,19 @@ interface DialogModeConfig {
 
 const MODES: Record<DialogMode, DialogModeConfig> = {
     edit: {
-        title: 'Edit payment for',
-        description: 'Update when the payment has been received and add internal notes.',
-        action: 'Save',
-        successMessage: 'Payment updated successfully',
-        errorMessage: 'Failed to update payment',
+        title: i18nKey('admin.payment-dialog.edit.title'),
+        description: t('admin.payment-dialog.edit.description'),
+        action: t('admin.common.save'),
+        successMessage: t('admin.payment-dialog.edit.done'),
+        errorMessage: t('admin.payment-dialog.edit.failed'),
     },
     confirm: {
-        title: 'Confirm payment for',
-        description: 'Register when the payment has been received. Tickets will be sent to the customer.',
-        action: 'Confirm',
+        title: i18nKey('admin.payment-dialog.confirm.title'),
+        description: t('admin.payment-dialog.confirm.description'),
+        action: t('admin.common.confirm'),
         actionIcon: 'check2',
-        successMessage: 'Payment confirmed successfully',
-        errorMessage: 'Failed to confirm payment',
+        successMessage: t('admin.payment-dialog.confirm.done'),
+        errorMessage: t('admin.payment-dialog.confirm.failed'),
     },
 };
 
@@ -115,7 +116,7 @@ export class EditPaymentDialog extends LitElement {
             this.transaction = result.data.transaction;
             this.resetForm(this.transaction);
         } catch {
-            dispatchFeedback({ type: 'danger', message: 'Failed to load payment details' }, this);
+            dispatchFeedback({ type: 'danger', message: t('admin.payment-dialog.load-failed') }, this);
             await this.dialog.hide();
         }
     }
@@ -149,10 +150,10 @@ export class EditPaymentDialog extends LitElement {
     render(): TemplateResult {
         const config = MODES[this.mode];
         return html`
-            <sl-dialog class="responsive-dialog" label="${config.title} ${shortReservationId(this.reservationId)}"
+            <sl-dialog class="responsive-dialog" label=${t(config.title, shortReservationId(this.reservationId))}
                        @sl-request-close=${this.onRequestClose}
                        @sl-after-hide=${this.onAfterHide}>
-                ${dialogTitle('cash-coin', `${config.title} ${shortReservationId(this.reservationId)}`, config.description)}
+                ${dialogTitle('cash-coin', t(config.title, shortReservationId(this.reservationId)), config.description)}
                 ${when(this.transaction,
                     () => this.renderForm(this.transaction!),
                     () => html`<div class="dialog-loading"><sl-spinner></sl-spinner></div>`)}
@@ -160,7 +161,7 @@ export class EditPaymentDialog extends LitElement {
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
                         <sl-button variant="default" size="large" ?disabled=${this.saving}
-                                   @click=${() => this.dialog.hide()}>Cancel</sl-button>
+                                   @click=${() => this.dialog.hide()}>${t('admin.common.cancel')}</sl-button>
                         <div></div>
                         <sl-button id="save-payment" variant="warning" size="large"
                                    ?loading=${this.saving} ?disabled=${this.transaction == null}
@@ -179,7 +180,7 @@ export class EditPaymentDialog extends LitElement {
             <form class="dialog-form form-stack" novalidate @submit=${(e: Event) => { e.preventDefault(); void this.submit(); }}>
                 <div class="section-card">
                     <div class="dialog-section-header">
-                        <sl-icon name="calendar-event"></sl-icon>Payment received on
+                        <sl-icon name="calendar-event"></sl-icon>${t('admin.payment-dialog.received-on')}
                         <sl-badge variant="primary" pill>${this.timeZone}</sl-badge>
                     </div>
                     <div class="section-body">
@@ -187,24 +188,24 @@ export class EditPaymentDialog extends LitElement {
                             () => this.#form.field({ name: 'timestamp', validators: validateWith(value => this.validateTimestamp(value)) },
                                 field => validatedInput(field, this.#form.api.state.submissionAttempts > 0, {
                                     className: 'payment-timestamp',
-                                    label: 'Date and time',
+                                    label: t('admin.payment-dialog.date-time'),
                                     type: 'datetime-local',
                                     min: this.minTimestamp(transaction),
                                 })),
                             () => html`
-                                <sl-input name="timestamp" label="Date and time" readonly
-                                          help-text="Recorded by the payment provider, it cannot be changed."
+                                <sl-input name="timestamp" label=${t('admin.payment-dialog.date-time')} readonly
+                                          help-text=${t('admin.payment-dialog.date-time.readonly')}
                                           value=${formatDate(transaction.timestamp, { timeZone: this.timeZone })}>
                                     <sl-icon name="lock" slot="suffix"></sl-icon>
                                 </sl-input>`)}
                     </div>
                 </div>
                 <div class="section-card">
-                    <div class="dialog-section-header"><sl-icon name="card-text"></sl-icon>Notes</div>
+                    <div class="dialog-section-header"><sl-icon name="card-text"></sl-icon>${t('admin.payments.notes')}</div>
                     <div class="section-body">
                         ${this.#form.field({ name: 'notes' }, field => html`
-                            <sl-textarea name="notes" label="Internal notes" rows="3" resize="auto"
-                                         help-text="Visible only to administrators."
+                            <sl-textarea name="notes" label=${t('admin.payment-dialog.notes')} rows="3" resize="auto"
+                                         help-text=${t('admin.payment-dialog.notes.help')}
                                          .value=${field.state.value}
                                          @sl-input=${(e: Event) => field.handleChange((e.target as SlTextarea).value)}></sl-textarea>
                         `)}
@@ -239,7 +240,7 @@ export class EditPaymentDialog extends LitElement {
         }
         // datetime-local values (yyyy-MM-ddTHH:mm) sort as strings
         if (String(value) < this.minTimestamp(transaction)) {
-            return 'The payment cannot be older than one year';
+            return t('admin.payment-dialog.error.too-old');
         }
         return undefined;
     }

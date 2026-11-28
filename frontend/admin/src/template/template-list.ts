@@ -8,6 +8,7 @@ import {badges, base, modernLayout, modernTable, textColors} from '../styles.ts'
 import {emptyState} from '../components/empty-state.ts';
 import {taskContent} from '../components/task-content.ts';
 import { adminUrl, navigateToUrl } from '../admin-router';
+import { t } from '../service/i18n';
 
 /**
  * The list of the overridable templates ("customize templates"), grouped by context
@@ -71,10 +72,10 @@ export class TemplateList extends LitElement {
         const content = html`
             <sl-alert open variant="warning">
                 <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                <strong>This is an advanced configuration.</strong>
-                Please be careful, as a wrong edit could lead to a loss of functionality.
+                <strong>${t('admin.template.list.warning')}</strong>
+                ${t('admin.template.list.warning.text')}
             </sl-alert>
-            ${taskContent(this.loadTask, this.templates, 'Failed to load the templates. Please try again.',
+            ${taskContent(this.loadTask, this.templates, t('admin.template.list.load-failed'),
                 (templates) => this.renderList(templates))}
         `;
         // as a page (event scope) the component renders its own title; embedded in a configuration tab, the tab already has one
@@ -82,7 +83,7 @@ export class TemplateList extends LitElement {
             return html`
                 <div class="container">
                     <div class="page-title-row">
-                        <h1>Customize templates</h1>
+                        <h1>${t('admin.event.menu.customize-templates')}</h1>
                     </div>
                     <hr class="page-separator"/>
                     ${content}
@@ -94,7 +95,7 @@ export class TemplateList extends LitElement {
 
     private renderList(templates: TemplateDescriptor[]): TemplateResult {
         if (templates.length === 0) {
-            return emptyState('No templates have been found');
+            return emptyState(t('admin.template.list.none'));
         }
         return html`
             ${repeat(groupTemplatesByContext(templates), (group) => group.context, (group) => this.renderContextGroup(group))}
@@ -114,9 +115,9 @@ export class TemplateList extends LitElement {
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>Template</th>
-                                <th>Recipient</th>
-                                <th><span class="sr-only">Actions</span></th>
+                                <th>${t('admin.page-title.template')}</th>
+                                <th>${t('admin.invitations.recipient')}</th>
+                                <th><span class="sr-only">${t('admin.common.actions')}</span></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -135,7 +136,7 @@ export class TemplateList extends LitElement {
                                             <sl-button variant="default" size="small" class="edit-template" data-template=${template.name}
                                                        title=${template.name} type="button" @click=${() => this.openEditor(template.name)}>
                                                 <sl-icon slot="prefix" name="pencil"></sl-icon>
-                                                Edit<span class="sr-only"> ${template.name}</span>
+                                                ${t('admin.common.edit')}<span class="sr-only"> ${template.name}</span>
                                             </sl-button>
                                         </div>
                                     </td>

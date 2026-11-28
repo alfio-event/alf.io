@@ -47,6 +47,7 @@ import {
 } from '../components/form-validation.ts';
 
 import { adminConfig } from '../admin-config';
+import { t, tHtml, tHtmlPlural } from '../service/i18n';
 interface LoadResult {
     users: User[];
     roles: Role[];
@@ -85,14 +86,14 @@ function emptyUserForm(organizationId: string): UserFormValues {
 
 function validateEntries(value: unknown): string | undefined {
     if (Number(value ?? 0) === 0) {
-        return 'Please upload a CSV file with at least one API key';
+        return t('admin.users.error.bulk-empty');
     }
     return undefined;
 }
 
 @customElement('alfio-users')
 export class Users extends LitElement {
-    @property({attribute: 'alfio-title'}) alfioTitle: string = 'Users';
+    @property({attribute: 'alfio-title'}) alfioTitle: string = t('admin.user.list.title');
     @property() type: UserType = 'user';
 
     @state() isAdmin: boolean = adminConfig().isAdmin;
@@ -282,7 +283,7 @@ export class Users extends LitElement {
                         </div>
                     `)}
 
-                ${taskContent(this.loadDataTask, data, `Failed to load the ${this.entityPlural()}. Please try again.`,
+                ${taskContent(this.loadDataTask, data, this.entityTexts().loadFailed,
                     (loaded) => this.renderSections(loaded))}
             </div>
 
@@ -296,24 +297,24 @@ export class Users extends LitElement {
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => this.apiQrDialog.hide()}>Close</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.apiQrDialog.hide()}>${t('admin.common.close')}</sl-button>
                         <div></div>
                     </div>
                 </div>
             </sl-dialog>
 
-            <sl-dialog id="show-user-data" class="responsive-dialog" label="User credentials">
+            <sl-dialog id="show-user-data" class="responsive-dialog" label=${t('admin.users.credentials')}>
                 <div class="credentials-card">
                     <div class="cred-row">
-                        <span class="cred-label">Username</span>
+                        <span class="cred-label">${t('admin.common.username')}</span>
                         <span class="cred-value">${this.userDataReset?.username ?? ''}</span>
                     </div>
                     <div class="cred-row">
-                        <span class="cred-label">Password</span>
+                        <span class="cred-label">${t('admin.users.password')}</span>
                         <span class="cred-value">
-                            <sl-tooltip content="Copy password">
-                                <sl-button variant="text" size="small" @click=${() => UtilService.copyValueToClipboard(() => this.userDataReset!.password!, 'User Password', this)}>
-                                    <sl-icon name="clipboard" label="Copy password"></sl-icon>
+                            <sl-tooltip content=${t('admin.users.copy-password')}>
+                                <sl-button variant="text" size="small" @click=${() => UtilService.copyValueToClipboard(() => this.userDataReset!.password!, t('admin.users.user-password'), this)}>
+                                    <sl-icon name="clipboard" label=${t('admin.users.copy-password')}></sl-icon>
                                 </sl-button>
                             </sl-tooltip>
                             ${this.userDataReset?.password ?? ''}
@@ -323,7 +324,7 @@ export class Users extends LitElement {
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => this.showUserDataDialog.hide()}>Close</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.showUserDataDialog.hide()}>${t('admin.common.close')}</sl-button>
                         <div></div>
                     </div>
                 </div>
@@ -334,24 +335,24 @@ export class Users extends LitElement {
     private renderSystemApiKey(): TemplateResult {
         return html`
             <div class="featured-card">
-                <h2><sl-icon name="key-fill"></sl-icon> System API Key</h2>
-                <small class="text-muted">Used by external applications to create, modify and delete organizations, and to create API keys.</small>
+                <h2><sl-icon name="key-fill"></sl-icon> ${t('admin.users.system-api-key')}</h2>
+                <small class="text-muted">${t('admin.users.system-api-key.description')}</small>
                 ${when(this.systemApiKey,
                     () => html`
                         <div class="secret-display">${this.systemApiKey}</div>
                         <div class="api-key-actions">
-                            <sl-button variant="default" size="small" @click=${() => UtilService.copyValueToClipboard(() => this.systemApiKey!, 'System API Key', this)}>
-                                <sl-icon slot="prefix" name="clipboard"></sl-icon> Copy
+                            <sl-button variant="default" size="small" @click=${() => UtilService.copyValueToClipboard(() => this.systemApiKey!, t('admin.users.system-api-key'), this)}>
+                                <sl-icon slot="prefix" name="clipboard"></sl-icon> ${t('admin.common.copy')}
                             </sl-button>
                             <sl-button variant="warning" size="small" @click=${() => this.confirmRotateSystemApiKey()}>
-                                <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon> Rotate
+                                <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon> ${t('admin.users.rotate')}
                             </sl-button>
                         </div>
                     `,
                     () => html`
                         <div class="api-key-actions">
                             <sl-button variant="default" size="small" @click=${() => this.revealSystemApiKey()}>
-                                <sl-icon slot="prefix" name="eye"></sl-icon> Reveal System API Key
+                                <sl-icon slot="prefix" name="eye"></sl-icon> ${t('admin.users.reveal-system-api-key')}
                             </sl-button>
                         </div>
                     `)}
@@ -367,19 +368,19 @@ export class Users extends LitElement {
         }
         return html`
             ${when(orgs.length > 1, () => html`
-                <sl-select clearable hoist class="filter-select" label="Show members of"
+                <sl-select clearable hoist class="filter-select" label=${t('admin.users.filter.organization')}
                            .value=${selectedOrganization}
                            @sl-change=${(e: Event) => this.onOrganizationFilterChange((e.target as SlSelect).value)}>
-                    <sl-option value="">All</sl-option>
+                    <sl-option value="">${t('admin.users.filter.all')}</sl-option>
                     ${repeat(orgs, (org) => org.id, (org) => html`
                         <sl-option value=${org.id}>${org.name}</sl-option>
                     `)}
                 </sl-select>
             `)}
-            <sl-select clearable hoist class="filter-select" label="Filter by role"
+            <sl-select clearable hoist class="filter-select" label=${t('admin.users.filter.role')}
                        .value=${this.selectedRole ?? ''}
                        @sl-change=${(e: Event) => this.onRoleFilterChange((e.target as SlSelect).value)}>
-                <sl-option value="">All roles</sl-option>
+                <sl-option value="">${t('admin.users.filter.all-roles')}</sl-option>
                 ${repeat(this.roles.filter(r => (r.target || []).includes(targetType) && availableRoles.has(r.role)), (r) => r.role, (r) => html`
                     <sl-option value=${r.role}>${r.description}</sl-option>
                 `)}
@@ -390,16 +391,16 @@ export class Users extends LitElement {
     private renderToolbarActions(orgs: Organization[]): TemplateResult {
         return html`
             ${when(this.type === 'user',
-                () => html`<sl-button variant="success" size="large" @click=${() => this.openNewUser()}><sl-icon slot="prefix" name="plus-circle"></sl-icon> Add new</sl-button>`,
-                () => html`<sl-button variant="success" size="large" @click=${() => this.openNewApiKey()}><sl-icon slot="prefix" name="plus-circle"></sl-icon> Add new</sl-button>`)}
+                () => html`<sl-button variant="success" size="large" @click=${() => this.openNewUser()}><sl-icon slot="prefix" name="plus-circle"></sl-icon> ${t('admin.common.add-new-entity')}</sl-button>`,
+                () => html`<sl-button variant="success" size="large" @click=${() => this.openNewApiKey()}><sl-icon slot="prefix" name="plus-circle"></sl-icon> ${t('admin.common.add-new-entity')}</sl-button>`)}
             ${when(this.type === 'apikey',
-                () => html`<sl-button variant="primary" size="large" @click=${() => this.openBulkImport()}><sl-icon slot="prefix" name="file-earmark-bar-graph"></sl-icon> Bulk creation</sl-button>`)}
+                () => html`<sl-button variant="primary" size="large" @click=${() => this.openBulkImport()}><sl-icon slot="prefix" name="file-earmark-bar-graph"></sl-icon> ${t('admin.users.bulk-creation')}</sl-button>`)}
             ${when(this.type === 'apikey' && orgs.length === 1,
-                () => html`<sl-button variant="default" size="large" @click=${() => this.downloadApiKeys(orgs[0].id)}><sl-icon slot="prefix" name="download"></sl-icon> Download all</sl-button>`)}
+                () => html`<sl-button variant="default" size="large" @click=${() => this.downloadApiKeys(orgs[0].id)}><sl-icon slot="prefix" name="download"></sl-icon> ${t('admin.users.download-all')}</sl-button>`)}
             ${when(this.type === 'apikey' && orgs.length > 1,
                 () => html`
                     <sl-dropdown hoist>
-                        <sl-button slot="trigger" variant="default" size="large" caret><sl-icon slot="prefix" name="download"></sl-icon> Download all</sl-button>
+                        <sl-button slot="trigger" variant="default" size="large" caret><sl-icon slot="prefix" name="download"></sl-icon> ${t('admin.users.download-all')}</sl-button>
                         <sl-menu>
                             ${repeat(orgs, (org) => org.id, (org) => html`
                                 <sl-menu-item @click=${() => this.downloadApiKeys(org.id)}>${org.name}</sl-menu-item>
@@ -416,7 +417,7 @@ export class Users extends LitElement {
         return html`
             ${sectionCard({
                 icon: 'check-circle',
-                title: 'Active',
+                title: t('admin.categories.filter.active'),
                 badge: html`<sl-badge variant="success" pill>${enabledUsers.length}</sl-badge>`,
                 className: 'active-users',
             }, html`<div class="table-responsive">${this.renderUsersTable(enabledUsers)}</div>`)}
@@ -425,7 +426,7 @@ export class Users extends LitElement {
 
             ${sectionCard({
                 icon: 'eye-slash',
-                title: 'Inactive',
+                title: t('admin.users.inactive'),
                 badge: html`<sl-badge variant="neutral" pill>${disabledUsers.length}</sl-badge>`,
                 className: 'inactive-users',
             }, html`<div class="table-responsive">${this.renderUsersTable(disabledUsers)}</div>`)}
@@ -472,13 +473,13 @@ export class Users extends LitElement {
                 <div class="form-stack">
                     <div class="row" style="--alfio-row-cols: 2">
                         ${this.#userForm.field({ name: 'organizationId', validators: validateWith(value => requiredValue(value)) },
-                            field => validatedSelect(field, submitted, { id: 'edit-org', label: 'Organization', placeholder: 'Select an organization' }, html`
+                            field => validatedSelect(field, submitted, { id: 'edit-org', label: t('admin.common.organization'), placeholder: t('admin.users.organization.placeholder') }, html`
                                 ${repeat(this.organizations, (org) => org.id, (org) => html`
                                     <sl-option value=${String(org.id)}>${org.name}</sl-option>
                                 `)}
                             `))}
                         ${this.#userForm.field({ name: 'role', validators: validateWith(value => requiredValue(value)) },
-                            field => validatedSelect(field, submitted, { id: 'edit-role', label: 'Role', placeholder: 'Select a role' }, html`
+                            field => validatedSelect(field, submitted, { id: 'edit-role', label: t('admin.users.role'), placeholder: t('admin.users.role.placeholder') }, html`
                                 ${repeat(availableRoles, (r) => r.role, (r) => html`
                                     <sl-option value=${r.role}>${r.description}</sl-option>
                                 `)}
@@ -488,29 +489,29 @@ export class Users extends LitElement {
                     ${when(target === 'USER',
                         () => html`
                             ${this.#userForm.field({ name: 'username', validators: validateWith(value => ifUser(() => minLength(value, 2))) },
-                                field => input(field, { id: 'edit-username', label: 'Username', prefixIcon: 'person' }))}
+                                field => input(field, { id: 'edit-username', label: t('admin.common.username'), prefixIcon: 'person' }))}
                             <div class="row" style="--alfio-row-cols: 2">
                                 ${this.#userForm.field({ name: 'firstName', validators: validateWith(value => ifUser(() => minLength(value, 2))) },
-                                    field => input(field, { id: 'edit-firstName', label: 'First name' }))}
+                                    field => input(field, { id: 'edit-firstName', label: t('admin.common.first-name') }))}
                                 ${this.#userForm.field({ name: 'lastName', validators: validateWith(value => ifUser(() => minLength(value, 2))) },
-                                    field => input(field, { id: 'edit-lastName', label: 'Last name' }))}
+                                    field => input(field, { id: 'edit-lastName', label: t('admin.common.last-name') }))}
                             </div>
                             ${this.#userForm.field({ name: 'emailAddress', validators: validateWith(value => ifUser(() => emailAddress(value))) },
-                                field => input(field, { id: 'edit-emailAddress', label: 'E-mail', type: 'email', prefixIcon: 'envelope' }))}
+                                field => input(field, { id: 'edit-emailAddress', label: t('admin.common.email'), type: 'email', prefixIcon: 'envelope' }))}
                         `,
                         () => html`
                             ${this.#userForm.field({ name: 'description' },
-                                field => input(field, { id: 'edit-description', label: 'Description', maxlength: 128, prefixIcon: 'card-text', optional: true }))}
+                                field => input(field, { id: 'edit-description', label: t('admin.common.description'), maxlength: 128, prefixIcon: 'card-text', optional: true }))}
                         `)}
                 </div>
 
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => this.cancelEdit()}>Cancel</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.cancelEdit()}>${t('admin.common.cancel')}</sl-button>
                         <div></div>
                         <sl-button id="save-user" variant="warning" size="large" ?loading=${this.savingUser} @click=${() => this.submitUser()}>
-                            Save
+                            ${t('admin.common.save')}
                         </sl-button>
                     </div>
                 </div>
@@ -524,34 +525,34 @@ export class Users extends LitElement {
         const count = this.bulkDescriptions.length;
 
         return html`
-            <sl-dialog id="bulk-import" class="responsive-dialog" label="Bulk create API keys"
+            <sl-dialog id="bulk-import" class="responsive-dialog" label=${t('admin.users.bulk.title')}
                        @sl-request-close=${this.preventOverlayClose}>
                 <div class="form-stack">
                     ${this.#bulkForm.field({ name: 'organizationId', validators: validateWith(value => requiredValue(value)) },
-                        field => validatedSelect(field, bulkSubmitted, { id: 'bulk-org', label: 'Organization', placeholder: 'Select an organization' }, html`
+                        field => validatedSelect(field, bulkSubmitted, { id: 'bulk-org', label: t('admin.common.organization'), placeholder: t('admin.users.organization.placeholder') }, html`
                             ${repeat(this.organizations, (org) => org.id, (org) => html`
                                 <sl-option value=${String(org.id)}>${org.name}</sl-option>
                             `)}
                         `))}
 
                     ${this.#bulkForm.field({ name: 'role', validators: validateWith(value => requiredValue(value)) },
-                        field => validatedSelect(field, bulkSubmitted, { id: 'bulk-role', label: 'Role', placeholder: 'Select a role' }, html`
+                        field => validatedSelect(field, bulkSubmitted, { id: 'bulk-role', label: t('admin.users.role'), placeholder: t('admin.users.role.placeholder') }, html`
                             ${repeat(availableRoles, (r) => r.role, (r) => html`
                                 <sl-option value=${r.role}>${r.description}</sl-option>
                             `)}
                         `))}
 
                     <div class="bulk-specs">
-                        <h4 style="margin-top: 0; margin-bottom: var(--sl-spacing-small);">File specifications</h4>
+                        <h4 style="margin-top: 0; margin-bottom: var(--sl-spacing-small);">${t('admin.csv-import.file-specifications')}</h4>
                         <p class="text-muted" style="margin: 0 0 var(--sl-spacing-small);">
-                            Create a CSV file <strong>without header</strong>, using commas (<strong>,</strong>) as separator and double quotes (<strong>"</strong>) as quote character.
+                            ${tHtml('admin.users.bulk.format', html`<strong>${t('admin.users.bulk.without-header')}</strong>`, html`<strong>,</strong>`, html`<strong>"</strong>`)}
                         </p>
-                        <strong>Row specification:</strong>
+                        <strong>${t('admin.users.bulk.row')}</strong>
                         <pre><span class="text-success">name</span>
 
-where:
+${t('admin.users.bulk.where')}
 
-<span class="text-success">name</span> is the client name, displayed in the QR-Code and statistics</pre>
+${tHtml('admin.users.bulk.name', html`<span class="text-success">name</span>`)}</pre>
                     </div>
 
                     <div>
@@ -571,19 +572,19 @@ where:
                         <div class="table-responsive">
                             <table class="table table-striped">
                                 <thead>
-                                    <tr><th colspan="2">Parsed entries</th></tr>
+                                    <tr><th colspan="2">${t('admin.users.bulk.parsed')}</th></tr>
                                 </thead>
                                 <tbody>
                                     ${repeat(this.bulkDescriptions, (_, i) => i, (desc) => html`<tr><td colspan="2">${desc}</td></tr>`)}
                                 </tbody>
                                 <tfoot>
-                                    <tr><th>Total</th><th><sl-badge variant="primary" pill>${count}</sl-badge></th></tr>
+                                    <tr><th>${t('admin.poll.total')}</th><th><sl-badge variant="primary" pill>${count}</sl-badge></th></tr>
                                 </tfoot>
                             </table>
                         </div>
                         <sl-alert variant="primary" open>
                             <sl-icon slot="icon" name="info-circle"></sl-icon>
-                            <strong>${count}</strong> ${this.apiKeysLabel(count)} will be created.
+                            ${tHtmlPlural('admin.users.bulk.will-be-created', count, html`<strong>${count}</strong>`)}
                         </sl-alert>
                     `)}
                 </div>
@@ -591,11 +592,11 @@ where:
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => this.cancelBulkImport()}>Cancel</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.cancelBulkImport()}>${t('admin.common.cancel')}</sl-button>
                         <div></div>
                         <sl-button id="save-bulk-import" variant="warning" size="large" ?loading=${this.savingBulkImport}
                                    @click=${() => this.submitBulkImport()}>
-                            Save
+                            ${t('admin.common.save')}
                         </sl-button>
                     </div>
                 </div>
@@ -619,11 +620,11 @@ where:
 
     private renderUsersTable(filtered: User[]): TemplateResult {
         if (filtered.length === 0) {
-            return emptyState(`No ${this.entityPlural()} found`);
+            return emptyState(this.entityTexts().none);
         }
-        let nameLabel = 'Name';
+        let nameLabel = t('admin.common.name');
         if (this.type === 'apikey') {
-            nameLabel = 'Description';
+            nameLabel = t('admin.common.description');
         }
 
         return html`
@@ -631,12 +632,12 @@ where:
                 <thead>
                     <tr>
                         <th style="width: 12%">
-                            ${when(this.type === 'user', () => 'Username', () => 'API key')}
+                            ${when(this.type === 'user', () => t('admin.common.username'), () => t('admin.users.api-key'))}
                         </th>
-                        <th style="width: 33%">${when(this.type === 'apikey', () => 'Description', () => 'Name')}</th>
-                        <th style="width: 10%">Role</th>
-                        <th style="width: 15%">Organization</th>
-                        <th style="width: 30%"><span class="sr-only">Actions</span></th>
+                        <th style="width: 33%">${nameLabel}</th>
+                        <th style="width: 10%">${t('admin.users.role')}</th>
+                        <th style="width: 15%">${t('admin.common.organization')}</th>
+                        <th style="width: 30%"><span class="sr-only">${t('admin.common.actions')}</span></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -649,41 +650,41 @@ where:
                                         <span class="api-key-cell">
                                             <sl-icon name="key"></sl-icon>
                                             <i>${user.username.substring(0, 8)}…</i>
-                                            <sl-tooltip content="Copy API key">
-                                                <sl-button variant="text" size="small" @click=${() => UtilService.copyValueToClipboard(() => user.username, 'API Key', this)}>
-                                                    <sl-icon name="clipboard" label="Copy API key"></sl-icon>
+                                            <sl-tooltip content=${t('admin.users.copy-api-key')}>
+                                                <sl-button variant="text" size="small" @click=${() => UtilService.copyValueToClipboard(() => user.username, t('admin.users.api-key'), this)}>
+                                                    <sl-icon name="clipboard" label=${t('admin.users.copy-api-key')}></sl-icon>
                                                 </sl-button>
                                             </sl-tooltip>
                                         </span>
                                     `)}
                             </td>
                             <td data-label=${nameLabel}>${when(this.type === 'user', () => html`${user.firstName} ${user.lastName}`, () => html`${user.description}`)}</td>
-                            <td data-label="Role">${repeat(user.roles, (role) => role, (role) => html`<sl-badge variant="primary" pill>${this.roleDesc(role)}</sl-badge>`)}</td>
-                            <td data-label="Organization">${repeat(user.memberOf, (org: any) => org.id, (org: any) => html`<sl-badge variant="neutral" pill>${org.name}</sl-badge>`)}</td>
+                            <td data-label=${t('admin.users.role')}>${repeat(user.roles, (role) => role, (role) => html`<sl-badge variant="primary" pill>${this.roleDesc(role)}</sl-badge>`)}</td>
+                            <td data-label=${t('admin.common.organization')}>${repeat(user.memberOf, (org: any) => org.id, (org: any) => html`<sl-badge variant="neutral" pill>${org.name}</sl-badge>`)}</td>
                             <td>
                                 <div class="actions-cell">
                                     ${when(user.enabled,
                                         () => html`
                                             <sl-button variant="default" size="small" @click=${() => this.editUser(user)}>
-                                                <sl-icon slot="prefix" name="pencil"></sl-icon> Edit
+                                                <sl-icon slot="prefix" name="pencil"></sl-icon> ${t('admin.common.edit')}
                                             </sl-button>
                                             ${when(this.type === 'user',
                                                 () => html`<sl-button variant="default" size="small" @click=${() => this.resetPassword(user)}>
-                                                    <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon> Reset
+                                                    <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon> ${t('admin.common.reset')}
                                                 </sl-button>`,
                                                 () => html`<sl-button variant="default" size="small" @click=${() => this.viewApiKey(user)}>
-                                                    <sl-icon slot="prefix" name="qr-code"></sl-icon> QR
+                                                    <sl-icon slot="prefix" name="qr-code"></sl-icon> ${t('admin.users.qr')}
                                                 </sl-button>`)}
                                             <sl-button variant="warning" size="small" @click=${() => this.enableUser(user, false)}>
-                                                <sl-icon slot="prefix" name="eye-slash"></sl-icon> Deactivate
+                                                <sl-icon slot="prefix" name="eye-slash"></sl-icon> ${t('admin.users.deactivate')}
                                             </sl-button>
                                         `,
                                         () => html`
                                             <sl-button variant="default" size="small" @click=${() => this.enableUser(user, true)}>
-                                                <sl-icon slot="prefix" name="eye"></sl-icon> Reactivate
+                                                <sl-icon slot="prefix" name="eye"></sl-icon> ${t('admin.users.reactivate')}
                                             </sl-button>
                                             <sl-button variant="danger" size="small" @click=${() => this.deleteUser(user)}>
-                                                <sl-icon slot="prefix" name="trash"></sl-icon> Delete
+                                                <sl-icon slot="prefix" name="trash"></sl-icon> ${t('admin.common.delete')}
                                             </sl-button>
                                         `)}
                                 </div>
@@ -702,33 +703,26 @@ where:
         return 'API_KEY';
     }
 
-    // "users" or "API keys", for the messages of the page
-    private entityPlural(): string {
+    // the messages of the page, for users or API keys
+    private entityTexts(): { loadFailed: string, none: string } {
         if (this.type === 'user') {
-            return 'users';
+            return { loadFailed: t('admin.users.load-failed'), none: t('admin.users.none') };
         }
-        return 'API keys';
-    }
-
-    private apiKeysLabel(count: number): string {
-        if (count === 1) {
-            return 'API key';
-        }
-        return 'API keys';
+        return { loadFailed: t('admin.users.api-keys.load-failed'), none: t('admin.users.api-keys.none') };
     }
 
     private userDialogLabel(user: EditableUser): string {
         const isApiKey = user.target === 'API_KEY';
         if (user.id != null) {
             if (isApiKey) {
-                return 'Edit API key';
+                return t('admin.users.api-key.edit');
             }
-            return 'Edit user';
+            return t('admin.users.edit');
         }
         if (isApiKey) {
-            return 'New API key';
+            return t('admin.users.api-key.new');
         }
-        return 'New user';
+        return t('admin.users.new');
     }
 
     // a click outside a form dialog would discard what the user typed: only the close button and Cancel close it
@@ -923,7 +917,7 @@ where:
         if (!this.editingUser) return;
         if (this.editingUser.id != null) {
             this.refresh();
-            dispatchFeedback({type: 'success', message: 'User updated successfully'}, this);
+            dispatchFeedback({type: 'success', message: t('admin.users.updated')}, this);
         } else if (saved) {
             this.refresh();
             if (this.editingUser.target === 'USER') {
@@ -982,7 +976,7 @@ where:
         });
         this.refresh();
         await this.bulkImportDialog.hide();
-        dispatchFeedback({type: 'success', message: 'API keys imported successfully'}, this);
+        dispatchFeedback({type: 'success', message: t('admin.users.api-keys.imported')}, this);
     }
 
     private cancelBulkImport(): void {
@@ -992,24 +986,24 @@ where:
     }
 
     private async deleteUser(user: User): Promise<void> {
-        let title = 'Delete user?';
-        let message = `The user ${user.username} will be deleted. Are you sure?`;
+        let title = t('admin.users.delete.title');
+        let message = t('admin.users.delete.text', user.username);
         if (this.type === 'apikey') {
-            title = 'Delete API key?';
-            message = `The API key ${user.description ?? user.username} will be deleted. Are you sure?`;
+            title = t('admin.users.api-key.delete.title');
+            message = t('admin.users.api-key.delete.text', user.description ?? user.username);
         }
         const confirmation = await ConfirmationDialogService.requestConfirm(title, message, 'danger');
         if (confirmation) {
             await UsersService.delete(user.id);
             this.refresh();
-            dispatchFeedback({type: 'success', message: 'User deleted'}, this);
+            dispatchFeedback({type: 'success', message: t('admin.users.deleted')}, this);
         }
     }
 
     private async resetPassword(user: User): Promise<void> {
         const confirmation = await ConfirmationDialogService.requestConfirm(
-            `Reset password?`,
-            `The password for the user ${user.username} will be reset. Are you sure?`,
+            t('admin.users.reset-password.title'),
+            t('admin.users.reset-password.text', user.username),
             'warning'
         );
         if (confirmation) {
@@ -1040,15 +1034,15 @@ where:
 
     private async confirmRotateSystemApiKey(): Promise<void> {
         const confirmation = await ConfirmationDialogService.requestConfirm(
-            'Rotate the System API Key?',
-            'The current key stops working immediately, and all external applications must use the new one. This cannot be undone.',
+            t('admin.users.rotate.title'),
+            t('admin.users.rotate.text'),
             'warning'
         );
         if (!confirmation) {
             return;
         }
         this.systemApiKey = await UsersService.rotateSystemApiKey();
-        dispatchFeedback({type: 'success', message: 'API Key successfully rotated.'}, this);
+        dispatchFeedback({type: 'success', message: t('admin.users.rotated')}, this);
     }
 }
 

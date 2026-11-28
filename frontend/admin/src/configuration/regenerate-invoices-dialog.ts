@@ -16,6 +16,7 @@ import {
     validatedInput,
 } from '../components/form-validation.ts';
 import {base, dialog, form, modernLayout, row, textColors} from '../styles.ts';
+import { t, tHtml } from '../service/i18n';
 
 interface PeriodValues {
     from: string;
@@ -90,7 +91,7 @@ export class RegenerateInvoicesDialog extends LitElement {
 
     render(): TemplateResult {
         return html`
-            <sl-dialog class="responsive-dialog" label="Regenerate invoices"
+            <sl-dialog class="responsive-dialog" label=${t('admin.settings.regenerate-invoices')}
                        @sl-request-close=${this.onRequestClose}
                        @sl-after-hide=${this.onAfterHide}>
                 ${when(this.opened, () => this.renderForm())}
@@ -103,8 +104,7 @@ export class RegenerateInvoicesDialog extends LitElement {
         return html`
             <form id="regenerate-invoices-form" class="form-stack" novalidate @submit=${this.submit}>
                 <p class="text-muted">
-                    The invoices of ${this.eventName} created in this period will show the current settings of the event.
-                    You will receive an e-mail when they have been regenerated.
+                    ${t('admin.regenerate-invoices.description', this.eventName)}
                 </p>
                 <div class="row" style="--alfio-row-cols: 2">
                     ${this.#form.field({
@@ -114,7 +114,7 @@ export class RegenerateInvoicesDialog extends LitElement {
                             onSubmit: ({value}) => requiredValue(value),
                         },
                     }, (field: BoundField<string>) => validatedInput(field, submitted, {
-                        id: 'invoices-from', label: 'Created from', type: 'date', min: this.minDate,
+                        id: 'invoices-from', label: t('admin.regenerate-invoices.from'), type: 'date', min: this.minDate,
                     }))}
                     ${this.#form.field({
                         name: 'to',
@@ -124,7 +124,7 @@ export class RegenerateInvoicesDialog extends LitElement {
                             onSubmit: ({value, fieldApi}) => checkEndDate(value, fieldApi.form.getFieldValue('from')),
                         },
                     }, (field: BoundField<string>) => validatedInput(field, submitted, {
-                        id: 'invoices-to', label: 'Created until', type: 'date', min: this.minDate,
+                        id: 'invoices-to', label: t('admin.regenerate-invoices.to'), type: 'date', min: this.minDate,
                     }))}
                 </div>
                 ${this.renderMatching()}
@@ -139,11 +139,11 @@ export class RegenerateInvoicesDialog extends LitElement {
                 <sl-divider></sl-divider>
                 ${when(this.invalid, () => html`<p class="text-danger">${INVALID_FORM_MESSAGE}</p>`)}
                 <div class="row" style="--alfio-row-cols: 3">
-                    <sl-button variant="default" size="large" @click=${this.close}>Cancel</sl-button>
+                    <sl-button variant="default" size="large" @click=${this.close}>${t('admin.common.cancel')}</sl-button>
                     <div></div>
                     <sl-button id="confirm-regenerate-invoices" variant="warning" size="large"
                                ?loading=${this.submitting} ?disabled=${this.submitting}
-                               @click=${this.submit}>Regenerate</sl-button>
+                               @click=${this.submit}>${t('admin.reservation.billing.regenerate')}</sl-button>
                 </div>
             </div>
         `;
@@ -151,19 +151,19 @@ export class RegenerateInvoicesDialog extends LitElement {
 
     private renderMatching(): TemplateResult {
         if (this.searching) {
-            return html`<p class="matching text-muted"><sl-spinner></sl-spinner> Searching the invoices…</p>`;
+            return html`<p class="matching text-muted"><sl-spinner></sl-spinner> ${t('admin.regenerate-invoices.searching')}</p>`;
         }
         if (this.matching == null) {
             return html``;
         }
         if (this.matching.length === 0) {
-            return html`<p class="matching text-muted" id="matching-invoices">No invoices were created in this period.</p>`;
+            return html`<p class="matching text-muted" id="matching-invoices">${t('admin.regenerate-invoices.none')}</p>`;
         }
-        let label = `${this.matching.length} invoices`;
+        let label = t('admin.regenerate-invoices.count', { count: this.matching.length });
         if (this.matching.length === 1) {
-            label = '1 invoice';
+            label = t('admin.regenerate-invoices.count', { count: 1 });
         }
-        return html`<p class="matching" id="matching-invoices"><strong>${label}</strong> will be regenerated.</p>`;
+        return html`<p class="matching" id="matching-invoices">${tHtml('admin.regenerate-invoices.will-be-regenerated', html`<strong>${label}</strong>`)}</p>`;
     }
 
     // the period searched last
@@ -193,7 +193,7 @@ export class RegenerateInvoicesDialog extends LitElement {
         } catch (e) {
             if (request === this.searchRequest) {
                 this.matching = null;
-                this.submitError = errorMessage(e, 'Failed to search the invoices');
+                this.submitError = errorMessage(e, t('admin.settings.error.search-invoices'));
             }
         } finally {
             if (request === this.searchRequest) {
@@ -223,18 +223,18 @@ export class RegenerateInvoicesDialog extends LitElement {
             const matching = await SettingsService.findMatchingInvoices(this.eventId, startOfDay(from), endOfDay(to));
             this.matching = matching;
             if (matching.length === 0) {
-                this.submitError = 'No invoices were created in this period: choose another period.';
+                this.submitError = t('admin.regenerate-invoices.none-choose-another');
                 return;
             }
             const scheduled = await SettingsService.regenerateInvoices(this.eventId, matching);
             if (!scheduled) {
-                this.submitError = 'The regeneration could not be scheduled. Please try again in a few minutes.';
+                this.submitError = t('admin.regenerate-invoices.failed');
                 return;
             }
-            dispatchFeedback({type: 'success', message: 'The invoices will be regenerated: you will receive an e-mail when they are ready'}, this);
+            dispatchFeedback({type: 'success', message: t('admin.regenerate-invoices.scheduled')}, this);
             this.close();
         } catch (e) {
-            this.submitError = errorMessage(e, 'The regeneration could not be scheduled. Please try again in a few minutes.');
+            this.submitError = errorMessage(e, t('admin.regenerate-invoices.failed'));
         } finally {
             this.submitting = false;
         }
@@ -267,7 +267,7 @@ function checkEndDate(value: unknown, from: unknown): string | undefined {
         return required;
     }
     if (from != null && from !== '' && String(value) < String(from)) {
-        return 'Please choose a date on or after the start date';
+        return t('admin.regenerate-invoices.error.to');
     }
     return undefined;
 }

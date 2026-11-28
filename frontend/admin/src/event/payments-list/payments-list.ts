@@ -35,6 +35,7 @@ import {emptyState} from '../../components/empty-state.ts';
 import {ListSearchController} from '../../components/list-search.ts';
 import {taskContent} from '../../components/task-content.ts';
 import { adminUrl } from '../../admin-router';
+import { t, tHtml } from '../../service/i18n';
 
 interface PaymentsListData {
     event: AlfioEvent;
@@ -127,7 +128,7 @@ export class PaymentsList extends LitElement {
     }
 
     render(): TemplateResult {
-        return taskContent(this.loadDataTask, this.lastData, 'Failed to load payments. Please try again.',
+        return taskContent(this.loadDataTask, this.lastData, t('admin.payments.load-failed'),
             (data) => this.renderContent(data));
     }
 
@@ -136,16 +137,16 @@ export class PaymentsList extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row secondary">
-                    <h1>Confirmed payments for <i>${localizedTitle(data.event)}</i></h1>
+                    <h1>${tHtml('admin.payments.title', html`<i>${localizedTitle(data.event)}</i>`)}</h1>
                 </div>
                 <hr class="page-separator" />
                 <div class="filter-toolbar">
-                    <div class="filter-left">${this.searchController.render('payments')}</div>
+                    <div class="filter-left">${this.searchController.render(t('admin.payments.items'))}</div>
                     ${when(payments.right > 0, () => html`
                         <div class="filter-right">
                             <sl-button variant="default" size="large" href=${this.exportHref()} target="_blank" rel="noopener">
                                 <sl-icon slot="prefix" name="download"></sl-icon>
-                                Export
+                                ${t('admin.payments.export')}
                             </sl-button>
                         </div>
                     `)}
@@ -153,7 +154,7 @@ export class PaymentsList extends LitElement {
                 ${when(payments.right === 0,
                     () => html`
                         <section class="section-card">
-                            ${emptyState('No payments found')}
+                            ${emptyState(t('admin.payments.none'))}
                         </section>
                     `,
                     () => html`
@@ -162,7 +163,7 @@ export class PaymentsList extends LitElement {
                             .page=${this.page}
                             .total=${payments.right}
                             page-size=${ITEMS_PER_PAGE}
-                            item-label="payments"
+                            item-label=${t('admin.payments.items')}
                             @alfio-page-change=${this.onPageChange}
                         ></alfio-pagination-bar>
                     `)}
@@ -182,14 +183,14 @@ export class PaymentsList extends LitElement {
                 <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Customer</th>
-                            <th class="hide-small">Email</th>
-                            <th class="hide-small">Payment</th>
-                            <th>Amount</th>
-                            <th class="hide-small">Date</th>
-                            <th class="hide-small">Notes</th>
-                            <th>Actions</th>
+                            <th>${t('admin.common.id')}</th>
+                            <th>${t('admin.common.customer')}</th>
+                            <th class="hide-small">${t('admin.common.email-short')}</th>
+                            <th class="hide-small">${t('admin.common.payment')}</th>
+                            <th>${t('admin.common.amount')}</th>
+                            <th class="hide-small">${t('admin.common.date')}</th>
+                            <th class="hide-small">${t('admin.payments.notes')}</th>
+                            <th>${t('admin.common.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -200,24 +201,24 @@ export class PaymentsList extends LitElement {
                                         ${reservationIdentifier(payment, data.useInvoiceNumberAsId)}
                                     </a>
                                 </td>
-                                <td data-label="Customer">${formatFullName(payment)}</td>
-                                <td class="email hide-small" data-label="Email">${payment.email ?? ''}</td>
-                                <td class="hide-small" data-label="Payment">
+                                <td data-label=${t('admin.common.customer')}>${formatFullName(payment)}</td>
+                                <td class="email hide-small" data-label=${t('admin.common.email-short')}>${payment.email ?? ''}</td>
+                                <td class="hide-small" data-label=${t('admin.common.payment')}>
                                     <alfio-payment-method method=${payment.paymentMethod ?? ''}></alfio-payment-method>
                                 </td>
-                                <td class="amount" data-label="Amount">${formatAmount(payment.paidAmount, payment.currencyCode)}</td>
-                                <td class="timestamp hide-small" data-label="Date">
+                                <td class="amount" data-label=${t('admin.common.amount')}>${formatAmount(payment.paidAmount, payment.currencyCode)}</td>
+                                <td class="timestamp hide-small" data-label=${t('admin.common.date')}>
                                     <alfio-format-date
                                         date=${payment.transactionTimestamp}
                                         time-zone=${data.event.timeZone}
                                     ></alfio-format-date>
                                 </td>
-                                <td class="notes hide-small" data-label="Notes">${payment.transactionNotes ?? ''}</td>
+                                <td class="notes hide-small" data-label=${t('admin.payments.notes')}>${payment.transactionNotes ?? ''}</td>
                                 <td class="actions-cell">
                                     <sl-button size="small" variant="default" outline
                                                @click=${() => this.editDialog.open(payment.id)}>
                                         <sl-icon slot="prefix" name="pencil"></sl-icon>
-                                        Edit
+                                        ${t('admin.common.edit')}
                                     </sl-button>
                                 </td>
                             </tr>
