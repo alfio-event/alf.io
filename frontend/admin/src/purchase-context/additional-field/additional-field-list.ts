@@ -24,6 +24,7 @@ import {AlfioDialogClosed, dispatchFeedback} from "../../model/dom-events.ts";
 import {LocalizedAdditionalFieldContent, renderPreview} from "./additional-field-util.ts";
 import {AdditionalItem} from "../../model/additional-item.ts";
 import {AdditionalItemService} from "../../service/additional-item.ts";
+import { t, tHtml, currentLanguage } from '../../service/i18n';
 
 interface Model {
     purchaseContextType: PurchaseContextType;
@@ -147,7 +148,7 @@ export class AdditionalFieldList extends LitElement {
     `];
 
     protected render(): unknown {
-        return taskContent(this.retrievePageDataTask, this.retrievePageDataTask.value ?? null, 'Failed to load the page data.',
+        return taskContent(this.retrievePageDataTask, this.retrievePageDataTask.value ?? null, t('admin.additional-fields.load-page-failed'),
             (model) => html`
                 <div class="container">
                     <div class="page-title-row secondary">
@@ -172,25 +173,25 @@ export class AdditionalFieldList extends LitElement {
             <sl-dropdown hoist placement="bottom-end">
                 <sl-button variant="success" size="large" slot="trigger" caret>
                     <sl-icon name="plus-circle" slot="prefix"></sl-icon>
-                    Add new
+                    ${t('admin.common.add-new-entity')}
                 </sl-button>
                 <sl-menu>
                     <sl-menu-item>
-                        From template
+                        ${t('admin.additional-fields.from-template')}
                         <sl-menu slot="submenu">
                             ${repeat(model.templates, t => t.name, (template) => html`
-                                    <sl-menu-item @click=${() => this.newFromTemplate(model, template, this.itemsCount(model))}>${template.description['en'].label} (${template.name})</sl-menu-item>
+                                    <sl-menu-item @click=${() => this.newFromTemplate(model, template, this.itemsCount(model))}>${(template.description[currentLanguage()] ?? template.description['en']).label} (${template.name})</sl-menu-item>
                                 `)}
                         </sl-menu>
                     </sl-menu-item>
-                    <sl-menu-item @click=${() => this.newCustom(model, this.itemsCount(model))}>Custom</sl-menu-item>
+                    <sl-menu-item @click=${() => this.newCustom(model, this.itemsCount(model))}>${t('admin.subscription-form.type.custom')}</sl-menu-item>
                 </sl-menu>
             </sl-dropdown>
         `;
     }
 
     private iterateItems(model: Model): TemplateResult {
-        return taskContent(model.dataTask, model.dataTask.value ?? null, 'Failed to load the additional fields.', listData => {
+        return taskContent(model.dataTask, model.dataTask.value ?? null, t('admin.additional-fields.load-failed'), listData => {
             if (listData.items.length === 0) {
                 return renderStandard();
             }
@@ -208,22 +209,22 @@ export class AdditionalFieldList extends LitElement {
                         ${this.showStatisticsButton(field, model)}
                         <sl-button type="button" variant="default" size="small" @click=${() => this.edit(field, model)}>
                             <sl-icon name="pencil" slot="prefix"></sl-icon>
-                            Edit
+                            ${t('admin.common.edit')}
                         </sl-button>
                         <sl-button type="button" variant="danger" size="small" @click=${() => this.delete(field, model)}>
                             <sl-icon name="trash" slot="prefix"></sl-icon>
-                            Delete
+                            ${t('admin.common.delete')}
                         </sl-button>
                     `,
                 }, html`
                     <div class="field-body">
                         ${detailList([
-                            { label: 'Type', value: renderAdditionalFieldType(field.type) },
-                            supportsMinMaxLength(field.type) && { label: 'Min length', value: field.minLength },
-                            supportsMinMaxLength(field.type) && { label: 'Max length', value: field.maxLength },
+                            { label: t('admin.common.type'), value: renderAdditionalFieldType(field.type) },
+                            supportsMinMaxLength(field.type) && { label: t('admin.additional-fields.min-length'), value: field.minLength },
+                            supportsMinMaxLength(field.type) && { label: t('admin.additional-fields.max-length'), value: field.maxLength },
                         ])}
                         <div>
-                            <span class="preview-label">Preview</span>
+                            <span class="preview-label">${t('admin.common.preview')}</span>
                             <sl-tab-group>
                                 ${repeat(this.sortContentLanguages(field, model), d => d.localeLabel, (d, index) => html`
                                     <sl-tab slot="nav" panel=${d.locale} ?active=${index === 0}>${d.localeLabel}</sl-tab>
@@ -263,12 +264,12 @@ export class AdditionalFieldList extends LitElement {
                 <sl-icon slot="icon" name="info-circle"></sl-icon>
                 ${renderIf(() => selectedCategories > 0, () => html`
                     <div>
-                        Collected only for the following categories: ${repeat(eventCategories.filter(c => field.categoryIds!.includes(c.id)), c => c.id, category => html`<sl-badge variant="neutral" pill>${category.name}</sl-badge>`)}
+                        ${t('admin.additional-fields.only-categories')} ${repeat(eventCategories.filter(c => field.categoryIds!.includes(c.id)), c => c.id, category => html`<sl-badge variant="neutral" pill>${category.name}</sl-badge>`)}
                     </div>
                 `)}
                 ${renderIf(() => additionalItem != null, () => html`
                     <div>
-                        Collected only if the additional option <sl-badge variant="neutral" pill>${additionalItem!.title.map(t => t.value).join(" / ")}</sl-badge> was selected
+                        ${tHtml('admin.additional-fields.only-option', html`<sl-badge variant="neutral" pill>${additionalItem!.title.map(title => title.value).join(" / ")}</sl-badge>`)}
                     </div>
                 `)}
             </sl-alert>
@@ -281,14 +282,14 @@ export class AdditionalFieldList extends LitElement {
             () => html`
                 <sl-button type="button" variant="default" size="small" @click=${() => this.fieldUp(field, index, listData, (model.event ?? model.subscriptionDescriptor)!)}>
                     <sl-icon name="arrow-up" slot="prefix"></sl-icon>
-                    Move up
+                    ${t('admin.common.move-up')}
                 </sl-button>
             `)}
         ${renderIf(() => (index < listData.items.length - 1) || field.order < 0,
             () => html`
                 <sl-button type="button" variant="default" size="small" @click=${() => this.fieldDown(field, index, listData, (model.event ?? model.subscriptionDescriptor)!)}>
                     <sl-icon name="arrow-down" slot="prefix"></sl-icon>
-                    Move down
+                    ${t('admin.common.move-down')}
                 </sl-button>
             `)}
         `;
@@ -336,8 +337,8 @@ export class AdditionalFieldList extends LitElement {
     async delete(field: AdditionalField, model: Model): Promise<boolean> {
         try {
             const confirmation = await ConfirmationDialogService.requestConfirm(
-                `Delete field ${field.name}`,
-                `Are you sure to delete the field "${field.name}"? All the values in the tickets associated to this field will be removed and they cannot be recovered.`,
+                t('admin.additional-fields.delete.title', field.name),
+                t('admin.additional-fields.delete.text', field.name),
                 'danger'
             );
             if (confirmation) {
@@ -345,14 +346,14 @@ export class AdditionalFieldList extends LitElement {
                 if(response.ok) {
                     dispatchFeedback({
                         type: 'success',
-                        message: `Field ${field.name} successfully deleted`
+                        message: t('admin.additional-fields.deleted', field.name)
                     }, this);
                     this.refreshCount++;
                     return true;
                 } else {
                     dispatchFeedback({
                         type: 'danger',
-                        message: `Cannot delete field ${field.name}`
+                        message: t('admin.additional-fields.delete-failed', field.name)
                     }, this);
                 }
             }
@@ -361,7 +362,7 @@ export class AdditionalFieldList extends LitElement {
             console.error("Error while deleting field", e);
             dispatchFeedback({
                 type: 'danger',
-                message: `Cannot delete field ${field.name}`
+                message: t('admin.additional-fields.delete-failed', field.name)
             }, this);
             return false;
         }
@@ -369,7 +370,7 @@ export class AdditionalFieldList extends LitElement {
 
     private showStatisticsButton(field: AdditionalField, model: Model) {
         return renderIf(() => field.type === 'select' || field.type === 'country', () => html`
-            <sl-button variant="default" size="small" @click=${() => this.openStatisticsDetail(model, field)}><sl-icon name="bar-chart-line" slot="prefix"></sl-icon>Statistics</sl-button>
+            <sl-button variant="default" size="small" @click=${() => this.openStatisticsDetail(model, field)}><sl-icon name="bar-chart-line" slot="prefix"></sl-icon>${t('admin.statistics.title')}</sl-button>
         `);
     }
 
@@ -441,7 +442,7 @@ export class AdditionalFieldList extends LitElement {
             this.refreshCount++;
             dispatchFeedback({
                 type: 'success',
-                message: 'Operation completed successfully'
+                message: t('admin.common.operation-completed')
             }, this);
         }
     }
@@ -450,46 +451,48 @@ export class AdditionalFieldList extends LitElement {
 function pageTitle(model: Model): TemplateResult {
     if (model.isSubscription) {
         const title = Object.values(model.subscriptionDescriptor?.title ?? {})[0];
-        return html`Subscription owner's data to collect${when(title, () => html` for <i>${title}</i>`)}`;
+        return html`${when(title,
+            () => tHtml('admin.additional-fields.title.subscription-for', html`<i>${title}</i>`),
+            () => t('admin.additional-fields.title.subscription'))}`;
     }
-    return html`Attendees' data to collect for <i>${localizedTitle(model.event!)}</i>`;
+    return html`${tHtml('admin.additional-fields.title.event', html`<i>${localizedTitle(model.event!)}</i>`)}`;
 }
 
 function pageDescription(model: Model): string {
     if (model.isSubscription) {
-        return 'The following data will be collected.';
+        return t('admin.additional-fields.description.subscription');
     }
-    return 'The following data will be collected. Full name, email and language are collected by default.';
+    return t('admin.additional-fields.description.event');
 }
 
 function fieldBadges(field: AdditionalField): TemplateResult {
     return html`
         ${renderIf(() => field.required, () => html`
-            <sl-tooltip content="This information is required">
-                <sl-badge variant="warning" pill>required</sl-badge>
+            <sl-tooltip content=${t('admin.additional-fields.required.help')}>
+                <sl-badge variant="warning" pill>${t('admin.additional-fields.required')}</sl-badge>
             </sl-tooltip>
         `)}
         ${renderIf(() => !field.editable, () => html`
-            <sl-tooltip content="Information cannot be modified after set">
-                <sl-badge variant="neutral" pill>read-only</sl-badge>
+            <sl-tooltip content=${t('admin.additional-fields.read-only.help')}>
+                <sl-badge variant="neutral" pill>${t('admin.additional-fields.read-only')}</sl-badge>
             </sl-tooltip>
         `)}
         ${renderIf(() => field.displayAtCheckIn, () => html`
-            <sl-tooltip content="This information will be shown in the check-in app upon successful scan">
-                <sl-badge variant="success" pill>shown at check-in</sl-badge>
+            <sl-tooltip content=${t('admin.additional-fields.check-in.help')}>
+                <sl-badge variant="success" pill>${t('admin.additional-fields.check-in')}</sl-badge>
             </sl-tooltip>
         `)}
     `;
 }
 
 function renderStandard(): TemplateResult {
-    return sectionCard({icon: 'person-vcard', title: 'Standard fields'}, html`
+    return sectionCard({icon: 'person-vcard', title: t('admin.additional-fields.standard')}, html`
         <div class="standard-fields">
-            <div>First name</div>
+            <div>${t('admin.common.first-name')}</div>
             <sl-divider></sl-divider>
-            <div>Last name</div>
+            <div>${t('admin.common.last-name')}</div>
             <sl-divider></sl-divider>
-            <div>Email address</div>
+            <div>${t('admin.common.email-address')}</div>
         </div>
     `);
 }

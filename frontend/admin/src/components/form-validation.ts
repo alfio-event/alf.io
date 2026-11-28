@@ -2,6 +2,7 @@ import {html, nothing, ReactiveController, ReactiveControllerHost, TemplateResul
 import {classMap} from 'lit/directives/class-map.js';
 import {when} from 'lit/directives/when.js';
 import type {SlInput, SlSelect} from '@shoelace-style/shoelace';
+import { t } from '../service/i18n';
 
 /**
  * Validators and error display for the forms built with TanStackFormController (@tanstack/lit-form).
@@ -10,8 +11,8 @@ import type {SlInput, SlSelect} from '@shoelace-style/shoelace';
  * onSubmit validator, so that the errors are updated while the user types and checked again on submit.
  */
 
-export const REQUIRED_MESSAGE = 'Please fill in this field';
-export const EMAIL_MESSAGE = 'Please enter a valid e-mail address';
+export const REQUIRED_MESSAGE = t('admin.validation.required');
+export const EMAIL_MESSAGE = t('admin.validation.email');
 
 // the rule of <input type="email"> (WHATWG HTML): addresses such as admin@localhost are accepted, as before
 const EMAIL_PATTERN = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
@@ -43,7 +44,7 @@ export function minLength(value: unknown, length: number): string | undefined {
         return missing;
     }
     if (String(value).trim().length < length) {
-        return `Please enter at least ${length} characters`;
+        return t('admin.validation.min-length', { count: length });
     }
     return undefined;
 }
@@ -57,13 +58,13 @@ export function httpsUrl(value: unknown): string | undefined {
         return undefined;
     }
     if (!text.toLowerCase().startsWith('https://')) {
-        return 'The URL must start with https://';
+        return t('admin.validation.https-url');
     }
     try {
         new URL(text);
         return undefined;
     } catch {
-        return 'Please enter a valid URL';
+        return t('admin.validation.url');
     }
 }
 
@@ -255,7 +256,7 @@ export class FormMountController implements ReactiveController {
     }
 }
 
-export const INVALID_FORM_MESSAGE = 'Please fill in the fields highlighted in red.';
+export const INVALID_FORM_MESSAGE = t('admin.validation.invalid-form');
 
 /**
  * Validates all the fields and, if they are valid, calls the onSubmit of the form. The errors returned by the server

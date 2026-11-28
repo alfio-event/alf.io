@@ -6,6 +6,7 @@ import {
     PromoCodeSettingsData,
     UsageDetailEvent
 } from "../model/promo-code.ts";
+import { t } from './i18n';
 
 export class PromoCodeService {
     static add(promoCode: PromoCodeFormData): Promise<Response> {
@@ -82,7 +83,7 @@ export function discountDescription(code: PromoCodeDiscount, currency: string): 
     }
     const amount = `-${code.formattedDiscountAmount ?? code.discountAmount} ${code.currencyCode || currency}`;
     if (code.discountType === 'FIXED_AMOUNT') {
-        return `${amount} per ticket`;
+        return t('admin.promo-code.amount-per-ticket', amount);
     }
-    return `${amount} per reservation`;
+    return t('admin.promo-code.amount-per-reservation', amount);
 }

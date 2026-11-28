@@ -17,6 +17,7 @@ import '../event/promo-code/promo-code.ts';
 
 import { adminConfig } from '../admin-config';
 import { navigate, adminUrl } from '../admin-router';
+import { t, tHtml } from '../service/i18n';
 interface PageData {
     level: SettingsLevel;
     // the levels the user can choose, empty on the pages of an event (the event menu is the navigation there)
@@ -127,7 +128,7 @@ export class SettingsPage extends LitElement {
     ];
 
     render(): TemplateResult {
-        return taskContent(this.loadTask, this.lastData, 'Failed to load the configuration. Please try again.',
+        return taskContent(this.loadTask, this.lastData, t('admin.settings-page.load-failed'),
             (data) => this.renderContent(data));
     }
 
@@ -166,12 +167,12 @@ export class SettingsPage extends LitElement {
         }
         return html`
             <div class="filter-toolbar">
-                <sl-select id="settings-level" class="level-select" label="Show the configuration of" hoist .value=${value}
+                <sl-select id="settings-level" class="level-select" label=${t('admin.settings-page.level')} hoist .value=${value}
                            @sl-change=${(e: Event) => this.goToLevel(data, String((e.target as SlSelect).value))}>
                     ${when(adminConfig().isAdmin, () => html`
                         <sl-option value="system">
                             <sl-icon slot="prefix" name="globe"></sl-icon>
-                            System
+                            ${t('admin.menu.system')}
                         </sl-option>
                     `)}
                     ${repeat(data.organizations, (organization) => organization.id, (organization) => html`
@@ -213,36 +214,36 @@ export class SettingsPage extends LitElement {
 
     private tabs(level: SettingsLevel): { name: TabName; label: string }[] {
         const tabs: { name: TabName; label: string }[] = [
-            {name: 'settings', label: 'Settings'},
-            {name: 'translations', label: 'Translations'},
+            {name: 'settings', label: t('admin.settings-page.tab.settings')},
+            {name: 'translations', label: t('admin.settings-page.tab.translations')},
         ];
         if (level.type === 'ORGANIZATION') {
-            tabs.push({name: 'promo-codes', label: 'Promo codes'});
+            tabs.push({name: 'promo-codes', label: t('admin.page-title.promo-codes')});
         }
         if (level.type !== 'EVENT') {
-            tabs.push({name: 'templates', label: 'Templates'});
+            tabs.push({name: 'templates', label: t('admin.page-title.templates')});
         }
         return tabs;
     }
 
     private pageTitle(level: SettingsLevel): TemplateResult {
         if (level.type === 'ORGANIZATION') {
-            return html`Configuration of ${level.organizationName}`;
+            return html`${t('admin.settings-page.title', level.organizationName)}`;
         }
         if (level.type === 'EVENT') {
-            return html`Configuration of <i>${level.eventDisplayName}</i>`;
+            return html`${tHtml('admin.settings-page.title', html`<i>${level.eventDisplayName}</i>`)}`;
         }
-        return html`System configuration`;
+        return html`${t('admin.settings-page.title.system')}`;
     }
 
     private description(level: SettingsLevel): string {
         if (level.type === 'ORGANIZATION') {
-            return 'These settings apply to the events of the organization, unless an event changes them.';
+            return t('admin.settings-page.description.organization');
         }
         if (level.type === 'EVENT') {
-            return 'These settings apply to this event only. The settings left empty take the value of the organization.';
+            return t('admin.settings-page.description.event');
         }
-        return 'These settings apply to all the organizations, unless an organization or an event changes them.';
+        return t('admin.settings-page.description.system');
     }
 
     private eventPage(): boolean {

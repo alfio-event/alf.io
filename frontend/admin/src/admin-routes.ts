@@ -1,5 +1,6 @@
 import { html, nothing, TemplateResult } from 'lit';
 import { decodeParam } from './admin-route-paths';
+import { t } from './service/i18n';
 
 /**
  * The pages of the admin. Paths are URLPattern pathnames:
@@ -71,100 +72,100 @@ function organizationsPage(mode: string, organizationId: string): TemplateResult
 }
 
 export const ADMIN_ROUTES: AdminRoute[] = [
-    { path: '/', title: 'Events', render: () => html`<alfio-events-page></alfio-events-page>` },
+    { path: '/', title: t('admin.menu.events'), render: () => html`<alfio-events-page></alfio-events-page>` },
 
-    { path: '/configuration/system', title: 'Configuration', render: () => html`<alfio-settings-page></alfio-settings-page>` },
+    { path: '/configuration/system', title: t('admin.menu.settings'), render: () => html`<alfio-settings-page></alfio-settings-page>` },
     {
         path: '/configuration/organization/:organizationId',
-        title: 'Organization configuration',
+        title: t('admin.page-title.organization-configuration'),
         render: (params) => html`<alfio-settings-page data-organization-id=${p(params, 'organizationId')}></alfio-settings-page>`,
     },
     {
         path: '/configuration/organization/:organizationId/event/:eventId',
-        title: 'Event configuration',
+        title: t('admin.page-title.event-configuration'),
         render: (params) => html`<alfio-settings-page data-event-id=${p(params, 'eventId')}></alfio-settings-page>`,
     },
 
-    { path: '/organizations{/}?', title: 'Organizations', render: () => organizationsPage('list', '') },
-    { path: '/organizations/new', title: 'New organization', render: () => organizationsPage('new', '') },
+    { path: '/organizations{/}?', title: t('admin.menu.system.organizations'), render: () => organizationsPage('list', '') },
+    { path: '/organizations/new', title: t('admin.page-title.new-organization'), render: () => organizationsPage('new', '') },
     {
         path: '/organizations/:organizationId/edit',
-        title: 'Edit organization',
+        title: t('admin.page-title.edit-organization'),
         render: (params) => organizationsPage('edit', p(params, 'organizationId')),
     },
     {
         path: '/show-resources/:resourceName{/}?',
-        title: 'Template',
+        title: t('admin.page-title.template'),
         render: (params) => html`<alfio-template-edit data-system="" data-resource-name=${p(params, 'resourceName')}></alfio-template-edit>`,
     },
     {
         path: '/organizations/:organizationId/show-resources/:resourceName{/}?',
-        title: 'Template',
+        title: t('admin.page-title.template'),
         render: (params) => html`<alfio-template-edit data-organization-id=${p(params, 'organizationId')} data-resource-name=${p(params, 'resourceName')}></alfio-template-edit>`,
     },
 
-    { path: '/users{/}?', title: 'Users', render: () => html`<alfio-users alfio-title="Users" type="user"></alfio-users>` },
-    { path: '/api-keys{/}?', title: 'API keys', render: () => html`<alfio-users alfio-title="API keys" type="apikey"></alfio-users>` },
-    { path: '/profile/edit', title: 'Account', render: () => html`<alfio-user-profile-edit></alfio-user-profile-edit>` },
+    { path: '/users{/}?', title: t('admin.user.list.title'), render: () => html`<alfio-users alfio-title=${t('admin.user.list.title')} type="user"></alfio-users>` },
+    { path: '/api-keys{/}?', title: t('admin.menu.api-keys'), render: () => html`<alfio-users alfio-title=${t('admin.menu.api-keys')} type="apikey"></alfio-users>` },
+    { path: '/profile/edit', title: t('admin.navbar.account'), render: () => html`<alfio-user-profile-edit></alfio-user-profile-edit>` },
 
-    { path: '/events/new', title: 'New event', render: () => html`<alfio-event-create></alfio-event-create>` },
+    { path: '/events/new', title: t('admin.page-title.new-event'), render: () => html`<alfio-event-create></alfio-event-create>` },
     {
         path: '/events/:eventName{/}?',
-        title: 'Event',
+        title: t('admin.page-title.event'),
         render: (params) => html`<alfio-redirect data-route=${`/events/${params.eventName}/detail`}></alfio-redirect>`,
     },
     {
         path: '/events/:eventName/*',
-        title: 'Event',
+        title: t('admin.page-title.event'),
         render: (params) => html`<alfio-event-layout data-event-name=${p(params, 'eventName')}></alfio-event-layout>`,
     },
 
-    { path: '/extension{/}?', title: 'Extensions', render: () => html`<alfio-redirect data-route="/extension/list"></alfio-redirect>` },
-    { path: '/extension/list', title: 'Extensions', render: () => html`<alfio-extension-list></alfio-extension-list>` },
-    { path: '/extension/new', title: 'New extension', render: () => html`<alfio-extension-edit></alfio-extension-edit>` },
-    { path: '/extension/log', title: 'Extension log', render: () => html`<alfio-extension-log></alfio-extension-log>` },
+    { path: '/extension{/}?', title: t('admin.menu.extensions'), render: () => html`<alfio-redirect data-route="/extension/list"></alfio-redirect>` },
+    { path: '/extension/list', title: t('admin.menu.extensions'), render: () => html`<alfio-extension-list></alfio-extension-list>` },
+    { path: '/extension/new', title: t('admin.page-title.new-extension'), render: () => html`<alfio-extension-edit></alfio-extension-edit>` },
+    { path: '/extension/log', title: t('admin.page-title.extension-log'), render: () => html`<alfio-extension-log></alfio-extension-log>` },
     {
         path: '/extension/:path/:name/edit',
-        title: 'Edit extension',
+        title: t('admin.page-title.edit-extension'),
         render: (params) => html`<alfio-extension-edit data-path=${p(params, 'path')} data-name=${p(params, 'name')}></alfio-extension-edit>`,
     },
 
-    { path: '/subscriptions{/}?', title: 'Subscriptions', render: () => subscriptionsPage(nothing) },
+    { path: '/subscriptions{/}?', title: t('admin.menu.subscriptions'), render: () => subscriptionsPage(nothing) },
     {
         path: '/subscriptions/:organizationId/list',
-        title: 'Subscriptions',
+        title: t('admin.menu.subscriptions'),
         render: (params) => subscriptionsPage(html`<alfio-subscriptions-list data-organization-id=${p(params, 'organizationId')}></alfio-subscriptions-list>`),
     },
     {
         path: '/subscriptions/:organizationId/create',
-        title: 'New subscription',
+        title: t('admin.page-title.new-subscription'),
         render: (params) => subscriptionsPage(html`<alfio-subscription-edit data-organization-id=${p(params, 'organizationId')}></alfio-subscription-edit>`),
     },
     {
         path: '/subscriptions/:organizationId/:subscriptionId/edit',
-        title: 'Edit subscription',
+        title: t('admin.page-title.edit-subscription'),
         render: (params) => subscriptionsPage(html`<alfio-subscription-edit data-organization-id=${p(params, 'organizationId')} data-subscription-id=${p(params, 'subscriptionId')}></alfio-subscription-edit>`),
     },
     {
         path: '/subscriptions/:organizationId/:subscriptionId/*',
-        title: 'Subscription',
+        title: t('admin.page-title.subscription'),
         render: (params) => subscriptionsPage(html`<alfio-subscription-layout data-organization-id=${p(params, 'organizationId')} data-subscription-id=${p(params, 'subscriptionId')}></alfio-subscription-layout>`),
     },
 
-    { path: '/group{/}?', title: 'Groups', render: () => groupsPage(nothing) },
+    { path: '/group{/}?', title: t('admin.menu.groups'), render: () => groupsPage(nothing) },
     {
         path: '/group/:organizationId/all',
-        title: 'Groups',
+        title: t('admin.menu.groups'),
         render: (params) => groupsPage(html`<alfio-groups-list data-organization-id=${p(params, 'organizationId')}></alfio-groups-list>`),
     },
     {
         path: '/group/:organizationId/new',
-        title: 'New group',
+        title: t('admin.page-title.new-group'),
         render: (params) => groupsPage(html`<alfio-group-edit data-organization-id=${p(params, 'organizationId')} data-create-new="true"></alfio-group-edit>`),
     },
     {
         path: '/group/:organizationId/edit/:groupId',
-        title: 'Edit group',
+        title: t('admin.page-title.edit-group'),
         render: (params) => groupsPage(html`<alfio-group-edit data-organization-id=${p(params, 'organizationId')} data-group-id=${p(params, 'groupId')}></alfio-group-edit>`),
     },
 ];
@@ -179,73 +180,73 @@ function eventEmailLog(event: RoutedEvent, messageId: string): TemplateResult {
 
 /** relative to /events/:eventName/ */
 export const EVENT_ROUTES: EventRoute[] = [
-    { path: 'detail', title: 'Overview', render: (_, e) => html`<alfio-event-detail data-event-name=${e.shortName}></alfio-event-detail>` },
-    { path: 'edit', title: 'Edit', render: (_, e) => html`<alfio-event-create data-event-name=${e.shortName}></alfio-event-create>` },
-    { path: 'configuration', title: 'Configuration', render: (_, e) => html`<alfio-settings-page data-event-name=${e.shortName}></alfio-settings-page>` },
+    { path: 'detail', title: t('admin.page-title.overview'), render: (_, e) => html`<alfio-event-detail data-event-name=${e.shortName}></alfio-event-detail>` },
+    { path: 'edit', title: t('admin.common.edit'), render: (_, e) => html`<alfio-event-create data-event-name=${e.shortName}></alfio-event-create>` },
+    { path: 'configuration', title: t('admin.menu.settings'), render: (_, e) => html`<alfio-settings-page data-event-name=${e.shortName}></alfio-settings-page>` },
     {
         path: 'attendee-data-to-collect',
-        title: 'Data to collect',
+        title: t('admin.page-title.data-to-collect'),
         render: (_, e) => html`<alfio-additional-field-list data-public-identifier=${e.publicIdentifier} data-purchase-context-type="event" data-organization-id=${e.organizationId}></alfio-additional-field-list>`,
     },
     {
         path: 'promo-codes',
-        title: 'Promo codes',
+        title: t('admin.page-title.promo-codes'),
         render: (_, e) => html`<alfio-promo-code data-event-name=${e.shortName} data-organization-id=${e.organizationId} data-for-event="true"></alfio-promo-code>`,
     },
-    { path: 'additional-services', title: 'Additional options', render: (_, e) => additionalItems(e, 'SUPPLEMENT', 'Additional options', 'cash') },
-    { path: 'donations', title: 'Donation options', render: (_, e) => additionalItems(e, 'DONATION', 'Donation options', 'gift') },
-    { path: 'check-in', title: 'Check-in', render: (_, e) => html`<alfio-check-in data-event-name=${e.shortName}></alfio-check-in>` },
-    { path: 'check-in/scan', title: 'Scan tickets', render: (_, e) => html`<alfio-check-in-scan data-event-name=${e.shortName}></alfio-check-in-scan>` },
+    { path: 'additional-services', title: t('admin.page-title.additional-options'), render: (_, e) => additionalItems(e, 'SUPPLEMENT', t('admin.page-title.additional-options'), 'cash') },
+    { path: 'donations', title: t('admin.page-title.donation-options'), render: (_, e) => additionalItems(e, 'DONATION', t('admin.page-title.donation-options'), 'gift') },
+    { path: 'check-in', title: t('admin.page-title.check-in'), render: (_, e) => html`<alfio-check-in data-event-name=${e.shortName}></alfio-check-in>` },
+    { path: 'check-in/scan', title: t('admin.page-title.scan-tickets'), render: (_, e) => html`<alfio-check-in-scan data-event-name=${e.shortName}></alfio-check-in-scan>` },
     {
         path: 'c/:categoryId/send-invitation',
-        title: 'Send invitations',
+        title: t('admin.page-title.send-invitations'),
         render: (params, e) => html`<alfio-send-invitations data-event-name=${e.shortName} data-category-id=${p(params, 'categoryId')}></alfio-send-invitations>`,
     },
-    { path: 'reservations{/}?', title: 'Reservations', render: (_, e) => html`<alfio-reservations-list data-event-name=${e.shortName}></alfio-reservations-list>` },
-    { path: 'transactions{/}?', title: 'Payments', render: (_, e) => html`<alfio-payments-list data-event-name=${e.shortName}></alfio-payments-list>` },
-    { path: 'email-log', title: 'E-mail log', render: (_, e) => eventEmailLog(e, '') },
-    { path: 'email-log/:messageId', title: 'E-mail log', render: (params, e) => eventEmailLog(e, p(params, 'messageId')) },
+    { path: 'reservations{/}?', title: t('admin.event.menu.reservations'), render: (_, e) => html`<alfio-reservations-list data-event-name=${e.shortName}></alfio-reservations-list>` },
+    { path: 'transactions{/}?', title: t('admin.page-title.payments'), render: (_, e) => html`<alfio-payments-list data-event-name=${e.shortName}></alfio-payments-list>` },
+    { path: 'email-log', title: t('admin.event.menu.email-log'), render: (_, e) => eventEmailLog(e, '') },
+    { path: 'email-log/:messageId', title: t('admin.event.menu.email-log'), render: (params, e) => eventEmailLog(e, p(params, 'messageId')) },
     {
         path: 'category/:categoryId/tickets',
-        title: 'Tickets',
+        title: t('admin.page-title.tickets'),
         render: (params, e) => html`<alfio-tickets-list data-event-name=${e.shortName} data-category-id=${p(params, 'categoryId')}></alfio-tickets-list>`,
     },
-    { path: 'pending-payments{/}?', title: 'Pending payments', render: (_, e) => html`<alfio-pending-payments data-event-name=${e.shortName}></alfio-pending-payments>` },
-    { path: 'compose-custom-message', title: 'Compose message', render: (_, e) => html`<alfio-compose-message data-event-name=${e.shortName}></alfio-compose-message>` },
-    { path: 'waiting-queue', title: 'Waiting list', render: (_, e) => html`<alfio-waiting-list data-event-name=${e.shortName}></alfio-waiting-list>` },
-    { path: 'show-resources', title: 'Templates', render: (_, e) => html`<alfio-template-list data-event-name=${e.shortName}></alfio-template-list>` },
+    { path: 'pending-payments{/}?', title: t('admin.page-title.pending-payments'), render: (_, e) => html`<alfio-pending-payments data-event-name=${e.shortName}></alfio-pending-payments>` },
+    { path: 'compose-custom-message', title: t('admin.event.menu.compose-message'), render: (_, e) => html`<alfio-compose-message data-event-name=${e.shortName}></alfio-compose-message>` },
+    { path: 'waiting-queue', title: t('admin.event.menu.waiting-list'), render: (_, e) => html`<alfio-waiting-list data-event-name=${e.shortName}></alfio-waiting-list>` },
+    { path: 'show-resources', title: t('admin.page-title.templates'), render: (_, e) => html`<alfio-template-list data-event-name=${e.shortName}></alfio-template-list>` },
     {
         path: 'show-resources/:resourceName{/}?',
-        title: 'Template',
+        title: t('admin.page-title.template'),
         render: (params, e) => html`<alfio-template-edit data-event-name=${e.shortName} data-resource-name=${p(params, 'resourceName')}></alfio-template-edit>`,
     },
-    { path: 'reservation/new', title: 'Create reservation', render: (_, e) => html`<alfio-reservation-create data-event-name=${e.shortName}></alfio-reservation-create>` },
-    { path: 'reservation/import', title: 'Import attendees', render: (_, e) => html`<alfio-attendees-import data-event-name=${e.shortName}></alfio-attendees-import>` },
+    { path: 'reservation/new', title: t('admin.event.menu.create-reservation'), render: (_, e) => html`<alfio-reservation-create data-event-name=${e.shortName}></alfio-reservation-create>` },
+    { path: 'reservation/import', title: t('admin.event.menu.import-attendees'), render: (_, e) => html`<alfio-attendees-import data-event-name=${e.shortName}></alfio-attendees-import>` },
     {
         path: 'reservation/import/:requestId/status',
-        title: 'Import status',
+        title: t('admin.page-title.import-status'),
         render: (params, e) => html`<alfio-attendees-import-status data-event-name=${e.shortName} data-request-id=${p(params, 'requestId')}></alfio-attendees-import-status>`,
     },
     {
         path: 'reservation/:reservationId',
-        title: 'Reservation',
+        title: t('admin.page-title.reservation'),
         render: (params, e) => html`<alfio-reservation-detail data-purchase-context-type="event" data-public-identifier=${e.shortName} data-reservation-id=${p(params, 'reservationId')} data-from-creation=${query('fromCreation')}></alfio-reservation-detail>`,
     },
-    { path: 'polls/list', title: 'Polls', render: (_, e) => html`<alfio-polls-list data-event-name=${e.shortName}></alfio-polls-list>` },
+    { path: 'polls/list', title: t('admin.event.menu.polls'), render: (_, e) => html`<alfio-polls-list data-event-name=${e.shortName}></alfio-polls-list>` },
     {
         path: 'polls/view/:pollId',
-        title: 'Poll',
+        title: t('admin.page-title.poll'),
         render: (params, e) => html`<alfio-poll-detail data-event-name=${e.shortName} data-poll-id=${p(params, 'pollId')}></alfio-poll-detail>`,
     },
-    { path: 'polls/new', title: 'New poll', render: (_, e) => html`<alfio-poll-edit data-event-name=${e.shortName}></alfio-poll-edit>` },
+    { path: 'polls/new', title: t('admin.page-title.new-poll'), render: (_, e) => html`<alfio-poll-edit data-event-name=${e.shortName}></alfio-poll-edit>` },
     {
         path: 'polls/edit/:pollId',
-        title: 'Edit poll',
+        title: t('admin.page-title.edit-poll'),
         render: (params, e) => html`<alfio-poll-edit data-event-name=${e.shortName} data-poll-id=${p(params, 'pollId')}></alfio-poll-edit>`,
     },
     {
         path: 'polls/:pollId/participants',
-        title: 'Poll participants',
+        title: t('admin.page-title.poll-participants'),
         render: (params, e) => html`<alfio-poll-participants data-event-name=${e.shortName} data-poll-id=${p(params, 'pollId')}></alfio-poll-participants>`,
     },
 ];
@@ -258,19 +259,19 @@ function subscriptionEmailLog(s: RoutedSubscription, messageId: string): Templat
 export const SUBSCRIPTION_ROUTES: SubscriptionRoute[] = [
     {
         path: 'reservations{/}?',
-        title: 'Reservations',
+        title: t('admin.event.menu.reservations'),
         render: (_, s) => html`<alfio-reservations-list data-event-name=${s.publicIdentifier} data-organization-id=${s.organizationId} data-purchase-context-type="subscription" data-title=${s.title}></alfio-reservations-list>`,
     },
     {
         path: 'reservation/:reservationId',
-        title: 'Reservation',
+        title: t('admin.page-title.reservation'),
         render: (params, s) => html`<alfio-reservation-detail data-purchase-context-type="subscription" data-public-identifier=${s.publicIdentifier} data-organization-id=${s.organizationId} data-reservation-id=${p(params, 'reservationId')}></alfio-reservation-detail>`,
     },
-    { path: 'email-log', title: 'E-mail log', render: (_, s) => subscriptionEmailLog(s, '') },
-    { path: 'email-log/:messageId', title: 'E-mail log', render: (params, s) => subscriptionEmailLog(s, p(params, 'messageId')) },
+    { path: 'email-log', title: t('admin.event.menu.email-log'), render: (_, s) => subscriptionEmailLog(s, '') },
+    { path: 'email-log/:messageId', title: t('admin.event.menu.email-log'), render: (params, s) => subscriptionEmailLog(s, p(params, 'messageId')) },
     {
         path: 'additional-fields',
-        title: 'Additional fields',
+        title: t('admin.page-title.additional-fields'),
         render: (_, s) => html`<alfio-additional-field-list data-public-identifier=${s.publicIdentifier} data-purchase-context-type="subscription" data-organization-id=${s.organizationId}></alfio-additional-field-list>`,
     },
 ];

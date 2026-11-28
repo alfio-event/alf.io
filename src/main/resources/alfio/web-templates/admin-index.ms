@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{language}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -17,11 +17,16 @@
         <script type="module" src="{{contextPath}}/frontend-admin/{{lit-polyfills-js}}" nonce="{{nonce}}"></script>
         {{/litPolyfills}}
         <script type="module" src="{{contextPath}}/frontend-admin/{{lit-js}}" id="lit-js" nonce="{{nonce}}"></script>
+        {{#lit-app-js}}
+        <link rel="modulepreload" href="{{contextPath}}/frontend-admin/{{.}}" nonce="{{nonce}}">
+        {{/lit-app-js}}
         {{#lit-css}}
         <link rel="stylesheet" href="{{contextPath}}/frontend-admin/{{.}}" />
         {{/lit-css}}
     {{/litAdminStatic}}
 
+    <!-- fetched by the shell before its first render (i18n.ts): download it in parallel with the scripts -->
+    <link rel="preload" as="fetch" crossorigin href="{{translationsUrl}}">
     <title>Alf.io Admin</title>
 </head>
 <body>

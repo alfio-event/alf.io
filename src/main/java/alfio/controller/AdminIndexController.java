@@ -36,8 +36,11 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.servlet.support.RequestContextUtils;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.HashMap;
@@ -107,6 +110,12 @@ public class AdminIndexController {
         model.addAttribute("isOwner", isAdmin || authorities.contains(Role.OWNER.getRoleName()));
         model.addAttribute("isAdmin", isAdmin);
         model.addAttribute("supportedLanguages", i18nManager.getAvailableLanguages());
+        // resolved by MvcConfiguration#localeResolver: the language picker (?lang=), then the browser's languages
+        var language = RequestContextUtils.getLocale(request).getLanguage();
+        model.addAttribute("language", language);
+        // the version busts the browser cache of the translations at every release
+        model.addAttribute("translationsUrl", request.getContextPath() + "/api/v2/admin/i18n/bundle/" + language
+            + "?v=" + URLEncoder.encode(version, StandardCharsets.UTF_8));
         //
         addCommonModelAttributes(model, request, environment);
         model.addAttribute("displayProjectBanner", isAdmin && configurationManager.getForSystem(SHOW_PROJECT_BANNER).getValueAsBooleanOrDefault());
@@ -121,6 +130,8 @@ public class AdminIndexController {
             var polyfills = frontendManifest.polyfills();
             model.addAttribute("litPolyfills", polyfills.isPresent());
             polyfills.ifPresent(p -> model.addAttribute("lit-polyfills-js", p.file()));
+            // imported by main.ts after the translations: preloaded, so that it downloads in parallel
+            frontendManifest.appEntry().ifPresent(app -> model.addAttribute("lit-app-js", app.file()));
         });
 
         model.addAttribute("adminConfig", Json.toJson(adminConfig(model.asMap())));
@@ -149,7 +160,7 @@ public class AdminIndexController {
         var config = new HashMap<String, Object>();
         List.of("contextPath",  "isOwner", "isAdmin", "isDBAuthentication", USERNAME, IDP_LOGOUT_REDIRECTION_URL,
                 "errorMessage", "displayProjectBanner", "alfioVersion", "basicConfigurationNeeded", "supportedLanguages",
-                "baseUrl", "devModeEnabled", "prodModeEnabled")
+                "baseUrl", "devModeEnabled", "prodModeEnabled", "language", "translationsUrl")
             .forEach(key -> config.put(key, model.get(key)));
         return config;
     }

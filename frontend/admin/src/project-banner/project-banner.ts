@@ -3,6 +3,7 @@ import { customElement, property } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js';
 import { ConfigurationService } from '../service/configuration';
 import { retroCompat, textColors, row, spacing } from '../styles'
+import { t, tHtml } from '../service/i18n';
 
 @customElement('alfio-project-banner')
 export class ProjectBanner extends LitElement {
@@ -32,32 +33,34 @@ export class ProjectBanner extends LitElement {
     render() {
         const notFullBanner = () => html`
             <div>
-                <h5 class="text-muted">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.${this.alfioVersion}</h5>
-                <small><a href="https://github.com/alfio-event/alf.io/issues" target="_blank" rel="noopener">report an issue</a> or <a href="https://github.com/alfio-event/alf.io/discussions" target="_blank" rel="nofollow noopener noreferrer">ask for help</a></small>
+                <h5 class="text-muted">${tHtml('admin.banner.powered-by', html`<a href="https://alf.io" target="_blank">Alf.io</a>`, this.alfioVersion)}</h5>
+                <small>${tHtml('admin.banner.report-or-ask',
+                    html`<a href="https://github.com/alfio-event/alf.io/issues" target="_blank" rel="noopener">${t('admin.banner.report-an-issue')}</a>`,
+                    html`<a href="https://github.com/alfio-event/alf.io/discussions" target="_blank" rel="nofollow noopener noreferrer">${t('admin.banner.ask-for-help')}</a>`)}</small>
                 <div class="wMarginTop10px">
-                    <sl-button variant="primary" size="small" href="https://alf.io/usage-form/" target="_blank" rel="noopener">Tell us about you!</sl-button>
+                    <sl-button variant="primary" size="small" href="https://alf.io/usage-form/" target="_blank" rel="noopener">${t('admin.banner.tell-us')}</sl-button>
                 </div>
             </div>
         `;
 
         const fullBanner = () => html`
             <div>
-                <h3 class="text-center">Thank you for using Alf.io!</h3>
-                <h4> We don't track usage in any way, because we respect your privacy<br>
-                ...but we're very happy that you've decided to use Alf.io and we'd love to hear your story! </h4>
+                <h3 class="text-center">${t('admin.banner.thank-you')}</h3>
+                <h4>${t('admin.banner.no-tracking')}<br>
+                ${t('admin.banner.your-story')}</h4>
                 <div class="row banner-actions">
                     <div>
                         <sl-button variant="primary" href="https://alf.io/usage-form/" target="_blank" rel="noopener">
-                            Tell us about you!
+                            ${t('admin.banner.tell-us')}
                         </sl-button>
                     </div>
                     <div>
                         <sl-button variant="default" href="https://opencollective.com/alfio/contribute" target="_blank" rel="noopener">
-                            Contribute on OpenCollective
+                            ${t('admin.banner.contribute')}
                         </sl-button>
                     </div>
                     <div>
-                        <sl-button type="button" variant="default" @click=${this.dismiss}>Dismiss</sl-button>
+                        <sl-button type="button" variant="default" @click=${this.dismiss}>${t('admin.common.dismiss')}</sl-button>
                     </div>
                 </div>
             </div>

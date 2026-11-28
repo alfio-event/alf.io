@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2;
 
+import alfio.config.Initializer;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.Language;
 import alfio.model.LocalizedCountry;
@@ -25,9 +26,14 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.LocaleUtil;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.Collator;
+import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -39,9 +45,14 @@ public class TranslationsApiController {
     private final MessageSourceManager messageSourceManager;
     private final ConfigurationManager configurationManager;
     private final I18nManager i18nManager;
+    private final Environment environment;
 
-    public TranslationsApiController(MessageSourceManager messageSourceManager, ConfigurationManager configurationManager, I18nManager i18nManager) {
+    public TranslationsApiController(MessageSourceManager messageSourceManager,
+                                     ConfigurationManager configurationManager,
+                                     I18nManager i18nManager,
+                                     Environment environment) {
         this.messageSourceManager = messageSourceManager;
+        this.environment = environment;
         this.configurationManager = configurationManager;
         this.i18nManager = i18nManager;
     }
@@ -52,10 +63,19 @@ public class TranslationsApiController {
         return messageSourceManager.getBundleAsMap("alfio.i18n.public", withSystemOverride, lang, MessageSourceManager.PUBLIC_FRONTEND);
     }
 
+    /**
+     * The translations of the admin UI. They are static: neither the system nor the organizers can override them.
+     * The page links this URL with the application version ({@code ?v=}), so the browser can cache it until the
+     * next release.
+     */
     @GetMapping("/admin/i18n/bundle/{lang}")
-    public Map<String, String> getAdminTranslations(@PathVariable String lang,
-                                                    @RequestParam(value = "withSystemOverride", defaultValue = "true", required = false) boolean withSystemOverride) {
-        return messageSourceManager.getBundleAsMap("alfio.i18n.public", withSystemOverride, lang, MessageSourceManager.ADMIN_FRONTEND);
+    public ResponseEntity<Map<String, String>> getAdminTranslations(@PathVariable String lang) {
+        var translations = messageSourceManager.getBundleAsMap("alfio.i18n.public", false, lang, MessageSourceManager.ADMIN_FRONTEND);
+        var cacheControl = CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable();
+        if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEV))) {
+            cacheControl = CacheControl.noCache();
+        }
+        return ResponseEntity.ok().cacheControl(cacheControl).body(translations);
     }
 
     @GetMapping("/public/i18n/countries/{lang}")

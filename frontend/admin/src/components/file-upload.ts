@@ -4,6 +4,7 @@ import {classMap} from 'lit/directives/class-map.js';
 import {when} from 'lit/directives/when.js';
 import {dropZone, form, textColors} from '../styles.ts';
 import {formatBytesBinary, matchesAccept} from '../service/helpers.ts';
+import { t, tHtml } from '../service/i18n';
 
 export type FileUploadChangeEvent = CustomEvent<{ file: File | null }>;
 
@@ -69,7 +70,7 @@ export class FileUpload extends LitElement {
     public accept: string = '';
 
     @property({type: String})
-    public label: string = 'Choose a file or drag it here';
+    public label: string = t('admin.file-upload.label');
 
     @property({type: Number})
     public maxSize: number = 0;
@@ -114,7 +115,7 @@ export class FileUpload extends LitElement {
                 class=${classMap({ 'drop-zone': true, 'drag-over': this.isDragOver })}
                 role="button"
                 tabindex="0"
-                aria-label="Choose a file"
+                aria-label=${t('admin.file-upload.choose')}
                 @click=${() => this.fileInput?.click()}
                 @keydown=${this.onDropZoneKeydown}
                 @dragover=${this.onDragOver}
@@ -126,9 +127,9 @@ export class FileUpload extends LitElement {
                 </div>
                 <p>${this.label}</p>
                 ${when(this.accept,
-                    () => html`<p class="drop-zone-prompt">Accepted: ${this.accept}</p>`)}
+                    () => html`<p class="drop-zone-prompt">${t('admin.file-upload.accepted', this.accept)}</p>`)}
                 ${when(this.maxSize > 0,
-                    () => html`<p class="drop-zone-prompt">Max size: ${formatBytesBinary(this.maxSize)}</p>`)}
+                    () => html`<p class="drop-zone-prompt">${tHtml('admin.file-upload.max-size', formatBytesBinary(this.maxSize))}</p>`)}
             </div>
         `;
     }
@@ -146,7 +147,7 @@ export class FileUpload extends LitElement {
                 </div>
                 <sl-icon-button
                     name="x-circle"
-                    label="Remove file"
+                    label=${t('admin.file-upload.remove')}
                     @click=${this.clearFile}
                 ></sl-icon-button>
             </div>
@@ -197,12 +198,12 @@ export class FileUpload extends LitElement {
         }
 
         if (this.accept && !matchesAccept(file, this.accept)) {
-            this.error = `File type "${file.type || '(unknown)'}" is not accepted. Expected: ${this.accept}`;
+            this.error = t('admin.file-upload.type-not-accepted', file.type || t('admin.file-upload.unknown-type'), this.accept);
             return;
         }
 
         if (this.maxSize > 0 && file.size > this.maxSize) {
-            this.error = html`File exceeds maximum size of ${formatBytesBinary(this.maxSize)}`;
+            this.error = html`${tHtml('admin.file-upload.too-big', formatBytesBinary(this.maxSize))}`;
             return;
         }
 

@@ -5,6 +5,7 @@ import {DateTimeModification} from "../model/purchase-context.ts";
 import {PageAndContent} from "../model/reservation.ts";
 import {WaitingQueueSubscription} from "../model/waiting-queue.ts";
 import {callDelete, ensureOk, fetchJson, postJson, putJson, responseErrorMessage} from "./helpers.ts";
+import { t } from './i18n';
 
 export interface EventValidationResult extends Omit<ValidatedResponse<unknown>, "value"> {
 }
@@ -38,7 +39,7 @@ export class EventService {
     static async create(payload: EventModificationPayload): Promise<void> {
         const response = await postJson('/admin/api/events/new', payload);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, `Unexpected status ${response.status}`));
+            throw new Error(await responseErrorMessage(response, t('admin.error.unexpected-status', response.status)));
         }
     }
 
@@ -66,7 +67,7 @@ export class EventService {
     static async updateStatus(eventId: number, active: boolean): Promise<void> {
         const response = await putJson(`/admin/api/events/${eventId}/status?active=${active}`, null);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, `Unexpected status ${response.status}`));
+            throw new Error(await responseErrorMessage(response, t('admin.error.unexpected-status', response.status)));
         }
     }
 
@@ -83,7 +84,7 @@ export class EventService {
     static async deleteCategory(eventName: string, categoryId: number): Promise<void> {
         const response = await callDelete(`/admin/api/events/${eventName}/category/${categoryId}`);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, `Unexpected status ${response.status}`));
+            throw new Error(await responseErrorMessage(response, t('admin.error.unexpected-status', response.status)));
         }
     }
 
@@ -93,7 +94,7 @@ export class EventService {
     static async reallocateOrphans(srcCategoryId: number, targetCategoryId: number, eventId: number): Promise<void> {
         const response = await putJson('/admin/api/events/reallocate', {srcCategoryId, targetCategoryId, eventId});
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, `Unexpected status ${response.status}`));
+            throw new Error(await responseErrorMessage(response, t('admin.error.unexpected-status', response.status)));
         }
     }
 
@@ -103,7 +104,7 @@ export class EventService {
     static async unbindTickets(eventName: string, categoryId: number): Promise<void> {
         const response = await putJson(`/admin/api/events/${eventName}/category/${categoryId}/unbind-tickets`, null);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, `Unexpected status ${response.status}`));
+            throw new Error(await responseErrorMessage(response, t('admin.error.unexpected-status', response.status)));
         }
     }
 
@@ -113,7 +114,7 @@ export class EventService {
     static async rearrangeCategories(eventName: string, categories: { id: number; name: string; ordinal: number }[]): Promise<void> {
         const response = await putJson(`/admin/api/events/${eventName}/rearrange-categories`, categories);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, `Unexpected status ${response.status}`));
+            throw new Error(await responseErrorMessage(response, t('admin.error.unexpected-status', response.status)));
         }
     }
 
@@ -160,7 +161,7 @@ export class EventService {
         }
         const response = await putJson(url, settings);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, 'The online settings could not be saved. Please check the meeting links and their dates.'));
+            throw new Error(await responseErrorMessage(response, t('admin.error.save-online-settings')));
         }
     }
 
@@ -171,7 +172,7 @@ export class EventService {
     static async executeCapability(eventName: string, capability: string, params: Record<string, string>): Promise<string> {
         const response = await postJson(`/admin/api/events/${eventName}/capability/${capability}`, params);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, 'The extension could not complete the action'));
+            throw new Error(await responseErrorMessage(response, t('admin.error.extension-action')));
         }
         return await response.text();
     }
@@ -189,7 +190,7 @@ export class EventService {
     static async deleteEvent(eventId: number): Promise<void> {
         const response = await callDelete(`/admin/api/events/${eventId}`);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, 'The event could not be deleted'));
+            throw new Error(await responseErrorMessage(response, t('admin.error.delete-event')));
         }
     }
 
@@ -233,7 +234,7 @@ export class EventService {
     static async setWaitingQueuePaused(eventName: string, paused: boolean): Promise<void> {
         const response = await putJson(`/admin/api/event/${eventName}/waiting-queue/status`, {status: paused});
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, `Unexpected status ${response.status}`));
+            throw new Error(await responseErrorMessage(response, t('admin.error.unexpected-status', response.status)));
         }
     }
 }
@@ -244,7 +245,7 @@ export class EventService {
 async function waitingQueueModification(request: Promise<Response>): Promise<WaitingQueueSubscription[]> {
     const response = await request;
     if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, `Unexpected status ${response.status}`));
+        throw new Error(await responseErrorMessage(response, t('admin.error.unexpected-status', response.status)));
     }
     const body: { list: WaitingQueueSubscription[] } = await response.json();
     return body.list;

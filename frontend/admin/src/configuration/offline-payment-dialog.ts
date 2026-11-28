@@ -16,6 +16,7 @@ import {
 import type {MultiLanguageTextChange, MultiLanguageTextLocalesChange} from '../components/multi-language-text.ts';
 import '../components/multi-language-text.ts';
 import {base, dialog, form, modernLayout, row, textColors} from '../styles.ts';
+import { t } from '../service/i18n';
 
 export const OFFLINE_PAYMENT_SAVE_EVENT = 'alfio-offline-payment-save';
 
@@ -128,9 +129,9 @@ export class OfflinePaymentDialog extends LitElement {
     }
 
     render(): TemplateResult {
-        let label = 'Add payment method';
+        let label = t('admin.settings.add-payment-method');
         if (this.paymentMethodId != null) {
-            label = 'Edit payment method';
+            label = t('admin.offline-payment.edit');
         }
         return html`
             <sl-dialog class="responsive-dialog" label=${label}
@@ -144,16 +145,16 @@ export class OfflinePaymentDialog extends LitElement {
     private renderForm(): TemplateResult {
         return html`
             <form id="offline-payment-form" class="form-stack payment-method-form" novalidate @submit=${this.submit}>
-                ${this.textField('name', 'Name', {
+                ${this.textField('name', t('admin.common.name'), {
                     validate: (value) => this.validateName(value),
                     multiline: false,
                 })}
-                ${this.textField('description', 'Description', {
-                    validate: (value) => missingTranslation(value, 'Please enter the description in every language.'),
+                ${this.textField('description', t('admin.common.description'), {
+                    validate: (value) => missingTranslation(value, t('admin.offline-payment.error.description')),
                     multiline: true,
                 })}
-                ${this.textField('instructions', 'Payment instructions', {
-                    validate: (value) => missingTranslation(value, 'Please enter the instructions in every language.'),
+                ${this.textField('instructions', t('admin.offline-payment.instructions'), {
+                    validate: (value) => missingTranslation(value, t('admin.offline-payment.error.instructions')),
                     multiline: true,
                 })}
                 ${when(this.error, () => html`
@@ -167,10 +168,10 @@ export class OfflinePaymentDialog extends LitElement {
                 <sl-divider></sl-divider>
                 ${when(this.invalid, () => html`<p class="text-danger">${INVALID_FORM_MESSAGE}</p>`)}
                 <div class="row" style="--alfio-row-cols: 3">
-                    <sl-button variant="default" size="large" @click=${() => this.close()}>Cancel</sl-button>
+                    <sl-button variant="default" size="large" @click=${() => this.close()}>${t('admin.common.cancel')}</sl-button>
                     <div></div>
                     <sl-button id="save-payment-method" variant="warning" size="large" ?loading=${this.saving}
-                               ?disabled=${this.saving} @click=${this.submit}>Save</sl-button>
+                               ?disabled=${this.saving} @click=${this.submit}>${t('admin.common.save')}</sl-button>
                 </div>
             </div>
         `;
@@ -216,12 +217,12 @@ export class OfflinePaymentDialog extends LitElement {
     }
 
     private validateName(value: LocalizedContent): string | undefined {
-        const missing = missingTranslation(value, 'Please enter the name in every language.');
+        const missing = missingTranslation(value, t('admin.offline-payment.error.name'));
         if (missing != null) {
             return missing;
         }
         if (Object.values(value).some((name) => this.otherNames.has(name.trim().toLowerCase()))) {
-            return 'Another payment method of the organization has this name.';
+            return t('admin.offline-payment.error.duplicate');
         }
         return undefined;
     }

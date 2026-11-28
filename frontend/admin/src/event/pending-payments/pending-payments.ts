@@ -40,6 +40,7 @@ import './bulk-confirmation.ts';
 import {emptyState} from '../../components/empty-state.ts';
 import {taskContent} from '../../components/task-content.ts';
 import { adminUrl } from '../../admin-router';
+import { t, tHtml, formatNumber } from '../../service/i18n';
 
 interface PendingPaymentRow {
     payment: PendingPayment;
@@ -61,28 +62,28 @@ const CANCEL_ACTIONS: Record<CancelAction, { request: (id: string) => Cancellati
     credit: {
         request: (id) => ({
             icon: 'arrow-counterclockwise',
-            title: `Issue credit note for ${id}?`,
-            description: 'A credit note will be generated. The reservation will be listed under "Credit Note issued" in the reservations list.',
-            action: 'Proceed',
+            title: t('admin.pending-payments.credit.title', id),
+            description: t('admin.pending-payments.credit.description'),
+            action: t('admin.common.proceed'),
             variant: 'warning',
-            options: { notify: 'Send the credit note to the reservation contact person' },
+            options: { notify: t('admin.pending-payments.credit.notify') },
             defaults: { refund: false, issueCreditNote: false, notify: false },
         }),
-        success: 'Credit note issued successfully',
-        error: 'Failed to issue the credit note',
+        success: t('admin.pending-payments.credit.done'),
+        error: t('admin.pending-payments.credit.failed'),
     },
     delete: {
         request: (id) => ({
             icon: 'trash',
-            title: `Delete reservation ${id}?`,
-            description: 'The payment will be discarded and the reservation deleted for good.',
-            action: 'Proceed',
+            title: t('admin.pending-payments.delete.title', id),
+            description: t('admin.pending-payments.delete.description'),
+            action: t('admin.common.proceed'),
             variant: 'danger',
-            options: { notify: 'Send a notification email to the reservation contact person' },
+            options: { notify: t('admin.pending-payments.delete.notify') },
             defaults: { refund: false, issueCreditNote: false, notify: true },
         }),
-        success: 'Reservation deleted successfully',
-        error: 'Failed to delete the reservation',
+        success: t('admin.pending-payments.delete.done'),
+        error: t('admin.pending-payments.delete.failed'),
     },
 };
 
@@ -163,7 +164,7 @@ export class PendingPayments extends LitElement {
     ];
 
     render(): TemplateResult {
-        return taskContent(this.loadDataTask, this.lastData, 'Failed to load pending payments. Please try again.',
+        return taskContent(this.loadDataTask, this.lastData, t('admin.pending-payments.load-failed'),
             (data) => this.renderContent(data));
     }
 
@@ -171,14 +172,14 @@ export class PendingPayments extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row secondary">
-                    <h1>Pending payments for <i>${localizedTitle(data.event)}</i></h1>
+                    <h1>${tHtml('admin.pending-payments.title', html`<i>${localizedTitle(data.event)}</i>`)}</h1>
                 </div>
                 <hr class="page-separator" />
-                <p class="page-description text-muted">Confirm them one at a time, or upload a file to confirm them in bulk.</p>
+                <p class="page-description text-muted">${t('admin.pending-payments.description')}</p>
                 ${when(data.rows.length === 0,
                     () => html`
                         <section class="section-card">
-                            ${emptyState('No pending payments found')}
+                            ${emptyState(t('admin.pending-payments.none-found'))}
                         </section>
                     `,
                     () => this.renderPendingPayments(data))}
@@ -203,8 +204,8 @@ export class PendingPayments extends LitElement {
                 <div class="filter-left">
                     <sl-input
                         class="list-search label-hidden"
-                        label="Filter payments"
-                        placeholder="Filter payments"
+                        label=${t('admin.pending-payments.filter')}
+                        placeholder=${t('admin.pending-payments.filter')}
                         clearable
                         .value=${this.search}
                         @sl-input=${(e: Event) => { this.search = (e.target as SlInput).value; }}
@@ -219,7 +220,7 @@ export class PendingPayments extends LitElement {
             ${when(rows.length === 0,
                 () => html`
                     <section class="section-card">
-                        ${emptyState('No pending payments match your filter')}
+                        ${emptyState(t('admin.pending-payments.none-matching'))}
                     </section>
                 `,
                 () => this.renderTable(rows, data))}
@@ -236,12 +237,12 @@ export class PendingPayments extends LitElement {
                     <thead>
                         <tr>
                             ${sortableHeader('ID', 'id', this.sort, onSort)}
-                            ${sortableHeader('Expires', 'expiration', this.sort, onSort)}
-                            ${sortableHeader('Customer', 'customer', this.sort, onSort)}
-                            ${sortableHeader('Email', 'email', this.sort, onSort, 'hide-small')}
-                            ${sortableHeader('Tickets', 'tickets', this.sort, onSort, 'tickets hide-small')}
-                            ${sortableHeader('Amount', 'amount', this.sort, onSort, 'amount')}
-                            <th aria-label="Actions"></th>
+                            ${sortableHeader(t('admin.pending-payments.expires'), 'expiration', this.sort, onSort)}
+                            ${sortableHeader(t('admin.common.customer'), 'customer', this.sort, onSort)}
+                            ${sortableHeader(t('admin.common.email-short'), 'email', this.sort, onSort, 'hide-small')}
+                            ${sortableHeader(t('admin.page-title.tickets'), 'tickets', this.sort, onSort, 'tickets hide-small')}
+                            ${sortableHeader(t('admin.common.amount'), 'amount', this.sort, onSort, 'amount')}
+                            <th aria-label=${t('admin.common.actions')}></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -260,41 +261,41 @@ export class PendingPayments extends LitElement {
                 <td class="reservation-id">
                     <a href=${this.reservationHref(reservation.id)}>${row.publicId}</a>
                 </td>
-                <td class="expiration" data-label="Expires">
+                <td class="expiration" data-label=${t('admin.pending-payments.expires')}>
                     <alfio-format-date date=${reservation.validity} time-zone=${data.event.timeZone}></alfio-format-date>
-                    ${when(row.overdue, () => html`<sl-badge variant="danger" pill>Overdue</sl-badge>`)}
+                    ${when(row.overdue, () => html`<sl-badge variant="danger" pill>${t('admin.pending-payments.overdue')}</sl-badge>`)}
                 </td>
-                <td data-label="Customer">${row.customer}</td>
-                <td class="email hide-small" data-label="Email">${reservation.email ?? ''}</td>
-                <td class="tickets hide-small" data-label="Tickets">${row.payment.ticketsCount}</td>
-                <td class="amount" data-label="Amount">${when(transaction, () => formatAmount(transaction!.formattedAmount, transaction!.currency))}</td>
+                <td data-label=${t('admin.common.customer')}>${row.customer}</td>
+                <td class="email hide-small" data-label=${t('admin.common.email-short')}>${reservation.email ?? ''}</td>
+                <td class="tickets hide-small" data-label=${t('admin.page-title.tickets')}>${row.payment.ticketsCount}</td>
+                <td class="amount" data-label=${t('admin.common.amount')}>${when(transaction, () => formatAmount(transaction!.formattedAmount, transaction!.currency))}</td>
                 <td>
                     <div class="actions-cell">
                         ${when(this.hasMatchingTransaction(row.payment), () => html`
                             <sl-button size="small" variant="primary" outline ?disabled=${this.busy}
                                        @click=${() => this.reviewMatchingTransaction(row.payment)}>
                                 <sl-icon slot="prefix" name="arrow-left-right"></sl-icon>
-                                Review match
+                                ${t('admin.pending-payments.review-match')}
                             </sl-button>
                         `)}
                         <sl-button size="small" variant="success" outline ?disabled=${this.busy}
                                    @click=${() => this.confirmDialog.openForConfirmation(reservation.id)}>
                             <sl-icon slot="prefix" name="check2"></sl-icon>
-                            Confirm
+                            ${t('admin.common.confirm')}
                         </sl-button>
                         <sl-dropdown hoist placement="bottom-end">
-                            <sl-icon-button slot="trigger" name="three-dots-vertical" label="More actions for ${row.publicId}"
+                            <sl-icon-button slot="trigger" name="three-dots-vertical" label=${t('admin.categories.more-actions', row.publicId)}
                                             ?disabled=${this.busy}></sl-icon-button>
                             <sl-menu @sl-select=${(e: CustomEvent) => this.cancel(row.payment, e.detail.item.value)}>
                                 ${when(this.canIssueCreditNote(row.payment), () => html`
                                     <sl-menu-item value="credit">
                                         <sl-icon slot="prefix" name="arrow-counterclockwise"></sl-icon>
-                                        Issue credit note
+                                        ${t('admin.pending-payments.issue-credit-note')}
                                     </sl-menu-item>
                                 `)}
                                 <sl-menu-item value="delete" class="danger">
                                     <sl-icon slot="prefix" name="trash"></sl-icon>
-                                    Delete
+                                    ${t('admin.common.delete')}
                                 </sl-menu-item>
                             </sl-menu>
                         </sl-dropdown>
@@ -332,9 +333,9 @@ export class PendingPayments extends LitElement {
 
     private resultCount(visible: number, total: number): string {
         if (visible === total) {
-            return `${total} pending`;
+            return t('admin.pending-payments.count-pending', formatNumber(total));
         }
-        return `${visible} of ${total} pending`;
+        return t('admin.pending-payments.count-visible', formatNumber(visible), formatNumber(total));
     }
 
     private hasMatchingTransaction(payment: PendingPayment): boolean {
@@ -354,8 +355,8 @@ export class PendingPayments extends LitElement {
         } else if (choice === 'discard') {
             await this.perform(
                 () => PendingPaymentsService.discardMatchingTransaction(this.eventName, reservationId, payment.transaction!.id),
-                'Transaction flagged as not valid',
-                'Failed to flag the transaction as not valid');
+                t('admin.pending-payments.flagged'),
+                t('admin.pending-payments.flag-failed'));
         }
     }
 

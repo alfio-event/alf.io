@@ -1,6 +1,7 @@
 import {AdditionalField, PurchaseContextFieldDescriptionContainer} from "../../model/additional-field.ts";
 import {html, nothing} from "lit";
 import {repeat} from "lit/directives/repeat.js";
+import { t } from '../../service/i18n';
 
 export interface LocalizedAdditionalFieldContent {
     locale: string,
@@ -31,9 +32,9 @@ export function renderPreview(fieldContent: LocalizedAdditionalFieldContent, fie
         case "country":
             return html`
                 <sl-select hoist label=${localizedConfiguration.label}>
-                    <sl-option value="C1">Country 1</sl-option>
-                    <sl-option value="C2">Country 2</sl-option>
-                    <sl-option value="C3">Country 3</sl-option>
+                    <sl-option value="C1">${t('admin.additional-fields.sample-country', 1)}</sl-option>
+                    <sl-option value="C2">${t('admin.additional-fields.sample-country', 2)}</sl-option>
+                    <sl-option value="C3">${t('admin.additional-fields.sample-country', 3)}</sl-option>
                 </sl-select>
             `;
         case "select":

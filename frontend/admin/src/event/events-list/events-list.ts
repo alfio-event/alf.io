@@ -14,6 +14,7 @@ import '../../components/pending-payments-count.ts';
 
 import { adminConfig } from '../../admin-config';
 import { adminUrl } from '../../admin-router';
+import { t, formatNumber } from '../../service/i18n';
 let sharedActiveEventsPromise: Promise<EventStatistic[]> | null = null;
 
 async function fetchActiveEvents(): Promise<EventStatistic[]> {
@@ -74,23 +75,23 @@ export class EventsList extends LitElement {
                     <div class="filter-right">
                         <sl-button href=${adminUrl(`/events/new`)} variant="success" size="large">
                             <sl-icon name="plus-circle" slot="prefix"></sl-icon>
-                            Add new
+                            ${t('admin.common.add-new-entity')}
                         </sl-button>
                     </div>
                 </div>
             `)}
-            ${sectionCard({icon: 'calendar-event', title: 'Active events', badge: count, className: 'list-card'}, html`
+            ${sectionCard({icon: 'calendar-event', title: t('admin.events.active'), badge: count, className: 'list-card'}, html`
                 ${this.loadEventsTask.render({
                     initial: () => this.renderSpinner(),
                     running: () => this.renderSpinner(),
                     error: () => html`
                         <div class="state-message">
-                            <sl-alert open variant="danger"><sl-icon name="exclamation-triangle" slot="icon"></sl-icon>Failed to load events</sl-alert>
+                            <sl-alert open variant="danger"><sl-icon name="exclamation-triangle" slot="icon"></sl-icon>${t('admin.load-error.events')}</sl-alert>
                         </div>
                     `,
                     complete: (loaded: EventStatistic[]) => {
                         if (loaded.length === 0) {
-                            return emptyState('No active events have been found');
+                            return emptyState(t('admin.events.none-active'));
                         }
                         return this.renderEvents(loaded, false);
                     }
@@ -99,13 +100,13 @@ export class EventsList extends LitElement {
                     () => this.renderEvents(this.events, true))}
                 <div class="older-events">
                     ${when(!this.loaded,
-                        () => html`<sl-button variant="text" size="small" @click=${() => this.loadExpiredEvents()}>Show older events<sl-icon name="chevron-down" slot="suffix"></sl-icon></sl-button>`,
+                        () => html`<sl-button variant="text" size="small" @click=${() => this.loadExpiredEvents()}>${t('admin.events.show-older')}<sl-icon name="chevron-down" slot="suffix"></sl-icon></sl-button>`,
                         () => when(this.loading,
                             () => html`<sl-spinner></sl-spinner>`,
                             () => when(this._error, () => html`
                                 <sl-alert open variant="danger">
                                     <sl-icon name="exclamation-triangle" slot="icon"></sl-icon>
-                                    Failed to load older events
+                                    ${t('admin.events.load-older-failed')}
                                 </sl-alert>
                             `)))}
                 </div>
@@ -130,11 +131,11 @@ export class EventsList extends LitElement {
                     const nearlyFull = percentage >= 90;
                     const showLogo = !expired && ev.fileBlobId != null;
                     return html`
-                        <a class="event-row" href=${adminUrl(`/events/${ev.shortName}/detail`)} aria-label="Open ${ev.displayName}">
+                        <a class="event-row" href=${adminUrl(`/events/${ev.shortName}/detail`)} aria-label=${t('admin.events.open', ev.displayName)}>
                             <div class=${classMap({ 'event-logo': true, placeholder: !showLogo })}>
                                 ${when(showLogo,
-                                    () => html`<img src="/file/${ev.fileBlobId}" alt="${ev.displayName} logo">`,
-                                    () => html`<sl-icon name="image" aria-label="No event logo"></sl-icon>`)}
+                                    () => html`<img src="/file/${ev.fileBlobId}" alt=${t('admin.events.logo', ev.displayName)}>`,
+                                    () => html`<sl-icon name="image" aria-label=${t('admin.events.no-logo')}></sl-icon>`)}
                             </div>
                             <div class="event-main">
                                 <div class="event-heading">
@@ -142,8 +143,8 @@ export class EventsList extends LitElement {
                                             ${when(ev.warningNeeded,
                                               () => html`
                                                   <sl-badge variant="warning" pill>
-                                                     <sl-tooltip content="Please check the Event detail">
-                                                         <sl-icon name="exclamation-triangle" style="cursor: help;" tabindex="0" aria-label="Warning: please check event detail"></sl-icon>
+                                                     <sl-tooltip content=${t('admin.events.check-detail')}>
+                                                         <sl-icon name="exclamation-triangle" style="cursor: help;" tabindex="0" aria-label=${t('admin.events.check-detail')}></sl-icon>
                                                      </sl-tooltip>
                                                   </sl-badge>
                                               `)}
@@ -151,11 +152,11 @@ export class EventsList extends LitElement {
                                               () => html`
                                                   <sl-badge variant="neutral" pill>
                                                      <sl-icon name="eye-slash" aria-hidden="true"></sl-icon>
-                                                     Unlisted
+                                                     ${t('admin.event.status.unlisted')}
                                                   </sl-badge>
                                               `,
                                               () => when(!expired && ev.status === 'PUBLIC',
-                                                  () => html`<sl-badge variant="success" pill>Live</sl-badge>`))}
+                                                  () => html`<sl-badge variant="success" pill>${t('admin.event.status.live')}</sl-badge>`))}
                                 </div>
                                 <div class="event-date">
                                     <sl-icon name="calendar-event" aria-hidden="true"></sl-icon>
@@ -165,10 +166,10 @@ export class EventsList extends LitElement {
                                     <div class="ticket-summary">
                                         <div class="sales-progress">
                                             <div class="sales-meta">
-                                                <span>${sold} of ${ev.availableSeats} tickets sold</span>
-                                                <span>${when(remaining > 0 && nearlyFull, () => `${remaining} left`, () => `${percentage}%`)}</span>
+                                                <span>${t('admin.events.tickets-sold', { count: ev.availableSeats, 0: formatNumber(sold), 1: formatNumber(ev.availableSeats) })}</span>
+                                                <span>${when(remaining > 0 && nearlyFull, () => t('admin.events.tickets-left', { count: remaining }), () => `${percentage}%`)}</span>
                                             </div>
-                                            <sl-progress-bar class=${classMap({ 'nearly-full': nearlyFull })} value=${percentage} aria-label="${percentage}% of tickets sold"></sl-progress-bar>
+                                            <sl-progress-bar class=${classMap({ 'nearly-full': nearlyFull })} value=${percentage} aria-label=${t('admin.events.percentage-sold', percentage)}></sl-progress-bar>
                                         </div>
                                     </div>
                                     ${when(!expired && ev.visibleForCurrentUser && supportsOfflinePayments(ev.allowedPaymentProxies),

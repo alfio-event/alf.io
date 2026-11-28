@@ -4,6 +4,7 @@ import {css, html, LitElement, TemplateResult} from "lit";
 import {Task} from "@lit/task";
 import {UtilService} from "../service/util.ts";
 import {dialog, row} from "../styles.ts";
+import { t } from '../service/i18n';
 
 @customElement('alfio-display-commonmark-preview')
 export class DisplayCommonMarkPreview extends LitElement {
@@ -48,13 +49,13 @@ export class DisplayCommonMarkPreview extends LitElement {
             <div class="row">
                 <sl-button class="right" variant="text" .disabled=${(this.text ?? '').trim().length === 0} @click=${this.openDialog} size="small"><sl-icon name="easel3" slot="prefix"></sl-icon> ${this.buttonText}</sl-button>
             </div>
-            <sl-dialog ?open=${this.dialogOpen} label="Text preview" class="responsive-dialog dialog-markdown-preview"
+            <sl-dialog ?open=${this.dialogOpen} label=${t('admin.markdown.preview.title')} class="responsive-dialog dialog-markdown-preview"
                        @sl-after-hide=${this.onAfterHide}>
                 ${this.renderText()}
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${this.closeDialog}>Close</sl-button>
+                        <sl-button variant="default" size="large" @click=${this.closeDialog}>${t('admin.common.close')}</sl-button>
                     </div>
                 </div>
             </sl-dialog>
@@ -92,7 +93,7 @@ export class DisplayCommonMarkPreview extends LitElement {
             error: () => html`
                 <sl-alert variant="danger" open>
                     <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                    The preview could not be rendered. Please try again.
+                    ${t('admin.markdown.preview.error')}
                 </sl-alert>
             `,
         });

@@ -46,6 +46,7 @@ import {
     validatedInput,
     validateWith
 } from "../../components/form-validation.ts";
+import { t } from '../../service/i18n';
 
 interface SelectableOption {
     fieldName: string;
@@ -232,19 +233,19 @@ export class AdditionalFieldEdit extends LitElement {
                 <div class="row custom" style="--alfio-custom-row-cols-layout: 2fr 1fr">
                     <div class="col">
                         <section>
-                            <div class="section-header">Field definition</div>
-                            <div class="section-subtitle">What kind of data will you collect?</div>
+                            <div class="section-header">${t('admin.additional-field-dialog.definition')}</div>
+                            <div class="section-subtitle">${t('admin.additional-field-dialog.definition.help')}</div>
                             ${(this.renderFieldTypeSelector())}
                             ${this.renderConstraints()}
                         </section>
                         <sl-divider></sl-divider>
                         <section>
-                            <div class="section-header">Display labels</div>
-                            <div class="section-subtitle">What attendees will see in the form</div>
+                            <div class="section-header">${t('admin.additional-field-dialog.labels')}</div>
+                            <div class="section-subtitle">${t('admin.additional-field-dialog.labels.help')}</div>
                             <sl-tab-group>
                                 ${contentLanguages.map((d, index) => {
                                     return html`
-                                            <sl-tab slot="nav" panel=${d.locale} ?active=${index === 0}>${d.displayLanguage}${renderIf(() => index === 0, () => html`<sl-badge variant="primary" pill class="ms-1">Primary</sl-badge>`)}</sl-tab>
+                                            <sl-tab slot="nav" panel=${d.locale} ?active=${index === 0}>${d.displayLanguage}${renderIf(() => index === 0, () => html`<sl-badge variant="primary" pill class="ms-1">${t('admin.additional-field-dialog.primary')}</sl-badge>`)}</sl-tab>
                                             <sl-tab-panel name=${d.locale} ?active=${index === 0}>
                                                 <div class="info-container">
                                                     ${this.renderLanguageFields(d, index === 0)}
@@ -257,14 +258,14 @@ export class AdditionalFieldEdit extends LitElement {
                         <sl-divider></sl-divider>
                         ${this.renderValues()}
                         <section>
-                            <div class="section-header">Field reference</div>
-                            <div class="section-subtitle">How the field is referenced in exported and imported spreadsheets</div>
+                            <div class="section-header">${t('admin.additional-field-dialog.reference')}</div>
+                            <div class="section-subtitle">${t('admin.additional-field-dialog.reference.help')}</div>
                             ${(this.renderNameField())}
                         </section>
                         <sl-divider></sl-divider>
                         <section>
-                            <div class="section-header">Field behavior</div>
-                            <div class="section-subtitle">How the field works</div>
+                            <div class="section-header">${t('admin.additional-field-dialog.behavior')}</div>
+                            <div class="section-subtitle">${t('admin.additional-field-dialog.behavior.help')}</div>
                             <ul class="list-group">
                                 <li class="list-group-item">
                                     ${this.renderRequiredCheckbox()}
@@ -280,8 +281,8 @@ export class AdditionalFieldEdit extends LitElement {
                         ${renderIf(() => this.purchaseContext?.type === 'event', () => html`
                             <sl-divider></sl-divider>
                             <section>
-                                <div class="section-header">Visibility rules</div>
-                                <div class="section-subtitle">Control when this field appears</div>
+                                <div class="section-header">${t('admin.additional-field-dialog.visibility')}</div>
+                                <div class="section-subtitle">${t('admin.additional-field-dialog.visibility.help')}</div>
                                 <ul class="list-group">
                                     <li class="list-group-item">
                                         ${this.renderCollectFor()}
@@ -294,13 +295,13 @@ export class AdditionalFieldEdit extends LitElement {
                     <div class="col live-preview-container">
 
                         <div class="live-preview">
-                            <div class="section-title">Live preview</div>
+                            <div class="section-title">${t('admin.additional-field-dialog.preview')}</div>
 
                             ${this.buildPreview(contentLanguages[0])}
 
                             <sl-alert variant="primary" open class="mt-3">
                                 <sl-icon slot="icon" name="info-circle"></sl-icon>
-                                <strong>Preview updates as you configure the field</strong>
+                                <strong>${t('admin.additional-field-dialog.preview.help')}</strong>
                             </sl-alert>
                         </div>
 
@@ -317,9 +318,9 @@ export class AdditionalFieldEdit extends LitElement {
                 <div>
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => this.close(false)}>Cancel</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.close(false)}>${t('admin.common.cancel')}</sl-button>
                         <div></div>
-                        <sl-button variant="warning" type="submit" size="large" ?loading=${this.saving} ?disabled=${this.saving}>Save</sl-button>
+                        <sl-button variant="warning" type="submit" size="large" ?loading=${this.saving} ?disabled=${this.saving}>${t('admin.common.save')}</sl-button>
                     </div>
                 </div>
             </form>
@@ -332,8 +333,8 @@ export class AdditionalFieldEdit extends LitElement {
             return html`
                 <sl-alert variant="warning" open class="mt-3">
                     <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                    <strong>Not enough information to build a preview</strong><br />
-                    Please configure the field
+                    <strong>${t('admin.additional-field-dialog.preview.missing')}</strong><br />
+                    ${t('admin.additional-field-dialog.preview.configure')}
                 </sl-alert>
             `;
         } else {
@@ -353,8 +354,8 @@ export class AdditionalFieldEdit extends LitElement {
         return this.#form.field({
             name: 'editable'
         }, (field) => html`
-            <sl-switch .value=${field.state.value} help-text="Attendee can modify after initial submission" checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field, _ => (e.currentTarget as HTMLInputElement).checked)} class="block mt-2 mb-2">
-                Editable by attendee
+            <sl-switch .value=${field.state.value} help-text=${t('admin.additional-field-dialog.editable.help')} checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field, _ => (e.currentTarget as HTMLInputElement).checked)} class="block mt-2 mb-2">
+                ${t('admin.additional-field-dialog.editable')}
             </sl-switch>
         `);
     }
@@ -363,8 +364,8 @@ export class AdditionalFieldEdit extends LitElement {
         return this.#form.field({
             name: 'displayAtCheckIn'
         }, (field) => html`
-            <sl-switch help-text="Displayed in check-in app upon successful scan" checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field, _ => (e.currentTarget as HTMLInputElement).checked)} class="block mt-2 mb-2">
-                Show at check-in
+            <sl-switch help-text=${t('admin.additional-field-dialog.check-in.help')} checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field, _ => (e.currentTarget as HTMLInputElement).checked)} class="block mt-2 mb-2">
+                ${t('admin.additional-field-dialog.check-in')}
             </sl-switch>
         `);
     }
@@ -373,8 +374,8 @@ export class AdditionalFieldEdit extends LitElement {
         return this.#form.field({
             name: 'required'
         }, (field) => html`
-            <sl-switch size="medium" .value=${field.state.value} help-text="The attendee must fill in the field" checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field, _ => (e.currentTarget as HTMLInputElement).checked)} class="block mt-2 mb-2">
-                Required field
+            <sl-switch size="medium" .value=${field.state.value} help-text=${t('admin.additional-field-dialog.required.help')} checked=${field.state.value || nothing} @sl-change=${(e: InputEvent) => notifyChange(e, field, _ => (e.currentTarget as HTMLInputElement).checked)} class="block mt-2 mb-2">
+                ${t('admin.additional-field-dialog.required')}
             </sl-switch>
         `);
     }
@@ -393,7 +394,7 @@ export class AdditionalFieldEdit extends LitElement {
                 notifyChange(e, field);
             }
             return html`
-                <sl-select label="Field type" required hoist .value=${field.state.value} @sl-change=${(e: InputEvent) => selectionChangeHandler(e)}>
+                <sl-select label=${t('admin.additional-field-dialog.type')} required hoist .value=${field.state.value} @sl-change=${(e: InputEvent) => selectionChangeHandler(e)}>
                     ${repeat(Object.entries(additionalFieldTypesWithDescription), ([k]) => k, ([value, description]) => html`
                         <sl-option value=${value}>${description}</sl-option>
                     `)}
@@ -407,10 +408,10 @@ export class AdditionalFieldEdit extends LitElement {
             name: 'name',
             validators: validateWith(value => this.validateFieldName(value)),
         }, field => validatedInput(field, this.submitted, {
-            label: 'Internal field name',
-            placeholder: 'Name',
+            label: t('admin.additional-field-dialog.name'),
+            placeholder: t('admin.common.name'),
             maxlength: 64,
-            helpText: 'Letters, numbers, and underscores only.',
+            helpText: t('admin.additional-field-dialog.name.help'),
             readonly: this.editField,
         }));
     }
@@ -444,14 +445,14 @@ export class AdditionalFieldEdit extends LitElement {
                 name: `description.${cl.locale}.description.label`,
                 validators: validateWith(value => requiredValue(value)),
             }, field => validatedInput(withChangeListener(field, generateName), this.submitted, {
-                label: 'Title',
-                placeholder: 'The question attendees will see',
+                label: t('admin.additional-item.title'),
+                placeholder: t('admin.additional-field-dialog.title.placeholder'),
             }))}
             ${renderIf(() => supportsPlaceholder(this.#form.api.state.values.type),
                 () => html`
                     ${this.#form.field({name: `description.${cl.locale}.description.placeholder`}, field => validatedInput(field as BoundField<string>, this.submitted, {
-                        label: 'Placeholder',
-                        placeholder: 'Optional hint inside the field',
+                        label: t('admin.additional-field-dialog.placeholder'),
+                        placeholder: t('admin.additional-field-dialog.placeholder.placeholder'),
                         optional: true,
                     }))}
                 `)}
@@ -465,8 +466,8 @@ export class AdditionalFieldEdit extends LitElement {
 
         return html`
             <section>
-                <div class="section-header">Selectable options</div>
-                <div class="section-subtitle">Define the options attendees can choose from</div>
+                <div class="section-header">${t('admin.additional-field-dialog.options')}</div>
+                <div class="section-subtitle">${t('admin.additional-field-dialog.options.help')}</div>
                 <div class="field-constraints">
                     ${this.#form.field({
                         name: 'selectableOptions',
@@ -485,7 +486,7 @@ export class AdditionalFieldEdit extends LitElement {
                             })}
                             <sl-button class="mt-2" variant="text" @click=${() => {selectableOptionsField.pushValue({fieldName: '', description: {}, toBePersisted: true})}}>
                                 <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-                                Add option
+                                ${t('admin.poll-edit.add-option')}
                             </sl-button>
                         `;
                     })}
@@ -513,10 +514,10 @@ export class AdditionalFieldEdit extends LitElement {
         return html`
             <sl-card class="item bg-default mt-3">
                 <div slot="header">
-                    <div class="col option-title">Option ${optionIndex + 1}</div>
+                    <div class="col option-title">${t('admin.additional-field-dialog.option', optionIndex + 1)}</div>
                     <div class="col">
                         ${renderIf(() => this.#form.api.getFieldValue(`selectableOptions[${optionIndex}].toBePersisted`),
-                            () => html`<sl-button variant="danger" size="small" @click=${() => removeField()}><sl-icon slot="prefix" name="trash"></sl-icon>Delete</sl-button>`)}
+                            () => html`<sl-button variant="danger" size="small" @click=${() => removeField()}><sl-icon slot="prefix" name="trash"></sl-icon>${t('admin.common.delete')}</sl-button>`)}
                     </div>
                 </div>
                 <div slot="footer">
@@ -524,14 +525,14 @@ export class AdditionalFieldEdit extends LitElement {
                         () => html`
                             <sl-button type="button" variant="default" size="small" @click=${() => moveField(optionIndex - 1)}>
                                 <sl-icon name="arrow-up" slot="prefix"></sl-icon>
-                                Move up
+                                ${t('admin.common.move-up')}
                             </sl-button>
                         `)}
                     ${renderIf(() => optionIndex < maxIndex,
                         () => html`
                         <sl-button type="button" variant="default" size="small" @click=${() => moveField(optionIndex + 1)}>
                             <sl-icon name="arrow-down" slot="prefix"></sl-icon>
-                            Move down
+                            ${t('admin.common.move-down')}
                         </sl-button>
                     `)}
                 </div>
@@ -545,8 +546,8 @@ export class AdditionalFieldEdit extends LitElement {
                                         name: `selectableOptions[${optionIndex}].description.${d.locale}`,
                                         validators: validateWith(value => this.ifSelectableOptions(() => requiredValue(value))),
                                     }, field => validatedInput(withChangeListener(field as BoundField<string>, value => generateValue(value, languageIndex)), this.submitted, {
-                                        label: `Description (${d.displayLanguage})`,
-                                        placeholder: `Enter the description (${d.displayLanguage})`,
+                                        label: t('admin.additional-field-dialog.option.description', d.displayLanguage),
+                                        placeholder: t('admin.additional-field-dialog.option.description.placeholder', d.displayLanguage),
                                     }))}
                                 </div>
                             </div>
@@ -554,16 +555,16 @@ export class AdditionalFieldEdit extends LitElement {
                     })}
                     <sl-divider></sl-divider>
                     <div class="row custom">
-                        <div class="col text-end selectable-option-header">Value</div>
+                        <div class="col text-end selectable-option-header">${t('admin.additional-field-dialog.value')}</div>
                         <div class="col">
                             ${this.#form.field({
                                 name: `selectableOptions[${optionIndex}].fieldName`,
                                 validators: validateWith(value => this.ifSelectableOptions(() => this.validateOptionValue(value, optionIndex))),
                             }, field => validatedInput(field, this.submitted, {
-                                label: 'Value',
-                                placeholder: 'Generated from the description',
+                                label: t('admin.additional-field-dialog.value'),
+                                placeholder: t('admin.additional-field-dialog.value.placeholder'),
                                 maxlength: 64,
-                                helpText: 'Used in data exports. Letters, numbers, and underscores only.',
+                                helpText: t('admin.additional-field-dialog.value.help'),
                                 readonly: this.editField && !toBePersisted,
                             }))}
                         </div>
@@ -604,9 +605,9 @@ export class AdditionalFieldEdit extends LitElement {
                     return html`
                         <ul class="list-group">
                             <li class="list-group-item">
-                                <sl-switch help-text="Turn it off to select the categories the field is collected for." class="block mt-2 mb-2"
+                                <sl-switch help-text=${t('admin.additional-field-dialog.all-categories.help')} class="block mt-2 mb-2"
                                            .checked=${this.allCategories}
-                                           @sl-change=${(e: InputEvent) => selectionChanged(e)}>Apply to all ticket categories</sl-switch>
+                                           @sl-change=${(e: InputEvent) => selectionChanged(e)}>${t('admin.promo-code.all-categories.switch')}</sl-switch>
                                 ${renderIf(() => !this.allCategories, () => html`
                                     ${this.renderCategories(event, field)}
                                 `)}
@@ -633,7 +634,7 @@ export class AdditionalFieldEdit extends LitElement {
         };
 
         return html`
-            <sl-select label="Categories" required hoist value=${field.state.value?.join(' ') ?? ''} class=${classMap({ error: error != null, 'no-mt': true })} help-text=${error ?? ''} multiple @sl-change=${selectionChanged} @sl-blur=${() => field.handleBlur()}>
+            <sl-select label=${t('admin.categories.title')} required hoist value=${field.state.value?.join(' ') ?? ''} class=${classMap({ error: error != null, 'no-mt': true })} help-text=${error ?? ''} multiple @sl-change=${selectionChanged} @sl-blur=${() => field.handleBlur()}>
                 ${event.ticketCategories.map((tc) => {
                     return html`<sl-option value="${tc.id}">${tc.name}</sl-option>`;
                 })}
@@ -658,8 +659,8 @@ export class AdditionalFieldEdit extends LitElement {
                 ${this.#form.field({
                     name: 'context'
                 }, (field) => html`
-                        <sl-switch help-text="The field appears only when the attendee selects the additional option." class="block mt-2 mb-2" .checked=${field.state.value === 'ADDITIONAL_SERVICE'} @sl-change=${(e: InputEvent) => selectionChange(e, field)}>
-                            Show only for a specific additional option
+                        <sl-switch help-text=${t('admin.additional-field-dialog.option-only.help')} class="block mt-2 mb-2" .checked=${field.state.value === 'ADDITIONAL_SERVICE'} @sl-change=${(e: InputEvent) => selectionChange(e, field)}>
+                            ${t('admin.additional-field-dialog.option-only')}
                         </sl-switch>
                     `)}
 
@@ -673,7 +674,7 @@ export class AdditionalFieldEdit extends LitElement {
                     }, (field) => {
                         const error = fieldError(field.state.meta, this.submitted);
                         return html`
-                            <sl-select label="Additional option" required hoist class=${classMap({ error: error != null, "no-mt block": true })}
+                            <sl-select label=${t('admin.additional-field-dialog.additional-option')} required hoist class=${classMap({ error: error != null, "no-mt block": true })}
                                        help-text=${error ?? ''}
                                        .value=${asString(field.state.value) ?? ''}
                                        @sl-change=${(e: InputEvent) => notifyChange(e, field, asNumber)}
@@ -694,7 +695,7 @@ export class AdditionalFieldEdit extends LitElement {
             return html`
                 <div class="field-constraints">
 
-                    <div class="section-title">Field options</div>
+                    <div class="section-title">${t('admin.additional-field-dialog.field-options')}</div>
 
                     <div class="row">
                         <div class="col">
@@ -734,9 +735,9 @@ export class AdditionalFieldEdit extends LitElement {
 
         if (this.dialog != null) {
             if (request.field == null) {
-                this.dialogTitle = 'Add attendee data field';
+                this.dialogTitle = t('admin.additional-field-dialog.new');
             } else {
-                this.dialogTitle = `Edit ${request.field.name} field`;
+                this.dialogTitle = t('admin.additional-field-dialog.edit', request.field.name);
             }
             this.editField = request.field != null;
             this.existingFieldName = request.field?.name;
@@ -889,7 +890,7 @@ export class AdditionalFieldEdit extends LitElement {
         const duplicate = this.#form.api.state.values.selectableOptions
             .some((option, index) => index !== optionIndex && option.fieldName === String(value));
         if (duplicate) {
-            return 'Another option has the same value';
+            return t('admin.additional-field-dialog.error.duplicate-value');
         }
         return undefined;
     }
@@ -904,7 +905,7 @@ export class AdditionalFieldEdit extends LitElement {
             return undefined;
         }
         if (Number(value) < Number(min)) {
-            return 'Please enter a number not lower than the minimum';
+            return t('admin.additional-field-dialog.error.max');
         }
         return undefined;
     }
@@ -914,7 +915,7 @@ export class AdditionalFieldEdit extends LitElement {
             return undefined;
         }
         if (!Array.isArray(value) || value.length === 0) {
-            return 'Please select at least one category';
+            return t('admin.promo-code.error.categories');
         }
         return undefined;
     }
@@ -924,7 +925,7 @@ export class AdditionalFieldEdit extends LitElement {
             return undefined;
         }
         if (value == null || Number.isNaN(value)) {
-            return 'Please select the additional option';
+            return t('admin.additional-field-dialog.error.option');
         }
         return undefined;
     }
@@ -949,7 +950,7 @@ export class AdditionalFieldEdit extends LitElement {
         if (response.ok) {
             await this.close(true);
         } else {
-            this.submitError = 'Failed to save. Please try again.';
+            this.submitError = t('admin.additional-item.save-failed');
         }
     }
 
@@ -995,12 +996,12 @@ export class AdditionalFieldEdit extends LitElement {
         } else {
             const nameError = updateResult.validationErrors.find(e => e.fieldName === 'name')?.code;
             if (nameError == null) {
-                this.submitError = 'Failed to save. Please try again.';
+                this.submitError = t('admin.additional-item.save-failed');
                 return;
             }
-            let message = 'Please use only letters, numbers and underscores';
+            let message = t('admin.additional-field-dialog.error.name');
             if (nameError === 'duplicate') {
-                message = 'A field with this name already exists';
+                message = t('admin.additional-field-dialog.error.name-taken');
             }
             setServerError(this.#form.api, 'name', message);
             this.submitError = INVALID_FORM_MESSAGE;
@@ -1067,7 +1068,7 @@ function validateName(value: unknown): string | undefined {
         return missing;
     }
     if (!/^[a-z0-9][a-z0-9_]*$/i.test(String(value))) {
-        return 'Please use only letters, numbers and underscores';
+        return t('admin.additional-field-dialog.error.name');
     }
     return undefined;
 }
@@ -1083,7 +1084,7 @@ function optionalCount(value: unknown): string | undefined {
     }
     const count = Number(String(value).trim());
     if (!Number.isInteger(count) || count < 0) {
-        return 'Please enter a whole number, or leave it empty';
+        return t('admin.validation.integer-or-empty');
     }
     return undefined;
 }
@@ -1106,14 +1107,14 @@ function withChangeListener(field: BoundField<string>, onChange: (value: string)
 function lengthLabel(fieldType: AdditionalFieldType, bound: 'min' | 'max'): string {
     if (fieldType === 'input:dateOfBirth') {
         if (bound === 'min') {
-            return 'Min age (years)';
+            return t('admin.additional-field-dialog.min-age');
         }
-        return 'Max age (years)';
+        return t('admin.additional-field-dialog.max-age');
     }
     if (bound === 'min') {
-        return 'Min length';
+        return t('admin.additional-fields.min-length');
     }
-    return 'Max length';
+    return t('admin.additional-fields.max-length');
 }
 
 declare global {

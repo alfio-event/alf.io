@@ -2,6 +2,7 @@ import {Extension} from '@tiptap/core';
 import {Plugin, PluginKey} from '@tiptap/pm/state';
 import {Decoration, DecorationSet} from '@tiptap/pm/view';
 import type {Node as ProseMirrorNode} from '@tiptap/pm/model';
+import { t } from '../service/i18n';
 
 /**
  * Mustache variables ("{{fullName}}") in <alfio-markdown-editor>, shown as chips.
@@ -33,7 +34,7 @@ function decorate(doc: ProseMirrorNode): DecorationSet {
             for (const range of findVariables(node.text)) {
                 decorations.push(Decoration.inline(position + range.from, position + range.to, {
                     class: 'mustache-variable',
-                    title: 'Variable, replaced when the message is sent',
+                    title: t('admin.markdown.variable-title'),
                 }));
             }
         }

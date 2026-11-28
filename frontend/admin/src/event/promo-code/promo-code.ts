@@ -58,6 +58,7 @@ import {
 
 import { adminConfig } from '../../admin-config';
 import { adminUrl } from '../../admin-router';
+import { t, tHtml, i18nKey, formatNumber } from '../../service/i18n';
 const PROMO_CODE_PATTERN = /^[A-Za-z0-9_\-:@!$*,;]*$/;
 
 /**
@@ -85,8 +86,53 @@ interface PromoCodeWithUsage extends PromoCodeDiscount {
     useCount: number | undefined;
 }
 
+/**
+ * The texts of a kind of code: an event can call its discount codes "partner codes" (USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL)
+ */
+interface CodeTexts {
+    pageTitle: string;
+    title: string;
+    description: string;
+    about: string;
+    noCodes: string;
+    add: string;
+    menuItem: string;
+    newTitle: string;
+    editTitle: string;
+    deleteTitle: string;
+    disableTitle: string;
+}
+
+const PROMO_CODE_TEXTS: CodeTexts = {
+    pageTitle: i18nKey('admin.promo-code.promo.page-title'),
+    title: i18nKey('admin.page-title.promo-codes'),
+    description: i18nKey('admin.promo-code.promo.description'),
+    about: i18nKey('admin.promo-code.promo.about'),
+    noCodes: i18nKey('admin.promo-code.promo.free-event'),
+    add: i18nKey('admin.promo-code.promo.add'),
+    menuItem: i18nKey('admin.promo-code.promo.menu-item'),
+    newTitle: i18nKey('admin.promo-code.promo.new'),
+    editTitle: i18nKey('admin.promo-code.promo.edit'),
+    deleteTitle: i18nKey('admin.promo-code.promo.delete'),
+    disableTitle: i18nKey('admin.promo-code.promo.disable'),
+};
+
+const PARTNER_CODE_TEXTS: CodeTexts = {
+    pageTitle: i18nKey('admin.promo-code.partner.page-title'),
+    title: i18nKey('admin.event-menu.partner-codes'),
+    description: i18nKey('admin.promo-code.partner.description'),
+    about: i18nKey('admin.promo-code.partner.about'),
+    noCodes: i18nKey('admin.promo-code.partner.free-event'),
+    add: i18nKey('admin.promo-code.partner.add'),
+    menuItem: i18nKey('admin.promo-code.partner.menu-item'),
+    newTitle: i18nKey('admin.promo-code.partner.new'),
+    editTitle: i18nKey('admin.promo-code.partner.edit'),
+    deleteTitle: i18nKey('admin.promo-code.partner.delete'),
+    disableTitle: i18nKey('admin.promo-code.partner.disable'),
+};
+
 interface LoadData {
-    promoCodeDescription: string;
+    codeTexts: CodeTexts;
     promocodes: PromoCodeWithUsage[];
     accesscodes: PromoCodeWithUsage[];
     restrictedCategories: TicketCategory[];
@@ -136,7 +182,7 @@ function validateMaxUsage(value: unknown): string | undefined {
     }
     const maxUsage = Number(text);
     if (!Number.isInteger(maxUsage) || maxUsage < 1) {
-        return 'Please enter a number, at least 1, or leave it empty for unlimited uses';
+        return t('admin.promo-code.error.max-usage');
     }
     return undefined;
 }
@@ -249,12 +295,12 @@ export class PromoCode extends LitElement {
             }
             const orgId = this.organizationId ?? (ev?.organizationId ?? 0);
 
-            let promoCodeDescription = 'Promo';
+            let codeTexts = PROMO_CODE_TEXTS;
             if (forEvent && ev) {
                 try {
                     const val = await PromoCodeService.loadSingleConfig(ev.shortName, 'USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL');
                     if (val === 'true') {
-                        promoCodeDescription = 'Partner';
+                        codeTexts = PARTNER_CODE_TEXTS;
                     }
                 } catch {
                     // ignore, keep default
@@ -305,7 +351,7 @@ export class PromoCode extends LitElement {
             }
 
             return {
-                promoCodeDescription,
+                codeTexts,
                 promocodes,
                 accesscodes,
                 restrictedCategories,
@@ -494,7 +540,7 @@ export class PromoCode extends LitElement {
     ];
 
     render() {
-        return taskContent(this.loadDataTask, this.loadDataTask.value ?? null, 'Failed to load promo codes.',
+        return taskContent(this.loadDataTask, this.loadDataTask.value ?? null, t('admin.promo-code.load-failed'),
             data => this.renderContent(data));
     }
 
@@ -505,7 +551,7 @@ export class PromoCode extends LitElement {
             return html`
                 <div class="container">
                     <div class="page-title-row secondary">
-                        <h1>${data.promoCodeDescription} codes for <i>${localizedTitle(event)}</i></h1>
+                        <h1>${tHtml(data.codeTexts.pageTitle, html`<i>${localizedTitle(event)}</i>`)}</h1>
                     </div>
                     <hr class="page-separator" />
                     ${this.renderCodes(data)}
@@ -536,8 +582,8 @@ export class PromoCode extends LitElement {
                 () => html`
                     <sl-alert open variant="warning">
                         <sl-icon name="exclamation-triangle" slot="icon"></sl-icon>
-                        <strong>Your event cannot have ${data.promoCodeDescription.toLowerCase()} or access codes</strong>
-                        <p>Free events do not support promo or access codes.</p>
+                        <strong>${t(data.codeTexts.noCodes)}</strong>
+                        <p>${t('admin.promo-code.free-event.help')}</p>
                     </sl-alert>
                 `
             )}
@@ -548,14 +594,16 @@ export class PromoCode extends LitElement {
     }
 
     private renderSection(data: LoadData, codes: PromoCodeWithUsage[], isAccess: boolean): TemplateResult {
-        let title = `${data.promoCodeDescription} codes`;
+        let title = t(data.codeTexts.title);
         let icon = 'percent';
-        let description = `${data.promoCodeDescription} codes give a discount on the tickets of a reservation.`;
+        let description = t(data.codeTexts.description);
+        let about = t(data.codeTexts.about);
         let filterKey: 'promo' | 'access' = 'promo';
         if (isAccess) {
-            title = 'Access codes';
+            title = t('admin.promo-code.access.title');
             icon = 'unlock';
-            description = 'Access codes unlock unlisted categories: an attendee who enters one can buy tickets of that category.';
+            description = t('admin.promo-code.access.description');
+            about = t('admin.promo-code.access.about');
             filterKey = 'access';
         }
 
@@ -589,18 +637,18 @@ export class PromoCode extends LitElement {
                         <sl-badge variant="primary" pill>${countBadge}</sl-badge>
                     </div>
                     <sl-details class="text-muted section-description">
-                        <span slot="summary">About ${title.toLowerCase()}</span>${description}
+                        <span slot="summary">${about}</span>${description}
                     </sl-details>
                     <div class="filter-toolbar header-toolbar">
                         <div class="filter-left">
-                            <sl-input class="code-search" size="small" clearable placeholder="Search code" aria-label="Search ${title}"
+                            <sl-input class="code-search" size="small" clearable placeholder=${t('admin.promo-code.search')} aria-label=${t('admin.promo-code.search.label', title)}
                                 .value=${filter.search}
                                 @sl-input=${(e: Event) => setFilter('search', (e.target as SlInput).value)}
                                 @sl-clear=${() => setFilter('search', '')}>
                                 <sl-icon name="search" slot="prefix"></sl-icon>
                             </sl-input>
                             ${when(data.forEvent, () => html`
-                                <sl-select class="filter-select" size="small" clearable hoist placeholder="All categories" aria-label="Filter ${title} by category"
+                                <sl-select class="filter-select" size="small" clearable hoist placeholder=${t('admin.promo-code.all-categories')} aria-label=${t('admin.promo-code.filter-by-category', title)}
                                     .value=${filter.category}
                                     @sl-change=${(e: Event) => setFilter('category', (e.target as SlSelect).value as string)}
                                     @sl-clear=${() => setFilter('category', '')}>
@@ -611,7 +659,7 @@ export class PromoCode extends LitElement {
                         </div>
                         <div class="filter-right">
                             <sl-button size="small" ?disabled=${matchedCodes.length === 0} @click=${() => this.downloadCodes(matchedCodes, data, isAccess)}>
-                                <sl-icon name="download" slot="prefix"></sl-icon>Download
+                                <sl-icon name="download" slot="prefix"></sl-icon>${t('admin.event.menu.download')}
                             </sl-button>
                         </div>
                     </div>
@@ -619,7 +667,7 @@ export class PromoCode extends LitElement {
                 <div class="section-body">
                     ${this.renderTable(data, sortedCodes.slice((page - 1) * 25, page * 25), isAccess, setSort, state)}
                     ${when(sortedCodes.length > 0, () => html`
-                        <alfio-pagination-bar page=${page} total=${sortedCodes.length} page-size="25" item-label="codes"
+                        <alfio-pagination-bar page=${page} total=${sortedCodes.length} page-size="25" item-label=${t('admin.promo-code.codes')}
                                               @alfio-page-change=${(e: AlfioPageChange) => this.setTablePage(filterKey, e.detail.page)}></alfio-pagination-bar>
                     `)}
                 </div>
@@ -667,18 +715,18 @@ export class PromoCode extends LitElement {
         if (!this.canAddAccessCode(data)) {
             return html`
                 <sl-button variant="success" size="large" @click=${() => this.openCodeDialog(data, 'DISCOUNT')}>
-                    <sl-icon name="plus-circle" slot="prefix"></sl-icon>Add ${data.promoCodeDescription.toLowerCase()} code
+                    <sl-icon name="plus-circle" slot="prefix"></sl-icon>${t(data.codeTexts.add)}
                 </sl-button>
             `;
         }
         return html`
             <sl-dropdown hoist placement="bottom-end">
                 <sl-button slot="trigger" variant="success" size="large" caret>
-                    <sl-icon name="plus-circle" slot="prefix"></sl-icon>Add code
+                    <sl-icon name="plus-circle" slot="prefix"></sl-icon>${t('admin.promo-code.add')}
                 </sl-button>
                 <sl-menu @sl-select=${(e: CustomEvent) => this.openCodeDialog(data, e.detail.item.value as PromoCodeType)}>
-                    <sl-menu-item value="DISCOUNT"><sl-icon name="percent" slot="prefix"></sl-icon>${data.promoCodeDescription} code</sl-menu-item>
-                    <sl-menu-item value="ACCESS"><sl-icon name="unlock" slot="prefix"></sl-icon>Access code</sl-menu-item>
+                    <sl-menu-item value="DISCOUNT"><sl-icon name="percent" slot="prefix"></sl-icon>${t(data.codeTexts.menuItem)}</sl-menu-item>
+                    <sl-menu-item value="ACCESS"><sl-icon name="unlock" slot="prefix"></sl-icon>${t('admin.promo-code.access.menu-item')}</sl-menu-item>
                 </sl-menu>
             </sl-dropdown>
         `;
@@ -711,14 +759,14 @@ export class PromoCode extends LitElement {
     }
 
     private codeStatus(code: PromoCodeWithUsage) {
-        if (code.expired) return {label: 'Expired', icon: 'clock-history', color: 'text-muted'};
+        if (code.expired) return {label: t('admin.event.status.expired'), icon: 'clock-history', color: 'text-muted'};
         if (code.maxUsage != null && code.useCount != null && code.useCount >= code.maxUsage) {
-            return {label: 'Used up', icon: 'check-circle', color: 'text-muted'};
+            return {label: t('admin.promo-code.status.used-up'), icon: 'check-circle', color: 'text-muted'};
         }
         if (code.currentlyValid) {
-            return {label: 'Active', icon: 'check-circle', color: 'text-success'};
+            return {label: t('admin.categories.filter.active'), icon: 'check-circle', color: 'text-success'};
         }
-        return {label: 'Scheduled', icon: 'clock', color: 'text-muted'};
+        return {label: t('admin.promo-code.status.scheduled'), icon: 'clock', color: 'text-muted'};
     }
 
     // with an event, the dates are shown in its time zone; otherwise, the UTC instant
@@ -743,7 +791,7 @@ export class PromoCode extends LitElement {
                         setSort: (key: SortKey) => void, state: TableState): TemplateResult {
         if (codes.length === 0) {
             return html`
-                ${emptyState('No codes found. Adjust the filters or add a new code.')}
+                ${emptyState(t('admin.promo-code.none'))}
             `;
         }
 
@@ -752,15 +800,15 @@ export class PromoCode extends LitElement {
                 <table class="table table-striped table-stacked table-sortable">
                     <thead>
                         <tr>
-                            ${sortableHeader('Code', 'code', state, setSort)}
-                            ${sortableHeader('Status', 'status', state, setSort)}
-                            ${sortableHeader('Usage', 'usage', state, setSort)}
-                            ${sortableHeader('Start', 'start', state, setSort)}
-                            ${sortableHeader('End', 'end', state, setSort)}
-                            ${when(!isAccess, () => sortableHeader('Amount', 'amount', state, setSort))}
-                            ${when(data.forEvent, () => html`<th>Categories</th>`)}
-                            ${sortableHeader('Description', 'description', state, setSort)}
-                            <th style="text-align:right">Actions</th>
+                            ${sortableHeader(t('admin.promo-code.column.code'), 'code', state, setSort)}
+                            ${sortableHeader(t('admin.common.status'), 'status', state, setSort)}
+                            ${sortableHeader(t('admin.promo-code.column.usage'), 'usage', state, setSort)}
+                            ${sortableHeader(t('admin.event-detail.start'), 'start', state, setSort)}
+                            ${sortableHeader(t('admin.event-detail.end'), 'end', state, setSort)}
+                            ${when(!isAccess, () => sortableHeader(t('admin.common.amount'), 'amount', state, setSort))}
+                            ${when(data.forEvent, () => html`<th>${t('admin.categories.title')}</th>`)}
+                            ${sortableHeader(t('admin.common.description'), 'description', state, setSort)}
+                            <th style="text-align:right">${t('admin.common.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -775,23 +823,23 @@ export class PromoCode extends LitElement {
                                                 () => html`<a href="#" @click=${(e: Event) => { e.preventDefault(); this.showUsageDetails(code, data); }}>${code.promoCode}</a>`,
                                                 () => code.promoCode)}
                                         </span>
-                                        ${when(!code.expired && code.codeType === 'DYNAMIC', () => html`<span class="text-muted"> (auto)</span>`)}
+                                        ${when(!code.expired && code.codeType === 'DYNAMIC', () => html`<span class="text-muted"> ${t('admin.promo-code.auto')}</span>`)}
                                     </td>
-                                    <td data-label="Status"><span class="code-status ${status.color}"><sl-icon name=${status.icon}></sl-icon>${status.label}</span></td>
-                                    <td class="code-usage" data-label="Usage">
+                                    <td data-label=${t('admin.common.status')}><span class="code-status ${status.color}"><sl-icon name=${status.icon}></sl-icon>${status.label}</span></td>
+                                    <td class="code-usage" data-label=${t('admin.promo-code.column.usage')}>
                                         <strong>${code.useCount ?? '–'}</strong><span class="text-muted"> / ${code.maxUsage ?? '∞'}</span>
                                         ${when(code.maxUsage != null && code.maxUsage > 0 && code.useCount != null, () => html`
                                             <sl-progress-bar value=${Math.min(100, 100 * code.useCount! / code.maxUsage!)}
-                                                label="${code.promoCode}: ${code.useCount} of ${code.maxUsage} uses"></sl-progress-bar>
+                                                label=${t('admin.promo-code.usage', code.promoCode, formatNumber(code.useCount!), formatNumber(code.maxUsage!))}></sl-progress-bar>
                                         `)}
                                     </td>
-                                    <td data-label="Start">
+                                    <td data-label=${t('admin.event-detail.start')}>
                                         <alfio-format-date
                                             time-zone=${data.event?.timeZone ?? 'UTC'}
                                             date=${this.codeDate(code, data, 'start')}
                                         ></alfio-format-date>
                                     </td>
-                                    <td data-label="End">
+                                    <td data-label=${t('admin.event-detail.end')}>
                                         <alfio-format-date
                                             time-zone=${data.event?.timeZone ?? 'UTC'}
                                             date=${this.codeDate(code, data, 'end')}
@@ -799,29 +847,29 @@ export class PromoCode extends LitElement {
                                     </td>
                                     ${when(!isAccess, () => this.renderDiscountAmount(code))}
                                     ${when(data.forEvent, () => this.renderCategories(code, data))}
-                                    <td data-label="Description">${code.description || '—'}<small class="text-muted code-contact">${code.emailReference}</small></td>
+                                    <td data-label=${t('admin.common.description')}>${code.description || '—'}<small class="text-muted code-contact">${code.emailReference}</small></td>
                                     <td>
                                         <div class="actions-cell">
                                             ${when(data.event, () => html`
-                                                <sl-icon-button name="link-45deg" label="Copy link for ${code.promoCode}"
+                                                <sl-icon-button name="link-45deg" label=${t('admin.promo-code.copy-link', code.promoCode)}
                                                     @click=${() => UtilService.copyValueToClipboard(
                                                         () => `${adminConfig().baseUrl.replace(/\/+$/, '')}/e/${encodeURIComponent(data.event!.shortName)}/c/${encodeURIComponent(code.promoCode)}`,
-                                                        'Code link', this
+                                                        t('admin.promo-code.code-link'), this
                                                     )}></sl-icon-button>
                                             `)}
-                                            <sl-icon-button name="pencil" label="Edit ${code.promoCode}" @click=${() => this.openCodeDialog(data, code.codeType, code)}></sl-icon-button>
+                                            <sl-icon-button name="pencil" label=${t('admin.promo-code.edit-code', code.promoCode)} @click=${() => this.openCodeDialog(data, code.codeType, code)}></sl-icon-button>
                                             ${when(!code.expired || code.useCount === 0, () => html`
                                                 <sl-dropdown hoist placement="bottom-end">
-                                                    <sl-icon-button slot="trigger" name="three-dots-vertical" label="More actions for ${code.promoCode}"></sl-icon-button>
+                                                    <sl-icon-button slot="trigger" name="three-dots-vertical" label=${t('admin.categories.more-actions', code.promoCode)}></sl-icon-button>
                                                     <sl-menu @sl-select=${(e: CustomEvent) => {
                                                         if (e.detail.item.value === 'disable') this.disableCode(code, data);
                                                         if (e.detail.item.value === 'delete') this.deleteCode(code, data);
                                                     }}>
                                                         ${when(!code.expired, () => html`
-                                                            <sl-menu-item value="disable"><sl-icon name="eye-slash" slot="prefix"></sl-icon>Disable</sl-menu-item>
+                                                            <sl-menu-item value="disable"><sl-icon name="eye-slash" slot="prefix"></sl-icon>${t('admin.common.disable')}</sl-menu-item>
                                                         `)}
                                                         ${when(code.useCount === 0, () => html`
-                                                            <sl-menu-item value="delete" class="danger"><sl-icon name="trash" slot="prefix"></sl-icon>Delete</sl-menu-item>
+                                                            <sl-menu-item value="delete" class="danger"><sl-icon name="trash" slot="prefix"></sl-icon>${t('admin.common.delete')}</sl-menu-item>
                                                         `)}
                                                     </sl-menu>
                                                 </sl-dropdown>
@@ -839,26 +887,26 @@ export class PromoCode extends LitElement {
 
     private renderDiscountAmount(code: PromoCodeDiscount): TemplateResult {
         if (code.discountType === 'PERCENTAGE') {
-            return html`<td data-label="Amount"><strong>-${code.discountAmount}%</strong></td>`;
+            return html`<td data-label=${t('admin.common.amount')}><strong>-${code.discountAmount}%</strong></td>`;
         }
         const currency = code.currencyCode ?? '';
         return html`
-            <td data-label="Amount">
+            <td data-label=${t('admin.common.amount')}>
                 -${code.formattedDiscountAmount ?? code.discountAmount}
                 ${currency}
-                ${when(code.discountType === 'FIXED_AMOUNT', () => html`<div class="text-muted">per ticket</div>`)}
+                ${when(code.discountType === 'FIXED_AMOUNT', () => html`<div class="text-muted">${t('admin.promo-code.per-ticket')}</div>`)}
             </td>
         `;
     }
 
     private renderCategories(code: PromoCodeDiscount, data: LoadData): TemplateResult {
         if (code.codeType === 'ACCESS' && code.hiddenCategoryId) {
-            return html`<td data-label="Categories"><sl-badge variant="neutral" class="category-badge" pill>${this.categoryName(code.hiddenCategoryId, data)}</sl-badge></td>`;
+            return html`<td data-label=${t('admin.categories.title')}><sl-badge variant="neutral" class="category-badge" pill>${this.categoryName(code.hiddenCategoryId, data)}</sl-badge></td>`;
         }
 
         if (code.categories && code.categories.length > 0) {
             return html`
-                <td data-label="Categories">
+                <td data-label=${t('admin.categories.title')}>
                     ${repeat(code.categories, (id) => id, (id) => html`
                         <sl-badge variant="neutral" class="category-badge" pill>${this.categoryName(id, data)}</sl-badge>
                     `)}
@@ -867,7 +915,7 @@ export class PromoCode extends LitElement {
         }
 
         if (code.codeType !== 'ACCESS') {
-            return html`<td data-label="Categories">All categories</td>`;
+            return html`<td data-label=${t('admin.categories.title')}>${t('admin.promo-code.all-categories')}</td>`;
         }
 
         return html`<td></td>`;
@@ -919,17 +967,19 @@ export class PromoCode extends LitElement {
         const isAccess = this.pendingCodeType === 'ACCESS';
         const isDiscount = this.pendingCodeType === 'DISCOUNT';
         const editing = this.editingState != null;
-        let kind = data.promoCodeDescription.toLowerCase();
+        let newTitle = data.codeTexts.newTitle;
+        let editTitle = data.codeTexts.editTitle;
         let icon = 'ticket-perforated';
         if (isAccess) {
-            kind = 'access';
+            newTitle = i18nKey('admin.promo-code.access.new');
+            editTitle = i18nKey('admin.promo-code.access.edit');
             icon = 'unlock';
         }
-        let title = `New ${kind} code`;
-        let subtitle = 'Fields marked * are required.';
+        let title = t(newTitle);
+        let subtitle = t('admin.promo-code.dialog.new-help');
         if (editing) {
-            title = `Edit ${kind} code`;
-            subtitle = 'Update validity, usage limits, and details. Code and discount cannot be changed.';
+            title = t(editTitle);
+            subtitle = t('admin.promo-code.dialog.edit-help');
         }
         const save = () => this.submitCode();
         const submitted = this.#codeForm.api.state.submissionAttempts > 0;
@@ -946,45 +996,45 @@ export class PromoCode extends LitElement {
                 </div>
                 <form class="dialog-form form-stack" novalidate @submit=${(e: Event) => { e.preventDefault(); void save(); }}>
                     <div class="section-card">
-                        <div class="dialog-section-header"><sl-icon name="tag"></sl-icon>Code</div>
+                        <div class="dialog-section-header"><sl-icon name="tag"></sl-icon>${t('admin.promo-code.column.code')}</div>
                         <div class="section-body row" style="--alfio-row-cols: 2">
                             ${this.#codeForm.field({ name: 'promoCode', validators: validateWith(value => this.validatePromoCode(value)) }, field => input({
                                 state: field.state,
                                 handleChange: (value: string) => field.handleChange(value.toUpperCase()),
                                 handleBlur: () => field.handleBlur(),
-                            }, { name: 'promoCode', label: 'Code name', prefixIcon: 'tag', readonly: editing, helpText: 'Min 7 characters. Letters, numbers, and -:_@!$*,;' }))}
+                            }, { name: 'promoCode', label: t('admin.promo-code.name'), prefixIcon: 'tag', readonly: editing, helpText: t('admin.promo-code.name.help') }))}
                             ${this.#codeForm.field({ name: 'maxUsage', validators: validateWith(value => validateMaxUsage(value)) },
-                                field => input(field, { name: 'maxUsage', label: 'Limit usage to', type: 'number', prefixIcon: 'hash', optional: true, helpText: 'Leave empty for unlimited uses' }))}
+                                field => input(field, { name: 'maxUsage', label: t('admin.promo-code.max-usage'), type: 'number', prefixIcon: 'hash', optional: true, helpText: t('admin.promo-code.max-usage.help') }))}
                         </div>
                     </div>
 
                     <div class="section-card">
                         <div class="dialog-section-header">
-                            <sl-icon name="calendar-event"></sl-icon>Validity
+                            <sl-icon name="calendar-event"></sl-icon>${t('admin.category-dialog.validity')}
                             ${when(data.forEvent && data.event, () => html`<sl-badge variant="primary" pill>${data.event!.timeZone}</sl-badge>`)}
                         </div>
                         <div class="section-body row" style="--alfio-row-cols: 2">
                             ${this.#codeForm.field({ name: 'start', validators: validateWith(value => requiredValue(value)) },
-                                field => input(field, { name: 'start', label: 'Valid from', type: 'datetime-local' }))}
+                                field => input(field, { name: 'start', label: t('admin.category-dialog.valid-from'), type: 'datetime-local' }))}
                             ${this.#codeForm.field({
                                 name: 'end',
                                 // checked again when the start changes
                                 validators: { ...validateWith(value => this.validateEnd(value)), onChangeListenTo: ['start'] },
-                            }, field => input(field, { name: 'end', label: 'Valid until', type: 'datetime-local' }))}
+                            }, field => input(field, { name: 'end', label: t('admin.category-dialog.valid-until'), type: 'datetime-local' }))}
                         </div>
                     </div>
 
                     ${when(isDiscount, () => html`
                         <div class="section-card">
-                            <div class="dialog-section-header"><sl-icon name="percent"></sl-icon>Discount</div>
+                            <div class="dialog-section-header"><sl-icon name="percent"></sl-icon>${t('admin.promo-code.discount')}</div>
                             <div class="section-body row" style="--alfio-row-cols: ${this.discountColumns(data)}">
                                 ${this.#codeForm.field({ name: 'discountType' }, field => html`
-                                    <sl-select name="discountType" label="Discount type" ?disabled=${editing} required hoist
+                                    <sl-select name="discountType" label=${t('admin.promo-code.discount-type')} ?disabled=${editing} required hoist
                                         .value=${field.state.value}
                                         @sl-change=${(e: Event) => field.handleChange((e.target as SlSelect).value as DiscountType)}>
-                                        <sl-option value="PERCENTAGE">Percentage</sl-option>
-                                        <sl-option value="FIXED_AMOUNT_RESERVATION">Fixed amount, per reservation</sl-option>
-                                        <sl-option value="FIXED_AMOUNT">Fixed amount, per ticket</sl-option>
+                                        <sl-option value="PERCENTAGE">${t('admin.promo-code.discount-type.percentage')}</sl-option>
+                                        <sl-option value="FIXED_AMOUNT_RESERVATION">${t('admin.promo-code.discount-type.fixed-reservation')}</sl-option>
+                                        <sl-option value="FIXED_AMOUNT">${t('admin.promo-code.discount-type.fixed-ticket')}</sl-option>
                                     </sl-select>
                                 `)}
                                 ${this.#codeForm.field({
@@ -992,7 +1042,7 @@ export class PromoCode extends LitElement {
                                     validators: { ...validateWith(value => this.validateDiscountAmount(value)), onChangeListenTo: ['discountType'] },
                                 }, field => input(field, {
                                     name: 'discountAmount',
-                                    label: 'Discount amount',
+                                    label: t('admin.promo-code.discount-amount'),
                                     type: 'number',
                                     readonly: editing,
                                     suffixIcon: this.percentageSuffix(),
@@ -1002,8 +1052,8 @@ export class PromoCode extends LitElement {
                                     validators: { ...validateWith(value => this.validateCurrency(value, data)), onChangeListenTo: ['discountType'] },
                                 }, field => html`
                                     ${when(editing,
-                                        () => html`<sl-input name="currencyCode" label="Currency" readonly .value=${field.state.value}></sl-input>`,
-                                        () => validatedSelect(field, submitted, { className: 'currency-code', label: 'Currency' }, html`
+                                        () => html`<sl-input name="currencyCode" label=${t('admin.event-form.currency')} readonly .value=${field.state.value}></sl-input>`,
+                                        () => validatedSelect(field, submitted, { className: 'currency-code', label: t('admin.event-form.currency') }, html`
                                             ${repeat(data.currencies, (c) => c.code, (c) => html`<sl-option value=${c.code}>${c.name}</sl-option>`)}
                                         `))}
                                 `))}
@@ -1013,17 +1063,17 @@ export class PromoCode extends LitElement {
 
                     ${when(data.forEvent && (isDiscount || isAccess), () => html`
                         <div class="section-card">
-                            <div class="dialog-section-header"><sl-icon name=${this.categoriesIcon(isAccess)}></sl-icon>Ticket categories</div>
+                            <div class="dialog-section-header"><sl-icon name=${this.categoriesIcon(isAccess)}></sl-icon>${t('admin.promo-code.ticket-categories')}</div>
                             <div class="section-body">
                                 ${when(!isAccess, () => html`
-                                    <sl-switch help-text="Turn it off to select the categories the discount applies to." class="block mt-2 mb-2"
+                                    <sl-switch help-text=${t('admin.promo-code.all-categories.help')} class="block mt-2 mb-2"
                                         .checked=${this.allCategories}
                                         @sl-change=${(e: Event) => {
                                             this.allCategories = (e.target as SlSwitch).checked;
                                             if (this.allCategories) {
                                                 this.#codeForm.api.setFieldValue('categories', [], { dontUpdateMeta: true });
                                             }
-                                        }}>Apply to all ticket categories</sl-switch>
+                                        }}>${t('admin.promo-code.all-categories.switch')}</sl-switch>
                                 `)}
                                 ${when(isAccess, () => this.renderHiddenCategory(data, editing, submitted))}
                                 ${when(isDiscount && !this.allCategories, () => this.renderDiscountCategories(data, submitted))}
@@ -1032,15 +1082,15 @@ export class PromoCode extends LitElement {
                     `)}
 
                     <div class="section-card">
-                        <div class="dialog-section-header"><sl-icon name="card-text"></sl-icon>Details</div>
+                        <div class="dialog-section-header"><sl-icon name="card-text"></sl-icon>${t('admin.promo-code.details')}</div>
                         <div class="section-body row" style="--alfio-row-cols: 2">
                             ${this.#codeForm.field({ name: 'description' }, field => html`
-                                <sl-textarea name="description" label="Description" maxlength="1024" rows="2" resize="auto"
+                                <sl-textarea name="description" label=${t('admin.common.description')} maxlength="1024" rows="2" resize="auto"
                                              .value=${field.state.value}
                                              @sl-input=${(e: Event) => field.handleChange((e.target as SlTextarea).value)}></sl-textarea>
                             `)}
                             ${this.#codeForm.field({ name: 'emailReference', validators: validateWith(value => optionalEmail(value)) },
-                                field => input(field, { name: 'emailReference', label: 'Contact', type: 'email', prefixIcon: 'envelope', maxlength: 256, optional: true }))}
+                                field => input(field, { name: 'emailReference', label: t('admin.promo-code.contact'), type: 'email', prefixIcon: 'envelope', maxlength: 256, optional: true }))}
                         </div>
                     </div>
 
@@ -1056,10 +1106,10 @@ export class PromoCode extends LitElement {
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => this.codeDialog.hide()} ?disabled=${this.saving}>Cancel</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.codeDialog.hide()} ?disabled=${this.saving}>${t('admin.common.cancel')}</sl-button>
                         <div></div>
                         <sl-button variant="warning" size="large" @click=${() => save()} ?loading=${this.saving} ?disabled=${this.saving}>
-                            Save
+                            ${t('admin.common.save')}
                         </sl-button>
                     </div>
                 </div>
@@ -1083,10 +1133,10 @@ export class PromoCode extends LitElement {
         return html`${this.#codeForm.field({ name: 'hiddenCategoryId', validators: validateWith(value => this.validateHiddenCategory(value)) }, field => html`
             ${when(editing,
                 () => html`
-                    <sl-input name="hiddenCategoryId" label="Category" readonly
+                    <sl-input name="hiddenCategoryId" label=${t('admin.category-select.label')} readonly
                               .value=${data.ticketCategoriesById[Number(field.state.value)]?.name ?? field.state.value}></sl-input>
                 `,
-                () => validatedSelect(field, submitted, { className: 'hidden-category', label: 'Select Category', placeholder: 'Select a category' }, html`
+                () => validatedSelect(field, submitted, { className: 'hidden-category', label: t('admin.promo-code.select-category'), placeholder: t('admin.category-select.placeholder') }, html`
                     ${repeat(categoryIds, id => id, id => html`<sl-option value=${String(id)}>${data.ticketCategoriesById[id]?.name ?? id}</sl-option>`)}
                 `))}
         `)}`;
@@ -1097,7 +1147,7 @@ export class PromoCode extends LitElement {
         return html`${this.#codeForm.field({ name: 'categories', validators: validateWith(value => this.validateCategories(value)) }, field => {
             const error = fieldError(field.state.meta, submitted);
             return html`
-                <sl-select name="categories" label="Categories" placeholder="Select categories" multiple required hoist
+                <sl-select name="categories" label=${t('admin.categories.title')} placeholder=${t('admin.promo-code.select-categories')} multiple required hoist
                            class=${classMap({ error: error != null })} help-text=${error ?? ''}
                            .value=${field.state.value}
                            @sl-change=${(e: Event) => field.handleChange([...(e.target as SlSelect).value as string[]])}
@@ -1141,7 +1191,7 @@ export class PromoCode extends LitElement {
         }
         const code = String(value ?? '').trim();
         if (code.length < 7 || !PROMO_CODE_PATTERN.test(code)) {
-            return 'Use at least 7 characters: letters, numbers, and -:_@!$*,;';
+            return t('admin.promo-code.error.name');
         }
         return undefined;
     }
@@ -1154,7 +1204,7 @@ export class PromoCode extends LitElement {
         const start = this.#codeForm.api.state.values.start;
         // datetime-local values (yyyy-MM-ddTHH:mm) sort as strings
         if (start !== '' && String(value) <= start) {
-            return 'Please choose a date after "Valid from"';
+            return t('admin.promo-code.error.end');
         }
         return undefined;
     }
@@ -1165,10 +1215,10 @@ export class PromoCode extends LitElement {
         }
         const amount = Number(value);
         if (String(value ?? '').trim() === '' || Number.isNaN(amount) || amount < 0) {
-            return 'Please enter an amount, 0 or more';
+            return t('admin.promo-code.error.amount');
         }
         if (this.#codeForm.api.state.values.discountType === 'PERCENTAGE' && amount > 100) {
-            return 'A percentage cannot be more than 100';
+            return t('admin.promo-code.error.percentage');
         }
         return undefined;
     }
@@ -1179,7 +1229,7 @@ export class PromoCode extends LitElement {
             return undefined;
         }
         if (requiredValue(value) != null) {
-            return 'Please select the currency of the discount';
+            return t('admin.promo-code.error.currency');
         }
         return undefined;
     }
@@ -1189,7 +1239,7 @@ export class PromoCode extends LitElement {
             return undefined;
         }
         if (!Array.isArray(value) || value.length === 0) {
-            return 'Please select at least one category';
+            return t('admin.promo-code.error.categories');
         }
         return undefined;
     }
@@ -1199,7 +1249,7 @@ export class PromoCode extends LitElement {
             return undefined;
         }
         if (requiredValue(value) != null) {
-            return 'Please select the category that the code unlocks';
+            return t('admin.promo-code.error.hidden-category');
         }
         return undefined;
     }
@@ -1237,9 +1287,9 @@ export class PromoCode extends LitElement {
         };
         const currencyCode = data.event?.currency ?? values.currencyCode;
         this.saving = true;
-        let failureMessage = 'Failed to create promo code';
+        let failureMessage = t('admin.promo-code.create-failed');
         if (code) {
-            failureMessage = 'Failed to update code';
+            failureMessage = t('admin.promo-code.update-failed');
         }
         try {
             let response: Response;
@@ -1288,9 +1338,9 @@ export class PromoCode extends LitElement {
             if (response.ok) {
                 await this.codeDialog.hide();
                 this.loadDataTask.run();
-                let message = 'Promo code created successfully';
+                let message = t('admin.promo-code.created');
                 if (code) {
-                    message = 'Code updated successfully';
+                    message = t('admin.promo-code.updated');
                 }
                 dispatchFeedback({type: 'success', message}, this);
             } else {
@@ -1328,7 +1378,7 @@ export class PromoCode extends LitElement {
         try {
             this.usageData = await PromoCodeService.getUsageDetails(code.id, data.event?.shortName);
             if (this.usageData.length === 0) {
-                dispatchFeedback({type: 'warning', message: 'No reservations found for this code.'}, this);
+                dispatchFeedback({type: 'warning', message: t('admin.promo-code.usage.none')}, this);
                 return;
             }
             this.usageCode = code.promoCode;
@@ -1336,18 +1386,18 @@ export class PromoCode extends LitElement {
             await this.updateComplete;
             this.usageDetailsDialog.show();
         } catch {
-            dispatchFeedback({type: 'danger', message: 'Failed to load usage details.'}, this);
+            dispatchFeedback({type: 'danger', message: t('admin.promo-code.usage.load-failed')}, this);
         }
     }
 
     private renderUsageDetailsDialog(): TemplateResult {
         return html`
-            <sl-dialog id="usage-details-dialog" label="Usage details" class="usage-details-dialog responsive-dialog">
+            <sl-dialog id="usage-details-dialog" label=${t('admin.promo-code.usage.title')} class="usage-details-dialog responsive-dialog">
                 <div slot="label" class="dialog-title">
                     <sl-icon name="ticket-perforated"></sl-icon>
                     <div>
-                        <strong>Usage details - ${this.usageCode}</strong>
-                        <small>Reservations and attendees using this code. Times shown in ${this.usageTimeZone} time zone.</small>
+                        <strong>${t('admin.promo-code.usage.title-code', this.usageCode)}</strong>
+                        <small>${t('admin.promo-code.usage.help', this.usageTimeZone)}</small>
                     </div>
                 </div>
                 ${repeat(this.usageData, (detail) => detail.event.shortName, (detail) => html`
@@ -1357,20 +1407,20 @@ export class PromoCode extends LitElement {
                             <sl-badge variant="primary" pill>${this.reservationCount(detail.reservations.length)}</sl-badge>
                         </div>
                         <div class="section-body table-responsive">
-                        <table class="table table-striped" aria-label="Reservations for ${detail.event.displayName}">
+                        <table class="table table-striped" aria-label=${t('admin.promo-code.usage.reservations-for', detail.event.displayName)}>
                             <thead>
                                 <tr>
-                                    <th scope="col">Reservation</th>
-                                    <th>Customer</th>
-                                    <th>Payment</th>
-                                    <th>Amount</th>
-                                    <th>Confirmation</th>
+                                    <th scope="col">${t('admin.page-title.reservation')}</th>
+                                    <th>${t('admin.common.customer')}</th>
+                                    <th>${t('admin.common.payment')}</th>
+                                    <th>${t('admin.common.amount')}</th>
+                                    <th>${t('admin.promo-code.usage.confirmation')}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${repeat(detail.reservations, (r) => r.id, (reservation) => html`
                                     <tr>
-                                        <td><a href="${adminUrl(`/events/${encodeURIComponent(detail.event.shortName)}/reservation/${encodeURIComponent(reservation.id)}`)}" target="_blank" rel="noopener" class="username-link" title=${reservation.id} aria-label="Open reservation ${reservation.id}">${reservation.id.substring(0, 8).toUpperCase()}</a></td>
+                                        <td><a href="${adminUrl(`/events/${encodeURIComponent(detail.event.shortName)}/reservation/${encodeURIComponent(reservation.id)}`)}" target="_blank" rel="noopener" class="username-link" title=${reservation.id} aria-label=${t('admin.promo-code.usage.open-reservation', reservation.id)}>${reservation.id.substring(0, 8).toUpperCase()}</a></td>
                                         <td>${reservation.firstName} ${reservation.lastName}<small class="text-muted code-contact">${reservation.email}</small></td>
                                         <td>${reservation.paymentType}</td>
                                         <td>
@@ -1384,18 +1434,18 @@ export class PromoCode extends LitElement {
                                                     time-zone=${this.usageTimeZone}
                                                     date=${reservation.confirmationTimestamp}
                                                 ></alfio-format-date>
-                                            `, () => html`<span class="text-muted">Not confirmed</span>`)}
+                                            `, () => html`<span class="text-muted">${t('admin.promo-code.usage.not-confirmed')}</span>`)}
                                         </td>
                                     </tr>
                                     <tr>
                                         <td colspan="5">
-                                            <sl-details summary="Tickets (${reservation.tickets.length})">
-                                            <table class="table" aria-label="Tickets for reservation ${reservation.id}">
+                                            <sl-details summary=${t('admin.promo-code.usage.tickets', reservation.tickets.length)}>
+                                            <table class="table" aria-label=${t('admin.promo-code.usage.tickets-for', reservation.id)}>
                                                 <thead>
                                                     <tr>
-                                                        <th scope="col">Ticket ID</th>
-                                                        <th scope="col">Attendee</th>
-                                                        <th scope="col">Type</th>
+                                                        <th scope="col">${t('admin.promo-code.usage.ticket-id')}</th>
+                                                        <th scope="col">${t('admin.common.attendee')}</th>
+                                                        <th scope="col">${t('admin.common.type')}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -1421,7 +1471,7 @@ export class PromoCode extends LitElement {
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => this.usageDetailsDialog.hide()}>Close</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.usageDetailsDialog.hide()}>${t('admin.common.close')}</sl-button>
                     </div>
                 </div>
             </sl-dialog>
@@ -1432,8 +1482,8 @@ export class PromoCode extends LitElement {
 
     private async deleteCode(code: PromoCodeDiscount, data: LoadData): Promise<void> {
         const confirmed = await ConfirmationDialogService.requestConfirm(
-            `Delete ${data.promoCodeDescription} code`,
-            `Do you really want to delete the code "${code.promoCode}"? This action cannot be undone.`,
+            t(data.codeTexts.deleteTitle),
+            t('admin.promo-code.delete.text', code.promoCode),
             'danger'
         );
 
@@ -1443,19 +1493,19 @@ export class PromoCode extends LitElement {
             const response = await PromoCodeService.remove(code.id);
             if (response.ok) {
                 this.loadDataTask.run();
-                dispatchFeedback({type: 'success', message: 'Code deleted successfully'}, this);
+                dispatchFeedback({type: 'success', message: t('admin.promo-code.deleted')}, this);
             } else {
-                dispatchFeedback({type: 'danger', message: 'Failed to delete code'}, this);
+                dispatchFeedback({type: 'danger', message: t('admin.promo-code.delete-failed')}, this);
             }
         } catch {
-            dispatchFeedback({type: 'danger', message: 'Failed to delete code'}, this);
+            dispatchFeedback({type: 'danger', message: t('admin.promo-code.delete-failed')}, this);
         }
     }
 
     private async disableCode(code: PromoCodeDiscount, data: LoadData): Promise<void> {
         const confirmed = await ConfirmationDialogService.requestConfirm(
-            `Disable ${data.promoCodeDescription} code`,
-            `Do you want to disable the code "${code.promoCode}"?`,
+            t(data.codeTexts.disableTitle),
+            t('admin.promo-code.disable.text', code.promoCode),
             'warning'
         );
 
@@ -1465,12 +1515,12 @@ export class PromoCode extends LitElement {
             const response = await PromoCodeService.disable(code.id);
             if (response.ok) {
                 this.loadDataTask.run();
-                dispatchFeedback({type: 'success', message: 'Code disabled successfully'}, this);
+                dispatchFeedback({type: 'success', message: t('admin.promo-code.disabled')}, this);
             } else {
-                dispatchFeedback({type: 'danger', message: 'Failed to disable code'}, this);
+                dispatchFeedback({type: 'danger', message: t('admin.promo-code.disable-failed')}, this);
             }
         } catch {
-            dispatchFeedback({type: 'danger', message: 'Failed to disable code'}, this);
+            dispatchFeedback({type: 'danger', message: t('admin.promo-code.disable-failed')}, this);
         }
     }
 
@@ -1483,10 +1533,7 @@ export class PromoCode extends LitElement {
     }
 
     private reservationCount(count: number): string {
-        if (count === 1) {
-            return '1 reservation';
-        }
-        return `${count} reservations`;
+        return t('admin.promo-code.usage.reservations', { count });
     }
 
     private extractValidationErrors(errors: Array<{fieldName: string, message: string}>): Record<string, string> {

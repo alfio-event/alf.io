@@ -2,6 +2,7 @@ import { CustomPaymentMethodsService } from "../../service/custom-payment-method
 import { customElement, property, state } from "lit/decorators.js";
 import { html, LitElement } from "lit";
 import { Task } from '@lit/task';
+import { t } from '../../service/i18n';
 
 @customElement('custom-offline-payment-denied-methods-selector')
 export class CustomOfflinePaymentDeniedMethodsSelector extends LitElement {
@@ -93,7 +94,7 @@ export class CustomOfflinePaymentDeniedMethodsSelector extends LitElement {
             error: (e) => html`
                 <sl-alert variant="danger" open>
                     <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                    Failed to load the payment methods: ${e}
+                    ${t('admin.payment-method.load-failed', String(e))}
                 </sl-alert>
             `
         });

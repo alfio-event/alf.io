@@ -1,6 +1,7 @@
 import { callDelete, fetchJson, postJson, responseErrorMessage, adminFetch } from './helpers.ts';
 import {ContentLanguage} from '../model/purchase-context.ts';
 import {ResourceScope, TemplateDescriptor, TemplateOverride, UploadedResourceMetadata} from '../model/template.ts';
+import { t } from './i18n';
 
 /**
  * API of the overridable templates ("customize templates") and of the uploaded resources that override them.
@@ -108,7 +109,7 @@ export class TemplateService {
             return null;
         }
         if (!res.ok) {
-            throw new Error(await responseErrorMessage(res, `unexpected status ${res.status}`));
+            throw new Error(await responseErrorMessage(res, t('admin.error.unexpected-status', res.status)));
         }
         return res.json();
     }
@@ -119,7 +120,7 @@ export class TemplateService {
             return null;
         }
         if (!res.ok) {
-            throw new Error(await responseErrorMessage(res, `unexpected status ${res.status}`));
+            throw new Error(await responseErrorMessage(res, t('admin.error.unexpected-status', res.status)));
         }
         return res.text();
     }
@@ -128,7 +129,7 @@ export class TemplateService {
 async function fetchText(url: string): Promise<string> {
     const res = await adminFetch(url);
     if (!res.ok) {
-        throw new Error(await responseErrorMessage(res, `unexpected status ${res.status}`));
+        throw new Error(await responseErrorMessage(res, t('admin.error.unexpected-status', res.status)));
     }
     return res.text();
 }

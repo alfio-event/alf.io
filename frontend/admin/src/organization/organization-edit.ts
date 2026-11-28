@@ -21,6 +21,7 @@ import {
 } from "../components/form-validation.ts";
 
 import { adminConfig } from '../admin-config';
+import { t } from '../service/i18n';
 interface OrganizationForm {
     id: number | null;
     name: string;
@@ -37,7 +38,7 @@ function validateSlugFormat(value: unknown): string | undefined {
         return undefined;
     }
     if (!SLUG_PATTERN.test(String(value))) {
-        return 'Please use only letters and digits, separated by "-" or "_"';
+        return t('admin.organization.error.slug');
     }
     return undefined;
 }
@@ -119,9 +120,9 @@ export class OrganizationEdit extends LitElement {
                     <div slot="footer">
                         <sl-divider></sl-divider>
                         <div class="row" style="--alfio-row-cols: 3">
-                            <sl-button variant="default" size="large" @click=${() => this.close(false)}>Cancel</sl-button>
+                            <sl-button variant="default" size="large" @click=${() => this.close(false)}>${t('admin.common.cancel')}</sl-button>
                             <div></div>
-                            <sl-button id="save-organization" variant="warning" type="submit" size="large" form="form" ?loading=${this.saving}>Save</sl-button>
+                            <sl-button id="save-organization" variant="warning" type="submit" size="large" form="form" ?loading=${this.saving}>${t('admin.common.save')}</sl-button>
                         </div>
                     </div>
 
@@ -133,7 +134,7 @@ export class OrganizationEdit extends LitElement {
         return html`
             <form id="form" class="dialog-form form-stack" @submit=${this.onSubmit}>
                 <div class="section-card">
-                    <div class="dialog-section-header"><sl-icon name="building"></sl-icon>Organizer data</div>
+                    <div class="dialog-section-header"><sl-icon name="building"></sl-icon>${t('admin.organization.organizer-data')}</div>
                     <div class="section-body form-stack">
                         ${this.renderNameField()}
                         ${this.renderEmailField()}
@@ -143,7 +144,7 @@ export class OrganizationEdit extends LitElement {
 
                 ${when(this.isAdmin, () => html`
                     <div class="section-card">
-                        <div class="dialog-section-header"><sl-icon name="gear"></sl-icon>Advanced configuration</div>
+                        <div class="dialog-section-header"><sl-icon name="gear"></sl-icon>${t('admin.organization.advanced')}</div>
                         <div class="section-body form-stack">
                             ${this.renderSlugField()}
                             ${this.renderExternalIdField()}
@@ -176,14 +177,14 @@ export class OrganizationEdit extends LitElement {
         return this.#form.field({
             name: 'name',
             validators: validateWith(value => minLength(value, 2))
-        }, (field) => validatedInput(field, this.formSubmitted, { id: 'organization-name', label: 'Name' }));
+        }, (field) => validatedInput(field, this.formSubmitted, { id: 'organization-name', label: t('admin.common.name') }));
     }
 
     private renderEmailField() {
         return this.#form.field({
             name: 'email',
             validators: validateWith(value => emailAddress(value))
-        }, (field) => validatedInput(field, this.formSubmitted, { id: 'organization-email', label: 'Contact e-mail', type: 'email', prefixIcon: 'envelope' }));
+        }, (field) => validatedInput(field, this.formSubmitted, { id: 'organization-email', label: t('admin.organization.email'), type: 'email', prefixIcon: 'envelope' }));
     }
 
     private renderDescriptionField() {
@@ -193,7 +194,7 @@ export class OrganizationEdit extends LitElement {
         }, (field) => {
             const error = fieldError(field.state.meta, this.formSubmitted);
             return html`
-                <sl-textarea id="organization-description" label="Description" rows="2" required
+                <sl-textarea id="organization-description" label=${t('admin.common.description')} rows="2" required
                              class=${classMap({ error: error != null })}
                              help-text=${error ?? ''}
                              .value=${field.state.value ?? ''}
@@ -211,10 +212,10 @@ export class OrganizationEdit extends LitElement {
         }, (field) => {
             let error = fieldError(field.state.meta, this.formSubmitted);
             if (!this.slugValid) {
-                error = 'This slug is already in use. Please choose a different one.';
+                error = t('admin.organization.error.slug-taken');
             }
             return html`
-                <sl-input id="organization-slug" label="Slug"
+                <sl-input id="organization-slug" label=${t('admin.organization.new.slug')}
                     type="text"
                     pattern="^[A-Za-z0-9]+([_-]+[A-Za-z0-9]+)*$"
                     class=${classMap({ error: error != null })}
@@ -246,7 +247,7 @@ export class OrganizationEdit extends LitElement {
                 if (!result.success) {
                     dispatchFeedback({
                         type: "danger",
-                        message: "This slug is already in use. Please choose a different one."
+                        message: t('admin.organization.error.slug-taken')
                     }, this);
                 }
             } catch {
@@ -268,7 +269,7 @@ export class OrganizationEdit extends LitElement {
     private renderExternalIdField() {
         return this.#form.field({
             name: 'externalId',
-        }, (field) => validatedInput(field, this.formSubmitted, { id: 'organization-external-id', label: 'External ID (OpenID organization ID)', optional: true }));
+        }, (field) => validatedInput(field, this.formSubmitted, { id: 'organization-external-id', label: t('admin.organization.external-id'), optional: true }));
     }
 
     public async hide(): Promise<void> {
@@ -299,9 +300,9 @@ export class OrganizationEdit extends LitElement {
     public async open(request: { type: 'new' | 'edit', organizationId?: number }): Promise<void> {
         const myGeneration = ++this.openGeneration;
         if (request.type === 'edit') {
-            this.dialogTitle = 'Edit organization';
+            this.dialogTitle = t('admin.page-title.edit-organization');
         } else {
-            this.dialogTitle = 'New organization';
+            this.dialogTitle = t('admin.page-title.new-organization');
         }
         this.isAdmin = adminConfig().isAdmin;
         this.slugCheckGeneration++;
@@ -395,7 +396,7 @@ export class OrganizationEdit extends LitElement {
                 result.validationErrors.forEach(error => setServerError(this.#form.api, error.fieldName, error.code));
                 dispatchFeedback({
                     type: "danger",
-                    message: "Please correct the errors in the form"
+                    message: t('admin.organization.error.form')
                 }, this);
                 return;
             }
@@ -412,13 +413,13 @@ export class OrganizationEdit extends LitElement {
             } else {
                 dispatchFeedback({
                     type: "danger",
-                    message: "Unexpected error. Please retry."
+                    message: t('admin.organization.error.unexpected')
                 }, this);
             }
         } catch {
             dispatchFeedback({
                 type: "danger",
-                message: "Unexpected error. Please retry."
+                message: t('admin.organization.error.unexpected')
             }, this);
         }
     }

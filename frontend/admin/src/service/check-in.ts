@@ -8,6 +8,7 @@
 
 import {CheckInTicket, TicketAndCheckInResult} from '../model/check-in.ts';
 import { postJson, adminFetch } from './helpers.ts';
+import { t } from './i18n';
 
 const CHUNK_SIZE = 200;
 // set by the server on the "ticket-identifiers" response. Used as "changedSince" for the next sync
@@ -172,7 +173,7 @@ async function postForBoolean(url: string): Promise<boolean> {
 
 async function ensureSuccess(response: Response): Promise<void> {
     if (!response.ok) {
-        throw new Error((await response.text()) || `unexpected status ${response.status}`);
+        throw new Error((await response.text()) || t('admin.error.unexpected-status', response.status));
     }
 }
 

@@ -32,6 +32,7 @@ import {
     ValidatedInputOptions,
     validateWith
 } from "../../components/form-validation.ts";
+import { t } from '../../service/i18n';
 
 @customElement('alfio-additional-item-edit')
 export class AdditionalItemEdit extends LitElement {
@@ -166,14 +167,17 @@ export class AdditionalItemEdit extends LitElement {
     }
 
     private get dialogTitle(): string {
-        let action = 'New';
-        if (this.editedItem != null) {
-            action = 'Edit';
-        }
+        const editing = this.editedItem != null;
         if (this.type === 'SUPPLEMENT') {
-            return `${action} additional option`;
+            if (editing) {
+                return t('admin.additional-item.edit-option');
+            }
+            return t('admin.additional-item.new-option');
         }
-        return `${action} donation option`;
+        if (editing) {
+            return t('admin.additional-item.edit-donation');
+        }
+        return t('admin.additional-item.new-donation');
     }
 
     private get submitted(): boolean {
@@ -198,13 +202,13 @@ export class AdditionalItemEdit extends LitElement {
         return html`
             <form id="form" class="dialog-form form-stack" novalidate @submit=${this.submit}>
                 <div class="section-card">
-                    <div class="dialog-section-header"><sl-icon name="card-text"></sl-icon>Descriptions</div>
+                    <div class="dialog-section-header"><sl-icon name="card-text"></sl-icon>${t('admin.additional-item.descriptions')}</div>
                     <div class="section-body row">
                         ${this.renderDescriptions(values.descriptions ?? [])}
                     </div>
                 </div>
                 <div class="section-card">
-                    <div class="dialog-section-header"><sl-icon name="calendar-event"></sl-icon>Availability and prices</div>
+                    <div class="dialog-section-header"><sl-icon name="calendar-event"></sl-icon>${t('admin.additional-item.availability')}</div>
                     <div class="section-body">
                         ${this.renderAvailabilityAndPrices(values.availabilityAndPrices)}
                     </div>
@@ -219,9 +223,9 @@ export class AdditionalItemEdit extends LitElement {
                 <div>
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => this.close(false)}>Cancel</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.close(false)}>${t('admin.common.cancel')}</sl-button>
                         <div></div>
-                        <sl-button variant="warning" type="submit" size="large" ?loading=${this.saving} ?disabled=${this.saving}>Save</sl-button>
+                        <sl-button variant="warning" type="submit" size="large" ?loading=${this.saving} ?disabled=${this.saving}>${t('admin.common.save')}</sl-button>
                     </div>
                 </div>
             </form>
@@ -233,18 +237,18 @@ export class AdditionalItemEdit extends LitElement {
             <div class="col">
                 <h4 class="language-heading">${this.supportedLanguages?.find(cl => cl.locale === description.locale)?.displayLanguage}</h4>
                 ${this.#form.field({name: `descriptions[${index}].title`, validators: validateWith(value => requiredValue(value))},
-                    field => validatedInput(field, this.submitted, {label: 'Title'}))}
+                    field => validatedInput(field, this.submitted, {label: t('admin.additional-item.title')}))}
                 ${this.#form.field({name: `descriptions[${index}].description`, validators: validateWith(value => requiredValue(value))},
                     field => {
                         const error = fieldError(field.state.meta, this.submitted);
                         return html`
-                            <sl-textarea label="Description" required rows="2" class=${classMap({ error: error != null })}
+                            <sl-textarea label=${t('admin.common.description')} required rows="2" class=${classMap({ error: error != null })}
                                          .value=${field.state.value}
                                          @sl-input=${(e: Event) => field.handleChange((e.target as SlTextarea).value)}
                                          @sl-blur=${() => field.handleBlur()}>
                                 <div slot="help-text">
                                     ${when(error != null, () => html`<div>${error}</div>`)}
-                                    <alfio-display-commonmark-preview data-button-text="preview" .text=${field.state.value}></alfio-display-commonmark-preview>
+                                    <alfio-display-commonmark-preview data-button-text=${t('admin.additional-item.preview')} .text=${field.state.value}></alfio-display-commonmark-preview>
                                 </div>
                             </sl-textarea>
                         `;
@@ -257,7 +261,7 @@ export class AdditionalItemEdit extends LitElement {
         return html`
             ${when(this.type === 'SUPPLEMENT', () => html`
                 ${this.#form.field({name: 'availabilityAndPrices.supplementPolicy'}, field => html`
-                    <sl-select required hoist label="Additional option policy" .value=${field.state.value}
+                    <sl-select required hoist label=${t('admin.additional-item.policy')} .value=${field.state.value}
                                @sl-change=${(e: Event) => field.handleChange((e.target as SlSelect).value as SupplementPolicy)}>
                         ${repeat(Object.keys(supplementPolicyDescriptions), k => k, (k) => html`
                             <sl-option value=${k}>${supplementPolicyDescriptions[k]}</sl-option>
@@ -268,7 +272,7 @@ export class AdditionalItemEdit extends LitElement {
             <div class="row">
                 <div class="col">
                     ${this.#form.field({name: 'availabilityAndPrices.inception', validators: validateWith(value => requiredValue(value))},
-                        field => validatedInput(field, this.submitted, {label: 'Valid from', type: 'datetime-local'}))}
+                        field => validatedInput(field, this.submitted, {label: t('admin.category-dialog.valid-from'), type: 'datetime-local'}))}
                 </div>
                 <div class="col">
                     ${this.#form.field({
@@ -278,15 +282,15 @@ export class AdditionalItemEdit extends LitElement {
                                 onChangeListenTo: ['availabilityAndPrices.inception'],
                             },
                         },
-                        field => validatedInput(field, this.submitted, {label: 'Valid to', type: 'datetime-local'}))}
+                        field => validatedInput(field, this.submitted, {label: t('admin.additional-item.valid-to'), type: 'datetime-local'}))}
                 </div>
             </div>
             ${when(this.type === 'DONATION', () => html`
                 ${this.#form.field({name: 'availabilityAndPrices.fixPrice'}, field => html`
-                    <sl-select required hoist label="Price policy" .value=${String(field.state.value)}
+                    <sl-select required hoist label=${t('admin.additional-item.price-policy')} .value=${String(field.state.value)}
                                @sl-change=${(e: Event) => field.handleChange((e.target as SlSelect).value === 'true')}>
-                        <sl-option value="true">Fixed</sl-option>
-                        <sl-option value="false">User-defined</sl-option>
+                        <sl-option value="true">${t('admin.additional-item.price-policy.fixed')}</sl-option>
+                        <sl-option value="false">${t('admin.additional-items.price.user-defined')}</sl-option>
                     </sl-select>
                 `)}
                 ${when(formValue.fixPrice, () => this.renderMaxQuantityPerOrder(formValue))}
@@ -301,12 +305,12 @@ export class AdditionalItemEdit extends LitElement {
                                     onChangeListenTo: ['availabilityAndPrices.fixPrice'],
                                 },
                             },
-                            field => this.numberInput(field, {label: 'Price', suffix: this.priceUnit(formValue)}))}
+                            field => this.numberInput(field, {label: t('admin.category-dialog.price'), suffix: this.priceUnit(formValue)}))}
                     </div>
                 `)}
                 <div class="col">
                     ${this.#form.field({name: 'availabilityAndPrices.vatType'}, field => html`
-                        <sl-select required hoist label="Tax policy" .value=${field.state.value}
+                        <sl-select required hoist label=${t('admin.additional-item.tax-policy')} .value=${field.state.value}
                                    @sl-change=${(e: Event) => field.handleChange((e.target as SlSelect).value as AdditionalItemTaxType)}>
                             ${repeat(Object.keys(taxTypeDescriptions), k => k, (k) => html`
                                 <sl-option value=${k}>${taxTypeDescriptions[k]}</sl-option>
@@ -336,7 +340,7 @@ export class AdditionalItemEdit extends LitElement {
                                         onChangeListenTo: ['availabilityAndPrices.supplementPolicy'],
                                     },
                                 },
-                                field => this.numberInput(field, {label: 'Min price', suffix: this.event?.currency, optional: true}))}
+                                field => this.numberInput(field, {label: t('admin.additional-item.min-price'), suffix: this.event?.currency, optional: true}))}
                         </div>
                         <div class="col">
                             ${this.#form.field({
@@ -346,7 +350,7 @@ export class AdditionalItemEdit extends LitElement {
                                         onChangeListenTo: ['availabilityAndPrices.supplementPolicy', 'availabilityAndPrices.minPrice'],
                                     },
                                 },
-                                field => this.numberInput(field, {label: 'Max price', suffix: this.event?.currency, optional: true}))}
+                                field => this.numberInput(field, {label: t('admin.additional-item.max-price'), suffix: this.event?.currency, optional: true}))}
                         </div>
                     </div>
                 `;
@@ -374,7 +378,7 @@ export class AdditionalItemEdit extends LitElement {
                         onChangeListenTo: ['availabilityAndPrices.supplementPolicy', 'availabilityAndPrices.fixPrice'],
                     },
                 },
-                field => this.numberInput(field, {label: this.maxQuantityLabel(formValue), optional: true, helpText: 'Leave it empty for no limit'}))}
+                field => this.numberInput(field, {label: this.maxQuantityLabel(formValue), optional: true, helpText: t('admin.additional-item.no-limit-help')}))}
         `;
     }
 
@@ -388,7 +392,7 @@ export class AdditionalItemEdit extends LitElement {
                         name: 'availabilityAndPrices.availableQuantity',
                         validators: validateWith(value => optionalCount(value)),
                     },
-                    field => this.numberInput(field, {label: 'Total available quantity', optional: true, helpText: 'Leave it empty for no limit'}))}
+                    field => this.numberInput(field, {label: t('admin.additional-item.total-quantity'), optional: true, helpText: t('admin.additional-item.no-limit-help')}))}
             </div>
         `;
     }
@@ -402,9 +406,9 @@ export class AdditionalItemEdit extends LitElement {
 
     private maxQuantityLabel(formValue: AvailabilityAndPricesForm): string {
         if (this.type === 'DONATION' || formValue.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_RESERVATION') {
-            return 'Max quantity per order';
+            return t('admin.additional-items.max-per-order');
         }
-        return 'Max quantity per ticket';
+        return t('admin.additional-items.max-per-ticket');
     }
 
     private priceUnit(formValue: AvailabilityAndPricesForm): string | undefined {
@@ -426,7 +430,7 @@ export class AdditionalItemEdit extends LitElement {
         const inception = extractDateTime(this.availabilityAndPrices.inception);
         // datetime-local values (yyyy-MM-ddTHH:mm) sort as strings
         if (inception !== '' && extractDateTime(String(value)) < inception) {
-            return 'Please choose a date after "Valid from"';
+            return t('admin.promo-code.error.end');
         }
         return undefined;
     }
@@ -459,7 +463,7 @@ export class AdditionalItemEdit extends LitElement {
             return undefined;
         }
         if (Number(value) < Number(minPrice)) {
-            return 'Please enter an amount not lower than "Min price"';
+            return t('admin.additional-item.error.max-price');
         }
         return undefined;
     }
@@ -477,7 +481,7 @@ export class AdditionalItemEdit extends LitElement {
         }
         const quantity = Number(String(value).trim());
         if (!Number.isInteger(quantity) || quantity < 1) {
-            return 'Please enter a whole number, at least 1, or leave it empty';
+            return t('admin.validation.positive-integer-or-empty');
         }
         return undefined;
     }
@@ -574,7 +578,7 @@ export class AdditionalItemEdit extends LitElement {
             if (update.ok) {
                 await this.close(true);
             } else {
-                this.submitError = 'Failed to save. Please try again.';
+                this.submitError = t('admin.additional-item.save-failed');
             }
         } finally {
             this.saving = false;
@@ -586,17 +590,17 @@ export class AdditionalItemEdit extends LitElement {
         switch (fieldName) {
             case 'title':
             case 'description':
-                value.descriptions.forEach((_, index) => setServerError(api, `descriptions[${index}].${fieldName}`, 'Please check this text'));
+                value.descriptions.forEach((_, index) => setServerError(api, `descriptions[${index}].${fieldName}`, t('admin.additional-item.error.text')));
                 break;
             case 'price':
-                setServerError(api, 'availabilityAndPrices.price', 'Please enter a valid amount');
+                setServerError(api, 'availabilityAndPrices.price', t('admin.additional-item.error.amount'));
                 break;
             case 'inception':
             case 'expiration':
-                setServerError(api, `availabilityAndPrices.${fieldName}`, 'Please check the validity interval');
+                setServerError(api, `availabilityAndPrices.${fieldName}`, t('admin.additional-item.error.validity'));
                 break;
             default:
-                this.submitError = 'Failed to save. Please check the values and try again.';
+                this.submitError = t('admin.additional-item.save-failed-check');
         }
     }
 }
@@ -612,7 +616,7 @@ function optionalAmount(value: unknown): string | undefined {
     }
     const amount = Number(String(value).trim());
     if (!Number.isFinite(amount) || amount < 0) {
-        return 'Please enter a valid amount';
+        return t('admin.additional-item.error.amount');
     }
     return undefined;
 }
@@ -624,7 +628,7 @@ function optionalCount(value: unknown): string | undefined {
     }
     const count = Number(String(value).trim());
     if (!Number.isInteger(count) || count < 0) {
-        return 'Please enter a whole number, or leave it empty';
+        return t('admin.validation.integer-or-empty');
     }
     return undefined;
 }

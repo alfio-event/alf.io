@@ -9,6 +9,7 @@ import {sectionCard} from './section-card.ts';
 import {badges, form, modernLayout, textColors} from '../styles.ts';
 import {UtilService} from '../service/util.ts';
 import './markdown-editor.ts';
+import { t } from '../service/i18n';
 
 export interface MultiLanguageTextChange {
     value: LocalizedContent;
@@ -236,7 +237,7 @@ export class MultiLanguageText extends LitElement {
         const locales = this.displayedLocales;
         let badge: TemplateResult | undefined;
         if (locales.length > 1) {
-            badge = html`<sl-badge variant="primary" pill>${locales.length} languages</sl-badge>`;
+            badge = html`<sl-badge variant="primary" pill>${t('admin.multi-language.languages', { count: locales.length })}</sl-badge>`;
         }
         const body = html`
             <div class="form-stack">
@@ -275,15 +276,15 @@ export class MultiLanguageText extends LitElement {
                         ${when(this.markdown, () => html`
                             <sl-button-group>
                                 <sl-button size="small" variant=${editVariant} @click=${() => this.setPreview(locale, false)}>
-                                    <sl-icon slot="prefix" name="pencil"></sl-icon>Edit
+                                    <sl-icon slot="prefix" name="pencil"></sl-icon>${t('admin.common.edit')}
                                 </sl-button>
                                 <sl-button size="small" variant=${previewVariant} ?disabled=${text.trim() === ''} @click=${() => this.setPreview(locale, true)}>
-                                    <sl-icon slot="prefix" name="eye"></sl-icon>Preview
+                                    <sl-icon slot="prefix" name="eye"></sl-icon>${t('admin.common.preview')}
                                 </sl-button>
                             </sl-button-group>
                         `, () => nothing)}
                         ${when(localeCount > 1, () => html`
-                            <sl-icon-button name="trash" label=${`Remove ${displayLanguage}`}
+                            <sl-icon-button name="trash" label=${t('admin.multi-language.remove', displayLanguage)}
                                             @click=${() => this.removeLocale(locale)}></sl-icon-button>
                         `, () => nothing)}
                     </span>
@@ -346,7 +347,7 @@ export class MultiLanguageText extends LitElement {
         return when(available.length > 0, () => html`
             <sl-dropdown hoist>
                 <sl-button slot="trigger" variant="text" size="small" caret class="add-translation">
-                    <sl-icon slot="prefix" name="plus-circle"></sl-icon>Add translation
+                    <sl-icon slot="prefix" name="plus-circle"></sl-icon>${t('admin.multi-language.add-translation')}
                 </sl-button>
                 <sl-menu>
                     ${repeat(available, (language) => language.locale, (language) => html`

@@ -44,6 +44,7 @@ import {
     validatedSelect,
 } from '../../components/form-validation.ts';
 import '../../components/format-date.ts';
+import { t, tHtml } from '../../service/i18n';
 
 type TabName = 'invitations' | 'history';
 
@@ -73,14 +74,14 @@ const INPUT_MODES: ChoiceCardOption<InputMode>[] = [
     {
         value: 'manual',
         icon: 'person-vcard',
-        title: 'Insert manually',
-        description: 'Type the invitees one by one, then review them before sending.',
+        title: t('admin.reservation-create.attendees.manual'),
+        description: t('admin.invitations.manual.description'),
     },
     {
         value: 'csv',
         icon: 'filetype-csv',
-        title: 'Upload CSV',
-        description: 'Import the invitees from a file, then review them before sending.',
+        title: t('admin.reservation-create.attendees.csv'),
+        description: t('admin.invitations.csv.description'),
     },
 ];
 
@@ -234,7 +235,7 @@ export class SendInvitations extends LitElement {
     ];
 
     render(): TemplateResult {
-        return taskContent(this.loadDataTask, this.loadDataTask.value ?? null, 'Failed to load the invitations. Please try again.',
+        return taskContent(this.loadDataTask, this.loadDataTask.value ?? null, t('admin.invitations.load-failed'),
             data => this.renderContent(data));
     }
 
@@ -242,21 +243,21 @@ export class SendInvitations extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row secondary">
-                    <h1>Send invitations for <i>${category?.name ?? localizedTitle(event)}</i></h1>
+                    <h1>${tHtml('admin.invitations.title', html`<i>${category?.name ?? localizedTitle(event)}</i>`)}</h1>
                 </div>
                 <hr class="page-separator" />
-                <p class="page-description text-muted">Send an email with the reserved code to each invitee, typed in one by one or read from a CSV file.</p>
+                <p class="page-description text-muted">${t('admin.invitations.description')}</p>
                 <sl-tab-group @sl-tab-show=${this.onTabShow}>
                     <sl-tab slot="nav" panel="invitations" ?active=${this.selectedTab === 'invitations'}>
                         <span class="tab-label">
                             <sl-icon name="envelope"></sl-icon>
-                            Invitations
+                            ${t('admin.invitations.tab.invitations')}
                         </span>
                     </sl-tab>
                     <sl-tab slot="nav" panel="history" ?active=${this.selectedTab === 'history'}>
                         <span class="tab-label">
                             <sl-icon name="clock-history"></sl-icon>
-                            History
+                            ${t('admin.invitations.tab.history')}
                             <sl-badge variant="primary" pill>${sentCodes.length}</sl-badge>
                         </span>
                     </sl-tab>
@@ -285,18 +286,18 @@ export class SendInvitations extends LitElement {
 
     private renderInput(event: AlfioEvent): TemplateResult {
         const freeCodes = this.freeCodes();
-        return sectionCard({ icon: 'people', title: 'Invitees' }, html`
+        return sectionCard({ icon: 'people', title: t('admin.invitations.invitees') }, html`
             ${choiceCards({
                 name: 'input-mode',
                 className: 'input-mode',
-                label: 'How do you want to add the invitees?',
+                label: t('admin.invitations.question'),
                 value: this.addMode,
                 options: INPUT_MODES,
                 panel: html`
                     ${when(this.uploading, () => html`
                         <div class="upload-progress">
                             <sl-spinner></sl-spinner>
-                            <span>Preparing the invitations…</span>
+                            <span>${t('admin.invitations.preparing')}</span>
                         </div>
                     `)}
                     ${when(this.addMode === 'manual',
@@ -319,7 +320,7 @@ export class SendInvitations extends LitElement {
                 ${repeat(invitees, (_, index) => index, (_, index) => this.renderInvitee(event, index, submitted, freeCodes))}
                 <sl-button class="add-invitee" variant="text" @click=${this.addInvitee}>
                     <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-                    Add invitee
+                    ${t('admin.invitations.add')}
                 </sl-button>
             </div>
             ${when(this.reviewError, () => html`
@@ -333,7 +334,7 @@ export class SendInvitations extends LitElement {
                 <div class="row" style="--alfio-row-cols: 3">
                     <div></div>
                     <div></div>
-                    <sl-button id="review-button" variant="warning" size="large" ?loading=${this.uploading} @click=${this.review}>Review</sl-button>
+                    <sl-button id="review-button" variant="warning" size="large" ?loading=${this.uploading} @click=${this.review}>${t('admin.invitations.review')}</sl-button>
                 </div>
             </div>
         `;
@@ -365,24 +366,24 @@ export class SendInvitations extends LitElement {
                 }, field => validatedSelect(field, submitted, {
                     id: `invitee-code-${index}`,
                     className: `invitee-code ${labelClass}`.trim(),
-                    label: 'Code',
+                    label: t('admin.promo-code.column.code'),
                     optional: true,
-                    helpText: 'Automatic assigns a free code',
+                    helpText: t('admin.invitations.code.help'),
                 }, html`
-                    <sl-option value="">Automatic</sl-option>
+                    <sl-option value="">${t('admin.invitations.code.automatic')}</sl-option>
                     ${freeCodes.map(code => html`<sl-option value=${code}>${code}</sl-option>`)}
                 `))}
                 ${this.#form.field({ name: `${path}.assignee`, validators: validateWith(value => ifManual(() => requiredValue(value))) },
                     field => validatedInput(field, submitted, {
                         id: `invitee-assignee-${index}`,
                         className: `invitee-assignee ${labelClass}`.trim(),
-                        label: 'Assignee',
+                        label: t('admin.tickets.assignee'),
                     }))}
                 ${this.#form.field({ name: `${path}.email`, validators: validateWith(value => ifManual(() => emailAddress(value))) },
                     field => validatedInput(field, submitted, {
                         id: `invitee-email-${index}`,
                         className: `invitee-email ${labelClass}`.trim(),
-                        label: 'Email',
+                        label: t('admin.common.email-short'),
                         type: 'email',
                         prefixIcon: 'envelope',
                     }))}
@@ -390,12 +391,12 @@ export class SendInvitations extends LitElement {
                     field => validatedSelect(field, submitted, {
                         id: `invitee-language-${index}`,
                         className: `invitee-language ${labelClass}`.trim(),
-                        label: 'Language',
-                        placeholder: 'Select a language',
+                        label: t('admin.reservation-create.language'),
+                        placeholder: t('admin.reservation-create.language.placeholder'),
                     }, html`
                         ${event.contentLanguages.map(language => html`<sl-option value=${language.locale}>${language.displayLanguage}</sl-option>`)}
                     `))}
-                <sl-icon-button class="remove-invitee" name="trash" label=${`Remove invitee ${index + 1}`}
+                <sl-icon-button class="remove-invitee" name="trash" label=${t('admin.invitations.remove', index + 1)}
                                 ?disabled=${this.#form.api.state.values.invitees.length === 1}
                                 @click=${() => this.removeInvitee(index)}></sl-icon-button>
             </div>
@@ -404,7 +405,7 @@ export class SendInvitations extends LitElement {
 
     private renderCsvImport(event: AlfioEvent): TemplateResult {
         return csvImport({
-            templateDescription: 'The first line is the header, then one line per invitee. Leave the code blank to assign a free one automatically.',
+            templateDescription: t('admin.invitations.template'),
             onDownloadTemplate: () => downloadCsv(`${event.shortName}-invitations.csv`, SpecialPriceService.template()),
             onFileChange: (e: FileUploadChangeEvent) => this.onFileChange(e),
             error: this.uploadError,
@@ -415,24 +416,22 @@ export class SendInvitations extends LitElement {
     private renderFileSpecs(): TemplateResult {
         return html`
             <div class="bulk-specs">
-                <p class="text-muted">The template already follows these rules: you need them only if the file is generated by another system.</p>
+                <p class="text-muted">${t('admin.invitations.specs.template')}</p>
                 <p class="text-muted">
-                    A CSV file <strong>with header</strong>, using commas (<code>,</code>) as separator,
-                    double quotes (<code>"</code>) as quote character and backslash (<code>\\</code>) as escape character.
+                    ${tHtml('admin.invitations.specs.format', html`<strong>${t('admin.csv-import.specs.with-header')}</strong>`, html`<code>,</code>`, html`<code>"</code>`, html`<code>\\</code>`)}
                 </p>
                 <p class="text-muted">
-                    The file must be <strong>UTF-8</strong> encoded, so that names like Müller or 田中 are read correctly:
-                    the template already is — in Excel, keep saving it as "CSV UTF-8".
+                    ${tHtml('admin.invitations.specs.encoding', html`<strong>UTF-8</strong>`)}
                 </p>
                 <pre>${CSV_HEADER.map((name, index) => html`${when(index > 0, () => ',')}<code>${name}</code>`)}
 <code>ABCD</code>,<code>Name Surname</code>,<code>email@host.tld</code>,<code>en</code>
 
-the first line is the header, then one line per invitee:
+${t('admin.invitations.specs.lines')}
 
-<code>code</code> is the code to assign, blank if automatic
-<code>assignee</code> is the full name of the invitee
-<code>email</code> is the email of the invitee (the invitation is sent to this address)
-<code>language</code> is the ISO language (e.g. it, en, de) of the message</pre>
+${tHtml('admin.invitations.specs.code', html`<code>code</code>`)}
+${tHtml('admin.invitations.specs.assignee', html`<code>assignee</code>`)}
+${tHtml('admin.invitations.specs.email', html`<code>email</code>`)}
+${tHtml('admin.invitations.specs.language', html`<code>language</code>`)}</pre>
             </div>
         `;
     }
@@ -441,26 +440,26 @@ the first line is the header, then one line per invitee:
         const preview = this.preview ?? [];
         return sectionCard({
             icon: 'eye',
-            title: 'Review the invitations',
+            title: t('admin.invitations.review.title'),
             badge: html`<sl-badge id="preview-count" variant="primary" pill>${preview.length}</sl-badge>`,
         }, html`
             <div class="table-responsive">
                 <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
-                            <th>Code</th>
-                            <th>Assignee</th>
-                            <th>Email</th>
-                            <th>Language</th>
+                            <th>${t('admin.promo-code.column.code')}</th>
+                            <th>${t('admin.tickets.assignee')}</th>
+                            <th>${t('admin.common.email-short')}</th>
+                            <th>${t('admin.reservation-create.language')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${repeat(preview, (_, index) => index, row => html`
                             <tr class="invitation">
-                                <td data-label="Code">${row.code}</td>
-                                <td data-label="Assignee">${row.assignee}</td>
-                                <td data-label="Email">${row.email}</td>
-                                <td data-label="Language">${row.language}</td>
+                                <td data-label=${t('admin.promo-code.column.code')}>${row.code}</td>
+                                <td data-label=${t('admin.tickets.assignee')}>${row.assignee}</td>
+                                <td data-label=${t('admin.common.email-short')}>${row.email}</td>
+                                <td data-label=${t('admin.reservation-create.language')}>${row.language}</td>
                             </tr>
                         `)}
                     </tbody>
@@ -475,9 +474,9 @@ the first line is the header, then one line per invitee:
             <div class="preview-footer">
                 <sl-divider></sl-divider>
                 <div class="row" style="--alfio-row-cols: 3">
-                    <sl-button id="cancel-send" variant="default" size="large" @click=${this.cancelPreview}>Cancel</sl-button>
+                    <sl-button id="cancel-send" variant="default" size="large" @click=${this.cancelPreview}>${t('admin.common.cancel')}</sl-button>
                     <div></div>
-                    <sl-button id="send-button" variant="warning" size="large" ?loading=${this.sending} @click=${this.send}>Send</sl-button>
+                    <sl-button id="send-button" variant="warning" size="large" ?loading=${this.sending} @click=${this.send}>${t('admin.compose.send')}</sl-button>
                 </div>
             </div>
         `);
@@ -486,7 +485,7 @@ the first line is the header, then one line per invitee:
     private renderHistory(event: AlfioEvent, sentCodes: SpecialPrice[]): TemplateResult {
         return sectionCard({
             icon: 'clock-history',
-            title: 'Sent invitations',
+            title: t('admin.invitations.sent'),
             badge: html`<sl-badge id="sent-count" variant="primary" pill>${sentCodes.length}</sl-badge>`,
         }, html`
             ${when(sentCodes.length > 0, () => html`
@@ -494,24 +493,24 @@ the first line is the header, then one line per invitee:
                     <table class="table table-striped table-stacked">
                         <thead>
                             <tr>
-                                <th>Code</th>
-                                <th>Recipient</th>
-                                <th>Sent on</th>
-                                <th><span class="sr-only">Actions</span></th>
+                                <th>${t('admin.promo-code.column.code')}</th>
+                                <th>${t('admin.invitations.recipient')}</th>
+                                <th>${t('admin.invitations.sent-on')}</th>
+                                <th><span class="sr-only">${t('admin.common.actions')}</span></th>
                             </tr>
                         </thead>
                         <tbody>
                             ${repeat(sentCodes, code => code.id, code => html`
                                 <tr class="sent-code">
-                                    <td data-label="Code">${code.code}</td>
-                                    <td data-label="Recipient">${code.recipientName} <span class="text-muted">&lt;${code.recipientEmail}&gt;</span></td>
-                                    <td data-label="Sent on"><alfio-format-date date=${code.sentTimestamp ?? ''} time-zone=${event.timeZone}>—</alfio-format-date></td>
+                                    <td data-label=${t('admin.promo-code.column.code')}>${code.code}</td>
+                                    <td data-label=${t('admin.invitations.recipient')}>${code.recipientName} <span class="text-muted">&lt;${code.recipientEmail}&gt;</span></td>
+                                    <td data-label=${t('admin.invitations.sent-on')}><alfio-format-date date=${code.sentTimestamp ?? ''} time-zone=${event.timeZone}>—</alfio-format-date></td>
                                     <td>
                                         <div class="actions-cell">
                                             ${when(code.status === 'FREE', () => html`
                                                 <sl-button class="clear-recipient" variant="danger" size="small" @click=${() => this.clearRecipient(code)}>
                                                     <sl-icon slot="prefix" name="trash"></sl-icon>
-                                                    Clear
+                                                    ${t('admin.common.clear')}
                                                 </sl-button>
                                             `)}
                                         </div>
@@ -521,7 +520,7 @@ the first line is the header, then one line per invitee:
                         </tbody>
                     </table>
                 </div>
-            `, () => emptyState('No invitations have been sent yet.'))}
+            `, () => emptyState(t('admin.invitations.none')))}
         `);
     }
 
@@ -567,7 +566,7 @@ the first line is the header, then one line per invitee:
         }
         const firstRowWithCode = this.#form.api.state.values.invitees.findIndex(i => i.code.trim() === code);
         if (firstRowWithCode !== -1 && firstRowWithCode < index) {
-            return 'Code already picked';
+            return t('admin.invitations.error.code-picked');
         }
         return undefined;
     }
@@ -612,12 +611,12 @@ the first line is the header, then one line per invitee:
             const csv = invitationsCsv(rows);
             const codes = await SpecialPriceService.linkCodesFromCsv(this.eventName, Number(this.categoryId), csv);
             if (codes.length === 0) {
-                this.reviewError = 'There is no invitee to send.';
+                this.reviewError = t('admin.invitations.error.no-invitee');
                 return;
             }
             this.preview = codes;
         } catch (error) {
-            this.reviewError = errorMessage(error, 'The invitations cannot be prepared. Please check the rows and retry.');
+            this.reviewError = errorMessage(error, t('admin.invitations.error.prepare'));
         } finally {
             this.uploading = false;
         }
@@ -636,12 +635,12 @@ the first line is the header, then one line per invitee:
         try {
             const codes = await SpecialPriceService.linkCodes(this.eventName, Number(this.categoryId), file);
             if (codes.length === 0) {
-                this.uploadError = 'The file does not contain any invitation.';
+                this.uploadError = t('admin.invitations.error.empty');
                 return;
             }
             this.preview = codes;
         } catch (error) {
-            this.uploadError = errorMessage(error, 'The file cannot be read.');
+            this.uploadError = errorMessage(error, t('admin.csv-import.error.read'));
         } finally {
             this.uploading = false;
         }
@@ -660,7 +659,7 @@ the first line is the header, then one line per invitee:
         this.sendError = null;
         try {
             await SpecialPriceService.sendCodes(this.eventName, Number(this.categoryId), this.preview);
-            dispatchFeedback({ type: 'success', message: 'Invitations have been sent.' }, this);
+            dispatchFeedback({ type: 'success', message: t('admin.invitations.done') }, this);
             this.preview = null;
             await this.loadDataTask.run();
             // start over with empty rows: the codes picked in the form are taken now
@@ -669,7 +668,7 @@ the first line is the header, then one line per invitee:
                 this.resetForm(event);
             }
         } catch (error) {
-            this.sendError = errorMessage(error, 'The invitations have not been sent. Please retry.');
+            this.sendError = errorMessage(error, t('admin.invitations.error.send-retry'));
         } finally {
             this.sending = false;
         }
@@ -677,18 +676,18 @@ the first line is the header, then one line per invitee:
 
     private async clearRecipient(code: SpecialPrice): Promise<void> {
         const confirmed = await ConfirmationDialogService.requestConfirm(
-            'Clear the recipient',
-            `About to clear the recipient for code ${code.code}. The code becomes free again. Are you sure?`,
+            t('admin.invitations.clear.title'),
+            t('admin.invitations.clear.text', code.code),
             'danger');
         if (!confirmed) {
             return;
         }
         try {
             await SpecialPriceService.clearRecipient(this.eventName, Number(this.categoryId), code.id);
-            dispatchFeedback({ type: 'success', message: `The recipient of code ${code.code} has been cleared.` }, this);
+            dispatchFeedback({ type: 'success', message: t('admin.invitations.cleared', code.code) }, this);
             await this.loadDataTask.run();
         } catch (error) {
-            dispatchFeedback({ type: 'danger', message: errorMessage(error, 'The recipient has not been cleared.') }, this);
+            dispatchFeedback({ type: 'danger', message: errorMessage(error, t('admin.invitations.error.clear-recipient')) }, this);
         }
     }
 }

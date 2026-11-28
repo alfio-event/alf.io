@@ -2,6 +2,7 @@ import {fetchJson, postJson, responseErrorMessage} from "./helpers.ts";
 import {dispatchFeedback} from "../model/dom-events.ts";
 import {LitElement} from "lit";
 import {Country} from "../components/attendee-fields.ts";
+import { t } from './i18n';
 
 export interface AvailableCurrency {
     code: string;
@@ -42,7 +43,7 @@ export class UtilService {
             return false;
         }
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, `Unexpected status ${response.status}`));
+            throw new Error(await responseErrorMessage(response, t('admin.error.unexpected-status', response.status)));
         }
         return await response.json();
     }
@@ -56,9 +57,9 @@ export class UtilService {
 
     static async copyValueToClipboard(supplier: () => string, what: string, src: LitElement): Promise<void> {
         if (await UtilService.copyToClipboard(supplier())) {
-            dispatchFeedback({type: 'success', message: `${what} copied to Clipboard!`}, src);
+            dispatchFeedback({type: 'success', message: t('admin.clipboard.copied', what)}, src);
         } else {
-            dispatchFeedback({type: 'danger', message: 'Unable to copy ${what} to Clipboard'}, src);
+            dispatchFeedback({type: 'danger', message: t('admin.clipboard.failed', what)}, src);
         }
     }
 

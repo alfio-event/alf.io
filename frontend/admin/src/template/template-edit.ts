@@ -15,6 +15,7 @@ import {taskContent} from '../components/task-content.ts';
 import {sectionCard} from '../components/section-card.ts';
 import '../components/code-editor.ts';
 import {mustacheLanguage} from './mustache-language.ts';
+import { t } from '../service/i18n';
 
 interface LocaleEdit {
     language: ContentLanguage;
@@ -193,7 +194,7 @@ export class TemplateEdit extends LitElement {
                     <h1>${this.editTitle()}</h1>
                 </div>
                 <hr class="page-separator"/>
-                ${taskContent(this.loadTask, this.data, 'Failed to load the template. Please try again.',
+                ${taskContent(this.loadTask, this.data, t('admin.template.load-failed'),
                     (data) => this.renderEditor(data))}
             </div>
         `;
@@ -205,14 +206,14 @@ export class TemplateEdit extends LitElement {
             ${when(data.scope.type === 'system', () => html`
                 <sl-alert open variant="primary">
                     <sl-icon slot="icon" name="info-circle"></sl-icon>
-                    Preview is not available for system-level templates.
+                    ${t('admin.template.preview.system')}
                 </sl-alert>
             `)}
             <sl-tab-group>
                 ${repeat(data.locales, (l) => l.locale, (l, index) => html`
                     <sl-tab slot="nav" panel=${l.locale} ?active=${index === 0}>
                         ${l.language.displayLanguage || l.locale}
-                        ${when(l.override != null, () => html`<sl-badge pill variant="primary" class="override-badge">Customized</sl-badge>`)}
+                        ${when(l.override != null, () => html`<sl-badge pill variant="primary" class="override-badge">${t('admin.translations.customized')}</sl-badge>`)}
                     </sl-tab>
                 `)}
                 ${repeat(data.locales, (l) => l.locale, (l, index) => html`
@@ -228,9 +229,9 @@ export class TemplateEdit extends LitElement {
      */
     private editTitle(): string {
         if (this.data?.descriptor != null && this.data.descriptor.description !== '') {
-            return `Edit template: ${this.data.descriptor.description}`;
+            return t('admin.template.edit', this.data.descriptor.description);
         }
-        return `Edit template: ${this.resourceName}`;
+        return t('admin.template.edit', this.resourceName);
     }
 
     /**
@@ -273,24 +274,24 @@ export class TemplateEdit extends LitElement {
                 <div>
                     ${when(this.showDelete(data.scope, st), () => html`
                         <sl-button variant="danger" data-action="delete" ?disabled=${busy} @click=${() => this.deleteFor(data, st)}>
-                            <sl-icon slot="prefix" name="trash"></sl-icon>Delete
+                            <sl-icon slot="prefix" name="trash"></sl-icon>${t('admin.common.delete')}
                         </sl-button>
                     `)}
                 </div>
                 <div class="right">
-                    <sl-button variant="default" data-action="reset" ?disabled=${busy} @click=${() => this.resetFor(st)}>Reset</sl-button>
+                    <sl-button variant="default" data-action="reset" ?disabled=${busy} @click=${() => this.resetFor(st)}>${t('admin.common.reset')}</sl-button>
                     ${when(st.previewMode,
                         () => html`
                             <sl-button variant="default" data-action="close-preview" ?disabled=${busy}
-                                       @click=${() => this.updateLocale(st.locale, {previewMode: false})}>Close preview</sl-button>
+                                       @click=${() => this.updateLocale(st.locale, {previewMode: false})}>${t('admin.template.close-preview')}</sl-button>
                         `,
                         () => html`
                             <sl-button variant="default" data-action="preview" ?disabled=${busy || data.scope.type === 'system'}
-                                       @click=${() => this.previewFor(data, st)}>Preview</sl-button>
+                                       @click=${() => this.previewFor(data, st)}>${t('admin.common.preview')}</sl-button>
                         `)}
                     ${when(this.canSave(data.scope, st), () => html`
                         <sl-button variant="warning" size="large" data-action="save" ?loading=${busy} ?disabled=${busy}
-                                   @click=${() => this.saveFor(data, st)}>Save</sl-button>
+                                   @click=${() => this.saveFor(data, st)}>${t('admin.common.save')}</sl-button>
                     `)}
                 </div>
             </div>
@@ -343,12 +344,12 @@ export class TemplateEdit extends LitElement {
         try {
             const res = await TemplateService.save(data.scope, TemplateService.fileName(this.resourceName, st.locale), st.current);
             if (!res.ok) {
-                throw new Error(await responseErrorMessage(res, `unexpected status ${res.status}`));
+                throw new Error(await responseErrorMessage(res, t('admin.error.unexpected-status', res.status)));
             }
-            dispatchFeedback({type: 'success', message: `The ${st.locale} version of ${this.resourceName} has been saved`}, this);
+            dispatchFeedback({type: 'success', message: t('admin.template.saved', st.locale, this.resourceName)}, this);
             this.reloadCount++;
         } catch (e) {
-            this.error = errorMessage(e, 'Failed to save the template');
+            this.error = errorMessage(e, t('admin.template.save-failed'));
         } finally {
             this.busyLocale = null;
         }
@@ -359,8 +360,8 @@ export class TemplateEdit extends LitElement {
             return;
         }
         const confirmed = await ConfirmationDialogService.requestConfirm(
-            'Delete template override',
-            `The ${st.locale} version of ${this.resourceName} will be deleted and the default template will be used again.`,
+            t('admin.template.delete.title'),
+            t('admin.template.delete.text', st.locale, this.resourceName),
             'danger');
         if (!confirmed) {
             return;
@@ -370,12 +371,12 @@ export class TemplateEdit extends LitElement {
         try {
             const res = await TemplateService.remove(data.scope, TemplateService.fileName(this.resourceName, st.locale));
             if (!res.ok) {
-                throw new Error(await responseErrorMessage(res, `unexpected status ${res.status}`));
+                throw new Error(await responseErrorMessage(res, t('admin.error.unexpected-status', res.status)));
             }
-            dispatchFeedback({type: 'success', message: `The ${st.locale} override of ${this.resourceName} has been deleted`}, this);
+            dispatchFeedback({type: 'success', message: t('admin.template.deleted', st.locale, this.resourceName)}, this);
             this.reloadCount++;
         } catch (e) {
-            this.error = errorMessage(e, 'Failed to delete the override');
+            this.error = errorMessage(e, t('admin.template.delete-failed'));
         } finally {
             this.busyLocale = null;
         }
@@ -395,7 +396,7 @@ export class TemplateEdit extends LitElement {
             const res = await TemplateService.preview(this.resourceName, st.locale, data.scope,
                 TemplateService.fileName(this.resourceName, st.locale), st.current);
             if (!res.ok) {
-                throw new Error(await responseErrorMessage(res, `unexpected status ${res.status}`));
+                throw new Error(await responseErrorMessage(res, t('admin.error.unexpected-status', res.status)));
             }
             const contentType = res.headers.get('content-type') ?? '';
             if (contentType.startsWith('text/plain')) {
@@ -410,7 +411,7 @@ export class TemplateEdit extends LitElement {
                 this.updateLocale(st.locale, {binaryPreview: true, previewMode: false});
             }
         } catch (e) {
-            this.error = errorMessage(e, 'Failed to render the preview. Please check the syntax and retry');
+            this.error = errorMessage(e, t('admin.template.preview-failed'));
         } finally {
             this.busyLocale = null;
         }
@@ -418,12 +419,12 @@ export class TemplateEdit extends LitElement {
 
     private scopeDescription(scope: ResourceScope): string {
         if (scope.type === 'system') {
-            return 'System-level template: an override applies to all organizations and events.';
+            return t('admin.template.scope.system');
         }
         if (scope.type === 'organization') {
-            return `Organization-level template: an override applies to all events of organization #${scope.organizationId}.`;
+            return t('admin.template.scope.organization', scope.organizationId);
         }
-        return `Event-level template: an override applies to ${this.eventName} only.`;
+        return t('admin.template.scope.event', this.eventName);
     }
 }
 

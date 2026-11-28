@@ -15,6 +15,7 @@ import {
     validateWith,
 } from '../components/form-validation.ts';
 import {base, detailList, dialog, form, modernLayout, row, textColors} from '../styles.ts';
+import { t, languageName } from '../service/i18n';
 
 /**
  * The translation to edit
@@ -111,7 +112,7 @@ export class TranslationDialog extends LitElement {
 
     render(): TemplateResult {
         return html`
-            <sl-dialog class="responsive-dialog" label="Edit translation"
+            <sl-dialog class="responsive-dialog" label=${t('admin.translation-dialog.title')}
                        @sl-request-close=${this.onRequestClose}
                        @sl-after-hide=${this.onAfterHide}>
                 ${when(this.translation, (translation) => this.renderForm(translation))}
@@ -124,19 +125,19 @@ export class TranslationDialog extends LitElement {
         return html`
             <form id="translation-form" novalidate @submit=${this.submit}>
                 <dl class="detail-list">
-                    <dt>Key</dt>
+                    <dt>${t('admin.translation-dialog.key')}</dt>
                     <dd class="monospace">${translation.key}</dd>
-                    <dt>English</dt>
+                    <dt>${languageName('en')}</dt>
                     <dd>${translation.english}</dd>
-                    <dt>Standard ${translation.languageName} text</dt>
+                    <dt>${t('admin.translation-dialog.standard', translation.languageName)}</dt>
                     <dd>${translation.standard}</dd>
                 </dl>
                 ${this.#form.field({name: 'value', validators: validateWith(requiredValue)}, (field: BoundField<string>) => {
                     const error = fieldError(field.state.meta, submitted);
                     return html`
-                        <sl-textarea id="translation-value" label="${translation.languageName} text" rows="4" resize="auto" required
+                        <sl-textarea id="translation-value" label=${t('admin.translation-dialog.text', translation.languageName)} rows="4" resize="auto" required
                                      class=${classMap({error: error != null})}
-                                     help-text=${error ?? 'Placeholders such as {0} are replaced by the actual values.'}
+                                     help-text=${error ?? t('admin.translation-dialog.help', '{0}')}
                                      .value=${field.state.value}
                                      @sl-input=${(e: Event) => field.handleChange((e.target as SlTextarea).value)}
                                      @sl-blur=${() => field.handleBlur()}></sl-textarea>
@@ -153,10 +154,10 @@ export class TranslationDialog extends LitElement {
                 <sl-divider></sl-divider>
                 ${when(this.invalid, () => html`<p class="text-danger">${INVALID_FORM_MESSAGE}</p>`)}
                 <div class="row" style="--alfio-row-cols: 3">
-                    <sl-button variant="default" size="large" @click=${() => this.close()}>Cancel</sl-button>
+                    <sl-button variant="default" size="large" @click=${() => this.close()}>${t('admin.common.cancel')}</sl-button>
                     <div></div>
                     <sl-button id="save-translation" variant="warning" size="large" ?loading=${this.saving} ?disabled=${this.saving}
-                               @click=${this.submit}>Save</sl-button>
+                               @click=${this.submit}>${t('admin.common.save')}</sl-button>
                 </div>
             </div>
         `;

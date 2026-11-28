@@ -98,7 +98,7 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 @Component
 public class AdminReservationManager {
 
-    private static final ErrorCode ERROR_CANNOT_CANCEL_CHECKED_IN_TICKETS = ErrorCode.custom("remove-reservation.failed", "This reservation contains checked-in tickets. Unable to cancel it.");
+    private static final ErrorCode ERROR_CANNOT_CANCEL_CHECKED_IN_TICKETS = ErrorCode.translatable("remove-reservation.failed", "admin.error.reservation.checked-in-tickets", "This reservation contains checked-in tickets. Unable to cancel it.");
     private static final Logger log = LoggerFactory.getLogger(AdminReservationManager.class);
     private final PurchaseContextManager purchaseContextManager;
     private final EventManager eventManager;
@@ -436,7 +436,7 @@ public class AdminReservationManager {
         if(attendees.stream().anyMatch(a -> !a.getAdditionalInfo().isEmpty())) {
             var event = purchaseContext.event();
             if(event.isEmpty()) {
-                return Result.error(ErrorCode.custom("error.additionalInfo", "Additional fields can be set only for tickets"));
+                return Result.error(ErrorCode.translatable("error.additionalInfo", "admin.error.reservation.fields-only-for-tickets", "Additional fields can be set only for tickets"));
             }
             fields = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.get().getId());
         }
@@ -448,7 +448,7 @@ public class AdminReservationManager {
                 ticket = ticketsById.get(attendee.getTicketId());
             }
             if(ticket == null) {
-                errors.add(ErrorCode.custom("error.ticket.notfound", "Ticket " + attendee.getTicketId() + " does not belong to the reservation"));
+                errors.add(ErrorCode.translatable("error.ticket.notfound", "admin.error.reservation.ticket-not-in-reservation", "Ticket " + attendee.getTicketId() + " does not belong to the reservation", String.valueOf(attendee.getTicketId())));
                 continue;
             }
             Map<String, List<String>> additionalInfo = Map.of();
@@ -506,7 +506,7 @@ public class AdminReservationManager {
         }
         var ticket = findTicketInReservation(reservationId, ticketUuid);
         if(ticket.isEmpty()) {
-            return Result.error(ErrorCode.custom("error.ticket.notfound", "The ticket does not belong to the reservation"));
+            return Result.error(ErrorCode.translatable("error.ticket.notfound", "admin.error.reservation.the-ticket-not-in-reservation", "The ticket does not belong to the reservation"));
         }
         var fields = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.get().getId());
         var resolved = AdminAttendeeFields.resolve(Objects.requireNonNullElse(values, Map.of()), fields, ticket.get().getCategoryId());
@@ -624,7 +624,7 @@ public class AdminReservationManager {
                         .orElse("Unknown error");
                     log.warn("Unable to apply subscription {}: {}", subscriptionId,
                         bindingResult.getAllErrors().stream().map(ObjectError::getCode).collect(joining(", ")));
-                    return Result.error(ErrorCode.custom(message, "Cannot assign subscription %s to Reservation %s".formatted(subscriptionId, reservationId)));
+                    return Result.error(ErrorCode.translatable(message, "admin.error.reservation.cannot-assign-subscription", "Cannot assign subscription %s to Reservation %s".formatted(subscriptionId, reservationId), subscriptionId, reservationId));
                 }
 
                 reservation = ticketReservationManager.findById(reservationId).orElseThrow();
@@ -726,7 +726,7 @@ public class AdminReservationManager {
             .map(ti -> checkCategoryCapacity(ti, event, input, username))
             .reduce((r1, r2) -> reduceResults(r1, r2, this::joinData))
             .map(r -> createReservation(r, event, input, promoCodeDiscount))
-            .orElseGet(() -> Result.error(singletonList(ErrorCode.custom("", "something went wrong..."))));
+            .orElseGet(() -> Result.error(singletonList(ErrorCode.translatable("", "admin.error.unexpected", "something went wrong..."))));
     }
 
     /**
@@ -742,14 +742,14 @@ public class AdminReservationManager {
         var optionalDiscount = promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), code)
             .filter(d -> d.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT);
         if(optionalDiscount.isEmpty()) {
-            return Result.error(ErrorCode.custom("error.promoCode.notfound", "The discount code " + code + " does not exist"));
+            return Result.error(ErrorCode.translatable("error.promoCode.notfound", "admin.error.promo-code.not-found", "The discount code " + code + " does not exist", code));
         }
         var discount = optionalDiscount.get();
         if(!discount.isCurrentlyValid(event.getZoneId(), event.now(clockProvider))) {
-            return Result.error(ErrorCode.custom("error.promoCode.validity", "The discount code " + code + " is not valid now"));
+            return Result.error(ErrorCode.translatable("error.promoCode.validity", "admin.error.promo-code.not-valid-now", "The discount code " + code + " is not valid now", code));
         }
         if(discount.hasCurrencyCode() && !discount.getCurrencyCode().equals(event.getCurrency())) {
-            return Result.error(ErrorCode.custom("error.promoCode.currency", "The discount code " + code + " is not in the currency of the event"));
+            return Result.error(ErrorCode.translatable("error.promoCode.currency", "admin.error.promo-code.currency", "The discount code " + code + " is not in the currency of the event", code));
         }
         // the new categories are not among the discounted ones, since they don't exist yet
         long discountedTickets = input.getTicketsInfo().stream()
@@ -757,14 +757,15 @@ public class AdminReservationManager {
             .mapToLong(ti -> ti.getAttendees().size())
             .sum();
         if(discountedTickets == 0) {
-            return Result.error(ErrorCode.custom("error.promoCode.categories", "The discount code " + code + " does not apply to the categories of the tickets"));
+            return Result.error(ErrorCode.translatable("error.promoCode.categories", "admin.error.promo-code.categories", "The discount code " + code + " does not apply to the categories of the tickets", code));
         }
         if(discount.getMaxUsage() != null) {
             promoCodeDiscountRepository.lockForCount(discount.getId());
             int used = Objects.requireNonNullElse(promoCodeDiscountRepository.countUsedPromoCode(discount.getId()), 0);
             if(discount.getMaxUsage() < used + discountedTickets) {
-                return Result.error(ErrorCode.custom("error.promoCode.maxUsage", "The discount code " + code + " can be used for "
-                    + Math.max(0, discount.getMaxUsage() - used) + " more tickets"));
+                var remaining = Math.max(0, discount.getMaxUsage() - used);
+                return Result.error(ErrorCode.translatable("error.promoCode.maxUsage", "admin.error.promo-code.max-usage",
+                    "The discount code " + code + " can be used for " + remaining + " more tickets", code, remaining));
             }
         }
         return Result.success(Optional.of(discount));
@@ -796,7 +797,7 @@ public class AdminReservationManager {
             Result<List<Ticket>> result = flattenTicketsInfo(event, empty, t)
                 .map(pair -> reserveForTicketsInfo(event, arm, reservationId, pair, discount))
                 .reduce(this::reduceReservationResults)
-                .orElseGet(() -> Result.error(ErrorCode.custom("", "unknown error")));
+                .orElseGet(() -> Result.error(ErrorCode.translatable("", "admin.error.unexpected", "unknown error")));
 
             return result.map(list -> Pair.of(ticketReservationRepository.findReservationById(reservationId), list));
         });
@@ -1078,7 +1079,10 @@ public class AdminReservationManager {
     public Result<Boolean> removeSubscription(SubscriptionDescriptor descriptor, String reservationId, UUID subscriptionId, String username) {
         int result = subscriptionRepository.cancelSubscription(reservationId, subscriptionId, descriptor.getId());
         markAsCancelled(ticketReservationManager.findById(reservationId).orElseThrow(), username, descriptor);
-        return result == 1 ? Result.success(true) : Result.error(ErrorCode.custom("cannot-cancel-subscription", "Cannot cancel subscription"));
+        if (result == 1) {
+            return Result.success(true);
+        }
+        return Result.error(ErrorCode.translatable("cannot-cancel-subscription", "admin.error.subscription.cannot-cancel", "Cannot cancel subscription"));
     }
 
     @Transactional(readOnly = true)
@@ -1212,7 +1216,7 @@ public class AdminReservationManager {
             //fully refund
             boolean refundResult = paymentManager.refund(reservation, purchaseContext, null, username);
             if(!refundResult) {
-                return ErrorCode.custom("refund.failed", "Cannot perform refund");
+                return ErrorCode.translatable("refund.failed", "admin.error.reservation.refund-failed", "Cannot perform refund");
             }
         }
         return null;

@@ -25,6 +25,7 @@ import {AlfioDialogClosed, dispatchFeedback} from "../../model/dom-events.ts";
 import {ConfirmationDialogService} from "../../service/confirmation-dialog.ts";
 import {ContentLanguage} from "../../model/purchase-context.ts";
 import "../../components/format-date.ts";
+import { t, tHtml, formatNumber } from '../../service/i18n';
 
 interface Model {
     event: AlfioEvent;
@@ -108,11 +109,11 @@ export class AdditionalItemList extends LitElement {
     `];
 
     render() {
-        return taskContent(this.retrievePageDataTask, this.retrievePageDataTask.value ?? null, 'Failed to load the event.',
+        return taskContent(this.retrievePageDataTask, this.retrievePageDataTask.value ?? null, t('admin.load-error.event'),
             model => html`
                 <div class="container">
                     <div class="page-title-row secondary">
-                        <h1>${model.title} for <i>${localizedTitle(model.event)}</i></h1>
+                        <h1>${tHtml('admin.additional-items.title', model.title, html`<i>${localizedTitle(model.event)}</i>`)}</h1>
                     </div>
                     <hr class="page-separator" />
                     ${this.iterateItems(model)}
@@ -159,8 +160,8 @@ export class AdditionalItemList extends LitElement {
     async delete(item: AdditionalItem, model: Model): Promise<boolean> {
         try {
             const confirmation = await ConfirmationDialogService.requestConfirm(
-                "Delete additional option?",
-                `Do you want to delete Additional option "${item.title.map(t => t.value).join("/")}"?`,
+                t('admin.additional-items.delete.title'),
+                t('admin.additional-items.delete.text', item.title.map(title => title.value).join("/")),
                 'danger'
                 );
             if (confirmation) {
@@ -168,14 +169,14 @@ export class AdditionalItemList extends LitElement {
                 if(response.ok) {
                     dispatchFeedback({
                         type: 'success',
-                        message: 'Additional Option successfully deleted'
+                        message: t('admin.additional-items.deleted')
                     }, this);
                     this.triggerListRefresh();
                     return true;
                 } else {
                     dispatchFeedback({
                         type: 'danger',
-                        message: 'Cannot delete additional option'
+                        message: t('admin.additional-items.delete-failed')
                     }, this);
                 }
             }
@@ -187,15 +188,15 @@ export class AdditionalItemList extends LitElement {
 
     private renderToolbar(model: Model, listData: ListData): TemplateResult {
         if (model.event.freeOfCharge) {
-            let items = 'additional options';
+            let freeEvent = t('admin.additional-items.free-event.options');
             if (model.type === 'DONATION') {
-                items = 'donations';
+                freeEvent = t('admin.additional-items.free-event.donations');
             }
             return html`
                 <sl-alert open variant="warning">
                     <sl-icon name="exclamation-triangle" slot="icon"></sl-icon>
-                    <p>Cannot add ${items} to an event marked as "free of charge".</p>
-                    <p>Please change this setting, add a default price > 0, specify currency and Taxes</p>
+                    <p>${freeEvent}</p>
+                    <p>${t('admin.additional-items.free-event.help')}</p>
                 </sl-alert>
             `;
         }
@@ -205,13 +206,13 @@ export class AdditionalItemList extends LitElement {
                     ${when(listData.allowDownload, () => html`
                         <sl-button variant="default" size="large" href=${`/admin/api/events/${model.event.publicIdentifier}/additional-services/${this.type}/export`} target="_blank" rel="noopener">
                             <sl-icon name="download" slot="prefix"></sl-icon>
-                            Export purchased items
+                            ${t('admin.additional-items.export')}
                         </sl-button>
                     `)}
                     ${when(!this.editActive, () => html`
                         <sl-button type="button" variant="success" size="large" @click=${() => this.addNew(model, listData.items.length)}>
                             <sl-icon name="plus-circle" slot="prefix"></sl-icon>
-                            Add new
+                            ${t('admin.common.add-new-entity')}
                         </sl-button>
                     `)}
                 </div>
@@ -232,10 +233,10 @@ export class AdditionalItemList extends LitElement {
     }
 
     private iterateItems(model: Model): TemplateResult {
-        return taskContent(model.dataTask, model.dataTask.value ?? null, 'Failed to load the items.', listData => html`
+        return taskContent(model.dataTask, model.dataTask.value ?? null, t('admin.additional-items.load-failed'), listData => html`
             ${this.renderToolbar(model, listData)}
             ${when(listData.items.length === 0, () => html`
-                <section class="section-card">${emptyState(`No ${model.title.toLowerCase()} yet.`)}</section>
+                <section class="section-card">${emptyState(emptyMessage(model.type))}</section>
             `)}
             ${repeat(listData.items, (item) => item.id, (item, index) => html`
                 <div id=${`additional-service-${item.id}`}></div>
@@ -246,17 +247,17 @@ export class AdditionalItemList extends LitElement {
                     className: 'item-card',
                     actions: html`
                         ${this.renderMoveButtons(listData, index, item, model)}
-                        <sl-button variant="default" size="small" title="edit" @click=${() => this.edit(item, model)} type="button"><sl-icon name="pencil" slot="prefix"></sl-icon>Edit</sl-button>
+                        <sl-button variant="default" size="small" title=${t('admin.common.edit')} @click=${() => this.edit(item, model)} type="button"><sl-icon name="pencil" slot="prefix"></sl-icon>${t('admin.common.edit')}</sl-button>
                         ${this.renderDelete(listData, item, model)}
                     `,
                 }, html`
                     <div class="item-body">
                         ${detailList([
-                            { label: 'Confirmed', value: html`<span class="text-success">${formatSoldCount(listData, item.id)}</span>` },
-                            { label: 'Inception', value: html`<alfio-format-date .date=${item.inception} time-zone=${model.event.timeZone}></alfio-format-date>` },
-                            { label: 'Expiration', value: html`<alfio-format-date .date=${item.expiration} time-zone=${model.event.timeZone}></alfio-format-date>` },
-                            { label: 'Price', value: this.showItemPrice(item) },
-                            item.type === 'SUPPLEMENT' && { label: 'Policy', value: supplementPolicyDescriptions[item.supplementPolicy] },
+                            { label: t('admin.statistics.confirmed'), value: html`<span class="text-success">${formatSoldCount(listData, item.id)}</span>` },
+                            { label: t('admin.additional-items.inception'), value: html`<alfio-format-date .date=${item.inception} time-zone=${model.event.timeZone}></alfio-format-date>` },
+                            { label: t('admin.additional-items.expiration'), value: html`<alfio-format-date .date=${item.expiration} time-zone=${model.event.timeZone}></alfio-format-date>` },
+                            { label: t('admin.category-dialog.price'), value: this.showItemPrice(item) },
+                            item.type === 'SUPPLEMENT' && { label: t('admin.additional-items.policy'), value: supplementPolicyDescriptions[item.supplementPolicy] },
                             showMaxQuantity(item) && { label: maxQuantityLabel(item), value: item.maxQtyPerOrder },
                         ])}
                         <sl-tab-group>
@@ -264,7 +265,7 @@ export class AdditionalItemList extends LitElement {
                                 <sl-tab slot="nav" panel=${d.locale} ?active=${index === 0}>${d.localeLabel}</sl-tab>
                                 <sl-tab-panel name=${d.locale} ?active=${index === 0}>
                                     <div class="panel-content">
-                                        <alfio-display-commonmark-preview data-button-text="Preview" data-text=${d.value}></alfio-display-commonmark-preview>
+                                        <alfio-display-commonmark-preview data-button-text=${t('admin.common.preview')} data-text=${d.value}></alfio-display-commonmark-preview>
                                         <div class="description-text">${d.value}</div>
                                     </div>
                                 </sl-tab-panel>
@@ -279,10 +280,10 @@ export class AdditionalItemList extends LitElement {
     private renderMoveButtons(listData: ListData, index: number, item: AdditionalItem, model: Model): TemplateResult {
         return renderIf(() => model.event.supportsAdditionalServicesOrdinal && listData.items.length > 1, () => html`
             ${renderIf(() => index > 0 && item.ordinal !== 0, () => html`
-                <sl-button variant="default" size="small" title="move up" @click=${() => this.moveItem(model.event.id, listData, item, index, 'up')} type="button"><sl-icon name="arrow-up" slot="prefix"></sl-icon>Move up</sl-button>
+                <sl-button variant="default" size="small" title=${t('admin.common.move-up')} @click=${() => this.moveItem(model.event.id, listData, item, index, 'up')} type="button"><sl-icon name="arrow-up" slot="prefix"></sl-icon>${t('admin.common.move-up')}</sl-button>
             `)}
             ${renderIf(() => index < listData.items.length - 1 && item.ordinal !== 0, () => html`
-                <sl-button variant="default" size="small" title="move down" @click=${() => this.moveItem(model.event.id, listData, item, index, 'down')} type="button"><sl-icon name="arrow-down" slot="prefix"></sl-icon>Move down</sl-button>
+                <sl-button variant="default" size="small" title=${t('admin.common.move-down')} @click=${() => this.moveItem(model.event.id, listData, item, index, 'down')} type="button"><sl-icon name="arrow-down" slot="prefix"></sl-icon>${t('admin.common.move-down')}</sl-button>
             `)}
         `);
     }
@@ -304,13 +305,13 @@ export class AdditionalItemList extends LitElement {
         if (response.ok) {
             dispatchFeedback({
                 type: 'success',
-                message: 'Operation completed successfully'
+                message: t('admin.common.operation-completed')
             }, this);
             this.triggerListRefresh();
         } else {
             dispatchFeedback({
                 type: 'danger',
-                message: 'Error while swapping items'
+                message: t('admin.additional-items.swap-failed')
             }, this);
         }
     }
@@ -319,15 +320,15 @@ export class AdditionalItemList extends LitElement {
         if (item.fixPrice) {
             return this.showItemFixPrice(item);
         }
-        return html`<span>User-defined</span>`;
+        return html`<span>${t('admin.additional-items.price.user-defined')}</span>`;
     }
 
     private showItemFixPrice(item: AdditionalItem): TemplateResult {
         if (isMandatoryPercentage(item.supplementPolicy)) {
             return html`<div>${item.price}%${
-                renderIf(() => item.minPrice != null, () => html`, min. <sl-format-number type="currency" currency=${item.currency} value=${item.minPrice}></sl-format-number><span></span>`)
+                renderIf(() => item.minPrice != null, () => html`, ${t('admin.additional-items.price.min')} <sl-format-number type="currency" currency=${item.currency} value=${item.minPrice}></sl-format-number><span></span>`)
             }${
-                renderIf(() => item.maxPrice != null, () => html`, max <sl-format-number type="currency" currency=${item.currency} value=${item.maxPrice}></sl-format-number><span></span>`)
+                renderIf(() => item.maxPrice != null, () => html`, ${t('admin.additional-items.price.max')} <sl-format-number type="currency" currency=${item.currency} value=${item.maxPrice}></sl-format-number><span></span>`)
             }</div>`;
         }
         return html`<sl-format-number type="currency" currency=${item.currency} value=${item.finalPrice}></sl-format-number><span></span>`;
@@ -339,7 +340,7 @@ export class AdditionalItemList extends LitElement {
             this.triggerListRefresh();
             dispatchFeedback({
                 type: 'success',
-                message: 'Operation completed successfully'
+                message: t('admin.common.operation-completed')
             }, this);
         }
     }
@@ -350,7 +351,7 @@ export class AdditionalItemList extends LitElement {
 
     private renderDelete(listData: ListData, item: AdditionalItem, model: Model) {
         return renderIf(() => countUsage(listData, item.id) === 0, () => html`
-            <sl-button title="delete" variant="danger" size="small" @click=${() => this.delete(item, model)} type="button"><sl-icon name="trash" slot="prefix"></sl-icon>Delete</sl-button>
+            <sl-button title=${t('admin.common.delete')} variant="danger" size="small" @click=${() => this.delete(item, model)} type="button"><sl-icon name="trash" slot="prefix"></sl-icon>${t('admin.common.delete')}</sl-button>
         `);
     }
 }
@@ -374,9 +375,9 @@ function formatSoldCount(listData: ListData, itemId: number): string {
         const toBePaid = detail['TO_BE_PAID'] ?? 0;
         const totalSold = acquired + checkedIn + toBePaid;
         if (checkedIn > 0 || toBePaid > 0) {
-            return `${totalSold} (of which ${acquired} acquired, ${checkedIn} checked in, ${toBePaid} to be paid on site)`;
+            return t('admin.additional-items.sold-detail', formatNumber(totalSold), formatNumber(acquired), formatNumber(checkedIn), formatNumber(toBePaid));
         }
-        return String(totalSold);
+        return formatNumber(totalSold);
     }
     return '0';
 }
@@ -384,7 +385,7 @@ function formatSoldCount(listData: ListData, itemId: number): string {
 function itemTitle(item: AdditionalItem): string {
     return item.title.map(title => {
         if (title.value === '') {
-            return `missing ${title.locale}`;
+            return t('admin.additional-items.missing-title', title.locale);
         }
         return title.value;
     }).join(' / ');
@@ -395,7 +396,7 @@ function missingTitleBadge(item: AdditionalItem): TemplateResult | undefined {
     if (missing.length === 0) {
         return undefined;
     }
-    return html`<sl-badge variant="danger" pill>Title missing: ${missing.join(', ')}</sl-badge>`;
+    return html`<sl-badge variant="danger" pill>${t('admin.additional-items.title-missing', missing.join(', '))}</sl-badge>`;
 }
 
 function showMaxQuantity(item: AdditionalItem): boolean {
@@ -404,9 +405,16 @@ function showMaxQuantity(item: AdditionalItem): boolean {
 
 function maxQuantityLabel(item: AdditionalItem): string {
     if (item.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_TICKET') {
-        return 'Max quantity per ticket';
+        return t('admin.additional-items.max-per-ticket');
     }
-    return 'Max quantity per order';
+    return t('admin.additional-items.max-per-order');
+}
+
+function emptyMessage(type: string): string {
+    if (type === 'DONATION') {
+        return t('admin.additional-items.none.donations');
+    }
+    return t('admin.additional-items.none.options');
 }
 
 declare global {

@@ -30,6 +30,7 @@ import {
 import { adminUrl } from '../../admin-router';
 import {MustacheVariableDefinition} from '../../components/mustache-variable.ts';
 import {mustacheLanguage} from '../../components/mustache-language.ts';
+import { t, tHtml, formatNumber } from '../../service/i18n';
 
 interface ComposeFormValues {
     // the selected categories, if the message is not for all the attendees
@@ -59,16 +60,16 @@ interface AttachmentTexts {
 }
 
 const TICKET_ATTACHMENT: AttachmentTexts = {
-    label: 'Attach the attendee\'s ticket',
-    helpText: 'The ticket will be sent as attachment',
-    previewNotice: 'Ticket will be sent as attachment',
+    label: t('admin.compose.attach-ticket'),
+    helpText: t('admin.compose.attach-ticket.help'),
+    previewNotice: t('admin.compose.attach-ticket.notice'),
     previewIcon: 'paperclip'
 };
 
 const ONLINE_ACCESS_INFO: AttachmentTexts = {
-    label: 'Include access information',
-    helpText: 'Access information will be appended at the end of the email',
-    previewNotice: 'Information on how to join the event online will be included at the end of the message',
+    label: t('admin.compose.access-info'),
+    helpText: t('admin.compose.access-info.help'),
+    previewNotice: t('admin.compose.access-info.notice'),
     previewIcon: 'link-45deg'
 };
 
@@ -79,14 +80,14 @@ const ONLINE_ACCESS_INFO: AttachmentTexts = {
 const EMAIL_PREVIEW_CSP = "default-src 'none'; img-src http: https: data:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com";
 
 const TEMPLATE_VARIABLES: TemplateVariable[] = [
-    {name: 'eventName', description: d => d.event.displayName, tooltip: 'the name of the event'},
-    {name: 'fullName', description: () => 'John Doe', tooltip: 'Either the name of the attendee or the name of the reservation owner'},
-    {name: 'organizationName', description: d => d.organization.name, tooltip: 'The name of the organization'},
-    {name: 'organizationEmail', description: d => d.organization.email, tooltip: 'The organization e-mail address'},
-    {name: 'reservationID', description: () => 'The reservation identifier'},
-    {name: 'reservationURL', description: () => 'The URL of the reservation page'},
-    {name: 'ticketURL', description: () => 'The URL of the ticket'},
-    {name: 'ticketID', description: () => 'The ticket identifier'},
+    {name: 'eventName', description: d => d.event.displayName, tooltip: t('admin.compose.variable.event-name')},
+    {name: 'fullName', description: () => 'John Doe', tooltip: t('admin.compose.variable.full-name')},
+    {name: 'organizationName', description: d => d.organization.name, tooltip: t('admin.compose.variable.organization-name')},
+    {name: 'organizationEmail', description: d => d.organization.email, tooltip: t('admin.compose.variable.organization-email')},
+    {name: 'reservationID', description: () => t('admin.compose.variable.reservation-id')},
+    {name: 'reservationURL', description: () => t('admin.compose.variable.reservation-url')},
+    {name: 'ticketURL', description: () => t('admin.compose.variable.ticket-url')},
+    {name: 'ticketID', description: () => t('admin.compose.variable.ticket-id')},
 ];
 
 function variableDefinitions(data: LoadData): MustacheVariableDefinition[] {
@@ -285,7 +286,7 @@ export class ComposeMessage extends LitElement {
     ];
 
     render(): TemplateResult {
-        return taskContent(this.loadDataTask, this.loadDataTask.value ?? null, 'Failed to load the event. Please try again.',
+        return taskContent(this.loadDataTask, this.loadDataTask.value ?? null, t('admin.load-error.event-retry'),
             data => this.renderContent(data));
     }
 
@@ -294,16 +295,16 @@ export class ComposeMessage extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row secondary">
-                    <h1>Send a custom message to attendees</h1>
+                    <h1>${t('admin.compose.title')}</h1>
                 </div>
                 <hr class="page-separator">
-                <p class="page-description text-muted">Write a message and send it to all the attendees, or only to those of specific categories.</p>
+                <p class="page-description text-muted">${t('admin.compose.description')}</p>
                 <div class="layout">
-                    ${sectionCard({ icon: 'envelope', title: 'Message' }, html`
+                    ${sectionCard({ icon: 'envelope', title: t('admin.compose.message') }, html`
                             <form class="compose-form form-stack" novalidate @submit=${(e: Event) => { e.preventDefault(); void this.submit(); }}>
-                                <sl-switch name="allAttendees" help-text="Or select specific categories" .checked=${this.allAttendees}
+                                <sl-switch name="allAttendees" help-text=${t('admin.compose.all-attendees.help')} .checked=${this.allAttendees}
                                            @sl-change=${(e: Event) => this.toggleAllAttendees((e.target as SlSwitch).checked)}>
-                                    Send to all attendees
+                                    ${t('admin.compose.all-attendees')}
                                 </sl-switch>
                                 ${when(!this.allAttendees, () => this.#form.field({
                                     name: 'categoryIds',
@@ -311,7 +312,7 @@ export class ComposeMessage extends LitElement {
                                 }, field => {
                                     const error = fieldError(field.state.meta, this.submitted);
                                     return html`
-                                        <sl-select name="categories" label="Categories" placeholder="Select categories" multiple clearable required hoist max-options-visible="3"
+                                        <sl-select name="categories" label=${t('admin.categories.title')} placeholder=${t('admin.promo-code.select-categories')} multiple clearable required hoist max-options-visible="3"
                                                    class=${classMap({ error: error != null })}
                                                    help-text=${error ?? ''}
                                                    .value=${field.state.value}
@@ -331,7 +332,7 @@ export class ComposeMessage extends LitElement {
                                         <sl-tab-panel name=${m.locale} ?active=${index === 0}>
                                             <div class="form-stack">
                                                 ${this.#form.field({ name: `messages[${index}].subject`, validators: validateWith(value => requiredValue(value)) },
-                                                    field => validatedInput(field, this.submitted, { name: `subject-${m.locale}`, label: 'Subject', placeholder: m.subjectExample }))}
+                                                    field => validatedInput(field, this.submitted, { name: `subject-${m.locale}`, label: t('admin.compose.subject'), placeholder: m.subjectExample }))}
                                                 ${this.#form.field({ name: `messages[${index}].text`, validators: validateWith(value => requiredValue(value)) },
                                                     field => this.renderMessageEditor(data, m.locale, field.state.value, fieldError(field.state.meta, this.submitted),
                                                         value => field.handleChange(value), () => field.handleBlur()))}
@@ -353,11 +354,11 @@ export class ComposeMessage extends LitElement {
                                 <sl-divider></sl-divider>
                                 <div class="row" style="--alfio-row-cols: 3">
                                     <sl-button variant="default" size="large" href=${adminUrl(`/events/${data.event.shortName}/detail`)}>
-                                        Cancel
+                                        ${t('admin.common.cancel')}
                                     </sl-button>
                                     <div></div>
                                     <sl-button id="preview-button" type="submit" variant="warning" size="large" ?loading=${this.loadingPreview}>
-                                        Preview
+                                        ${t('admin.common.preview')}
                                     </sl-button>
                                 </div>
                             </form>
@@ -383,7 +384,7 @@ export class ComposeMessage extends LitElement {
         if (data.htmlEnabled) {
             return html`
                 <div>
-                    <alfio-markdown-editor label="Message" name="message-${locale}" .value=${value} .variables=${variables}
+                    <alfio-markdown-editor label=${t('admin.compose.message')} name="message-${locale}" .value=${value} .variables=${variables}
                                            ?invalid=${error != null}
                                            @value-changed=${(e: CustomEvent<string>) => onChange(e.detail)}
                                            @focusout=${onBlur}></alfio-markdown-editor>
@@ -393,23 +394,24 @@ export class ComposeMessage extends LitElement {
         }
         return html`
             <div>
-                <alfio-code-editor label="Message" name="message-${locale}" wrap .value=${value}
+                <alfio-code-editor label=${t('admin.compose.message')} name="message-${locale}" wrap .value=${value}
                                    .language=${mustacheLanguage(variables)}
                                    ?invalid=${error != null}
-                                   help-text=${error ?? 'Type {{ to insert a variable'}
+                                   help-text=${error ?? t('admin.compose.variable-hint', '{{')}
                                    @value-changed=${(e: CustomEvent<string>) => onChange(e.detail)}
                                    @focusout=${onBlur}></alfio-code-editor>
-                <p class="message-format">Sent as plain text: HTML e-mails are disabled.</p>
+                <p class="message-format">${t('admin.compose.plain-text')}</p>
             </div>
         `;
     }
 
     private renderVariables(data: LoadData): TemplateResult {
         return html`
-            ${sectionCard({ icon: 'braces', title: 'Available variables' }, html`
+            ${sectionCard({ icon: 'braces', title: t('admin.compose.variables') }, html`
                     <p class="variables-intro text-muted">
-                        The syntax is defined by <a href="https://mustache.github.io/mustache.5.html" target="_blank" rel="noopener">Mustache</a>,
-                        with some <a href="https://github.com/samskivert/jmustache#limitations" target="_blank" rel="noopener">limitations</a>
+                        ${tHtml('admin.compose.variables.syntax',
+                            html`<a href="https://mustache.github.io/mustache.5.html" target="_blank" rel="noopener">Mustache</a>`,
+                            html`<a href="https://github.com/samskivert/jmustache#limitations" target="_blank" rel="noopener">${t('admin.compose.variables.limitations')}</a>`)}
                     </p>
                     <ul class="variables-list list-group">
                         ${TEMPLATE_VARIABLES.map(v => html`
@@ -420,7 +422,7 @@ export class ComposeMessage extends LitElement {
                                         () => html`<code>{{${v.name}}}</code>`)}
                                     <small>${v.description(data)}</small>
                                 </div>
-                                <sl-copy-button hoist value="{{${v.name}}}" copy-label="Copy {{${v.name}}}"></sl-copy-button>
+                                <sl-copy-button hoist value="{{${v.name}}}" copy-label=${t('admin.compose.variables.copy', `{{${v.name}}}`)}></sl-copy-button>
                             </li>
                         `)}
                     </ul>
@@ -435,7 +437,7 @@ export class ComposeMessage extends LitElement {
             .join(', ');
         const attachment = this.attachmentTexts(data.event);
         return html`
-            <sl-dialog id="preview-dialog" class="responsive-dialog" style="--alfio-dialog-max-width: 56rem" label="Message preview"
+            <sl-dialog id="preview-dialog" class="responsive-dialog" style="--alfio-dialog-max-width: 56rem" label=${t('admin.compose.preview')}
                        @sl-request-close=${(e: CustomEvent) => {
                            // a send in progress must not be interrupted
                            if (this.sending || e.detail.source === 'overlay') {
@@ -445,29 +447,29 @@ export class ComposeMessage extends LitElement {
                        @sl-after-hide=${(e: Event) => { if (e.target === this.previewDialog) { this.preview = null; } }}>
                 <div slot="label" class="dialog-title">
                     <sl-icon name="eye"></sl-icon>
-                    <strong>Message preview</strong>
+                    <strong>${t('admin.compose.preview')}</strong>
                 </div>
                 ${when(this.preview, preview => html`
                     <sl-alert open variant=${this.affectedUsersVariant(preview.affectedUsers)} class="affected-users">
                         <sl-icon name="people" slot="icon"></sl-icon>
-                        Potentially affected users: <strong>${preview.affectedUsers}</strong>${when(categoryNames, () => html` of ${this.categoriesLabel()} ${categoryNames}`)}
+                        ${tHtml('admin.compose.affected-users', html`<strong>${formatNumber(preview.affectedUsers)}</strong>`)}${when(categoryNames, () => html` ${t('admin.compose.affected-users.categories', { count: this.categoryIds.length, 1: categoryNames })}`)}
                     </sl-alert>
                     <sl-tab-group>
                         ${repeat(preview.preview, m => m.locale, (m, index) => html`<sl-tab slot="nav" panel=${m.locale} ?active=${index === 0}>${this.languageName(m.locale)}</sl-tab>`)}
                         ${repeat(preview.preview, m => m.locale, (m, index) => html`
                             <sl-tab-panel name=${m.locale} ?active=${index === 0}>
                                 <div class="form-stack">
-                                    <sl-input class="preview-subject" label="Subject" readonly filled .value=${m.subjectExample}></sl-input>
+                                    <sl-input class="preview-subject" label=${t('admin.compose.subject')} readonly filled .value=${m.subjectExample}></sl-input>
                                     ${when(preview.htmlPreview?.[m.locale], htmlPreview => html`
                                         <div>
-                                            <span class="preview-label">Message</span>
+                                            <span class="preview-label">${t('admin.compose.message')}</span>
                                             ${this.renderHtmlPreview(htmlPreview)}
                                         </div>
-                                        <sl-details summary="Plain text version">
+                                        <sl-details summary=${t('admin.compose.plain-text-version')}>
                                             <sl-textarea class="preview-text" readonly filled resize="auto" rows="3" .value=${m.textExample}></sl-textarea>
                                         </sl-details>
                                     `, () => html`
-                                        <sl-textarea class="preview-text" label="Message" readonly filled resize="auto" rows="3" .value=${m.textExample}></sl-textarea>
+                                        <sl-textarea class="preview-text" label=${t('admin.compose.message')} readonly filled resize="auto" rows="3" .value=${m.textExample}></sl-textarea>
                                     `)}
                                     ${when(m.attachTicket, () => html`
                                         <sl-alert open variant="primary">
@@ -484,11 +486,11 @@ export class ComposeMessage extends LitElement {
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
                         <sl-button variant="default" size="large" ?disabled=${this.sending} @click=${() => this.previewDialog.hide()}>
-                            Cancel
+                            ${t('admin.common.cancel')}
                         </sl-button>
                         <div></div>
                         <sl-button id="send-button" variant="warning" size="large" ?loading=${this.sending} @click=${() => this.send()}>
-                            Send
+                            ${t('admin.compose.send')}
                         </sl-button>
                     </div>
                 </div>
@@ -502,7 +504,7 @@ export class ComposeMessage extends LitElement {
      */
     private renderHtmlPreview(htmlPreview: string): TemplateResult {
         return html`
-            <iframe class="preview-html" title="E-mail preview" referrerpolicy="no-referrer"
+            <iframe class="preview-html" title=${t('admin.compose.email-preview')} referrerpolicy="no-referrer"
                     sandbox="allow-popups allow-popups-to-escape-sandbox"
                     .srcdoc=${this.withPreviewCsp(htmlPreview)}></iframe>
         `;
@@ -537,12 +539,6 @@ export class ComposeMessage extends LitElement {
         return 'warning';
     }
 
-    private categoriesLabel(): string {
-        if (this.categoryIds.length > 1) {
-            return 'categories';
-        }
-        return 'category';
-    }
 
     private get messages(): MessageModification[] {
         return this.#form.api.state.values.messages;
@@ -565,7 +561,7 @@ export class ComposeMessage extends LitElement {
     private validateCategories(value: unknown): string | undefined {
         // an empty selection would send the message to all the attendees
         if (!this.allAttendees && (!Array.isArray(value) || value.length === 0)) {
-            return 'Please select at least one category';
+            return t('admin.promo-code.error.categories');
         }
         return undefined;
     }
@@ -619,10 +615,10 @@ export class ComposeMessage extends LitElement {
                 await this.updateComplete;
                 await this.previewDialog.show();
             } else {
-                dispatchFeedback({type: 'danger', message: await this.errorMessage(response, 'Cannot generate the preview')}, this);
+                dispatchFeedback({type: 'danger', message: await this.errorMessage(response, t('admin.compose.preview-failed'))}, this);
             }
         } catch {
-            dispatchFeedback({type: 'danger', message: 'Cannot generate the preview'}, this);
+            dispatchFeedback({type: 'danger', message: t('admin.compose.preview-failed')}, this);
         } finally {
             this.loadingPreview = false;
         }
@@ -634,8 +630,8 @@ export class ComposeMessage extends LitElement {
             return;
         }
         if (preview.affectedUsers === 0) {
-            const confirmed = await ConfirmationDialogService.requestConfirm('No recipients',
-                'No one will receive this message. Do you really want to continue?', 'warning');
+            const confirmed = await ConfirmationDialogService.requestConfirm(t('admin.compose.no-recipients'),
+                t('admin.compose.no-recipients.text'), 'warning');
             if (!confirmed) {
                 return;
             }
@@ -646,12 +642,12 @@ export class ComposeMessage extends LitElement {
             if (response.ok) {
                 this.sending = false;
                 await this.previewDialog.hide();
-                dispatchFeedback({type: 'success', message: 'Messages have been enqueued'}, this);
+                dispatchFeedback({type: 'success', message: t('admin.compose.sent')}, this);
             } else {
-                dispatchFeedback({type: 'danger', message: await this.errorMessage(response, 'Cannot send the messages')}, this);
+                dispatchFeedback({type: 'danger', message: await this.errorMessage(response, t('admin.compose.send-failed'))}, this);
             }
         } catch {
-            dispatchFeedback({type: 'danger', message: 'Cannot send the messages'}, this);
+            dispatchFeedback({type: 'danger', message: t('admin.compose.send-failed')}, this);
         } finally {
             this.sending = false;
         }

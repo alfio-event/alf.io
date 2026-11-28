@@ -20,6 +20,10 @@ export interface AdminConfig {
     baseUrl: string;
     devModeEnabled: boolean;
     prodModeEnabled: boolean;
+    /** the language of the admin UI ("de"), chosen by the server: the language picker, then the browser's */
+    language: string;
+    /** where the translations of that language are, see service/i18n.ts */
+    translationsUrl: string;
 }
 
 export const adminConfigContext = createContext<AdminConfig>('alfio-admin-config');
@@ -39,6 +43,8 @@ const DEFAULT_CONFIG: AdminConfig = {
     baseUrl: '',
     devModeEnabled: false,
     prodModeEnabled: false,
+    language: 'en',
+    translationsUrl: '',
 };
 
 let config: AdminConfig | null = null;

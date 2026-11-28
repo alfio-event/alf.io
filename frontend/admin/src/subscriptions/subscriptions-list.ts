@@ -19,6 +19,7 @@ import '../components/format-date.ts';
 import './linked-events-dialog.ts';
 import type {LinkedEventsDialog} from './linked-events-dialog.ts';
 import { adminUrl, navigate } from '../admin-router';
+import { t, formatNumber } from '../service/i18n';
 
 interface SubscriptionsListData {
     subscriptions: SubscriptionWithStatistics[];
@@ -150,13 +151,13 @@ export class SubscriptionsList extends LitElement {
                     <sl-button id="add-subscription" href=${adminUrl(`/subscriptions/${this.organizationId}/create`)}
                                variant="success" size="large">
                         <sl-icon name="plus-circle" slot="prefix"></sl-icon>
-                        Add new
+                        ${t('admin.common.add-new-entity')}
                     </sl-button>
                 </div>
             </div>
-            ${sectionCard({icon: 'ticket-perforated', title: 'Subscriptions', badge: count, className: 'list-card'},
+            ${sectionCard({icon: 'ticket-perforated', title: t('admin.menu.subscriptions'), badge: count, className: 'list-card'},
                 taskContent(this.loadDataTask, this.loadDataTask.value ?? null,
-                    'Failed to load the subscriptions. Please try again.',
+                    t('admin.subscriptions.load-failed'),
                     (loaded) => this.renderContent(loaded)))}
             <alfio-linked-events-dialog></alfio-linked-events-dialog>
         `;
@@ -181,7 +182,7 @@ export class SubscriptionsList extends LitElement {
     }
 
     private renderEmpty(): TemplateResult {
-        return emptyState('No subscriptions have been found');
+        return emptyState(t('admin.subscriptions.none'));
     }
 
     private renderSubscriptions(data: SubscriptionsListData): TemplateResult {
@@ -198,20 +199,20 @@ export class SubscriptionsList extends LitElement {
             <div class="subscription-item">
                 <a class="event-row subscription-row" title=${descriptor.id}
                    href=${adminUrl(`/subscriptions/${descriptor.organizationId}/${descriptor.id}/edit`)}
-                   aria-label=${`Edit ${title}`}>
+                   aria-label=${t('admin.promo-code.edit-code', title)}>
                     <div class=${classMap({ 'event-logo': true, placeholder: descriptor.fileBlobId == null })}>
                         ${when(descriptor.fileBlobId != null,
-                            () => html`<img src=${`/file/${descriptor.fileBlobId}`} alt="${title} logo">`,
-                            () => html`<sl-icon name="ticket-perforated" aria-label="No image"></sl-icon>`)}
+                            () => html`<img src=${`/file/${descriptor.fileBlobId}`} alt=${t('admin.events.logo', title)}>`,
+                            () => html`<sl-icon name="ticket-perforated" aria-label=${t('admin.image-upload.no-image')}></sl-icon>`)}
                     </div>
                     <div class="event-main">
                         <div class="event-heading">
                             <span class="event-title">${title}</span>
                             ${when(descriptor.isPublic,
-                                () => html`<sl-badge variant="success" pill><sl-icon name="eye" aria-hidden="true"></sl-icon> Visible</sl-badge>`,
-                                () => html`<sl-badge variant="neutral" pill><sl-icon name="eye-slash" aria-hidden="true"></sl-icon> Hidden</sl-badge>`)}
+                                () => html`<sl-badge variant="success" pill><sl-icon name="eye" aria-hidden="true"></sl-icon> ${t('admin.subscription-form.visible')}</sl-badge>`,
+                                () => html`<sl-badge variant="neutral" pill><sl-icon name="eye-slash" aria-hidden="true"></sl-icon> ${t('admin.subscription-form.hidden')}</sl-badge>`)}
                             ${when(data.ticketsGenerationJobActive && descriptor.supportsTicketsGeneration === true,
-                                () => html`<sl-badge variant="primary" pill><sl-icon name="ticket" aria-hidden="true"></sl-icon> Automatic tickets generation</sl-badge>`,
+                                () => html`<sl-badge variant="primary" pill><sl-icon name="ticket" aria-hidden="true"></sl-icon> ${t('admin.subscription-form.generation')}</sl-badge>`,
                                 () => nothing)}
                         </div>
                         <div class="event-date">
@@ -230,7 +231,7 @@ export class SubscriptionsList extends LitElement {
                             <div class="subscription-price">
                                 <sl-icon name="cash" aria-hidden="true"></sl-icon>
                                 ${formatAmount(sub.unitPrice, descriptor.currency)}
-                                ${when(descriptor.vatStatus === 'NOT_INCLUDED', () => html`<span class="text-muted">+ Taxes</span>`, () => nothing)}
+                                ${when(descriptor.vatStatus === 'NOT_INCLUDED', () => html`<span class="text-muted">${t('admin.subscriptions.plus-taxes')}</span>`, () => nothing)}
                             </div>
                         </div>
                     </div>
@@ -238,16 +239,16 @@ export class SubscriptionsList extends LitElement {
                 <div class="item-actions">
                     <sl-button variant="default" size="small" class="show-linked-events"
                                @click=${() => this.showLinkedEvents(descriptor.organizationId, descriptor.id)}>
-                        <sl-icon slot="prefix" name="link-45deg"></sl-icon> Linked events
+                        <sl-icon slot="prefix" name="link-45deg"></sl-icon> ${t('admin.subscriptions.linked-events')}
                     </sl-button>
                     <sl-button variant="default" size="small"
                                href=${adminUrl(`/subscriptions/${descriptor.organizationId}/${descriptor.id}/additional-fields`)}>
-                        <sl-icon slot="prefix" name="info-circle"></sl-icon> Data to collect
+                        <sl-icon slot="prefix" name="info-circle"></sl-icon> ${t('admin.page-title.data-to-collect')}
                     </sl-button>
                     ${when(sub.reservationsCount > 0, () => html`
                         <sl-button variant="default" size="small"
                                    href=${adminUrl(`/subscriptions/${descriptor.organizationId}/${descriptor.id}/reservations`)}>
-                            <sl-icon slot="prefix" name="ticket"></sl-icon> Reservations
+                            <sl-icon slot="prefix" name="ticket"></sl-icon> ${t('admin.event.menu.reservations')}
                         </sl-button>
                     `, () => nothing)}
                 </div>
@@ -259,7 +260,7 @@ export class SubscriptionsList extends LitElement {
         const descriptor = sub.descriptor;
         let pending = '';
         if (sub.pendingCount > 0) {
-            pending = ` · ${sub.pendingCount} pending`;
+            pending = ` · ${t('admin.pending-payments.count-pending', formatNumber(sub.pendingCount))}`;
         }
         if (descriptor.maxAvailable > 0) {
             const soldAndPending = sub.soldCount + sub.pendingCount;
@@ -268,17 +269,17 @@ export class SubscriptionsList extends LitElement {
             // when nearly sold out, the remaining subscriptions say more than the percentage
             let progressLabel = `${percentage}%`;
             if (sub.availableCount > 0 && nearlyFull) {
-                progressLabel = `${sub.availableCount} left`;
+                progressLabel = t('admin.events.tickets-left', { count: sub.availableCount });
             }
             return html`
                 <div class="ticket-summary">
                     <div class="sales-progress">
                         <div class="sales-meta">
-                            <span>${sub.soldCount} of ${descriptor.maxAvailable} sold${pending}</span>
+                            <span>${t('admin.subscriptions.sold-of', formatNumber(sub.soldCount), formatNumber(descriptor.maxAvailable))}${pending}</span>
                             <span>${progressLabel}</span>
                         </div>
                         <sl-progress-bar class=${classMap({ 'nearly-full': nearlyFull })} value=${percentage}
-                                         aria-label="${percentage}% of the subscriptions sold"></sl-progress-bar>
+                                         aria-label=${t('admin.subscriptions.percentage-sold', percentage)}></sl-progress-bar>
                     </div>
                 </div>
             `;
@@ -286,7 +287,7 @@ export class SubscriptionsList extends LitElement {
         return html`
             <div class="ticket-summary">
                 <div class="sales-meta">
-                    <span>${sub.soldCount} sold${pending}</span>
+                    <span>${t('admin.subscriptions.sold', formatNumber(sub.soldCount))}${pending}</span>
                 </div>
             </div>
         `;
@@ -295,7 +296,7 @@ export class SubscriptionsList extends LitElement {
     private async showLinkedEvents(organizationId: number, subscriptionId: string): Promise<void> {
         const links = await SubscriptionService.loadLinkedEvents(organizationId, subscriptionId);
         if (links.length === 0) {
-            dispatchFeedback({type: 'neutral', message: 'No linked events found.'}, this);
+            dispatchFeedback({type: 'neutral', message: t('admin.subscriptions.no-linked-events')}, this);
             return;
         }
         const dialog = this.renderRoot.querySelector<LinkedEventsDialog>('alfio-linked-events-dialog');

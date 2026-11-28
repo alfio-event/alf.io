@@ -18,6 +18,7 @@ import type {DeleteEventDialog} from './delete-event-dialog.ts';
 import './linked-application-dialog.ts';
 import type {LinkedApplicationDialog} from './linked-application-dialog.ts';
 import { adminRoute, adminUrl, navigate, navigateToUrl, ROUTE_CHANGED_EVENT } from '../../admin-router';
+import { t, tHtml } from '../../service/i18n';
 
 interface NavItem {
     id: string;
@@ -295,16 +296,16 @@ export class EventSidebar extends LitElement {
                 </header>
                 ${this.renderActions(event)}
                 ${this.renderGoTo(groups)}
-                <nav aria-label="Event">
+                <nav aria-label=${t('admin.page-title.event')}>
                     ${repeat(groups, g => g.label, g => this.renderGroup(event, g))}
                     ${this.renderLinkedApplications(event)}
                 </nav>
                 <footer>
-                    <p>Powered by <a href="https://alf.io" target="_blank" rel="noopener">alf.io</a>${when(this.version !== '', () => html` v${this.version}`, () => nothing)}</p>
+                    <p>${tHtml('admin.event-menu.powered-by', html`<a href="https://alf.io" target="_blank" rel="noopener">alf.io</a>`)}${when(this.version !== '', () => html` v${this.version}`, () => nothing)}</p>
                     <p>
-                        <a href="https://github.com/alfio-event/alf.io/issues" target="_blank" rel="noopener">Report an issue</a>
+                        <a href="https://github.com/alfio-event/alf.io/issues" target="_blank" rel="noopener">${t('admin.event-menu.report-an-issue')}</a>
                         ·
-                        <a href="https://github.com/alfio-event/alf.io/discussions" target="_blank" rel="noopener">Ask for help</a>
+                        <a href="https://github.com/alfio-event/alf.io/discussions" target="_blank" rel="noopener">${t('admin.event-menu.ask-for-help')}</a>
                     </p>
                 </footer>
             </div>
@@ -319,42 +320,42 @@ export class EventSidebar extends LitElement {
                     <sl-button class="create-reservation" id="sidebar-create-reservation" variant="success"
                                href=${adminUrl(`/events/${event.shortName}/reservation/new`)}>
                         <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-                        Create reservation
+                        ${t('admin.event.menu.create-reservation')}
                     </sl-button>
                 `, () => nothing)}
                 ${when(owner, () => html`
                     <sl-dropdown id="event-actions" hoist>
-                        <sl-button slot="trigger" caret>Actions</sl-button>
+                        <sl-button slot="trigger" caret>${t('admin.event.menu.actions')}</sl-button>
                         <sl-menu @sl-select=${this.onAction}>
                             <sl-menu-item value="copy">
                                 <sl-icon slot="prefix" name="copy"></sl-icon>
-                                Copy this event
+                                ${t('admin.event.menu.copy-this-event')}
                             </sl-menu-item>
                             ${when(event.status === 'PUBLIC' && !event.expired, () => html`
                                 <sl-menu-item value="unlist" ?disabled=${this.changingStatus}>
                                     <sl-icon slot="prefix" name="eye-slash"></sl-icon>
-                                    Remove from the event list
+                                    ${t('admin.event-menu.unlist')}
                                 </sl-menu-item>
                             `, () => nothing)}
                             <sl-divider></sl-divider>
                             <sl-menu-item value="delete" class="delete-event">
                                 <sl-icon slot="prefix" name="trash"></sl-icon>
-                                Delete the event
+                                ${t('admin.event-menu.delete')}
                             </sl-menu-item>
                         </sl-menu>
                     </sl-dropdown>
                     <sl-dropdown id="event-downloads" hoist>
                         <sl-button slot="trigger" caret>
                             <sl-icon slot="prefix" name="download"></sl-icon>
-                            <span class="download-label">Download</span>
+                            <span class="download-label">${t('admin.event.menu.download')}</span>
                         </sl-button>
                         <sl-menu @sl-select=${this.onDownload}>
-                            <sl-menu-item value="attendees">Attendees' data…</sl-menu-item>
-                            <sl-menu-item value="waiting-list">Waiting list…</sl-menu-item>
-                            <sl-menu-item value="sponsor-scan">Sponsors' scans</sl-menu-item>
+                            <sl-menu-item value="attendees">${t('admin.event-menu.download.attendees')}</sl-menu-item>
+                            <sl-menu-item value="waiting-list">${t('admin.event-menu.download.waiting-list')}</sl-menu-item>
+                            <sl-menu-item value="sponsor-scan">${t('admin.event-menu.download.sponsor-scans')}</sl-menu-item>
                             <sl-divider></sl-divider>
-                            <sl-menu-item value="documents-pdf">Billing documents (PDF)</sl-menu-item>
-                            <sl-menu-item value="documents-xls">Billing documents (Excel)</sl-menu-item>
+                            <sl-menu-item value="documents-pdf">${t('admin.event-menu.download.billing-pdf')}</sl-menu-item>
+                            <sl-menu-item value="documents-xls">${t('admin.event-menu.download.billing-excel')}</sl-menu-item>
                         </sl-menu>
                     </sl-dropdown>
                 `, () => nothing)}
@@ -368,7 +369,7 @@ export class EventSidebar extends LitElement {
     private renderGoTo(groups: NavGroup[]): TemplateResult {
         const current = groups.flatMap(g => g.items).find(item => this.isCurrent(item));
         return html`
-            <sl-select class="go-to" id="event-go-to" label="Go to" hoist placeholder="Select a page"
+            <sl-select class="go-to" id="event-go-to" label=${t('admin.event-menu.go-to')} hoist placeholder=${t('admin.event-menu.select-page')}
                        .value=${current?.id ?? ''}
                        @sl-change=${this.onGoTo}>
                 ${repeat(groups, g => g.label, (g, index) => html`
@@ -426,7 +427,7 @@ export class EventSidebar extends LitElement {
         }
         return html`
             <div class="nav-group">
-                <p class="nav-group-label">Linked applications</p>
+                <p class="nav-group-label">${t('admin.event-menu.linked-applications')}</p>
                 <ul>
                     ${repeat(applications, a => a.label, a => html`
                         <li>
@@ -446,54 +447,54 @@ export class EventSidebar extends LitElement {
      * The pages of the event, grouped by task. Those who can't manage the event only see the overview and check-in
      */
     private navGroups(event: AlfioEvent): NavGroup[] {
-        const overview: NavItem = { id: 'overview', label: 'Overview', icon: 'speedometer2', path: 'detail', current: /^(detail|edit|category\/)/ };
-        const checkIn: NavItem = { id: 'check-in', label: 'Check-in', icon: 'qr-code-scan', path: 'check-in', current: /^check-in/ };
+        const overview: NavItem = { id: 'overview', label: t('admin.page-title.overview'), icon: 'speedometer2', path: 'detail', current: /^(detail|edit|category\/)/ };
+        const checkIn: NavItem = { id: 'check-in', label: t('admin.page-title.check-in'), icon: 'qr-code-scan', path: 'check-in', current: /^check-in/ };
         if (!event.visibleForCurrentUser) {
             return [{ label: '', items: [overview, checkIn] }];
         }
         const paid = !event.freeOfCharge;
         const offlinePayments = paid && (event.allowedPaymentProxies ?? []).some(p => p === 'OFFLINE' || p === 'CUSTOM_OFFLINE');
         const sales: NavItem[] = [
-            { id: 'reservations', label: 'Reservations', icon: 'ticket-perforated', path: 'reservations/', current: /^(reservations|reservation\/(?!new|import))/ },
+            { id: 'reservations', label: t('admin.event.menu.reservations'), icon: 'ticket-perforated', path: 'reservations/', current: /^(reservations|reservation\/(?!new|import))/ },
         ];
         if (paid) {
-            sales.push({ id: 'payments', label: 'Payments', icon: 'cash-stack', path: 'transactions/', current: /^transactions/ });
+            sales.push({ id: 'payments', label: t('admin.page-title.payments'), icon: 'cash-stack', path: 'transactions/', current: /^transactions/ });
         }
         if (offlinePayments) {
-            sales.push({ id: 'pending-payments', label: 'Pending payments', icon: 'hourglass-split', path: 'pending-payments/', current: /^pending-payments/, count: 'pending-payments' });
+            sales.push({ id: 'pending-payments', label: t('admin.page-title.pending-payments'), icon: 'hourglass-split', path: 'pending-payments/', current: /^pending-payments/, count: 'pending-payments' });
         }
-        sales.push({ id: 'waiting-list', label: 'Waiting list', icon: 'people', path: 'waiting-queue', current: /^waiting-queue/, count: 'waiting-list' });
+        sales.push({ id: 'waiting-list', label: t('admin.event.menu.waiting-list'), icon: 'people', path: 'waiting-queue', current: /^waiting-queue/, count: 'waiting-list' });
 
         const attendees: NavItem[] = [
             checkIn,
-            { id: 'compose-message', label: 'Compose message', icon: 'envelope', path: 'compose-custom-message', current: /^compose-custom-message/ },
-            { id: 'email-log', label: 'E-mail log', icon: 'send', path: 'email-log', current: /^email-log/ },
+            { id: 'compose-message', label: t('admin.event.menu.compose-message'), icon: 'envelope', path: 'compose-custom-message', current: /^compose-custom-message/ },
+            { id: 'email-log', label: t('admin.event.menu.email-log'), icon: 'send', path: 'email-log', current: /^email-log/ },
         ];
         if (!event.expired) {
-            attendees.push({ id: 'import-attendees', label: 'Import attendees', icon: 'upload', path: 'reservation/import', current: /^reservation\/import/ });
+            attendees.push({ id: 'import-attendees', label: t('admin.event.menu.import-attendees'), icon: 'upload', path: 'reservation/import', current: /^reservation\/import/ });
         }
-        attendees.push({ id: 'polls', label: 'Polls', icon: 'bar-chart', path: 'polls/list', current: /^polls/ });
+        attendees.push({ id: 'polls', label: t('admin.event.menu.polls'), icon: 'bar-chart', path: 'polls/list', current: /^polls/ });
 
-        let codesLabel = 'Promo codes';
+        let codesLabel = t('admin.page-title.promo-codes');
         if (this.usePartnerCode) {
-            codesLabel = 'Partner codes';
+            codesLabel = t('admin.event-menu.partner-codes');
         }
         const setup: NavItem[] = [
             { id: 'promo-codes', label: codesLabel, icon: 'percent', path: 'promo-codes', current: /^promo-codes/ },
-            { id: 'data-to-collect', label: 'Data to collect', icon: 'person-lines-fill', path: 'attendee-data-to-collect', current: /^attendee-data-to-collect/ },
+            { id: 'data-to-collect', label: t('admin.page-title.data-to-collect'), icon: 'person-lines-fill', path: 'attendee-data-to-collect', current: /^attendee-data-to-collect/ },
         ];
         if (paid) {
-            setup.push({ id: 'additional-options', label: 'Additional options', icon: 'bag-plus', path: 'additional-services', current: /^additional-services/ });
-            setup.push({ id: 'donations', label: 'Donation options', icon: 'gift', path: 'donations', current: /^donations/ });
+            setup.push({ id: 'additional-options', label: t('admin.page-title.additional-options'), icon: 'bag-plus', path: 'additional-services', current: /^additional-services/ });
+            setup.push({ id: 'donations', label: t('admin.page-title.donation-options'), icon: 'gift', path: 'donations', current: /^donations/ });
         }
-        setup.push({ id: 'templates', label: 'Templates', icon: 'file-earmark-text', path: 'show-resources', current: /^show-resources/ });
-        setup.push({ id: 'configuration', label: 'Configuration', icon: 'gear', path: 'configuration', current: /^configuration/ });
+        setup.push({ id: 'templates', label: t('admin.page-title.templates'), icon: 'file-earmark-text', path: 'show-resources', current: /^show-resources/ });
+        setup.push({ id: 'configuration', label: t('admin.menu.settings'), icon: 'gear', path: 'configuration', current: /^configuration/ });
 
         return [
             { label: '', items: [overview] },
-            { label: 'Sales', items: sales },
-            { label: 'Attendees', items: attendees },
-            { label: 'Setup', items: setup },
+            { label: t('admin.event-menu.group.sales'), items: sales },
+            { label: t('admin.event-menu.group.attendees'), items: attendees },
+            { label: t('admin.event-menu.group.setup'), items: setup },
         ];
     }
 
@@ -530,7 +531,7 @@ export class EventSidebar extends LitElement {
             }
         } catch (error) {
             if (request === this.request) {
-                this.loadError = errorMessage(error, 'Failed to load the event');
+                this.loadError = errorMessage(error, t('admin.load-error.event'));
             }
         }
     }
@@ -625,10 +626,10 @@ export class EventSidebar extends LitElement {
             if (count > 0) {
                 window.open(url);
             } else {
-                dispatchFeedback({type: 'neutral', message: 'This event has no billing documents yet.'}, this);
+                dispatchFeedback({type: 'neutral', message: t('admin.event-menu.no-billing-documents')}, this);
             }
         } catch (error) {
-            dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to download the billing documents')}, this);
+            dispatchFeedback({type: 'danger', message: errorMessage(error, t('admin.event-menu.download-billing-failed'))}, this);
         }
     }
 
@@ -639,11 +640,11 @@ export class EventSidebar extends LitElement {
         this.changingStatus = true;
         try {
             await EventService.updateStatus(event.id, false);
-            dispatchFeedback({type: 'success', message: 'The event has been removed from the event list. Anyone with the link can still buy tickets.'}, this);
+            dispatchFeedback({type: 'success', message: t('admin.event-menu.unlisted')}, this);
             dispatchEventChanged(event.shortName, this);
             void this.load();
         } catch (error) {
-            dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to change the event status')}, this);
+            dispatchFeedback({type: 'danger', message: errorMessage(error, t('admin.event-menu.status-change-failed'))}, this);
         } finally {
             this.changingStatus = false;
         }

@@ -452,6 +452,7 @@ Example: `event/check-in/add-attendees-dialog.ts`.
 - Use `<alfio-format-date>` (`components/format-date.ts`) for all dates, instead of `<sl-format-date>` or
   formatting by hand (`toLocaleString`, `Intl.DateTimeFormat`, …).
 - The display format is defined once, admin-wide, in `service/date-format.ts` (default: `Jun 30, 2026, 14:00`).
+  Dates and numbers follow the language of the admin: the `locale` key of its translation file (`de-DE`).
   Leave out month/day/hour options: `setDateFormatPreferences()` changes the format, and every date re-renders.
 - Pass the backend value as it is (no `.replace(' ', 'T')`, no appended `Z`):
   - **Instants** (ISO-8601 with offset or `Z`, e.g. a `ZonedDateTime`) are converted to `time-zone`.
@@ -511,7 +512,9 @@ module that uses `@lit-labs/router`.
   and query: Lit keeps the element when only those change, so the page keeps its state.
 - Links: `href=${adminUrl('/events/x/detail')}`; the router handles the click. Navigate from code with
   `navigate('/events/x/detail')`, or `navigateToUrl(url)` for a URL built with `adminUrl()`. Never set
-  `window.location`: a full reload loses the state of the shell.
+  `window.location`: a full reload loses the state of the shell. The only exception is the language menu of the
+  navbar: the texts are loaded once, before the first render, so a new language needs a reload (`?lang=`, see
+  [Translations](#12-translations)).
 - A link to something that is not an admin page (an export, a public page) opens in a new tab or has `download`;
   if it hasn't, the router lets the browser load it.
 - Filters and pagination live in the query: read it with `readRouteParams()`, update it with `replaceRouteParams()`
@@ -525,3 +528,44 @@ module that uses `@lit-labs/router`.
 - The shell and the layouts render in light DOM, so that the pages stay reachable from the document (E2E tests);
   their styles are in `main.css`. Pages keep their shadow DOM.
 - Cover a new page with an E2E test (see the E2E section of `CONTRIBUTING.md`).
+
+## 12. Translations
+
+Every text a user can see comes from the translation files, through `t()` and the other functions of
+`service/i18n.ts`. Only the logs (`console.*`) stay in English.
+
+- The texts are in `src/main/resources/alfio/i18n/public.properties`, the same file as the public frontend, with keys
+  that start with `admin.`. Add only the English text: the other languages (`public_de.properties`, …) are
+  translated on POEditor, and a key missing there shows the English text.
+- The server chooses the language: the one picked in the user menu (`?lang=de`, kept in the session), otherwise
+  the browser's, otherwise English. The page loads the texts once, before the first render, so `t()` also works in
+  constants at module level.
+- Keys: `admin.<area>.<screen>.<element>`, e.g. `admin.group.csv.empty`. Before adding a key, look for the same
+  English text: `admin.common.*` has the shared ones (`admin.common.save`, `admin.common.cancel`, …).
+- Write keys as literal strings, so that `i18n-keys.test.ts` checks that they exist. To choose among several keys,
+  keep them in a map of `i18nKey()` values, never build them (`'admin.status.' + status`):
+
+  ```ts
+  const LOG_TYPE_LABELS: Record<ExtensionLogType, string> = {
+      SUCCESS: i18nKey('admin.extension-log.type.success'),
+      ERROR: i18nKey('admin.extension-log.type.error'),
+  };
+  html`<sl-badge>${t(LOG_TYPE_LABELS[type])}</sl-badge>`
+  ```
+
+- Values go in placeholders, `{0}`, `{1}`, …: `t('admin.group.deleted', name)` for `Group {0} successfully deleted`.
+  Keep the sentence whole, so that translators can move the values: never join pieces of text.
+- Markup goes in the values, never in the text: ``tHtml('admin.extensions.delete.text', html`<b>${name}</b>`)`` for
+  `The extension {0} will be removed.` No `unsafeHTML`.
+- Plurals: one key per form, `_one` and `_other` (`admin.group.csv.imported_one`, `…_other`), where `{0}` is the
+  count. Call `t('admin.group.csv.imported', { count: n })`, or `tHtmlPlural()` with markup. The count can be
+  followed by more values: `{ count: n, 1: file.name }` for `{1}`.
+- The server reads every text with Java's `MessageFormat`: write an apostrophe twice (`it''s`), and don't write
+  braces in a text: pass them as a value. `FormattersTest` checks every file.
+- Numbers: `formatNumber()`, not `toLocaleString()` or `Intl.NumberFormat('en-US')`. Dates: see [Dates](#8-dates).
+- Errors: show a validation error code of the server with `translateErrorCode(code, fallback)`. The admin API
+  translates the errors of a `Result` itself (`AdminErrorTranslationAdvice`): give a new error an `admin.error.*` key
+  (`ErrorCode.translatable()`).
+- Keep in their original form the texts that aren't English words: brand names, CSV column names, sample data,
+  the Italian e-invoicing terms.
+- The E2E tests run Chrome in English and look for the English texts: when you change one, search the tests for it.

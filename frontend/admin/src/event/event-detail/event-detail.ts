@@ -43,6 +43,7 @@ import {
 
 import { adminConfig } from '../../admin-config';
 import { adminUrl } from '../../admin-router';
+import { t, tHtml, formatNumber } from '../../service/i18n';
 interface EventDetailData {
     event: AlfioEvent;
     organization: Organization;
@@ -61,12 +62,12 @@ interface WaitingQueueStatus {
 
 function formatLabel(format: string): string {
     if (format === 'IN_PERSON') {
-        return 'In person';
+        return t('admin.event.format.in-person');
     }
     if (format === 'HYBRID') {
-        return 'Hybrid';
+        return t('admin.event.format.hybrid-short');
     }
-    return 'Online';
+    return t('admin.event.format.online');
 }
 
 /**
@@ -75,12 +76,12 @@ function formatLabel(format: string): string {
  */
 export function eventStatusBadge(status: string): StatusBadgeConfig {
     if (status === 'PUBLIC') {
-        return {label: 'Live', variant: 'success', icon: 'eye'};
+        return {label: t('admin.event.status.live'), variant: 'success', icon: 'eye'};
     }
     if (status === 'DISABLED') {
-        return {label: 'Disabled', variant: 'neutral', icon: 'slash-circle'};
+        return {label: t('admin.event.status.disabled'), variant: 'neutral', icon: 'slash-circle'};
     }
-    return {label: 'Unlisted', variant: 'neutral', icon: 'eye-slash'};
+    return {label: t('admin.event.status.unlisted'), variant: 'neutral', icon: 'eye-slash'};
 }
 
 function hasText(value: string | null | undefined): value is string {
@@ -276,7 +277,7 @@ export class EventDetail extends LitElement {
             await EventService.setWaitingQueuePaused(this.eventName, paused);
             this.waitingQueueStatus = {active: true, paused};
         } catch (error) {
-            dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to update the waiting list')}, this);
+            dispatchFeedback({type: 'danger', message: errorMessage(error, t('admin.event-detail.waiting-list.update-failed'))}, this);
         }
     }
 
@@ -292,7 +293,7 @@ export class EventDetail extends LitElement {
         try {
             const info = await fetchJson<{ isDemoMode: boolean }>('/admin/api/utils/alfio/info');
             if (publish && info.isDemoMode) {
-                dispatchFeedback({type: 'danger', message: 'Events cannot be published in demo mode, for privacy reasons'}, this);
+                dispatchFeedback({type: 'danger', message: t('admin.event-detail.demo-mode')}, this);
                 return;
             }
             await EventService.updateStatus(data.event.id, publish);
@@ -302,7 +303,7 @@ export class EventDetail extends LitElement {
             // the event menu shows the status too
             dispatchEventChanged(this.eventName, this);
         } catch (error) {
-            dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to change the event status')}, this);
+            dispatchFeedback({type: 'danger', message: errorMessage(error, t('admin.event-menu.status-change-failed'))}, this);
         } finally {
             this.changingStatus = false;
         }
@@ -330,7 +331,7 @@ export class EventDetail extends LitElement {
         return html`
             <div class="container">
                 ${taskContent(this.loadTask, this.loadTask.value ?? null,
-                    'Failed to load the event. Please try again.',
+                    t('admin.load-error.event-retry'),
                     (data) => this.renderPage(data))}
             </div>
         `;
@@ -343,7 +344,7 @@ export class EventDetail extends LitElement {
             <div class="page-title-row secondary">
                 <h1>${event.displayName}</h1>
                 ${statusBadge(event.status, eventStatusBadge(event.status), 'event-status')}
-                ${when(event.expired, () => html`<sl-badge variant="neutral" pill>Expired</sl-badge>`, () => nothing)}
+                ${when(event.expired, () => html`<sl-badge variant="neutral" pill>${t('admin.event.status.expired')}</sl-badge>`, () => nothing)}
             </div>
             <hr class="page-separator">
             ${this.renderAlerts(data)}
@@ -351,12 +352,12 @@ export class EventDetail extends LitElement {
             ${this.renderEventDetailsCard(data)}
             ${when(hasText(firstText(event.description)) || event.visibleForCurrentUser, () => sectionCard({
                 icon: 'card-text',
-                title: 'Description',
+                title: t('admin.common.description'),
                 actions: this.editButton(event, 'description', 'edit-description'),
             }, html`
                 ${when(hasText(firstText(event.description)),
                     () => html`<alfio-localized-markdown class="event-description" .value=${event.description} .languages=${event.contentLanguages ?? []}></alfio-localized-markdown>`,
-                    () => html`<p class="text-muted">No description yet.</p>`)}
+                    () => html`<p class="text-muted">${t('admin.event-detail.no-description')}</p>`)}
             `), () => nothing)}
             ${this.renderSeatsCard(data)}
             ${when(online, () => html`
@@ -382,17 +383,17 @@ export class EventDetail extends LitElement {
         return html`
             <sl-button id=${id} variant="default" size="small" @click=${() => void this.editSection(section)}>
                 <sl-icon slot="prefix" name="pencil"></sl-icon>
-                Edit
+                ${t('admin.common.edit')}
             </sl-button>
         `;
     }
 
     private renderSectionDialog(event: AlfioEvent): TemplateResult {
-        let label = 'Edit event details';
+        let label = t('admin.event-detail.edit.details');
         if (this.editedSection === 'description') {
-            label = 'Edit description';
+            label = t('admin.event-detail.edit.description');
         } else if (this.editedSection === 'seats') {
-            label = 'Edit seats and payment info';
+            label = t('admin.event-detail.edit.seats');
         }
         // the form is created at every opening, so that it always starts from the saved event
         return html`
@@ -445,12 +446,11 @@ export class EventDetail extends LitElement {
                     <sl-icon slot="icon" name="eye-slash"></sl-icon>
                     <div class="alert-content">
                         <span>
-                            This event is not listed on the public event list. Anyone with the link can buy tickets:
-                            <a href=${publicUrl} target="_blank" rel="noopener">${publicUrl}</a>
+                            ${tHtml('admin.event-detail.unlisted', html`<a href=${publicUrl} target="_blank" rel="noopener">${publicUrl}</a>`)}
                         </span>
                         ${when(event.visibleForCurrentUser, () => html`
                             <sl-button id="publish-now" variant="primary" size="small" ?loading=${this.changingStatus}
-                                       @click=${() => void this.changeStatus(true)}>Publish on the event list</sl-button>
+                                       @click=${() => void this.changeStatus(true)}>${t('admin.event-detail.publish')}</sl-button>
                         `, () => nothing)}
                     </div>
                 </sl-alert>
@@ -461,9 +461,9 @@ export class EventDetail extends LitElement {
                 <sl-alert open variant="success" class="activated-alert" closable @sl-after-hide=${() => { this.justPublished = false; }}>
                     <sl-icon slot="icon" name="check2-circle"></sl-icon>
                     <div class="alert-content">
-                        <span>This event has been successfully published on the event list.</span>
+                        <span>${t('admin.event-detail.published')}</span>
                         <sl-button variant="default" size="small" class="undo-publish" ?loading=${this.changingStatus}
-                                   @click=${() => void this.changeStatus(false)}>Undo</sl-button>
+                                   @click=${() => void this.changeStatus(false)}>${t('admin.common.undo')}</sl-button>
                     </div>
                 </sl-alert>
             `);
@@ -477,13 +477,11 @@ export class EventDetail extends LitElement {
                     <sl-icon slot="icon" name="person-lock"></sl-icon>
                     <div class="alert-content">
                         <span>
-                            Only the members of the group
-                            <a href=${adminUrl(`/group/${event.organizationId}/edit/${event.attendeesList.groupId}`)}>${event.attendeesList.groupName}</a>
-                            can buy tickets for this event.
+                            ${tHtml('admin.event-detail.group-only', html`<a href=${adminUrl(`/group/${event.organizationId}/edit/${event.attendeesList.groupId}`)}>${event.attendeesList.groupName}</a>`)}
                         </span>
                         <sl-button size="small" href=${adminUrl(`/events/${event.shortName}/configuration`)}>
                             <sl-icon slot="prefix" name="wrench"></sl-icon>
-                            Configure
+                            ${t('admin.event.menu.configure')}
                         </sl-button>
                     </div>
                 </sl-alert>
@@ -498,13 +496,13 @@ export class EventDetail extends LitElement {
     private renderWaitingQueueAlert(paused: boolean): TemplateResult {
         let variant: 'primary' | 'warning' = 'primary';
         let icon = 'pause';
-        let label = 'Pause';
-        let message = 'The waiting list is open: people can join it.';
+        let label = t('admin.event-detail.waiting-list.pause');
+        let message = t('admin.event-detail.waiting-list.open');
         if (paused) {
             variant = 'warning';
             icon = 'play';
-            label = 'Resume';
-            message = 'The waiting list is paused: people can\'t join it.';
+            label = t('admin.event-detail.waiting-list.resume');
+            message = t('admin.event-detail.waiting-list.paused');
         }
         return html`
             <sl-alert open variant=${variant} class="waiting-queue-alert">
@@ -528,24 +526,24 @@ export class EventDetail extends LitElement {
         if (data.mapUrl != null) {
             location = html`<a href=${data.mapUrl} target="_blank" rel="noopener">${event.location}</a>`;
         }
-        return sectionCard({icon: 'info-circle', title: 'Event details', actions: this.editButton(event, 'details', 'edit-event')}, html`
+        return sectionCard({icon: 'info-circle', title: t('admin.event-detail.details'), actions: this.editButton(event, 'details', 'edit-event')}, html`
             <div class="event-summary">
                 <div class="event-logo">
-                    ${when(event.fileBlobId != null, () => html`<img src="/file/${event.fileBlobId}" alt="Logo of ${event.displayName}">`, () => nothing)}
+                    ${when(event.fileBlobId != null, () => html`<img src="/file/${event.fileBlobId}" alt=${t('admin.event-detail.logo', event.displayName)}>`, () => nothing)}
                     ${when(event.fileBlobId == null && hasText(event.imageUrl), () => html`<a href=${event.imageUrl!} target="_blank" rel="noopener">${event.imageUrl}</a>`, () => nothing)}
                 </div>
                 ${detailList([
-                    {label: 'Organized by', value: `${data.organization.name} <${data.organization.email}>`},
-                    {label: 'Format', value: formatLabel(event.format)},
-                    event.format !== 'ONLINE' && hasText(event.location) && {label: 'Location', value: location},
-                    {label: 'Time zone', value: event.timeZone},
-                    {label: 'Start', value: html`<alfio-format-date date=${event.formattedBegin} time-zone=${event.timeZone}></alfio-format-date>`},
-                    {label: 'End', value: html`<alfio-format-date date=${event.formattedEnd} time-zone=${event.timeZone}></alfio-format-date>`},
-                    {label: 'Languages', value: languages},
-                    {label: 'Public URL', value: html`<a href=${publicUrl} target="_blank" rel="noopener">${publicUrl}</a>`},
-                    hasText(event.websiteUrl) && {label: 'Website', value: html`<a href=${event.websiteUrl} target="_blank" rel="noopener">${event.websiteUrl}</a>`},
-                    hasText(event.termsAndConditionsUrl) && {label: 'Terms and conditions', value: html`<a href=${event.termsAndConditionsUrl} target="_blank" rel="noopener">${event.termsAndConditionsUrl}</a>`},
-                    hasText(event.privacyPolicyUrl) && {label: 'Privacy policy', value: html`<a href=${event.privacyPolicyUrl} target="_blank" rel="noopener">${event.privacyPolicyUrl}</a>`},
+                    {label: t('admin.event-detail.organized-by'), value: `${data.organization.name} <${data.organization.email}>`},
+                    {label: t('admin.event-detail.format'), value: formatLabel(event.format)},
+                    event.format !== 'ONLINE' && hasText(event.location) && {label: t('admin.event-detail.location'), value: location},
+                    {label: t('admin.event-detail.time-zone'), value: event.timeZone},
+                    {label: t('admin.event-detail.start'), value: html`<alfio-format-date date=${event.formattedBegin} time-zone=${event.timeZone}></alfio-format-date>`},
+                    {label: t('admin.event-detail.end'), value: html`<alfio-format-date date=${event.formattedEnd} time-zone=${event.timeZone}></alfio-format-date>`},
+                    {label: t('admin.event-detail.languages'), value: languages},
+                    {label: t('admin.event-detail.public-url'), value: html`<a href=${publicUrl} target="_blank" rel="noopener">${publicUrl}</a>`},
+                    hasText(event.websiteUrl) && {label: t('admin.event-detail.website'), value: html`<a href=${event.websiteUrl} target="_blank" rel="noopener">${event.websiteUrl}</a>`},
+                    hasText(event.termsAndConditionsUrl) && {label: t('admin.event-detail.terms'), value: html`<a href=${event.termsAndConditionsUrl} target="_blank" rel="noopener">${event.termsAndConditionsUrl}</a>`},
+                    hasText(event.privacyPolicyUrl) && {label: t('admin.event-detail.privacy-policy'), value: html`<a href=${event.privacyPolicyUrl} target="_blank" rel="noopener">${event.privacyPolicyUrl}</a>`},
                 ])}
             </div>
         `);
@@ -565,37 +563,36 @@ export class EventDetail extends LitElement {
             return describePaymentProxy(proxy);
         };
         const paymentMethods = (event.allowedPaymentProxies ?? []).map(describe).join(', ');
-        let ticketPrice = 'Free of charge';
+        let ticketPrice = t('admin.event-detail.free-of-charge');
         if (!event.freeOfCharge) {
             ticketPrice = formatAmount(event.regularPrice, currency);
         }
         let vatLabel = `${event.vatPercentage ?? 0}%`;
         if (event.vatIncluded) {
-            vatLabel += ' (included in the price)';
+            vatLabel = t('admin.event-detail.vat-included', event.vatPercentage ?? 0);
         }
         const subscriptions = event.subscriptionDescriptors ?? [];
-        return sectionCard({icon: 'cash', title: 'Seats and payment info', actions: this.editButton(event, 'seats', 'edit-seats')}, html`
+        return sectionCard({icon: 'cash', title: t('admin.event-detail.seats'), actions: this.editButton(event, 'seats', 'edit-seats')}, html`
             <div class="row seats-body" style="--alfio-row-cols: 2">
                 <div>
                     ${detailList([
-                        {label: 'Ticket price', value: ticketPrice},
-                        !event.freeOfCharge && {label: 'VAT', value: vatLabel},
-                        !event.freeOfCharge && {label: 'Final price', value: formatAmount(event.finalPrice, currency)},
-                        {label: 'Max tickets', value: String(event.availableSeats ?? 0)},
-                        !event.freeOfCharge && {label: 'Payment methods', value: paymentMethods},
+                        {label: t('admin.event-detail.ticket-price'), value: ticketPrice},
+                        !event.freeOfCharge && {label: t('admin.event-detail.vat'), value: vatLabel},
+                        !event.freeOfCharge && {label: t('admin.event-detail.final-price'), value: formatAmount(event.finalPrice, currency)},
+                        {label: t('admin.event-detail.max-tickets'), value: formatNumber(event.availableSeats ?? 0)},
+                        !event.freeOfCharge && {label: t('admin.event-detail.payment-methods'), value: paymentMethods},
                     ])}
                     ${when(!event.freeOfCharge && unavailable.length > 0, () => html`
                         <sl-alert open variant="warning" class="unavailable-payment-methods">
                             <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                            These payment methods don't accept ${currency}:
-                            ${unavailable.map((proxy) => proxy.description).join(', ')}.
-                            Check the <a href=${adminUrl(`/configuration/organization/${event.organizationId}`)}>organization configuration</a>.
+                            ${t('admin.event-detail.unavailable-payment-methods', currency, unavailable.map((proxy) => proxy.description).join(', '))}
+                            ${tHtml('admin.event-detail.check-organization-configuration', html`<a href=${adminUrl(`/configuration/organization/${event.organizationId}`)}>${t('admin.event-detail.organization-configuration-link')}</a>`)}
                         </sl-alert>
                     `, () => nothing)}
                 </div>
                 ${when(subscriptions.length > 0, () => html`
                     <div>
-                        <span class="list-title">Subscriptions accepted</span>
+                        <span class="list-title">${t('admin.event-detail.subscriptions-accepted')}</span>
                         <ul class="subscription-list">
                             ${repeat(subscriptions, (descriptor) => descriptor.id, (descriptor) => html`
                                 <li>

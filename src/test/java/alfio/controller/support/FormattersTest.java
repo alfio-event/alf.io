@@ -24,11 +24,16 @@ import org.junit.jupiter.params.provider.CsvSources;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -52,6 +57,57 @@ class FormattersTest {
         ContentLanguage.ALL_LANGUAGES.forEach(cl ->
             FORMATTER_CODES.forEach(code -> Formatters.formatDateForLocale(now, code, messageSource, (a, b) -> Assertions.assertNotNull(b), cl, true))
         );
+    }
+
+    /**
+     * The "locale" key drives the formatting of dates and numbers, both in the emails (format-date) and in the admin
+     * UI (Intl.NumberFormat / Intl.DateTimeFormat). Every language must define its own value, otherwise it would
+     * silently inherit the English one, and the value must be a BCP 47 tag ("de-DE"), which the browser accepts
+     * while it rejects the Java form "de_DE".
+     */
+    @Test
+    void everyLanguageDefinesAValidFormattingLocale() throws IOException {
+        for (var language : ContentLanguage.ALL_LANGUAGES) {
+            var fileName = "/alfio/i18n/public_" + language.getLanguage() + ".properties";
+            if (language.equals(ContentLanguage.ENGLISH)) {
+                fileName = "/alfio/i18n/public.properties";
+            }
+            var properties = new Properties();
+            try (var stream = getClass().getResourceAsStream(fileName)) {
+                assertNotNull(stream, fileName + " not found");
+                properties.load(new InputStreamReader(stream, StandardCharsets.UTF_8));
+            }
+            var value = properties.getProperty("locale");
+            assertNotNull(value, fileName + " must define the 'locale' key");
+            var locale = Locale.forLanguageTag(value.strip());
+            assertEquals(value.strip(), locale.toLanguageTag(), fileName + ": 'locale' must be a language tag such as de-DE, found '" + value + "'");
+            assertEquals(language.getLanguage(), locale.getLanguage(), fileName + ": 'locale' must match the language of the file");
+            assertFalse(locale.getCountry().isEmpty(), fileName + ": 'locale' must include the country, e.g. de-DE");
+        }
+    }
+
+    /**
+     * The server reads every text with MessageFormat (alwaysUseMessageFormat): a text it cannot parse, such as
+     * i18next's "{{count}}", would break the translations of the whole admin and public frontend for that language.
+     */
+    @Test
+    void everyTextIsAValidMessageFormat() throws IOException {
+        for (var language : ContentLanguage.ALL_LANGUAGES) {
+            var fileName = "/alfio/i18n/public_" + language.getLanguage() + ".properties";
+            if (language.equals(ContentLanguage.ENGLISH)) {
+                fileName = "/alfio/i18n/public.properties";
+            }
+            var properties = new Properties();
+            try (var stream = getClass().getResourceAsStream(fileName)) {
+                assertNotNull(stream, fileName + " not found");
+                properties.load(new InputStreamReader(stream, StandardCharsets.UTF_8));
+            }
+            for (var key : properties.stringPropertyNames()) {
+                var text = properties.getProperty(key);
+                var file = fileName;
+                assertDoesNotThrow(() -> new MessageFormat(text, language.locale()), () -> file + ": " + key + " is not a valid MessageFormat: " + text);
+            }
+        }
     }
 
     @Test

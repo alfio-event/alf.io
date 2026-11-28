@@ -5,6 +5,7 @@ import {
     SubscriptionPayload,
     SubscriptionWithStatistics
 } from "../model/subscription-descriptor.ts";
+import { t } from './i18n';
 
 export class SubscriptionService {
 
@@ -26,7 +27,7 @@ export class SubscriptionService {
     static async create(organizationId: number, payload: SubscriptionPayload): Promise<string> {
         const response = await postJson(`/admin/api/organization/${organizationId}/subscription`, payload);
         if (!response.ok) {
-            throw new Error(await response.text() || `unexpected status ${response.status}`);
+            throw new Error(await response.text() || t('admin.error.unexpected-status', response.status));
         }
         // the backend returns the id as a JSON string
         return await response.json();
@@ -35,7 +36,7 @@ export class SubscriptionService {
     static async update(organizationId: number, subscriptionId: string, payload: SubscriptionPayload): Promise<void> {
         const response = await postJson(`/admin/api/organization/${organizationId}/subscription/${subscriptionId}`, payload);
         if (!response.ok) {
-            throw new Error(await response.text() || `unexpected status ${response.status}`);
+            throw new Error(await response.text() || t('admin.error.unexpected-status', response.status));
         }
     }
 
@@ -43,7 +44,7 @@ export class SubscriptionService {
         const response = await patchJson(
             `/admin/api/organization/${organizationId}/subscription/${subscriptionId}/is-public?status=${isPublic}`, null);
         if (!response.ok) {
-            throw new Error(await response.text() || `unexpected status ${response.status}`);
+            throw new Error(await response.text() || t('admin.error.unexpected-status', response.status));
         }
         return response.json();
     }

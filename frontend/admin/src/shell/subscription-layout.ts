@@ -6,6 +6,7 @@ import { RoutedSubscription, SUBSCRIPTION_ROUTES } from '../admin-routes';
 import { SubscriptionDescriptorService } from '../service/subscription-descriptor';
 import { taskContent } from '../components/task-content';
 import { firstLocalized } from '../model/poll';
+import { t } from '../service/i18n';
 
 /**
  * The pages of a subscription (/admin/subscriptions/{organizationId}/{subscriptionId}/…), inside
@@ -19,7 +20,7 @@ export class SubscriptionLayout extends LitElement {
 
     private readonly routes = createChildRoutes(this, SUBSCRIPTION_ROUTES.map(route => ({
         path: route.path,
-        render: (params) => taskContent(this.loadTask, this.currentSubscription(), 'Failed to load the subscription',
+        render: (params) => taskContent(this.loadTask, this.currentSubscription(), t('admin.load-error.subscription'),
             (subscription) => route.render(params, subscription)),
     })), () => `/subscriptions/${this.organizationId}/${this.subscriptionId}/reservations/`);
 

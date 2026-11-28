@@ -31,6 +31,7 @@
     "@tiptap/starter-kit": "^3.33.0",
     "chart.js": "^4.6.1",
     "codemirror": "^6.0.0",
+    "i18next": "27.1.1",
     "lit": "3.3.2",
     "papaparse": "^5.5.4",
     "urlpattern-polyfill": "10.1.0"

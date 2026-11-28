@@ -6,6 +6,7 @@ import type {SlDialog} from '@shoelace-style/shoelace';
 import {EventSubscriptionLink} from '../model/subscription-descriptor.ts';
 import {formatAmount} from '../service/reservation-format.ts';
 import {badges, dialog, modernLayout, modernTable, row} from '../styles.ts';
+import { t } from '../service/i18n';
 
 /**
  * Shows the events linked to a subscription. The content is set by show(), so that every
@@ -31,7 +32,7 @@ export class LinkedEventsDialog extends LitElement {
     render(): TemplateResult {
         const links = this.links ?? [];
         return html`
-            <sl-dialog class="responsive-dialog" label="Linked events" @sl-after-hide=${this.onAfterHide}>
+            <sl-dialog class="responsive-dialog" label=${t('admin.subscriptions.linked-events')} @sl-after-hide=${this.onAfterHide}>
                 ${when(this.links == null,
                     () => html`<div class="dialog-loading"><sl-spinner></sl-spinner></div>`,
                     () => html`
@@ -39,8 +40,8 @@ export class LinkedEventsDialog extends LitElement {
                             <table class="table">
                                 <thead>
                                 <tr>
-                                    <th scope="col">Name</th>
-                                    <th scope="col">Price per ticket</th>
+                                    <th scope="col">${t('admin.common.name')}</th>
+                                    <th scope="col">${t('admin.subscriptions.price-per-ticket')}</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -57,7 +58,7 @@ export class LinkedEventsDialog extends LitElement {
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => this.dialog.hide()}>Close</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.dialog.hide()}>${t('admin.common.close')}</sl-button>
                     </div>
                 </div>
             </sl-dialog>

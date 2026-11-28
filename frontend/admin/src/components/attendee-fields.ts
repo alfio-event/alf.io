@@ -3,6 +3,7 @@ import {repeat} from 'lit/directives/repeat.js';
 import {when} from 'lit/directives/when.js';
 import type {SlCheckbox, SlInput, SlSelect, SlTextarea} from '@shoelace-style/shoelace';
 import {AdditionalField} from '../model/additional-field.ts';
+import { t } from '../service/i18n';
 
 /**
  * Values of the additional fields of an attendee: field name -> values.
@@ -167,7 +168,7 @@ function renderCountry(field: AdditionalField,
         `,
         () => html`
             <sl-input class="attendee-field" data-field=${field.name} label=${label} size=${options.size ?? 'medium'} maxlength="2"
-                      help-text="ISO country code" .value=${value}
+                      help-text=${t('admin.attendee-fields.iso-country-code')} .value=${value}
                       @sl-input=${(e: Event) => update([(e.target as SlInput).value.toUpperCase()])}></sl-input>
         `)}`;
 }

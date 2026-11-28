@@ -6,6 +6,7 @@ import {base, dialog, modernLayout, retroCompat, row} from '../styles.ts';
 import {Ticket} from '../model/reservation-detail.ts';
 import {dialogTitle, PromptDialog} from '../components/prompt-dialog.ts';
 import {formatFullName} from '../service/reservation-format.ts';
+import { t } from '../service/i18n';
 
 export interface AttendeesByCategory {
     name: string;
@@ -59,10 +60,10 @@ export class NotifyAttendeesDialog extends PromptDialog<number[]> {
 
     render(): TemplateResult {
         return html`
-            <sl-dialog class="responsive-dialog" label="Send tickets via e-mail"
+            <sl-dialog class="responsive-dialog" label=${t('admin.notify-attendees.title')}
                        @sl-request-close=${this.onRequestClose}
                        @sl-after-hide=${this.onAfterHide}>
-                ${dialogTitle('envelope', 'Send tickets via e-mail', 'Select the attendees who will receive their ticket.')}
+                ${dialogTitle('envelope', t('admin.notify-attendees.title'), t('admin.notify-attendees.description'))}
                 <div class="dialog-form form-stack">
                     ${repeat(this.categories, (category) => category.name, (category) => html`
                         <div class="section-card">
@@ -79,18 +80,18 @@ export class NotifyAttendeesDialog extends PromptDialog<number[]> {
                         </div>
                     `)}
                     <div class="selection">
-                        <sl-button variant="text" size="small" @click=${() => this.selectAll(true)}>Select all</sl-button>
-                        <sl-button variant="text" size="small" @click=${() => this.selectAll(false)}>Select none</sl-button>
+                        <sl-button variant="text" size="small" @click=${() => this.selectAll(true)}>${t('admin.common.select-all')}</sl-button>
+                        <sl-button variant="text" size="small" @click=${() => this.selectAll(false)}>${t('admin.common.select-none')}</sl-button>
                     </div>
                 </div>
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => this.close(null)}>Cancel</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.close(null)}>${t('admin.common.cancel')}</sl-button>
                         <div></div>
                         <sl-button variant="warning" size="large" ?disabled=${this.selected.size === 0}
                                    @click=${() => this.close([...this.selected])}>
-                            Send
+                            ${t('admin.compose.send')}
                         </sl-button>
                     </div>
                 </div>

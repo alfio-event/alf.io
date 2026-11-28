@@ -26,6 +26,7 @@ import {
     validateWith,
 } from '../components/form-validation.ts';
 import { navigate, adminUrl } from '../admin-router';
+import { t, tHtml } from '../service/i18n';
 
 /**
  * A member of the group being edited. A member already saved on the server has an id and is
@@ -52,10 +53,7 @@ function emptyFormValues(): GroupFormValues {
 }
 
 function skippedRowsWarning(skippedRows: number): string {
-    if (skippedRows === 1) {
-        return '1 row was skipped because it does not contain a valid e-mail address.';
-    }
-    return `${skippedRows} rows were skipped because they do not contain a valid e-mail address.`;
+    return t('admin.group.csv.skipped', { count: skippedRows });
 }
 
 type MembersInputMode = 'manual' | 'csv';
@@ -64,14 +62,14 @@ const MEMBERS_INPUT_MODES: ChoiceCardOption<MembersInputMode>[] = [
     {
         value: 'manual',
         icon: 'person-vcard',
-        title: 'Insert manually',
-        description: 'Type the e-mail addresses of the members, one by one.',
+        title: t('admin.reservation-create.attendees.manual'),
+        description: t('admin.group.manual.description'),
     },
     {
         value: 'csv',
         icon: 'filetype-csv',
-        title: 'Upload CSV',
-        description: 'Import the members from a file, then review them before saving.',
+        title: t('admin.reservation-create.attendees.csv'),
+        description: t('admin.group.csv.description'),
     },
 ];
 
@@ -209,18 +207,18 @@ export class GroupEdit extends LitElement {
     render(): TemplateResult {
         return html`
             <div class="page-title-row secondary">
-                <h1>${when(this.createNew, () => 'Create new', () => 'Edit')} group</h1>
+                <h1>${when(this.createNew, () => t('admin.group.create'), () => t('admin.page-title.edit-group'))}</h1>
                 ${when(!this.createNew,
                     () => html`
                         <sl-button id="delete-group" variant="danger" @click=${this.deleteGroup}>
-                            <sl-icon slot="prefix" name="trash"></sl-icon>Delete
+                            <sl-icon slot="prefix" name="trash"></sl-icon>${t('admin.common.delete')}
                         </sl-button>
                     `,
                     () => nothing)}
             </div>
             <hr class="page-separator">
             ${taskContent(this.loadGroupTask, this.loadGroupTask.value ?? null,
-                'Failed to load the group. Please try again.',
+                t('admin.group.load-failed'),
                 () => this.renderForm())}
         `;
     }
@@ -230,23 +228,23 @@ export class GroupEdit extends LitElement {
         const items = this.#form.api.state.values.items;
         return html`
             <form novalidate @submit=${this.submit}>
-                ${sectionCard({icon: 'info-circle', title: 'Group details'}, html`
+                ${sectionCard({icon: 'info-circle', title: t('admin.group.details')}, html`
                     <div class="row" style="--alfio-row-cols: 2">
                         ${this.#form.field({name: 'name', validators: validateWith(requiredValue)},
-                            field => validatedInput(field, submitted, {id: 'group-name', label: 'Name', prefixIcon: 'tag'}))}
+                            field => validatedInput(field, submitted, {id: 'group-name', label: t('admin.common.name'), prefixIcon: 'tag'}))}
                         ${this.#form.field({name: 'description', validators: validateWith(requiredValue)},
-                            field => validatedInput(field, submitted, {id: 'group-description', label: 'Description', prefixIcon: 'card-text'}))}
+                            field => validatedInput(field, submitted, {id: 'group-description', label: t('admin.common.description'), prefixIcon: 'card-text'}))}
                     </div>
                 `)}
                 ${sectionCard({
                     icon: 'people',
-                    title: 'Members',
+                    title: t('admin.group.members'),
                     badge: html`<sl-badge id="members-count" variant="primary" pill>${items.length}</sl-badge>`,
                 }, html`
                     ${choiceCards({
                         name: 'members-input-mode',
                         className: 'members-input-mode',
-                        label: 'How do you want to add the members?',
+                        label: t('admin.group.members.question'),
                         value: this.membersMode,
                         options: MEMBERS_INPUT_MODES,
                         panel: html`
@@ -267,9 +265,9 @@ export class GroupEdit extends LitElement {
                 <div class="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" href=${adminUrl(`/group/${this.organizationId}/all`)}>Cancel</sl-button>
+                        <sl-button variant="default" size="large" href=${adminUrl(`/group/${this.organizationId}/all`)}>${t('admin.common.cancel')}</sl-button>
                         <div></div>
-                        <sl-button id="save-group" type="submit" variant="warning" size="large" ?loading=${this.saving}>Save</sl-button>
+                        <sl-button id="save-group" type="submit" variant="warning" size="large" ?loading=${this.saving}>${t('admin.common.save')}</sl-button>
                     </div>
                 </div>
             </form>
@@ -285,7 +283,7 @@ export class GroupEdit extends LitElement {
             <div class="members">
                 ${repeat(items, (_, index) => index, (item, index) => this.renderMember(item, index, submitted))}
                 <sl-button id="add-member" class="add-member" variant="text" @click=${this.addMember}>
-                    <sl-icon slot="prefix" name="plus-circle"></sl-icon>Add member
+                    <sl-icon slot="prefix" name="plus-circle"></sl-icon>${t('admin.group.add-member')}
                 </sl-button>
             </div>
         `;
@@ -302,7 +300,7 @@ export class GroupEdit extends LitElement {
                 `,
                 () => nothing)}
             ${csvImport({
-                templateDescription: 'A CSV file with a header row and one member per row: the e-mail address and an optional description.',
+                templateDescription: t('admin.group.csv.template'),
                 onDownloadTemplate: () => downloadCsv('group-members.csv', GroupService.csvTemplate()),
                 onFileChange: (e: FileUploadChangeEvent) => this.onCsvFileChange(e),
                 error: this.csvError,
@@ -328,7 +326,7 @@ export class GroupEdit extends LitElement {
                     field => validatedInput(field, submitted, {
                         id: `member-email-${index}`,
                         className: `member-email ${labelClass}`.trim(),
-                        label: 'E-mail',
+                        label: t('admin.common.email'),
                         type: 'email',
                         prefixIcon: 'envelope',
                         readonly: saved,
@@ -337,7 +335,7 @@ export class GroupEdit extends LitElement {
                     field => validatedInput(field, submitted, {
                         id: `member-description-${index}`,
                         className: `member-description ${labelClass}`.trim(),
-                        label: 'Description',
+                        label: t('admin.common.description'),
                         optional: true,
                         prefixIcon: 'card-text',
                         readonly: saved,
@@ -347,11 +345,11 @@ export class GroupEdit extends LitElement {
                         <sl-button class="deactivate-member" variant="danger" size="small"
                                    ?disabled=${itemsCount <= 1}
                                    @click=${() => this.deactivateMember(item)}>
-                            <sl-icon slot="prefix" name="trash"></sl-icon>Delete
+                            <sl-icon slot="prefix" name="trash"></sl-icon>${t('admin.common.delete')}
                         </sl-button>
                     `,
                     () => html`
-                        <sl-icon-button class="remove-member" name="trash" label=${`Remove member ${index + 1}`}
+                        <sl-icon-button class="remove-member" name="trash" label=${t('admin.group.remove-member', index + 1)}
                                         ?disabled=${itemsCount <= 1}
                                         @click=${() => this.removeMember(index)}></sl-icon-button>
                     `)}
@@ -363,16 +361,16 @@ export class GroupEdit extends LitElement {
         return html`
             <div class="bulk-specs">
                 <p class="text-muted">
-                    The template already follows these rules: you need them only if your file is generated by another system.
+                    ${t('admin.csv-import.specs.template')}
                 </p>
                 <p class="text-muted">
-                    A CSV file <strong>with header</strong>, using commas (<code>,</code>) as separator and double quotes (<code>"</code>) as quote character.
-                    Double quotes within a value are written twice (<code>""</code>).
+                    ${tHtml('admin.csv-import.specs.format', html`<strong>${t('admin.csv-import.specs.with-header')}</strong>`, html`<code>,</code>`, html`<code>"</code>`)}
+                    ${tHtml('admin.csv-import.specs.quotes', html`<code>""</code>`)}
                 </p>
                 <pre><span id="template-header">"email","description"</span>
 
-email: required, the allowed e-mail address
-description: optional, for internal usage</pre>
+${t('admin.group.csv.email-column')}
+${t('admin.group.csv.description-column')}</pre>
             </div>
         `;
     }
@@ -416,9 +414,9 @@ description: optional, for internal usage</pre>
             const parsed = GroupService.parseCsv(await file.text());
             if (parsed.items.length === 0) {
                 if (parsed.skippedRows > 0) {
-                    this.csvError = `All ${parsed.skippedRows} rows were skipped because they do not contain a valid e-mail address.`;
+                    this.csvError = t('admin.group.csv.all-skipped', { count: parsed.skippedRows });
                 } else {
-                    this.csvError = 'The file does not contain any member.';
+                    this.csvError = t('admin.group.csv.empty');
                 }
                 return;
             }
@@ -430,16 +428,12 @@ description: optional, for internal usage</pre>
                 description: item.description ?? '',
             }));
             this.#form.api.setFieldValue('items', [...current, ...imported], {dontUpdateMeta: true});
-            if (imported.length === 1) {
-                this.csvMessage = `1 member has been imported from ${file.name}. Please review it in the manual list before saving.`;
-            } else {
-                this.csvMessage = `${imported.length} members have been imported from ${file.name}. Please review them in the manual list before saving.`;
-            }
+            this.csvMessage = t('admin.group.csv.imported', { count: imported.length, 1: file.name });
             if (parsed.skippedRows > 0) {
                 this.csvWarning = skippedRowsWarning(parsed.skippedRows);
             }
         } catch (error) {
-            this.csvError = errorMessage(error, 'The file could not be read. Please check the specifications below.');
+            this.csvError = errorMessage(error, t('admin.group.csv.read-failed'));
         }
     }
 
@@ -483,14 +477,14 @@ description: optional, for internal usage</pre>
             };
             if (this.createNew) {
                 await GroupService.create(this.organizationId, payload);
-                dispatchFeedback({type: 'success', message: `Group ${values.name} successfully created`}, this);
+                dispatchFeedback({type: 'success', message: t('admin.group.created', values.name)}, this);
             } else {
                 await GroupService.update(this.organizationId, this.groupId, payload);
-                dispatchFeedback({type: 'success', message: `Group ${values.name} successfully updated`}, this);
+                dispatchFeedback({type: 'success', message: t('admin.group.updated', values.name)}, this);
             }
             navigate(`/group/${this.organizationId}/all`);
         } catch (error) {
-            dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to save the group')}, this);
+            dispatchFeedback({type: 'danger', message: errorMessage(error, t('admin.group.save-failed'))}, this);
         } finally {
             this.saving = false;
         }
@@ -499,18 +493,18 @@ description: optional, for internal usage</pre>
     private deleteGroup = async (): Promise<void> => {
         const name = this.#form.api.state.values.name;
         const confirmed = await ConfirmationDialogService.requestConfirm(
-            'Delete group',
-            `The group ${name} will be deleted.`,
+            t('admin.group.delete.title'),
+            t('admin.group.delete.text', name),
             'danger');
         if (!confirmed) {
             return;
         }
         try {
             await GroupService.deactivateGroup(this.organizationId, this.groupId);
-            dispatchFeedback({type: 'success', message: `Group ${name} successfully deleted`}, this);
+            dispatchFeedback({type: 'success', message: t('admin.group.deleted', name)}, this);
             navigate(`/group/${this.organizationId}/all`);
         } catch (error) {
-            dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to delete the group')}, this);
+            dispatchFeedback({type: 'danger', message: errorMessage(error, t('admin.group.error.delete'))}, this);
         }
     };
 
@@ -519,19 +513,19 @@ description: optional, for internal usage</pre>
             return;
         }
         const confirmed = await ConfirmationDialogService.requestConfirm(
-            'Remove member',
-            `${item.value} will be removed from the group.`,
+            t('admin.group.remove-member.title'),
+            t('admin.group.remove-member.text', item.value),
             'danger');
         if (!confirmed) {
             return;
         }
         try {
             await GroupService.deactivateMember(this.organizationId, this.groupId, item.id);
-            dispatchFeedback({type: 'success', message: `${item.value} successfully removed`}, this);
+            dispatchFeedback({type: 'success', message: t('admin.group.member-removed', item.value)}, this);
             // reload the group, as the member is gone from the server
             this.loadGroupTask.run();
         } catch (error) {
-            dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to remove the member')}, this);
+            dispatchFeedback({type: 'danger', message: errorMessage(error, t('admin.group.error.remove-member'))}, this);
         }
     };
 

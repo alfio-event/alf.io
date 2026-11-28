@@ -198,7 +198,7 @@ public class DataSourceConfiguration {
     public MessageSourceManager messageSourceManager(ConfigurationRepository configurationRepository) {
 
         var source = new CustomResourceBundleMessageSource();
-        source.setBasenames("alfio.i18n.public", "alfio.i18n.admin");
+        source.setBasenames("alfio.i18n.public");
         source.setDefaultEncoding(StandardCharsets.UTF_8.displayName());
         //since we have all the english translations in the default file, we don't need
         //the fallback to the system locale.

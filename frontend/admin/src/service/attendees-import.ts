@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import {AttendeesImportRequest, AttendeesImportStats, ImportedAttendee, ParsedAttendees} from '../model/attendees-import.ts';
 import { postJson, result, adminFetch } from './helpers.ts';
+import { t } from './i18n';
 
 export const REQUIRED_COLUMNS = ['firstName', 'lastName', 'email', 'lang'];
 // the attendee ID in the organizer's system
@@ -53,7 +54,7 @@ export class AttendeesImportService {
         });
         const [header = [], ...rows] = parsed.data;
         if (header.length < FIXED_COLUMNS) {
-            throw new Error(`The file must have at least ${FIXED_COLUMNS} columns: ${REQUIRED_COLUMNS.join(', ')}`);
+            throw new Error(t('admin.reservation-import.error.min-columns', FIXED_COLUMNS, REQUIRED_COLUMNS.join(', ')));
         }
         const fieldNames = header.map(name => name.trim());
         const attendees: ImportedAttendee[] = [];

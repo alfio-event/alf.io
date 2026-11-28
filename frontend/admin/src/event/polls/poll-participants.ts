@@ -15,6 +15,7 @@ import {taskContent} from '../../components/task-content.ts';
 import {sectionCard} from '../../components/section-card.ts';
 import {badges, base, dialog, form, modernLayout, modernTable, purchaseContextListPage, retroCompat, row, textColors} from '../../styles.ts';
 import { adminUrl } from '../../admin-router';
+import { t, tHtml } from '../../service/i18n';
 
 const SEARCH_DELAY_MS = 300;
 
@@ -89,10 +90,10 @@ export class PollParticipants extends LitElement {
 
     render(): TemplateResult {
         return html`
-            ${taskContent(this.loadDataTask, this.lastData, 'Failed to load the participants. Please try again.', (data) =>
+            ${taskContent(this.loadDataTask, this.lastData, t('admin.poll-participants.load-failed'), (data) =>
                 this.renderContent(data),
             )}
-            <sl-dialog class="responsive-dialog add-participants" label="Add participants" style="--alfio-dialog-max-width: 60rem"
+            <sl-dialog class="responsive-dialog add-participants" label=${t('admin.poll-participants.add')} style="--alfio-dialog-max-width: 60rem"
                        ?open=${this.dialogOpen}
                        @sl-request-close=${this.onRequestClose}
                        @sl-hide=${() => this.closeDialog()}>
@@ -108,13 +109,13 @@ export class PollParticipants extends LitElement {
         return html`
             <div class="container">
                 <div class="page-title-row">
-                    <h1>Participants – <i>${firstLocalized(poll.title, firstLocale)}</i></h1>
+                    <h1>${tHtml('admin.poll-participants.title', html`<i>${firstLocalized(poll.title, firstLocale)}</i>`)}</h1>
                 </div>
                 <hr class="page-separator" />
-                <p class="page-description text-muted">View and add participants to the poll.</p>
+                <p class="page-description text-muted">${t('admin.poll-participants.description')}</p>
                 <div class="filter-toolbar">
                     <div class="filter-left">
-                        <sl-input class="filter-input label-hidden" label="Filter participants" placeholder="Filter participants"
+                        <sl-input class="filter-input label-hidden" label=${t('admin.poll-participants.filter')} placeholder=${t('admin.poll-participants.filter')}
                                   clearable .value=${this.filter} @sl-input=${(e: Event) => { this.filter = (e.target as SlInput).value; }}
                                   @sl-clear=${() => { this.filter = ''; }}>
                             <sl-icon slot="prefix" name="search"></sl-icon>
@@ -123,47 +124,47 @@ export class PollParticipants extends LitElement {
                     <div class="filter-right">
                         <sl-button class="add-participants-btn" variant="success" size="large" @click=${() => this.openDialog()}>
                             <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-                            Add participants
+                            ${t('admin.poll-participants.add')}
                         </sl-button>
                     </div>
                 </div>
                 ${sectionCard({
                     icon: 'people',
-                    title: 'Participants',
+                    title: t('admin.poll.participants'),
                     badge: html`<sl-badge variant="primary" pill>${data.participants.length}</sl-badge>`,
                 }, html`
                     ${when(data.participants.length === 0,
-                        () => emptyState('No participant added yet'),
+                        () => emptyState(t('admin.poll-participants.none')),
                         () => when(filtered.length === 0,
-                            () => emptyState('No results found'),
+                            () => emptyState(t('admin.poll-participants.no-results')),
                             () => html`
                                 <div class="table-responsive">
                                     <table class="table table-striped participants-table table-stacked">
                                         <thead>
                                             <tr>
                                                 <th>#</th>
-                                                <th>First name</th>
-                                                <th>Last name</th>
-                                                <th>E-Mail</th>
-                                                <th class="hide-small">Ticket category</th>
-                                                <th><span class="sr-only">Actions</span></th>
+                                                <th>${t('admin.common.first-name')}</th>
+                                                <th>${t('admin.common.last-name')}</th>
+                                                <th>${t('admin.common.email')}</th>
+                                                <th class="hide-small">${t('admin.attendees-import.category')}</th>
+                                                <th><span class="sr-only">${t('admin.common.actions')}</span></th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             ${repeat(filtered, (p) => p.id, (p, index) => html`
                                                 <tr data-participant-id=${p.id}>
                                                     <td data-label="#">${index + 1}</td>
-                                                    <td data-label="First name">${p.firstName}</td>
-                                                    <td data-label="Last name">${p.lastName}</td>
-                                                    <td data-label="E-Mail">${p.emailAddress}</td>
-                                                    <td class="hide-small" data-label="Ticket category">${p.categoryName}</td>
+                                                    <td data-label=${t('admin.common.first-name')}>${p.firstName}</td>
+                                                    <td data-label=${t('admin.common.last-name')}>${p.lastName}</td>
+                                                    <td data-label=${t('admin.common.email')}>${p.emailAddress}</td>
+                                                    <td class="hide-small" data-label=${t('admin.attendees-import.category')}>${p.categoryName}</td>
                                                     <td class="actions-cell">
                                                         <sl-button class="remove-participant" size="small" variant="danger" outline
                                                                    ?disabled=${this.busyId != null}
                                                                    ?loading=${this.busyId === p.id}
                                                                    @click=${() => void this.removeParticipant(p)}>
                                                             <sl-icon slot="prefix" name="trash"></sl-icon>
-                                                            Remove
+                                                            ${t('admin.common.remove')}
                                                         </sl-button>
                                                     </td>
                                                 </tr>
@@ -175,7 +176,7 @@ export class PollParticipants extends LitElement {
                 `)}
                 <sl-divider></sl-divider>
                 <div class="row" style="--alfio-row-cols: 3">
-                    <sl-button variant="default" size="large" href=${adminUrl(`/events/${this.eventName}/polls/view/${poll.id}`)}>Back</sl-button>
+                    <sl-button variant="default" size="large" href=${adminUrl(`/events/${this.eventName}/polls/view/${poll.id}`)}>${t('admin.common.back')}</sl-button>
                     <div></div>
                     <div></div>
                 </div>
@@ -186,7 +187,7 @@ export class PollParticipants extends LitElement {
     private renderDialog(): TemplateResult {
         const allSelected = this.results.length > 0 && this.results.every((p) => this.selected.has(p.id));
         return html`
-            <sl-input label="Search by name or email address" placeholder="Enter name or email address" clearable
+            <sl-input label=${t('admin.poll-participants.search')} placeholder=${t('admin.poll-participants.search.placeholder')} clearable
                       .value=${this.searchTerm} @sl-input=${this.onSearchInput} @sl-clear=${this.onSearchInput}>
                 <sl-icon slot="prefix" name="search"></sl-icon>
                 ${when(this.searching, () => html`<sl-spinner slot="suffix"></sl-spinner>`)}
@@ -196,12 +197,12 @@ export class PollParticipants extends LitElement {
                     <table class="table table-striped search-results">
                         <thead>
                             <tr>
-                                <th>First name</th>
-                                <th>Last name</th>
-                                <th>E-Mail</th>
-                                <th class="hide-small">Ticket category</th>
+                                <th>${t('admin.common.first-name')}</th>
+                                <th>${t('admin.common.last-name')}</th>
+                                <th>${t('admin.common.email')}</th>
+                                <th class="hide-small">${t('admin.attendees-import.category')}</th>
                                 <th>
-                                    <sl-checkbox ?checked=${allSelected} aria-label="Select all"
+                                    <sl-checkbox ?checked=${allSelected} aria-label=${t('admin.common.select-all')}
                                                  @sl-change=${(e: Event) => this.toggleAll((e.target as SlCheckbox).checked)}></sl-checkbox>
                                 </th>
                             </tr>
@@ -214,7 +215,7 @@ export class PollParticipants extends LitElement {
                                     <td>${p.emailAddress}</td>
                                     <td class="hide-small">${p.categoryName}</td>
                                     <td>
-                                        <sl-checkbox ?checked=${this.selected.has(p.id)} aria-label=${`Select ${p.firstName} ${p.lastName}`}
+                                        <sl-checkbox ?checked=${this.selected.has(p.id)} aria-label=${t('admin.poll-participants.select', `${p.firstName} ${p.lastName}`)}
                                                      @sl-change=${(e: Event) => this.toggle(p, (e.target as SlCheckbox).checked)}></sl-checkbox>
                                     </td>
                                 </tr>
@@ -222,17 +223,17 @@ export class PollParticipants extends LitElement {
                         </tbody>
                     </table>
                 </div>
-            `, () => when(this.searchTerm.trim() !== '', () => html`<p class="text-muted">No attendees found.</p>`, () => nothing))}
+            `, () => when(this.searchTerm.trim() !== '', () => html`<p class="text-muted">${t('admin.poll-participants.no-attendees')}</p>`, () => nothing))}
             <div slot="footer">
                 <sl-divider></sl-divider>
                 <div class="row" style="--alfio-row-cols: 3">
-                    <sl-button variant="default" size="large" @click=${() => this.closeDialog()}>Close</sl-button>
+                    <sl-button variant="default" size="large" @click=${() => this.closeDialog()}>${t('admin.common.close')}</sl-button>
                     <div></div>
                     <sl-button class="confirm-add" variant="warning" size="large"
                                ?disabled=${this.selected.size === 0}
                                ?loading=${this.adding}
                                @click=${() => void this.addSelected()}>
-                        Add${this.selected.size > 0 ? ` (${this.selected.size})` : ''}
+                        ${when(this.selected.size > 0, () => t('admin.poll-participants.add-count', this.selected.size), () => t('admin.common.add'))}
                     </sl-button>
                 </div>
             </div>
@@ -259,9 +260,9 @@ export class PollParticipants extends LitElement {
             if (this.lastData != null) {
                 this.lastData = { ...this.lastData, participants: remaining };
             }
-            dispatchFeedback({ type: 'success', message: `${participant.firstName} ${participant.lastName} removed.` }, this);
+            dispatchFeedback({ type: 'success', message: t('admin.poll-participants.removed', `${participant.firstName} ${participant.lastName}`) }, this);
         } catch (e) {
-            dispatchFeedback({ type: 'danger', message: errorMessage(e, 'Failed to remove the participant') }, this);
+            dispatchFeedback({ type: 'danger', message: errorMessage(e, t('admin.poll-participants.remove-failed')) }, this);
         } finally {
             this.busyId = null;
         }
@@ -310,7 +311,7 @@ export class PollParticipants extends LitElement {
         try {
             this.results = await PollService.searchTickets(this.eventName, this.pollId, term);
         } catch (e) {
-            dispatchFeedback({ type: 'danger', message: errorMessage(e, 'Failed to search the attendees') }, this);
+            dispatchFeedback({ type: 'danger', message: errorMessage(e, t('admin.poll-participants.search-failed')) }, this);
         } finally {
             this.searching = false;
         }
@@ -345,11 +346,11 @@ export class PollParticipants extends LitElement {
         this.adding = true;
         try {
             await PollService.addParticipants(this.eventName, this.pollId, [...this.selected]);
-            dispatchFeedback({ type: 'success', message: `${this.selected.size} participant${this.selected.size === 1 ? '' : 's'} added.` }, this);
+            dispatchFeedback({ type: 'success', message: t('admin.poll-participants.added', { count: this.selected.size }) }, this);
             this.closeDialog();
             void this.loadDataTask.run();
         } catch (e) {
-            dispatchFeedback({ type: 'danger', message: errorMessage(e, 'Failed to add the participants') }, this);
+            dispatchFeedback({ type: 'danger', message: errorMessage(e, t('admin.poll-participants.add-failed')) }, this);
         } finally {
             this.adding = false;
         }

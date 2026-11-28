@@ -6,6 +6,7 @@ import type {SlCheckbox, SlDialog, SlRadioGroup} from '@shoelace-style/shoelace'
 import {EventService, ExportField} from '../../service/event.ts';
 import {errorMessage} from '../../service/helpers.ts';
 import {dialog, row} from '../../styles.ts';
+import { t } from '../../service/i18n';
 
 export type ExportKind = 'attendees' | 'waiting-list';
 
@@ -71,15 +72,15 @@ export class EventExportDialog extends LitElement {
             try {
                 this.fields = await EventService.loadExportFields(eventName);
             } catch (error) {
-                this.loadError = errorMessage(error, 'Failed to load the fields');
+                this.loadError = errorMessage(error, t('admin.load-error.fields'));
             }
         }
     }
 
     render(): TemplateResult {
-        let label = 'Download the waiting list';
+        let label = t('admin.event-menu.export.waiting-list');
         if (this.kind === 'attendees') {
-            label = "Download the attendees' data";
+            label = t('admin.event-menu.export.attendees');
         }
         return html`
             <sl-dialog class="responsive-dialog" label=${label} style="--alfio-dialog-max-width: 48rem"
@@ -88,13 +89,13 @@ export class EventExportDialog extends LitElement {
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => void this.dialog.hide()}>Close</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => void this.dialog.hide()}>${t('admin.common.close')}</sl-button>
                         <div></div>
                         <sl-button id="export-download" variant="warning" size="large"
                                    ?disabled=${this.kind === 'attendees' && this.selected.size === 0}
                                    @click=${this.download}>
                             <sl-icon slot="prefix" name="download"></sl-icon>
-                            Download
+                            ${t('admin.event.menu.download')}
                         </sl-button>
                     </div>
                 </div>
@@ -105,7 +106,7 @@ export class EventExportDialog extends LitElement {
     private renderBody(): TemplateResult {
         return html`
             ${when(this.kind === 'attendees', () => this.renderFields(), () => nothing)}
-            <sl-radio-group id="export-format" label="Format" .value=${this.format}
+            <sl-radio-group id="export-format" label=${t('admin.event-menu.export.format')} .value=${this.format}
                             @sl-change=${(e: Event) => { this.format = (e.target as SlRadioGroup).value as ExportFormat; }}>
                 <sl-radio-button value="excel">Excel</sl-radio-button>
                 <sl-radio-button value="csv">CSV</sl-radio-button>
@@ -128,10 +129,10 @@ export class EventExportDialog extends LitElement {
         }
         return html`
             <div class="fields-header">
-                <h3>Fields to include</h3>
+                <h3>${t('admin.event-menu.export.fields')}</h3>
                 <div class="select-buttons">
-                    <sl-button size="small" id="select-all-fields" @click=${() => { this.selected = new Set(fields.map(f => f.key)); }}>Select all</sl-button>
-                    <sl-button size="small" id="select-no-fields" @click=${() => { this.selected = new Set(); }}>Select none</sl-button>
+                    <sl-button size="small" id="select-all-fields" @click=${() => { this.selected = new Set(fields.map(f => f.key)); }}>${t('admin.common.select-all')}</sl-button>
+                    <sl-button size="small" id="select-no-fields" @click=${() => { this.selected = new Set(); }}>${t('admin.common.select-none')}</sl-button>
                 </div>
             </div>
             <div class="fields">

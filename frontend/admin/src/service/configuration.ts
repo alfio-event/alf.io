@@ -1,5 +1,6 @@
 import { callDelete, fetchJson, postJson, responseErrorMessage, adminFetch } from './helpers';
 import {ConfigurationModification, SettingsByCategory} from "../model/configuration.ts";
+import { t } from './i18n';
 
 export class ConfigurationService {
 
@@ -17,7 +18,7 @@ export class ConfigurationService {
                                         settings: Record<string, ConfigurationModification[]>): Promise<void> {
         const response = await postJson(`/admin/api/configuration/events/${eventId}/categories/${categoryId}/update`, settings);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, 'Failed to save the options'));
+            throw new Error(await responseErrorMessage(response, t('admin.error.save-options')));
         }
     }
 
@@ -27,7 +28,7 @@ export class ConfigurationService {
     static async deleteCategorySetting(eventId: number, categoryId: number, key: string): Promise<void> {
         const response = await callDelete(`/admin/api/configuration/event/${eventId}/category/${categoryId}/key/${key}`);
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, 'Failed to reset the option'));
+            throw new Error(await responseErrorMessage(response, t('admin.error.reset-option')));
         }
     }
 
@@ -55,7 +56,7 @@ export class ConfigurationService {
             credentials: 'include',
         });
         if (!response.ok) {
-            throw new Error(await responseErrorMessage(response, 'Failed to load the badge colors'));
+            throw new Error(await responseErrorMessage(response, t('admin.load-error.badge-colors')));
         }
         const colors = new Map<number, string>();
         const text = await response.text();

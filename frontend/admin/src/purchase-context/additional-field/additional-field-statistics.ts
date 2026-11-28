@@ -10,6 +10,7 @@ import {SlDrawer} from "@shoelace-style/shoelace";
 import {renderIf} from "../../service/helpers.ts";
 import {modernLayout, modernTable, textAlign} from "../../styles.ts";
 import {emptyState} from "../../components/empty-state.ts";
+import { t } from '../../service/i18n';
 
 
 @customElement('alfio-additional-field-statistics')
@@ -46,24 +47,24 @@ export class AdditionalFieldStatistics extends LitElement {
     protected render(): unknown {
 
         return html`
-            <sl-drawer label=${`Statistics for ${this.field?.name}`} id="drawer-statistics">
+            <sl-drawer label=${t('admin.additional-fields.statistics.title', this.field?.name ?? '')} id="drawer-statistics">
                ${renderIf(() => this.active, () => this.retrievePageDataTask.render({
                    initial: () => html`<div class="loading"><sl-spinner></sl-spinner></div>`,
                    pending: () => html`<div class="loading"><sl-spinner></sl-spinner></div>`,
                    error: () => html`
                        <sl-alert open variant="danger">
                            <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                           Failed to load the statistics.
+                           ${t('admin.additional-fields.statistics.load-failed')}
                        </sl-alert>
                    `,
-                   complete: stats => when(stats.length === 0, () => emptyState('No values collected yet.'), () => html`
+                   complete: stats => when(stats.length === 0, () => emptyState(t('admin.additional-fields.statistics.none')), () => html`
                     <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>Option</th>
-                                <th>Count</th>
-                                <th>Percentage</th>
+                                <th>${t('admin.poll.option')}</th>
+                                <th>${t('admin.additional-fields.statistics.count')}</th>
+                                <th>${t('admin.promo-code.discount-type.percentage')}</th>
                             </tr>
                         </thead>
                         <tbody>

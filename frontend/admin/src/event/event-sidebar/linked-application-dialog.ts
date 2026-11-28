@@ -5,6 +5,7 @@ import type {SlDialog} from '@shoelace-style/shoelace';
 import {EventService} from '../../service/event.ts';
 import {errorMessage} from '../../service/helpers.ts';
 import {dialog, row} from '../../styles.ts';
+import { t } from '../../service/i18n';
 
 type Step = 'loading' | 'ready' | 'error';
 
@@ -42,7 +43,7 @@ export class LinkedApplicationDialog extends LitElement {
             }
         } catch (error) {
             if (request === this.request) {
-                this.error = errorMessage(error, 'The link could not be generated');
+                this.error = errorMessage(error, t('admin.event-menu.linked-application.error'));
                 this.step = 'error';
             }
         }
@@ -52,13 +53,13 @@ export class LinkedApplicationDialog extends LitElement {
         return html`
             <sl-dialog class="responsive-dialog" label=${this.label} style="--alfio-dialog-max-width: 32rem">
                 ${choose(this.step, [
-                    ['loading', () => html`<p><sl-spinner></sl-spinner> Generating the link…</p>`],
+                    ['loading', () => html`<p><sl-spinner></sl-spinner> ${t('admin.event-menu.linked-application.generating')}</p>`],
                     ['ready', () => html`
-                        <p>The link is ready.</p>
+                        <p>${t('admin.event-menu.linked-application.ready')}</p>
                         <sl-button id="open-linked-application" variant="primary" href=${this.link} target="_blank"
                                    @click=${() => void this.dialog.hide()}>
                             <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
-                            Open ${this.label}
+                            ${t('admin.event-menu.linked-application.open', this.label)}
                         </sl-button>
                     `],
                     ['error', () => html`
@@ -71,7 +72,7 @@ export class LinkedApplicationDialog extends LitElement {
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button variant="default" size="large" @click=${() => void this.dialog.hide()}>Close</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => void this.dialog.hide()}>${t('admin.common.close')}</sl-button>
                     </div>
                 </div>
             </sl-dialog>

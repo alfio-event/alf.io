@@ -34,6 +34,7 @@ import { ListSearchController } from '../../components/list-search.ts';
 import { taskContent } from '../../components/task-content.ts';
 import { sectionCard } from '../../components/section-card.ts';
 import { adminUrl } from '../../admin-router';
+import { t, tHtml } from '../../service/i18n';
 
 type TabName = 'completed' | 'payment-pending' | 'in-process' | 'credited' | 'cancelled';
 interface Reservation extends ReservationSummary {
@@ -44,6 +45,8 @@ interface Reservation extends ReservationSummary {
 interface ReservationSection {
     name: TabName;
     label: string;
+    /** the plural label of the reservations of the tab, for the pagination */
+    itemLabel: string;
     icon: string;
     emptyMessage: string;
     statuses: ReservationStatus[];
@@ -65,16 +68,18 @@ const FIRST_PAGES: Record<TabName, number> = {
 const sections: ReservationSection[] = [
     {
         name: 'completed',
-        label: 'Completed',
+        label: t('admin.reservations.tab.completed'),
+        itemLabel: t('admin.reservations.tab.completed.items'),
         icon: 'check-circle',
-        emptyMessage: 'No completed reservations have been found',
+        emptyMessage: t('admin.reservations.tab.completed.empty'),
         statuses: ['COMPLETE'],
     },
     {
         name: 'payment-pending',
-        label: 'Payment Pending',
+        label: t('admin.reservations.tab.payment-pending'),
+        itemLabel: t('admin.reservations.tab.payment-pending.items'),
         icon: 'cash-coin',
-        emptyMessage: 'No reservations pending payment have been found',
+        emptyMessage: t('admin.reservations.tab.payment-pending.empty'),
         statuses: [
             'IN_PAYMENT',
             'EXTERNAL_PROCESSING_PAYMENT',
@@ -86,23 +91,26 @@ const sections: ReservationSection[] = [
     },
     {
         name: 'in-process',
-        label: 'In Process',
+        label: t('admin.reservations.tab.in-process'),
+        itemLabel: t('admin.reservations.tab.in-process.items'),
         icon: 'cart',
-        emptyMessage: 'No reservations in process have been found',
+        emptyMessage: t('admin.reservations.tab.in-process.empty'),
         statuses: ['PENDING'],
     },
     {
         name: 'credited',
-        label: 'Credit Note Issued',
+        label: t('admin.reservations.tab.credited'),
+        itemLabel: t('admin.reservations.tab.credited.items'),
         icon: 'arrow-counterclockwise',
-        emptyMessage: 'No credited reservations have been found',
+        emptyMessage: t('admin.reservations.tab.credited.empty'),
         statuses: ['CREDIT_NOTE_ISSUED'],
     },
     {
         name: 'cancelled',
-        label: 'Cancelled',
+        label: t('admin.reservations.tab.cancelled'),
+        itemLabel: t('admin.reservations.tab.cancelled.items'),
         icon: 'ban',
-        emptyMessage: 'No cancelled reservations have been found',
+        emptyMessage: t('admin.reservations.tab.cancelled.empty'),
         statuses: ['CANCELLED'],
     },
 ];
@@ -237,11 +245,11 @@ export class ReservationsList extends LitElement {
             // which Lit's Array converter turns into null.
             const reservations = this.reservations ?? [];
             if (reservations.length === 0) {
-                return emptyState('No reservations completed so far');
+                return emptyState(t('admin.reservations.none'));
             }
             return this.renderTable(reservations, null);
         }
-        return taskContent(this.loadDataTask, this.lastData, 'Failed to load reservations. Please try again.', (data) =>
+        return taskContent(this.loadDataTask, this.lastData, t('admin.reservations.load-failed'), (data) =>
             this.renderContent(data),
         );
     }
@@ -251,31 +259,29 @@ export class ReservationsList extends LitElement {
             <div class="container">
                 <div class="page-title-row secondary">
                     <h1>
-                        Reservations for
-                        <i>${this.contextTitle(data.event)}</i>
+                        ${tHtml('admin.reservations.title', html`<i>${this.contextTitle(data.event)}</i>`)}
                     </h1>
                 </div>
                 <hr class="page-separator" />
                 <div class="filter-toolbar">
-                    <div class="filter-left">${this.searchController.render('reservations')}</div>
+                    <div class="filter-left">${this.searchController.render(t('admin.reservations.items'))}</div>
                     ${when(this.purchaseContextType === 'event' && !data.event?.expired, () => html`
                         <div class="filter-right create-reservation-toolbar">
                             <sl-button variant="success" size="large" href=${this.newReservationHref()}>
                                 <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-                                Create reservation
+                                ${t('admin.event.menu.create-reservation')}
                             </sl-button>
                         </div>
                     `)}
                 </div>
                 ${when(stuck.right > 0, () => sectionCard({
                     icon: 'exclamation-triangle',
-                    title: 'Stuck reservations',
+                    title: t('admin.reservations.stuck'),
                     badge: html`<sl-badge variant="warning" pill>${stuck.right}</sl-badge>`,
                     className: 'stuck-reservations',
                 }, html`
                     <p class="stuck-message">
-                        Please check your payment provider’s data and confirm or cancel the following
-                        reservations.
+                        ${t('admin.reservations.stuck.help')}
                     </p>
                     ${this.renderTable(stuck.left, data.event)}
                 `))}
@@ -316,7 +322,7 @@ export class ReservationsList extends LitElement {
                                 .page=${this.pages[section.name]}
                                 .total=${data.right}
                                 page-size=${ITEMS_PER_PAGE}
-                                item-label="${section.label.toLowerCase()} reservations"
+                                item-label=${section.itemLabel}
                                 @alfio-page-change=${(e: AlfioPageChange) => this.changePage(section.name, e.detail.page)}
                             ></alfio-pagination-bar>
                         `)}
@@ -330,13 +336,13 @@ export class ReservationsList extends LitElement {
                 <table class="table table-striped table-stacked">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Customer</th>
-                            <th class="hide-small">Email</th>
-                            <th class="hide-small">Payment</th>
-                            <th>Amount</th>
-                            <th class="hide-small">Confirmation</th>
-                            <th>Actions</th>
+                            <th>${t('admin.common.id')}</th>
+                            <th>${t('admin.common.customer')}</th>
+                            <th class="hide-small">${t('admin.common.email-short')}</th>
+                            <th class="hide-small">${t('admin.common.payment')}</th>
+                            <th>${t('admin.common.amount')}</th>
+                            <th class="hide-small">${t('admin.promo-code.usage.confirmation')}</th>
+                            <th>${t('admin.common.actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -350,16 +356,16 @@ export class ReservationsList extends LitElement {
                                             ${reservationIdentifier(reservation, this.lastData?.useInvoiceNumberAsId ?? false)}
                                         </a>
                                     </td>
-                                    <td data-label="Customer">${formatFullName(reservation)}</td>
-                                    <td class="email hide-small" data-label="Email">${reservation.email ?? ''}</td>
-                                    <td class="hide-small" data-label="Payment">
+                                    <td data-label=${t('admin.common.customer')}>${formatFullName(reservation)}</td>
+                                    <td class="email hide-small" data-label=${t('admin.common.email-short')}>${reservation.email ?? ''}</td>
+                                    <td class="hide-small" data-label=${t('admin.common.payment')}>
                                         <alfio-payment-method method=${reservation.paymentMethod ?? ''}></alfio-payment-method>
                                     </td>
-                                    <td class="amount" data-label="Amount">
+                                    <td class="amount" data-label=${t('admin.common.amount')}>
                                         ${when(reservation.finalPriceCts > 0,
                                             () => formatAmount(reservation.paidAmount, reservation.currencyCode))}
                                     </td>
-                                    <td class="timestamp hide-small" data-label="Confirmation">
+                                    <td class="timestamp hide-small" data-label=${t('admin.promo-code.usage.confirmation')}>
                                         <alfio-format-date
                                             date=${reservation.confirmationTimestamp ?? ''}
                                             time-zone=${event?.timeZone ?? 'UTC'}
@@ -373,7 +379,7 @@ export class ReservationsList extends LitElement {
                                             href=${this.reservationHref(reservation, event)}
                                         >
                                             <sl-icon slot="prefix" name="eye"></sl-icon>
-                                            View
+                                            ${t('admin.common.view')}
                                         </sl-button>
                                     </td>
                                 </tr>
@@ -393,7 +399,7 @@ export class ReservationsList extends LitElement {
         const params = new URLSearchParams({ page: String(page - 1), search });
         statuses.forEach((status) => params.append('status', status));
         const response = await adminFetch(`${baseUrl}?${params}`);
-        if (!response.ok) throw new Error('Failed to load reservations');
+        if (!response.ok) throw new Error(t('admin.reservations.load-failed'));
         return response.json();
     }
 

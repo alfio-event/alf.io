@@ -26,6 +26,7 @@ import './online-settings.ts';
 import {allocationSegments} from './ticket-allocation.ts';
 import {badges, dialog, form, modernLayout, modernTable, row, textColors} from '../../styles.ts';
 import { navigate, adminUrl } from '../../admin-router';
+import { t, tHtml, formatNumber, translateErrorCode } from '../../service/i18n';
 
 interface Selection {
     active: boolean;
@@ -88,12 +89,6 @@ function hasText(value: string | null | undefined): boolean {
     return value != null && value.trim() !== '';
 }
 
-function plural(count: number, singular: string, pluralForm: string): string {
-    if (count === 1) {
-        return `${count} ${singular}`;
-    }
-    return `${count} ${pluralForm}`;
-}
 
 /**
  * The categories of the event detail page: filter toolbar, one card per category with its ticket
@@ -415,7 +410,7 @@ export class EventCategories extends LitElement {
         return html`
             <section class="categories" aria-labelledby="categories-title">
                 <div class="categories-heading">
-                    <h2 id="categories-title">Categories</h2>
+                    <h2 id="categories-title">${t('admin.categories.title')}</h2>
                     <sl-badge variant="primary" pill>${event.ticketCategories.length}</sl-badge>
                 </div>
                 ${this.renderCategoryList()}
@@ -438,13 +433,13 @@ export class EventCategories extends LitElement {
                 <div class="filter-left">
                     <sl-checkbox class="filter-active" ?checked=${this.selection.active}
                                  @sl-change=${(e: Event) => { this.selection = {...this.selection, active: (e.target as HTMLInputElement).checked}; }}>
-                        Active <sl-badge variant="neutral" pill class="selection-count">${activeCount}</sl-badge>
+                        ${t('admin.categories.filter.active')} <sl-badge variant="neutral" pill class="selection-count">${activeCount}</sl-badge>
                     </sl-checkbox>
                     <sl-checkbox class="filter-expired" ?checked=${this.selection.expired}
                                  @sl-change=${(e: Event) => { this.selection = {...this.selection, expired: (e.target as HTMLInputElement).checked}; }}>
-                        Expired <sl-badge variant="neutral" pill class="selection-count">${expiredCount}</sl-badge>
+                        ${t('admin.event.status.expired')} <sl-badge variant="neutral" pill class="selection-count">${expiredCount}</sl-badge>
                     </sl-checkbox>
-                    <sl-input class="list-search label-hidden" label="Filter categories" type="search" placeholder="Filter by name" clearable
+                    <sl-input class="list-search label-hidden" label=${t('admin.categories.filter')} type="search" placeholder=${t('admin.categories.filter.placeholder')} clearable
                               .value=${this.selection.freeText}
                               @sl-input=${(e: Event) => { this.selection = {...this.selection, freeText: (e.target as SlInput).value}; }}>
                         <sl-icon slot="prefix" name="search"></sl-icon>
@@ -455,20 +450,20 @@ export class EventCategories extends LitElement {
                         ${when(event.ticketCategories.length > 1, () => html`
                             <sl-button id="rearrange-categories" variant="default" size="large" @click=${this.startRearrange}>
                                 <sl-icon slot="prefix" name="arrow-down-up"></sl-icon>
-                                Rearrange
+                                ${t('admin.categories.rearrange')}
                             </sl-button>
                         `, () => nothing)}
                         ${when(event.addCategoryEnabled, () => html`
                             <sl-button id="add-category" variant="success" size="large" @click=${this.addCategory}>
                                 <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-                                Add category
+                                ${t('admin.categories.add')}
                             </sl-button>
                         `, () => nothing)}
                     </div>
                 `, () => nothing)}
             </div>
             ${when(visible.length === 0,
-                () => html`<section class="section-card">${emptyState('No categories match the selected filters')}</section>`,
+                () => html`<section class="section-card">${emptyState(t('admin.categories.none-matching'))}</section>`,
                 () => html`${repeat(visible, (category) => category.id, (category) => this.renderCategory(category))}`)}
         `;
     }
@@ -476,10 +471,10 @@ export class EventCategories extends LitElement {
     private renderRearrange(): TemplateResult {
         const order = this.draftOrder;
         return html`
-            <sl-dialog id="rearrange-dialog" class="responsive-dialog" label="Rearrange categories"
+            <sl-dialog id="rearrange-dialog" class="responsive-dialog" label=${t('admin.categories.rearrange.title')}
                        @sl-request-close=${this.onRearrangeRequestClose}
                        @sl-after-hide=${(e: Event) => { if (e.target === this.rearrangeDialog) { this.draftOrder = []; } }}>
-                <p class="text-muted">Drag the categories, or move them with the arrows: the event page lists them in this order.</p>
+                <p class="text-muted">${t('admin.categories.rearrange.text')}</p>
                 <ol class="rearrange-list">
                     ${repeat(order, (entry) => entry.id, (entry, index) => html`
                         <li class=${classMap({'rearrange-order': true, dragged: this.draggedId === entry.id})} draggable="true"
@@ -489,9 +484,9 @@ export class EventCategories extends LitElement {
                             <sl-icon class="drag-handle" name="grip-vertical" aria-hidden="true"></sl-icon>
                             <strong>${index + 1}.</strong>
                             <span class="name">${entry.name}</span>
-                            <sl-icon-button name="arrow-up" label="Move ${entry.name} up" ?disabled=${index === 0}
+                            <sl-icon-button name="arrow-up" label=${t('admin.categories.rearrange.up', entry.name)} ?disabled=${index === 0}
                                             @click=${() => this.moveCategory(entry.id, -1)}></sl-icon-button>
-                            <sl-icon-button name="arrow-down" label="Move ${entry.name} down" ?disabled=${index === order.length - 1}
+                            <sl-icon-button name="arrow-down" label=${t('admin.categories.rearrange.down', entry.name)} ?disabled=${index === order.length - 1}
                                             @click=${() => this.moveCategory(entry.id, 1)}></sl-icon-button>
                         </li>
                     `)}
@@ -499,9 +494,9 @@ export class EventCategories extends LitElement {
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="row" style="--alfio-row-cols: 3">
-                        <sl-button id="cancel-rearrange" variant="default" size="large" @click=${() => void this.rearrangeDialog.hide()}>Cancel</sl-button>
+                        <sl-button id="cancel-rearrange" variant="default" size="large" @click=${() => void this.rearrangeDialog.hide()}>${t('admin.common.cancel')}</sl-button>
                         <div></div>
-                        <sl-button id="save-order" variant="warning" size="large" ?loading=${this.saving} ?disabled=${this.saving} @click=${this.saveOrder}>Save</sl-button>
+                        <sl-button id="save-order" variant="warning" size="large" ?loading=${this.saving} ?disabled=${this.saving} @click=${this.saveOrder}>${t('admin.common.save')}</sl-button>
                     </div>
                 </div>
             </sl-dialog>
@@ -513,9 +508,9 @@ export class EventCategories extends LitElement {
         const needsAttention = (category.containingOrphans ?? false) || (category.containingStuckTickets ?? false);
         const badgeRow = html`
             <span class="category-badges">
-                ${when(category.expired, () => html`<sl-badge variant="neutral" pill>Expired</sl-badge>`, () => nothing)}
-                ${when(category.accessRestricted, () => html`<sl-badge variant="neutral" pill class="unlisted-badge"><sl-icon name="eye-slash" aria-hidden="true"></sl-icon>Unlisted</sl-badge>`, () => nothing)}
-                ${when(event.format === 'HYBRID' && category.ticketAccessType === 'ONLINE', () => html`<sl-badge variant="primary" pill>Online</sl-badge>`, () => nothing)}
+                ${when(category.expired, () => html`<sl-badge variant="neutral" pill>${t('admin.event.status.expired')}</sl-badge>`, () => nothing)}
+                ${when(category.accessRestricted, () => html`<sl-badge variant="neutral" pill class="unlisted-badge"><sl-icon name="eye-slash" aria-hidden="true"></sl-icon>${t('admin.event.status.unlisted')}</sl-badge>`, () => nothing)}
+                ${when(event.format === 'HYBRID' && category.ticketAccessType === 'ONLINE', () => html`<sl-badge variant="primary" pill>${t('admin.event.format.online')}</sl-badge>`, () => nothing)}
             </span>
         `;
         let cardClass = 'category-card';
@@ -542,18 +537,15 @@ export class EventCategories extends LitElement {
                     ${when(category.attendeesList != null, () => html`
                         <sl-alert open variant="primary">
                             <sl-icon slot="icon" name="person-lock"></sl-icon>
-                            Only the members of the group
-                            <a href=${adminUrl(`/group/${event.organizationId}/edit/${category.attendeesList!.groupId}`)}>${category.attendeesList!.groupName}</a>
-                            can buy tickets of this category.
+                            ${tHtml('admin.categories.group-only', html`<a href=${adminUrl(`/group/${event.organizationId}/edit/${category.attendeesList!.groupId}`)}>${category.attendeesList!.groupName}</a>`)}
                         </sl-alert>
                     `, () => nothing)}
                     ${when(category.containingOrphans, () => this.renderOrphanWarning(category), () => nothing)}
                     ${when(category.containingStuckTickets, () => html`
                         <sl-alert open variant="warning">
                             <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                            Some tickets of this category belong to reservations in an unknown state, usually after
-                            an error of the payment provider.
-                            <a href=${adminUrl(`/events/${event.shortName}/category/${category.id}/tickets`)}>Fix them</a>
+                            ${t('admin.categories.stuck-tickets')}
+                            <a href=${adminUrl(`/events/${event.shortName}/category/${category.id}/tickets`)}>${t('admin.categories.stuck-tickets.fix')}</a>
                         </sl-alert>
                     `, () => nothing)}
                     ${this.renderProgress(category)}
@@ -572,7 +564,7 @@ export class EventCategories extends LitElement {
         return html`
             <span class="fact badge-color-fact">
                 ${badgeSwatch(badgeColor)}
-                ${badgeColor.label} badge
+                ${t('admin.categories.badge-color', badgeColor.label)}
             </span>
         `;
     }
@@ -586,36 +578,36 @@ export class EventCategories extends LitElement {
         return html`
             <sl-button variant="default" size="small" class="tickets-link" href=${adminUrl(`/events/${event.shortName}/category/${category.id}/tickets`)}>
                 <sl-icon slot="prefix" name="ticket"></sl-icon>
-                Tickets
+                ${t('admin.page-title.tickets')}
             </sl-button>
             <sl-button variant="default" size="small" class="edit-category" @click=${() => void this.editCategory(category)}>
                 <sl-icon slot="prefix" name="pencil"></sl-icon>
-                Edit
+                ${t('admin.common.edit')}
             </sl-button>
             <sl-dropdown hoist placement="bottom-end">
-                <sl-icon-button slot="trigger" class="category-menu" name="three-dots-vertical" label="More actions for ${category.name}"></sl-icon-button>
+                <sl-icon-button slot="trigger" class="category-menu" name="three-dots-vertical" label=${t('admin.categories.more-actions', category.name)}></sl-icon-button>
                 <sl-menu @sl-select=${(e: CustomEvent) => void this.onCategoryMenu(category, String(e.detail.item.value))}>
                     ${when(canSendInvitations, () => html`
                         <sl-menu-item value="invitations" class="send-invitations-link">
                             <sl-icon slot="prefix" name="envelope"></sl-icon>
-                            Send invitations
+                            ${t('admin.page-title.send-invitations')}
                         </sl-menu-item>
                     `, () => nothing)}
                     ${when(this.isOnline(category), () => html`
                         <sl-menu-item value="online" class="online-settings-link">
                             <sl-icon slot="prefix" name="camera-video"></sl-icon>
-                            Online settings
+                            ${t('admin.categories.online-settings')}
                         </sl-menu-item>
                     `, () => nothing)}
                     <sl-menu-item value="options" class="options-link">
                         <sl-icon slot="prefix" name="wrench"></sl-icon>
-                        Options
+                        ${t('admin.categories.options')}
                     </sl-menu-item>
                     ${when(this.canBeDeleted(category), () => html`
                         <sl-divider></sl-divider>
                         <sl-menu-item value="delete" class="danger delete-category">
                             <sl-icon slot="prefix" name="trash"></sl-icon>
-                            Delete
+                            ${t('admin.common.delete')}
                         </sl-menu-item>
                     `, () => nothing)}
                 </sl-menu>
@@ -641,11 +633,11 @@ export class EventCategories extends LitElement {
         const bounded = category.bounded ?? false;
         let max = category.maxTickets ?? 0;
         let available: Record<string, number> = {availableFixed: category.notSoldTickets ?? 0};
-        let labels: Record<string, string> = {availableFixed: 'Available'};
+        let labels: Record<string, string> = {availableFixed: t('admin.allocation.available')};
         if (!bounded) {
             max = (event.dynamicAllocation ?? 0) + (category.checkedInTickets ?? 0) + (category.soldTickets ?? 0) + (category.pendingTickets ?? 0);
             available = {availableDynamic: event.dynamicAllocation ?? 0};
-            labels = {availableDynamic: 'Available (shared with other categories)'};
+            labels = {availableDynamic: t('admin.allocation.available-shared')};
         }
         const segments = allocationSegments({
             checkedIn: category.checkedInTickets ?? 0,
@@ -653,20 +645,20 @@ export class EventCategories extends LitElement {
             pending: category.pendingTickets ?? 0,
             ...available,
         }, labels);
-        const summary = segments.map((segment) => `${segment.label}: ${segment.value}`).join(', ');
+        const summary = segments.map((segment) => `${segment.label}: ${formatNumber(segment.value)}`).join(', ');
         return html`
             <div class="ticket-allocation">
-                <div class="progress-track" role="img" aria-label="Tickets of ${category.name}: ${summary || 'none'}">
+                <div class="progress-track" role="img" aria-label=${t('admin.categories.allocation', category.name, summary || t('admin.categories.allocation.none'))}>
                     ${when(max > 0, () => html`
                         ${repeat(segments, (segment) => segment.key, (segment) => html`
                             <div class="progress-segment" style="width: ${Math.max(0, segment.value * 100 / max)}%; background: ${segment.color}"
-                                 title="${segment.label}: ${segment.value}"></div>
+                                 title="${segment.label}: ${formatNumber(segment.value)}"></div>
                         `)}
                     `, () => nothing)}
                 </div>
                 <div class="progress-legend">
                     ${repeat(segments, (segment) => segment.key, (segment) => html`
-                        <span><span class="swatch" style="background: ${segment.color}"></span>${segment.label}: ${segment.value}</span>
+                        <span><span class="swatch" style="background: ${segment.color}"></span>${segment.label}: ${formatNumber(segment.value)}</span>
                     `)}
                 </div>
             </div>
@@ -679,12 +671,12 @@ export class EventCategories extends LitElement {
             <div class="category-facts">
                 <span class="fact">
                     <sl-icon name="calendar-check" aria-hidden="true"></sl-icon>
-                    <span>On sale <alfio-format-date date=${category.formattedInception ?? ''} end=${category.formattedExpiration ?? ''} time-zone=${event.timeZone}></alfio-format-date></span>
+                    <span>${tHtml('admin.categories.on-sale', html`<alfio-format-date date=${category.formattedInception ?? ''} end=${category.formattedExpiration ?? ''} time-zone=${event.timeZone}></alfio-format-date>`)}</span>
                 </span>
                 ${when(category.bounded, () => html`
                     <span class="fact">
                         <sl-icon name="ticket" aria-hidden="true"></sl-icon>
-                        Up to ${plural(category.maxTickets ?? 0, 'ticket', 'tickets')}
+                        ${t('admin.categories.up-to', { count: category.maxTickets ?? 0 })}
                     </span>
                 `, () => nothing)}
                 ${when(!event.freeOfCharge, () => html`
@@ -696,13 +688,13 @@ export class EventCategories extends LitElement {
                 ${when(category.formattedValidCheckInFrom != null || category.formattedValidCheckInTo != null, () => html`
                     <span class="fact">
                         <sl-icon name="qr-code" aria-hidden="true"></sl-icon>
-                        <span>Check-in <alfio-format-date date=${category.formattedValidCheckInFrom ?? ''} end=${category.formattedValidCheckInTo ?? ''} time-zone=${event.timeZone}></alfio-format-date></span>
+                        <span>${tHtml('admin.categories.check-in', html`<alfio-format-date date=${category.formattedValidCheckInFrom ?? ''} end=${category.formattedValidCheckInTo ?? ''} time-zone=${event.timeZone}></alfio-format-date>`)}</span>
                     </span>
                 `, () => nothing)}
                 ${when(category.formattedTicketValidityStart != null || category.formattedTicketValidityEnd != null, () => html`
                     <span class="fact">
                         <sl-icon name="clock" aria-hidden="true"></sl-icon>
-                        <span>Valid <alfio-format-date date=${category.formattedTicketValidityStart ?? ''} end=${category.formattedTicketValidityEnd ?? ''} time-zone=${event.timeZone}></alfio-format-date></span>
+                        <span>${tHtml('admin.categories.valid', html`<alfio-format-date date=${category.formattedTicketValidityStart ?? ''} end=${category.formattedTicketValidityEnd ?? ''} time-zone=${event.timeZone}></alfio-format-date>`)}</span>
                     </span>
                 `, () => nothing)}
                 ${when(hasText(category.code), () => html`
@@ -712,7 +704,7 @@ export class EventCategories extends LitElement {
                     </span>
                 `, () => nothing)}
                 ${this.renderBadgeColorFact(category)}
-                <span class="fact text-muted">ID ${category.id}</span>
+                <span class="fact text-muted">${t('admin.categories.id', category.id)}</span>
             </div>
         `;
     }
@@ -732,13 +724,13 @@ export class EventCategories extends LitElement {
         return html`
             <div class="category-details">
                 ${when(hasDescription, () => html`
-                    <sl-details summary="Description" class="category-description">
+                    <sl-details summary=${t('admin.common.description')} class="category-description">
                         <alfio-localized-markdown .value=${category.description} .languages=${this.event.contentLanguages ?? []}></alfio-localized-markdown>
                     </sl-details>
                 `, () => nothing)}
                 ${when(category.accessRestricted, () => this.renderTokens(category), () => nothing)}
                 ${when(ownOnlineSettings, () => html`
-                    <sl-details summary="Online settings of this category" class="category-online-settings">
+                    <sl-details summary=${t('admin.categories.own-online-settings')} class="category-online-settings">
                         ${when(links.length > 0, () => html`
                             <ul class="meeting-links">
                                 ${repeat(links, (link, index) => `${index}-${link.link}`, (link) => html`
@@ -764,9 +756,9 @@ export class EventCategories extends LitElement {
         return html`
             <sl-alert open variant="danger">
                 <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                This category has tickets that can't be sold anymore. Move them to another category.
+                ${t('admin.categories.orphans')}
                 <div class="orphan-actions">
-                    <sl-select class="orphan-target label-hidden" label="Target category" size="small" placeholder="Select a category" hoist
+                    <sl-select class="orphan-target label-hidden" label=${t('admin.categories.orphans.target')} size="small" placeholder=${t('admin.category-select.placeholder')} hoist
                                .value=${selected}
                                @sl-change=${(e: Event) => {
                                    this.orphanTarget = {...this.orphanTarget, [category.id]: String((e.target as SlSelect).value)};
@@ -776,10 +768,10 @@ export class EventCategories extends LitElement {
                         `)}
                     </sl-select>
                     <sl-button variant="warning" size="small" class="move-orphans" ?disabled=${selected === '' || this.saving}
-                               @click=${() => void this.moveOrphans(category, Number(selected))}>Move</sl-button>
+                               @click=${() => void this.moveOrphans(category, Number(selected))}>${t('admin.categories.orphans.move')}</sl-button>
                     ${when(this.event.containingUnboundedCategories, () => html`
                         <sl-button variant="default" size="small" class="unbind-tickets" ?disabled=${this.saving}
-                                   @click=${() => void this.unbindTickets(category)}>Put back on sale</sl-button>
+                                   @click=${() => void this.unbindTickets(category)}>${t('admin.categories.orphans.put-back-on-sale')}</sl-button>
                     `, () => nothing)}
                 </div>
             </sl-alert>
@@ -792,11 +784,11 @@ export class EventCategories extends LitElement {
         const groups = this.groupTokensByStatus(tokens);
         const count = Object.values(groups).reduce((sum, group) => sum + group.length, 0);
         return html`
-            <sl-details class="tokens-details" summary="Invitation codes (${count})">
+            <sl-details class="tokens-details" summary=${t('admin.categories.invitation-codes', count)}>
                 ${when(containsWaiting, () => html`
                     <sl-alert open variant="primary">
                         <sl-icon slot="icon" name="info-circle"></sl-icon>
-                        The invitation codes are being generated. Reload the page in 30 seconds.
+                        ${t('admin.categories.invitation-codes.generating')}
                     </sl-alert>
                 `, () => nothing)}
                 ${repeat(Object.entries(groups), ([status]) => status, ([status, groupTokens]) => html`
@@ -806,7 +798,7 @@ export class EventCategories extends LitElement {
                             ${repeat(groupTokens, (token) => token.id, (token) => html`
                                 <li>
                                     ${when(token.status === 'TAKEN', () => html`
-                                        <a href=${adminUrl(`/events/${this.event.shortName}/reservations/?search=${token.code}`)} title="Find the reservation">${token.code}</a>
+                                        <a href=${adminUrl(`/events/${this.event.shortName}/reservations/?search=${token.code}`)} title=${t('admin.categories.invitation-codes.find-reservation')}>${token.code}</a>
                                     `, () => html`<span>${token.code}</span>`)}
                                 </li>
                             `)}
@@ -824,14 +816,14 @@ export class EventCategories extends LitElement {
             let status: string;
             if (token.status === 'FREE') {
                 if (token.sentTimestamp == null) {
-                    status = 'Free';
+                    status = t('admin.categories.invitation-codes.free');
                 } else {
-                    status = 'Invitation sent';
+                    status = t('admin.categories.invitation-codes.sent');
                 }
             } else if (token.status === 'PENDING') {
-                status = 'Pending';
+                status = t('admin.allocation.pending');
             } else if (token.status === 'TAKEN') {
-                status = 'Confirmed';
+                status = t('admin.statistics.confirmed');
             } else {
                 status = token.status;
             }
@@ -880,13 +872,13 @@ export class EventCategories extends LitElement {
         try {
             const validation = await EventService.createCategory(event.id, categoryDraftToPayload(result));
             if (!validation.success) {
-                dispatchFeedback({type: 'danger', message: validation.validationErrors?.map((e) => e.message ?? e.code).join(' ') || 'The category could not be created'}, this);
+                dispatchFeedback({type: 'danger', message: validation.validationErrors?.map((e) => translateErrorCode(e.code, e.message ?? e.code)).join(' ') || t('admin.categories.create-failed')}, this);
                 return;
             }
-            dispatchFeedback({type: 'success', message: `Category ${result.name} created`}, this);
+            dispatchFeedback({type: 'success', message: t('admin.categories.created', result.name)}, this);
             this.reload();
         } catch (error) {
-            dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to create the category')}, this);
+            dispatchFeedback({type: 'danger', message: errorMessage(error, t('admin.categories.create-failed'))}, this);
         } finally {
             this.saving = false;
         }
@@ -917,13 +909,13 @@ export class EventCategories extends LitElement {
             payload.id = category.id;
             const validation = await EventService.updateCategory(this.event.id, category.id, payload);
             if (!validation.success) {
-                dispatchFeedback({type: 'danger', message: validation.validationErrors?.map((e) => e.message ?? e.code).join(' ') || 'The category could not be saved'}, this);
+                dispatchFeedback({type: 'danger', message: validation.validationErrors?.map((e) => translateErrorCode(e.code, e.message ?? e.code)).join(' ') || t('admin.categories.save-failed')}, this);
                 return;
             }
-            dispatchFeedback({type: 'success', message: `Category ${result.name} saved`}, this);
+            dispatchFeedback({type: 'success', message: t('admin.categories.saved', result.name)}, this);
             this.reload();
         } catch (error) {
-            dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to save the category')}, this);
+            dispatchFeedback({type: 'danger', message: errorMessage(error, t('admin.categories.save-failed'))}, this);
         } finally {
             this.saving = false;
         }
@@ -943,7 +935,7 @@ export class EventCategories extends LitElement {
         const saved = await dialog.open({
             eventName: event.shortName,
             categoryId: category.id,
-            label: `Online settings of ${category.name}`,
+            label: t('admin.categories.online-settings-of', category.name),
             metadata,
             eventBegin: wallClockToDateTimeLocal(event.formattedBegin),
             eventEnd: wallClockToDateTimeLocal(event.formattedEnd),
@@ -951,25 +943,25 @@ export class EventCategories extends LitElement {
             contextLanguages: event.contentLanguages ?? [],
         });
         if (saved) {
-            dispatchFeedback({type: 'success', message: `The online settings of ${category.name} have been saved`}, this);
+            dispatchFeedback({type: 'success', message: t('admin.categories.online-settings-saved', category.name)}, this);
             this.reload();
         }
     }
 
     private async deleteCategory(category: TicketCategory): Promise<void> {
         const confirmed = await ConfirmationDialogService.requestConfirm(
-            `Delete category ${category.name}?`,
-            'The category and its settings will be deleted. This cannot be undone.',
+            t('admin.categories.delete.title', category.name),
+            t('admin.categories.delete.text'),
             'danger');
         if (!confirmed) {
             return;
         }
         try {
             await EventService.deleteCategory(this.event.shortName, category.id);
-            dispatchFeedback({type: 'success', message: `Category ${category.name} deleted`}, this);
+            dispatchFeedback({type: 'success', message: t('admin.categories.deleted', category.name)}, this);
             this.reload();
         } catch (error) {
-            dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to delete the category')}, this);
+            dispatchFeedback({type: 'danger', message: errorMessage(error, t('admin.categories.delete-failed'))}, this);
         }
     }
 
@@ -977,10 +969,10 @@ export class EventCategories extends LitElement {
         this.saving = true;
         try {
             await EventService.reallocateOrphans(category.id, targetCategoryId, this.event.id);
-            dispatchFeedback({type: 'success', message: 'The tickets have been moved'}, this);
+            dispatchFeedback({type: 'success', message: t('admin.categories.orphans.moved')}, this);
             this.reload();
         } catch (error) {
-            dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to move the tickets')}, this);
+            dispatchFeedback({type: 'danger', message: errorMessage(error, t('admin.categories.orphans.move-failed'))}, this);
         } finally {
             this.saving = false;
         }
@@ -990,10 +982,10 @@ export class EventCategories extends LitElement {
         this.saving = true;
         try {
             await EventService.unbindTickets(this.event.shortName, category.id);
-            dispatchFeedback({type: 'success', message: 'The tickets are back on sale'}, this);
+            dispatchFeedback({type: 'success', message: t('admin.categories.orphans.back-on-sale')}, this);
             this.reload();
         } catch (error) {
-            dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to assign the tickets')}, this);
+            dispatchFeedback({type: 'danger', message: errorMessage(error, t('admin.categories.orphans.assign-failed'))}, this);
         } finally {
             this.saving = false;
         }
@@ -1056,11 +1048,11 @@ export class EventCategories extends LitElement {
         this.saving = true;
         try {
             await EventService.rearrangeCategories(this.event.shortName, this.draftOrder);
-            dispatchFeedback({type: 'success', message: 'The order of the categories has been saved'}, this);
+            dispatchFeedback({type: 'success', message: t('admin.categories.rearrange.saved')}, this);
             await this.rearrangeDialog.hide();
             this.reload();
         } catch (error) {
-            dispatchFeedback({type: 'danger', message: errorMessage(error, 'Failed to save the order of the categories')}, this);
+            dispatchFeedback({type: 'danger', message: errorMessage(error, t('admin.categories.rearrange.failed'))}, this);
         } finally {
             this.saving = false;
         }

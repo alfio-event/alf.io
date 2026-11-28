@@ -57,6 +57,8 @@ class AdminIndexControllerTest {
         model.put("username", "admin");
         model.put("isOwner", true);
         model.put("supportedLanguages", List.of());
+        model.put("language", "de");
+        model.put("translationsUrl", "/ctx/api/v2/admin/i18n/bundle/de?v=2.0");
         model.put("unrelated", "not exposed");
 
         var config = AdminIndexController.adminConfig(model);
@@ -64,6 +66,8 @@ class AdminIndexControllerTest {
         assertEquals("/ctx", config.get("contextPath"));
         assertEquals("admin", config.get("username"));
         assertEquals(true, config.get("isOwner"));
+        assertEquals("de", config.get("language"));
+        assertEquals("/ctx/api/v2/admin/i18n/bundle/de?v=2.0", config.get("translationsUrl"));
         assertFalse(config.containsKey("unrelated"));
     }
 }

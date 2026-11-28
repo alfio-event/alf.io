@@ -2,6 +2,7 @@ import {ExtensionEvent, ExtensionLog, ExtensionLogType, ExtensionModification, E
 import {Organization} from '../model/organization.ts';
 import {PageAndContent} from '../model/reservation.ts';
 import {callDelete, fetchJson, postJson} from './helpers.ts';
+import { t } from './i18n';
 
 /**
  * Result of a create/update call: the backend answers with a pair (success, error message)
@@ -44,7 +45,7 @@ export class ExtensionService {
         // the endpoint answers with an empty body, so we check the status instead of using ensureOk (which parses JSON)
         const response = await callDelete(`${ExtensionService.baseUrl()}/${encodeURIComponent(path)}/${encodeURIComponent(name)}`);
         if (!response.ok) {
-            throw new Error((await response.text()) || `unexpected status ${response.status}`);
+            throw new Error((await response.text()) || t('admin.error.unexpected-status', response.status));
         }
     }
 

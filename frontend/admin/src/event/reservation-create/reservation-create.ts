@@ -68,6 +68,7 @@ import {
     INVALID_FORM_MESSAGE,
 } from '../../components/form-validation.ts';
 import { navigate, adminUrl } from '../../admin-router';
+import { t, tHtml } from '../../service/i18n';
 
 type AttendeeStrategy = 'manual' | 'csv' | 'empty';
 
@@ -108,26 +109,26 @@ const ATTENDEE_STRATEGIES: ChoiceCardOption<AttendeeStrategy>[] = [
     {
         value: 'manual',
         icon: 'person-vcard',
-        title: 'Insert manually',
-        description: "Type the attendees' names and e-mail addresses, one by one.",
+        title: t('admin.reservation-create.attendees.manual'),
+        description: t('admin.reservation-create.attendees.manual.description'),
     },
     {
         value: 'csv',
         icon: 'filetype-csv',
-        title: 'Upload CSV',
-        description: 'Import the attendees and their data from a file, then review them before saving.',
+        title: t('admin.reservation-create.attendees.csv'),
+        description: t('admin.reservation-create.attendees.csv.description'),
     },
     {
         value: 'empty',
         icon: 'person-dash',
-        title: 'Reserve empty seats',
-        description: "The contact person fills in the attendees' data later, through the reservation link.",
+        title: t('admin.reservation-create.attendees.empty'),
+        description: t('admin.reservation-create.attendees.empty.description'),
     },
 ];
 
 const TICKET_ACCESS_TYPES: { value: TicketAccessType, label: string }[] = [
-    { value: 'IN_PERSON', label: 'In person' },
-    { value: 'ONLINE', label: 'Online' },
+    { value: 'IN_PERSON', label: t('admin.event.format.in-person') },
+    { value: 'ONLINE', label: t('admin.event.format.online') },
 ];
 
 /**
@@ -295,7 +296,7 @@ export class ReservationCreate extends LitElement {
     ];
 
     render(): TemplateResult {
-        return taskContent(this.loadEventTask, this.loadEventTask.value ?? null, 'Failed to load the event. Please try again.',
+        return taskContent(this.loadEventTask, this.loadEventTask.value ?? null, t('admin.load-error.event-retry'),
             event => this.renderContent(event));
     }
 
@@ -313,7 +314,7 @@ export class ReservationCreate extends LitElement {
                     ${repeat(this.tickets, (_, index) => index, (tickets, index) => this.renderTickets(event, tickets, index))}
                     <sl-button id="add-category" class="section-card-add" variant="default" size="large" @click=${this.addTickets}>
                         <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-                        Add tickets for another category
+                        ${t('admin.reservation-create.add-category')}
                     </sl-button>
                     ${when(!event.freeOfCharge, () => this.renderDiscount(event))}
                     ${when(this.submitError, () => html`
@@ -328,7 +329,7 @@ export class ReservationCreate extends LitElement {
                             ${this.renderCancelButton(event)}
                             <div></div>
                             <sl-button id="save-button" type="submit" variant="warning" size="large" ?loading=${this.submitting}>
-                                Save
+                                ${t('admin.common.save')}
                             </sl-button>
                         </div>
                     </div>
@@ -344,11 +345,11 @@ export class ReservationCreate extends LitElement {
         }
         return html`
             <div class="page-title-row secondary">
-                <h1>Create reservation for <i>${localizedTitle(event)}</i></h1>
+                <h1>${tHtml('admin.reservation-create.title', html`<i>${localizedTitle(event)}</i>`)}</h1>
             </div>
             <hr class="page-separator" />
             <p class="page-description text-muted">
-                You can create tickets for one or more <i>ticket categories</i>, either existing or dedicated (new).
+                ${tHtml('admin.reservation-create.description', html`<i>${t('admin.reservation-create.description.categories')}</i>`)}
             </p>
         `;
     }
@@ -357,13 +358,13 @@ export class ReservationCreate extends LitElement {
         if (this.fastCreation) {
             return html`
                 <sl-button id="cancel-button" variant="default" size="large" @click=${this.cancel}>
-                    Cancel
+                    ${t('admin.common.cancel')}
                 </sl-button>
             `;
         }
         return html`
             <sl-button id="cancel-button" variant="default" size="large" href=${adminUrl(`/events/${event.shortName}/detail`)}>
-                Cancel
+                ${t('admin.common.cancel')}
             </sl-button>
         `;
     }
@@ -375,21 +376,21 @@ export class ReservationCreate extends LitElement {
             if (!multipleLanguages) {
                 return html``;
             }
-            return sectionCard({ icon: 'translate', title: 'Language' }, html`
+            return sectionCard({ icon: 'translate', title: t('admin.reservation-create.language') }, html`
                 <div class="row">${this.renderLanguage(event)}</div>
             `);
         }
-        return sectionCard({ icon: 'person-vcard', title: 'Contact info' }, html`
+        return sectionCard({ icon: 'person-vcard', title: t('admin.reservation-create.contact') }, html`
             <div class="form-stack">
                 <div class="row">
                     ${this.#form.field({ name: 'contact.firstName', validators: validateWith(value => this.ifContact(() => requiredValue(value))) },
-                        field => this.textInput(field, { id: 'contact-first-name', label: 'First name' }))}
+                        field => this.textInput(field, { id: 'contact-first-name', label: t('admin.common.first-name') }))}
                     ${this.#form.field({ name: 'contact.lastName', validators: validateWith(value => this.ifContact(() => requiredValue(value))) },
-                        field => this.textInput(field, { id: 'contact-last-name', label: 'Last name' }))}
+                        field => this.textInput(field, { id: 'contact-last-name', label: t('admin.common.last-name') }))}
                 </div>
                 <div class="row">
                     ${this.#form.field({ name: 'contact.emailAddress', validators: validateWith(value => this.ifContact(() => emailAddress(value))) },
-                        field => this.textInput(field, { id: 'contact-email', label: 'Email address', type: 'email', prefixIcon: 'envelope' }))}
+                        field => this.textInput(field, { id: 'contact-email', label: t('admin.common.email-address'), type: 'email', prefixIcon: 'envelope' }))}
                     ${when(multipleLanguages, () => this.renderLanguage(event))}
                 </div>
             </div>
@@ -401,7 +402,7 @@ export class ReservationCreate extends LitElement {
             ${this.#form.field({ name: 'language', validators: validateWith(value => requiredValue(value)) }, field => {
                 const error = this.error(field.state.meta);
                 return html`
-                    <sl-select id="language" label="Language" placeholder="Select a language" required hoist
+                    <sl-select id="language" label=${t('admin.reservation-create.language')} placeholder=${t('admin.reservation-create.language.placeholder')} required hoist
                                class=${classMap({ error: error != null })} help-text=${error ?? ''}
                                .value=${field.state.value}
                                @sl-change=${(e: Event) => field.handleChange(String((e.target as SlSelect).value))}
@@ -446,13 +447,13 @@ export class ReservationCreate extends LitElement {
             actions = html`
                 <sl-button class="remove-category" variant="default" size="small" @click=${() => this.removeTickets(index)}>
                     <sl-icon slot="prefix" name="trash"></sl-icon>
-                    Remove
+                    ${t('admin.common.remove')}
                 </sl-button>
             `;
         }
         return sectionCard({
             icon: 'ticket-perforated',
-            title: `Tickets for ${categoryDescription(this.categories, tickets, index)}`,
+            title: t('admin.reservation-create.tickets-for', categoryDescription(this.categories, tickets, index)),
             badge: html`<sl-badge class="attendees-count" variant="primary" pill>${tickets.attendees.length}</sl-badge>`,
             actions,
         }, html`
@@ -468,14 +469,14 @@ export class ReservationCreate extends LitElement {
         // "Upload CSV" is complete only once the file has been read: the attendees are then shown as inserted manually
         const validateStrategy = (value: unknown) => {
             if (value === 'csv') {
-                return 'Please upload a CSV file, or choose another way to add the attendees';
+                return t('admin.reservation-create.error.csv-missing');
             }
             return undefined;
         };
         return html`${this.#form.field({ name: `tickets[${index}].attendeeStrategy`, validators: validateWith(validateStrategy) }, field => choiceCards({
             name: `attendee-strategy-${tickets.key}`,
             className: 'attendee-strategy',
-            label: 'How do you want to add the attendees?',
+            label: t('admin.reservation-create.attendees.question'),
             value: tickets.attendeeStrategy,
             options: ATTENDEE_STRATEGIES,
             panel: html`
@@ -499,7 +500,7 @@ export class ReservationCreate extends LitElement {
             const validateSeats = (value: unknown) => this.ifTickets(index, t => t.attendeeStrategy === 'empty', () => {
                 const seats = Number(value);
                 if (String(value ?? '').trim() === '' || !Number.isInteger(seats) || seats < 1) {
-                    return 'Please enter a number of seats, at least 1';
+                    return t('admin.reservation-create.error.seats');
                 }
                 return undefined;
             });
@@ -508,7 +509,7 @@ export class ReservationCreate extends LitElement {
                     ${this.#form.field({ name: `tickets[${index}].seats`, validators: validateWith(validateSeats) }, field => {
                         const error = this.error(field.state.meta);
                         return html`
-                            <sl-input class=${classMap({ seats: true, error: error != null })} label="Number of seats" type="number" min="1" step="1" required
+                            <sl-input class=${classMap({ seats: true, error: error != null })} label=${t('admin.reservation-create.seats')} type="number" min="1" step="1" required
                                       help-text=${error ?? ''}
                                       .value=${field.state.value}
                                       @sl-input=${(e: Event) => this.changeSeats(tickets, (e.target as SlInput).value, field)}
@@ -531,16 +532,16 @@ export class ReservationCreate extends LitElement {
             `)}
             ${when(fields.length > 0, () => html`
                 <sl-switch class="show-fields" .checked=${tickets.showFields}
-                           help-text="Fields left empty can be filled in later by the attendees."
+                           help-text=${t('admin.reservation-create.fields.help')}
                            @sl-change=${(e: Event) => this.updateTickets(tickets, { showFields: (e.target as SlSwitch).checked })}>
-                    Fill in the additional fields
+                    ${t('admin.reservation-create.fields')}
                 </sl-switch>
             `)}
             <div class="attendees">
                 ${repeat(tickets.attendees, (_, attendeeIndex) => attendeeIndex, (attendee, attendeeIndex) => this.renderAttendee(tickets, index, attendee, attendeeIndex, fields))}
                 <sl-button class="add-attendee" variant="text" @click=${() => this.addAttendee(tickets)}>
                     <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-                    Add attendee
+                    ${t('admin.reservation-create.add-attendee')}
                 </sl-button>
             </div>
         `;
@@ -569,12 +570,12 @@ export class ReservationCreate extends LitElement {
             <div class=${rowClass}>
                 <span class="attendee-number">#${number}</span>
                 ${this.#form.field({ name: `${path}.firstName`, validators: validateWith(value => ifAttendee(() => requiredValue(value))) },
-                    field => this.textInput(field, { className: `attendee-first-name ${labelClass}`.trim(), label: 'First name' }))}
+                    field => this.textInput(field, { className: `attendee-first-name ${labelClass}`.trim(), label: t('admin.common.first-name') }))}
                 ${this.#form.field({ name: `${path}.lastName`, validators: validateWith(value => ifAttendee(() => requiredValue(value))) },
-                    field => this.textInput(field, { className: `attendee-last-name ${labelClass}`.trim(), label: 'Last name' }))}
+                    field => this.textInput(field, { className: `attendee-last-name ${labelClass}`.trim(), label: t('admin.common.last-name') }))}
                 ${this.#form.field({ name: `${path}.emailAddress`, validators: validateWith(value => ifAttendee(() => emailAddress(value))) },
-                    field => this.textInput(field, { className: `attendee-email ${labelClass}`.trim(), label: 'Email', type: 'email' }))}
-                <sl-icon-button class="remove-attendee" name="trash" label=${`Remove attendee ${number}`}
+                    field => this.textInput(field, { className: `attendee-email ${labelClass}`.trim(), label: t('admin.common.email-short'), type: 'email' }))}
+                <sl-icon-button class="remove-attendee" name="trash" label=${t('admin.reservation-create.remove-attendee', number)}
                                 ?disabled=${tickets.attendees.length === 1}
                                 @click=${() => this.removeAttendee(tickets, index)}></sl-icon-button>
                 ${when(showFields, () => attendeeFields({
@@ -600,12 +601,12 @@ export class ReservationCreate extends LitElement {
 
     private templateDescription(event: AlfioEvent, tickets: TicketsDraft, fields: readonly AdditionalField[]): TemplateResult {
         if (fields.length === 0) {
-            return html`It has a column for the first name, the last name and the e-mail of the attendees.`;
+            return html`${t('admin.reservation-create.template.basic')}`;
         }
         if (this.selectedCategoryId(tickets) == null) {
-            return html`It has a column for each of the ${attendeeFieldsLink(event.shortName)} of this event. Select the category first to get only its columns.`;
+            return html`${tHtml('admin.reservation-create.template.event-fields', attendeeFieldsLink(event.shortName))}`;
         }
-        return html`It has a column for each of the ${attendeeFieldsLink(event.shortName)} of the category.`;
+        return html`${tHtml('admin.reservation-create.template.category-fields', attendeeFieldsLink(event.shortName))}`;
     }
 
     private renderFileSpecs(event: AlfioEvent, fields: readonly AdditionalField[]): TemplateResult {
@@ -617,35 +618,35 @@ export class ReservationCreate extends LitElement {
         return html`
             <div class="bulk-specs">
                 <p class="text-muted">
-                    The template already follows these rules: you need them only if your file is generated by another system.
+                    ${t('admin.csv-import.specs.template')}
                 </p>
                 <p class="text-muted">
-                    A CSV file <strong>with header</strong>, using commas (<code>,</code>) as separator and double quotes (<code>"</code>) as quote character.
-                    Double quotes within a value are written twice (<code>""</code>).
-                    The rows without first name, last name or e-mail are skipped.
+                    ${tHtml('admin.csv-import.specs.format', html`<strong>${t('admin.csv-import.specs.with-header')}</strong>`, html`<code>,</code>`, html`<code>"</code>`)}
+                    ${tHtml('admin.csv-import.specs.quotes', html`<code>""</code>`)}
+                    ${t('admin.reservation-create.specs.skipped')}
                 </p>
                 <pre><span class="template-header">${RESERVATION_ATTENDEE_COLUMNS.map((column, i) => html`${when(i > 0, () => ',')}<span class="text-success">${AttendeesImportService.quoteColumn(column)}</span>`)}${fieldNames.map(name => `,${AttendeesImportService.quoteColumn(name)}`)}</span>
 
-${RESERVATION_ATTENDEE_COLUMNS.join(', ')}: required, in this order
+${t('admin.csv-import.specs.required-columns', RESERVATION_ATTENDEE_COLUMNS.join(', '))}
 ${when(fieldNames.length > 0,
-    () => html`${fieldNames.join(', ')}: optional, the ${attendeeFieldsLink(event.shortName)}${fieldsWithOptions.map(field => html`
-${field.name}: one of ${allowedValues(field).join(', ')}`)}${checkboxes.map(field => html`
-${field.name}: more options separated by ${CHECKBOX_OPTIONS_SEPARATOR}`)}${countries.map(field => html`
-${field.name}: the ISO code of the country, e.g. CH`)}${dates.map(field => html`
-${field.name}: a date, as YYYY-MM-DD`)}`,
-    () => html`There are no ${attendeeFieldsLink(event.shortName)} for this event`)}</pre>
+    () => html`${tHtml('admin.csv-import.specs.optional-columns', fieldNames.join(', '), attendeeFieldsLink(event.shortName))}${fieldsWithOptions.map(field => html`
+${t('admin.csv-import.specs.one-of', field.name, allowedValues(field).join(', '))}`)}${checkboxes.map(field => html`
+${t('admin.csv-import.specs.separated-by', field.name, CHECKBOX_OPTIONS_SEPARATOR)}`)}${countries.map(field => html`
+${t('admin.csv-import.specs.country', field.name)}`)}${dates.map(field => html`
+${t('admin.csv-import.specs.date', field.name)}`)}`,
+    () => html`${tHtml('admin.csv-import.specs.no-fields', attendeeFieldsLink(event.shortName))}`)}</pre>
             </div>
         `;
     }
 
     private renderDiscount(event: AlfioEvent): TemplateResult {
         const selected = this.discounts.find(discount => String(discount.id) === this.discountId);
-        const promoCodesLink = html`<a href=${adminUrl(`/events/${event.shortName}/promo-codes`)}>promo codes</a>`;
-        return sectionCard({ icon: 'percent', title: 'Discount' }, html`
+        const promoCodesLink = html`<a href=${adminUrl(`/events/${event.shortName}/promo-codes`)}>${t('admin.reservation-create.promo-codes-link')}</a>`;
+        return sectionCard({ icon: 'percent', title: t('admin.promo-code.discount') }, html`
             <div class="form-stack">
                 <div>
                     <div class="input-with-action">
-                        <sl-select id="discount-code" label="Discount code" placeholder="No discount" clearable hoist
+                        <sl-select id="discount-code" label=${t('admin.reservation-create.discount-code')} placeholder=${t('admin.reservation-create.discount-code.none')} clearable hoist
                                    aria-describedby="discount-help" ?disabled=${this.discounts.length === 0}
                                    .value=${this.discountId}
                                    @sl-change=${(e: Event) => this.#form.api.setFieldValue('discountId', String((e.target as SlSelect).value))}>
@@ -655,7 +656,7 @@ ${field.name}: a date, as YYYY-MM-DD`)}`,
                         </sl-select>
                         <sl-button id="refresh-discounts" variant="default" ?loading=${this.refreshingDiscounts} @click=${() => this.refreshDiscounts(event)}>
                             <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
-                            Refresh
+                            ${t('admin.common.refresh')}
                         </sl-button>
                     </div>
                     <!-- below the row, not as help-text: the button stays aligned with the select -->
@@ -668,7 +669,7 @@ ${field.name}: a date, as YYYY-MM-DD`)}`,
                     </sl-alert>
                 `)}
                 ${when(this.discounts.length === 0 && this.discountsError == null, () => html`
-                    <p class="text-muted no-discounts">There are no discount codes valid now. You can create them in the ${promoCodesLink} of the event.</p>
+                    <p class="text-muted no-discounts">${tHtml('admin.reservation-create.no-discounts', promoCodesLink)}</p>
                 `)}
             </div>
         `);
@@ -676,12 +677,12 @@ ${field.name}: a date, as YYYY-MM-DD`)}`,
 
     private discountHelp(event: AlfioEvent, discount: PromoCodeDiscount | undefined): string {
         if (discount == null) {
-            return 'Discount codes of the event and of its organization, valid now';
+            return t('admin.reservation-create.discount-code.help');
         }
         let help = discount.description || discountDescription(discount, event.currency);
         if (discount.categories.length > 0) {
             const names = discount.categories.map(id => this.categories.find(String(id))?.name ?? `#${id}`);
-            help += `. Applies only to the tickets of: ${names.join(', ')}`;
+            help = t('admin.reservation-create.discount-code.categories', help, names.join(', '));
         }
         return help;
     }
@@ -689,14 +690,14 @@ ${field.name}: a date, as YYYY-MM-DD`)}`,
     private renderCategory(event: AlfioEvent, tickets: TicketsDraft, index: number): TemplateResult {
         const validateCategory = (value: unknown) => this.ifTickets(index, t => t.categoryType === 'existing', () => {
             if (requiredValue(value) != null) {
-                return 'Please select a category';
+                return t('admin.reservation-create.error.category');
             }
             return undefined;
         });
         return choiceCards({
             name: `category-type-${tickets.key}`,
             className: 'category-type',
-            label: 'Assign the attendees to',
+            label: t('admin.reservation-create.assign-to'),
             value: tickets.categoryType,
             options: CATEGORY_TYPE_CHOICES,
             panel: html`
@@ -712,14 +713,14 @@ ${field.name}: a date, as YYYY-MM-DD`)}`,
                         })),
                     () => this.renderNewCategory(event, tickets, index))}
                 <sl-switch class="add-seats" .checked=${tickets.addSeatsIfNotAvailable}
-                           help-text="Increases the number of seats of the event if there aren't enough. Otherwise, the reservation is not created."
+                           help-text=${t('admin.reservation-create.extra-seats.help')}
                            @sl-change=${(e: Event) => this.updateTickets(tickets, { addSeatsIfNotAvailable: (e.target as SlSwitch).checked })}>
-                    Add extra seats if needed
+                    ${t('admin.reservation-create.extra-seats')}
                 </sl-switch>
                 ${when(tickets.addSeatsIfNotAvailable && tickets.categoryType === 'existing', () => html`
                     <sl-alert variant="warning" open>
                         <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                        If you add seats to a public category and the reservation expires, the added seats will be released to the public.
+                        ${t('admin.reservation-create.extra-seats.warning')}
                     </sl-alert>
                 `)}
             `,
@@ -738,15 +739,15 @@ ${field.name}: a date, as YYYY-MM-DD`)}`,
         return html`
             <div class="row" style="--alfio-row-cols: ${columns}">
                 ${this.#form.field({ name: `tickets[${index}].name`, validators: validateWith(value => this.ifNewCategory(index, () => requiredValue(value))) },
-                    field => this.textInput(field, { className: 'new-category-name', label: 'Name' }))}
+                    field => this.textInput(field, { className: 'new-category-name', label: t('admin.common.name') }))}
                 ${when(hybrid, () => this.#form.field({
                     name: `tickets[${index}].ticketAccessType`,
                     validators: validateWith(value => this.ifNewCategory(index, () => requiredValue(value))),
                 }, field => {
                     const error = this.error(field.state.meta);
                     return html`
-                        <sl-select class=${classMap({ 'ticket-access-type': true, error: error != null })} label="Ticket holders can access the event"
-                                   placeholder="Select" required hoist help-text=${error ?? ''}
+                        <sl-select class=${classMap({ 'ticket-access-type': true, error: error != null })} label=${t('admin.category-dialog.access-type')}
+                                   placeholder=${t('admin.common.select')} required hoist help-text=${error ?? ''}
                                    .value=${field.state.value}
                                    @sl-change=${(e: Event) => field.handleChange(String((e.target as SlSelect).value))}
                                    @sl-blur=${() => field.handleBlur()}>
@@ -763,7 +764,7 @@ ${field.name}: a date, as YYYY-MM-DD`)}`,
         const validatePrice = (value: unknown) => this.ifNewCategory(index, () => {
             const price = Number(value);
             if (String(value ?? '').trim() === '' || Number.isNaN(price) || price < 0) {
-                return 'Please enter a price, 0 or more';
+                return t('admin.category-dialog.error.price');
             }
             return undefined;
         });
@@ -771,7 +772,7 @@ ${field.name}: a date, as YYYY-MM-DD`)}`,
             ${this.#form.field({ name: `tickets[${index}].price`, validators: validateWith(validatePrice) }, field => {
                 const error = this.error(field.state.meta);
                 return html`
-                    <sl-input class=${classMap({ 'new-category-price': true, error: error != null })} label="Ticket price" type="number" min="0" step="0.01" required
+                    <sl-input class=${classMap({ 'new-category-price': true, error: error != null })} label=${t('admin.event-detail.ticket-price')} type="number" min="0" step="0.01" required
                               help-text=${error ?? ''}
                               .value=${field.state.value}
                               @sl-input=${(e: Event) => field.handleChange((e.target as SlInput).value)}
@@ -780,7 +781,7 @@ ${field.name}: a date, as YYYY-MM-DD`)}`,
                     </sl-input>
                 `;
             })}
-            <sl-input class="final-price" label="Final ticket price" readonly help-text=${vatDescription(event)}
+            <sl-input class="final-price" label=${t('admin.reservation-create.final-price')} readonly help-text=${vatDescription(event)}
                      .value=${formatFinalPrice(event, tickets.price)}></sl-input>
         `;
     }
@@ -855,7 +856,7 @@ ${field.name}: a date, as YYYY-MM-DD`)}`,
             this.discounts = await PromoCodeService.listApplicableDiscounts(event);
             this.discountsError = null;
         } catch (error) {
-            this.discountsError = errorMessage(error, 'The discount codes cannot be loaded.');
+            this.discountsError = errorMessage(error, t('admin.reservation-create.discounts-load-failed'));
         }
         // the selected code could have expired or been removed in the meantime
         if (this.discountId !== '' && !this.discounts.some(discount => String(discount.id) === this.discountId)) {
@@ -893,9 +894,9 @@ ${field.name}: a date, as YYYY-MM-DD`)}`,
     private notCollectedMessage(tickets: TicketsDraft, fieldNames: string[]): string {
         const names = fieldNames.join(', ');
         if (this.selectedCategoryId(tickets) == null) {
-            return `Select the category of the tickets: the imported values of ${names} are saved only if the category collects them.`;
+            return t('admin.reservation-create.not-collected.select-category', names);
         }
-        return `The category doesn't collect ${names}: the imported values will not be saved.`;
+        return t('admin.reservation-create.not-collected', names);
     }
 
     private selectedCategoryId(tickets: TicketsDraft): number | null {
@@ -999,18 +1000,12 @@ ${field.name}: a date, as YYYY-MM-DD`)}`,
             // the category can still change: all the fields are accepted, and the ones of other categories are ignored when saving
             const parsed = AdminReservationService.parseAttendees(await file.text(), attendeeFieldsOfAnyCategory(this.fields));
             if (parsed.attendees.length === 0) {
-                this.updateTickets(tickets, { csvError: 'The file does not contain any attendee.' });
+                this.updateTickets(tickets, { csvError: t('admin.csv-import.error.empty') });
                 return;
             }
-            let imported = `${parsed.attendees.length} attendees have`;
-            if (parsed.attendees.length === 1) {
-                imported = '1 attendee has';
-            }
-            let csvMessage = `${imported} been imported from ${file.name}. Please review them before saving.`;
-            if (parsed.skippedRows === 1) {
-                csvMessage += ' 1 row has been skipped, because it doesn\'t contain first name, last name and e-mail.';
-            } else if (parsed.skippedRows > 1) {
-                csvMessage += ` ${parsed.skippedRows} rows have been skipped, because they don't contain first name, last name and e-mail.`;
+            let csvMessage = t('admin.reservation-create.csv.imported', { count: parsed.attendees.length, 1: file.name });
+            if (parsed.skippedRows > 0) {
+                csvMessage = `${csvMessage} ${t('admin.reservation-create.csv.skipped', { count: parsed.skippedRows })}`;
             }
             // the imported attendees can be reviewed and edited as if they had been inserted manually
             const showFields = tickets.showFields || parsed.additionalFields.length > 0;
@@ -1018,7 +1013,7 @@ ${field.name}: a date, as YYYY-MM-DD`)}`,
             // validates the field again: the "Upload CSV" error, if any, no longer applies
             this.#form.api.setFieldValue(`tickets[${this.indexOf(tickets)}].attendeeStrategy`, 'manual');
         } catch (error) {
-            this.updateTickets(tickets, { csvError: errorMessage(error, 'The file cannot be read.') });
+            this.updateTickets(tickets, { csvError: errorMessage(error, t('admin.csv-import.error.read')) });
         }
     }
 
@@ -1053,7 +1048,7 @@ ${field.name}: a date, as YYYY-MM-DD`)}`,
             const reservationId = await AdminReservationService.create(event.shortName, this.buildRequest(event, values));
             this.onCreated({ reservationId, eventName: event.shortName });
         } catch (error) {
-            this.submitError = errorMessage(error, 'Unexpected error. Please retry and/or check the logs.');
+            this.submitError = errorMessage(error, t('admin.error.unexpected-retry'));
         } finally {
             this.submitting = false;
         }
@@ -1127,7 +1122,7 @@ function emptyAttendee(): ReservationAttendee {
 }
 
 function categoryDescription(categories: TicketCategoriesController, tickets: TicketsDraft, index: number): string {
-    const fallback = `category #${index + 1}`;
+    const fallback = t('admin.reservation-create.category-fallback', index + 1);
     if (tickets.categoryType === 'existing') {
         const category = categories.find(tickets.existingCategoryId);
         return category?.name ?? fallback;

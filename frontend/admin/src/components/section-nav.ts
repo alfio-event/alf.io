@@ -3,6 +3,7 @@ import {customElement, property} from 'lit/decorators.js';
 import {repeat} from 'lit/directives/repeat.js';
 import type {SlSelect} from '@shoelace-style/shoelace';
 import {base, creationLayout} from '../styles.ts';
+import { t } from '../service/i18n';
 
 export interface FormSection {
     id: string;
@@ -30,7 +31,7 @@ export class SectionNav extends LitElement {
 
     // aria-label of the nav, e.g. "Event form sections"
     @property({type: String})
-    label = 'Form sections';
+    label = t('admin.section-nav.label');
 
     // id of the section currently in view (or last jumped to)
     @property({attribute: false})
@@ -76,7 +77,7 @@ export class SectionNav extends LitElement {
                        }}>${section.label}</a>
                 `)}
             </nav>
-            <sl-select class="mobile-section-nav" label="Jump to section" hoist .value=${this.activeSection}
+            <sl-select class="mobile-section-nav" label=${t('admin.section-nav.jump-to')} hoist .value=${this.activeSection}
                        @sl-change=${(event: Event) => this.jumpToSection(String((event.target as SlSelect).value))}>
                 ${repeat(this.sections, (section) => section.id, (section) => html`
                     <sl-option value=${section.id}>${section.label}</sl-option>

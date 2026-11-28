@@ -2,6 +2,7 @@ import {html, TemplateResult} from 'lit';
 import {when} from 'lit/directives/when.js';
 import {ExtensionEvent} from '../model/extension.ts';
 import type {Organization} from '../model/organization.ts';
+import { t } from '../service/i18n';
 
 export interface ExtensionScopeIds {
     organizationId: number | null;
@@ -29,7 +30,8 @@ export function renderScope(path: string,
     const organization = organizations.find((o) => o.id === ids.organizationId);
     const event = events.find((e) => e.id === ids.eventId);
     return html`
-        <span class="text-muted">System</span>
+        <span class="text-muted">${t('admin.menu.system')}</span>
+
         ${when(organization !== undefined, () => html`<span class="text-muted"> &gt; ${organization!.name}</span>`)}
         ${when(event !== undefined, () => html`<span class="text-muted"> &gt; ${event!.displayName}</span>`)}
     `;

@@ -13,6 +13,7 @@ import type {AttendeeFieldValues} from '../components/attendee-fields.ts';
 import {AdditionalField, allowedValues} from '../model/additional-field.ts';
 import {postJson, result} from './helpers.ts';
 import {formatAmount} from './reservation-format.ts';
+import { t } from './i18n';
 
 export interface ParsedReservationAttendees {
     attendees: ReservationAttendee[];
@@ -35,14 +36,14 @@ export const CATEGORY_TYPE_CHOICES: ChoiceCardOption<CategoryType>[] = [
     {
         value: 'existing',
         icon: 'tags',
-        title: 'Existing category',
-        description: 'The attendees get seats of the category, which is extended with unallocated seats if needed.',
+        title: t('admin.reservation-create.category-type.existing'),
+        description: t('admin.reservation-create.category-type.existing.description'),
     },
     {
         value: 'new',
         icon: 'shield-lock',
-        title: 'New restricted category',
-        description: 'A category for these attendees only, with its own name and price.',
+        title: t('admin.reservation-create.category-type.new'),
+        description: t('admin.reservation-create.category-type.new.description'),
     },
 ];
 
@@ -83,13 +84,13 @@ export class AdminReservationService {
         const [header = [], ...rows] = parsed.data;
         const fixedColumns = RESERVATION_ATTENDEE_COLUMNS.length;
         if (header.length < fixedColumns || header[2].includes('@')) {
-            throw new Error(`The first row must contain the names of the columns: ${RESERVATION_ATTENDEE_COLUMNS.join(', ')} and the additional fields. Please use the template.`);
+            throw new Error(t('admin.reservation-import.error.header', RESERVATION_ATTENDEE_COLUMNS.join(', ')));
         }
         const fieldsByName = new Map(fields.map(field => [field.name.toLowerCase(), field]));
         const columns = header.slice(fixedColumns).map(name => fieldsByName.get(name.trim().toLowerCase()));
         const unknownColumns = header.slice(fixedColumns).filter((_, i) => columns[i] == null);
         if (unknownColumns.length > 0) {
-            throw new Error(`These columns are not attendees' data to collect of this event: ${unknownColumns.join(', ')}. Please use the template.`);
+            throw new Error(t('admin.reservation-import.error.unknown-columns', unknownColumns.join(', ')));
         }
         const attendees: ReservationAttendee[] = [];
         const invalidValues: string[] = [];
@@ -108,7 +109,7 @@ export class AdminReservationService {
                 const values = fieldValues(field, value);
                 if (values == null) {
                     // the header is the first row of the file
-                    invalidValues.push(`row ${rowIndex + 2}, ${field.name}: "${value}"`);
+                    invalidValues.push(t('admin.reservation-import.error.invalid-value', rowIndex + 2, field.name, value));
                     return;
                 }
                 additionalInfo[field.name] = values;
@@ -125,11 +126,10 @@ export class AdminReservationService {
         });
         if (invalidValues.length > 0) {
             const shown = invalidValues.slice(0, MAX_REPORTED_ERRORS).join('; ');
-            let more = '';
             if (invalidValues.length > MAX_REPORTED_ERRORS) {
-                more = ` and ${invalidValues.length - MAX_REPORTED_ERRORS} more`;
+                throw new Error(t('admin.reservation-import.error.invalid-values-and-more', shown, invalidValues.length - MAX_REPORTED_ERRORS));
             }
-            throw new Error(`These values are not options of their field: ${shown}${more}. See the file specifications.`);
+            throw new Error(t('admin.reservation-import.error.invalid-values', shown));
         }
         return {
             attendees,
@@ -191,9 +191,9 @@ export function formatFinalPrice(event: AlfioEvent, price: string): string {
  */
 export function vatDescription(event: AlfioEvent): string {
     if (event.vatIncluded) {
-        return 'VAT included';
+        return t('admin.price.vat-included');
     }
-    return `Including ${event.vatPercentage}% VAT`;
+    return t('admin.price.including-vat', event.vatPercentage);
 }
 
 /**

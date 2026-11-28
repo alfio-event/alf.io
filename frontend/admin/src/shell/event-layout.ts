@@ -5,6 +5,7 @@ import { createChildRoutes, PAGE_NAME_EVENT, ROUTE_CHANGED_EVENT } from '../admi
 import { EVENT_ROUTES, RoutedEvent } from '../admin-routes';
 import { EventService } from '../service/event';
 import { taskContent } from '../components/task-content';
+import { t } from '../service/i18n';
 
 /**
  * The pages of an event (/admin/events/{eventName}/…): the event menu (<alfio-event-sidebar>) next to the page.
@@ -60,7 +61,7 @@ export class EventLayout extends LitElement {
     }
 
     private renderPage(page: (event: RoutedEvent) => TemplateResult): TemplateResult {
-        return taskContent(this.loadEventTask, this.currentEvent(), 'Failed to load the event', page);
+        return taskContent(this.loadEventTask, this.currentEvent(), t('admin.load-error.event'), page);
     }
 
     /** the loaded event, unless it's the previous one while moving to another event */

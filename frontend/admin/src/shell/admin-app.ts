@@ -18,8 +18,9 @@ import {
 import { ADMIN_ROUTES, routeTitles } from '../admin-routes';
 import { NOT_AUTHORIZED_EVENT, NOT_LOGGED_IN_EVENT } from '../service/helpers';
 import { clearSessionStorage } from './admin-navbar';
+import { t } from '../service/i18n';
 
-const APP_TITLE = 'alf.io Admin';
+const APP_TITLE = t('admin.shell.app-title');
 /** kept across reloads: the draft of the event being created (see event-create.ts) */
 const EVENT_DRAFT_KEY = 'new_event';
 
@@ -109,7 +110,7 @@ export class AdminApp extends LitElement {
         const config = this.config;
         const eventPage = adminRoute().startsWith('/events/') && !adminRoute().startsWith('/events/new');
         return html`
-            <a class="skip-link" href="#main-content" @click=${this.skipToContent}>Skip to content</a>
+            <a class="skip-link" href="#main-content" @click=${this.skipToContent}>${t('admin.shell.skip-to-content')}</a>
             <alfio-admin-navbar></alfio-admin-navbar>
             <main class="main-content" id="main-content" tabindex="-1">
                 ${when(config.errorMessage != null && config.errorMessage !== '', () => html`
@@ -128,9 +129,9 @@ export class AdminApp extends LitElement {
                 </footer>
             `)}
             ${this.renderModeNotice()}
-            <sl-dialog class="not-authorized-dialog responsive-dialog" label="Not allowed">
-                <p>Your account is not allowed to do this. Ask an administrator of your organization if you need to.</p>
-                <sl-button slot="footer" variant="default" size="large" @click=${this.closeNotAuthorized}>Close</sl-button>
+            <sl-dialog class="not-authorized-dialog responsive-dialog" label=${t('admin.shell.not-allowed.title')}>
+                <p>${t('admin.shell.not-allowed.text')}</p>
+                <sl-button slot="footer" variant="default" size="large" @click=${this.closeNotAuthorized}>${t('admin.common.close')}</sl-button>
             </sl-dialog>
             <alfio-feedback-visualizer></alfio-feedback-visualizer>
             ${when(config.basicConfigurationNeeded, () => html`<alfio-basic-settings-dialog></alfio-basic-settings-dialog>`)}
@@ -142,7 +143,7 @@ export class AdminApp extends LitElement {
             return html`
                 <sl-alert class="mode-notice" variant="primary" open closable @sl-after-hide=${this.dismissDevNotice}>
                     <sl-icon slot="icon" name="info-circle"></sl-icon>
-                    You are running alf.io in development mode
+                    ${t('admin.shell.development-mode')}
                 </sl-alert>
             `;
         }
@@ -150,7 +151,7 @@ export class AdminApp extends LitElement {
             return html`
                 <sl-alert class="mode-notice" variant="danger" open>
                     <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-                    You are running alf.io in production mode not over https. This is not a recommended configuration.
+                    ${t('admin.shell.production-without-https')}
                 </sl-alert>
             `;
         }

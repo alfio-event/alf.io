@@ -1,3 +1,4 @@
+import { t } from '../service/i18n';
 /**
  * The shape of a JSON setting, as the server reads it: keep each schema in sync with the Java class it describes.
  * null is accepted for every value, as the server does.
@@ -25,10 +26,10 @@ export function checkJsonSetting(value: unknown, schema: Record<string, JsonSche
     try {
         parsed = JSON.parse(text);
     } catch {
-        return 'Please enter valid JSON';
+        return t('admin.json-check.invalid');
     }
     if (!isObject(parsed)) {
-        return 'The value must be a JSON object, between { and }';
+        return t('admin.json-check.not-object', '{', '}');
     }
     return checkObject(parsed, schema, '');
 }
@@ -85,7 +86,7 @@ function checkObject(value: Record<string, unknown>, schema: Record<string, Json
         const expected = schema[name];
         if (expected == null) {
             const known = Object.keys(schema).map((key) => `${path}${key}`).join(', ');
-            return `Unknown property "${property}". Expected one of: ${known}`;
+            return t('admin.json-check.unknown-property', property, known);
         }
         const error = checkValue(propertyValue, expected, property);
         if (error != null) {
@@ -100,17 +101,17 @@ function checkValue(value: unknown, schema: JsonSchema, path: string): string | 
         return undefined;
     }
     if (schema === 'text') {
-        return check(typeof value === 'string', path, 'must be a text, between double quotes');
+        return check(typeof value === 'string', t('admin.json-check.text', path));
     }
     if (schema === 'yes/no') {
-        return check(typeof value === 'boolean', path, 'must be true or false, without quotes');
+        return check(typeof value === 'boolean', t('admin.json-check.yes-no', path));
     }
     if (schema === 'whole number') {
-        return check(Number.isInteger(value), path, 'must be a whole number, without quotes');
+        return check(Number.isInteger(value), t('admin.json-check.whole-number', path));
     }
     if ('list' in schema) {
         if (!Array.isArray(value)) {
-            return `"${path}" must be a list, between [ and ]`;
+            return t('admin.json-check.list', path, '[', ']');
         }
         for (let index = 0; index < value.length; index++) {
             const error = checkValue(value[index], schema.list, `${path}[${index}]`);
@@ -121,16 +122,16 @@ function checkValue(value: unknown, schema: JsonSchema, path: string): string | 
         return undefined;
     }
     if (!isObject(value)) {
-        return `"${path}" must be an object, between { and }`;
+        return t('admin.json-check.object', path, '{', '}');
     }
     return checkObject(value, schema.object, `${path}.`);
 }
 
-function check(valid: boolean, path: string, message: string): string | undefined {
+function check(valid: boolean, message: string): string | undefined {
     if (valid) {
         return undefined;
     }
-    return `"${path}" ${message}`;
+    return message;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {

@@ -4,8 +4,9 @@ import {PaymentInfo, ReservationDetail, Ticket} from '../model/reservation-detai
 import {formatAmount, formatFullName, shortReservationId} from '../service/reservation-format.ts';
 import '../components/format-date.ts';
 import '../components/payment-method.ts';
+import { t } from '../service/i18n';
 
-const NOTIFY_LABEL = 'Send a notification email to the reservation contact person';
+const NOTIFY_LABEL = t('admin.pending-payments.delete.notify');
 
 /**
  * A credit note can be issued if the customer has requested an invoice, and the payment has been received
@@ -28,16 +29,16 @@ export function cancelReservationRequest(reservation: ReservationDetail,
     const transaction = paymentInfo?.transaction;
     let warning: string | undefined;
     if (!credit && paymentInfo?.paymentInformation?.paidAmount !== '0.00' && !supportRefund) {
-        warning = 'This reservation cannot be refunded automatically.';
+        warning = t('admin.cancellation.no-automatic-refund');
     }
     const base = {
         details: [
-            { label: 'Payment method', value: html`<alfio-payment-method method=${paymentInfo?.paymentMethod ?? ''}></alfio-payment-method>` },
+            { label: t('admin.reservation.payment-method'), value: html`<alfio-payment-method method=${paymentInfo?.paymentMethod ?? ''}></alfio-payment-method>` },
             transaction != null && {
-                label: 'Transaction date',
+                label: t('admin.cancellation.transaction-date'),
                 value: html`<alfio-format-date date=${transaction.timestamp} time-zone=${timeZone}></alfio-format-date>`,
             },
-            paid !== '' && { label: 'Paid amount', value: paid },
+            paid !== '' && { label: t('admin.matching-transaction.paid-amount'), value: paid },
         ],
         warning,
         defaults: { refund: true, issueCreditNote: creditNote, notify: false },
@@ -46,22 +47,22 @@ export function cancelReservationRequest(reservation: ReservationDetail,
         return {
             ...base,
             icon: 'arrow-counterclockwise',
-            title: `Issue credit note for ${id}?`,
-            description: 'A credit note will be generated, and the reservation will be marked as credited.',
-            action: 'Issue credit note',
+            title: t('admin.pending-payments.credit.title', id),
+            description: t('admin.cancellation.credit.description'),
+            action: t('admin.pending-payments.issue-credit-note'),
             variant: 'warning',
             options: {
                 refund: refundLabel(supportRefund, paid),
-                notify: 'Send the credit note to the reservation contact person',
+                notify: t('admin.pending-payments.credit.notify'),
             },
         };
     }
     return {
         ...base,
         icon: 'trash',
-        title: `Cancel reservation ${id}?`,
-        description: 'All the tickets will be released. This operation cannot be undone.',
-        action: 'Cancel reservation',
+        title: t('admin.cancellation.cancel.title', id),
+        description: t('admin.cancellation.cancel.description'),
+        action: t('admin.reservation.cancel'),
         variant: 'danger',
         options: {
             refund: refundLabel(supportRefund, paid),
@@ -83,20 +84,20 @@ export function removeTicketRequest(reservation: Pick<ReservationDetail, 'id' | 
     const creditNote = canGenerateCreditNote(reservation);
     return {
         icon: 'trash',
-        title: `Remove ticket of ${formatFullName(ticket)}?`,
-        description: `The ticket will be removed from reservation ${shortReservationId(reservation.id)} and released.`,
-        action: 'Remove ticket',
+        title: t('admin.cancellation.remove.title', formatFullName(ticket)),
+        description: t('admin.cancellation.remove.description', shortReservationId(reservation.id)),
+        action: t('admin.cancellation.remove'),
         variant: 'danger',
         details: [
-            { label: 'Ticket', value: ticket.uuid, monospace: true },
-            { label: 'Attendee', value: formatFullName(ticket) },
-            { label: 'E-mail', value: ticket.email ?? '' },
-            { label: 'Paid amount', value: price },
+            { label: t('admin.common.ticket'), value: ticket.uuid, monospace: true },
+            { label: t('admin.common.attendee'), value: formatFullName(ticket) },
+            { label: t('admin.common.email'), value: ticket.email ?? '' },
+            { label: t('admin.matching-transaction.paid-amount'), value: price },
         ],
         options: {
             refund: refundLabel(supportRefund, price),
             issueCreditNote: creditNoteLabel(creditNote && !supportRefund, price),
-            notify: 'Send a notification email to the ticket holder',
+            notify: t('admin.cancellation.remove.notify'),
         },
         defaults: { refund: false, issueCreditNote: creditNote, notify: false },
     };
@@ -131,14 +132,14 @@ function paidAmount(paymentInfo: PaymentInfo | null, currencyCode: string | null
 
 function refundLabel(supportRefund: boolean, amount: string): string | undefined {
     if (supportRefund) {
-        return `Refund ${amount}`;
+        return t('admin.cancellation.refund', amount);
     }
     return undefined;
 }
 
 function creditNoteLabel(available: boolean, amount: string): string | undefined {
     if (available) {
-        return `Issue a credit note for ${amount}`;
+        return t('admin.cancellation.credit-note', amount);
     }
     return undefined;
 }

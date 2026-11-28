@@ -60,4 +60,8 @@ against it before reporting.
 
 ## Translations
 
-Translations (`src/main/resources/alfio/i18n`) are managed on POEditor. When adding a feature, add the new keys to the English files (`admin.properties`, `public.properties`) and leave the other languages to POEditor.
+Translations (`src/main/resources/alfio/i18n`) are managed on POEditor. When adding a feature, add the new keys to the English file (`public.properties`) and leave the other languages to POEditor.
+
+- One file holds the texts of the public frontend, the admin (keys starting with `admin.`), the e-mails and the server's validation errors (`error.*`).
+- The server reads every text with `MessageFormat`: write an apostrophe twice (`''`) and use `{0}`, `{1}` for the values. `FormattersTest` checks every language.
+- The admin UI has no hard-coded text: see the Translations section of `docs/admin-style-guide.md`.

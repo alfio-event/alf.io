@@ -28,6 +28,7 @@ import {
     validateWith,
 } from '../components/form-validation.ts';
 import { navigate } from '../admin-router';
+import { t } from '../service/i18n';
 
 const NAME_PATTERN = /^[A-Za-z0-9]+$/;
 
@@ -144,7 +145,7 @@ export class ExtensionEdit extends LitElement {
                     <h1>${this.pageTitle}</h1>
                 </div>
                 <hr class="page-separator"/>
-                ${taskContent(this.loadTask, this.data, 'Failed to load the extension. Please try again.',
+                ${taskContent(this.loadTask, this.data, t('admin.extension.load-failed'),
                     (data) => this.renderForm(data))}
             </div>
         `;
@@ -152,9 +153,9 @@ export class ExtensionEdit extends LitElement {
 
     private get pageTitle(): string {
         if (this.isEdit) {
-            return 'Edit extension';
+            return t('admin.page-title.edit-extension');
         }
-        return 'Create new extension';
+        return t('admin.extension.create');
     }
 
     private renderForm(data: EditData): TemplateResult {
@@ -164,28 +165,28 @@ export class ExtensionEdit extends LitElement {
         }
         return html`
             <form novalidate @submit=${this.submit}>
-                ${sectionCard({ icon: 'diagram-3', title: 'Scope and name' }, html`
+                ${sectionCard({ icon: 'diagram-3', title: t('admin.extension.scope-and-name') }, html`
                     <div class="form-stack">
                         <div class="settings-row">
                             <sl-select
-                                label="Scope"
+                                label=${t('admin.extension.scope')}
                                 hoist
-                                placeholder="System"
+                                placeholder=${t('admin.menu.system')}
                                 .value=${String(this.organizationId ?? '')}
                                 @sl-change=${this.onScopeChange}>
-                                <sl-option value="">System</sl-option>
+                                <sl-option value="">${t('admin.menu.system')}</sl-option>
                                 ${repeat(data.organizations, (org) => org.id, (org) => html`
                                     <sl-option value=${org.id}>${org.name}</sl-option>
                                 `)}
                             </sl-select>
                             ${when(this.organizationId !== null, () => html`
                                 <sl-select
-                                    label="Event"
+                                    label=${t('admin.page-title.event')}
                                     hoist
-                                    placeholder="All events"
+                                    placeholder=${t('admin.extension.all-events')}
                                     .value=${String(this.eventId ?? '')}
                                     @sl-change=${this.onEventChange}>
-                                    <sl-option value="">All events</sl-option>
+                                    <sl-option value="">${t('admin.extension.all-events')}</sl-option>
                                     ${repeat(events, (event) => event.id, (event) => html`
                                         <sl-option value=${event.id}>${event.displayName}</sl-option>
                                     `)}
@@ -196,18 +197,18 @@ export class ExtensionEdit extends LitElement {
                                 // the metadata id of the script follows the name
                                 handleChange: (name: string) => this.onNameInput(name, value => field.handleChange(value)),
                                 handleBlur: () => field.handleBlur(),
-                            }, this.submitted, { id: 'extension-name', name: 'name', label: 'Name', placeholder: 'Letters and numbers only' }))}
+                            }, this.submitted, { id: 'extension-name', name: 'name', label: t('admin.common.name'), placeholder: t('admin.extension.name.placeholder') }))}
                         </div>
                         <sl-switch
                             ?checked=${this.enabled}
-                            help-text="Only enabled extensions are run when their events occur."
+                            help-text=${t('admin.extension.enabled.help')}
                             @sl-change=${(e: Event) => {
                                 this.enabled = (e.target as SlSwitch).checked;
-                            }}>Enabled</sl-switch>
+                            }}>${t('admin.extensions.enabled')}</sl-switch>
                     </div>
                 `)}
 
-                ${sectionCard({ icon: 'code-slash', title: 'Script' }, html`
+                ${sectionCard({ icon: 'code-slash', title: t('admin.extension.script') }, html`
                     ${this.#form.field({ name: 'script', validators: validateWith(value => requiredValue(value)) }, field => {
                         const error = fieldError(field.state.meta, this.submitted);
                         return html`
@@ -216,7 +217,7 @@ export class ExtensionEdit extends LitElement {
                                 class=${classMap({ error: error != null })}
                                 ?invalid=${error != null}
                                 .language=${extensionScriptLanguage}
-                                help-text=${error ?? 'The script must define a getScriptMetadata() function, see the sample. In the events array, press Ctrl+Space or type a quote to list the supported events.'}
+                                help-text=${error ?? t('admin.extension.script.help')}
                                 .value=${field.state.value}
                                 @value-changed=${(e: CustomEvent<string>) => field.handleChange(e.detail)}></alfio-code-editor>
                         `;
@@ -234,11 +235,11 @@ export class ExtensionEdit extends LitElement {
                     <div class="row" style="--alfio-row-cols: 3">
                         <sl-button type="button" variant="default" size="large" ?disabled=${this.busy}
                                    @click=${() => this.cancel()}>
-                            Cancel
+                            ${t('admin.common.cancel')}
                         </sl-button>
                         <div></div>
                         <sl-button type="submit" variant="warning" size="large" ?loading=${this.busy} ?disabled=${this.busy}>
-                            Save
+                            ${t('admin.common.save')}
                         </sl-button>
                     </div>
                 </div>
@@ -335,14 +336,14 @@ export class ExtensionEdit extends LitElement {
         await ExtensionService.save(payload, previous)
             .then((result) => {
                 if (result.success) {
-                    dispatchFeedback({type: 'success', message: 'Extension has been saved'}, this);
+                    dispatchFeedback({type: 'success', message: t('admin.extension.saved')}, this);
                     this.gotoList();
                 } else {
-                    this.errorMessage = result.message ?? 'Failed to save the extension';
+                    this.errorMessage = result.message ?? t('admin.extension.save-failed');
                 }
             })
             .catch(() => {
-                this.errorMessage = 'Failed to save the extension';
+                this.errorMessage = t('admin.extension.save-failed');
             })
             .finally(() => {
                 this.busy = false;
@@ -364,7 +365,7 @@ function validateName(value: unknown): string | undefined {
         return missing;
     }
     if (!NAME_PATTERN.test(String(value))) {
-        return 'Use only letters and numbers';
+        return t('admin.extension.error.name');
     }
     return undefined;
 }

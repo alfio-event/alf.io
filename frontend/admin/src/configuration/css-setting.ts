@@ -5,6 +5,7 @@ import type {SlDialog, SlRequestCloseEvent} from '@shoelace-style/shoelace';
 import {css as cssLanguage} from '@codemirror/lang-css';
 import {base, dialog, form, row, textColors} from '../styles.ts';
 import '../components/code-editor.ts';
+import { t } from '../service/i18n';
 
 export const CSS_SETTING_CHANGE_EVENT = 'alfio-css-setting-change';
 
@@ -105,13 +106,13 @@ export class CssSetting extends LitElement {
                 ${when(text !== '', () => html`
                     <pre class="css-preview">${lines.slice(0, PREVIEW_LINES).join('\n')}${when(lines.length > PREVIEW_LINES, () => '\n…')}</pre>
                 `, () => html`
-                    <p class="css-empty">${this.notSetText || 'No custom CSS.'}</p>
+                    <p class="css-empty">${this.notSetText || t('admin.css-setting.none')}</p>
                 `)}
                 <div class="css-summary-footer">
                     <span>${when(text !== '', () => lineCount(lines.length), () => nothing)}</span>
                     <sl-button class="edit-css" variant="default" size="small" @click=${() => this.show()}>
                         <sl-icon slot="prefix" name="pencil"></sl-icon>
-                        Edit
+                        ${t('admin.common.edit')}
                     </sl-button>
                 </div>
             </div>
@@ -121,15 +122,15 @@ export class CssSetting extends LitElement {
                        @sl-after-hide=${this.onAfterHide}>
                 ${when(this.open, () => html`
                     <alfio-code-editor .language=${cssLanguage()} .value=${this.draft}
-                                       help-text="Applied after the standard styles of the pages."
+                                       help-text=${t('admin.css-setting.help')}
                                        @value-changed=${(e: CustomEvent<string>) => { this.draft = e.detail; }}></alfio-code-editor>
                     <div slot="footer">
                         <sl-divider></sl-divider>
-                        <p class="text-muted footer-note">The CSS is saved with the other settings.</p>
+                        <p class="text-muted footer-note">${t('admin.css-setting.footer')}</p>
                         <div class="row" style="--alfio-row-cols: 3">
-                            <sl-button variant="default" size="large" @click=${() => void this.dialog.hide()}>Cancel</sl-button>
+                            <sl-button variant="default" size="large" @click=${() => void this.dialog.hide()}>${t('admin.common.cancel')}</sl-button>
                             <div></div>
-                            <sl-button class="apply-css" variant="warning" size="large" @click=${() => this.apply()}>Apply</sl-button>
+                            <sl-button class="apply-css" variant="warning" size="large" @click=${() => this.apply()}>${t('admin.common.apply')}</sl-button>
                         </div>
                     </div>
                 `)}
@@ -169,10 +170,7 @@ export class CssSetting extends LitElement {
 }
 
 function lineCount(count: number): string {
-    if (count === 1) {
-        return '1 line';
-    }
-    return `${count} lines`;
+    return t('admin.css-setting.lines', { count });
 }
 
 declare global {

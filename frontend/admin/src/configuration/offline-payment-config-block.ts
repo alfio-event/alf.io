@@ -13,6 +13,7 @@ import {taskContent} from '../components/task-content.ts';
 import {badges, base, modernLayout, modernTable, textColors} from '../styles.ts';
 import type {OfflinePaymentDialog, OfflinePaymentSaveDetail} from './offline-payment-dialog.ts';
 import './offline-payment-dialog.ts';
+import { t } from '../service/i18n';
 
 interface PaymentMethodsData {
     methods: CustomOfflinePayment[];
@@ -98,7 +99,7 @@ export class OfflinePaymentConfigBlock extends LitElement {
 
     render(): TemplateResult {
         return html`
-            ${taskContent(this.loadTask, this.lastData, 'Failed to load the payment methods. Please try again.',
+            ${taskContent(this.loadTask, this.lastData, t('admin.offline-payment.load-failed'),
                 (data) => this.renderList(data))}
             <offline-payment-dialog @alfio-offline-payment-save=${this.onSave}></offline-payment-dialog>
         `;
@@ -106,16 +107,16 @@ export class OfflinePaymentConfigBlock extends LitElement {
 
     private renderList(data: PaymentMethodsData): TemplateResult {
         if (data.methods.length === 0) {
-            return emptyState('No payment methods yet.');
+            return emptyState(t('admin.offline-payment.none'));
         }
         return html`
             <div class="table-responsive">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Languages</th>
-                            <th><span class="sr-only">Actions</span></th>
+                            <th>${t('admin.common.name')}</th>
+                            <th>${t('admin.event-detail.languages')}</th>
+                            <th><span class="sr-only">${t('admin.common.actions')}</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -142,13 +143,13 @@ export class OfflinePaymentConfigBlock extends LitElement {
                 <td class="actions-cell">
                     <sl-button class="edit-payment-method" variant="default" size="small" @click=${() => this.edit(method)}>
                         <sl-icon slot="prefix" name="pencil"></sl-icon>
-                        Edit
+                        ${t('admin.common.edit')}
                     </sl-button>
                     <sl-button class="delete-payment-method" variant="danger" size="small" outline
                                ?loading=${this.deleting === id} ?disabled=${this.deleting != null}
                                @click=${() => void this.delete(method)}>
                         <sl-icon slot="prefix" name="trash"></sl-icon>
-                        Delete
+                        ${t('admin.common.delete')}
                     </sl-button>
                 </td>
             </tr>
@@ -167,24 +168,24 @@ export class OfflinePaymentConfigBlock extends LitElement {
     private onSave = async (event: CustomEvent<OfflinePaymentSaveDetail>): Promise<void> => {
         const {paymentMethodId, payment} = event.detail;
         let request: Promise<Response>;
-        let message = 'The payment method has been created';
+        let message = t('admin.offline-payment.created');
         if (paymentMethodId != null) {
             request = this.service.updatePaymentMethod(this.organization, paymentMethodId, payment);
-            message = 'The payment method has been saved';
+            message = t('admin.offline-payment.saved');
         } else {
             request = this.service.createPaymentMethod(this.organization, payment);
         }
         try {
             const response = await request;
             if (!response.ok) {
-                this.dialog.showError(await responseErrorMessage(response, 'Failed to save the payment method. Please try again.'));
+                this.dialog.showError(await responseErrorMessage(response, t('admin.offline-payment.save-failed')));
                 return;
             }
             this.dialog.close();
             dispatchFeedback({type: 'success', message}, this);
             this.refreshCount++;
         } catch {
-            this.dialog.showError('Failed to save the payment method. Please try again.');
+            this.dialog.showError(t('admin.offline-payment.save-failed'));
         }
     };
 
@@ -193,8 +194,8 @@ export class OfflinePaymentConfigBlock extends LitElement {
         if (id == null) {
             return;
         }
-        const confirmed = await ConfirmationDialogService.requestConfirm('Delete payment method',
-            `"${displayName(method)}" will no longer be offered to the buyers.`, 'danger');
+        const confirmed = await ConfirmationDialogService.requestConfirm(t('admin.offline-payment.delete.title'),
+            t('admin.offline-payment.delete.text', displayName(method)), 'danger');
         if (!confirmed) {
             return;
         }
@@ -202,13 +203,13 @@ export class OfflinePaymentConfigBlock extends LitElement {
         try {
             const response = await this.service.deletePaymentMethod(this.organization, id);
             if (!response.ok) {
-                dispatchFeedback({type: 'danger', message: await responseErrorMessage(response, 'Failed to delete the payment method')}, this);
+                dispatchFeedback({type: 'danger', message: await responseErrorMessage(response, t('admin.offline-payment.delete-failed'))}, this);
                 return;
             }
-            dispatchFeedback({type: 'success', message: 'The payment method has been deleted'}, this);
+            dispatchFeedback({type: 'success', message: t('admin.offline-payment.deleted')}, this);
             this.refreshCount++;
         } catch {
-            dispatchFeedback({type: 'danger', message: 'Failed to delete the payment method'}, this);
+            dispatchFeedback({type: 'danger', message: t('admin.offline-payment.delete-failed')}, this);
         } finally {
             this.deleting = null;
         }

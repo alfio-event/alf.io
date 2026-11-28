@@ -8,6 +8,7 @@ import {Table, TableCell, TableHeader, TableRow} from '@tiptap/extension-table';
 import {Plugin, PluginKey} from '@tiptap/pm/state';
 import type {SlInput, SlMenuItem} from '@shoelace-style/shoelace';
 import {MustacheVariableDefinition, MustacheVariables} from './mustache-variable.ts';
+import { t } from '../service/i18n';
 
 export type AlfioMarkdownChange = CustomEvent<string>;
 
@@ -357,7 +358,7 @@ export class MarkdownEditor extends LitElement {
             <sl-dropdown hoist class="variable-menu">
                 <sl-button slot="trigger" size="small" caret ?disabled=${this.editor == null}>
                     <sl-icon slot="prefix" name="braces"></sl-icon>
-                    Insert variable
+                    ${t('admin.markdown.insert-variable')}
                 </sl-button>
                 <sl-menu @sl-select=${this.insertVariable}>
                     ${this.variables.map(v => html`
@@ -393,7 +394,7 @@ export class MarkdownEditor extends LitElement {
         if (this.active('heading', {level: 3})) {
             return 'H3';
         }
-        return 'Paragraph';
+        return t('admin.markdown.paragraph');
     }
 
     private onHeadingSelect(e: CustomEvent): void {
@@ -444,60 +445,60 @@ export class MarkdownEditor extends LitElement {
         const editor = this.editor;
         return html`
             <div class="toolbar">
-                <sl-icon-button name="arrow-counterclockwise" label="Undo"
+                <sl-icon-button name="arrow-counterclockwise" label=${t('admin.markdown.undo')}
                                 ?disabled=${editor == null || !editor.can().undo()}
                                 @click=${() => editor?.chain().focus().undo().run()}></sl-icon-button>
-                <sl-icon-button name="arrow-clockwise" label="Redo"
+                <sl-icon-button name="arrow-clockwise" label=${t('admin.markdown.redo')}
                                 ?disabled=${editor == null || !editor.can().redo()}
                                 @click=${() => editor?.chain().focus().redo().run()}></sl-icon-button>
                 <span class="toolbar-divider"></span>
-                <sl-icon-button name="type-bold" label="Bold" aria-pressed=${this.pressed('bold')}
+                <sl-icon-button name="type-bold" label=${t('admin.markdown.bold')} aria-pressed=${this.pressed('bold')}
                                 ?disabled=${editor == null || !editor.can().toggleBold()}
                                 @click=${() => editor?.chain().focus().toggleBold().run()}></sl-icon-button>
-                <sl-icon-button name="type-italic" label="Italic" aria-pressed=${this.pressed('italic')}
+                <sl-icon-button name="type-italic" label=${t('admin.markdown.italic')} aria-pressed=${this.pressed('italic')}
                                 ?disabled=${editor == null || !editor.can().toggleItalic()}
                                 @click=${() => editor?.chain().focus().toggleItalic().run()}></sl-icon-button>
-                <sl-icon-button name="type-underline" label="Underline" aria-pressed=${this.pressed('underline')}
+                <sl-icon-button name="type-underline" label=${t('admin.markdown.underline')} aria-pressed=${this.pressed('underline')}
                                 ?disabled=${editor == null || !editor.can().toggleUnderline()}
                                 @click=${() => editor?.chain().focus().toggleUnderline().run()}></sl-icon-button>
-                <sl-icon-button name="type-strikethrough" label="Strikethrough" aria-pressed=${this.pressed('strike')}
+                <sl-icon-button name="type-strikethrough" label=${t('admin.markdown.strikethrough')} aria-pressed=${this.pressed('strike')}
                                 ?disabled=${editor == null || !editor.can().toggleStrike()}
                                 @click=${() => editor?.chain().focus().toggleStrike().run()}></sl-icon-button>
-                <sl-icon-button name="code-slash" label="Inline code" aria-pressed=${this.pressed('code')}
+                <sl-icon-button name="code-slash" label=${t('admin.markdown.inline-code')} aria-pressed=${this.pressed('code')}
                                 ?disabled=${editor == null || !editor.can().toggleCode()}
                                 @click=${() => editor?.chain().focus().toggleCode().run()}></sl-icon-button>
                 <span class="toolbar-divider"></span>
                 <sl-dropdown hoist>
                     <sl-button slot="trigger" size="small" caret ?disabled=${editor == null}>${this.headingLabel()}</sl-button>
                     <sl-menu @sl-select=${this.onHeadingSelect}>
-                        <sl-menu-item value="paragraph">Paragraph</sl-menu-item>
-                        <sl-menu-item value="h1">Heading 1</sl-menu-item>
-                        <sl-menu-item value="h2">Heading 2</sl-menu-item>
-                        <sl-menu-item value="h3">Heading 3</sl-menu-item>
+                        <sl-menu-item value="paragraph">${t('admin.markdown.paragraph')}</sl-menu-item>
+                        <sl-menu-item value="h1">${t('admin.markdown.heading', 1)}</sl-menu-item>
+                        <sl-menu-item value="h2">${t('admin.markdown.heading', 2)}</sl-menu-item>
+                        <sl-menu-item value="h3">${t('admin.markdown.heading', 3)}</sl-menu-item>
                     </sl-menu>
                 </sl-dropdown>
                 <span class="toolbar-divider"></span>
-                <sl-icon-button name="list-ul" label="Bullet list" aria-pressed=${this.pressed('bulletList')}
+                <sl-icon-button name="list-ul" label=${t('admin.markdown.bullet-list')} aria-pressed=${this.pressed('bulletList')}
                                 ?disabled=${editor == null || !editor.can().toggleBulletList()}
                                 @click=${() => editor?.chain().focus().toggleBulletList().run()}></sl-icon-button>
-                <sl-icon-button name="list-ol" label="Ordered list" aria-pressed=${this.pressed('orderedList')}
+                <sl-icon-button name="list-ol" label=${t('admin.markdown.ordered-list')} aria-pressed=${this.pressed('orderedList')}
                                 ?disabled=${editor == null || !editor.can().toggleOrderedList()}
                                 @click=${() => editor?.chain().focus().toggleOrderedList().run()}></sl-icon-button>
                 <span class="toolbar-divider"></span>
-                <sl-icon-button name="quote" label="Quote" aria-pressed=${this.pressed('blockquote')}
+                <sl-icon-button name="quote" label=${t('admin.markdown.quote')} aria-pressed=${this.pressed('blockquote')}
                                 ?disabled=${editor == null || !editor.can().toggleBlockquote()}
                                 @click=${() => editor?.chain().focus().toggleBlockquote().run()}></sl-icon-button>
-                <sl-icon-button name="code-square" label="Code block" aria-pressed=${this.pressed('codeBlock')}
+                <sl-icon-button name="code-square" label=${t('admin.markdown.code-block')} aria-pressed=${this.pressed('codeBlock')}
                                 ?disabled=${editor == null || !editor.can().toggleCodeBlock()}
                                 @click=${() => editor?.chain().focus().toggleCodeBlock().run()}></sl-icon-button>
-                <sl-icon-button name="hr" label="Horizontal rule"
+                <sl-icon-button name="hr" label=${t('admin.markdown.horizontal-rule')}
                                 ?disabled=${editor == null || !editor.can().setHorizontalRule()}
                                 @click=${() => editor?.chain().focus().setHorizontalRule().run()}></sl-icon-button>
                 <span class="toolbar-divider"></span>
-                <sl-icon-button name="link-45deg" label="Link" aria-pressed=${this.pressed('link')}
+                <sl-icon-button name="link-45deg" label=${t('admin.markdown.link')} aria-pressed=${this.pressed('link')}
                                 ?disabled=${editor == null}
                                 @click=${this.openLinkDialog}></sl-icon-button>
-                <sl-icon-button name="eraser" label="Clear formatting"
+                <sl-icon-button name="eraser" label=${t('admin.markdown.clear-formatting')}
                                 ?disabled=${editor == null || !editor.can().clearNodes()}
                                 @click=${() => editor?.chain().focus().clearNodes().unsetAllMarks().run()}></sl-icon-button>
                 ${this.renderVariableMenu()}
@@ -507,21 +508,21 @@ export class MarkdownEditor extends LitElement {
 
     private renderLinkDialog(): TemplateResult {
         return html`
-            <sl-dialog ?open=${this.linkDialogOpen} label="Link" style="--width: min(32rem, calc(100vw - 2 * var(--sl-spacing-large)));"
+            <sl-dialog ?open=${this.linkDialogOpen} label=${t('admin.markdown.link')} style="--width: min(32rem, calc(100vw - 2 * var(--sl-spacing-large)));"
                        @sl-hide=${() => this.linkDialogOpen = false}>
-                <sl-input label="URL" type="url" placeholder="https://…" .value=${this.linkUrl}
+                <sl-input label=${t('admin.markdown.url')} type="url" placeholder="https://…" .value=${this.linkUrl}
                           @sl-input=${(e: Event) => this.linkUrl = (e.target as SlInput).value}></sl-input>
                 <div slot="footer">
                     <sl-divider></sl-divider>
                     <div class="link-dialog-footer">
-                        <sl-button variant="default" size="large" @click=${() => this.linkDialogOpen = false}>Cancel</sl-button>
+                        <sl-button variant="default" size="large" @click=${() => this.linkDialogOpen = false}>${t('admin.common.cancel')}</sl-button>
                         ${when(this.active('link'), () => html`
                             <sl-button variant="danger" size="large" @click=${this.removeLink}>
                                 <sl-icon slot="prefix" name="trash"></sl-icon>
-                                Remove link
+                                ${t('admin.markdown.remove-link')}
                             </sl-button>
                         `, () => html`<div></div>`)}
-                        <sl-button variant="warning" size="large" @click=${this.applyLink}>Apply</sl-button>
+                        <sl-button variant="warning" size="large" @click=${this.applyLink}>${t('admin.common.apply')}</sl-button>
                     </div>
                 </div>
             </sl-dialog>

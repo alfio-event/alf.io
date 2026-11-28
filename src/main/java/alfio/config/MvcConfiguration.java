@@ -18,6 +18,7 @@ package alfio.config;
 
 import alfio.config.support.HeaderPublisherFilter;
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.ContentLanguage;
 import tools.jackson.databind.json.JsonMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -44,10 +45,14 @@ import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHtt
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 import org.springframework.session.web.http.*;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.LocaleResolver;
+import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
+import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
+import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 import org.springframework.web.servlet.ViewResolver;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.DelegatingWebMvcConfiguration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.AbstractUrlBasedView;
 import org.springframework.web.servlet.view.UrlBasedViewResolver;
 
@@ -55,6 +60,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import static alfio.config.Initializer.API_V2_PUBLIC_PATH;
 import static org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.pathPattern;
@@ -62,9 +68,10 @@ import static org.springframework.security.web.servlet.util.matcher.PathPatternR
 
 @Configuration(proxyBeanMethods = false)
 @ComponentScan(basePackages = {"alfio.controller", "alfio.config"})
-@EnableWebMvc
 @EnableJdbcHttpSession(maxInactiveIntervalInSeconds = 4 * 60 * 60, tableName = "ALFIO_SPRING_SESSION") //4h
-public class MvcConfiguration implements WebMvcConfigurer {
+// extends DelegatingWebMvcConfiguration instead of using @EnableWebMvc, which is the Spring way to replace one of
+// its beans (localeResolver): see "Advanced Java Config" in the Spring MVC reference
+public class MvcConfiguration extends DelegatingWebMvcConfiguration {
 
     private final Environment environment;
     private final JsonMapper objectMapper;
@@ -77,6 +84,8 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // keeps applying the other WebMvcConfigurer beans
+        super.addResourceHandlers(registry);
         boolean isLive = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE));
         int cacheMinutes = isLive ? 15 : 0;
 
@@ -105,6 +114,35 @@ public class MvcConfiguration implements WebMvcConfigurer {
             .addResourceLocations("classpath:/resources/alfio-admin-frontend/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(CacheControl.maxAge(Duration.ofDays(60)));
+    }
+
+    /**
+     * The language of the admin UI, and of the messages the admin API returns: the one chosen with the language
+     * picker ({@code ?lang=de}, stored in the session), otherwise the first supported language of the browser,
+     * otherwise English.
+     * No code outside the admin depends on the resolved locale: the public frontend always passes its language.
+     */
+    @Bean
+    @Override
+    public LocaleResolver localeResolver() {
+        var acceptHeaderLocaleResolver = new AcceptHeaderLocaleResolver();
+        acceptHeaderLocaleResolver.setSupportedLocales(ContentLanguage.ALL_LANGUAGES.stream().map(ContentLanguage::locale).toList());
+        acceptHeaderLocaleResolver.setDefaultLocale(Locale.ENGLISH);
+        var sessionLocaleResolver = new SessionLocaleResolver();
+        sessionLocaleResolver.setDefaultLocaleFunction(acceptHeaderLocaleResolver::resolveLocale);
+        return sessionLocaleResolver;
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        // keeps applying the other WebMvcConfigurer beans
+        super.addInterceptors(registry);
+        var localeChangeInterceptor = new LocaleChangeInterceptor();
+        localeChangeInterceptor.setParamName("lang");
+        localeChangeInterceptor.setIgnoreInvalidLocale(true);
+        registry.addInterceptor(localeChangeInterceptor)
+            .addPathPatterns("/admin", "/admin/**")
+            .excludePathPatterns("/admin/api/**");
     }
 
     // see https://github.com/spring-projects/spring-session/issues/244#issuecomment-296605144
@@ -149,6 +187,8 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+        // keeps applying the other WebMvcConfigurer beans
+        super.configureMessageConverters(converters);
         converters.add(jacksonMessageConverter(objectMapper));
         StringHttpMessageConverter converter = new StringHttpMessageConverter();
         converter.setSupportedMediaTypes(Collections.singletonList(MediaType.ALL));

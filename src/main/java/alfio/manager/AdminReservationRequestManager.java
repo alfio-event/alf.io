@@ -126,7 +126,7 @@ public class AdminReservationRequestManager {
         //therefore we will limit the maximum amount of people in a single reservation to 100. This will be addressed in rel. 2.0
 
         if(singleReservation && body.getTicketsInfo().stream().mapToLong(ti -> ti.getAttendees().size()).sum() > 100) {
-            return Result.error(ErrorCode.custom("MAX_NUMBER_EXCEEDED", "Maximum allowed attendees per reservation is 100"));
+            return Result.error(ErrorCode.translatable("MAX_NUMBER_EXCEEDED", "admin.error.reservation.too-many-attendees", "Maximum allowed attendees per reservation is 100", 100));
         }
 
         // #620 - validate reference:
@@ -140,7 +140,7 @@ public class AdminReservationRequestManager {
             .toList();
 
         if(!attendeesWithDuplicateReference.isEmpty()) {
-            return Result.error(ErrorCode.custom("DUPLICATE_REFERENCE", "The following codes are duplicate:" + attendeesWithDuplicateReference));
+            return Result.error(ErrorCode.translatable("DUPLICATE_REFERENCE", "admin.error.reservation.duplicate-references", "The following codes are duplicate:" + attendeesWithDuplicateReference, String.join(", ", attendeesWithDuplicateReference)));
         }
 
 
